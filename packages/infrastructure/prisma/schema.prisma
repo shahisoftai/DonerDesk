@@ -20,6 +20,9 @@ model Organization {
   defaultLanguage String  @default("en")
   /// IANA zone; the daily summary goes out at 07:00 here. Default UTC.
   timeZone      String   @default("UTC")
+  /// The currency the organisation reports in (finance register); amounts are shown in it only through a dated rate.
+  primaryCurrency String @default("USD")
+  localCurrency   String?
   logoUrl       String?
   mainOfficeLocation String?
   donorTypesServed String?
@@ -1618,6 +1621,8 @@ model BudgetLine {
 
   @@index([tenantId, plannedActivityId])
   @@index([tenantId, projectId])
+  /// The funding source this line is budgeted against (finance register); none = not assigned.
+  fundingSourceId   String?
 }
 
 /// An expense booked against one budget line.
@@ -1634,6 +1639,16 @@ model BudgetExpense {
 
   @@index([tenantId, budgetLineId])
   @@index([tenantId, projectId])
+  /// Finance register: who was paid, in what currency (null = the line's), the funding source, the approval state and the file that proves it.
+  vendor          String    @default("")
+  currency        String?
+  fundingSourceId String?
+  evidenceId      String?
+  /// DRAFT | APPROVED | REJECTED. Rows that existed before the register are APPROVED.
+  status          String    @default("APPROVED")
+  decidedById     String?
+  decidedAt       DateTime?
+  decisionNote    String?
 }
 
 /// How many planned activities a person can lead in a week. Blank (null) means no limit has been set.
@@ -2355,4 +2370,136 @@ model DashboardTemplate {
   updatedAt DateTime @updatedAt
 
   @@index([tenantId, sector])
+}
+
+/// An organisation's funding source (finance register). `ownFunding` sources count towards a project's headline figures; others are listed apart.
+model FundingSource {
+  id         String   @id
+  tenantId   String
+  name       String
+  ownFunding Boolean  @default(true)
+  archived   Boolean  @default(false)
+  createdById String
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+/// What a project is allocated from a funding source (the "Obligated" figure). Amounts are whole minor units.
+model ProjectFunding {
+  id              String   @id
+  tenantId        String
+  projectId       String
+  fundingSourceId String
+  allocatedOn     DateTime @db.Date
+  amountMinor     BigInt
+  currency        String
+  note            String   @default("")
+  createdById     String
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId, projectId])
+  @@index([tenantId, fundingSourceId])
+}
+
+/// An organisation's own budget categories, added to the built-in ones.
+model BudgetCategory {
+  id          String   @id
+  tenantId    String
+  code        String
+  label       String
+  archived    Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+/// Money received from a funder for a project. DRAFT until a person with `finance.approve` decides.
+model Disbursement {
+  id              String    @id
+  tenantId        String
+  projectId       String
+  fundingSourceId String
+  paidOn          DateTime  @db.Date
+  amountMinor     BigInt
+  currency        String
+  memo            String    @default("")
+  /// DRAFT | APPROVED | REJECTED
+  status          String    @default("DRAFT")
+  decidedById     String?
+  decidedAt       DateTime?
+  decisionNote    String?
+  createdById     String
+  createdAt       DateTime  @default(now())
+
+  @@index([tenantId, projectId])
+  @@index([tenantId, fundingSourceId])
+}
+
+/// A payment milestone: approved by a named person at a time, then paid.
+model Deliverable {
+  id           String    @id
+  tenantId     String
+  projectId    String
+  name         String
+  amountMinor  BigInt
+  currency     String
+  dueOn        DateTime  @db.Date
+  approvedById String?
+  approvedAt   DateTime?
+  paidOn       DateTime? @db.Date
+  createdById  String
+  createdAt    DateTime  @default(now())
+
+  @@index([tenantId, projectId])
+}
+
+/// Money given out that must be accounted for.
+model Advance {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  heldBy      String
+  givenOn     DateTime @db.Date
+  amountMinor BigInt
+  currency    String
+  note        String   @default("")
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, projectId])
+}
+
+/// What has been accounted for against an advance (receipts, returned cash).
+model AdvanceAccounting {
+  id          String   @id
+  tenantId    String
+  advanceId   String
+  accountedOn DateTime @db.Date
+  amountMinor BigInt
+  currency    String
+  note        String   @default("")
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, advanceId])
+}
+
+/// A manual, dated exchange rate: units of `to` for one unit of `from`, in force from `effectiveOn`. Never deleted once entered.
+model CurrencyRate {
+  id          String   @id
+  tenantId    String
+  fromCurrency String
+  toCurrency  String
+  /// Plain decimal text, at most 8 decimals.
+  rate        String
+  effectiveOn DateTime @db.Date
+  source      String   @default("")
+  enteredById String
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, fromCurrency, toCurrency, effectiveOn])
 }

@@ -44,7 +44,7 @@ export async function importPlacesAction(input: unknown): Promise<Result<PlaceIm
 }
 
 /** Each indicator's recorded per-location values read at one level of the place tree. */
-export async function getPlaceResultsAction(projectId: string, level: number): Promise<Result<PlaceResults, AppError>> {
+export async function getPlaceResultsAction(projectId: string, level: number, periodId?: string): Promise<Result<PlaceResults, AppError>> {
   const context = await requireSession();
-  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/place-results?level=${encodeURIComponent(String(level))}`, PlaceResultsSchema, context.token);
+  return gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/place-results?level=${encodeURIComponent(String(level))}${periodId ? `&periodId=${encodeURIComponent(periodId)}` : ""}`, PlaceResultsSchema, context.token);
 }

@@ -5,11 +5,13 @@ import type * as echarts from "echarts";
 import { prepareChartMaps } from "@/lib/client/chart-maps";
 
 /** One chart that fills the box it is given and redraws when the box changes size (a dragged corner, a rotated phone). */
-export function DashboardChart({ option, label, maps, regionNames }: { option: Record<string, unknown>; label: string; maps?: string[] | undefined; regionNames?: string[] | undefined }) {
+export function DashboardChart({ option, label, maps, regionNames, onPick }: { option: Record<string, unknown>; label: string; maps?: string[] | undefined; regionNames?: string[] | undefined; /** A click on a bar, point or slice reports its label; the dashboard decides what that means. */ onPick?: ((name: string) => void) | undefined }) {
   const ref = useRef<HTMLDivElement>(null);
   const instance = useRef<echarts.ECharts | null>(null);
   const latest = useRef(option);
   latest.current = option;
+  const pick = useRef(onPick);
+  pick.current = onPick;
 
   useEffect(() => {
     let disposed = false;
@@ -21,6 +23,10 @@ export function DashboardChart({ option, label, maps, regionNames }: { option: R
       if (disposed || !ref.current) return;
       const chart = mod.init(ref.current);
       instance.current = chart;
+      chart.on("click", (params: unknown) => {
+        const name = (params as { name?: unknown }).name;
+        if (typeof name === "string" && name !== "") pick.current?.(name);
+      });
       chart.setOption(latest.current, true);
       observer = new ResizeObserver(() => chart.resize());
       observer.observe(ref.current);

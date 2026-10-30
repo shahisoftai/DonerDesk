@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { settleLayout, type DashboardWidget } from "@donordesk/domain/contexts/dashboards/index.js";
+import { addWidget, resizeWidget, settleLayout, updateWidgetSettings, widgetProblems, type DashboardWidget, type MapWidgetQuery, type MetricQuery, type WidgetChange } from "@donordesk/domain/contexts/dashboards/index.js";
 import {
-  createDashboardLinkAction, deleteDashboardAction, listDashboardLinksAction, revokeDashboardLinkAction, saveDashboardAction,
+  createDashboardLinkAction, deleteDashboardAction, getDashboardChartsAction, listDashboardLinksAction, revokeDashboardLinkAction, saveDashboardAction,
 } from "@/lib/actions/dashboards";
 import { useActionState } from "@/lib/client/action-state";
 import type { ChartDrawing, DashboardLinkView, DashboardView as DashboardData } from "@/lib/server/schemas-dashboards";
@@ -12,13 +12,17 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { DashboardCanvas } from "./DashboardCanvas";
+import { nextPeriodFilter } from "../domain/cross-filter";
 import { useTvMode } from "./use-tv-mode";
+import { AddTilePanel } from "./AddTilePanel";
+import { AddMapPanel } from "./AddMapPanel";
+import { EditWidgetPanel } from "./EditWidgetPanel";
 import { DashboardTabBar, TabAssigner, useDashboardTabs } from "./DashboardTabs";
 
 const SCOPE_LABEL = { ORG: "Whole organisation", PROJECT: "One project", MINE: "Only me" } as const;
 
 /** A dashboard: read it, change it (move, resize, remove, rename), share it, delete it. Changes are kept only when saved. */
-export function DashboardView({ dashboard, charts, projectNames }: { dashboard: DashboardData; charts: ChartDrawing[]; projectNames: Record<string, string> }) {
+export function DashboardView({ dashboard, charts: initialCharts, periods, projectNames }: { dashboard: DashboardData; charts: ChartDrawing[]; periods: ReadonlyArray<{ projectId: string; id: string; label: string }>; projectNames: Record<string, string> }) {
   const router = useRouter();
   const save = useActionState();
   const del = useActionState();
@@ -27,6 +31,10 @@ export function DashboardView({ dashboard, charts, projectNames }: { dashboard: 
   const [widgets, setWidgets] = useState<DashboardWidget[]>(dashboard.widgets as DashboardWidget[]);
   const [version, setVersion] = useState(dashboard.updatedAt);
   const [saved, setSaved] = useState(true);
+  const [charts, setCharts] = useState(initialCharts);
+  const [periodId, setPeriodId] = useState("");
+  const [periodError, setPeriodError] = useState<string | null>(null);
+  useEffect(() => setCharts(initialCharts), [initialCharts]);
   const byId = useMemo(() => new Map(charts.map((c) => [c.widgetId, c])), [charts]);
   const [projectFilter, setProjectFilter] = useState("");
   const tv = useTvMode(60, () => router.refresh());
@@ -42,6 +50,52 @@ export function DashboardView({ dashboard, charts, projectNames }: { dashboard: 
   };
   const titles = useMemo(() => new Map(charts.map((c) => [c.widgetId, c.chart?.title ?? c.table?.title ?? ""])), [charts]);
   const dirty = !saved || name !== dashboard.name;
+
+  /** The viewer's own period for this visit: charts are redrawn on the server; the saved dashboard is untouched. */
+  async function choosePeriod(next: string) {
+    setPeriodId(next);
+    setPeriodError(null);
+    const r = await getDashboardChartsAction(dashboard.id, next || undefined);
+    if (r.ok) setCharts(r.value); else setPeriodError(r.error.message);
+  }
+  const onPick = (name: string) => { const next = nextPeriodFilter(periodId, periods, name); if (next !== periodId) void choosePeriod(next); };
+  const periodChoices = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const p of periods) if (!seen.has(p.id)) seen.set(p.id, projectIds.length > 1 ? `${projectNames[p.projectId] ?? "Project"}: ${p.label}` : p.label);
+    return [...seen];
+  }, [periods, projectIds.length, projectNames]);
+
+  /** A number tile is added to the unsaved layout like any chart and kept when the dashboard is saved. */
+  function addTile(projectId: string, metric: MetricQuery) {
+    const next = addWidget(widgets, { id: `t${Math.random().toString(36).slice(2, 10)}`, projectId, kind: "METRIC", metric });
+    if (!next) return;
+    setWidgets(next);
+    setSaved(false);
+  }
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [changeError, setChangeError] = useState<string | null>(null);
+  const editingWidget = editingId ? widgets.find((w) => w.id === editingId) ?? null : null;
+  /** A widget's settings change where it stands; the whole list is checked before the change is kept. */
+  function changeWidget(change: WidgetChange) {
+    if (!editingId) return;
+    const next = updateWidgetSettings(widgets, editingId, change);
+    const problem = next ? widgetProblems(next)[0] : { message: "That change does not fit this widget." };
+    if (!next || problem) { setChangeError(problem?.message ?? "That change could not be made."); return; }
+    setChangeError(null);
+    setWidgets(next);
+    setSaved(false);
+    setEditingId(null);
+  }
+
+  /** A map is added full width: it needs room to be read. */
+  function addMap(projectId: string, map: MapWidgetQuery) {
+    const id = `m${Math.random().toString(36).slice(2, 10)}`;
+    const next = addWidget(widgets, { id, projectId, kind: "MAP", map });
+    if (!next) return;
+    setWidgets(resizeWidget(next, id, 12, 8));
+    setSaved(false);
+  }
 
   async function commit() {
     const r = await save.run(() => saveDashboardAction({ name, scope: dashboard.scope, ...(dashboard.projectId ? { projectId: dashboard.projectId } : {}), widgets, expectedUpdatedAt: version }, dashboard.id));
@@ -66,6 +120,12 @@ export function DashboardView({ dashboard, charts, projectNames }: { dashboard: 
               {projectIds.map((id) => <option key={id} value={id}>{projectNames[id] ?? "A project"}</option>)}
             </select>
           )}
+          {!editing && periodChoices.length > 0 && (
+            <select aria-label="Show one period" className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm dark:border-white/15 dark:bg-white/5" value={periodId} onChange={(e) => void choosePeriod(e.target.value)}>
+              <option value="">All periods (as saved)</option>
+              {periodChoices.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+            </select>
+          )}
           {!editing && <Button variant="secondary" onClick={tv.toggle}>{tv.active ? "Leave full screen" : "Full screen"}</Button>}
           {!editing && <Button variant="secondary" onClick={() => window.print()}>Print</Button>}
         </div>
@@ -80,15 +140,28 @@ export function DashboardView({ dashboard, charts, projectNames }: { dashboard: 
           </div>
         )}
       </header>
+      {periodError && <p role="alert" className="text-sm text-danger-600">{periodError}</p>}
       {save.error && <p role="alert" className="text-sm text-danger-600">{save.error}</p>}
       {editing && <p className="text-xs text-slate-500">Drag a chart by its title bar, resize it from the corner, or focus the title bar and use the arrow keys (Shift with an arrow key resizes). Nothing is kept until you save.</p>}
 
+      {editing && editingWidget && <EditWidgetPanel key={editingWidget.id} widget={editingWidget} chartTitle={(editingWidget.spec as { title?: string } | undefined)?.title ?? titles.get(editingWidget.id) ?? ""} onApply={changeWidget} onCancel={() => { setEditingId(null); setChangeError(null); }} />}
+      {changeError && <p role="alert" className="text-sm text-danger-600">{changeError}</p>}
+      {editing && <AddTilePanel projects={dashboard.scope === "PROJECT" && dashboard.projectId ? { [dashboard.projectId]: projectNames[dashboard.projectId] ?? "This project" } : projectNames} onAdd={addTile} full={widgets.length >= 24} />}
+      {editing && <AddMapPanel projects={dashboard.scope === "PROJECT" && dashboard.projectId ? { [dashboard.projectId]: projectNames[dashboard.projectId] ?? "This project" } : projectNames} onAdd={addMap} full={widgets.length >= 24} />}
       <DashboardTabBar tabs={tabbed.tabs} active={tabbed.active} onSelect={tabbed.setActive} overviewLabel="Overview" />
       {editing && widgets.length > 0 && <TabAssigner widgets={widgets} titles={titles} onChange={(next) => { setWidgets(next); setSaved(false); }} />}
       {widgets.length === 0 ? (
         <p className="rounded-lg border border-dashed border-slate-300 p-6 text-sm text-slate-500 dark:border-slate-700">No charts yet. Open a project&apos;s Data Center, build a chart and choose &ldquo;Add to a dashboard&rdquo;.</p>
       ) : (
-        <DashboardCanvas widgets={shown} charts={byId} editing={editing} labels={projectNames} onChange={applyShown} />
+        <>
+        {periodId && !editing && (
+          <p role="status" className="flex flex-wrap items-center gap-2 text-sm" data-no-print>
+            Showing {periodChoices.find(([id]) => id === periodId)?.[1] ?? "one period"}. Click a period on a chart to switch, or
+            <button type="button" className="underline" onClick={() => void choosePeriod("")}>show all periods</button>
+          </p>
+        )}
+        <DashboardCanvas widgets={shown} charts={byId} editing={editing} labels={projectNames} onChange={applyShown} onPick={onPick} onEdit={setEditingId} />
+        </>
       )}
 
       {dashboard.canEdit && !editing && !tv.active && (

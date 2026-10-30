@@ -1,5 +1,5 @@
 import {
-  DomainError, PlaceRegistry, ok, indicatorLocationRows, isRateIndicator, rollupByPlace, type AdminLevel, type PlaceRecord, type PlaceRollup, type Result,
+  DomainError, PlaceRegistry, periodSheetLabel, ok, indicatorLocationRows, isRateIndicator, rollupByPlace, type AdminLevel, type PlaceRecord, type PlaceRollup, type Result,
 } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IProjectRepository } from "../../ports/projects.js";
@@ -11,6 +11,8 @@ export interface PlaceResultsDto {
   level: AdminLevel;
   /** The levels the organisation's list actually has places at (what the level picker offers). */
   levelsAvailable: AdminLevel[];
+  /** The project's reporting periods in order: what a map's time slider steps through. */
+  periods: Array<{ id: string; label: string }>;
   /** True when the organisation has no places yet: the screen points to the Places list. */
   noPlaces: boolean;
   indicators: Array<{
@@ -40,7 +42,8 @@ export class GetProjectPlaceResultsHandler {
     private readonly places: IPlaceRepository,
   ) {}
 
-  async handle(ctx: AuthenticatedContext, projectId: string, level: AdminLevel): Promise<Result<PlaceResultsDto, DomainError>> {
+  /** `options.periodId` reads one reporting period's own values (the map's time slider); without it the whole life of the project is read. */
+  async handle(ctx: AuthenticatedContext, projectId: string, level: AdminLevel, options: { periodId?: string } = {}): Promise<Result<PlaceResultsDto, DomainError>> {
     const tenantId = ctx.tenant.tenantId;
     const project = await this.projects.findById(projectId, tenantId);
     if (!project.ok) return project;
@@ -56,7 +59,8 @@ export class GetProjectPlaceResultsHandler {
 
     const periods = [...periodsResult.value].sort((a, b) => a.duration.start.getTime() - b.duration.start.getTime());
     const periodOrder = periods.map((p) => p.id);
-    const values = await this.updates.findByReportingPeriods(periodOrder, tenantId);
+    if (options.periodId !== undefined && !periodOrder.includes(options.periodId)) return { ok: false, error: DomainError.notFound("ReportingPeriod", options.periodId) };
+    const values = await this.updates.findByReportingPeriods(options.periodId ? [options.periodId] : periodOrder, tenantId);
     if (!values.ok) return values;
     const byIndicator = new Map<string, typeof values.value>();
     for (const u of values.value) {
@@ -70,7 +74,7 @@ export class GetProjectPlaceResultsHandler {
     const levelsAvailable = [...new Set(registry.all().map((p) => p.adminLevel))].sort((a, b) => a - b) as AdminLevel[];
     const countryHint = project.value.country || undefined;
 
-    const out: PlaceResultsDto = { level, levelsAvailable, noPlaces: registry.size === 0, indicators: [], withoutLocation: [] };
+    const out: PlaceResultsDto = { level, levelsAvailable, periods: periods.map((p) => ({ id: p.id, label: periodSheetLabel(p.duration.start.toISOString().slice(0, 10), p.duration.end.toISOString().slice(0, 10)) })), noPlaces: registry.size === 0, indicators: [], withoutLocation: [] };
     for (const indicator of indicatorsResult.value) {
       const updates = [...(byIndicator.get(indicator.id) ?? [])].sort((a, b) => periodOrder.indexOf(a.reportingPeriodId) - periodOrder.indexOf(b.reportingPeriodId));
       const view = indicatorLocationRows(

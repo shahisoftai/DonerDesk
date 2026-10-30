@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useActionState } from "@/lib/client/action-state";
 import { createPlaceAction, importPlacesAction, setPlaceRetiredAction } from "@/lib/actions/places";
@@ -11,6 +11,10 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { PLACES_COPY as C, PLACE_LEVEL_LABEL } from "../domain/places-copy";
+import { DEFAULT_PLACE_COLUMNS, PLACE_COLUMNS, cellFor, filterPlaces, placesCsv, type PlaceColumn } from "../domain/places-table";
+import { loadBoundaryFile, loadBoundaryManifest } from "@/lib/client/boundary-loader";
+import { fileFor, findCountry, levelsFor } from "@/features/maps/domain/boundary-sources";
+import { containingFeature } from "@/features/maps/domain/point-in-area";
 
 interface Draft {
   name: string;
@@ -36,10 +40,37 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
   const [sheet, setSheet] = useState("");
   const [preview, setPreview] = useState<PlaceImportPreview | null>(null);
 
+  const [query, setQuery] = useState("");
+  const [levelFilter, setLevelFilter] = useState<number | null>(null);
+  const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [columns, setColumns] = useState<readonly PlaceColumn[]>(DEFAULT_PLACE_COLUMNS);
+  const [inside, setInside] = useState<string | null>(null);
+
   const live = useMemo(() => places.filter((p) => !p.archived), [places]);
-  const shown = useMemo(() => (showRetired ? places : live), [places, live, showRetired]);
+  const base = useMemo(() => (showRetired ? places : live), [places, live, showRetired]);
+  const shown = useMemo(() => filterPlaces(base, { query, level: levelFilter, pinnedOnly }), [base, query, levelFilter, pinnedOnly]);
+  const levelLabel = (l: number) => PLACE_LEVEL_LABEL[l] ?? String(l);
+  const levelsPresent = useMemo(() => [...new Set(places.map((p) => p.adminLevel))].sort((a, b) => a - b), [places]);
   const retiredCount = places.length - live.length;
   const parents = useMemo(() => live.filter((p) => p.kind === "AREA"), [live]);
+  // A suggestion only: where a typed pin falls among the bundled boundaries (never filled in for the person).
+  useEffect(() => {
+    setInside(null);
+    const lat = Number(draft.latitude), lng = Number(draft.longitude);
+    if (draft.latitude.trim() === "" || draft.longitude.trim() === "" || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    const country = places.find((x) => x.id === draft.parentId)?.path.split(" › ").pop();
+    if (!country) return;
+    let live = true;
+    void loadBoundaryManifest().then(async (m) => {
+      const c = m ? findCountry(m, country) : null;
+      const levels = levelsFor(c);
+      const entry = levels.length ? fileFor(c, levels[levels.length - 1]!) : null;
+      const file = entry ? await loadBoundaryFile(entry) : null;
+      if (live && file) setInside(containingFeature(file.features as never, lat, lng));
+    });
+    return () => { live = false; };
+  }, [draft.latitude, draft.longitude, draft.parentId, places]);
+
   const busy = add.busy || retire.busy || imp.busy;
 
   const set = <K extends keyof Draft>(key: K, value: Draft[K]) => setDraft((d) => ({ ...d, [key]: value }));
@@ -155,6 +186,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
                 <Input inputMode="decimal" value={draft.longitude} onChange={(e) => set("longitude", e.target.value)} disabled={busy} />
               </Field>
             </div>
+            {inside && <p className="text-sm text-slate-600 sm:col-span-2 dark:text-slate-300">This pin falls inside <strong>{inside}</strong>. Add it below that area if it is listed.</p>}
             <div className="sm:col-span-2">
               <Button type="submit" disabled={busy || draft.name.trim() === ""}>{add.busy ? C.adding : C.add}</Button>
               {add.error && <p role="alert" className="mt-2 text-sm text-danger-600">{add.error}</p>}
@@ -175,8 +207,26 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
             </label>
           )}
         </div>
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+          <Input aria-label="Search places" placeholder="Search places" value={query} onChange={(e) => setQuery(e.target.value)} className="max-w-56" />
+          <Select aria-label="Level" value={levelFilter === null ? "" : String(levelFilter)} onChange={(e) => setLevelFilter(e.target.value === "" ? null : Number(e.target.value))}>
+            <option value="">All levels</option>
+            {levelsPresent.map((l) => <option key={l} value={l}>{levelLabel(l)}</option>)}
+          </Select>
+          <label className="flex items-center gap-1"><input type="checkbox" checked={pinnedOnly} onChange={(e) => setPinnedOnly(e.target.checked)} /> With a pin</label>
+          <details className="relative">
+            <summary className="cursor-pointer select-none">Columns</summary>
+            <div className="absolute z-10 mt-1 space-y-1 rounded-lg border bg-white p-2 shadow dark:bg-slate-900">
+              {PLACE_COLUMNS.map((c) => (
+                <label key={c.key} className="flex items-center gap-1"><input type="checkbox" checked={columns.includes(c.key)} onChange={() => setColumns((cur) => (cur.includes(c.key) ? cur.filter((k) => k !== c.key) : PLACE_COLUMNS.map((x) => x.key).filter((k) => k === c.key || cur.includes(k))))} /> {c.label}</label>
+              ))}
+            </div>
+          </details>
+          <a className="ms-auto underline" href={`data:text/csv;charset=utf-8,${encodeURIComponent(placesCsv(shown, columns, levelLabel))}`} download="places.csv">Download CSV</a>
+        </div>
+        <p className="mt-1 text-xs text-slate-500">{shown.length} of {base.length} places</p>
         {shown.length === 0 ? (
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{C.empty}</p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{base.length === 0 ? C.empty : "No place matches."}</p>
         ) : (
           <ul className="mt-3 text-sm">
             {shown.map((p) => (
@@ -184,8 +234,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
                 <span className={p.archived ? "text-slate-400 line-through dark:text-slate-500" : "text-slate-800 dark:text-slate-100"}>
                   {p.name}
                   <span className="ml-2 text-xs text-slate-500 no-underline dark:text-slate-400">
-                    {PLACE_LEVEL_LABEL[p.adminLevel]}
-                    {p.aliases.length > 0 ? ` · also ${p.aliases.join(", ")}` : ""}
+                    {columns.map((c) => cellFor(p, c, levelLabel)).filter(Boolean).join(" · ")}
                     {p.archived ? ` · ${C.retiredTag}` : ""}
                   </span>
                 </span>

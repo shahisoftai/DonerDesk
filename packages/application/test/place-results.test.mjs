@@ -13,13 +13,13 @@ const entry = (category, value) => ({ dimension: "LOCATION", category, value });
 function handler({ places, updates }) {
   return new GetProjectPlaceResultsHandler(
     { findById: async () => ok({ archivedAt: null, country: "Sudan" }) },
-    { findByProject: async () => ok([{ id: "p1", duration: { start: day("2026-11-01") } }, { id: "p2", duration: { start: day("2026-12-01") } }]) },
+    { findByProject: async () => ok([{ id: "p1", duration: { start: day("2026-11-01"), end: day("2026-11-30") } }, { id: "p2", duration: { start: day("2026-12-01"), end: day("2026-12-31") } }]) },
     { findByProject: async () => ok([
       { id: "i1", code: "OC1", name: "Children vaccinated", type: "NUMBER", unit: "children" },
       { id: "i2", code: "OC2", name: "Coverage", type: "PERCENTAGE", unit: "%" },
       { id: "i3", code: "OC3", name: "No breakdown", type: "NUMBER", unit: null },
     ]) },
-    { findByReportingPeriods: async () => ok(updates) },
+    { findByReportingPeriods: async (ids) => ok(updates.filter((u) => ids.includes(u.reportingPeriodId))) },
     { list: async () => ok(places) },
   );
 }
@@ -50,7 +50,25 @@ test("an organisation with no places is told so, and typed locations stay unplac
   assert.deepEqual(r.value.levelsAvailable, []);
 });
 
+test("the periods come back in order with plain labels, for the map's time slider", async () => {
+  const r = await handler({ places: PLACES, updates: [] }).handle(ctx, "proj", 1);
+  assert.deepEqual(r.value.periods.map((p) => p.id), ["p1", "p2"]);
+  assert.ok(r.value.periods.every((p) => p.label.length > 0 && !/undefined|NaN|T00/.test(p.label)), JSON.stringify(r.value.periods));
+});
+
 test("an archived or missing project is not found", async () => {
   const h = new GetProjectPlaceResultsHandler({ findById: async () => ok(null) }, {}, {}, {}, {});
   assert.equal((await h.handle(ctx, "x", 1)).error.code, "NOT_FOUND");
+});
+
+test("one period can be read on its own (the map's time slider); an unknown period is not found", async () => {
+  const updates = [upd("i1", "p1", [entry("Rabak", "70")]), upd("i1", "p2", [entry("Rabak", "30")])];
+  const h = handler({ places: PLACES, updates });
+  const first = await h.handle(ctx, "proj", 2, { periodId: "p1" });
+  assert.equal(first.value.indicators[0].rollup.rows[0].value, "70");
+  const second = await h.handle(ctx, "proj", 2, { periodId: "p2" });
+  assert.equal(second.value.indicators[0].rollup.rows[0].value, "30");
+  const whole = await h.handle(ctx, "proj", 2);
+  assert.equal(whole.value.indicators[0].rollup.rows[0].value, "100");
+  assert.equal((await h.handle(ctx, "proj", 2, { periodId: "nope" })).error.code, "NOT_FOUND");
 });

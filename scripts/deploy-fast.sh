@@ -165,7 +165,8 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   mkdir -p "${WEB_STAGE}"
   rsync -a --delete "${ROOT}/apps/web/.next/standalone/" "${WEB_STAGE}/"
   rsync -a "${ROOT}/apps/web/.next/static/" "${WEB_STAGE}/apps/web/.next/static/" 2>/dev/null || true
-  rsync -a "${ROOT}/apps/web/public/" "${WEB_STAGE}/apps/web/public/" 2>/dev/null || true
+  # public/geo (the boundary files, ~100 MB) is NOT part of a release: scripts/sync-geo.sh puts it in the shared folder nginx serves at /geo/.
+  rsync -a --exclude=geo "${ROOT}/apps/web/public/" "${WEB_STAGE}/apps/web/public/" 2>/dev/null || true
   rsync -a "${ROOT}/apps/web/content/" "${WEB_STAGE}/apps/web/content/"
   rsync -a "${ROOT}/apps/web/package.json" "${WEB_STAGE}/apps/web/package.json"
   rsync -a --delete "${ROOT}/node_modules/" "${WEB_STAGE}/node_modules/"

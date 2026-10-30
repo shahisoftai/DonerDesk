@@ -60,8 +60,8 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
 
   // Each indicator's recorded per-location values read at one level of the place tree (Data Center "By place").
   app.get("/v1/projects/:projectId/place-results", async (req) => {
-    const { level } = z.object({ level: z.coerce.number().int().min(0).max(4).default(1) }).parse(req.query);
-    const r = await req.container.handlers.getProjectPlaceResults.handle(ctx(req), param(req, "projectId"), level as never);
+    const { level, periodId } = z.object({ level: z.coerce.number().int().min(0).max(4).default(1), periodId: z.string().min(1).optional() }).parse(req.query);
+    const r = await req.container.handlers.getProjectPlaceResults.handle(ctx(req), param(req, "projectId"), level as never, periodId ? { periodId } : {});
     if (!r.ok) throw r.error;
     return r.value;
   });

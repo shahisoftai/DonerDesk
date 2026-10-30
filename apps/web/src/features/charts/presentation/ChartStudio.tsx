@@ -137,6 +137,14 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
     setName(v.name);
     setMessage({ tone: "ok", text: t("studio.versions.restored") });
   }
+  /** The same indicator as a KPI tile: its latest figure, share of target and trend (the first indicator the chart uses). */
+  async function addKpiToDashboard() {
+    const indicatorId = spec.dataset.indicatorIds[0];
+    if (!dashboardId || !indicatorId) return;
+    const r = await addDashboardChartAction(dashboardId, { projectId, kpi: { indicatorId, includeDraft: spec.dataset.includeDraft } });
+    setMessage(r.ok ? { tone: "ok", text: "Added as a KPI tile." } : { tone: "error", text: r.error.message });
+  }
+
   async function addToDashboard() {
     if (!dashboardId) return;
     const r = await addDashboardChartAction(dashboardId, { projectId, spec });
@@ -287,6 +295,7 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
                   <option value="">{t("studio.dashboard.choose")}</option>{dashboards.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
                 <button type="button" className={btn} disabled={!dashboardId || problems.length > 0} onClick={() => void addToDashboard()}>{t("studio.dashboard.add")}</button>
+                <button type="button" className={btn} disabled={!dashboardId || spec.dataset.indicatorIds.length === 0} onClick={() => void addKpiToDashboard()}>Add as a KPI tile</button>
               </div>
             )}
           </Section>

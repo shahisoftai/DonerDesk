@@ -58,6 +58,7 @@ export * from "./data-sheet.js";
 export * from "./data-charts.js";
 export * from "./chart-spec-v2.js";
 export * from "./dataset-query.js";
+export * from "./plan-counts.js";
 export * from "./data-tables.js";
 export * from "./period-target.js";
 export * from "./entry-stoplight.js";

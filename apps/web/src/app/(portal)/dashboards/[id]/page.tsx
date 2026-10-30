@@ -22,7 +22,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
     <div className="animate-fade-in space-y-3">
       <p className="text-xs"><Link className="hover:underline" href="/dashboards">Dashboards</Link></p>
       {!data.ok && <InlineError title={data.error.message} referenceId={data.error.referenceId} />}
-      <DashboardView dashboard={dashboard.value} charts={data.ok ? data.value.charts : []} projectNames={names} />
+      <DashboardView dashboard={dashboard.value} charts={data.ok ? data.value.charts : []} periods={data.ok ? data.value.periods : []} projectNames={names} />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { DataSheetResponseSchema } from "@/lib/server/schemas";
 import { SavedChartListSchema } from "@/lib/server/schemas-charts";
 import { InlineError } from "@/components/feedback/PageState";
 import { ChartStudio } from "@/features/charts/presentation/ChartStudio";
+import { MapExplorer } from "@/features/maps/presentation/MapExplorer";
+import { PlaceListSchema, PlaceResultsSchema } from "@/lib/server/schemas-places";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +14,18 @@ export const dynamic = "force-dynamic";
 export default async function MapsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ctx = await requireSession();
-  const [sheet, saved] = await Promise.all([
+  const [sheet, saved, placeList, initial] = await Promise.all([
     gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/data-sheet`, DataSheetResponseSchema, ctx.token),
     gatewayRequest(`/v1/charts?projectId=${encodeURIComponent(id)}`, SavedChartListSchema, ctx.token),
+    gatewayRequest("/v1/places", PlaceListSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/place-results?level=1`, PlaceResultsSchema, ctx.token),
   ]);
   if (!sheet.ok) return <InlineError title={sheet.error.message} referenceId={sheet.error.referenceId} />;
   return (
     <>
       <p className="mb-3 text-sm"><Link className="underline" href={`/projects/${id}/data`}>Data Center</Link> · <Link className="underline" href={`/projects/${id}/charts`}>Chart Studio</Link></p>
+      <MapExplorer projectId={id} places={placeList.ok ? placeList.value.places : []} initial={initial.ok ? initial.value : null} periods={sheet.value.periods.map((p) => ({ id: p.id, label: p.label }))} />
+      <h2 className="mb-2 mt-8 text-lg font-semibold">Map charts and saved views</h2>
       <ChartStudio mode="map"
         projectId={id}
         indicators={sheet.value.indicators.map((i) => ({ id: i.id, code: i.code, name: i.name, unit: i.unit, isRate: i.isRate }))}

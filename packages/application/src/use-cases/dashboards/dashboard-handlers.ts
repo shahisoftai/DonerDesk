@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
+  restrictWidgetToPeriod, buildKpi, computeMetric, MAP_VIEW_LABEL, type KpiTile, type MetricTile,
   DomainError, Permissions, addWidget, buildChart, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, datasetQueryFor, isSpecV2, resolveDataset, runReport, settleLayout, toDatasetQuery, validateReportQuery, widgetProblems, type ReportQuery,
   type ChartSpecV2, type DashboardScope, type DashboardWidget, type DataChartSpec, type DataSheet, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
@@ -133,7 +134,7 @@ export class AddDashboardWidgetHandler {
     if (!mine.ok) return mine;
     if (!mine.value.some((p) => p.id === input.projectId)) return fail(DomainError.notFound("Project", input.projectId));
     if (d.value.scope === "PROJECT" && d.value.projectId !== input.projectId) return fail(DomainError.validation("A project dashboard holds charts from its own project only."));
-    const widgets = addWidget(d.value.widgets, { id: this.ids.generate().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40), projectId: input.projectId, ...(input.report ? { kind: "REPORT" as const, report: input.report as unknown as ReportQuery, ...(input.title ? { text: input.title } : {}) } : { spec: input.spec as unknown as DataChartSpec | ChartSpecV2 }) });
+    const widgets = addWidget(d.value.widgets, { id: this.ids.generate().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40), projectId: input.projectId, ...(input.map ? { kind: "MAP" as const, map: input.map } : input.metric ? { kind: "METRIC" as const, metric: input.metric } : input.kpi ? { kind: "KPI" as const, kpi: input.kpi } : input.report ? { kind: "REPORT" as const, report: input.report as unknown as ReportQuery, ...(input.title ? { text: input.title } : {}) } : { spec: input.spec as unknown as DataChartSpec | ChartSpecV2 }) });
     if (!widgets) return fail(DomainError.conflict("This dashboard is full. Remove a chart first."));
     const problems = widgetProblems(widgets);
     if (problems.length > 0) return fail(DomainError.validation(problems[0]!.message, { problems }));
@@ -168,6 +169,12 @@ export interface DashboardChartDto {
   chart?: { option: Record<string, unknown>; title: string; notes: string[]; unverified: number; points: number; /** Map names the screen registers before drawing. */ maps?: string[]; regionNames?: string[] };
   /** A table kind (pivot, scorecard): the rows to show instead of a picture. */
   table?: { title: string; columns: string[]; rows: Array<Array<string | null>>; notes: string[] };
+  /** A KPI tile: the latest figure, its share of target and a sparkline. */
+  kpi?: KpiTile;
+  /** A coloured number tile: a money or activity figure. */
+  metric?: MetricTile;
+  /** An interactive map: the screen draws it, for the viewer, from their own access (nothing is sent here). */
+  map?: { view: "RESULTS" | "ACTIVITIES"; title: string; projectId: string };
   /** A text block. */
   text?: string;
   /** Why it is not drawn: not available to this viewer, or the chart's own reason (an indicator was removed). */
@@ -180,9 +187,12 @@ async function drawCharts(
   readSheet: (projectId: string) => Promise<DataSheet | null>,
   /** The plan, activity days and budget, read for this caller; absent for a share link, which never shows them. */
   extras?: { ctx: AuthenticatedContext; service: IDatasetExtras },
+  /** The viewer's own period for this visit; the saved dashboard is not changed. */
+  viewerPeriodId?: string,
 ): Promise<DashboardChartDto[]> {
   const sheets = new Map<string, DataSheet | null>();
   for (const w of widgets) if (!sheets.has(w.projectId)) sheets.set(w.projectId, await readSheet(w.projectId));
+  const shown = viewerPeriodId ? widgets.map((w) => restrictWidgetToPeriod(w, viewerPeriodId, sheets.get(w.projectId)?.periods.map((p) => p.id))) : widgets;
   // Extra data is read once per project and source, however many charts use it.
   const cache = new Map<string, Promise<unknown>>();
   const extra = <T,>(key: string, read: () => Promise<T>): Promise<T> => { if (!cache.has(key)) cache.set(key, read()); return cache.get(key) as Promise<T>; };
@@ -202,10 +212,29 @@ async function drawCharts(
     }
     return data;
   };
-  return Promise.all(widgets.map(async (w): Promise<DashboardChartDto> => {
+  return Promise.all(shown.map(async (w): Promise<DashboardChartDto> => {
     if (w.kind === "TEXT") return { widgetId: w.id, text: w.text ?? "" };
     const sheet = sheets.get(w.projectId);
     if (!sheet) return { widgetId: w.id, unavailable: "This chart is from a project you cannot see." };
+    if (w.kind === "MAP") {
+      if (!w.map) return { widgetId: w.id, unavailable: "This map has no settings." };
+      // A map reads recorded values and the plan as the person opening the dashboard: it is never drawn for a share link (no extras there).
+      if (!extras) return { widgetId: w.id, unavailable: "Maps are not shown through a share link." };
+      return { widgetId: w.id, map: { view: w.map.view, title: w.map.title?.trim() || MAP_VIEW_LABEL[w.map.view], projectId: w.projectId } };
+    }
+    if (w.kind === "METRIC") {
+      if (!w.metric) return { widgetId: w.id, unavailable: "This tile has no figure." };
+      // Money and the plan are read for the caller and never through a share link (no extras there): the tile then says so, it is not drawn empty.
+      const grp = w.metric.metric.startsWith("FIN_") ? "FINANCE" : "PLAN";
+      const plan = grp === "PLAN" && extras ? await extra(`${w.projectId}|plan`, () => extras.service.plan(extras.ctx, w.projectId)) : undefined;
+      const finance = grp === "FINANCE" && extras ? await extra(`${w.projectId}|finance`, () => extras.service.finance(extras.ctx, w.projectId)) : undefined;
+      return { widgetId: w.id, metric: computeMetric(w.metric, { plan, finance }) };
+    }
+    if (w.kind === "KPI") {
+      if (!w.kpi) return { widgetId: w.id, unavailable: "This tile has no indicator." };
+      const k = buildKpi(sheet, w.kpi);
+      return k.ok ? { widgetId: w.id, kpi: k.tile } : { widgetId: w.id, unavailable: k.reason };
+    }
     if (w.kind === "REPORT") {
       // A saved report: the question is run against the sheet now, so the table cannot be out of date.
       if (!w.report || validateReportQuery(w.report).length > 0) return { widgetId: w.id, unavailable: "This report's question is not valid." };
@@ -230,19 +259,23 @@ async function drawCharts(
 export class GetDashboardDataHandler {
   constructor(private readonly repo: IDashboardRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly visible: VisibleProjects, private readonly extras?: IDatasetExtras) {}
 
-  async handle(ctx: AuthenticatedContext, id: string): Promise<Result<{ charts: DashboardChartDto[] }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, id: string, options: { periodId?: string } = {}): Promise<Result<{ charts: DashboardChartDto[]; periods: Array<{ projectId: string; id: string; label: string }> }, DomainError>> {
     if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see dashboards"));
     const d = await load(this.repo, ctx, id);
     if (!d.ok) return d;
     const mine = await this.visible.for(ctx);
     if (!mine.ok) return mine;
     const allowed = new Set(mine.value.map((p) => p.id));
+    // The periods of the projects the viewer may see: what the dashboard's period filter offers.
+    const periods: Array<{ projectId: string; id: string; label: string }> = [];
     const charts = await drawCharts(d.value.widgets, async (projectId) => {
       if (!allowed.has(projectId)) return null;
       const sheet = await this.sheets.handle(ctx, projectId);
-      return sheet.ok ? sheet.value : null;
-    }, this.extras ? { ctx, service: this.extras } : undefined);
-    return ok({ charts });
+      if (!sheet.ok) return null;
+      for (const p of sheet.value.periods) periods.push({ projectId, id: p.id, label: p.label });
+      return sheet.value;
+    }, this.extras ? { ctx, service: this.extras } : undefined, options.periodId);
+    return ok({ charts, periods });
   }
 }
 

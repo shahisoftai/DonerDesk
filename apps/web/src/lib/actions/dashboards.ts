@@ -45,9 +45,9 @@ export async function deleteDashboardAction(dashboardId: string): Promise<Result
   return result.ok ? { ok: true, value: undefined } : result;
 }
 
-export async function getDashboardChartsAction(dashboardId: string): Promise<Result<ChartDrawing[], AppError>> {
+export async function getDashboardChartsAction(dashboardId: string, periodId?: string): Promise<Result<ChartDrawing[], AppError>> {
   const context = await requireSession();
-  const result = await gatewayRequest(`/v1/dashboards/${enc(dashboardId)}/data`, DashboardDataSchema, context.token);
+  const result = await gatewayRequest(`/v1/dashboards/${enc(dashboardId)}/data${periodId ? `?periodId=${encodeURIComponent(periodId)}` : ""}`, DashboardDataSchema, context.token);
   return result.ok ? { ok: true, value: result.value.charts } : result;
 }
 

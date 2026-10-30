@@ -6,7 +6,7 @@ const SpecSchema = z.object({
 });
 /** A widget draws the older chart settings, a Chart Studio chart (`version: 2`), or is a text block. */
 export const WidgetSchema = z.object({
-  id: z.string(), projectId: z.string(), kind: z.enum(["CHART", "TEXT", "REPORT"]).optional(), report: z.record(z.unknown()).optional(),
+  id: z.string(), projectId: z.string(), kind: z.enum(["CHART", "TEXT", "REPORT", "KPI", "METRIC", "MAP"]).optional(), report: z.record(z.unknown()).optional(), kpi: z.record(z.unknown()).optional(), metric: z.record(z.unknown()).optional(), map: z.record(z.unknown()).optional(),
   spec: z.union([SpecSchema, z.object({ version: z.literal(2) }).passthrough()]).optional(), text: z.string().optional(), tab: z.string().optional(),
   x: z.number(), y: z.number(), w: z.number(), h: z.number(),
 });
@@ -25,11 +25,14 @@ export const ChartDrawingSchema = z.object({
   widgetId: z.string(),
   chart: z.object({ option: z.record(z.unknown()), title: z.string(), notes: z.array(z.string()), unverified: z.number(), points: z.number(), maps: z.array(z.string()).optional(), regionNames: z.array(z.string()).optional() }).optional(),
   table: z.object({ title: z.string(), columns: z.array(z.string()), rows: z.array(z.array(z.string().nullable())), notes: z.array(z.string()) }).optional(),
+  kpi: z.object({ title: z.string(), color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).nullable().default(null), unit: z.string().nullable(), value: z.number().nullable(), periodLabel: z.string().nullable(), target: z.string().nullable(), percentOfTarget: z.number().nullable(), spark: z.array(z.object({ label: z.string(), value: z.number().nullable() })), unverified: z.boolean(), notes: z.array(z.string()) }).optional(),
+  metric: z.object({ title: z.string(), color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]), value: z.number().nullable(), text: z.string(), unit: z.string(), note: z.string().nullable() }).optional(),
+  map: z.object({ view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string(), projectId: z.string() }).optional(),
   text: z.string().optional(),
   unavailable: z.string().optional(),
 });
 export type ChartDrawing = z.infer<typeof ChartDrawingSchema>;
-export const DashboardDataSchema = z.object({ charts: z.array(ChartDrawingSchema) });
+export const DashboardDataSchema = z.object({ charts: z.array(ChartDrawingSchema), periods: z.array(z.object({ projectId: z.string(), id: z.string(), label: z.string() })).default([]) });
 
 export const DashboardLinkSchema = z.object({ id: z.string(), label: z.string(), expiresAt: z.string(), live: z.boolean(), revoked: z.boolean() });
 export type DashboardLinkView = z.infer<typeof DashboardLinkSchema>;

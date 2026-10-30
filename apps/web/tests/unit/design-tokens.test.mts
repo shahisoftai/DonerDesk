@@ -95,3 +95,8 @@ test("every tile message exists in every language and reads as a sentence, with 
     }
   }
 });
+
+import { TILE_BACKGROUND, contrastWithWhite } from "../../src/features/dashboards/domain/tile-theme.ts";
+test("white text on every number-tile colour reaches AA for small text", () => {
+  for (const [name, bg] of Object.entries(TILE_BACKGROUND)) assert.ok(contrastWithWhite(bg) >= 4.5, `${name} ${contrastWithWhite(bg).toFixed(2)}:1`);
+});

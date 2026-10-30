@@ -40,9 +40,10 @@ export class PrismaBudgetRepository implements IBudgetRepository {
     return ok(undefined);
   }
 
+  /** Only APPROVED expenses: a draft waiting for a decision, or a rejected one, is not spending yet (the finance register stores all three in this table). */
   async findExpensesByLines(lineIds: string[], tenantId: TenantId): Promise<Result<BudgetExpenseRecord[], DomainError>> {
     if (lineIds.length === 0) return ok([]);
-    const rows = await this.prisma.budgetExpense.findMany({ where: { tenantId: tenantId.toString(), budgetLineId: { in: lineIds } } });
+    const rows = await this.prisma.budgetExpense.findMany({ where: { tenantId: tenantId.toString(), budgetLineId: { in: lineIds }, status: "APPROVED" } });
     return ok(rows.map((r) => ({
       id: r.id, tenantId: r.tenantId, projectId: r.projectId, budgetLineId: r.budgetLineId, expenseDate: r.expenseDate.toISOString().slice(0, 10),
       amountMinor: r.amountMinor, description: r.description, createdById: r.createdById, createdAt: r.createdAt,

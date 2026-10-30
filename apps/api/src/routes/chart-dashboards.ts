@@ -161,7 +161,7 @@ export async function registerChartDashboardRoutes(app: FastifyInstance) {
   });
 
   app.get("/v1/dashboards/:dashboardId/data", async (req) => {
-    const r = await req.container.handlers.getDashboardData.handle(ctx(req), param(req, "dashboardId"));
+    const r = await req.container.handlers.getDashboardData.handle(ctx(req), param(req, "dashboardId"), (() => { const id = (req.query as { periodId?: unknown }).periodId; return typeof id === "string" && id !== "" ? { periodId: id } : {}; })());
     if (!r.ok) throw r.error;
     return r.value;
   });

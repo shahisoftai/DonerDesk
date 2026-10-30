@@ -51,6 +51,7 @@ export type Capability =
   | "team.view-work"
   | "risk.raise"
   | "risk.manage"
+  | "finance.approve"
   | "settings.view"
   | "billing.manage";
 
@@ -91,6 +92,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "team.view-work",
       "risk.raise",
     "risk.manage",
+    "finance.approve",
   ],
   PROJECT_MANAGER: [
     "project.create",
@@ -117,6 +119,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "team.view-work",
       "risk.raise",
     "risk.manage",
+    "finance.approve",
   ],
   ME_OFFICER: [
     "logframe.edit",

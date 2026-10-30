@@ -455,3 +455,41 @@ test("a choropleth colours countries only, says which countries it needs the map
   const inside = buildChart(spec("CHOROPLETH", "RESULTS_BY_PLACE", ["a"]), { ...base, places: [EXTRA.places[3], { ...EXTRA.places[3], name: "Kosti" }] });
   assert.match(inside.reason, /use graduated symbols/);
 });
+
+test("activities by status: a donut of the plan's activity statuses, the same counts as the number tiles, with cancelled and late said in notes", () => {
+  const act = (id, status, signal = "ON_TIME", kind = "ACTIVITY") => ({ id, title: id, kind, start: "2026-01-01", end: "2026-02-01", status, signal, signalLabel: "" });
+  const plan = [act("a", "DONE", "DONE"), act("b", "DONE", "DONE"), act("c", "IN_PROGRESS"), act("d", "PLANNED", "LATE"), act("e", "CANCELLED", "CANCELLED"), act("m", "PLANNED", "ON_TIME", "MILESTONE")];
+  const base = resolveDataset(sheet, datasetQueryFor(spec("DONUT", "PLAN_TIMELINE", []), ALL));
+  assert.deepEqual(datasetQueryFor(spec("DONUT", "PLAN_TIMELINE", []), ALL).sources, ["PLAN"]);
+  const d = build(spec("DONUT", "PLAN_TIMELINE", []), { ...base, plan });
+  assert.equal(d.ok, true, d.reason);
+  const [pie] = seriesOf(d);
+  assert.equal(pie.type, "pie");
+  assert.deepEqual(pie.data, [{ name: "Planned", value: 1 }, { name: "In progress", value: 1 }, { name: "Done", value: 2 }]);
+  assert.equal(d.title, "Activities by status");
+  assert.ok(d.notes.some((n) => /1 cancelled activity is not counted/.test(n)));
+  assert.ok(d.notes.some((n) => /1 of the 4 is running late/.test(n)));
+  const onlyDone = build(spec("PIE", "PLAN_TIMELINE", []), { ...base, plan: [act("a", "DONE", "DONE")] });
+  assert.deepEqual(seriesOf(onlyDone)[0].data, [{ name: "Done", value: 1 }], "a status with none is left out, not drawn as zero");
+  assert.match(build(spec("DONUT", "PLAN_TIMELINE", []), { ...base, plan: [] }).reason, /no planned activities yet/);
+  assert.match(build(spec("DONUT", "PLAN_TIMELINE", []), { ...base, plan: [act("e", "CANCELLED", "CANCELLED")] }).reason, /cancelled/);
+  assert.equal(build(spec("DONUT", "PLAN_TIMELINE", []), { ...base, plan: undefined }).ok, false);
+});
+
+test("spent by result: a donut of approved spending grouped by the result each line's activity serves, with unlinked spending shown, never hidden or double counted", () => {
+  const line = (result, spent, currency = "USD") => ({ donor: "D", category: "Travel", currency, budgeted: 1000, spent, ...(result ? { result } : {}) });
+  const base = resolveDataset(sheet, datasetQueryFor(spec("DONUT", "BUDGET_FLOW", []), ALL));
+  assert.deepEqual(datasetQueryFor(spec("DONUT", "BUDGET_FLOW", []), ALL).sources, ["BUDGET"]);
+  const lines = [line("1 Capacity building", 300), line("1 Capacity building", 100), line("2 Basic education", 700), line(undefined, 50), line("3 Employability", 0)];
+  const d = build(spec("DONUT", "BUDGET_FLOW", []), { ...base, budget: lines });
+  assert.equal(d.ok, true, d.reason);
+  assert.equal(d.title, "Spent by result");
+  assert.deepEqual(seriesOf(d)[0].data, [{ name: "2 Basic education", value: 700 }, { name: "1 Capacity building", value: 400 }, { name: "Not linked to a result", value: 50 }]);
+  assert.ok(d.notes.some((n) => /50 USD was spent on activities not linked to a result/.test(n)));
+  assert.ok(d.notes.some((n) => /Spent is approved expenses only/.test(n)));
+  assert.match(build(spec("DONUT", "BUDGET_FLOW", []), { ...base, budget: [line("A", 1), line("B", 1, "EUR")] }).reason, /more than one currency/);
+  assert.match(build(spec("DONUT", "BUDGET_FLOW", []), { ...base, budget: [line("A", 0)] }).reason, /No spending has been approved/);
+  assert.match(build(spec("DONUT", "BUDGET_FLOW", []), { ...base, budget: [] }).reason, /no budget lines/);
+  assert.match(build(spec("DONUT", "BUDGET_FLOW", []), { ...base, budget: [{ ...line(undefined, 9), resultUnknown: true }] }).reason, /could not be read just now/);
+  assert.equal(build(spec("SANKEY", "BUDGET_FLOW", []), { ...base, budget: [line("A", 5), line("B", 6)] }).ok, true, "the budget flow is unchanged");
+});

@@ -13,6 +13,8 @@
     "test:sheet": "node tests/harness/entry-sheet/run.mjs",
     "test:studio": "node tests/harness/chart-studio/run.mjs",
     "test:report-builder": "node tests/harness/report-builder/run.mjs",
+    "test:finance": "node tests/harness/finance/run.mjs",
+    "test:tiles": "node tests/harness/dashboard-tiles/run.mjs",
     "test:templates": "node tests/harness/dashboard-templates/run.mjs"
   },
   "dependencies": {

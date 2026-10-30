@@ -59,6 +59,7 @@ export type PlaceRollupRow = z.infer<typeof RollupRowSchema>;
 export const PlaceResultsSchema = z.object({
   level: z.number().int(),
   levelsAvailable: z.array(z.number().int()),
+  periods: z.array(z.object({ id: z.string(), label: z.string() })).default([]),
   noPlaces: z.boolean(),
   indicators: z.array(z.object({
     id: z.string(),

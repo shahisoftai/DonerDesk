@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { FundingResponseSchema, PortfolioOverviewSchema } from "@/lib/server/schemas";
+import { PortfolioFinanceSchema } from "@/lib/server/schemas-finance";
+import { HomeFinance } from "@/features/finance/presentation/HomeFinance";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { loadDashboard } from "../application/dashboard-read-model";
 import { loadWorkItems } from "@/features/work-items/application/work-items-read-model";
@@ -21,11 +23,12 @@ const BAND_TONE = { ON_TRACK: "success", AT_RISK: "warning", OFF_TRACK: "danger"
 export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRECTOR" | "MANAGER" }) {
   const identity = decodeSessionPayload(ctx.token);
   const director = variant === "DIRECTOR";
-  const [overview, snapshot, work, funding] = await Promise.all([
+  const [overview, snapshot, work, funding, finance] = await Promise.all([
     gatewayRequest("/v1/portfolio/overview", PortfolioOverviewSchema, ctx.token),
     loadDashboard(ctx.token),
     loadWorkItems(ctx.token),
     director && ctx.capabilities.has("org.manage") ? gatewayRequest("/v1/funding", FundingResponseSchema, ctx.token) : Promise.resolve(null),
+    gatewayRequest("/v1/portfolio/finance", PortfolioFinanceSchema, ctx.token),
   ]);
 
   const today = new Date().toISOString().slice(0, 10);
@@ -83,6 +86,8 @@ export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRE
           <Tile label="Late planned activities" value={String(rows.reduce((n, r) => n + r.delivery.lateActivities, 0))} hint={`${rows.reduce((n, r) => n + r.delivery.valuesOverdue, 0)} indicator values overdue`} href="/my-work" />
         </section>
       )}
+
+      {finance.ok && <HomeFinance f={finance.value} />}
 
       {overview.ok && (
         <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">

@@ -14,7 +14,13 @@ export interface DatasetPlanRow { id: string; title: string; kind: "ACTIVITY" | 
 /** One day and how many activities were completed on it (a record spanning days counts on its first day). */
 export interface DatasetDay { date: string; count: number }
 /** One budget line: who funds it, its cost category, what is budgeted and what is spent (major units of one currency). */
-export interface DatasetBudgetLine { donor: string; category: string; currency: string; budgeted: number; spent: number }
+export interface DatasetBudgetLine {
+  donor: string; category: string; currency: string; budgeted: number; spent: number;
+  /** The result (logframe output) the line's activity contributes to, as "code title"; absent when the activity is not linked to one. */
+  result?: string | undefined;
+  /** The results could not be read just now: `result` is then unknown, not "none". */
+  resultUnknown?: true | undefined;
+}
 
 /** One place's value of an indicator at the chosen level of the organisation's place tree (rates are shown, never combined). */
 export interface DatasetPlace {

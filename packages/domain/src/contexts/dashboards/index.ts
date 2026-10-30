@@ -2,3 +2,7 @@ export * from "./dashboard.js";
 export * from "./dashboard-templates.js";
 export * from "./sector-templates.js";
 export * from "./saved-chart.js";
+export * from "./viewer-filter.js";
+export * from "./kpi.js";
+export * from "./metric-tile.js";
+export * from "./map-widget.js";

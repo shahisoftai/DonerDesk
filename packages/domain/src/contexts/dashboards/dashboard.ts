@@ -7,6 +7,9 @@
 import { MAX_REPORT_NAME, validateReportQuery, type ReportQuery } from "../reporting/report-query.js";
 import { DATA_CHART_TEMPLATES, HEX_COLOUR, type DataChartSpec, type DataChartTemplate } from "../reporting/data-charts.js";
 import { validateChartSpec, type ChartSpecV2 } from "../reporting/chart-spec-v2.js";
+import { validateKpiQuery, type KpiQuery } from "./kpi.js";
+import { validateMetricQuery, type MetricQuery } from "./metric-tile.js";
+import { validateMapWidget, type MapWidgetQuery } from "./map-widget.js";
 
 export const GRID_COLUMNS = 12;
 export const WIDGET_MIN_W = 3;
@@ -32,7 +35,13 @@ export interface DashboardWidget {
   /** The project whose data sheet this chart is drawn from (for a text block, the project it sits with). */
   projectId: string;
   /** CHART (the default) draws `spec`; TEXT shows `text`. */
-  kind?: "CHART" | "TEXT" | "REPORT" | undefined;
+  kind?: "CHART" | "TEXT" | "REPORT" | "KPI" | "METRIC" | "MAP" | undefined;
+  /** MAP: an interactive map of the project (results by place, or where the activities are). */
+  map?: MapWidgetQuery | undefined;
+  /** METRIC: a coloured number tile (a money or activity figure). */
+  metric?: MetricQuery | undefined;
+  /** KPI: the indicator whose latest figure the tile shows. */
+  kpi?: KpiQuery | undefined;
   spec?: WidgetSpec | undefined;
   /** REPORT: the saved-report question (indicators, periods, measure, rows); the table is run against the data sheet whenever the dashboard is opened. `text` is its title. */
   report?: ReportQuery | undefined;
@@ -73,6 +82,21 @@ export function widgetProblems(widgets: ReadonlyArray<DashboardWidget>): WidgetP
       const found = w.report ? validateReportQuery(w.report) : [{ message: "A report widget needs its question." }];
       if (found.length > 0) add(found[0]!.message);
       if ((w.text?.length ?? 0) > MAX_REPORT_NAME) add(`A report's title is at most ${MAX_REPORT_NAME} characters.`);
+      continue;
+    }
+    if (w.kind === "MAP") {
+      const found = w.map ? validateMapWidget(w.map) : "A map needs to say what it shows.";
+      if (found) add(found);
+      continue;
+    }
+    if (w.kind === "METRIC") {
+      const found = w.metric ? validateMetricQuery(w.metric) : "A number tile needs a figure to show.";
+      if (found) add(found);
+      continue;
+    }
+    if (w.kind === "KPI") {
+      const found = w.kpi ? validateKpiQuery(w.kpi) : "A KPI tile needs an indicator.";
+      if (found) add(found);
       continue;
     }
     if (w.kind === "TEXT") {
@@ -143,12 +167,48 @@ export function resizeWidget<T extends GridBox>(widgets: ReadonlyArray<T>, id: s
   return settleLayout(widgets.map((it) => (it.id === id ? { ...it, w: Math.round(w), h: Math.round(h) } : it)), id);
 }
 
+/** What a person can change about a widget without removing it. Each change fits one kind of widget; a change for another kind is refused (null). */
+export type WidgetChange =
+  | { kind: "METRIC"; metric: MetricQuery }
+  | { kind: "MAP"; map: MapWidgetQuery }
+  | { kind: "KPI"; kpi: KpiQuery }
+  | { kind: "TEXT"; text: string }
+  /** A chart keeps its data and drawing; only its title changes here (empty clears it). */
+  | { kind: "CHART"; title: string };
+
+/**
+ * Changes a widget's settings in place: its place on the grid, its size, its tab and its project are untouched. Returns the new list, or null when
+ * the widget is not there or the change is for another kind. The caller checks the whole list with `widgetProblems` before keeping it.
+ */
+export function updateWidgetSettings(widgets: ReadonlyArray<DashboardWidget>, id: string, change: WidgetChange): DashboardWidget[] | null {
+  const at = widgets.findIndex((w) => w.id === id);
+  const w = widgets[at];
+  if (at < 0 || !w) return null;
+  const kind = w.kind ?? "CHART";
+  if (kind !== change.kind) return null;
+  let next: DashboardWidget;
+  switch (change.kind) {
+    case "METRIC": next = { ...w, metric: change.metric }; break;
+    case "MAP": next = { ...w, map: change.map }; break;
+    case "KPI": next = { ...w, kpi: change.kpi }; break;
+    case "TEXT": next = { ...w, text: change.text }; break;
+    case "CHART": {
+      if (!w.spec) return null;
+      const title = change.title.trim();
+      const { title: _gone, ...rest } = w.spec as { title?: string };
+      next = { ...w, spec: (title ? { ...rest, title } : rest) as typeof w.spec };
+      break;
+    }
+  }
+  return widgets.map((x, i) => (i === at ? next : x));
+}
+
 export function removeWidget<T extends GridBox>(widgets: ReadonlyArray<T>, id: string): T[] {
   return settleLayout(widgets.filter((w) => w.id !== id));
 }
 
 /** A new chart goes below everything else, at the default size. Refused (null) at the limit. */
-export function addWidget(widgets: ReadonlyArray<DashboardWidget>, input: { id: string; projectId: string; spec?: WidgetSpec | undefined; kind?: "CHART" | "TEXT" | "REPORT" | undefined; text?: string | undefined; report?: ReportQuery | undefined }): DashboardWidget[] | null {
+export function addWidget(widgets: ReadonlyArray<DashboardWidget>, input: { id: string; projectId: string; spec?: WidgetSpec | undefined; kind?: "CHART" | "TEXT" | "REPORT" | "KPI" | "METRIC" | "MAP" | undefined; text?: string | undefined; report?: ReportQuery | undefined; kpi?: KpiQuery | undefined; metric?: MetricQuery | undefined; map?: MapWidgetQuery | undefined }): DashboardWidget[] | null {
   if (widgets.length >= MAX_WIDGETS) return null;
   const bottom = widgets.reduce((max, w) => Math.max(max, w.y + w.h), 0);
   return settleLayout([...widgets, { ...input, x: 0, y: bottom, w: DEFAULT_WIDGET_W, h: DEFAULT_WIDGET_H }]);

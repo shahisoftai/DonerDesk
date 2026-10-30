@@ -25,10 +25,21 @@ export const ReportQuerySchema = z.object({
   includeDraft: z.boolean(),
   breakdown: z.enum(["SEX", "AGE_GROUP", "DISABILITY", "LOCATION", "OTHER"]).optional(),
 });
+export const MapWidgetSchema = z.object({ view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string().max(60).optional() });
+export const MetricQuerySchema = z.object({
+  metric: z.enum(["FIN_OBLIGATED", "FIN_RECEIVED", "FIN_SPENT", "FIN_REMAINING", "ACTIVITIES_TOTAL", "ACTIVITIES_IN_PROGRESS", "ACTIVITIES_DONE", "ACTIVITIES_LATE"]),
+  color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).optional(),
+  currency: z.string().length(3).optional(),
+  title: z.string().max(60).optional(),
+});
+export const KpiQuerySchema = z.object({ indicatorId: z.string().min(1), includeDraft: z.boolean(), toPeriodId: z.string().optional(), color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).optional(), title: z.string().max(60).optional() });
 export const DashboardWidgetSchema = z.object({
   id: z.string().min(1).max(64),
   projectId: z.string().min(1),
-  kind: z.enum(["CHART", "TEXT", "REPORT"]).optional(),
+  kind: z.enum(["CHART", "TEXT", "REPORT", "KPI", "METRIC", "MAP"]).optional(),
+  metric: MetricQuerySchema.optional(),
+  map: MapWidgetSchema.optional(),
+  kpi: KpiQuerySchema.optional(),
   spec: WidgetSpecSchema.optional(),
   report: ReportQuerySchema.optional(),
   text: z.string().max(2000).optional(),
@@ -46,7 +57,7 @@ export const SaveDashboardSchema = z.object({
 });
 export type SaveDashboardInput = z.infer<typeof SaveDashboardSchema>;
 
-export const AddDashboardWidgetSchema = z.object({ projectId: z.string().min(1), spec: WidgetSpecSchema.optional(), report: ReportQuerySchema.optional(), title: z.string().trim().max(120).optional() }).refine((v) => (v.spec ? 1 : 0) + (v.report ? 1 : 0) === 1, { message: "Add either a chart or a report." });
+export const AddDashboardWidgetSchema = z.object({ projectId: z.string().min(1), spec: WidgetSpecSchema.optional(), report: ReportQuerySchema.optional(), kpi: KpiQuerySchema.optional(), metric: MetricQuerySchema.optional(), map: MapWidgetSchema.optional(), title: z.string().trim().max(120).optional() }).refine((v) => (v.spec ? 1 : 0) + (v.report ? 1 : 0) + (v.kpi ? 1 : 0) + (v.metric ? 1 : 0) + (v.map ? 1 : 0) === 1, { message: "Add either a chart, a report, a KPI tile or a number tile." });
 export type AddDashboardWidgetInput = z.infer<typeof AddDashboardWidgetSchema>;
 
 export const CreateDashboardShareSchema = z.object({ label: z.string().trim().min(1).max(120), expiresInDays: z.number().int().min(1).max(180).default(30) });

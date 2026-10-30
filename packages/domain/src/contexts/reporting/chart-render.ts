@@ -1,5 +1,6 @@
 import { CHART_PALETTES, DATA_CHART_TEMPLATES, HEX_COLOUR } from "./data-charts.js";
 import { CHART_KINDS, TEMPLATE_SHAPE, type ChartAnnotation, type ChartKind, type ChartShape, type ChartSize, type ChartSpecV2, type NumberFormat, type SeriesStyle } from "./chart-spec-v2.js";
+import { planCounts } from "./plan-counts.js";
 import type { DatasetBudgetLine, DatasetDay, DatasetFinanceRow, DatasetPlace, DatasetPlanRow, DatasetPoint, DatasetQuery, DatasetResult, DatasetSource } from "./dataset-query.js";
 import { hasShareOfTarget, type DataSheetIndicator } from "./data-sheet.js";
 
@@ -616,15 +617,50 @@ function sankey(spec: ChartSpecV2, lines: ReadonlyArray<DatasetBudgetLine>, titl
   return { option: { ...baseOption(spec, title, palette(spec), false, annotationsOf(spec, false, [])), tooltip: { trigger: "item" }, series: [{ type: "sankey", left: 24, right: 120, top: 56, bottom: 24, data: names, links: data, emphasis: { focus: "adjacency" }, lineStyle: { color: "gradient", curveness: 0.5 } }] }, notes };
 }
 
+/** The planned activities by status as a pie or donut: the same counts as the Activities number tiles (`planCounts`); a status with none is left out, not drawn as zero. */
+function planStatusPie(spec: ChartSpecV2, rows: ReadonlyArray<DatasetPlanRow>, title: string, notes: string[]): Built {
+  const c = planCounts(rows);
+  const parts = [["Planned", c.planned], ["In progress", c.inProgress], ["Done", c.done]].filter(([, n]) => (n as number) > 0).map(([name, value]) => ({ name: name as string, value: value as number }));
+  if (c.total === 0) return rows.some((r) => r.kind === "ACTIVITY") ? "Every planned activity is cancelled, so there is nothing to show." : "There are no planned activities yet.";
+  if (c.cancelled > 0) notes.push(`${c.cancelled} cancelled ${c.cancelled === 1 ? "activity is" : "activities are"} not counted.`);
+  if (c.late > 0) notes.push(`${c.late} of the ${c.total} ${c.late === 1 ? "is" : "are"} running late.`);
+  const common = baseOption(spec, title, palette(spec), true, annotationsOf(spec, false, []));
+  return { option: { ...common, series: [{ type: "pie", radius: spec.kind === "DONUT" ? ["45%", "70%"] : "68%", data: parts, label: labelOf({ ...spec, labels: spec.labels ?? { show: true, format: "NAME_VALUE" } }, "", true), avoidLabelOverlap: true }] }, notes };
+}
+
+/**
+ * Spending by result as a pie or donut: approved expenses booked on budget lines, grouped by the result (logframe output) the line's activity contributes
+ * to. An activity serves at most one output, so nothing is counted twice; lines of activities with no result are shown as one part, never hidden. One
+ * currency only (amounts of different currencies do not add up).
+ */
+function spendByResultPie(spec: ChartSpecV2, lines: ReadonlyArray<DatasetBudgetLine>, title: string, notes: string[]): Built {
+  const currencies = [...new Set(lines.map((l) => l.currency))];
+  if (lines.length === 0) return "There are no budget lines yet.";
+  if (lines.some((l) => l.resultUnknown)) return "The results these activities serve could not be read just now. Try again in a moment.";
+  if (currencies.length > 1) return `The budget is in more than one currency (${currencies.join(", ")}), so spending cannot be shown as one whole.`;
+  const UNLINKED = "Not linked to a result";
+  const spent = new Map<string, number>();
+  for (const l of lines) spent.set(l.result?.trim() || UNLINKED, (spent.get(l.result?.trim() || UNLINKED) ?? 0) + l.spent);
+  const parts = [...spent].filter(([, v]) => v > 0).map(([name, value]) => ({ name, value: Math.round(value * 100) / 100 })).sort((a, b) => b.value - a.value);
+  if (parts.length === 0) return "No spending has been approved against these budget lines yet.";
+  const unlinked = spent.get(UNLINKED) ?? 0;
+  if (unlinked > 0) notes.push(`${formatChartNumber(unlinked)} ${currencies[0] ?? ""} was spent on activities not linked to a result.`);
+  notes.push(`Amounts are in ${currencies[0] ?? "the project currency"}. Spent is approved expenses only.`);
+  const common = baseOption(spec, title, palette(spec), true, annotationsOf(spec, false, []));
+  return { option: { ...common, series: [{ type: "pie", radius: spec.kind === "DONUT" ? ["45%", "70%"] : "68%", data: parts, label: labelOf({ ...spec, labels: spec.labels ?? { show: true, format: "NAME_VALUE" } }, currencies[0] ?? "", true), avoidLabelOverlap: true }] }, notes };
+}
+
 /** Plan, daily and budget charts read their own data (attached by the server), not the sheet's indicators. */
 function buildExtraShape(spec: ChartSpecV2, data: DatasetResult, shape: ChartShape): ChartBuild {
   const info = DATA_CHART_TEMPLATES[spec.dataset.template];
-  const title = spec.title?.trim() || info.label;
+  const isStatusPie = shape === "PLAN" && (spec.kind === "PIE" || spec.kind === "DONUT");
+  const isSpendPie = shape === "BUDGET" && (spec.kind === "PIE" || spec.kind === "DONUT");
+  const title = spec.title?.trim() || (isStatusPie ? "Activities by status" : isSpendPie ? "Spent by result" : info.label);
   const notes = [...data.notes];
   const rule = CHART_KINDS[spec.kind];
   const need = shape === "PLAN" ? data.plan : shape === "DAYS" ? data.activityDays : data.budget;
   if (need === undefined) return { ok: false, reason: "This data is not available here (it is not shown through a share link, and needs permission to see the plan or the budget)." };
-  const built: Built = shape === "PLAN" ? gantt(spec, need as DatasetPlanRow[], title, notes) : shape === "DAYS" ? calendar(spec, need as DatasetDay[], title, notes) : sankey(spec, need as DatasetBudgetLine[], title, notes);
+  const built: Built = shape === "PLAN" ? (isStatusPie ? planStatusPie(spec, need as DatasetPlanRow[], title, notes) : gantt(spec, need as DatasetPlanRow[], title, notes)) : shape === "DAYS" ? calendar(spec, need as DatasetDay[], title, notes) : isSpendPie ? spendByResultPie(spec, need as DatasetBudgetLine[], title, notes) : sankey(spec, need as DatasetBudgetLine[], title, notes);
   if (typeof built === "string") return { ok: false, reason: built };
   const alt = spec.altText?.trim() || `${rule.label} chart: ${title}. ${need.length} ${shape === "PLAN" ? "planned items" : shape === "DAYS" ? "days with completed activities" : "budget lines"}.`;
   return { ok: true, render: "ECHART", option: { ...built.option, aria: { enabled: true, label: { description: alt } } }, title, notes: built.notes ?? notes, alt, aspect: CHART_ASPECT[spec.size ?? "WIDE"], provenance: { points: need.length, unverified: 0 } };

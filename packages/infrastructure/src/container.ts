@@ -637,10 +637,11 @@ export interface Container {
     retryBillingInbox: RetryBillingInboxHandler;
     runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
     runGrandfatherByoLlm: RunGrandfatherByoLlmHandler;
-  } & WorkplanHandlers;
+  } & WorkplanHandlers & FinanceHandlers;
 }
 
 import { createWorkplanModule, type WorkplanHandlers } from "./container/workplan-module.js";
+import { createFinanceModule, type FinanceHandlers } from "./container/finance-module.js";
 
 /** Use cases that run in one transaction with their audit row (H-3). Add a name here, never a wrapper elsewhere. */
 export const ATOMIC_HANDLERS = [
@@ -1317,7 +1318,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const visibleProjects = new VisibleProjects(projects, projectMembers);
   const saveDashboard = new SaveDashboardHandler(ids, dashboards, visibleProjects, audits, clock);
   const placeResults = new GetProjectPlaceResultsHandler(projects, periods, indicators, indicatorUpdates, places);
-  const datasetExtras = new DatasetExtrasService(workplan.handlers.listWorkPlan, activities, new PrismaBudgetRepository(prisma), placeResults, places);
+  const finance = createFinanceModule({ prisma, ids, clock, audits, projects, visible: visibleProjects });
+  const datasetExtras = new DatasetExtrasService(workplan.handlers.listWorkPlan, activities, new PrismaBudgetRepository(prisma), placeResults, places, logframe, finance.handlers.getProjectFinance);
   const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials);
   const getProjectInfographicData = new GetProjectInfographicDataHandler(
     projects, periods, indicators, indicatorUpdates, financeInputs, periodFinancials,
@@ -1351,6 +1353,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const listPeriodIndicators = new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities, projects, new PrismaEntryDueDays(prisma), clock);
   const handlers: Container["handlers"] = {
     ...workplan.handlers,
+    ...finance.handlers,
     suggestPresenceRows: new SuggestPresenceRowsHandler(workplan.handlers.listWorkPlan, new ListProjectPeopleHandler(projectMembers, users)),
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
     login: new LoginHandler(users, auth, audits, mfaService),

@@ -33,7 +33,8 @@ export type Permission =
   | "task.assign"
   | "team.view-work"
   | "risk.raise"
-  | "risk.manage";
+  | "risk.manage"
+  | "finance.approve";
 
 const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -49,6 +50,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "workplan.manage", "workplan.update-own",
     "task.assign", "team.view-work",
     "risk.raise", "risk.manage",
+    "finance.approve",
   ]),
   PROJECT_MANAGER: new Set<Permission>([
     "project.edit", "project.view",
@@ -62,6 +64,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "workplan.manage", "workplan.update-own",
     "task.assign", "team.view-work",
     "risk.raise", "risk.manage",
+    "finance.approve",
   ]),
   ME_OFFICER: new Set<Permission>([
     "project.view",

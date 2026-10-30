@@ -157,3 +157,48 @@ test("a dashboard draws a map chart with its map names and the regions to match,
   assert.deepEqual(by.m2.chart.maps, ["donordesk-world"]);
   assert.equal(reads, 1);
 });
+
+test("number tiles and maps are drawn for a signed-in viewer from their own reads, and a share link shows neither money, plan counts nor maps", async () => {
+  const plan = Array.from({ length: 3 }, (_, i) => ({ id: `a${i}`, title: `A${i}`, kind: "ACTIVITY", start: "2026-01-01", end: "2026-02-01", status: i === 0 ? "DONE" : "PLANNED", signal: i === 1 ? "LATE" : "ON_TIME", signalLabel: "" }));
+  const usd = (minor) => ({ minor, currency: "USD" });
+  const finance = { primaryCurrency: "USD", index: { obligated: [usd(5000000)], disbursed: [], remaining: [usd(5000000)], spent: [], otherFunding: [] }, inPrimary: { obligated: { total: usd(5000000), needsRate: [] }, disbursed: { total: null, needsRate: [] }, spent: { total: null, needsRate: [] } } };
+  let planReads = 0, financeReads = 0;
+  const extras = { plan: async () => (planReads++, plan), finance: async () => (financeReads++, finance), activityDays: async () => [], budget: async () => [], places: async () => [] };
+  const widgets = [
+    { id: "t1", projectId: "p1", kind: "METRIC", metric: { metric: "FIN_OBLIGATED" }, x: 0, y: 0, w: 3, h: 3 },
+    { id: "t2", projectId: "p1", kind: "METRIC", metric: { metric: "ACTIVITIES_TOTAL" }, x: 3, y: 0, w: 3, h: 3 },
+    { id: "t3", projectId: "p1", kind: "METRIC", metric: { metric: "ACTIVITIES_LATE" }, x: 6, y: 0, w: 3, h: 3 },
+    { id: "m1", projectId: "p1", kind: "MAP", map: { view: "RESULTS", title: "Vaccinated" }, x: 0, y: 3, w: 12, h: 8 },
+    { id: "m2", projectId: "p1", kind: "MAP", map: { view: "ACTIVITIES" }, x: 0, y: 11, w: 12, h: 8 },
+  ];
+  const dash = { id: "d1", tenantId, scope: "MINE", ownerId: "amina", name: "x", widgets, createdAt: new Date(), updatedAt: new Date() };
+  const repo = { findById: async () => ok(dash) };
+  const mine = await new GetDashboardDataHandler(repo, { handle: async () => ok(sheet) }, { for: async () => ok([{ id: "p1" }]) }, extras).handle(ctx, "d1");
+  const by = Object.fromEntries(mine.value.charts.map((c) => [c.widgetId, c]));
+  assert.deepEqual([by.t1.metric.text, by.t1.metric.unit], ["50", "thousand USD"]);
+  assert.deepEqual([by.t2.metric.value, by.t3.metric.value], [3, 1]);
+  assert.deepEqual(by.m1.map, { view: "RESULTS", title: "Vaccinated", projectId: "p1" });
+  assert.equal(by.m2.map.title, "Where activities are");
+  assert.equal(planReads, 1, "the plan is read once for every activity tile");
+  assert.equal(financeReads, 1);
+  const link = await new PublicDashboardHandler(repo, { handle: async () => ok(sheet) }).handle(tenantId, "d1");
+  const out = Object.fromEntries(link.value.charts.map((c) => [c.widgetId, c]));
+  assert.equal(out.t1.metric.note, "Not available here");
+  assert.equal(out.t1.metric.value, null);
+  assert.equal(out.t2.metric.value, null);
+  assert.match(out.m1.unavailable, /not shown through a share link/);
+  assert.match(out.m2.unavailable, /not shown through a share link/);
+});
+
+test("budget lines say which result their activity serves, named as the logframe names it; a line with none says nothing; a failed read of the logframe never invents a result", async () => {
+  const planWithOutputs = [{ id: "act1", title: "Drill", kind: "ACTIVITY", plannedStart: "2026-01-05", plannedEnd: "2026-02-20", status: "DONE", signal: "DONE", signalLabel: "Done", outputId: "o1" }, { id: "act2", title: "Other", kind: "ACTIVITY", plannedStart: "2026-01-05", plannedEnd: "2026-02-20", status: "PLANNED", signal: "ON_TIME", signalLabel: "", outputId: "gone" }];
+  const budgets = { findLinesByProject: async () => ok([{ id: "l1", plannedActivityId: "act1", donorName: "D", category: "Travel", currency: "USD", amountMinor: 100000 }, { id: "l2", plannedActivityId: "act2", donorName: "D", category: "Travel", currency: "USD", amountMinor: 50000 }, { id: "l3", plannedActivityId: "act9", donorName: "D", category: "Travel", currency: "USD", amountMinor: 1000 }]), findExpensesByLines: async () => ok([{ budgetLineId: "l1", amountMinor: 25000 }]), findLineById: async () => ok(null), findLinesByItem: async () => ok([]) };
+  const make = (items) => new DatasetExtrasService({ handle: async () => ok(planWithOutputs) }, { findByProject: async () => ok([]) }, budgets, undefined, undefined, { findByProject: async () => items });
+  const lines = await make(ok([{ id: "o1", code: "1.2", title: "Staff trained" }])).budget(ctx, "p1");
+  assert.deepEqual(lines.map((l) => l.result), ["1.2 Staff trained", undefined, undefined]);
+  assert.equal(lines[0].spent, 250);
+  const down = await make({ ok: false, error: new Error("no") }).budget(ctx, "p1");
+  assert.deepEqual(down.map((l) => [l.result, l.resultUnknown]), [[undefined, true], [undefined, true], [undefined, true]], "unknown is said, never turned into 'none'");
+  const none = await new DatasetExtrasService({ handle: async () => ok(planWithOutputs) }, { findByProject: async () => ok([]) }, budgets).budget(ctx, "p1");
+  assert.ok(none.every((l) => !("result" in l)), "without the logframe nothing is named");
+});
