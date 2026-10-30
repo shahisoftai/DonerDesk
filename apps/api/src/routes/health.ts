@@ -19,6 +19,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "DashboardShareLink", field: "tokenHash" },
   { model: "SavedChart", field: "specJson" },
   { model: "Bookmark", field: "href" },
+  { model: "HomePin", field: "ref" },
   { model: "ProjectFunding", field: "amountMinor" },
   { model: "Disbursement", field: "status" },
   { model: "BudgetExpense", field: "status" },

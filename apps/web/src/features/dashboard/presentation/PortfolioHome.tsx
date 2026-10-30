@@ -13,14 +13,17 @@ import { InlineError } from "@/components/feedback/PageState";
 import { dueLabel, healthCounts, homeHeadline, needsYouItems, reportsDueWithin, upcomingReports } from "../domain/home-derive";
 import { loadHomeInsights } from "../application/home-insights";
 import { DeadlineTiles, DeliverySparkline, PaceBar, PaceLegend, PipelineBoard, ResultsBars, RisksList, StatList } from "./HomeWidgets";
+import { HomePinsPanel } from "@/features/home-pins/presentation/HomePinsPanel";
 import { BookmarksPanel } from "@/features/bookmarks/presentation/BookmarksPanel";
+import { FilterNote, ProjectBreakdown, type HomeFilter } from "./ProjectBreakdown";
+import { filterProjects } from "../domain/home-breakdown";
 import { HomeHeader, NeedsYouStrip, NotificationsList, Panel, QuickLinks, Tile, type QuickLink } from "./HomeParts";
 
 type Ctx = Awaited<ReturnType<typeof requireSession>>;
 const BAND_TONE = { ON_TRACK: "success", AT_RISK: "warning", OFF_TRACK: "danger", NO_PLAN: "neutral" } as const;
 
 /** Home for a director (and read-only viewers) and for a project or M&E manager: the same read model, scoped to the projects the person can see. */
-export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRECTOR" | "MANAGER" }) {
+export async function PortfolioHome({ ctx, variant, filter = {} }: { ctx: Ctx; variant: "DIRECTOR" | "MANAGER"; filter?: HomeFilter }) {
   const identity = decodeSessionPayload(ctx.token);
   const director = variant === "DIRECTOR";
   const [overview, snapshot, work, funding, finance] = await Promise.all([
@@ -36,6 +39,7 @@ export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRE
   const liveProjects = (snapshot.projects.ok ? snapshot.projects.value ?? [] : []).filter((p) => liveIds.has(p.id));
   const extra = await loadHomeInsights(ctx.token, liveProjects, today);
   const rows = overview.ok ? overview.value.rows : [];
+  const shownRows = filterProjects(rows, filter);
   const totals = overview.ok ? overview.value.totals : null;
   const items = work.ok ? work.items : [];
   const notifications = snapshot.notifications.ok ? snapshot.notifications.value ?? [] : [];
@@ -73,6 +77,7 @@ export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRE
       />
 
       <NeedsYouStrip items={needs} />
+      <HomePinsPanel />
       <BookmarksPanel />
 
       {!overview.ok && <InlineError title={overview.error.message} referenceId={overview.error.referenceId} />}
@@ -89,9 +94,14 @@ export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRE
 
       {finance.ok && <HomeFinance f={finance.value} />}
 
+      {overview.ok && rows.length > 0 && (
+        <Panel title="Projects by …" href="/portfolio" linkLabel="Open portfolio →"><ProjectBreakdown rows={rows} filter={filter} /></Panel>
+      )}
+
       {overview.ok && (
         <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
           <Panel title="Project health" href="/portfolio" linkLabel="Open portfolio →">
+            <FilterNote shown={shownRows.length} total={rows.length} filter={filter} />
             {rows.length > 0 && <PaceLegend />}
             {rows.length === 0 ? (
               <p className="card text-sm text-slate-600 dark:text-slate-300">No live projects yet. <Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href="/projects/new">Create your first project</Link>.</p>
@@ -104,7 +114,7 @@ export async function PortfolioHome({ ctx, variant }: { ctx: Ctx; variant: "DIRE
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.slice(0, 8).map((r) => (
+                    {shownRows.slice(0, 8).map((r) => (
                       <tr key={r.projectId} className="border-t border-slate-200/70 hover:bg-slate-50 dark:border-white/10 dark:hover:bg-white/5">
                         <td className="px-3 py-2.5"><Link href={`/projects/${r.projectId}`} className="block font-medium hover:underline">{r.title}</Link><span className="text-xs text-slate-500 dark:text-slate-400">{r.donorName} · {r.country}</span></td>
                         <td className="px-3 py-2.5"><Badge tone={BAND_TONE[r.delivery.band]}>{r.delivery.label}</Badge>{r.delivery.reason && <div className="mt-1 max-w-[220px] text-xs text-slate-500 dark:text-slate-400">{r.delivery.reason}</div>}</td>

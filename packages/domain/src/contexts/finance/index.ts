@@ -8,3 +8,4 @@ export * from "./finance-views.js";
 export * from "./project-finance.js";
 export * from "./entry-checks.js";
 export * from "./register-sheet.js";
+export * from "./register-period-rows.js";

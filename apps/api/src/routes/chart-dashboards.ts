@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
+import { AddHomePinSchema, MoveHomePinSchema, AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { createContainer, type Container } from "@donordesk/infrastructure";
 
 /** Dashboards of saved Data Center charts (Phase 33.8). Thin: validate, call one handler, throw its error; the rules are in the handlers. */
@@ -102,6 +102,28 @@ export async function registerChartDashboardRoutes(app: FastifyInstance) {
   });
   app.delete("/v1/saved-reports/:reportId", async (req) => {
     const r = await req.container.handlers.deleteSavedReport.handle(ctx(req), param(req, "reportId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // Pinned tiles on the caller's own Home (Phase 35.H4).
+  app.get("/v1/home-pins", async (req) => {
+    const r = await req.container.handlers.listHomePins.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/home-pins", async (req, reply) => {
+    const r = await req.container.handlers.addHomePin.handle(ctx(req), AddHomePinSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+  app.put("/v1/home-pins/:pinId/position", async (req) => {
+    const r = await req.container.handlers.moveHomePin.handle(ctx(req), param(req, "pinId"), MoveHomePinSchema.parse(req.body).to);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+  app.delete("/v1/home-pins/:pinId", async (req) => {
+    const r = await req.container.handlers.removeHomePin.handle(ctx(req), param(req, "pinId"));
     if (!r.ok) throw r.error;
     return { ok: true };
   });

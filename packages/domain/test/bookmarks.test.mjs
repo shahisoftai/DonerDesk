@@ -17,3 +17,16 @@ test("a bookmark is cleaned, and refused when empty, outside the app, repeated o
   assert.equal(code({ title: "x", href: "/a" }, ["/a"]), "ALREADY_SAVED");
   assert.equal(code({ title: "x", href: "/new" }, Array.from({ length: MAX_BOOKMARKS }, (_, i) => `/p${i}`)), "TOO_MANY");
 });
+
+test("home pins: only a known kind, one of a thing, twelve at most, and the order moves one pin", async () => {
+  const { checkHomePin, reorderPins, MAX_HOME_PINS } = await import("../dist/index.js");
+  assert.equal(checkHomePin({ kind: "NOPE", ref: "d1" }, []).ok, false);
+  assert.equal(checkHomePin({ kind: "DASHBOARD", ref: "  " }, []).ok, false);
+  assert.equal(checkHomePin({ kind: "DASHBOARD", ref: "d1" }, [{ kind: "DASHBOARD", ref: "d1" }]).problem.code, "ALREADY_PINNED");
+  const full = Array.from({ length: MAX_HOME_PINS }, (_, i) => ({ kind: "DASHBOARD", ref: `d${i}` }));
+  assert.equal(checkHomePin({ kind: "DASHBOARD", ref: "new" }, full).problem.code, "TOO_MANY");
+  assert.deepEqual(checkHomePin({ kind: "DASHBOARD", ref: " d9 " }, []).value, { kind: "DASHBOARD", ref: "d9" });
+  assert.deepEqual(reorderPins(["a", "b", "c"], "a", 2), ["b", "c", "a"]);
+  assert.deepEqual(reorderPins(["a", "b", "c"], "c", 0), ["c", "a", "b"]);
+  assert.deepEqual(reorderPins(["a", "b"], "zzz", 0), ["a", "b"]);
+});

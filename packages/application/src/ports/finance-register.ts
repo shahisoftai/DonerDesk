@@ -35,6 +35,8 @@ export interface IDisbursementRepository {
   listByProject(projectId: string, tenantId: TenantId): Promise<Result<StoredDisbursement[]>>;
   findById(id: string, tenantId: TenantId): Promise<Result<StoredDisbursement | null>>;
   create(d: StoredDisbursement): Promise<Result<void>>;
+  /** Changes a DRAFT only; false when it was decided meanwhile. */
+  updateDraft(id: string, tenantId: TenantId, patch: { fundingSourceId: string; date: string; amount: Amount; memo: string }): Promise<Result<boolean>>;
   /** Decides a DRAFT only; false when it was already decided (so two people cannot both decide it). */
   decide(id: string, tenantId: TenantId, decision: Decision): Promise<Result<boolean>>;
 }
@@ -48,6 +50,8 @@ export interface IRegisterExpenseRepository {
   listByProject(projectId: string, tenantId: TenantId): Promise<Result<StoredRegisterExpense[]>>;
   findById(id: string, tenantId: TenantId): Promise<Result<StoredRegisterExpense | null>>;
   create(e: StoredRegisterExpense): Promise<Result<void>>;
+  /** Changes a DRAFT only; false when it was decided meanwhile. */
+  updateDraft(id: string, tenantId: TenantId, patch: { date: string; amount: Amount; vendor: string; memo: string; fundingSourceId: string | null; evidenceId: string | null }): Promise<Result<boolean>>;
   decide(id: string, tenantId: TenantId, decision: Decision): Promise<Result<boolean>>;
 }
 
@@ -75,8 +79,9 @@ export interface ICurrencyRateRepository {
   add(r: StoredCurrencyRate): Promise<Result<void>>;
 }
 
-export interface FinanceSettings { primaryCurrency: string; localCurrency?: string }
+export interface FinanceSettings { primaryCurrency: string; localCurrency?: string; /** A second person must decide an entry (off by default). */ separateApprover: boolean }
 export interface IFinanceSettingsRepository {
   get(tenantId: TenantId): Promise<Result<FinanceSettings>>;
-  set(tenantId: TenantId, settings: FinanceSettings): Promise<Result<void>>;
+  set(tenantId: TenantId, settings: { primaryCurrency: string; localCurrency?: string }): Promise<Result<void>>;
+  setSeparateApprover(tenantId: TenantId, on: boolean): Promise<Result<void>>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { addBudgetCategoryAction, addCurrencyRateAction, addFundingSourceAction, setFinanceCurrenciesAction, updateFundingSourceAction } from "@/lib/actions/finance";
+import { addBudgetCategoryAction, addCurrencyRateAction, addFundingSourceAction, setFinanceCurrenciesAction, setSeparateApproverAction, updateFundingSourceAction } from "@/lib/actions/finance";
 import { useActionState } from "@/lib/client/action-state";
 import type { FundingSourceItem, RatesView } from "@/lib/server/schemas-finance";
 import { FINANCE_COPY as C } from "../domain/finance-copy";
@@ -25,6 +25,16 @@ export function FinanceSettingsPanel({ sources, rates, categories, canEdit, toda
             fields={[{ name: "primaryCurrency", label: C.primaryCurrency, kind: "currency", required: true, initial: rates.primaryCurrency }, { name: "localCurrency", label: C.localCurrency, kind: "currency", initial: rates.localCurrency ?? "" }]}
             onSubmit={(v) => setFinanceCurrenciesAction(v)} />
         )}
+      </section>
+
+      <section aria-labelledby="set-approval" className="space-y-2">
+        <h2 id="set-approval" className="text-base font-semibold">{C.approvalTitle}</h2>
+        <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-300">{C.approvalIntro}</p>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={rates.separateApprover} disabled={!canEdit || toggle.busy} onChange={async (e) => { if (await toggle.run(() => setSeparateApproverAction({ on: e.target.checked }))) router.refresh(); }} />
+          {C.approvalLabel}
+        </label>
+        {toggle.error && <p role="alert" className="text-sm text-danger-600">{toggle.error}</p>}
       </section>
 
       <section aria-labelledby="set-sources" className="space-y-2">

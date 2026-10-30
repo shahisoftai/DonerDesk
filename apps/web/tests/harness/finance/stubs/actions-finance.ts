@@ -11,6 +11,7 @@ export async function removeProjectFundingAction(projectId: string, id: string) 
 export async function addDisbursementAction(projectId: string, input: unknown) { rec("addDisbursement", projectId, input); return ok({ id: "d-new" }); }
 export async function addExpenseAction(projectId: string, lineId: string, input: unknown) { rec("addExpense", projectId, lineId, input); return ok({ id: "e-new" }); }
 export async function decideEntryAction(projectId: string, kind: string, id: string, input: unknown) { rec("decide", projectId, kind, id, input); return ok({}); }
+export async function updateDraftEntryAction(projectId: string, kind: string, id: string, input: unknown) { rec("updateDraft", projectId, kind, id, input); return ok({}); }
 export async function addDeliverableAction(projectId: string, input: unknown) { rec("addDeliverable", projectId, input); return ok({ id: "dl-new" }); }
 export async function approveDeliverableAction(projectId: string, id: string) { rec("approveDeliverable", projectId, id); return ok({}); }
 export async function payDeliverableAction(projectId: string, id: string, input: unknown) { rec("payDeliverable", projectId, id, input); return ok({}); }

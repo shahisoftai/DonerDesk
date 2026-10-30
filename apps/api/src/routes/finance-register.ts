@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import {
   AccountForAdvanceSchema, AddAdvanceSchema, AddCurrencyRateSchema, AddDeliverableSchema, AddDisbursementSchema, AddProjectFundingSchema, AddRegisterExpenseSchema, CreateBudgetCategorySchema,
-  CreateFundingSourceSchema, DecideEntrySchema, ImportRegisterSheetSchema, PayDeliverableSchema, SetFinanceCurrenciesSchema, UpdateFundingSourceSchema,
+  CreateFundingSourceSchema, DecideEntrySchema, ImportRegisterSheetSchema, PayDeliverableSchema, SetFinanceCurrenciesSchema, SetSeparateApproverSchema, UpdateDraftDisbursementSchema, UpdateDraftExpenseSchema, UpdateFundingSourceSchema,
 } from "@donordesk/contracts";
 
 /**
@@ -21,7 +21,7 @@ export async function registerFinanceRegisterRoutes(app: FastifyInstance) {
   app.post("/v1/finance/budget-categories", async (req, reply) => reply.status(201).send(send(await req.container.handlers.createBudgetCategory.handle(ctx(req), CreateBudgetCategorySchema.parse(req.body)))));
   app.get("/v1/finance/rates", async (req) => {
     const r = send(await req.container.handlers.listCurrencyRates.handle(ctx(req)));
-    return { primaryCurrency: r.primaryCurrency, localCurrency: r.localCurrency ?? null, rates: r.rates.map((x) => ({ id: x.id, from: x.from, to: x.to, rate: x.rate, effectiveOn: x.effectiveOn, source: x.source })) };
+    return { primaryCurrency: r.primaryCurrency, localCurrency: r.localCurrency ?? null, separateApprover: r.separateApprover, rates: r.rates.map((x) => ({ id: x.id, from: x.from, to: x.to, rate: x.rate, effectiveOn: x.effectiveOn, source: x.source })) };
   });
   app.post("/v1/finance/rates", async (req, reply) => reply.status(201).send(send(await req.container.handlers.addCurrencyRate.handle(ctx(req), AddCurrencyRateSchema.parse(req.body)))));
   app.put("/v1/finance/currencies", async (req) => {
@@ -29,6 +29,8 @@ export async function registerFinanceRegisterRoutes(app: FastifyInstance) {
     send(await req.container.handlers.setFinanceCurrencies.handle(ctx(req), { primaryCurrency: b.primaryCurrency, ...(b.localCurrency ? { localCurrency: b.localCurrency } : {}) }));
     return { ok: true };
   });
+
+  app.put("/v1/finance/approval", async (req) => { send(await req.container.handlers.setSeparateApprover.handle(ctx(req), SetSeparateApproverSchema.parse(req.body))); return { ok: true }; });
 
   // The money across every project the person can see (Home).
   app.get("/v1/portfolio/finance", async (req) => send(await req.container.handlers.getPortfolioFinance.handle(ctx(req))));
@@ -41,6 +43,8 @@ export async function registerFinanceRegisterRoutes(app: FastifyInstance) {
   app.post("/v1/projects/:projectId/finance/budget-lines/:lineId/expenses", async (req, reply) => reply.status(201).send(send(await req.container.handlers.addRegisterExpense.handle(ctx(req), param(req, "projectId"), param(req, "lineId"), AddRegisterExpenseSchema.parse(req.body)))));
   app.post("/v1/projects/:projectId/finance/expenses/:id/decision", async (req) => { send(await req.container.handlers.decideFinanceEntry.handle(ctx(req), param(req, "projectId"), "EXPENSE", param(req, "id"), DecideEntrySchema.parse(req.body))); return { ok: true }; });
   app.post("/v1/projects/:projectId/finance/disbursements/:id/decision", async (req) => { send(await req.container.handlers.decideFinanceEntry.handle(ctx(req), param(req, "projectId"), "DISBURSEMENT", param(req, "id"), DecideEntrySchema.parse(req.body))); return { ok: true }; });
+  app.put("/v1/projects/:projectId/finance/expenses/:id", async (req) => { send(await req.container.handlers.updateDraftFinanceEntry.handle(ctx(req), param(req, "projectId"), "EXPENSE", param(req, "id"), UpdateDraftExpenseSchema.parse(req.body))); return { ok: true }; });
+  app.put("/v1/projects/:projectId/finance/disbursements/:id", async (req) => { send(await req.container.handlers.updateDraftFinanceEntry.handle(ctx(req), param(req, "projectId"), "DISBURSEMENT", param(req, "id"), UpdateDraftDisbursementSchema.parse(req.body))); return { ok: true }; });
   app.post("/v1/projects/:projectId/finance/deliverables", async (req, reply) => reply.status(201).send(send(await req.container.handlers.addDeliverable.handle(ctx(req), param(req, "projectId"), AddDeliverableSchema.parse(req.body)))));
   app.post("/v1/projects/:projectId/finance/deliverables/:id/approve", async (req) => { send(await req.container.handlers.changeDeliverable.handle(ctx(req), param(req, "projectId"), param(req, "id"), { action: "APPROVE" })); return { ok: true }; });
   app.post("/v1/projects/:projectId/finance/deliverables/:id/pay", async (req) => { send(await req.container.handlers.changeDeliverable.handle(ctx(req), param(req, "projectId"), param(req, "id"), { action: "PAY", on: PayDeliverableSchema.parse(req.body).on })); return { ok: true }; });

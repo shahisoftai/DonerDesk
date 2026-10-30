@@ -22,6 +22,8 @@ model Organization {
   timeZone      String   @default("UTC")
   /// The currency the organisation reports in (finance register); amounts are shown in it only through a dated rate.
   primaryCurrency String @default("USD")
+  /// When true, the person who entered a finance entry may not decide it (a second person must).
+  financeSeparateApprover Boolean @default(false)
   localCurrency   String?
   logoUrl       String?
   mainOfficeLocation String?
@@ -1615,7 +1617,7 @@ model BudgetLine {
   description       String   @default("")
   donorName         String   @default("")
   currency          String
-  amountMinor       Int
+  amountMinor       BigInt
   createdById       String
   createdAt         DateTime @default(now())
 
@@ -1632,7 +1634,7 @@ model BudgetExpense {
   projectId    String
   budgetLineId String
   expenseDate  DateTime @db.Date
-  amountMinor  Int
+  amountMinor  BigInt
   description  String   @default("")
   createdById  String
   createdAt    DateTime @default(now())
@@ -2111,6 +2113,8 @@ model Place {
   longitude   Float?
   aliases     String[]  @default([])
   code        String?
+  /// A place people go to for a service (clinic, school, water point, distribution site), as opposed to an area.
+  facility    Boolean   @default(false)
   archivedAt  DateTime?
   createdById String
   createdAt   DateTime  @default(now())
@@ -2353,6 +2357,20 @@ model Bookmark {
   href      String
   createdAt DateTime @default(now())
 
+  @@index([tenantId, userId])
+}
+
+/// A person's own pinned tile on their Home (Phase 35.H4): a dashboard they can open. Stores a reference, never data; only the caller's rows are read or removed.
+model HomePin {
+  id        String   @id
+  tenantId  String
+  userId    String
+  kind      String
+  ref       String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, userId, kind, ref])
   @@index([tenantId, userId])
 }
 

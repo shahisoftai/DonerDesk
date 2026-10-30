@@ -74,6 +74,21 @@ await check("approving a draft sends the decision for that entry", async () => {
   assert.ok((await H()).refreshes >= 1, "the page refreshes after a change");
 });
 
+await check("a draft can be changed (amount and the file behind it) and a decided entry has no Change button", async () => {
+  assert.equal(await page.getByRole("button", { name: "Change", exact: true }).count(), 1, "only the draft offers Change");
+  await page.getByRole("button", { name: "Change", exact: true }).click();
+  const form = page.getByRole("form", { name: /Change: Training venue/ });
+  assert.equal(await form.getByLabel(/Amount/).inputValue(), "80", "the form starts from what was entered");
+  await form.getByLabel(/Amount/).fill("95.50");
+  await form.getByLabel(/Proof/).selectOption({ label: "Receipt.jpg" });
+  await form.getByRole("button", { name: "Save changes" }).click();
+  await page.waitForFunction(() => window.__h.calls.some((c) => c.name === "updateDraft"));
+  const [c] = await calls("updateDraft");
+  assert.deepEqual([c.args[0], c.args[1], c.args[2]], ["p1", "EXPENSE", "e2"]);
+  assert.equal(c.args[3].amount, "95.50"); assert.equal(c.args[3].evidenceId, "ev2"); assert.equal(c.args[3].vendor, "Hall Ltd");
+  assert.equal(await page.getByRole("form", { name: /Change:/ }).count(), 0, "the form closes after saving");
+});
+
 await check("rejecting needs a reason first", async () => {
   await page.getByRole("button", { name: "Reject", exact: true }).first().click();
   const send = page.getByRole("button", { name: "Reject", exact: true }).last();
@@ -163,7 +178,7 @@ await check("a person without permission sees the figures but no form, no approv
   await page.waitForSelector("#fin-summary");
   assert.match(await text(page.locator("section[aria-labelledby='fin-summary']")), /obligated USD 10,000.00/i);
   assert.equal(await page.getByRole("form").count(), 0);
-  assert.equal(await page.getByRole("button", { name: /Approve|Reject|Mark as paid|Import|Remove/ }).count(), 0);
+  assert.equal(await page.getByRole("button", { name: /Approve|Reject|Mark as paid|Import|Remove|Change/ }).count(), 0);
   assert.equal(await page.locator("section[aria-labelledby='fin-import']").count(), 0);
 });
 

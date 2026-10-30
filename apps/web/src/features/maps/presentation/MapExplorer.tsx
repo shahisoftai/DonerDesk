@@ -144,7 +144,13 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
           </select>
         </label>
       </div>
-      {!compact && <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> Compare the latest periods side by side</label>}
+      {!compact && (
+        <div className="flex flex-wrap items-center gap-4" data-no-print>
+          <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> Compare the latest periods side by side</label>
+          <button type="button" className="text-sm font-medium underline" onClick={() => window.print()}>Print this map</button>
+        </div>
+      )}
+      <p className="hidden text-sm print:block">{indicator ? `${indicator.code} ${indicator.name}` : "Results by place"} · {view.kind === "COUNTRY" ? view.country : "World"} · printed {new Date().toISOString().slice(0, 10)}. Drawn from the figures recorded in DonorDesk; a place with no figure is grey, not zero.</p>
       <PeriodSlider steps={steps} periodId={periodId} onChange={setPeriodId} />
       {!compact && compare && baseCollection && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Periods side by side">
@@ -174,7 +180,7 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
           {view.kind === "COUNTRY" && view.depth > 1 && countryFiles && <p className="text-xs text-slate-500">{attributionLine(countryFiles, view.depth as 2 | 3)}</p>}
           {model && model.unmapped.length > 0 && <p className="text-xs text-slate-500">Not on the map (no pin): {model.unmapped.map((u) => u.name).join(", ")}</p>}
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3" data-no-print>
           {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
           {!compact && <div className="text-sm">
             <label className="block font-medium">Add a GeoJSON file as a layer

@@ -2,7 +2,7 @@
 
 import {
   AccountForAdvanceSchema, AddAdvanceSchema, AddCurrencyRateSchema, AddDeliverableSchema, AddDisbursementSchema, AddProjectFundingSchema, AddRegisterExpenseSchema, CreateBudgetCategorySchema,
-  CreateFundingSourceSchema, DecideEntrySchema, ImportRegisterSheetSchema, PayDeliverableSchema, SetFinanceCurrenciesSchema, UpdateFundingSourceSchema,
+  CreateFundingSourceSchema, DecideEntrySchema, SetSeparateApproverSchema, UpdateDraftDisbursementSchema, UpdateDraftExpenseSchema, ImportRegisterSheetSchema, PayDeliverableSchema, SetFinanceCurrenciesSchema, UpdateFundingSourceSchema,
 } from "@donordesk/contracts";
 import { z, type ZodTypeAny } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
@@ -49,6 +49,10 @@ export async function addExpenseAction(projectId: string, lineId: string, input:
 export async function decideEntryAction(projectId: string, kind: "EXPENSE" | "DISBURSEMENT", id: string, input: unknown): Promise<Done> {
   return send(`${p(projectId)}/${kind === "EXPENSE" ? "expenses" : "disbursements"}/${enc(id)}/decision`, "POST", input, DecideEntrySchema);
 }
+export async function updateDraftEntryAction(projectId: string, kind: "EXPENSE" | "DISBURSEMENT", id: string, input: unknown): Promise<Done> {
+  return send(`${p(projectId)}/${kind === "EXPENSE" ? "expenses" : "disbursements"}/${enc(id)}`, "PUT", input, kind === "EXPENSE" ? UpdateDraftExpenseSchema : UpdateDraftDisbursementSchema);
+}
+export async function setSeparateApproverAction(input: unknown): Promise<Done> { return send("/v1/finance/approval", "PUT", input, SetSeparateApproverSchema); }
 export async function addDeliverableAction(projectId: string, input: unknown): Promise<Done> { return send(`${p(projectId)}/deliverables`, "POST", input, AddDeliverableSchema); }
 export async function approveDeliverableAction(projectId: string, id: string): Promise<Done> { return send(`${p(projectId)}/deliverables/${enc(id)}/approve`, "POST", {}, null); }
 export async function payDeliverableAction(projectId: string, id: string, input: unknown): Promise<Done> { return send(`${p(projectId)}/deliverables/${enc(id)}/pay`, "POST", input, PayDeliverableSchema); }

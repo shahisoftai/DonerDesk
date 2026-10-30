@@ -13,6 +13,7 @@ export const CreatePlaceSchema = z.object({
   longitude: z.number().min(-180).max(180).optional(),
   aliases: z.array(z.string().trim().min(1).max(120)).max(12).default([]),
   code: z.string().trim().max(60).optional(),
+  facility: z.boolean().optional(),
 });
 export type CreatePlaceInput = z.infer<typeof CreatePlaceSchema>;
 
@@ -27,6 +28,7 @@ export const UpdatePlaceSchema = z.object({
   longitude: z.number().min(-180).max(180).nullable().optional(),
   aliases: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
   code: z.string().trim().max(60).nullable().optional(),
+  facility: z.boolean().optional(),
 });
 export type UpdatePlaceInput = z.infer<typeof UpdatePlaceSchema>;
 

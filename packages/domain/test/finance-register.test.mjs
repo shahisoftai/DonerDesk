@@ -276,3 +276,16 @@ test("the portfolio adds every visible project's own funding per currency, count
   assert.deepEqual(withRate.inPrimary.obligated.total, usd(2000));
   assert.equal(portfolioFinance({ ...base, fundings: [], disbursements: [], expenses: [] }).projectsWithFunding, 0);
 });
+
+test("register period rows: own funding is the budget, approved spend is cumulative to the period end, one currency or nothing", async () => {
+  const { registerPeriodRows } = await import("../dist/index.js");
+  const periods = [{ id: "p1", end: "2026-01-31" }, { id: "p2", end: "2026-02-28" }, { id: "p0", end: "2025-12-31" }];
+  const usd = (minor) => ({ minor, currency: "USD" });
+  const rows = registerPeriodRows({ periods, funding: [{ date: "2026-01-05", amount: usd(1000000) }], expenses: [{ date: "2026-01-20", amount: usd(100000) }, { date: "2026-02-10", amount: usd(150000) }] });
+  assert.deepEqual(rows.map((r) => r.periodId), ["p1", "p2"]);
+  assert.equal(rows[0].budget, "10000.00"); assert.equal(rows[0].expenditure, "1000.00"); assert.equal(rows[0].burnRatePercent, "10.0");
+  assert.equal(rows[1].expenditure, "2500.00"); assert.equal(rows[1].balance, "7500.00");
+  assert.deepEqual(registerPeriodRows({ periods, funding: [{ date: "2026-01-05", amount: usd(100) }], expenses: [{ date: "2026-01-06", amount: { minor: 5, currency: "EUR" } }] }), [], "two currencies never share a row");
+  const spendOnly = registerPeriodRows({ periods, funding: [], expenses: [{ date: "2026-01-20", amount: usd(500) }] });
+  assert.equal(spendOnly[0].budget, ""); assert.equal(spendOnly[0].burnRatePercent, undefined, "no budget, no burn: never a made-up percentage");
+});

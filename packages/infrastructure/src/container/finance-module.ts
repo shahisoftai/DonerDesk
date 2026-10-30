@@ -1,7 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import {
   AccountForAdvanceHandler, AddAdvanceHandler, AddCurrencyRateHandler, AddDeliverableHandler, AddDisbursementHandler, AddProjectFundingHandler, AddRegisterExpenseHandler,
-  ChangeDeliverableHandler, ImportRegisterSheetHandler, CreateBudgetCategoryHandler, CreateFundingSourceHandler, DecideEntryHandler, GetProjectFinanceHandler, ListBudgetCategoriesHandler, ListCurrencyRatesHandler,
+  ChangeDeliverableHandler, RegisterFinanceRows, SetSeparateApproverHandler, UpdateDraftEntryHandler, ImportRegisterSheetHandler, CreateBudgetCategoryHandler, CreateFundingSourceHandler, DecideEntryHandler, GetProjectFinanceHandler, ListBudgetCategoriesHandler, ListCurrencyRatesHandler,
   GetPortfolioFinanceHandler, ListFundingSourcesHandler, RemoveProjectFundingHandler, SetFinanceCurrenciesHandler, UpdateFundingSourceHandler,
   type IAuditLogger, type IClock, type IIdGenerator, type IProjectRepository, type VisibleProjects,
 } from "@donordesk/application";
@@ -11,11 +11,11 @@ import {
 } from "../repositories/finance-register.js";
 import { PrismaBudgetRepository } from "../repositories/work-plan/budget.js";
 
-export interface FinanceModuleDeps { prisma: PrismaClient; ids: IIdGenerator; clock: IClock; audits: IAuditLogger; projects: IProjectRepository; visible: VisibleProjects }
+export interface FinanceModuleDeps { prisma: PrismaClient; ids: IIdGenerator; clock: IClock; audits: IAuditLogger; projects: IProjectRepository; visible: VisibleProjects; evidence?: GetProjectFinanceHandler extends never ? never : ConstructorParameters<typeof GetProjectFinanceHandler>[11] }
 
 /** The finance register (Phase 35.F) as one module: its repositories and handlers. The container takes `handlers` as they are. */
 export function createFinanceModule(deps: FinanceModuleDeps) {
-  const { prisma, ids, clock, audits, projects, visible } = deps;
+  const { prisma, ids, clock, audits, projects, visible, evidence } = deps;
   const d = { audit: audits, clock, ids };
   const sources = new PrismaFundingSourceRepository(prisma);
   const fundings = new PrismaProjectFundingRepository(prisma);
@@ -27,7 +27,9 @@ export function createFinanceModule(deps: FinanceModuleDeps) {
   const rates = new PrismaCurrencyRateRepository(prisma);
   const settings = new PrismaFinanceSettingsRepository(prisma);
   const lines = new PrismaBudgetRepository(prisma);
+  const registerFinanceRows = new RegisterFinanceRows(sources, fundings, expenses);
   return {
+    registerFinanceRows,
     handlers: {
       listFundingSources: new ListFundingSourcesHandler(sources),
       createFundingSource: new CreateFundingSourceHandler(sources, d),
@@ -41,14 +43,16 @@ export function createFinanceModule(deps: FinanceModuleDeps) {
       removeProjectFunding: new RemoveProjectFundingHandler(fundings, d),
       addDisbursement: new AddDisbursementHandler(projects, sources, disbursements, d),
       addRegisterExpense: new AddRegisterExpenseHandler(projects, lines, sources, expenses, d),
-      decideFinanceEntry: new DecideEntryHandler(expenses, disbursements, d),
+      decideFinanceEntry: new DecideEntryHandler(expenses, disbursements, settings, d),
+      updateDraftFinanceEntry: new UpdateDraftEntryHandler(lines, sources, expenses, disbursements, d),
+      setSeparateApprover: new SetSeparateApproverHandler(settings, d),
       addDeliverable: new AddDeliverableHandler(projects, deliverables, d),
-      changeDeliverable: new ChangeDeliverableHandler(deliverables, d),
+      changeDeliverable: new ChangeDeliverableHandler(deliverables, settings, d),
       addAdvance: new AddAdvanceHandler(projects, advances, d),
       accountForAdvance: new AccountForAdvanceHandler(advances, d),
       getPortfolioFinance: new GetPortfolioFinanceHandler(visible, sources, fundings, disbursements, expenses, rates, settings),
       importRegisterSheet: new ImportRegisterSheetHandler(projects, lines, sources, expenses, disbursements, settings, d),
-      getProjectFinance: new GetProjectFinanceHandler(projects, lines, sources, fundings, disbursements, expenses, advances, deliverables, rates, settings, clock),
+      getProjectFinance: new GetProjectFinanceHandler(projects, lines, sources, fundings, disbursements, expenses, advances, deliverables, rates, settings, clock, evidence),
     },
   };
 }

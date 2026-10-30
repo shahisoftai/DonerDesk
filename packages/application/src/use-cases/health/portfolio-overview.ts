@@ -40,7 +40,7 @@ export class GetPortfolioOverviewHandler {
       if (!risks.ok) return risks;
       if (!periods.ok) return periods;
       rows.push(buildPortfolioRow({
-        projectId: project.id, title: project.title, donorName: project.donorName, country: project.country, status: project.status,
+        projectId: project.id, title: project.title, donorName: project.donorName, country: project.country, status: project.status, sector: String(project.sector ?? ""),
         health: { band: h.band, label: h.label, reasons: h.reasons, lateActivities: lateActivities(h.health), valuesOverdue: h.health.valuesOverdue },
         risks: risks.value.map((r) => ({ status: r.status, seriousness: r.seriousness, reviewBy: r.reviewBy })),
         periods: periods.value.map((p) => ({ id: p.id, deadline: toPlainDate(p.deadline)!, status: p.status.toString(), readinessScore: p.readinessScore, cancelled: p.isCancelled })),

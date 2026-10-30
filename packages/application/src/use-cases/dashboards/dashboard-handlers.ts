@@ -364,7 +364,7 @@ export class PublicDashboardHandler {
       const sheet = await this.sheets.handle(guest, projectId);
       if (!sheet.ok) return null;
       // Finance never goes out through a link.
-      return { ...sheet.value, finance: [], financeEnabled: false } as DataSheet;
+      return { ...sheet.value, finance: [], registerFinance: undefined, financeEnabled: false } as DataSheet;
     });
     return ok({ name: found.value.name, widgets: found.value.widgets, charts });
   }

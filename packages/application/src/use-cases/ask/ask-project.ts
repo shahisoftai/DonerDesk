@@ -125,7 +125,7 @@ export class AskProjectHandler {
     if (!activities.ok) return activities;
     if (!files.ok) return files;
     // Finance is not part of this feature: it has its own gate and its own screens.
-    const indicators = indicatorCandidates({ ...sheet.value, finance: [] });
+    const indicators = indicatorCandidates({ ...sheet.value, finance: [], registerFinance: undefined });
     const acts = activityCandidates(
       activities.value.filter((a) => a.status === "ACCEPTED" && !a.supersededById).slice(0, 200).map((a) => ({
         title: a.activityTitle, date: toPlainDate(a.activityDate) ?? undefined, location: a.location, summary: a.summary, participants: a.participantsTotal,

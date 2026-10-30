@@ -12,6 +12,7 @@ export const PlaceSchema = z.object({
   longitude: z.number().optional(),
   aliases: z.array(z.string()),
   code: z.string().optional(),
+  facility: z.boolean().optional(),
   archived: z.boolean(),
   childCount: z.number().int(),
 });

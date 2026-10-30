@@ -21,6 +21,8 @@ export class GetProjectDataSheetHandler {
     private readonly updates: IIndicatorUpdateRepository,
     private readonly finance: IFinanceInputs,
     private readonly summaries: IPeriodFinancialRepository,
+    /** Finance-register figures per period (optional): a chart can draw them where no period summary exists. */
+    private readonly register?: { rowsFor(ctx: AuthenticatedContext, projectId: string, periods: Array<{ id: string; end: string }>): Promise<DataSheet["finance"]> },
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<DataSheet & { financeEnabled: boolean }, DomainError>> {
@@ -83,6 +85,7 @@ export class GetProjectDataSheetHandler {
     // A calculated value is never stored: it is worked out here from the values it comes from, so it cannot drift.
     const derived = deriveFormulaCells(indicatorsResult.value.map((i) => ({ id: i.id, formula: i.formula })), typedCells, periods.map((p) => p.id));
 
+    const registerFinance = this.register ? await this.register.rowsFor(ctx, projectId, periods.map((p) => ({ id: p.id, end: isoDay(p.duration.end) }))) : [];
     return {
       ok: true,
       value: {
@@ -109,6 +112,7 @@ export class GetProjectDataSheetHandler {
         })),
         cells: [...typedCells, ...derived],
         finance: financeRows,
+        ...(registerFinance.length > 0 ? { registerFinance } : {}),
       },
     };
   }

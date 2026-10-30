@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import {
   DomainError, Permissions, portfolioFinance, parseRegisterSheet, registerSheetErrorFile, advancePosition, budgetVsActual, burnReading, canEditEntry, checkAdvance, checkAdvanceAccounting, checkBudgetCategory, checkDeliverable, checkDeliverableChange,
-  checkDisbursement, checkFundingSourceName, checkProjectFunding, checkRate, checkRegisterExpense, convertedTotal, deliverableState, financeIndex, registerRows, registerTotals,
+  checkDisbursement, checkFundingSourceName, checkProjectFunding, checkRate, checkRegisterExpense, convertedTotal, deliverableState, financeIndex, registerRows, registerTotals, registerPeriodRows,
   CURRENCY_CODE, type Amount, type PortfolioFinance, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
@@ -11,7 +11,7 @@ import type { IBudgetLineReader } from "../../ports/workplan.js";
 import type { VisibleProjects } from "../../services/visible-projects.js";
 import type {
   IAdvanceRepository, IBudgetCategoryRepository, ICurrencyRateRepository, IDeliverableRepository, IDisbursementRepository, IFinanceSettingsRepository, IFundingSourceRepository,
-  IProjectFundingRepository, IRegisterExpenseRepository, StoredBudgetCategory, StoredCurrencyRate, StoredFundingSource,
+  IProjectFundingRepository, IRegisterExpenseRepository, StoredBudgetCategory, StoredCurrencyRate, StoredFundingSource, StoredRegisterExpense,
 } from "../../ports/finance-register.js";
 
 /**
@@ -100,7 +100,7 @@ export class CreateBudgetCategoryHandler {
 export class ListCurrencyRatesHandler {
   constructor(private readonly rates: ICurrencyRateRepository, private readonly settings: IFinanceSettingsRepository) {}
   async handle(ctx: AuthenticatedContext) {
-    if (!can(ctx, "project.view")) return forbid<{ rates: StoredCurrencyRate[]; primaryCurrency: string; localCurrency?: string }>("see currency rates");
+    if (!can(ctx, "project.view")) return forbid<{ rates: StoredCurrencyRate[]; primaryCurrency: string; localCurrency?: string; separateApprover: boolean }>("see currency rates");
     const [rates, settings] = await Promise.all([this.rates.list(ctx.tenant.tenantId), this.settings.get(ctx.tenant.tenantId)]);
     if (!rates.ok) return rates;
     if (!settings.ok) return settings;
@@ -218,7 +218,7 @@ export class AddRegisterExpenseHandler {
 
 /** Approve or reject a draft expense or disbursement (`finance.approve`). A decided entry stays as it is; a second decision is refused. */
 export class DecideEntryHandler {
-  constructor(private readonly expenses: IRegisterExpenseRepository, private readonly disbursements: IDisbursementRepository, private readonly d: Deps) {}
+  constructor(private readonly expenses: IRegisterExpenseRepository, private readonly disbursements: IDisbursementRepository, private readonly settings: IFinanceSettingsRepository, private readonly d: Deps) {}
   async handle(ctx: AuthenticatedContext, projectId: string, kind: "EXPENSE" | "DISBURSEMENT", id: string, input: { decision: "APPROVED" | "REJECTED"; note?: string }): Promise<Result<void, DomainError>> {
     if (!can(ctx, "finance.approve")) return forbid("approve or reject finance entries");
     const reason = (input.note ?? "").trim().slice(0, 300);
@@ -227,11 +227,71 @@ export class DecideEntryHandler {
     if (!found.ok) return found;
     if (!found.value || found.value.projectId !== projectId) return fail(DomainError.notFound(kind === "EXPENSE" ? "Expense" : "Disbursement", id));
     if (!canEditEntry(found.value.status)) return fail(DomainError.conflict("This entry has already been decided."));
+    const settings = await this.settings.get(ctx.tenant.tenantId);
+    if (!settings.ok) return settings;
+    if (settings.value.separateApprover && found.value.createdById === ctx.tenant.userId) return fail(DomainError.validation("Someone else must decide this entry: your organisation does not let the person who entered it approve it."));
     const decision = { status: input.decision, byId: ctx.tenant.userId, at: this.d.clock.now(), note: reason } as const;
     const done = kind === "EXPENSE" ? await this.expenses.decide(id, ctx.tenant.tenantId, decision) : await this.disbursements.decide(id, ctx.tenant.tenantId, decision);
     if (!done.ok) return done;
     if (!done.value) return fail(DomainError.conflict("This entry has already been decided."));
     await note(this.d, ctx, input.decision === "APPROVED" ? "finance.entry_approved" : "finance.entry_rejected", kind === "EXPENSE" ? "expense" : "disbursement", id, found.value.projectId, { note: reason });
+    return ok(undefined);
+  }
+}
+
+export class SetSeparateApproverHandler {
+  constructor(private readonly settings: IFinanceSettingsRepository, private readonly d: Deps) {}
+  async handle(ctx: AuthenticatedContext, input: { on: boolean }): Promise<Result<void, DomainError>> {
+    if (!can(ctx, "org.manage")) return forbid("change who may approve finance entries");
+    const saved = await this.settings.setSeparateApprover(ctx.tenant.tenantId, input.on);
+    if (!saved.ok) return saved;
+    await note(this.d, ctx, "finance.separate_approver_set", "organization", ctx.tenant.tenantId.toString(), undefined, { on: input.on });
+    return ok(undefined);
+  }
+}
+
+/**
+ * Change a DRAFT entry (an expense or an amount received) before it is decided: the same checks as adding one. A decided entry is never edited (a correction is a new
+ * entry); the write is conditional on DRAFT, so a decision made meanwhile wins. The person who entered it may fix it with the permission they entered it with;
+ * anyone with `finance.approve` may too.
+ */
+export class UpdateDraftEntryHandler {
+  constructor(private readonly lines: IBudgetLineReader, private readonly sources: IFundingSourceRepository, private readonly expenses: IRegisterExpenseRepository, private readonly disbursements: IDisbursementRepository, private readonly d: Deps) {}
+  async handle(ctx: AuthenticatedContext, projectId: string, kind: "EXPENSE" | "DISBURSEMENT", id: string, input: Record<string, unknown>): Promise<Result<void, DomainError>> {
+    const found = kind === "EXPENSE" ? await this.expenses.findById(id, ctx.tenant.tenantId) : await this.disbursements.findById(id, ctx.tenant.tenantId);
+    if (!found.ok) return found;
+    if (!found.value || found.value.projectId !== projectId) return fail(DomainError.notFound(kind === "EXPENSE" ? "Expense" : "Disbursement", id));
+    const mine = found.value.createdById === ctx.tenant.userId;
+    const entering = kind === "EXPENSE" ? can(ctx, "workplan.update-own") : can(ctx, "project.edit");
+    if (!(can(ctx, "finance.approve") || (mine && entering))) return forbid("change this entry");
+    if (!canEditEntry(found.value.status)) return fail(DomainError.conflict("This entry has already been decided, so it cannot be changed. Enter a correction instead."));
+    if (kind === "EXPENSE") {
+      const current = found.value as StoredRegisterExpense;
+      const line = await this.lines.findLineById(current.budgetLineId, ctx.tenant.tenantId);
+      if (!line.ok) return line;
+      if (!line.value) return fail(DomainError.notFound("BudgetLine", current.budgetLineId));
+      const e = checkRegisterExpense(input as unknown as Parameters<typeof checkRegisterExpense>[0], line.value.currency);
+      if (!e.ok) return e;
+      if (e.value.fundingSourceId) {
+        const source = await this.sources.findById(e.value.fundingSourceId, ctx.tenant.tenantId);
+        if (!source.ok) return source;
+        if (!source.value) return fail(DomainError.validation("Choose a funding source from the list.", { field: "fundingSourceId" }));
+      }
+      const done = await this.expenses.updateDraft(id, ctx.tenant.tenantId, { date: e.value.date, amount: e.value.amount, vendor: e.value.vendor, memo: e.value.memo, fundingSourceId: e.value.fundingSourceId ?? null, evidenceId: e.value.evidenceId ?? null });
+      if (!done.ok) return done;
+      if (!done.value) return fail(DomainError.conflict("This entry has just been decided, so it cannot be changed."));
+      await note(this.d, ctx, "finance.expense_changed", "expense", id, projectId, { amount: e.value.amount, vendor: e.value.vendor });
+      return ok(undefined);
+    }
+    const d = checkDisbursement(input as unknown as Parameters<typeof checkDisbursement>[0]);
+    if (!d.ok) return d;
+    const source = await this.sources.findById(d.value.fundingSourceId, ctx.tenant.tenantId);
+    if (!source.ok) return source;
+    if (!source.value) return fail(DomainError.validation("Choose a funding source from the list.", { field: "fundingSourceId" }));
+    const done = await this.disbursements.updateDraft(id, ctx.tenant.tenantId, { fundingSourceId: d.value.fundingSourceId, date: d.value.date, amount: d.value.amount, memo: d.value.memo });
+    if (!done.ok) return done;
+    if (!done.value) return fail(DomainError.conflict("This entry has just been decided, so it cannot be changed."));
+    await note(this.d, ctx, "finance.disbursement_changed", "disbursement", id, projectId, { amount: d.value.amount });
     return ok(undefined);
   }
 }
@@ -254,7 +314,7 @@ export class AddDeliverableHandler {
 
 /** Approval records who and when; payment follows approval. `separateApprover` is the organisation's choice (off by default here: a small team may be one person). */
 export class ChangeDeliverableHandler {
-  constructor(private readonly repo: IDeliverableRepository, private readonly d: Deps, private readonly separateApprover = false) {}
+  constructor(private readonly repo: IDeliverableRepository, private readonly settings: IFinanceSettingsRepository, private readonly d: Deps) {}
   async handle(ctx: AuthenticatedContext, projectId: string, id: string, change: { action: "APPROVE" } | { action: "PAY"; on: string }): Promise<Result<void, DomainError>> {
     const found = await this.repo.findById(id, ctx.tenant.tenantId);
     if (!found.ok) return found;
@@ -264,7 +324,9 @@ export class ChangeDeliverableHandler {
     if (change.action === "APPROVE") {
       if (!can(ctx, "finance.approve")) return forbid("approve deliverables");
       const now = this.d.clock.now();
-      const problem = checkDeliverableChange(current, { approve: true, byId: ctx.tenant.userId, at: now.toISOString(), createdById: dl.createdById, separateApprover: this.separateApprover });
+      const settings = await this.settings.get(ctx.tenant.tenantId);
+      if (!settings.ok) return settings;
+      const problem = checkDeliverableChange(current, { approve: true, byId: ctx.tenant.userId, at: now.toISOString(), createdById: dl.createdById, separateApprover: settings.value.separateApprover });
       if (problem) return fail(DomainError.validation(problem));
       const done = await this.repo.approve(id, ctx.tenant.tenantId, ctx.tenant.userId, now);
       if (!done.ok) return done;
@@ -326,13 +388,36 @@ export interface ProjectFinanceDto {
   index: ReturnType<typeof financeIndex>;
   /** Obligated, disbursed and spent in the primary currency: null when any amount lacks a dated rate (the amounts missing one are named). */
   inPrimary: Record<"obligated" | "disbursed" | "spent", { total: Amount | null; needsRate: Array<{ date: string; amount: Amount }> }>;
-  register: ReturnType<typeof registerRows> extends Array<infer R> ? Array<R & { status: string; vendor?: string; sourceId?: string; hasEvidence?: boolean; budgetLineId?: string; canDecide: boolean }> : never;
+  register: ReturnType<typeof registerRows> extends Array<infer R> ? Array<R & { status: string; vendor?: string; sourceId?: string; hasEvidence?: boolean; budgetLineId?: string; canDecide: boolean; canEdit: boolean; evidenceId?: string; enteredByMe: boolean }> : never;
   totals: ReturnType<typeof registerTotals>;
   advances: Array<{ id: string; heldBy: string; givenOn: string; amount: Amount; note: string; position: ReturnType<typeof advancePosition> }>;
   deliverables: Array<{ id: string; name: string; amount: Amount; dueOn: string; state: ReturnType<typeof deliverableState>; approvedAt?: string; paidOn?: string }>;
   budgetLines: Array<ReturnType<typeof budgetVsActual>[number] & { description: string; category: string; otherCurrencySpent: number }>;
   burn: ReturnType<typeof burnReading> | null;
   sources: Array<{ id: string; name: string; ownFunding: boolean; archived: boolean }>;
+  /** The project's files a person can attach to an expense as proof. */
+  evidence: Array<{ id: string; name: string }>;
+  separateApprover: boolean;
+}
+
+/**
+ * The register's figures as per-period finance rows for charts (own funding as the budget, approved expenses to each period's end; one currency or none).
+ * Anyone who can see a project's Finance tab may chart it; an outside partner never gets it.
+ */
+export class RegisterFinanceRows {
+  constructor(private readonly sources: IFundingSourceRepository, private readonly fundings: IProjectFundingRepository, private readonly expenses: IRegisterExpenseRepository) {}
+  async rowsFor(ctx: AuthenticatedContext, projectId: string, periods: Array<{ id: string; end: string }>) {
+    if (!can(ctx, "project.view") || (ctx.tenant as { external?: boolean }).external) return [];
+    const t: TenantId = ctx.tenant.tenantId;
+    const [src, fund, exp] = await Promise.all([this.sources.list(t), this.fundings.listByProject(projectId, t), this.expenses.listByProject(projectId, t)]);
+    if (!src.ok || !fund.ok || !exp.ok) return [];
+    const own = new Set(src.value.filter((s) => s.ownFunding).map((s) => s.id));
+    return registerPeriodRows({
+      periods,
+      funding: fund.value.filter((f) => own.has(f.fundingSourceId)).map((f) => ({ date: f.date, amount: f.amount })),
+      expenses: exp.value.filter((e) => e.status === "APPROVED").map((e) => ({ date: e.date, amount: e.amount })),
+    });
+  }
 }
 
 export class GetProjectFinanceHandler {
@@ -340,6 +425,8 @@ export class GetProjectFinanceHandler {
     private readonly projects: IProjectRepository, private readonly lines: IBudgetLineReader, private readonly sources: IFundingSourceRepository, private readonly fundings: IProjectFundingRepository,
     private readonly disbursements: IDisbursementRepository, private readonly expenses: IRegisterExpenseRepository, private readonly advances: IAdvanceRepository,
     private readonly deliverables: IDeliverableRepository, private readonly rates: ICurrencyRateRepository, private readonly settings: IFinanceSettingsRepository, private readonly clock: IClock,
+    /** The project's files, offered when attaching proof to an expense (optional: without it none are offered). */
+    private readonly evidence?: { search(filter: { projectId?: string; allowedConfidentialityLevels?: never[] | undefined }, tenantId: TenantId): Promise<Result<{ items: Array<{ id: string; fileName: string }> }>> },
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<ProjectFinanceDto, DomainError>> {
@@ -378,10 +465,12 @@ export class GetProjectFinanceHandler {
       else otherCurrency.set(line.id, (otherCurrency.get(line.id) ?? 0) + 1);
     }
     const rows = registerRows({ expenses: expenseList.map((e) => ({ ...e, evidenceId: e.evidenceId })), disbursements: disbList, today });
-    const meta = new Map<string, { status: string; vendor?: string; sourceId?: string; hasEvidence?: boolean; budgetLineId?: string }>();
-    for (const e of exp.value) meta.set(e.id, { status: e.status, vendor: e.vendor, ...(e.fundingSourceId ? { sourceId: e.fundingSourceId } : {}), hasEvidence: !!e.evidenceId, budgetLineId: e.budgetLineId });
-    for (const d of disb.value) meta.set(d.id, { status: d.status, sourceId: d.fundingSourceId });
+    const meta = new Map<string, { status: string; vendor?: string; sourceId?: string; hasEvidence?: boolean; budgetLineId?: string; evidenceId?: string; createdById: string }>();
+    for (const e of exp.value) meta.set(e.id, { status: e.status, vendor: e.vendor, createdById: e.createdById, ...(e.evidenceId ? { evidenceId: e.evidenceId } : {}), ...(e.fundingSourceId ? { sourceId: e.fundingSourceId } : {}), hasEvidence: !!e.evidenceId, budgetLineId: e.budgetLineId });
+    for (const d of disb.value) meta.set(d.id, { status: d.status, sourceId: d.fundingSourceId, createdById: d.createdById });
     const canDecide = can(ctx, "finance.approve");
+    const found = this.evidence ? await this.evidence.search({ projectId }, t) : null;
+    const evidenceOptions = found && found.ok ? found.value.items.slice(0, 200).map((e) => ({ id: e.id, name: e.fileName })) : [];
     const budget = project.value.budget;
     const budgetMinor = budget ? Math.round(budget.amount * 100) : null;
     const spentInBudgetCurrency = budget ? index.spent.find((s) => s.currency === budget.currency)?.minor ?? 0 : 0;
@@ -389,7 +478,7 @@ export class GetProjectFinanceHandler {
       primaryCurrency: primary,
       funding: fund.value.map((f) => ({ id: f.id, sourceId: f.fundingSourceId, sourceName: sourceById.get(f.fundingSourceId)?.name ?? "A funding source that was removed", ownFunding: sourceById.get(f.fundingSourceId)?.ownFunding ?? false, date: f.date, amount: amountDto(f.amount), note: f.note })),
       index, inPrimary,
-      register: rows.map((r) => ({ ...r, status: meta.get(r.id)?.status ?? "DRAFT", ...(meta.get(r.id)?.vendor !== undefined ? { vendor: meta.get(r.id)!.vendor! } : {}), ...(meta.get(r.id)?.sourceId ? { sourceId: meta.get(r.id)!.sourceId! } : {}), hasEvidence: meta.get(r.id)?.hasEvidence ?? false, ...(meta.get(r.id)?.budgetLineId ? { budgetLineId: meta.get(r.id)!.budgetLineId! } : {}), canDecide: canDecide && meta.get(r.id)?.status === "DRAFT" })) as ProjectFinanceDto["register"],
+      register: rows.map((r) => ({ ...r, status: meta.get(r.id)?.status ?? "DRAFT", ...(meta.get(r.id)?.vendor !== undefined ? { vendor: meta.get(r.id)!.vendor! } : {}), ...(meta.get(r.id)?.sourceId ? { sourceId: meta.get(r.id)!.sourceId! } : {}), hasEvidence: meta.get(r.id)?.hasEvidence ?? false, ...(meta.get(r.id)?.budgetLineId ? { budgetLineId: meta.get(r.id)!.budgetLineId! } : {}), canDecide: canDecide && meta.get(r.id)?.status === "DRAFT", enteredByMe: meta.get(r.id)?.createdById === ctx.tenant.userId, canEdit: meta.get(r.id)?.status === "DRAFT" && (canDecide || (meta.get(r.id)?.createdById === ctx.tenant.userId && (r.kind === "EXPENSE" ? can(ctx, "workplan.update-own") : can(ctx, "project.edit")))), ...(meta.get(r.id)?.evidenceId ? { evidenceId: meta.get(r.id)!.evidenceId! } : {}) })) as ProjectFinanceDto["register"],
       totals: registerTotals({ expenses: expenseList, disbursements: disbList, advances: adv.value.map((a) => ({ id: a.id, heldBy: a.heldBy, givenOn: a.givenOn, amount: a.amount, accounted: a.accounted.map((x) => ({ date: x.date, amount: x.amount })) })), today }),
       advances: adv.value.map((a) => ({ id: a.id, heldBy: a.heldBy, givenOn: a.givenOn, amount: amountDto(a.amount), note: a.note, position: advancePosition({ id: a.id, heldBy: a.heldBy, givenOn: a.givenOn, amount: a.amount, accounted: a.accounted.map((x) => ({ date: x.date, amount: x.amount })) }, today) })),
       deliverables: del.value.map((d) => {
@@ -402,6 +491,7 @@ export class GetProjectFinanceHandler {
       }),
       burn: budget ? burnReading({ budgetMinor, spentMinor: spentInBudgetCurrency, start: dayOf(project.value.duration.start), end: dayOf(project.value.duration.end), today }) : null,
       sources: src.value.map((s) => ({ id: s.id, name: s.name, ownFunding: s.ownFunding, archived: s.archived })),
+      evidence: evidenceOptions, separateApprover: settings.value.separateApprover,
     });
   }
 }

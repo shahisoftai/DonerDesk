@@ -26,11 +26,13 @@ export interface EntryField {
  * One small form for every "add something" on the finance screens: the fields are data, the action is passed in, and a success refreshes the page.
  * An amount is checked as the server will before it is sent; the server's own answer (a permission, a rule) is shown under the form.
  */
-export function EntryForm({ title, fields, submit, onSubmit }: {
+export function EntryForm({ title, fields, submit, onSubmit, onDone }: {
   title: string;
   fields: ReadonlyArray<EntryField>;
   submit: string;
   onSubmit: (values: Record<string, string>) => Promise<Result<unknown, AppError>>;
+  /** Called after a successful save (the edit form closes itself here). */
+  onDone?: () => void;
 }) {
   const router = useRouter();
   const act = useActionState();
@@ -45,7 +47,7 @@ export function EntryForm({ title, fields, submit, onSubmit }: {
     setSaved(false);
     const sent = Object.fromEntries(Object.entries(values).filter(([, v]) => v.trim() !== "")) as Record<string, string>;
     const out = await act.run(() => onSubmit(sent));
-    if (out) { setValues(blank()); setSaved(true); router.refresh(); }
+    if (out) { setValues(blank()); setSaved(true); router.refresh(); onDone?.(); }
   }
 
   return (

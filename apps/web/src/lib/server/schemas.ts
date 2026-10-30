@@ -1550,6 +1550,7 @@ export const PlanItemBudgetSchema = z.object({
       state: z.enum(["NO_BUDGET", "NOT_STARTED", "UNDER_SPENT", "FULLY_SPENT", "OVERSPENT"]),
     }),
     expenses: z.array(z.object({ id: z.string(), date: z.string(), amountMinor: z.number(), description: z.string() })),
+    waiting: z.array(z.object({ id: z.string(), date: z.string(), amountMinor: z.number(), description: z.string() })).default([]),
   })),
 });
 export type PlanItemBudget = z.infer<typeof PlanItemBudgetSchema>;
@@ -1724,6 +1725,7 @@ export const PortfolioOverviewSchema = z.object({
       donorName: z.string(),
       country: z.string(),
       status: z.string(),
+      sector: z.string().default(""),
       delivery: z.object({ band: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "NO_PLAN"]), label: z.string(), reason: z.string().nullable(), lateActivities: z.number(), valuesOverdue: z.number() }),
       risks: z.object({ open: z.number(), high: z.number(), reviewOverdue: z.number() }),
       reporting: z.object({ periodId: z.string(), deadline: z.string(), daysUntil: z.number(), status: z.string(), readinessScore: z.number() }).nullable(),

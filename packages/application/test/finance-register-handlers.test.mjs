@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { TenantId } from "@donordesk/domain";
 import {
   AccountForAdvanceHandler, AddAdvanceHandler, AddCurrencyRateHandler, AddDeliverableHandler, AddDisbursementHandler, AddProjectFundingHandler, AddRegisterExpenseHandler, ChangeDeliverableHandler,
-  CreateFundingSourceHandler, DecideEntryHandler, GetProjectFinanceHandler, ImportRegisterSheetHandler, UpdateFundingSourceHandler,
+  CreateFundingSourceHandler, DecideEntryHandler, GetProjectFinanceHandler, ImportRegisterSheetHandler, UpdateFundingSourceHandler, SetSeparateApproverHandler, UpdateDraftEntryHandler,
 } from "../dist/index.js";
 
 const tenantId = TenantId.create("tenant-a");
@@ -30,6 +30,7 @@ const lines = { findLineById: async (id) => ok(lineRows.find((l) => l.id === id)
 function world() {
   const sources = memory(), fundings = { ...memory(), async listByProject(p) { return ok(this.rows.filter((r) => r.projectId === p)); } };
   const mk = () => ({ ...memory(), async listByProject(p) { return ok(this.rows.filter((r) => r.projectId === p)); },
+    async updateDraft(id, _t, x) { const r = this.rows.find((y) => y.id === id); if (!r || r.status !== "DRAFT") return ok(false); Object.assign(r, x, x.memo !== undefined ? { memo: x.memo } : {}); return ok(true); },
     async decide(id, _t, x) { const r = this.rows.find((y) => y.id === id); if (!r || r.status !== "DRAFT") return ok(false); Object.assign(r, { status: x.status, decidedById: x.byId, decisionNote: x.note }); return ok(true); } });
   const disb = mk(), exps = mk();
   const dels = { ...memory(), async listByProject(p) { return ok(this.rows.filter((r) => r.projectId === p)); },
@@ -38,7 +39,7 @@ function world() {
   const advs = { ...memory(), async listByProject(p) { return ok(this.rows.filter((r) => r.projectId === p).map((a) => ({ ...a, accounted: this.acc.filter((x) => x.advanceId === a.id) }))); },
     async findById(id) { const a = this.rows.find((r) => r.id === id); return ok(a ? { ...a, accounted: this.acc.filter((x) => x.advanceId === id) } : null); }, acc: [], async addAccounting(_t, a) { this.acc.push(a); return ok(undefined); } };
   const rates = { rows: [], async list() { return ok([...this.rows]); }, async add(r) { this.rows.push(r); return ok(undefined); } };
-  const settings = { get: async () => ok({ primaryCurrency: "USD" }), set: async () => ok(undefined) };
+  const settings = { separate: false, async get() { return ok({ primaryCurrency: "USD", separateApprover: this.separate }); }, set: async () => ok(undefined), async setSeparateApprover(_t, on) { this.separate = on; return ok(undefined); } };
   return { sources, fundings, disb, exps, dels, advs, rates, settings };
 }
 
@@ -73,7 +74,7 @@ test("an expense is a draft until someone with finance.approve decides it, once;
   const e = await add.handle(field, "p1", "L1", { date: "2026-02-01", amount: "10", vendor: "Acme" });
   assert.equal(e.ok, true);
   assert.equal(w.exps.rows[0].status, "DRAFT");
-  const decide = new DecideEntryHandler(w.exps, w.disb, d);
+  const decide = new DecideEntryHandler(w.exps, w.disb, w.settings, d);
   assert.equal((await decide.handle(me, "p1", "EXPENSE", e.value.id, { decision: "APPROVED" })).ok, false);
   assert.match((await decide.handle(pm, "p1", "EXPENSE", e.value.id, { decision: "REJECTED" })).error.message, /why/);
   assert.equal((await decide.handle(pm, "p1", "EXPENSE", e.value.id, { decision: "APPROVED" })).ok, true);
@@ -86,7 +87,7 @@ test("a disbursement follows the same draft-then-decide path", async () => {
   const s = (await new CreateFundingSourceHandler(w.sources, d).handle(admin, { name: "Donor A" })).value.id;
   const r = await new AddDisbursementHandler(projects, w.sources, w.disb, d).handle(pm, "p1", { fundingSourceId: s, date: "2026-02-01", amount: "1000", currency: "USD" });
   assert.equal(w.disb.rows[0].status, "DRAFT");
-  assert.equal((await new DecideEntryHandler(w.exps, w.disb, d).handle(admin, "p1", "DISBURSEMENT", r.value.id, { decision: "APPROVED" })).ok, true);
+  assert.equal((await new DecideEntryHandler(w.exps, w.disb, w.settings, d).handle(admin, "p1", "DISBURSEMENT", r.value.id, { decision: "APPROVED" })).ok, true);
 });
 
 test("currency rates are added by an administrator, validated, and never edited", async () => {
@@ -101,14 +102,13 @@ test("currency rates are added by an administrator, validated, and never edited"
 test("a deliverable is approved by someone who may, then paid; payment before approval is refused", async () => {
   const w = world();
   const dl = await new AddDeliverableHandler(projects, w.dels, d).handle(pm, "p1", { name: "Baseline", amount: "500", currency: "USD", dueOn: "2026-02-01" });
-  const change = new ChangeDeliverableHandler(w.dels, d);
+  const change = new ChangeDeliverableHandler(w.dels, w.settings, d);
   assert.match((await change.handle(pm, "p1", dl.value.id, { action: "PAY", on: "2026-02-10" })).error.message, /approved before/);
   assert.equal((await change.handle(me, "p1", dl.value.id, { action: "APPROVE" })).ok, false);
   assert.equal((await change.handle(pm, "p1", dl.value.id, { action: "APPROVE" })).ok, true);
   assert.equal((await change.handle(pm, "p1", dl.value.id, { action: "APPROVE" })).ok, false);
   assert.equal((await change.handle(pm, "p1", dl.value.id, { action: "PAY", on: "2026-03-01" })).ok, true);
   assert.equal((await change.handle(pm, "other-project", dl.value.id, { action: "PAY", on: "2026-03-01" })).error.code, "NOT_FOUND");
-  assert.equal(new ChangeDeliverableHandler(w.dels, d, true) instanceof ChangeDeliverableHandler, true);
 });
 
 test("an advance is accounted for in its own currency, and not before it was given", async () => {
@@ -131,7 +131,7 @@ test("the project finance read counts own funding only, converts only with a dat
   await fund.handle(admin, "p1", { fundingSourceId: other, date: "2026-01-06", amount: "999", currency: "USD" });
   const e1 = await new AddRegisterExpenseHandler(projects, lines, w.sources, w.exps, d).handle(field, "p1", "L1", { date: "2026-02-01", amount: "10", vendor: "A" });
   await new AddRegisterExpenseHandler(projects, lines, w.sources, w.exps, d).handle(field, "p1", "L1", { date: "2026-02-02", amount: "20", vendor: "B" });
-  await new DecideEntryHandler(w.exps, w.disb, d).handle(pm, "p1", "EXPENSE", e1.value.id, { decision: "APPROVED" });
+  await new DecideEntryHandler(w.exps, w.disb, w.settings, d).handle(pm, "p1", "EXPENSE", e1.value.id, { decision: "APPROVED" });
   const read = new GetProjectFinanceHandler(projects, lines, w.sources, w.fundings, w.disb, w.exps, w.advs, w.dels, w.rates, w.settings, clock);
   assert.equal((await read.handle(ctxFor("VIEWER"), "p1")).ok, true);
   let f = (await read.handle(viewer, "p1")).value;
@@ -184,4 +184,29 @@ test("importing needs permission, and money received needs project.edit", async 
   assert.equal(field_.applied, false);
   assert.match(field_.problems[0].message, /cannot record money received/);
   assert.equal((await imp.handle(admin, "nope", { text: SHEET, apply: false })).error.code, "NOT_FOUND");
+});
+
+test("a draft expense can be changed by its author or an approver, a decided one never; the file can be attached", async () => {
+  const w = world();
+  const add = new AddRegisterExpenseHandler(projects, lines, w.sources, w.exps, d);
+  const e = await add.handle(field, "p1", "L1", { date: "2026-02-01", amount: "10", vendor: "Acme" });
+  const edit = new UpdateDraftEntryHandler(lines, w.sources, w.exps, w.disb, d);
+  assert.equal((await edit.handle(viewer, "p1", "EXPENSE", e.value.id, { date: "2026-02-02", amount: "12", vendor: "Acme" })).ok, false);
+  assert.equal((await edit.handle(field, "p1", "EXPENSE", e.value.id, { date: "2026-02-02", amount: "12", vendor: "Acme Ltd", evidenceId: "ev1" })).ok, true);
+  assert.deepEqual(w.exps.rows[0].amount, { minor: 1200, currency: "USD" });
+  assert.equal(w.exps.rows[0].evidenceId, "ev1");
+  assert.equal((await edit.handle(field, "p2", "EXPENSE", e.value.id, { date: "2026-02-02", amount: "12", vendor: "x" })).error.code, "NOT_FOUND");
+  assert.equal((await edit.handle(field, "p1", "EXPENSE", e.value.id, { date: "2026-02-02", amount: "-5", vendor: "x" })).ok, false);
+  await new DecideEntryHandler(w.exps, w.disb, w.settings, d).handle(pm, "p1", "EXPENSE", e.value.id, { decision: "APPROVED" });
+  assert.match((await edit.handle(pm, "p1", "EXPENSE", e.value.id, { date: "2026-02-02", amount: "13", vendor: "x" })).error.message, /already been decided/);
+});
+
+test("when the organisation asks for a second person, the one who entered an entry cannot decide it; only an administrator sets this", async () => {
+  const w = world();
+  const e = await new AddRegisterExpenseHandler(projects, lines, w.sources, w.exps, d).handle(pm, "p1", "L1", { date: "2026-02-01", amount: "10", vendor: "Acme" });
+  assert.equal((await new SetSeparateApproverHandler(w.settings, d).handle(pm, { on: true })).ok, false);
+  assert.equal((await new SetSeparateApproverHandler(w.settings, d).handle(admin, { on: true })).ok, true);
+  const decide = new DecideEntryHandler(w.exps, w.disb, w.settings, d);
+  assert.match((await decide.handle(pm, "p1", "EXPENSE", e.value.id, { decision: "APPROVED" })).error.message, /Someone else/);
+  assert.equal((await decide.handle(admin, "p1", "EXPENSE", e.value.id, { decision: "APPROVED" })).ok, true);
 });

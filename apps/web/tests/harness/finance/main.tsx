@@ -22,7 +22,7 @@ const f: ProjectFinance = {
   register: [
     { id: "d1", date: "2026-02-01", kind: "DISBURSEMENT", memo: "Tranche 1", amount: usd(300000), balanceMinor: 300000, ageDays: 28, status: "APPROVED", canDecide: false },
     { id: "e1", date: "2026-02-10", kind: "EXPENSE", memo: "Fuel", amount: eur(12000), balanceMinor: -12000, ageDays: 19, status: "APPROVED", vendor: "Acme", hasEvidence: false, canDecide: false },
-    { id: "e2", date: "2026-02-20", kind: "EXPENSE", memo: "Training venue", amount: eur(8000), balanceMinor: -12000, ageDays: 9, status: "DRAFT", vendor: "Hall Ltd", hasEvidence: true, canDecide: true },
+    { id: "e2", date: "2026-02-20", kind: "EXPENSE", memo: "Training venue", amount: eur(8000), balanceMinor: -12000, ageDays: 9, status: "DRAFT", vendor: "Hall Ltd", hasEvidence: true, canDecide: true, canEdit: true, enteredByMe: true, evidenceId: "ev1" },
   ],
   totals: { spent: [eur(12000)], disbursed: [usd(300000)], pending: [eur(8000)], rejectedCount: 0, outstandingAdvances: [usd(60000)], unclassifiedExpenses: 1, withoutEvidence: 1 },
   advances: [{ id: "a1", heldBy: "Field team", givenOn: "2026-01-10", amount: usd(100000), note: "", position: { accountedMinor: 40000, outstandingMinor: 60000, overAccounted: false, ageDays: 50, overdue: true } }],
@@ -33,6 +33,8 @@ const f: ProjectFinance = {
   budgetLines: [{ lineId: "L1", code: "1.1", description: "Travel", category: "TRAVEL", budget: eur(10000), spentMinor: 12000, remainingMinor: -2000, spentPercent: 120, overspent: true, otherCurrencySpent: 1 }],
   burn: { spentPercent: 60, timeElapsedPercent: 40, gapPoints: 20 },
   sources: [{ id: "s1", name: "Donor A", ownFunding: true, archived: false }, { id: "s2", name: "Partner cost-share", ownFunding: false, archived: false }],
+  evidence: [{ id: "ev1", name: "Venue invoice.pdf" }, { id: "ev2", name: "Receipt.jpg" }],
+  separateApprover: false,
 };
 
 const params = new URLSearchParams(window.location.search);
@@ -43,7 +45,7 @@ createRoot(document.getElementById("root")!).render(
     <FinanceSummary f={f} />
     <FundingSection projectId="p1" f={f} canEdit={!viewer} today="2026-03-01" />
     <BudgetSection f={f} />
-    <RegisterSection projectId="p1" f={viewer ? { ...f, register: f.register.map((r) => ({ ...r, canDecide: false })) } : f} canEnterExpense={!viewer} canEnterMoney={!viewer} today="2026-03-01" />
+    <RegisterSection projectId="p1" f={viewer ? { ...f, register: f.register.map((r) => ({ ...r, canDecide: false, canEdit: false })) } : f} canEnterExpense={!viewer} canEnterMoney={!viewer} today="2026-03-01" />
     {!viewer && <ImportSection projectId="p1" />}
     <AdvancesSection projectId="p1" f={f} canEdit={!viewer} today="2026-03-01" />
     <DeliverablesSection projectId="p1" f={f} canEdit={!viewer} canApprove={!viewer} today="2026-03-01" />

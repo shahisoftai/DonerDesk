@@ -110,3 +110,17 @@ test("resolve suggests and never changes; unconfirmed lists what no place answer
   assert.equal(queue.value.confirmed, 1);
   assert.deepEqual(queue.value.items.map((i) => [i.text, i.status]), [["Sinja", "AMBIGUOUS"], ["Singa", "UNRESOLVED"]]);
 });
+
+test("a place can be marked as a facility, shown as one, and unmarked; an unmarked place carries no flag", async () => {
+  const w = world();
+  const sd = (await w.create.handle(PM, area("Sudan", 0))).value.id;
+  const clinic = (await w.create.handle(PM, area("Rabak Clinic", 4, sd, { facility: true, latitude: 13.2, longitude: 32.7 }))).value.id;
+  const plain = (await w.create.handle(PM, area("Rabak", 2, sd))).value.id;
+  const byId = async () => new Map((await w.list.handle(VIEWER)).value.places.map((p) => [p.id, p]));
+  assert.equal((await byId()).get(clinic).facility, true);
+  assert.equal((await byId()).get(plain).facility, undefined);
+  assert.equal((await w.update.handle(PM, clinic, { facility: false })).ok, true);
+  assert.equal((await byId()).get(clinic).facility, undefined);
+  assert.equal((await w.update.handle(PM, plain, { facility: true })).ok, true);
+  assert.equal((await byId()).get(plain).facility, true);
+});

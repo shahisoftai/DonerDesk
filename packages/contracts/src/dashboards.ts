@@ -139,3 +139,6 @@ export const SaveReportSchema = z.object({
   expectedUpdatedAt: z.string().optional(),
 });
 export type SaveReportInput = z.infer<typeof SaveReportSchema>;
+
+export const AddHomePinSchema = z.object({ kind: z.string().max(20), ref: z.string().max(64) });
+export const MoveHomePinSchema = z.object({ to: z.number().int().min(0).max(50) });

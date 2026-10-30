@@ -140,7 +140,7 @@ export function resolveDataset(sheet: DataSheet, query: DatasetQuery): DatasetRe
 
   const finance: DatasetFinanceRow[] = [];
   for (const period of periods) {
-    const f = sheet.finance.find((x) => x.periodId === period.id);
+    const f = sheet.finance.find((x) => x.periodId === period.id) ?? sheet.registerFinance?.find((x) => x.periodId === period.id);
     if (!f) continue;
     if (!f.verified && !query.includeDraft) { withheldDrafts += 1; continue; }
     const n = (v: string | undefined): number | null => { if (v === undefined || v.trim() === "") return null; const x = Number.parseFloat(v.replace(/,/g, "")); return Number.isFinite(x) ? x : null; };

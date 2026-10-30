@@ -13,6 +13,8 @@ export interface BudgetLineView {
   currency: string;
   position: BudgetPosition;
   expenses: Array<{ id: string; date: string; amountMinor: number; description: string }>;
+  /** Entered, waiting for approval under Finance; not counted as spent. */
+  waiting: Array<{ id: string; date: string; amountMinor: number; description: string }>;
 }
 
 /** A budget line on a planned activity. Managers only: the budget is set when the plan is made. */
@@ -77,17 +79,20 @@ export class GetPlanItemBudgetHandler {
     if (!item.ok) return item;
     const lines = await this.budgets.findLinesByItem(itemId, ctx.tenant.tenantId);
     if (!lines.ok) return lines;
-    const expenses = await this.budgets.findExpensesByLines(lines.value.map((l) => l.id), ctx.tenant.tenantId);
+    const ids = lines.value.map((l) => l.id);
+    const [expenses, pending] = await Promise.all([this.budgets.findExpensesByLines(ids, ctx.tenant.tenantId), this.budgets.findPendingExpensesByLines(ids, ctx.tenant.tenantId)]);
     if (!expenses.ok) return expenses;
-    return ok(lines.value.map((l) => toView(l, expenses.value.filter((e) => e.budgetLineId === l.id))));
+    if (!pending.ok) return pending;
+    return ok(lines.value.map((l) => toView(l, expenses.value.filter((e) => e.budgetLineId === l.id), pending.value.filter((e) => e.budgetLineId === l.id))));
   }
 }
 
-function toView(line: BudgetLineRecord, expenses: BudgetExpenseRecord[]): BudgetLineView {
+function toView(line: BudgetLineRecord, expenses: BudgetExpenseRecord[], pending: BudgetExpenseRecord[]): BudgetLineView {
   return {
     id: line.id, code: line.code, category: line.category, description: line.description, donorName: line.donorName, currency: line.currency,
     position: budgetPosition(line.amountMinor, expenses.map((e) => ({ date: e.expenseDate, amountMinor: e.amountMinor }))),
     expenses: expenses.map((e) => ({ id: e.id, date: e.expenseDate, amountMinor: e.amountMinor, description: e.description })).sort((a, b) => a.date.localeCompare(b.date)),
+    waiting: pending.map((e) => ({ id: e.id, date: e.expenseDate, amountMinor: e.amountMinor, description: e.description })).sort((a, b) => a.date.localeCompare(b.date)),
   };
 }
 

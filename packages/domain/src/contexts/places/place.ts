@@ -37,6 +37,8 @@ export interface PlaceRecord {
   aliases: string[];
   /** The organisation's own code (a P-code, a facility id); never required. */
   code?: string;
+  /** A place people go to for a service (clinic, school, water point). Optional: absent means not marked. */
+  facility?: boolean;
   archived: boolean;
 }
 

@@ -74,6 +74,9 @@ export function PlanItemBudget({ itemId, lines, canManage, canSpend, today }: { 
                 ))}
               </ul>
             )}
+            {l.waiting.length > 0 && (
+              <p className="text-xs text-slate-500">Waiting for approval: {l.waiting.map((w) => `${formatMinor(w.amountMinor, l.currency)}${w.description ? ` (${w.description})` : ""}`).join(", ")}. Counts as spent once approved under Finance.</p>
+            )}
             {canSpend && expenseFor !== l.id && <Button size="sm" variant="secondary" onClick={() => { setExpenseFor(l.id); setExpDate(today); }}>Add an expense</Button>}
             {canSpend && expenseFor === l.id && (
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr_1fr_auto] sm:items-end">

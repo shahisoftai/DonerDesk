@@ -9,7 +9,7 @@ function placeFrom(row: Row): StoredPlace {
     id: row.id, tenantId: TenantId.create(row.tenantId), name: row.name, kind: row.kind === "POINT" ? "POINT" : "AREA",
     adminLevel: row.adminLevel as StoredPlace["adminLevel"], ...(row.parentId ? { parentId: row.parentId } : {}),
     ...(row.country ? { country: row.country } : {}), ...(row.latitude !== null && row.longitude !== null ? { latitude: row.latitude, longitude: row.longitude } : {}),
-    aliases: row.aliases, ...(row.code ? { code: row.code } : {}), archived: row.archivedAt !== null,
+    aliases: row.aliases, ...(row.code ? { code: row.code } : {}), ...(row.facility ? { facility: true } : {}), archived: row.archivedAt !== null,
     createdById: row.createdById, ...(row.archivedAt ? { archivedAt: row.archivedAt } : {}),
   };
 }
@@ -34,7 +34,7 @@ export class PrismaPlaceRepository implements IPlaceRepository {
     await this.prisma.place.createMany({
       data: places.map((p) => ({
         id: p.id, tenantId: p.tenantId.toString(), name: p.name, kind: p.kind, adminLevel: p.adminLevel, parentId: p.parentId ?? null,
-        country: p.country ?? null, latitude: p.latitude ?? null, longitude: p.longitude ?? null, aliases: p.aliases, code: p.code ?? null, createdById: p.createdById,
+        country: p.country ?? null, latitude: p.latitude ?? null, longitude: p.longitude ?? null, aliases: p.aliases, code: p.code ?? null, facility: p.facility ?? false, createdById: p.createdById,
       })),
     });
     return ok(undefined);
@@ -46,7 +46,7 @@ export class PrismaPlaceRepository implements IPlaceRepository {
       where: { id: place.id, tenantId: place.tenantId.toString() },
       data: {
         name: place.name, kind: place.kind, adminLevel: place.adminLevel, parentId: place.parentId ?? null, country: place.country ?? null,
-        latitude: place.latitude ?? null, longitude: place.longitude ?? null, aliases: place.aliases, code: place.code ?? null,
+        latitude: place.latitude ?? null, longitude: place.longitude ?? null, aliases: place.aliases, code: place.code ?? null, facility: place.facility ?? false,
         archivedAt: place.archived ? place.archivedAt ?? new Date() : null,
       },
     });

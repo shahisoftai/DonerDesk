@@ -1,5 +1,5 @@
 import { TenantId, ok, type DashboardTemplate, type DashboardWidget, type Result } from "@donordesk/domain";
-import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
+import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, IHomePinRepository, StoredHomePin, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
 
 type DashboardRow = NonNullable<Awaited<ReturnType<PrismaClient["dashboard"]["findFirst"]>>>;
@@ -232,5 +232,25 @@ export class PrismaSavedReportRepository implements ISavedReportRepository {
   async listForProject(tenantId: TenantId, projectId: string, ownerId: string): Promise<Result<StoredReport[]>> {
     const rows = await this.prisma.savedReport.findMany({ where: { tenantId: tenantId.toString(), projectId, OR: [{ scope: "PROJECT" }, { scope: "MINE", ownerId }] }, orderBy: { updatedAt: "desc" } });
     return ok(rows.map(reportFrom));
+  }
+}
+
+export class PrismaHomePinRepository implements IHomePinRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+  async create(p: StoredHomePin): Promise<Result<void>> {
+    await this.prisma.homePin.create({ data: { id: p.id, tenantId: p.tenantId.toString(), userId: p.userId, kind: p.kind, ref: p.ref, position: p.position } });
+    return ok(undefined);
+  }
+  async delete(id: string, tenantId: TenantId, userId: string): Promise<Result<void>> {
+    await this.prisma.homePin.deleteMany({ where: { id, tenantId: tenantId.toString(), userId } });
+    return ok(undefined);
+  }
+  async listForUser(tenantId: TenantId, userId: string): Promise<Result<StoredHomePin[]>> {
+    const rows = await this.prisma.homePin.findMany({ where: { tenantId: tenantId.toString(), userId }, orderBy: [{ position: "asc" }, { createdAt: "asc" }] });
+    return ok(rows.map((r) => ({ id: r.id, tenantId: TenantId.create(r.tenantId), userId: r.userId, kind: r.kind, ref: r.ref, position: r.position, createdAt: r.createdAt })));
+  }
+  async setOrder(tenantId: TenantId, userId: string, orderedIds: string[]): Promise<Result<void>> {
+    await this.prisma.$transaction(orderedIds.map((id, i) => this.prisma.homePin.updateMany({ where: { id, tenantId: tenantId.toString(), userId }, data: { position: i } })));
+    return ok(undefined);
   }
 }

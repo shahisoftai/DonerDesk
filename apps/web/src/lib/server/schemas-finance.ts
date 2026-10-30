@@ -8,6 +8,7 @@ export const FundingSourceListSchema = z.object({ sources: z.array(z.object({ id
 export type FundingSourceItem = z.infer<typeof FundingSourceListSchema>["sources"][number];
 export const BudgetCategoryListSchema = z.object({ categories: z.array(z.object({ id: z.string(), code: z.string(), label: z.string(), archived: z.boolean() })) });
 export const RatesSchema = z.object({
+  separateApprover: z.boolean().default(false),
   primaryCurrency: z.string(), localCurrency: z.string().nullable(),
   rates: z.array(z.object({ id: z.string(), from: z.string(), to: z.string(), rate: z.string(), effectiveOn: z.string(), source: z.string() })),
 });
@@ -21,6 +22,7 @@ export const ProjectFinanceSchema = z.object({
   register: z.array(z.object({
     id: z.string(), date: z.string(), kind: z.enum(["EXPENSE", "DISBURSEMENT"]), memo: z.string(), amount: Money, balanceMinor: z.number(), ageDays: z.number(),
     status: z.string(), vendor: z.string().optional(), sourceId: z.string().optional(), hasEvidence: z.boolean().optional(), budgetLineId: z.string().optional(), canDecide: z.boolean(),
+    canEdit: z.boolean().default(false), evidenceId: z.string().optional(), enteredByMe: z.boolean().default(false),
   })),
   totals: z.object({ spent: z.array(Money), disbursed: z.array(Money), pending: z.array(Money), rejectedCount: z.number(), outstandingAdvances: z.array(Money), unclassifiedExpenses: z.number(), withoutEvidence: z.number() }),
   advances: z.array(z.object({
@@ -34,6 +36,8 @@ export const ProjectFinanceSchema = z.object({
   })),
   burn: z.object({ spentPercent: z.number().nullable(), timeElapsedPercent: z.number().nullable(), gapPoints: z.number().nullable() }).nullable(),
   sources: z.array(z.object({ id: z.string(), name: z.string(), ownFunding: z.boolean(), archived: z.boolean() })),
+  evidence: z.array(z.object({ id: z.string(), name: z.string() })).default([]),
+  separateApprover: z.boolean().default(false),
 });
 export type ProjectFinance = z.infer<typeof ProjectFinanceSchema>;
 

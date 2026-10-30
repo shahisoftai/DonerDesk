@@ -21,3 +21,7 @@ export const PayDeliverableSchema = z.object({ on: day });
 export const AddAdvanceSchema = z.object({ heldBy: text(160), givenOn: day, amount, currency, note: text(300).optional() });
 export const AccountForAdvanceSchema = z.object({ date: day, amount, currency, note: text(300).optional() });
 export const ImportRegisterSheetSchema = z.object({ text: z.string().max(2_000_000), apply: z.boolean() });
+
+export const UpdateDraftExpenseSchema = AddRegisterExpenseSchema;
+export const UpdateDraftDisbursementSchema = AddDisbursementSchema;
+export const SetSeparateApproverSchema = z.object({ on: z.boolean() });

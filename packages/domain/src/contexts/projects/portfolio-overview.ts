@@ -10,6 +10,7 @@ export interface PortfolioProjectFacts {
   title: string;
   donorName: string;
   country: string;
+  sector?: string;
   status: string;
   health: { band: HealthBand; label: string; reasons: string[]; lateActivities: number; valuesOverdue: number };
   risks: ReadonlyArray<{ status: "OPEN" | "CLOSED"; seriousness: "HIGH" | "MEDIUM" | "LOW"; reviewBy?: PlainDate | undefined }>;
@@ -22,6 +23,8 @@ export interface PortfolioRow {
   donorName: string;
   country: string;
   status: string;
+  /** The project's sector as recorded (empty when none). */
+  sector: string;
   delivery: { band: HealthBand; label: string; reason: string | null; lateActivities: number; valuesOverdue: number };
   risks: { open: number; high: number; reviewOverdue: number };
   reporting: { periodId: string; deadline: PlainDate; daysUntil: number; status: string; readinessScore: number } | null;
@@ -42,6 +45,7 @@ export function buildPortfolioRow(facts: PortfolioProjectFacts, today: PlainDate
     donorName: facts.donorName,
     country: facts.country,
     status: facts.status,
+    sector: facts.sector ?? "",
     delivery: {
       band: facts.health.band,
       label: facts.health.label,

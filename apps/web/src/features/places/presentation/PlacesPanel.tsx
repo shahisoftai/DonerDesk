@@ -22,10 +22,11 @@ interface Draft {
   parentId: string;
   aliases: string;
   code: string;
+  facility: boolean;
   latitude: string;
   longitude: string;
 }
-const EMPTY: Draft = { name: "", adminLevel: "2", parentId: "", aliases: "", code: "", latitude: "", longitude: "" };
+const EMPTY: Draft = { name: "", adminLevel: "2", parentId: "", aliases: "", code: "", facility: false, latitude: "", longitude: "" };
 
 const depthOf = (place: PlaceItem) => Math.max(0, place.path.split(" › ").length - 1);
 
@@ -43,12 +44,13 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
   const [query, setQuery] = useState("");
   const [levelFilter, setLevelFilter] = useState<number | null>(null);
   const [pinnedOnly, setPinnedOnly] = useState(false);
+  const [facilitiesOnly, setFacilitiesOnly] = useState(false);
   const [columns, setColumns] = useState<readonly PlaceColumn[]>(DEFAULT_PLACE_COLUMNS);
   const [inside, setInside] = useState<string | null>(null);
 
   const live = useMemo(() => places.filter((p) => !p.archived), [places]);
   const base = useMemo(() => (showRetired ? places : live), [places, live, showRetired]);
-  const shown = useMemo(() => filterPlaces(base, { query, level: levelFilter, pinnedOnly }), [base, query, levelFilter, pinnedOnly]);
+  const shown = useMemo(() => filterPlaces(base, { query, level: levelFilter, pinnedOnly, facilitiesOnly }), [base, query, levelFilter, pinnedOnly, facilitiesOnly]);
   const levelLabel = (l: number) => PLACE_LEVEL_LABEL[l] ?? String(l);
   const levelsPresent = useMemo(() => [...new Set(places.map((p) => p.adminLevel))].sort((a, b) => a - b), [places]);
   const retiredCount = places.length - live.length;
@@ -86,6 +88,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
         ...(draft.parentId ? { parentId: draft.parentId } : {}),
         aliases: draft.aliases.split(",").map((a) => a.trim()).filter(Boolean),
         ...(draft.code.trim() ? { code: draft.code.trim() } : {}),
+        ...(draft.facility ? { facility: true } : {}),
         ...(draft.latitude.trim() !== "" ? { latitude: Number(draft.latitude) } : {}),
         ...(draft.longitude.trim() !== "" ? { longitude: Number(draft.longitude) } : {}),
       }),
@@ -178,6 +181,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
             <Field label={C.code}>
               <Input value={draft.code} onChange={(e) => set("code", e.target.value)} disabled={busy} />
             </Field>
+            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={draft.facility} onChange={(e) => set("facility", e.target.checked)} disabled={busy} />A facility: a clinic, school, water point or other service site</label>
             <div className="grid grid-cols-2 gap-3">
               <Field label={`${C.pin}: ${C.latitude}`} error={add.fields?.latitude?.[0]}>
                 <Input inputMode="decimal" value={draft.latitude} onChange={(e) => set("latitude", e.target.value)} disabled={busy} />
@@ -214,6 +218,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
             {levelsPresent.map((l) => <option key={l} value={l}>{levelLabel(l)}</option>)}
           </Select>
           <label className="flex items-center gap-1"><input type="checkbox" checked={pinnedOnly} onChange={(e) => setPinnedOnly(e.target.checked)} /> With a pin</label>
+          <label className="flex items-center gap-1"><input type="checkbox" checked={facilitiesOnly} onChange={(e) => setFacilitiesOnly(e.target.checked)} /> Facilities only</label>
           <details className="relative">
             <summary className="cursor-pointer select-none">Columns</summary>
             <div className="absolute z-10 mt-1 space-y-1 rounded-lg border bg-white p-2 shadow dark:bg-slate-900">

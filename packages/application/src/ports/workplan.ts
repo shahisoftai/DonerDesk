@@ -153,6 +153,8 @@ export interface IBudgetExpenseWriter {
 /** Reading the expenses booked against lines. */
 export interface IBudgetExpenseReader {
   findExpensesByLines(lineIds: string[], tenantId: TenantId): Promise<Result<BudgetExpenseRecord[]>>;
+  /** Entered but not yet approved (the finance register decides); not spending yet. */
+  findPendingExpensesByLines(lineIds: string[], tenantId: TenantId): Promise<Result<BudgetExpenseRecord[]>>;
 }
 /**
  * The whole budget store, for the class that implements it. A handler never asks for this: it names only the roles it uses

@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
-import { TenantId, ok, type Result } from "@donordesk/domain";
+import { TenantId, ok, type Amount, type Result } from "@donordesk/domain";
 import type {
   Decision, FinanceSettings, IAdvanceRepository, IBudgetCategoryRepository, ICurrencyRateRepository, IDeliverableRepository, IDisbursementRepository, IFinanceSettingsRepository,
   IFundingSourceRepository, IProjectFundingRepository, IRegisterExpenseRepository, StoredAdvance, StoredBudgetCategory, StoredCurrencyRate, StoredDeliverable, StoredDisbursement,
@@ -53,6 +53,10 @@ export class PrismaDisbursementRepository implements IDisbursementRepository {
   async listForProjects(projectIds: string[], tenantId: TenantId): Promise<Result<StoredDisbursement[]>> { return ok(projectIds.length === 0 ? [] : (await this.prisma.disbursement.findMany({ where: { projectId: { in: projectIds }, tenantId: tenantId.toString() } })).map(disbFrom)); }
   async listByProject(projectId: string, tenantId: TenantId): Promise<Result<StoredDisbursement[]>> { return ok((await this.prisma.disbursement.findMany({ where: { projectId, tenantId: tenantId.toString() }, orderBy: [{ paidOn: "asc" }, { id: "asc" }] })).map(disbFrom)); }
   async findById(id: string, tenantId: TenantId): Promise<Result<StoredDisbursement | null>> { const r = await this.prisma.disbursement.findFirst({ where: { id, tenantId: tenantId.toString() } }); return ok(r ? disbFrom(r) : null); }
+  async updateDraft(id: string, tenantId: TenantId, p: { fundingSourceId: string; date: string; amount: Amount; memo: string }): Promise<Result<boolean>> {
+    const done = await this.prisma.disbursement.updateMany({ where: { id, tenantId: tenantId.toString(), status: "DRAFT" }, data: { fundingSourceId: p.fundingSourceId, paidOn: asDate(p.date), amountMinor: big(p.amount.minor), currency: p.amount.currency, memo: p.memo } });
+    return ok(done.count > 0);
+  }
   async create(d: StoredDisbursement): Promise<Result<void>> { await this.prisma.disbursement.create({ data: { id: d.id, tenantId: d.tenantId.toString(), projectId: d.projectId, fundingSourceId: d.fundingSourceId, paidOn: asDate(d.date), amountMinor: big(d.amount.minor), currency: d.amount.currency, memo: d.memo, status: d.status, createdById: d.createdById } }); return ok(undefined); }
   async decide(id: string, tenantId: TenantId, x: Decision): Promise<Result<boolean>> {
     const done = await this.prisma.disbursement.updateMany({ where: { id, tenantId: tenantId.toString(), status: "DRAFT" }, data: { status: x.status, decidedById: x.byId, decidedAt: x.at, decisionNote: x.note || null } });
@@ -66,9 +70,9 @@ export class PrismaRegisterExpenseRepository implements IRegisterExpenseReposito
     const lines = await this.prisma.budgetLine.findMany({ where: { projectId, tenantId }, select: { id: true, currency: true } });
     return new Map(lines.map((l) => [l.id, l.currency]));
   }
-  private from(r: { id: string; tenantId: string; projectId: string; budgetLineId: string; expenseDate: Date; amountMinor: number; currency: string | null; description: string; vendor: string; fundingSourceId: string | null; evidenceId: string | null; status: string; decidedById: string | null; decidedAt: Date | null; decisionNote: string | null; createdById: string }, lineCurrency: string): StoredRegisterExpense {
+  private from(r: { id: string; tenantId: string; projectId: string; budgetLineId: string; expenseDate: Date; amountMinor: bigint; currency: string | null; description: string; vendor: string; fundingSourceId: string | null; evidenceId: string | null; status: string; decidedById: string | null; decidedAt: Date | null; decisionNote: string | null; createdById: string }, lineCurrency: string): StoredRegisterExpense {
     return {
-      id: r.id, tenantId: TenantId.create(r.tenantId), projectId: r.projectId, budgetLineId: r.budgetLineId, date: day(r.expenseDate), amount: { minor: r.amountMinor, currency: r.currency ?? lineCurrency },
+      id: r.id, tenantId: TenantId.create(r.tenantId), projectId: r.projectId, budgetLineId: r.budgetLineId, date: day(r.expenseDate), amount: { minor: Number(r.amountMinor), currency: r.currency ?? lineCurrency },
       vendor: r.vendor, memo: r.description, ...(r.fundingSourceId ? { fundingSourceId: r.fundingSourceId } : {}), ...(r.evidenceId ? { evidenceId: r.evidenceId } : {}), status: status(r.status),
       ...(r.decidedById ? { decidedById: r.decidedById } : {}), ...(r.decidedAt ? { decidedAt: r.decidedAt } : {}), ...(r.decisionNote ? { decisionNote: r.decisionNote } : {}), createdById: r.createdById,
     };
@@ -93,10 +97,14 @@ export class PrismaRegisterExpenseRepository implements IRegisterExpenseReposito
   }
   async create(e: StoredRegisterExpense): Promise<Result<void>> {
     await this.prisma.budgetExpense.create({ data: {
-      id: e.id, tenantId: e.tenantId.toString(), projectId: e.projectId, budgetLineId: e.budgetLineId, expenseDate: asDate(e.date), amountMinor: e.amount.minor, description: e.memo, vendor: e.vendor, currency: e.amount.currency,
+      id: e.id, tenantId: e.tenantId.toString(), projectId: e.projectId, budgetLineId: e.budgetLineId, expenseDate: asDate(e.date), amountMinor: big(e.amount.minor), description: e.memo, vendor: e.vendor, currency: e.amount.currency,
       fundingSourceId: e.fundingSourceId ?? null, evidenceId: e.evidenceId ?? null, status: e.status, createdById: e.createdById,
     } });
     return ok(undefined);
+  }
+  async updateDraft(id: string, tenantId: TenantId, p: { date: string; amount: Amount; vendor: string; memo: string; fundingSourceId: string | null; evidenceId: string | null }): Promise<Result<boolean>> {
+    const done = await this.prisma.budgetExpense.updateMany({ where: { id, tenantId: tenantId.toString(), status: "DRAFT" }, data: { expenseDate: asDate(p.date), amountMinor: big(p.amount.minor), currency: p.amount.currency, vendor: p.vendor, description: p.memo, fundingSourceId: p.fundingSourceId, evidenceId: p.evidenceId } });
+    return ok(done.count > 0);
   }
   async decide(id: string, tenantId: TenantId, x: Decision): Promise<Result<boolean>> {
     const done = await this.prisma.budgetExpense.updateMany({ where: { id, tenantId: tenantId.toString(), status: "DRAFT" }, data: { status: x.status, decidedById: x.byId, decidedAt: x.at, decisionNote: x.note || null } });
@@ -148,8 +156,9 @@ export class PrismaCurrencyRateRepository implements ICurrencyRateRepository {
 export class PrismaFinanceSettingsRepository implements IFinanceSettingsRepository {
   constructor(private readonly prisma: PrismaClient) {}
   async get(tenantId: TenantId): Promise<Result<FinanceSettings>> {
-    const o = await this.prisma.organization.findFirst({ where: { tenantId: tenantId.toString() }, select: { primaryCurrency: true, localCurrency: true } });
-    return ok({ primaryCurrency: o?.primaryCurrency ?? "USD", ...(o?.localCurrency ? { localCurrency: o.localCurrency } : {}) });
+    const o = await this.prisma.organization.findFirst({ where: { tenantId: tenantId.toString() }, select: { primaryCurrency: true, localCurrency: true, financeSeparateApprover: true } });
+    return ok({ primaryCurrency: o?.primaryCurrency ?? "USD", separateApprover: o?.financeSeparateApprover ?? false, ...(o?.localCurrency ? { localCurrency: o.localCurrency } : {}) });
   }
-  async set(tenantId: TenantId, s: FinanceSettings): Promise<Result<void>> { await this.prisma.organization.updateMany({ where: { tenantId: tenantId.toString() }, data: { primaryCurrency: s.primaryCurrency, localCurrency: s.localCurrency ?? null } }); return ok(undefined); }
+  async setSeparateApprover(tenantId: TenantId, on: boolean): Promise<Result<void>> { await this.prisma.organization.updateMany({ where: { tenantId: tenantId.toString() }, data: { financeSeparateApprover: on } }); return ok(undefined); }
+  async set(tenantId: TenantId, s: { primaryCurrency: string; localCurrency?: string }): Promise<Result<void>> { await this.prisma.organization.updateMany({ where: { tenantId: tenantId.toString() }, data: { primaryCurrency: s.primaryCurrency, localCurrency: s.localCurrency ?? null } }); return ok(undefined); }
 }

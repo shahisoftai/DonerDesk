@@ -30,6 +30,7 @@ function world() {
     findLinesByProject: async (p) => ok([...lines.values()].filter((l) => l.projectId === p)),
     addExpense: async (e) => (expenses.push(e), ok(undefined)),
     findExpensesByLines: async (ids2) => ok(expenses.filter((e) => ids2.includes(e.budgetLineId))),
+    findPendingExpensesByLines: async () => ok([]),
   };
   const auditLogger = { record: async (e) => void audit.push(e) };
   const access = new PlanAccess(itemRepo);

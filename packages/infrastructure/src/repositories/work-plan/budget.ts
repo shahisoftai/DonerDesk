@@ -9,7 +9,7 @@ export class PrismaBudgetRepository implements IBudgetRepository {
 
   async addLine(l: BudgetLineRecord): Promise<Result<void, DomainError>> {
     await this.prisma.budgetLine.create({
-      data: { id: l.id, tenantId: l.tenantId, projectId: l.projectId, plannedActivityId: l.plannedActivityId, code: l.code, category: l.category, description: l.description, donorName: l.donorName, currency: l.currency, amountMinor: l.amountMinor, createdById: l.createdById, createdAt: l.createdAt },
+      data: { id: l.id, tenantId: l.tenantId, projectId: l.projectId, plannedActivityId: l.plannedActivityId, code: l.code, category: l.category, description: l.description, donorName: l.donorName, currency: l.currency, amountMinor: BigInt(l.amountMinor), createdById: l.createdById, createdAt: l.createdAt },
     });
     return ok(undefined);
   }
@@ -35,7 +35,7 @@ export class PrismaBudgetRepository implements IBudgetRepository {
 
   async addExpense(e: BudgetExpenseRecord): Promise<Result<void, DomainError>> {
     await this.prisma.budgetExpense.create({
-      data: { id: e.id, tenantId: e.tenantId, projectId: e.projectId, budgetLineId: e.budgetLineId, expenseDate: new Date(`${e.expenseDate}T00:00:00.000Z`), amountMinor: e.amountMinor, description: e.description, createdById: e.createdById, createdAt: e.createdAt },
+      data: { id: e.id, tenantId: e.tenantId, projectId: e.projectId, budgetLineId: e.budgetLineId, expenseDate: new Date(`${e.expenseDate}T00:00:00.000Z`), amountMinor: BigInt(e.amountMinor), status: "DRAFT", description: e.description, createdById: e.createdById, createdAt: e.createdAt },
     });
     return ok(undefined);
   }
@@ -46,11 +46,21 @@ export class PrismaBudgetRepository implements IBudgetRepository {
     const rows = await this.prisma.budgetExpense.findMany({ where: { tenantId: tenantId.toString(), budgetLineId: { in: lineIds }, status: "APPROVED" } });
     return ok(rows.map((r) => ({
       id: r.id, tenantId: r.tenantId, projectId: r.projectId, budgetLineId: r.budgetLineId, expenseDate: r.expenseDate.toISOString().slice(0, 10),
-      amountMinor: r.amountMinor, description: r.description, createdById: r.createdById, createdAt: r.createdAt,
+      amountMinor: Number(r.amountMinor), description: r.description, createdById: r.createdById, createdAt: r.createdAt,
     })));
   }
 
-  private static line(r: { id: string; tenantId: string; projectId: string; plannedActivityId: string; code: string; category: string; description: string; donorName: string; currency: string; amountMinor: number; createdById: string; createdAt: Date }): BudgetLineRecord {
-    return { id: r.id, tenantId: r.tenantId, projectId: r.projectId, plannedActivityId: r.plannedActivityId, code: r.code, category: r.category, description: r.description, donorName: r.donorName, currency: r.currency, amountMinor: r.amountMinor, createdById: r.createdById, createdAt: r.createdAt };
+  /** Expenses entered but not yet approved: shown to the person who entered them, never counted as spent. */
+  async findPendingExpensesByLines(lineIds: string[], tenantId: TenantId): Promise<Result<BudgetExpenseRecord[], DomainError>> {
+    if (lineIds.length === 0) return ok([]);
+    const rows = await this.prisma.budgetExpense.findMany({ where: { tenantId: tenantId.toString(), budgetLineId: { in: lineIds }, status: "DRAFT" } });
+    return ok(rows.map((r) => ({
+      id: r.id, tenantId: r.tenantId, projectId: r.projectId, budgetLineId: r.budgetLineId, expenseDate: r.expenseDate.toISOString().slice(0, 10),
+      amountMinor: Number(r.amountMinor), description: r.description, createdById: r.createdById, createdAt: r.createdAt,
+    })));
+  }
+
+  private static line(r: { id: string; tenantId: string; projectId: string; plannedActivityId: string; code: string; category: string; description: string; donorName: string; currency: string; amountMinor: bigint; createdById: string; createdAt: Date }): BudgetLineRecord {
+    return { id: r.id, tenantId: r.tenantId, projectId: r.projectId, plannedActivityId: r.plannedActivityId, code: r.code, category: r.category, description: r.description, donorName: r.donorName, currency: r.currency, amountMinor: Number(r.amountMinor), createdById: r.createdById, createdAt: r.createdAt };
   }
 }

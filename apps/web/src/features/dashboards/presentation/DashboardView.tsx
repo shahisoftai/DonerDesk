@@ -11,6 +11,7 @@ import type { ChartDrawing, DashboardLinkView, DashboardView as DashboardData } 
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PinToHomeButton } from "@/features/home-pins/presentation/PinToHomeButton";
 import { DashboardCanvas } from "./DashboardCanvas";
 import { nextPeriodFilter } from "../domain/cross-filter";
 import { useTvMode } from "./use-tv-mode";
@@ -126,6 +127,7 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
               {periodChoices.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select>
           )}
+          {!editing && <PinToHomeButton dashboardId={dashboard.id} />}
           {!editing && <Button variant="secondary" onClick={tv.toggle}>{tv.active ? "Leave full screen" : "Full screen"}</Button>}
           {!editing && <Button variant="secondary" onClick={() => window.print()}>Print</Button>}
         </div>

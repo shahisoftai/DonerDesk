@@ -107,3 +107,13 @@ export interface ISavedReportRepository {
   findById(id: string, tenantId: TenantId): Promise<Result<StoredReport | null>>;
   listForProject(tenantId: TenantId, projectId: string, ownerId: string): Promise<Result<StoredReport[]>>;
 }
+
+export interface StoredHomePin { id: string; tenantId: TenantId; userId: string; kind: string; ref: string; position: number; createdAt: Date }
+/** A person's own pins. Every call is scoped to the person: nothing reads or changes another's. */
+export interface IHomePinRepository {
+  create(p: StoredHomePin): Promise<Result<void>>;
+  delete(id: string, tenantId: TenantId, userId: string): Promise<Result<void>>;
+  listForUser(tenantId: TenantId, userId: string): Promise<Result<StoredHomePin[]>>;
+  /** Sets the position of the person's own pins to their place in `orderedIds`. */
+  setOrder(tenantId: TenantId, userId: string, orderedIds: string[]): Promise<Result<void>>;
+}

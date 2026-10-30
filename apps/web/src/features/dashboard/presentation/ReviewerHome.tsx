@@ -9,6 +9,7 @@ import { workItemHref, workItemMeta, workItemTitle } from "@/features/work-items
 import { Badge } from "@/components/data/Badge";
 import { InlineError } from "@/components/feedback/PageState";
 import { needsYouItems, reportsDueWithin, upcomingReports } from "../domain/home-derive";
+import { HomePinsPanel } from "@/features/home-pins/presentation/HomePinsPanel";
 import { BookmarksPanel } from "@/features/bookmarks/presentation/BookmarksPanel";
 import { HomeHeader, NeedsYouStrip, NotificationsList, Panel, QuickLinks, Tile, type QuickLink } from "./HomeParts";
 import { DeadlineTiles, StatList } from "./HomeWidgets";
@@ -71,7 +72,8 @@ export async function ReviewerHome({ ctx, variant }: { ctx: Ctx; variant: "GRANT
       />
 
       <NeedsYouStrip items={needs} />
-      <BookmarksPanel />
+      <HomePinsPanel />
+<BookmarksPanel />
 
       {!overview.ok && <InlineError title={overview.error.message} referenceId={overview.error.referenceId} />}
 

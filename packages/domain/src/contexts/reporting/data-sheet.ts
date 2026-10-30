@@ -76,6 +76,8 @@ export interface DataSheet {
   indicators: DataSheetIndicator[];
   cells: DataSheetCell[];
   finance: DataSheetFinanceRow[];
+  /** Per-period finance from the finance register (approved figures, one currency): used by charts for a period with no period summary. Never sent through a share link. */
+  registerFinance?: DataSheetFinanceRow[] | undefined;
 }
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
