@@ -1,5 +1,5 @@
 import { TenantId, ok, type DashboardTemplate, type DashboardWidget, type Result } from "@donordesk/domain";
-import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, IHomePinRepository, StoredHomePin, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
+import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, IHomePinRepository, StoredHomePin, IMapOverlayRepository, StoredMapOverlay, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
 
 type DashboardRow = NonNullable<Awaited<ReturnType<PrismaClient["dashboard"]["findFirst"]>>>;
@@ -251,6 +251,27 @@ export class PrismaHomePinRepository implements IHomePinRepository {
   }
   async setOrder(tenantId: TenantId, userId: string, orderedIds: string[]): Promise<Result<void>> {
     await this.prisma.$transaction(orderedIds.map((id, i) => this.prisma.homePin.updateMany({ where: { id, tenantId: tenantId.toString(), userId }, data: { position: i } })));
+    return ok(undefined);
+  }
+}
+
+export class PrismaMapOverlayRepository implements IMapOverlayRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+  private from = (r: { id: string; tenantId: string; name: string; storageKey: string; sizeBytes: number; featureCount: number; uploadedById: string; createdAt: Date }): StoredMapOverlay =>
+    ({ id: r.id, tenantId: TenantId.create(r.tenantId), name: r.name, storageKey: r.storageKey, sizeBytes: r.sizeBytes, featureCount: r.featureCount, uploadedById: r.uploadedById, createdAt: r.createdAt });
+  async create(o: StoredMapOverlay): Promise<Result<void>> {
+    await this.prisma.mapOverlay.create({ data: { id: o.id, tenantId: o.tenantId.toString(), name: o.name, storageKey: o.storageKey, sizeBytes: o.sizeBytes, featureCount: o.featureCount, uploadedById: o.uploadedById } });
+    return ok(undefined);
+  }
+  async list(tenantId: TenantId): Promise<Result<StoredMapOverlay[]>> {
+    return ok((await this.prisma.mapOverlay.findMany({ where: { tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" } })).map(this.from));
+  }
+  async findById(id: string, tenantId: TenantId): Promise<Result<StoredMapOverlay | null>> {
+    const r = await this.prisma.mapOverlay.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    return ok(r ? this.from(r) : null);
+  }
+  async delete(id: string, tenantId: TenantId): Promise<Result<void>> {
+    await this.prisma.mapOverlay.deleteMany({ where: { id, tenantId: tenantId.toString() } });
     return ok(undefined);
   }
 }

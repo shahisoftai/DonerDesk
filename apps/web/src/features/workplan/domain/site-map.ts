@@ -175,6 +175,8 @@ export interface SiteMapItem {
   id: string;
   title: string;
   signal: DeliverySignal;
+  /** Said instead of the delivery label (the portfolio map names a project's delivery band, not an activity's state). */
+  label?: string;
 }
 
 export interface SiteMapPoint {
@@ -392,7 +394,7 @@ export function siteTooltip(params: unknown): string {
     lines.push(`<span style="color:#64748b">${escapeHtml([site.province, site.country].filter(Boolean).join(", "))}</span>`);
   }
   for (const item of site.items) {
-    lines.push(`${escapeHtml(item.title)} — ${DELIVERY_SIGNAL_LABEL[item.signal]}`);
+    lines.push(`${escapeHtml(item.title)} — ${escapeHtml(item.label ?? DELIVERY_SIGNAL_LABEL[item.signal])}`);
   }
   for (const risk of site.risks) {
     lines.push(`<span style="color:#b45309">${escapeHtml(risk)}</span>`);

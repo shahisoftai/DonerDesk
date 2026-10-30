@@ -117,3 +117,11 @@ export interface IHomePinRepository {
   /** Sets the position of the person's own pins to their place in `orderedIds`. */
   setOrder(tenantId: TenantId, userId: string, orderedIds: string[]): Promise<Result<void>>;
 }
+
+export interface StoredMapOverlay { id: string; tenantId: TenantId; name: string; storageKey: string; sizeBytes: number; featureCount: number; uploadedById: string; createdAt: Date }
+export interface IMapOverlayRepository {
+  create(o: StoredMapOverlay): Promise<Result<void>>;
+  list(tenantId: TenantId): Promise<Result<StoredMapOverlay[]>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<StoredMapOverlay | null>>;
+  delete(id: string, tenantId: TenantId): Promise<Result<void>>;
+}

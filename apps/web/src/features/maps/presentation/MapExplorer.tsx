@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { getPlaceResultsAction } from "@/lib/actions/places";
 import type { PlaceItem, PlaceResults } from "@/lib/server/schemas-places";
@@ -16,7 +16,8 @@ import { MapCanvas, type MapRegistration } from "./MapCanvas";
 import { LayerPanel } from "./LayerPanel";
 import { PlacePanel } from "./PlacePanel";
 import { PeriodSlider } from "./PeriodSlider";
-import { parseOverlay, type Overlay } from "../domain/overlay-layer";
+import { type Overlay } from "../domain/overlay-layer";
+import { OverlayPanel } from "./OverlayPanel";
 import { loadBoundaryFile, loadBoundaryManifest } from "@/lib/client/boundary-loader";
 import { attributionLine, fileFor, findCountry, levelsFor, type BoundaryManifest } from "../domain/boundary-sources";
 import { periodSteps } from "../domain/period-steps";
@@ -38,7 +39,6 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
   const [boundaries, setBoundaries] = useState<BoundaryManifest | null>(null);
   const [fine, setFine] = useState<NamedGeoCollection | null>(null);
   const [overlay, setOverlay] = useState<Overlay | null>(null);
-  const [overlayError, setOverlayError] = useState<string | null>(null);
   const [compare, setCompare] = useState(false);
   const [panels, setPanels] = useState<Array<{ label: string; results: PlaceResults }>>([]);
   const [error, setError] = useState<string | null>(null);
@@ -105,14 +105,10 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
   const panel = selected?.placeId ? placePanel(selected.placeId, places, results, indicatorId) : null;
   const canDrill = view.kind === "WORLD" && !!geo && !!selected && provincesOf(geo.admin1, selected.name) !== null;
 
-  async function loadOverlay(file: File | undefined) {
-    if (!file) return;
-    const parsed = parseOverlay(await file.text(), file.name);
-    if (!parsed.ok) { setOverlayError(parsed.reason); return; }
-    setOverlayError(null);
-    setOverlay(parsed.overlay);
-    setLayers((l) => (l.some((x) => x.id === "OVERLAY") ? l : [...l, OVERLAY_LAYER]));
-  }
+  const showOverlay = useCallback((o: Overlay | null) => {
+    setOverlay(o);
+    setLayers((l) => (o ? (l.some((x) => x.id === "OVERLAY") ? l : [...l, OVERLAY_LAYER]) : l.filter((x) => x.id !== "OVERLAY")));
+  }, []);
 
   function selectRegion(name: string) {
     setSelected({ name, placeId: placeForRegion(name, places, level)?.id ?? null });
@@ -182,14 +178,7 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
         </div>
         <div className="space-y-3" data-no-print>
           {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
-          {!compact && <div className="text-sm">
-            <label className="block font-medium">Add a GeoJSON file as a layer
-              <input type="file" accept=".geojson,.json,application/geo+json" className="mt-1 block w-full text-xs" onChange={(e) => void loadOverlay(e.target.files?.[0])} />
-            </label>
-            <p className="text-xs text-slate-500">Drawn for this visit only; nothing is saved.</p>
-            {overlayError && <p role="alert" className="text-xs text-danger-600">{overlayError}</p>}
-            {overlay && <button type="button" className="text-xs underline" onClick={() => { setOverlay(null); setLayers((l) => l.filter((x) => x.id !== "OVERLAY")); }}>Remove “{overlay.name}”</button>}
-          </div>}
+          {!compact && <OverlayPanel onOverlay={showOverlay} />}
           {selected && <PlacePanel panel={panel} name={selected.name} canDrill={canDrill} onDrill={() => { setView(drillInto(selected.name)); setSelected(null); }} onSelect={(id) => { const p = places.find((x) => x.id === id); if (p) setSelected({ name: p.name, placeId: p.id }); }} onClose={() => setSelected(null)} />}
         </div>
       </div>

@@ -11,7 +11,7 @@ export async function build(outfile) {
   await esbuild.build({
     entryPoints: [join(here, "main.tsx")],
     bundle: true, outfile, format: "iife", jsx: "automatic", platform: "browser", absWorkingDir: web, nodePaths: [join(web, "node_modules")],
-    alias: { "@/lib/actions/home-pins": join(here, "stubs/actions-home-pins.ts"), "@/lib/actions/dashboards": join(here, "stubs/actions-dashboards.ts"), "@/lib/client/boundary-loader": join(here, "stubs/boundary-loader.ts"), "@/lib/actions/map-widgets": join(here, "stubs/actions-maps.ts"), "@/lib/actions/places": join(here, "stubs/actions-maps.ts"), "next/navigation": join(here, "../entry-sheet/stubs/navigation.ts"), "next/link": join(here, "../entry-sheet/stubs/link.tsx"), "@": join(web, "src") },
+    alias: { "@/lib/actions/map-overlays": join(here, "stubs/actions-map-overlays.ts"), "@/lib/actions/home-pins": join(here, "stubs/actions-home-pins.ts"), "@/lib/actions/dashboards": join(here, "stubs/actions-dashboards.ts"), "@/lib/client/boundary-loader": join(here, "stubs/boundary-loader.ts"), "@/lib/actions/map-widgets": join(here, "stubs/actions-maps.ts"), "@/lib/actions/places": join(here, "stubs/actions-maps.ts"), "next/navigation": join(here, "../entry-sheet/stubs/navigation.ts"), "next/link": join(here, "../entry-sheet/stubs/link.tsx"), "@": join(web, "src") },
     define: { "process.env.NODE_ENV": '"development"' }, logLevel: "error",
   });
 }

@@ -142,3 +142,4 @@ export type SaveReportInput = z.infer<typeof SaveReportSchema>;
 
 export const AddHomePinSchema = z.object({ kind: z.string().max(20), ref: z.string().max(64) });
 export const MoveHomePinSchema = z.object({ to: z.number().int().min(0).max(50) });
+export const AddMapOverlaySchema = z.object({ name: z.string().trim().min(1).max(120), geojson: z.string().min(2).max(6_000_000) });

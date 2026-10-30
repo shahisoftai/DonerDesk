@@ -42,3 +42,5 @@ export * from "./core/exhaustive.js";
 export * from "./core/time-zone.js";
 
 export * from "./contexts/home/index.js";
+
+export * from "./contexts/identity/map-overlay.js";

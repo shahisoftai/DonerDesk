@@ -2,7 +2,7 @@
 
 import { layerState, type ExplorerLayer, type LayerKind } from "../domain/map-explorer";
 
-const LABEL: Record<LayerKind, string> = { FILL: "Results fill", SYMBOLS: "Place symbols", BOUNDARIES: "Boundaries", OVERLAY: "Your file" };
+const LABEL: Record<LayerKind, string> = { FILL: "Results fill", SYMBOLS: "Place symbols", BOUNDARIES: "Boundaries", OVERLAY: "Overlays" };
 
 /** Layer list: show/hide, opacity and order. Pure view over `ExplorerLayer[]`; every change is a callback. */
 export function LayerPanel({ layers, onToggle, onOpacity, onMove }: {

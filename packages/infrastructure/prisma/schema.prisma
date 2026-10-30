@@ -2360,6 +2360,20 @@ model Bookmark {
   @@index([tenantId, userId])
 }
 
+/// A context overlay the organisation keeps for its maps (Phase 35): rivers, roads, a camp outline. The GeoJSON lives in storage; ticked per map, never reported against.
+model MapOverlay {
+  id           String   @id
+  tenantId     String
+  name         String
+  storageKey   String
+  sizeBytes    Int
+  featureCount Int
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+}
+
 /// A person's own pinned tile on their Home (Phase 35.H4): a dashboard they can open. Stores a reference, never data; only the caller's rows are read or removed.
 model HomePin {
   id        String   @id

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { AddHomePinSchema, MoveHomePinSchema, AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
+import { AddMapOverlaySchema, AddHomePinSchema, MoveHomePinSchema, AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { createContainer, type Container } from "@donordesk/infrastructure";
 
 /** Dashboards of saved Data Center charts (Phase 33.8). Thin: validate, call one handler, throw its error; the rules are in the handlers. */
@@ -102,6 +102,30 @@ export async function registerChartDashboardRoutes(app: FastifyInstance) {
   });
   app.delete("/v1/saved-reports/:reportId", async (req) => {
     const r = await req.container.handlers.deleteSavedReport.handle(ctx(req), param(req, "reportId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // Map overlays: context layers (rivers, roads, a camp outline) the organisation keeps and ticks per map (Phase 35).
+  app.get("/v1/map-overlays", async (req) => {
+    const r = await req.container.handlers.listMapOverlays.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/map-overlays", { bodyLimit: 7_000_000 }, async (req, reply) => {
+    const r = await req.container.handlers.addMapOverlay.handle(ctx(req), AddMapOverlaySchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+  app.get("/v1/map-overlays/:overlayId/data", async (req, reply) => {
+    const r = await req.container.handlers.readMapOverlay.handle(ctx(req), param(req, "overlayId"));
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/json; charset=utf-8");
+    reply.header("cache-control", "private, no-store");
+    return reply.send(r.value);
+  });
+  app.delete("/v1/map-overlays/:overlayId", async (req) => {
+    const r = await req.container.handlers.removeMapOverlay.handle(ctx(req), param(req, "overlayId"));
     if (!r.ok) throw r.error;
     return { ok: true };
   });

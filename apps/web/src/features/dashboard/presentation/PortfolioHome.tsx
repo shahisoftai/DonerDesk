@@ -15,6 +15,8 @@ import { loadHomeInsights } from "../application/home-insights";
 import { DeadlineTiles, DeliverySparkline, PaceBar, PaceLegend, PipelineBoard, ResultsBars, RisksList, StatList } from "./HomeWidgets";
 import { HomePinsPanel } from "@/features/home-pins/presentation/HomePinsPanel";
 import { BookmarksPanel } from "@/features/bookmarks/presentation/BookmarksPanel";
+import { PortfolioMapPanel } from "./PortfolioMapPanel";
+import { loadPortfolioMap } from "../application/portfolio-map-read-model";
 import { FilterNote, ProjectBreakdown, type HomeFilter } from "./ProjectBreakdown";
 import { filterProjects } from "../domain/home-breakdown";
 import { HomeHeader, NeedsYouStrip, NotificationsList, Panel, QuickLinks, Tile, type QuickLink } from "./HomeParts";
@@ -37,7 +39,10 @@ export async function PortfolioHome({ ctx, variant, filter = {} }: { ctx: Ctx; v
   const today = new Date().toISOString().slice(0, 10);
   const liveIds = new Set((overview.ok ? overview.value.rows : []).map((r) => r.projectId));
   const liveProjects = (snapshot.projects.ok ? snapshot.projects.value ?? [] : []).filter((p) => liveIds.has(p.id));
-  const extra = await loadHomeInsights(ctx.token, liveProjects, today);
+  const [extra, portfolioMap] = await Promise.all([
+    loadHomeInsights(ctx.token, liveProjects, today),
+    overview.ok ? loadPortfolioMap(ctx.token, overview.value.rows.map((r) => ({ projectId: r.projectId, title: r.title, country: r.country, band: r.delivery.band }))) : Promise.resolve(null),
+  ]);
   const rows = overview.ok ? overview.value.rows : [];
   const shownRows = filterProjects(rows, filter);
   const totals = overview.ok ? overview.value.totals : null;
@@ -93,6 +98,8 @@ export async function PortfolioHome({ ctx, variant, filter = {} }: { ctx: Ctx; v
       )}
 
       {finance.ok && <HomeFinance f={finance.value} />}
+
+      {portfolioMap && rows.length > 0 && <Panel title="Where we work" href="/portfolio" linkLabel="Open portfolio →"><PortfolioMapPanel data={portfolioMap.data} total={portfolioMap.total} /></Panel>}
 
       {overview.ok && rows.length > 0 && (
         <Panel title="Projects by …" href="/portfolio" linkLabel="Open portfolio →"><ProjectBreakdown rows={rows} filter={filter} /></Panel>

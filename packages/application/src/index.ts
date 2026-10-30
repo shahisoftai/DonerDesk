@@ -374,3 +374,4 @@ export * from "./services/mcp-server.js";
 export * from "./use-cases/collection/connector-handlers.js";
 
 export * from "./use-cases/dashboards/home-pin-handlers.js";
+export * from "./use-cases/dashboards/map-overlay-handlers.js";

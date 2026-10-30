@@ -20,6 +20,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "SavedChart", field: "specJson" },
   { model: "Bookmark", field: "href" },
   { model: "HomePin", field: "ref" },
+  { model: "MapOverlay", field: "storageKey" },
   { model: "ProjectFunding", field: "amountMinor" },
   { model: "Disbursement", field: "status" },
   { model: "BudgetExpense", field: "status" },
