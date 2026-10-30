@@ -18,10 +18,11 @@ writeFileSync(join(out, "index.html"), '<!doctype html><html><head><meta charset
 const url = `file://${join(out, "index.html")}`;
 
 const browser = await chromium.launch();
-const page = await (await browser.newContext({ viewport: { width: 1300, height: 1000 } })).newPage();
+const page = await (await browser.newContext({ viewport: { width: 1300, height: 1000 }, acceptDownloads: true })).newPage();
 const errors = [];
 page.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
-page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 200)); });
+// The picture-making library reads the page's stylesheet over http; from a file:// page it says so. That is the harness, not the app.
+page.on("console", (m) => { if (m.type() === "error" && !/file:\/\/|Error inlining remote css/.test(m.text())) errors.push(m.text().slice(0, 200)); });
 const results = [];
 const check = async (name, fn) => { try { await fn(); results.push(`ok   ${name}`); } catch (e) { results.push(`FAIL ${name} :: ${String(e.message).split("\n").slice(0, 8).join(" ")}`); } };
 const tiles = () => page.getByTestId("metric-widget");
@@ -217,6 +218,63 @@ await check("an indicator tile with a colour is drawn in it, in white text; with
   assert.ok(green, `a green one is drawn in #15803d: ${JSON.stringify(styles)}`);
   assert.equal(green.fg, "rgb(255, 255, 255)");
   assert.match(await text(kpis.nth(styles.indexOf(green))), /420\s*children/);
+});
+
+await check("a section heading and a note can be added; a heading is drawn as a heading and is saved as '# text'", async () => {
+  await page.reload(); await tiles().first().waitFor();
+  await page.getByRole("button", { name: "Edit" }).click();
+  const form = page.getByRole("form", { name: "Add a note or heading" });
+  await form.getByLabel("Heading", { exact: true }).fill("Water and sanitation");
+  await form.getByRole("button", { name: "Add the heading" }).click();
+  await page.getByRole("heading", { name: "Water and sanitation" }).waitFor();
+  await form.getByLabel("Make it a section heading").uncheck();
+  await form.getByLabel("Note", { exact: true }).fill("Figures are to the end of the month.");
+  await form.getByRole("button", { name: "Add the note" }).click();
+  await page.getByTestId("text-widget").filter({ hasText: "Figures are to the end of the month." }).waitFor();
+  const before = await page.evaluate(() => window.__h.saves.length);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.waitForFunction((n) => window.__h.saves.length === n + 1, before);
+  const sent = (await page.evaluate((n) => window.__h.saves[n], before)).input;
+  const texts = sent.widgets.filter((w) => w.kind === "TEXT").map((w) => w.text);
+  assert.ok(texts.includes("# Water and sanitation") && texts.includes("Figures are to the end of the month."), JSON.stringify(texts));
+  const heading = sent.widgets.find((w) => w.text === "# Water and sanitation");
+  assert.deepEqual([heading.w, heading.h], [12, 2], "a heading is a thin full-width strip");
+});
+
+await check("a project list can be added with the three kinds of project, and is saved as its filters only", async () => {
+  await page.reload(); await tiles().first().waitFor();
+  await page.getByRole("button", { name: "Edit" }).click();
+  const form = page.getByRole("form", { name: "Add a project list" });
+  assert.deepEqual(await form.getByLabel("Which projects").locator("option").allTextContents(), ["All projects I can see", "Projects I am assigned to", "Projects I have bookmarked"]);
+  await form.getByLabel("Which projects").selectOption("BOOKMARKED");
+  await form.getByLabel("Status").selectOption("ACTIVE");
+  await form.getByRole("button", { name: "Add the list" }).click();
+  const before = await page.evaluate(() => window.__h.saves.length);
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.waitForFunction((n) => window.__h.saves.length === n + 1, before);
+  const sent = (await page.evaluate((n) => window.__h.saves[n], before)).input;
+  const list = sent.widgets.find((w) => w.kind === "PROJECT_LIST");
+  assert.deepEqual(list.projectList, { affiliation: "BOOKMARKED", status: "ACTIVE" });
+  assert.equal(list.spec, undefined);
+});
+
+await check("Download image makes a PNG of the dashboard with the date in its name", async () => {
+  await page.reload(); await tiles().first().waitFor();
+  const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), page.getByRole("button", { name: "Download image" }).click()]);
+  assert.match(download.suggestedFilename(), /^.+-\d{4}-\d{2}-\d{2}\.png$/);
+  const path = await download.path();
+  const { statSync } = await import("node:fs");
+  assert.ok(statSync(path).size > 2000, "the picture is not empty");
+});
+
+await check("an administrator chooses who sees an organisation dashboard on Home: nobody, everyone or chosen people", async () => {
+  await page.reload(); await tiles().first().waitFor();
+  await page.getByRole("button", { name: "Show on Home…" }).click();
+  await page.getByLabel("Chosen people").check();
+  assert.equal(await page.getByRole("button", { name: "Save", exact: true }).last().isDisabled(), true, "choosing people needs at least one person");
+  await page.getByLabel(/Amina/).check();
+  await page.getByRole("button", { name: "Save", exact: true }).last().click();
+  await page.getByText("Shown on the Home of 1 person.").waitFor();
 });
 
 await browser.close();

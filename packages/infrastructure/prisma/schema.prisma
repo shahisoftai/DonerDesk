@@ -2380,10 +2380,12 @@ model FeaturedDashboard {
   id            String   @id
   tenantId      String
   dashboardId   String
+  /// "*" = everyone; otherwise the id of the one person it is shown to.
+  audience      String   @default("*")
   createdById   String
   createdAt     DateTime @default(now())
 
-  @@unique([tenantId, dashboardId])
+  @@unique([tenantId, dashboardId, audience])
   @@index([tenantId])
 }
 

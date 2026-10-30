@@ -4,6 +4,7 @@ import type { IActivityUpdateRepository } from "../ports/activities.js";
 import type { IBudgetExpenseReader, IBudgetLineReader } from "../ports/workplan.js";
 import type { IPlaceRepository } from "../ports/places.js";
 import type { ILogframeRepository } from "../ports/logframe.js";
+import type { IBookmarkRepository } from "../ports/dashboards.js";
 import type { PlaceResultsDto } from "../use-cases/places/place-results.js";
 import type { WorkPlanRowDto } from "../use-cases/workplan/work-plan-row.js";
 
@@ -22,6 +23,8 @@ export interface IDatasetExtras {
   finance(ctx: AuthenticatedContext, projectId: string): Promise<MetricFinanceFigures | undefined>;
   /** The projects the caller can see, for a project-list tile; undefined when they cannot be read. */
   visibleProjects(ctx: AuthenticatedContext): Promise<ProjectListSource[] | undefined>;
+  /** The ids of the projects the caller has starred (their own bookmarks to a project page). */
+  bookmarkedProjectIds(ctx: AuthenticatedContext): Promise<Set<string>>;
 }
 
 export class DatasetExtrasService implements IDatasetExtras {
@@ -34,7 +37,17 @@ export class DatasetExtrasService implements IDatasetExtras {
     private readonly outputs?: Pick<ILogframeRepository, "findByProject">,
     private readonly projectFinance?: { handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<MetricFinanceFigures, DomainError>> },
     private readonly visible?: { for(ctx: AuthenticatedContext): Promise<Result<Project[], DomainError>> },
+    private readonly bookmarks?: Pick<IBookmarkRepository, "listForUser">,
   ) {}
+
+  async bookmarkedProjectIds(ctx: AuthenticatedContext): Promise<Set<string>> {
+    if (!this.bookmarks) return new Set();
+    const r = await this.bookmarks.listForUser(ctx.tenant.tenantId, ctx.tenant.userId);
+    if (!r.ok) return new Set();
+    const ids = new Set<string>();
+    for (const b of r.value) { const m = /^\/projects\/([^/?#]+)/.exec(b.href); if (m) ids.add(m[1]!); }
+    return ids;
+  }
 
   async visibleProjects(ctx: AuthenticatedContext): Promise<ProjectListSource[] | undefined> {
     if (!this.visible) return undefined;

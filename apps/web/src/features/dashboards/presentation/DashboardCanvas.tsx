@@ -7,6 +7,7 @@ import { DashboardChart } from "./DashboardChart";
 import { KpiTileView } from "./KpiTileView";
 import { MetricTileView } from "./MetricTileView";
 import { MapWidget } from "./MapWidget";
+import { TextBlock } from "./TextBlock";
 import { canEditInPlace } from "./EditWidgetPanel";
 
 const ROW_PX = 84;
@@ -70,7 +71,7 @@ export function DashboardCanvas({ widgets, charts, editing, onChange, labels, on
   }
 
   return (
-    <div ref={box} className="relative w-full" style={narrow ? undefined : { height: Math.max(gridRows(widgets), 4) * ROW_PX }}>
+    <div ref={box} data-dashboard-canvas id="dashboard-canvas" className="relative w-full" style={narrow ? undefined : { height: Math.max(gridRows(widgets), 4) * ROW_PX }}>
       {ordered.map((w) => {
         const drawing = charts.get(w.id);
         const style = narrow ? { height: w.h * ROW_PX } : { position: "absolute" as const, left: w.x * cell, top: w.y * ROW_PX, width: w.w * cell, height: w.h * ROW_PX };
@@ -91,11 +92,12 @@ export function DashboardCanvas({ widgets, charts, editing, onChange, labels, on
                 </span>
               </div>
               <div className="relative min-h-0 flex-1 p-1">
-                {!drawing ? <p className="p-3 text-sm text-slate-500">{editing ? "Save the dashboard to draw this." : "Loading…"}</p>
+                {!drawing && w.kind === "TEXT" ? <TextBlock text={w.text ?? ""} />
+                  : !drawing ? <p className="p-3 text-sm text-slate-500">{editing ? "Save the dashboard to draw this." : "Loading…"}</p>
                   : drawing.map ? <MapWidget view={drawing.map.view} projectId={drawing.map.projectId} />
                   : drawing.metric ? <MetricTileView metric={drawing.metric} />
                   : drawing.kpi ? <KpiTileView kpi={drawing.kpi} />
-                  : drawing.text !== undefined ? <p className="whitespace-pre-wrap p-3 text-sm" data-testid="text-widget">{drawing.text}</p>
+                  : drawing.text !== undefined ? <TextBlock text={drawing.text} />
                   : drawing.table ? (
                     <div className="h-full overflow-auto" data-testid="table-widget">
                       <table className="w-full text-xs"><thead><tr>{drawing.table.columns.map((c) => <th key={c} className="border-b px-2 py-1 text-start">{c}</th>)}</tr></thead>

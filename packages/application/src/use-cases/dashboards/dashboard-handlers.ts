@@ -220,7 +220,8 @@ async function drawCharts(
       if (!extras) return { widgetId: w.id, unavailable: "Project lists are not shown through a share link." };
       const sources = await extra("visible-projects", () => extras.service.visibleProjects(extras.ctx));
       if (!sources) return { widgetId: w.id, unavailable: "The projects could not be read just now." };
-      return { widgetId: w.id, table: projectListTable(sources, w.projectList, extras.ctx.tenant.userId) };
+      const starred = w.projectList.affiliation === "BOOKMARKED" ? await extra("bookmarked-projects", () => extras.service.bookmarkedProjectIds(extras.ctx)) : undefined;
+      return { widgetId: w.id, table: projectListTable(sources, w.projectList, extras.ctx.tenant.userId, starred) };
     }
     const sheet = sheets.get(w.projectId);
     if (!sheet) return { widgetId: w.id, unavailable: "This chart is from a project you cannot see." };

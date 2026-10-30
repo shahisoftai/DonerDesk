@@ -137,7 +137,7 @@ export async function registerChartDashboardRoutes(app: FastifyInstance) {
     return r.value;
   });
   app.put("/v1/dashboards/:dashboardId/featured", async (req) => {
-    const r = await req.container.handlers.setDashboardFeatured.handle(ctx(req), param(req, "dashboardId"), SetFeaturedSchema.parse(req.body).on);
+    const r = await req.container.handlers.setDashboardFeatured.handle(ctx(req), param(req, "dashboardId"), SetFeaturedSchema.parse(req.body).audiences);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

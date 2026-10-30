@@ -280,10 +280,10 @@ export class PrismaFeaturedDashboardRepository implements IFeaturedDashboardRepo
   constructor(private readonly prisma: PrismaClient) {}
   async list(tenantId: TenantId): Promise<Result<StoredFeaturedDashboard[]>> {
     const rows = await this.prisma.featuredDashboard.findMany({ where: { tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" } });
-    return ok(rows.map((r) => ({ id: r.id, tenantId: TenantId.create(r.tenantId), dashboardId: r.dashboardId, createdById: r.createdById, createdAt: r.createdAt })));
+    return ok(rows.map((r) => ({ id: r.id, tenantId: TenantId.create(r.tenantId), dashboardId: r.dashboardId, audience: r.audience, createdById: r.createdById, createdAt: r.createdAt })));
   }
   async add(f: StoredFeaturedDashboard): Promise<Result<void>> {
-    await this.prisma.featuredDashboard.upsert({ where: { tenantId_dashboardId: { tenantId: f.tenantId.toString(), dashboardId: f.dashboardId } }, update: {}, create: { id: f.id, tenantId: f.tenantId.toString(), dashboardId: f.dashboardId, createdById: f.createdById } });
+    await this.prisma.featuredDashboard.upsert({ where: { tenantId_dashboardId_audience: { tenantId: f.tenantId.toString(), dashboardId: f.dashboardId, audience: f.audience } }, update: {}, create: { id: f.id, tenantId: f.tenantId.toString(), dashboardId: f.dashboardId, audience: f.audience, createdById: f.createdById } });
     return ok(undefined);
   }
   async remove(dashboardId: string, tenantId: TenantId): Promise<Result<void>> {

@@ -26,12 +26,16 @@ export class ListHomePinsHandler {
     if (this.featured) {
       const shared = await this.featured.list(ctx.tenant.tenantId);
       if (shared.ok) {
+        const seen = new Set<string>();
         for (const f of shared.value) {
+          if (f.audience !== "*" && f.audience !== ctx.tenant.userId) continue;
+          if (seen.has(f.dashboardId)) continue;
+          seen.add(f.dashboardId);
           if (mine.value.some((p) => p.ref === f.dashboardId)) continue;
           const d = await this.dashboards.findById(f.dashboardId, ctx.tenant.tenantId);
           if (!d.ok || !d.value || !canSeeDashboard(d.value, viewerOf(ctx))) continue;
           const n = d.value.widgets.length;
-          out.push({ id: `shared-${f.id}`, kind: "DASHBOARD", ref: f.dashboardId, title: d.value.name, detail: `${n} ${n === 1 ? "tile" : "tiles"} · shared by your organisation`, href: `/dashboards/${d.value.id}`, available: true, shared: true });
+          out.push({ id: `shared-${f.id}`, kind: "DASHBOARD", ref: f.dashboardId, title: d.value.name, detail: `${n} ${n === 1 ? "tile" : "tiles"} · ${f.audience === "*" ? "shared by your organisation" : "shared with you"}`, href: `/dashboards/${d.value.id}`, available: true, shared: true });
         }
       }
     }
@@ -77,18 +81,29 @@ export class MoveHomePinHandler {
   }
 }
 
-/** Show a dashboard on everyone's Home, or stop (`org.manage`, audited). Only an organisation-wide dashboard can be shown to everyone: a personal one is not theirs to share. */
+/**
+ * Show a dashboard on the Home of everyone, or of chosen people, or stop (`org.manage`, audited) -- after DevResults' "push" and "default" dashboards. The audiences are
+ * replaced as a whole: "*" is everyone, otherwise person ids. Only an organisation-wide dashboard can be shown to others: a personal one is not theirs to share.
+ * A person still sees only what they may open.
+ */
 export class SetDashboardFeaturedHandler {
   constructor(private readonly ids: IIdGenerator, private readonly featured: IFeaturedDashboardRepository, private readonly dashboards: IDashboardRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
-  async handle(ctx: AuthenticatedContext, dashboardId: string, on: boolean): Promise<Result<void, DomainError>> {
-    if (!Permissions.can(ctx.tenant.role as Role, "org.manage")) return { ok: false, error: DomainError.forbidden("You cannot choose what is shown on everyone's Home") };
+  async handle(ctx: AuthenticatedContext, dashboardId: string, audiences: string[]): Promise<Result<void, DomainError>> {
+    if (!Permissions.can(ctx.tenant.role as Role, "org.manage")) return { ok: false, error: DomainError.forbidden("You cannot choose what is shown on other people's Home") };
     const d = await this.dashboards.findById(dashboardId, ctx.tenant.tenantId);
     if (!d.ok) return d;
     if (!d.value || !canSeeDashboard(d.value, viewerOf(ctx))) return { ok: false, error: DomainError.notFound("Dashboard", dashboardId) };
-    if (on && d.value.scope !== "ORG") return { ok: false, error: DomainError.validation("Only a dashboard made for the whole organisation can be shown on everyone's Home.") };
-    const done = on ? await this.featured.add({ id: this.ids.generate(), tenantId: ctx.tenant.tenantId, dashboardId, createdById: ctx.tenant.userId, createdAt: this.clock.now() }) : await this.featured.remove(dashboardId, ctx.tenant.tenantId);
-    if (!done.ok) return done;
-    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: on ? "dashboard.featured" : "dashboard.unfeatured", entityType: "dashboard", entityId: dashboardId });
+    const wanted = [...new Set(audiences.map((a) => a.trim()).filter(Boolean))];
+    if (wanted.length > 200) return { ok: false, error: DomainError.validation("Choose at most 200 people.") };
+    if (wanted.length > 0 && d.value.scope !== "ORG") return { ok: false, error: DomainError.validation("Only a dashboard made for the whole organisation can be shown on other people's Home.") };
+    const now = wanted.includes("*") ? ["*"] : wanted;
+    const cleared = await this.featured.remove(dashboardId, ctx.tenant.tenantId);
+    if (!cleared.ok) return cleared;
+    for (const audience of now) {
+      const done = await this.featured.add({ id: this.ids.generate(), tenantId: ctx.tenant.tenantId, dashboardId, audience, createdById: ctx.tenant.userId, createdAt: this.clock.now() });
+      if (!done.ok) return done;
+    }
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: now.length > 0 ? "dashboard.featured" : "dashboard.unfeatured", entityType: "dashboard", entityId: dashboardId, newValue: JSON.stringify({ audience: now.includes("*") ? "everyone" : `${now.length} people` }) });
     return ok(undefined);
   }
 }
@@ -96,9 +111,12 @@ export class SetDashboardFeaturedHandler {
 /** Whether a dashboard is shown on everyone's Home, for the button's state. */
 export class IsDashboardFeaturedHandler {
   constructor(private readonly featured: IFeaturedDashboardRepository) {}
-  async handle(ctx: AuthenticatedContext, dashboardId: string): Promise<Result<{ featured: boolean; canChange: boolean }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, dashboardId: string): Promise<Result<{ featured: boolean; audiences: string[]; canChange: boolean }, DomainError>> {
+    const canChange = Permissions.can(ctx.tenant.role as Role, "org.manage");
     const r = await this.featured.list(ctx.tenant.tenantId);
     if (!r.ok) return r;
-    return ok({ featured: r.value.some((f) => f.dashboardId === dashboardId), canChange: Permissions.can(ctx.tenant.role as Role, "org.manage") });
+    // Who it is shown to is for the people who may change it; everyone else only learns whether it is shown to them.
+    const mine = r.value.filter((f) => f.dashboardId === dashboardId);
+    return ok({ featured: mine.length > 0, audiences: canChange ? mine.map((f) => f.audience) : [], canChange });
   }
 }

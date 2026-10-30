@@ -126,7 +126,7 @@ export interface IMapOverlayRepository {
   delete(id: string, tenantId: TenantId): Promise<Result<void>>;
 }
 
-export interface StoredFeaturedDashboard { id: string; tenantId: TenantId; dashboardId: string; createdById: string; createdAt: Date }
+export interface StoredFeaturedDashboard { id: string; tenantId: TenantId; dashboardId: string; /** "*" = everyone, else one person's id. */ audience: string; createdById: string; createdAt: Date }
 export interface IFeaturedDashboardRepository {
   list(tenantId: TenantId): Promise<Result<StoredFeaturedDashboard[]>>;
   add(f: StoredFeaturedDashboard): Promise<Result<void>>;

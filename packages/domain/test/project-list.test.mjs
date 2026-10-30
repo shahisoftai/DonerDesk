@@ -11,6 +11,8 @@ test("a list is filtered by status and sector, in title order, and 'assigned' sh
   assert.deepEqual(projectListTable(src, { affiliation: "ALL", sector: "health" }, "me").rows.map((r) => r[0]), ["Project b"]);
   assert.deepEqual(projectListTable(src, { affiliation: "ASSIGNED" }, "me").rows.map((r) => r[0]), ["Project b", "Project d"]);
   assert.deepEqual(projectListTable(src, { affiliation: "ASSIGNED" }, "someone-else").rows, []);
+  assert.deepEqual(projectListTable(src, { affiliation: "BOOKMARKED" }, "me", new Set(["c", "d"])).rows.map((r) => r[0]), ["Project c", "Project d"]);
+  assert.match(projectListTable(src, { affiliation: "BOOKMARKED" }, "me").notes[0], /not bookmarked a project yet/);
 });
 
 test("an empty list says so, a long one is capped and says so, a missing value is 'Not recorded'", () => {

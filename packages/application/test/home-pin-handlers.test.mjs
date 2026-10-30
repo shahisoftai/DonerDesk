@@ -22,7 +22,7 @@ function world() {
     delete: async () => ok(undefined),
     setOrder: async (_t, u, order) => { order.forEach((id, i) => { const p = pins.find((x) => x.id === id && x.userId === u); if (p) p.position = i; }); return ok(undefined); },
   };
-  const featRepo = { list: async () => ok([...feats]), add: async (f) => (feats.push(f), ok(undefined)), remove: async (id) => (feats.splice(0, feats.length, ...feats.filter((f) => f.dashboardId !== id)), ok(undefined)) };
+  const featRepo = { list: async () => ok([...feats]), add: async (f) => (feats.some((x) => x.dashboardId === f.dashboardId && x.audience === f.audience) || feats.push(f), ok(undefined)), remove: async (id) => (feats.splice(0, feats.length, ...feats.filter((f) => f.dashboardId !== id)), ok(undefined)) };
   const log = { record: async (e) => void audit.push(e) };
   const ids = { generate: () => `x${++n}` }; const clock = { now: () => new Date("2026-10-30T00:00:00Z") };
   return { pins, feats, audit, add: new AddHomePinHandler(ids, pinRepo, dash, log, clock), list: new ListHomePinsHandler(pinRepo, dash, featRepo), move: new MoveHomePinHandler(pinRepo), feature: new SetDashboardFeaturedHandler(ids, featRepo, dash, log, clock) };
@@ -51,14 +51,27 @@ test("pins are reordered for the person alone", async () => {
 
 test("an administrator shows an organisation dashboard on everyone's Home; it appears for others after their own pins, once, and cannot be a personal one", async () => {
   const w = world();
-  assert.equal((await w.feature.handle(PM, "d-org", true)).error.code, "FORBIDDEN");
-  assert.match((await w.feature.handle(ADMIN, "d-mine", true)).error.message, /whole organisation/);
-  assert.equal((await w.feature.handle(ADMIN, "d-org", true)).ok, true);
+  assert.equal((await w.feature.handle(PM, "d-org", ["*"])).error.code, "FORBIDDEN");
+  assert.match((await w.feature.handle(ADMIN, "d-mine", ["*"])).error.message, /whole organisation/);
+  assert.equal((await w.feature.handle(ADMIN, "d-org", ["*"])).ok, true);
   assert.equal(w.audit.at(-1).eventType, "dashboard.featured");
   await w.add.handle(OTHER, { kind: "DASHBOARD", ref: "d-org" });
   assert.equal((await w.list.handle(OTHER)).value.pins.filter((p) => p.ref === "d-org").length, 1, "pinned and featured shows once");
   const forPm = (await w.list.handle(PM)).value.pins;
   assert.deepEqual([forPm.length, forPm[0].shared], [1, true]);
-  assert.equal((await w.feature.handle(ADMIN, "d-org", false)).ok, true);
+  assert.equal((await w.feature.handle(ADMIN, "d-org", [])).ok, true);
   assert.equal((await w.list.handle(PM)).value.pins.length, 0);
+});
+
+test("a dashboard can be shown to chosen people only: they see it, others do not, and a later choice replaces the earlier one", async () => {
+  const w = world();
+  assert.equal((await w.feature.handle(ADMIN, "d-org", ["pm"])).ok, true);
+  assert.deepEqual((await w.list.handle(PM)).value.pins.map((p) => [p.ref, p.shared]), [["d-org", true]]);
+  assert.match((await w.list.handle(PM)).value.pins[0].detail, /shared with you/);
+  assert.equal((await w.list.handle(OTHER)).value.pins.length, 0, "not shown to anyone else");
+  assert.equal((await w.feature.handle(ADMIN, "d-org", ["other", "other"])).ok, true);
+  assert.equal((await w.list.handle(PM)).value.pins.length, 0, "the choice was replaced, not added to");
+  assert.equal((await w.list.handle(OTHER)).value.pins.length, 1);
+  assert.equal((await w.feature.handle(ADMIN, "d-org", ["*", "pm"])).ok, true);
+  assert.equal(w.feats.length, 1, "everyone absorbs the individual choices");
 });

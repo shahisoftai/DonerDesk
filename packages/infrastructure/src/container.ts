@@ -1332,7 +1332,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const saveDashboard = new SaveDashboardHandler(ids, dashboards, visibleProjects, audits, clock);
   const placeResults = new GetProjectPlaceResultsHandler(projects, periods, indicators, indicatorUpdates, places);
   const finance = createFinanceModule({ prisma, ids, clock, audits, projects, visible: visibleProjects, evidence });
-  const datasetExtras = new DatasetExtrasService(workplan.handlers.listWorkPlan, activities, new PrismaBudgetRepository(prisma), placeResults, places, logframe, finance.handlers.getProjectFinance, visibleProjects);
+  const datasetExtras = new DatasetExtrasService(workplan.handlers.listWorkPlan, activities, new PrismaBudgetRepository(prisma), placeResults, places, logframe, finance.handlers.getProjectFinance, visibleProjects, bookmarks);
   const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials, finance.registerFinanceRows);
   const getProjectInfographicData = new GetProjectInfographicDataHandler(
     projects, periods, indicators, indicatorUpdates, financeInputs, periodFinancials,

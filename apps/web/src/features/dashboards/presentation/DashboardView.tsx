@@ -18,6 +18,8 @@ import { useTvMode } from "./use-tv-mode";
 import { AddTilePanel } from "./AddTilePanel";
 import { AddMapPanel } from "./AddMapPanel";
 import { AddProjectListPanel } from "./AddProjectListPanel";
+import { AddNotePanel } from "./AddNotePanel";
+import { DownloadImageButton } from "./DownloadImageButton";
 import { EditWidgetPanel } from "./EditWidgetPanel";
 import { DashboardTabBar, TabAssigner, useDashboardTabs } from "./DashboardTabs";
 
@@ -90,6 +92,15 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
     setEditingId(null);
   }
 
+  /** A heading is a thin full-width strip; a note is a block of text. */
+  function addNote(projectId: string, text: string, heading: boolean) {
+    const id = `n${Math.random().toString(36).slice(2, 10)}`;
+    const next = addWidget(widgets, { id, projectId, kind: "TEXT", text });
+    if (!next) return;
+    setWidgets(resizeWidget(next, id, heading ? 12 : 6, heading ? 2 : 3));
+    setSaved(false);
+  }
+
   /** A project list is a wide table: it is added full width. */
   function addProjectList(projectId: string, projectList: ProjectListQuery) {
     const id = `l${Math.random().toString(36).slice(2, 10)}`;
@@ -140,6 +151,7 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
           {!editing && <PinToHomeButton dashboardId={dashboard.id} orgWide={dashboard.scope === "ORG"} />}
           {!editing && <Button variant="secondary" onClick={tv.toggle}>{tv.active ? "Leave full screen" : "Full screen"}</Button>}
           {!editing && <Button variant="secondary" onClick={() => window.print()}>Print</Button>}
+          {!editing && <DownloadImageButton name={name} />}
         </div>
         {dashboard.canEdit && (
           <div className="flex flex-wrap gap-2" data-no-print>
@@ -159,6 +171,7 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
       {editing && editingWidget && <EditWidgetPanel key={editingWidget.id} widget={editingWidget} chartTitle={(editingWidget.spec as { title?: string } | undefined)?.title ?? titles.get(editingWidget.id) ?? ""} onApply={changeWidget} onCancel={() => { setEditingId(null); setChangeError(null); }} />}
       {changeError && <p role="alert" className="text-sm text-danger-600">{changeError}</p>}
       {editing && <AddTilePanel projects={dashboard.scope === "PROJECT" && dashboard.projectId ? { [dashboard.projectId]: projectNames[dashboard.projectId] ?? "This project" } : projectNames} onAdd={addTile} full={widgets.length >= 24} />}
+      {editing && <AddNotePanel projects={dashboard.scope === "PROJECT" && dashboard.projectId ? { [dashboard.projectId]: projectNames[dashboard.projectId] ?? "This project" } : projectNames} onAdd={addNote} full={widgets.length >= 24} />}
       {editing && <AddProjectListPanel projects={dashboard.scope === "PROJECT" && dashboard.projectId ? { [dashboard.projectId]: projectNames[dashboard.projectId] ?? "This project" } : projectNames} onAdd={addProjectList} full={widgets.length >= 24} />}
       {editing && <AddMapPanel projects={dashboard.scope === "PROJECT" && dashboard.projectId ? { [dashboard.projectId]: projectNames[dashboard.projectId] ?? "This project" } : projectNames} onAdd={addMap} full={widgets.length >= 24} />}
       <DashboardTabBar tabs={tabbed.tabs} active={tabbed.active} onSelect={tabbed.setActive} overviewLabel="Overview" />
