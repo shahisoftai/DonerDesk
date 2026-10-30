@@ -113,3 +113,6 @@ Decisions 1–3 were agreed by the owner (2026-10-29). Layer 1 now also covers t
 | Four-language finance copy | English only in `finance-copy.ts`; needs native reviewers for the finance terms |
 | Disbursed by results framework | No link from a budget line to a result beyond the planned activity's output (the "Spent by result" donut uses that) |
 | Per-project approval limits, multiple approvers in sequence | Not asked for; one decision per entry |
+
+### Checked on production (DEMO-13, 2026-10-30)
+Funding 250,000 USD, received 100,000 USD approved, a second draft of 5,000 changed to 7,500.50 and approved (total 107,500.50), the second-person setting refused self-approval with its sentence and approved after being switched off, and the number tiles on a dashboard showed 250 and 107.5 thousand USD. Not exercised: an expense through a budget line (DEMO-13 has no budget lines), the spreadsheet import, advances and milestones, attaching a file to an expense (the harness covers the form).

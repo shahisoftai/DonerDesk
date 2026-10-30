@@ -121,3 +121,5 @@ H1: additive API field, ship api and web together. H2: new route, `SCOPE=both`. 
 | **H5 Role layout and polish** | Yes: `HOME_TILES_BY_VARIANT` (one table, exhaustive over the five Home variants, tested) decides which parts each Home shows; every Home shows the person's pins and bookmarks | Per-tile Suspense boundaries, the translated copy and a `test:home` harness are not built |
 
 Deploy notes: migrations `20261031110000_home_pins` and `20261031140000_featured_dashboards` (additive), RLS for `HomePin` and `FeaturedDashboard`; `/ready` requires `HomePin.ref` and `FeaturedDashboard.dashboardId`.
+
+Checked on production (DEMO-13, 2026-10-30): "Where we work" drew 2 of 14 projects at 11 places with 12 listed below with their reasons ("No planned work yet", "Its places match no known place"); the project table filtered from the breakdown (2 of 14) and cleared; Pin to Home added a card and a second pin said "already pinned"; an organisation dashboard shown to everyone appeared with "Shown to everyone". The map is a world view, so a portfolio in one region is small; centring on the projects' own extent is not built.
