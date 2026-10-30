@@ -102,6 +102,7 @@ export function DashboardCanvas({ widgets, charts, editing, onChange, labels, on
                     <div className="h-full overflow-auto" data-testid="table-widget">
                       <table className="w-full text-xs"><thead><tr>{drawing.table.columns.map((c) => <th key={c} className="border-b px-2 py-1 text-start">{c}</th>)}</tr></thead>
                         <tbody>{drawing.table.rows.map((r, i) => <tr key={i} className="border-t border-slate-100 dark:border-slate-800">{r.map((c, j) => <td key={j} className="px-2 py-1">{c}</td>)}</tr>)}</tbody></table>
+                      {drawing.table.notes.length > 0 && <ul className="px-2 py-1 text-xs text-slate-500">{drawing.table.notes.map((n) => <li key={n}>{n}</li>)}</ul>}
                     </div>
                   ) : drawing.chart ? <DashboardChart option={drawing.chart.option} label={drawing.chart.title} maps={drawing.chart.maps} regionNames={drawing.chart.regionNames} onPick={editing ? undefined : onPick} /> : <p className="p-3 text-sm text-slate-500">{drawing.unavailable ?? "This chart cannot be drawn."}</p>}
               </div>

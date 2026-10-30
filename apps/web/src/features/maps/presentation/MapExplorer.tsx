@@ -8,7 +8,7 @@ import { loadMapAssets } from "@/lib/client/map-assets";
 import { provincesOf } from "../../workplan/domain/site-map";
 import type { NamedGeoCollection } from "../../workplan/domain/geo/geo-types";
 import {
-  DEFAULT_LAYERS, OVERLAY_LAYER, buildExplorerModel, defaultView, drillInto, drillUp, levelForView, mapSummary, moveLayer, withDepth, placeForRegion, placePanel,
+  DEFAULT_LAYERS, OVERLAY_LAYER, buildExplorerModel, type ExplorerModel, defaultView, drillInto, drillUp, levelForView, mapSummary, moveLayer, withDepth, placeForRegion, placePanel,
   setLayerOpacity, toggleLayer, sharedBands, withBands, panelPeriods, type DrillState,
 } from "../domain/map-explorer";
 import { DRILL_MAP_NAME, WORLD_MAP_NAME, explorerOption } from "../domain/map-option";
@@ -21,6 +21,8 @@ import { OverlayPanel } from "./OverlayPanel";
 import { loadBoundaryFile, loadBoundaryManifest } from "@/lib/client/boundary-loader";
 import { attributionLine, fileFor, findCountry, levelsFor, type BoundaryManifest } from "../domain/boundary-sources";
 import { periodSteps } from "../domain/period-steps";
+
+const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], regions: [], unmapped: [], bands: [], isRate: false };
 
 /**
  * The interactive map (Phase 35.0): hover for the figure, click for the place panel, open a country's provinces,
@@ -97,8 +99,11 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
   }, [baseCollection, view.kind]);
   const indicator = results?.indicators.find((i) => i.id === indicatorId);
   const option = useMemo(() => {
-    if (!model || !baseCollection) return null;
-    return explorerOption({ model, layers, view, featureNames: baseCollection.features.map((f) => f.properties.name), unit: indicator?.unit ?? null, selectedPlaceId: selected?.placeId ?? null, overlay });
+    if (!baseCollection) return null;
+    // With no figure to draw, a ticked overlay still shows on the plain base map (an overlay is context, not data).
+    const shown = model ?? (overlay ? EMPTY_MODEL : null);
+    if (!shown) return null;
+    return explorerOption({ model: shown, layers, view, featureNames: baseCollection.features.map((f) => f.properties.name), unit: indicator?.unit ?? null, selectedPlaceId: selected?.placeId ?? null, overlay });
   }, [model, baseCollection, layers, view, indicator, selected, overlay]);
 
   const level = levelForView(view, results?.levelsAvailable ?? []);

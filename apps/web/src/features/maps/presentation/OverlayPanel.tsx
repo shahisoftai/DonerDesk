@@ -30,13 +30,18 @@ export function OverlayPanel({ onOverlay }: { onOverlay: (overlay: Overlay | nul
 
   async function tick(o: MapOverlayItem, on: boolean) {
     setError(null);
+    // The box changes at once; if the overlay cannot be opened it goes back.
+    setTicked((t) => { const n = new Set(t); if (on) n.add(o.id); else n.delete(o.id); return n; });
     if (on && !data.has(o.id)) {
       const r = await readMapOverlayAction(o.id);
       const parsed = r.ok ? parseOverlay(r.value, o.name) : null;
-      if (!r.ok || !parsed || !parsed.ok) { setError(r.ok && parsed && !parsed.ok ? parsed.reason : "That overlay could not be opened."); return; }
+      if (!r.ok || !parsed || !parsed.ok) {
+        setError(r.ok && parsed && !parsed.ok ? parsed.reason : "That overlay could not be opened.");
+        setTicked((t) => { const n = new Set(t); n.delete(o.id); return n; });
+        return;
+      }
       setData((d) => new Map(d).set(o.id, parsed.overlay));
     }
-    setTicked((t) => { const n = new Set(t); if (on) n.add(o.id); else n.delete(o.id); return n; });
   }
 
   async function choose(file: File | undefined) {
