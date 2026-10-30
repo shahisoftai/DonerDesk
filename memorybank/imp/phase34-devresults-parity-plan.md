@@ -1,6 +1,43 @@
 # Phase 34 — Dashboards, Chart Studio, Entry Sheet, Maps Studio and the rest of the DevResults surface
 
-Status: **PARTLY BUILT AND DEPLOYED.** Batches 34.0–34.3 and the first slices of 34.4, 34.5 and 34.7 (bookmarks) are in production (`releaseId=20261028133938`, 2026-10-28, branch `0015-compitition`, commits `47dcbe6f` and `d1cdf9e3`). The rest is listed under "What is left". Version: DonorDesk 3.007 (the next product version is set when the owner decides). **Nothing here has yet been tried by a person in the signed-in production app.**
+Status: **MOSTLY BUILT AND DEPLOYED (see "Implementation status, 2026-10-30" below for the exact list of what is and is not built).** Version: DonorDesk 3.007 (the next product version is set when the owner decides). Production has been checked in a signed-in session on the DEMO-13 test project (results at the end of the status section).
+## Implementation status, 2026-10-30 (read this first; it replaces the older "what is left" table below)
+
+Sources used after 34.3: the DevResults help centre pages for Define a Dashboard, Mapping Functionality, Map Overlays, Dashboard Tile: Geotagged Photos Map, Project List tile (release note), Visualizations, MultiMatrix, Bookmarks, Partner Dashboards and the Program Statistic tile. Their pages describe behaviour in words only; no screen was seen.
+
+### Built (and in production unless marked)
+| Area | What exists | Notes |
+|---|---|---|
+| 34.0–34.3 | Foundations, Chart Studio (43 kinds), Entry Sheet, dashboards v2 with six sector templates | Deployed 2026-10-28 (`20261028133938`) |
+| 34.4 Maps | Maps page with layers, time slider, side-by-side periods, place panel (with a "facility" mark), drill to provinces / districts / sub-districts from bundled and OCHA/geoBoundaries files (68 MB under `/geo/`), saved map views, KML and GeoJSON downloads, **Print this map**, **map overlays** (the organisation keeps KML, KMZ, GeoJSON or shapefile-zip files and ticks them per map; 3 MB, 10 MB unpacked; context only, nothing reported against them), **Photos on the map** (image evidence placed by its written location: places list first, then gazetteer; thumbnails through the protected file route; unplaced and location-less photos said) | Overlays: `MapOverlay` table + `/v1/map-overlays*`; conversion of KML/KMZ/shapefile happens in the browser (`kml-to-geojson.ts`, `shapefile-to-geojson.ts`) |
+| 34.4 Places | Places master data, results by place, a **facility** flag (column, filter, form) | `Place.facility` |
+| 34.5 | Indicator views, saved report builder with breakdowns | Deployed 2026-10-28 |
+| 34.6 Finance | Register (funding, received, expenses, advances, milestones), multi-currency with dated manual rates, approval; **edit a draft and attach a file**, **second-person approval setting**, **plan-item expenses wait for approval**, **64-bit budget amounts**, **register-fed finance rows for charts**, import with error file | See `phase35-finance-register.md` |
+| 34.7 | Bookmarks (star on every page, Bookmarks panel) | Deployed 2026-10-28 |
+| Home | **Projects by sector / status / country / funder** with click-to-filter and alert chips; **Where we work** map of all projects (DevResults' Project Map tile); **Pin to Home** for a dashboard; **parts shown per Home variant** from one table (`HOME_TILES_BY_VARIANT`) | See `phase35-home-snapshot.md` |
+| Dashboards | KPI, number, map, note, report, chart widgets; **Project List tile** (status, sector, "assigned to me" or "bookmarked"; made for the viewer when opened; none through a share link); **section headings and notes** (`# text`); **Download image** (PNG made in the browser); **show on Home to everyone or chosen people** (DevResults' push / default dashboards, simplified: an organisation dashboard, replaced as a whole, audited); print; full screen; tabs; share link; embed | Browser harness `test:tiles` |
+
+### Not built, and why
+| Item | Why |
+|---|---|
+| **IATI export** | Owner: decide last. Needs the IATI version, publisher id and the fields we can honestly fill |
+| **Cost per result** | A planned activity has no link to one indicator, so dividing spend by results would double count; needs a rule from the owner |
+| **Partner dashboards (34.9)** and the admin switch | DevResults lets partners build their own dashboards, every tile filtered to their projects. Our outside partners can only reach the routes on `EXTERNAL_ALLOWED`, and a partner has no way to pick an indicator for a tile outside the Chart Studio; a half-built version would show them an empty builder. Needs its own batch: partner-safe tile picker, a switch on the organisation, and the boundary tests |
+| **Dashboard-level filters panel; sections inside a tab as a structure** | DevResults has neither: its filters are per tile (gear icon) and a dashboard is grouped by tabs and a markdown text tile. We matched that: per-tile settings, tabs, and section headings. A tile-level filter for every kind is not built |
+| **Push to chosen people as a copy; change owner** | We show an organisation dashboard on chosen people's Home (no copy is made, so it follows the owner's changes, as DevResults' "Add" does). Handing a dashboard to a new owner is not built |
+| **Online map tiles (opt-in)** | The maps run on ECharts, which draws shapes only; street tiles use another projection and send locations to a provider. Needs a map-engine change (for example MapLibre) and your decision |
+| **Linked forms, subtotal rows, place breakdown in reports** (34.5) | Not started |
+| **Workspace (34.7 rest)** notes wall, document library, photo gallery, iCal feed, merged swimlane | Not started |
+| **34.8** fill-from-project document templates, sign-off line on checklists | Not started |
+| **34.10** accessibility audit, performance budgets, right-to-left check, native review of fr/es/ar | Not started; the new screens are English only |
+| **34.2 leftovers** places × periods layout, editing earlier periods in the sheet, per-column history | Not started |
+| **Other** population pyramid (needs age × sex values), server-side PNG for donor-template Word export, translations of builder sentences | Not started |
+
+### Signed-in check on production (DEMO-13, 2026-10-30)
+See the end of `phase35-finance-register.md` and the AGENTS.md section "Phase 35 follow-ups" for what was clicked and what was found.
+
+(Older status below, kept for the record of the 2026-10-28 deploy.)
+
 ## Status and decisions (updated 2026-10-28, after the deploy)
 
 Owner decisions: (1) basemap = offline by default, opt-in online tiles per organisation (§5.0); (2) the tour images were read (see "Screens seen"); (3) **templates are always drafts** and fully editable (built-ins are copied, never edited in place); (4) **boundaries: bundle all possible** (every country and every licensed level; the licence check is still open); (5) **currency rates are manual**.

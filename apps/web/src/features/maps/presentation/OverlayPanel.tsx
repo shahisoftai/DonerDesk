@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { addMapOverlayAction, listMapOverlaysAction, readMapOverlayAction, removeMapOverlayAction, type MapOverlayItem } from "@/lib/actions/map-overlays";
+import { addMapOverlayAction, listMapOverlaysAction, readMapOverlayAction, removeMapOverlayAction } from "@/lib/actions/map-overlays";
+import type { MapOverlayItem } from "@/lib/server/schemas-map-overlays";
 import { parseOverlay, type Overlay } from "../domain/overlay-layer";
 import { KML_MAX_BYTES, overlayFileToGeoJson } from "../domain/kml-to-geojson";
 

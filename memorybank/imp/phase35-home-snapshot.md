@@ -1,6 +1,6 @@
 # Phase 35.H — Home snapshot (plan)
 
-Status: **PLAN ONLY, nothing built.** Branch `0015-compitition`. Version: DonorDesk 3.007. Written 2026-10-29.
+Status: **H1, H2, H3 (existing finance tile), H4 AND H5 BUILT AND DEPLOYED (2026-10-30); see "Implementation status" at the end.** (Was: plan only.) Branch `0015-compitition`. Version: DonorDesk 3.007. Written 2026-10-29.
 Compared with: DevResults' Dashboard (tour page: "interactive map of all projects, financial metrics for funds obligated / awarded / disbursed, results visualisations, upcoming tasks, alerts for overdue milestones and over-budget projects, breakdowns of projects by sector, status and mechanism, bookmarking").
 
 ## 1. What Home already does (do not rebuild)
@@ -109,3 +109,15 @@ Recommended: **H1 → H4 → H2 → H3 → H5**. H1 is useful at once and needs 
 ## 8. Deploy notes (when built)
 
 H1: additive API field, ship api and web together. H2: new route, `SCOPE=both`. H4: migration `HomePin` (additive, before the code), re-run `rls.sql` and check `rowsecurity`, `/ready` requires the new column, routes in `RULES`. Nothing in H1–H3 changes the database.
+
+## Implementation status, 2026-10-30
+
+| Batch | Built | How it differs from the plan |
+|---|---|---|
+| **H1 Breakdowns and the filtered table** | Yes. `Projects by …` (sector, status, country, funder) as bars; a click filters the Project health table through the address (`?by=&key=`), alert chips (`?alert=`) for overdue reports, late activities, overdue values, risk reviews and behind projects; "Showing 3 of 9 — clear". `PortfolioRow.sector` added. | Counts only, no ratings |
+| **H2 Map of all projects** | Yes, as **Where we work**: one dot per place, coloured by the worst delivery band of the projects there (On track / Needs attention / Behind / No plan yet), a "Projects by place" list and a "Not on the map" list with the reason | Built from each project's planned-activity places (the plan map's rule), read per project (first 25); **no fallback to a country pin**: a project with nothing locatable is listed apart, never guessed. No new route |
+| **H3 Funding snapshot** | The finance register's totals tile (`HomeFinance`) replaced the plan's "only what we record" version, so "obligated / received / spent" is now said with data behind it | |
+| **H4 Pinned tiles** | Partly: **a dashboard** can be pinned (`HomePin`, max 12, own rows only, move earlier/later, unpin; a deleted or hidden target is shown as such) | KPI and saved-chart pins are not built; pins are link cards (name and tile count), not a small drawing of the dashboard. Also added: an administrator can **show an organisation dashboard on everyone's Home or on chosen people's** (`FeaturedDashboard`, audited) |
+| **H5 Role layout and polish** | Yes: `HOME_TILES_BY_VARIANT` (one table, exhaustive over the five Home variants, tested) decides which parts each Home shows; every Home shows the person's pins and bookmarks | Per-tile Suspense boundaries, the translated copy and a `test:home` harness are not built |
+
+Deploy notes: migrations `20261031110000_home_pins` and `20261031140000_featured_dashboards` (additive), RLS for `HomePin` and `FeaturedDashboard`; `/ready` requires `HomePin.ref` and `FeaturedDashboard.dashboardId`.

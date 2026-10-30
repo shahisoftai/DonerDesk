@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addBudgetCategoryAction, addCurrencyRateAction, addFundingSourceAction, setFinanceCurrenciesAction, setSeparateApproverAction, updateFundingSourceAction } from "@/lib/actions/finance";
 import { useActionState } from "@/lib/client/action-state";
@@ -13,6 +14,7 @@ type Category = { id: string; code: string; label: string; archived: boolean };
 export function FinanceSettingsPanel({ sources, rates, categories, canEdit, today }: { sources: FundingSourceItem[]; rates: RatesView; categories: Category[]; canEdit: boolean; today: string }) {
   const router = useRouter();
   const toggle = useActionState();
+  const [separate, setSeparate] = useState(rates.separateApprover);
   const flip = async (id: string, patch: { ownFunding?: boolean; archived?: boolean }) => { if (await toggle.run(() => updateFundingSourceAction(id, patch))) router.refresh(); };
   const ordered = [...rates.rates].sort((a, b) => (a.effectiveOn < b.effectiveOn ? 1 : a.effectiveOn > b.effectiveOn ? -1 : 0));
   return (
@@ -31,7 +33,7 @@ export function FinanceSettingsPanel({ sources, rates, categories, canEdit, toda
         <h2 id="set-approval" className="text-base font-semibold">{C.approvalTitle}</h2>
         <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-300">{C.approvalIntro}</p>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={rates.separateApprover} disabled={!canEdit || toggle.busy} onChange={async (e) => { if (await toggle.run(() => setSeparateApproverAction({ on: e.target.checked }))) router.refresh(); }} />
+          <input type="checkbox" checked={separate} disabled={!canEdit || toggle.busy} onChange={async (e) => { const on = e.target.checked; setSeparate(on); if (await toggle.run(() => setSeparateApproverAction({ on }))) router.refresh(); else setSeparate(!on); }} />
           {C.approvalLabel}
         </label>
         {toggle.error && <p role="alert" className="text-sm text-danger-600">{toggle.error}</p>}

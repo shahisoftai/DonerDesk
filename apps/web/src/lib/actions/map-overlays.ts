@@ -7,15 +7,13 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { OkResponseSchema } from "./_schemas";
+import { MapOverlayItemSchema, MapOverlayListSchema, type MapOverlayItem } from "@/lib/server/schemas-map-overlays";
 
-/** The organisation's map overlays (Phase 35): context layers kept once and ticked per map. */
-export const MapOverlayItemSchema = z.object({ id: z.string(), name: z.string(), sizeBytes: z.number(), featureCount: z.number(), createdAt: z.string() });
-export type MapOverlayItem = z.infer<typeof MapOverlayItemSchema>;
-const ListSchema = z.object({ overlays: z.array(MapOverlayItemSchema), canEdit: z.boolean() });
+/** The organisation's map overlays (Phase 35): context layers kept once and ticked per map. (A "use server" file exports only async functions: the schemas are in schemas-map-overlays.ts.) */
 
-export async function listMapOverlaysAction(): Promise<Result<z.infer<typeof ListSchema>, AppError>> {
+export async function listMapOverlaysAction(): Promise<Result<z.infer<typeof MapOverlayListSchema>, AppError>> {
   const context = await requireSession();
-  return gatewayRequest("/v1/map-overlays", ListSchema, context.token);
+  return gatewayRequest("/v1/map-overlays", MapOverlayListSchema, context.token);
 }
 
 export async function addMapOverlayAction(input: unknown): Promise<Result<MapOverlayItem, AppError>> {

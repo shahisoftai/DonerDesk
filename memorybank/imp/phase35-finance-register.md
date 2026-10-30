@@ -1,6 +1,6 @@
 # Phase 35.F — Finance register (completes 34.6 / 33.11)
 
-Status: **LAYERS 1, 2 AND 3 BUILT AND TESTED, plus the Home totals tile and the bulk import (layer 4 partly). Checked in a real browser with stubbed server actions (13 checks); not yet tried against the real API in a signed-in session. Not deployed. Still open: IATI export, cost per result on the indicator page, finance charts, file attach, editing a draft, four-language copy.** Branch `0015-compitition`. Version: DonorDesk 3.007. Written 2026-10-29.
+Status: **BUILT, TESTED AND DEPLOYED** (register deployed 2026-10-30 as `20261030043842`; follow-ups in the next release). Checked in a real browser with stubbed actions (14 checks, `pnpm test:finance`) and, after deploy, in a signed-in session on the DEMO-13 project. Still open: IATI export, cost per result, four-language copy. See "Implementation status, 2026-10-30" at the end.
 Owner decision (2026-10-29): build the finance register before the Home funding tile, so Home can say "obligated / awarded / disbursed" with data behind it.
 
 ## 1. What exists and what is new
@@ -96,3 +96,20 @@ Decisions 1–3 were agreed by the owner (2026-10-29). Layer 1 now also covers t
 | **Attach a file to an expense; edit a draft** | Needs an evidence picker in the form and an update path that keeps "a decided entry is never edited" | `PUT` for DRAFT rows only |
 | **Four-language copy** | The finance screens are English only (`finance-copy.ts`) | Move to the typed catalogue and have native reviewers check the finance terms |
 | **Older budget tables** | `BudgetLine`/`BudgetExpense.amountMinor` are 32-bit (overflow at about 21 million); the older plan-item "Add expense" books APPROVED directly | A BIGINT migration with the Number/bigint handling in the work-plan budget code; a decision on routing the older path through the register |
+
+## Implementation status, 2026-10-30
+
+### Built
+- **Register** (layers 1–3): funding sources and project funding (own funding counts in totals), money received (disbursements), expenses, advances with accounting, payment milestones with approval, dated manual exchange rates, organisation budget categories, Project → Finance and Settings → Finance screens, bulk import with a per-row error file, Home totals tile. Currencies never add; no rate means "Rate needed"; only approved entries count.
+- **Follow-ups (this round)**: a **draft entry can be changed** (date, amount, currency, who was paid, funding source, memo) and a **file from the project attached as proof**; a decided entry is never edited (the write is conditional on DRAFT, a decision made meanwhile wins). **Second-person approval** is an organisation setting (Settings → Finance, `Organization.financeSeparateApprover`): when on, the person who entered an expense, money received or milestone cannot decide it. **Plan-item expenses** (the older "Add an expense") now enter as drafts and wait for approval; the plan item lists them as "waiting for approval" and they count as spent once approved. **64-bit amounts** on the older budget tables (`BudgetLine`, `BudgetExpense`). **Register-fed finance rows**: a chart can draw budget (own funding) and spend (approved expenses, cumulative to each period's end) from the register when a period has no summary; one currency or nothing; never through a share link.
+- **Dashboard tiles** reading the register: number tiles (obligated, received, spent, still to receive) and "Spent by result" donut (Phase 35 sections of AGENTS.md).
+- Rate history is the dated rates table in Settings → Finance (rates are added, never edited).
+
+### Not built
+| Item | Reason |
+|---|---|
+| IATI export | Owner: decide last (version, publisher id, honest field mapping) |
+| Cost per result | No link from an activity to one indicator; spend would be double counted |
+| Four-language finance copy | English only in `finance-copy.ts`; needs native reviewers for the finance terms |
+| Disbursed by results framework | No link from a budget line to a result beyond the planned activity's output (the "Spent by result" donut uses that) |
+| Per-project approval limits, multiple approvers in sequence | Not asked for; one decision per entry |

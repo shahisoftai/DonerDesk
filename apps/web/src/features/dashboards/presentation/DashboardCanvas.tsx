@@ -84,11 +84,11 @@ export function DashboardCanvas({ widgets, charts, editing, onChange, labels, on
                 aria-label={editing && !narrow ? `Move ${drawing?.chart?.title ?? "chart"}. Arrow keys move it, Shift with arrow keys resizes it.` : undefined}
                 onPointerDown={(e) => begin(e, w.id, "move")} onPointerMove={drag} onPointerUp={end} onPointerCancel={end} onKeyDown={(e) => key(e, w)}
               >
-                <span className="truncate font-medium">{drawing?.chart?.title ?? drawing?.table?.title ?? drawing?.kpi?.title ?? drawing?.metric?.title ?? drawing?.map?.title ?? (w.kind === "TEXT" ? "Note" : "Chart")}</span>
-                <span className="flex shrink-0 items-center gap-2">
-                  <span className="hidden text-xs text-slate-500 sm:inline">{labels[w.projectId] ?? ""}</span>
-                  {editing && onEdit && canEditInPlace(w) && <button type="button" className="text-xs text-slate-500 underline" aria-label={`Edit ${drawing?.chart?.title ?? drawing?.table?.title ?? drawing?.kpi?.title ?? drawing?.metric?.title ?? drawing?.map?.title ?? (w.kind === "TEXT" ? "Note" : "widget")}`} onPointerDown={(e) => e.stopPropagation()} onClick={() => onEdit(w.id)}>Edit</button>}
-                  {editing && <button type="button" className="text-xs text-slate-500 underline" onPointerDown={(e) => e.stopPropagation()} onClick={() => onChange(removeWidget(widgets, w.id))}>Remove</button>}
+                <span className="min-w-0 flex-1 truncate font-medium">{drawing?.chart?.title ?? drawing?.table?.title ?? drawing?.kpi?.title ?? drawing?.metric?.title ?? drawing?.map?.title ?? (w.kind === "TEXT" ? "Note" : "Chart")}</span>
+                <span className="flex min-w-0 max-w-[45%] items-center gap-2">
+                  <span className="hidden min-w-0 truncate text-xs text-slate-500 sm:inline">{labels[w.projectId] ?? ""}</span>
+                  {editing && onEdit && canEditInPlace(w) && <button type="button" className="shrink-0 text-xs text-slate-500 underline" aria-label={`Edit ${drawing?.chart?.title ?? drawing?.table?.title ?? drawing?.kpi?.title ?? drawing?.metric?.title ?? drawing?.map?.title ?? (w.kind === "TEXT" ? "Note" : "widget")}`} onPointerDown={(e) => e.stopPropagation()} onClick={() => onEdit(w.id)}>Edit</button>}
+                  {editing && <button type="button" className="shrink-0 text-xs text-slate-500 underline" onPointerDown={(e) => e.stopPropagation()} onClick={() => onChange(removeWidget(widgets, w.id))}>Remove</button>}
                 </span>
               </div>
               <div className="relative min-h-0 flex-1 p-1">
