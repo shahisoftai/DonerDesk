@@ -178,6 +178,8 @@ export function levelForView(state: DrillState, available: readonly number[]): n
 // ---- The place panel (what a click shows) --------------------------------------------------------------
 
 export interface PlacePanel {
+  /** Marked as a facility (a clinic, school or water point) in the places list. */
+  facility: boolean;
   placeId: string;
   name: string;
   path: string;
@@ -212,7 +214,7 @@ export function placePanel(placeId: string, places: readonly PlaceItem[], result
   const children = places
     .filter((p) => p.parentId === placeId && !p.archived)
     .map((p) => ({ placeId: p.id, name: p.name, display: selected?.rollup.rows.find((r) => r.placeId === p.id)?.value ?? null }));
-  return { placeId, name: place.name, path: place.path, trail, figures, children, pinned: place.latitude !== undefined && place.longitude !== undefined };
+  return { placeId, name: place.name, path: place.path, trail, figures, children, facility: place.facility === true, pinned: place.latitude !== undefined && place.longitude !== undefined };
 }
 
 /** Finds the place a clicked boundary stands for: by name, preferring the level being read. */

@@ -85,9 +85,9 @@ export function OverlayPanel({ onOverlay }: { onOverlay: (overlay: Overlay | nul
         </ul>
       )}
       <label className="block font-medium">Look at a file
-        <input type="file" accept=".kml,.kmz,.geojson,.json,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/geo+json" className="mt-1 block w-full text-xs" onChange={(e) => void choose(e.target.files?.[0])} />
+        <input type="file" accept=".kml,.kmz,.geojson,.json,.zip,.shp,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/geo+json" className="mt-1 block w-full text-xs" onChange={(e) => void choose(e.target.files?.[0])} />
       </label>
-      <p className="text-xs text-slate-500">KML, KMZ or GeoJSON, up to 3 MB. Drawn for this visit unless you keep it.</p>
+      <p className="text-xs text-slate-500">KML, KMZ, GeoJSON or a shapefile (.zip with the .shp, .dbf and .prj), up to 3 MB. Drawn for this visit unless you keep it.</p>
       {session && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span>Showing “{session.name}”.</span>

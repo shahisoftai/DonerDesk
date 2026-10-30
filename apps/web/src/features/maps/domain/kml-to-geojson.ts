@@ -1,3 +1,5 @@
+import { shapefileToGeoJson } from "./shapefile-to-geojson.ts";
+
 /**
  * KML and KMZ files to GeoJSON, in the browser, for map overlays (after DevResults' "Map Overlays": KML or KMZ, at most 3 MB, 10 MB once a KMZ is unpacked).
  * Pure text in, text out: no DOM, so the same code is tested in Node. It reads what an overlay draws -- points, lines and polygon rings with their names -- and
@@ -82,6 +84,36 @@ export async function kmlFromKmz(bytes: Uint8Array): Promise<{ ok: true; kml: st
   } catch { return { ok: false, reason: "That KMZ could not be unpacked." }; }
 }
 
+/** Every file inside a zip, by name (stored or deflated entries). Refuses a zip that unpacks past `maxTotal` bytes. */
+export async function unzipAll(bytes: Uint8Array, maxTotal = KMZ_UNPACKED_MAX_BYTES): Promise<{ ok: true; files: Map<string, Uint8Array> } | { ok: false; reason: string }> {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let end = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 22 - 65535); i -= 1) if (view.getUint32(i, true) === 0x06054b50) { end = i; break; }
+  if (end < 0) return { ok: false, reason: "That does not look like a zip file." };
+  const count = view.getUint16(end + 10, true);
+  let p = view.getUint32(end + 16, true);
+  const files = new Map<string, Uint8Array>();
+  let total = 0;
+  for (let n = 0; n < count && p + 46 <= bytes.length; n += 1) {
+    if (view.getUint32(p, true) !== 0x02014b50) break;
+    const method = view.getUint16(p + 10, true), csize = view.getUint32(p + 20, true), usize = view.getUint32(p + 24, true), offset = view.getUint32(p + 42, true);
+    const nameLen = view.getUint16(p + 28, true), extraLen = view.getUint16(p + 30, true), commentLen = view.getUint16(p + 32, true);
+    const name = new TextDecoder().decode(bytes.subarray(p + 46, p + 46 + nameLen));
+    p += 46 + nameLen + extraLen + commentLen;
+    if (name.endsWith("/")) continue;
+    total += usize;
+    if (total > maxTotal) return { ok: false, reason: "That zip is larger than 10 MB once unpacked. Simplify it first." };
+    const start = offset + 30 + view.getUint16(offset + 26, true) + view.getUint16(offset + 28, true);
+    const raw = bytes.subarray(start, start + csize);
+    if (method === 0) files.set(name, raw);
+    else if (method === 8) {
+      try { files.set(name, new Uint8Array(await new Response(new Blob([raw as BlobPart]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer())); }
+      catch { return { ok: false, reason: "That zip could not be unpacked." }; }
+    } else return { ok: false, reason: "That zip uses a compression this page cannot open." };
+  }
+  return { ok: true, files };
+}
+
 /** Any overlay file by its name: GeoJSON is passed on as it is, KML converted, KMZ unpacked then converted. */
 export async function overlayFileToGeoJson(name: string, bytes: Uint8Array): Promise<KmlResult> {
   if (/\.kmz$/i.test(name)) {
@@ -89,8 +121,12 @@ export async function overlayFileToGeoJson(name: string, bytes: Uint8Array): Pro
     const k = await kmlFromKmz(bytes);
     return k.ok ? kmlToGeoJson(k.kml) : k;
   }
+  if (/\.(zip|shp)$/i.test(name)) {
+    if (bytes.length > KML_MAX_BYTES * 3) return { ok: false, reason: "That file is larger than 9 MB. Simplify it first." };
+    return shapefileToGeoJson(name, bytes);
+  }
   const text = new TextDecoder().decode(bytes);
   if (/\.kml$/i.test(name)) return kmlToGeoJson(text);
   if (/\.(geo)?json$/i.test(name)) return bytes.length > KML_MAX_BYTES * 2 ? { ok: false, reason: "That file is larger than 6 MB. Simplify it first." } : { ok: true, geojson: text, features: 0 };
-  return { ok: false, reason: "Use a KML, KMZ or GeoJSON file." };
+  return { ok: false, reason: "Use a KML, KMZ, GeoJSON or shapefile (.zip) file." };
 }

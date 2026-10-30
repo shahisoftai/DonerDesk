@@ -49,5 +49,5 @@ test("a KMZ (deflated or stored) is unpacked and read; one with no KML is refuse
 
 test("GeoJSON passes through and other file types are refused by name", async () => {
   assert.equal((await overlayFileToGeoJson("a.geojson", new TextEncoder().encode("{}"))).ok, true);
-  assert.match(((await overlayFileToGeoJson("a.shp", new Uint8Array(3))) as { reason: string }).reason, /KML, KMZ or GeoJSON/);
+  assert.match(((await overlayFileToGeoJson("a.dwg", new Uint8Array(3))) as { reason: string }).reason, /KML, KMZ, GeoJSON or shapefile/);
 });

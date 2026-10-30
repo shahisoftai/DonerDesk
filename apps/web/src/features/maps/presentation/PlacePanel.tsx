@@ -18,6 +18,7 @@ export function PlacePanel({ panel, name, canDrill, onDrill, onSelect, onClose }
         <div>
           <h3 className="text-base font-semibold">{name}</h3>
           {panel && <p className="text-xs text-slate-500">{panel.path}</p>}
+          {panel?.facility && <p className="text-xs font-medium text-slate-600 dark:text-slate-300">A facility</p>}
         </div>
         <button type="button" className="rounded border px-2" aria-label="Close place details" onClick={onClose}>×</button>
       </div>

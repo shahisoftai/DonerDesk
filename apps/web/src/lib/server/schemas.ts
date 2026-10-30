@@ -657,6 +657,15 @@ export const EvidenceDetailSchema = z.object({
 });
 export type EvidenceDetail = z.infer<typeof EvidenceDetailSchema>;
 
+/** The evidence fields a map of photos needs (the list route sends more; the rest is ignored). */
+export const PhotoEvidenceResponseSchema = z.object({
+  items: z.array(z.object({
+    id: z.string(), title: z.string(), fileName: z.string(), fileType: z.string(), fileUrl: z.string(), storageProvider: z.string().optional(),
+    location: z.string().nullable().optional(), activityDate: z.string().optional(),
+  })),
+  total: z.number(),
+});
+
 export const EvidenceResponseSchema = z.object({
   items: z.array(EvidenceItemSchema),
   total: z.number(),

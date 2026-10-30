@@ -15,6 +15,7 @@
     "test:report-builder": "node tests/harness/report-builder/run.mjs",
     "test:finance": "node tests/harness/finance/run.mjs",
     "test:tiles": "node tests/harness/dashboard-tiles/run.mjs",
+    "test:maps-extras": "node tests/harness/maps-extras/run.mjs",
     "test:templates": "node tests/harness/dashboard-templates/run.mjs"
   },
   "dependencies": {
