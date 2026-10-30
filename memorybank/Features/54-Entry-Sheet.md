@@ -26,6 +26,7 @@ On a reporting period's **indicator values** page, a **Sheet / Form** toggle. Th
 - Undo restores exactly; a row put back to what the server holds is clean again.
 - An effect that runs on every keystroke must never set a new state object when nothing changed (this looped twice and is pinned by the harness).
 - Hand-in and verification are unchanged: the entry window, period locks and reviewer rules still apply.
+- **Simple review (Phase 36):** when a project turns it on, the explicit **Save** (button "Save and hand in") hands the saved values in, and verifies them when the saver may verify and a file is attached. **Autosave never does**: it keeps drafts. See [`59-Quick-Entry-And-Simple-Review.md`](59-Quick-Entry-And-Simple-Review.md).
 
 ## Not built
 

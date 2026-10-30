@@ -26,6 +26,12 @@ export async function saveCollectionFormAction(input: unknown, formId?: string):
   return gatewayRequest(formId ? `/v1/collection-forms/${enc(formId)}` : "/v1/collection-forms", IdResponseSchema, context.token, { method: formId ? "PUT" : "POST", body: parsed.data });
 }
 
+/** A draft form with the usual questions for one indicator (a total of records). Nothing is published; the person reviews it first. */
+export async function createFormFromIndicatorAction(indicatorId: string): Promise<Result<{ id: string; notes: string[] }, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/indicators/${enc(indicatorId)}/collection-form`, z.object({ id: z.string(), notes: z.array(z.string()).default([]) }), context.token, { method: "POST", body: {} });
+}
+
 export async function setCollectionFormStatusAction(formId: string, to: "publish" | "close"): Promise<Result<undefined, AppError>> {
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/collection-forms/${enc(formId)}/${to}`, OkResponseSchema, context.token, { method: "POST", body: {} });

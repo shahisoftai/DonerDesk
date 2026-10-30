@@ -455,6 +455,24 @@ export interface NeedsYouItem {
   href: string;
   /** Overdue first, then the order the kinds are listed in. */
   urgent: boolean;
+  /** Overdue values that can be typed right here (at most `INLINE_VALUE_LIMIT`), when the person may enter values. */
+  entries?: InlineValueEntry[];
+}
+
+/** One overdue indicator value: enough to type it without opening another page. */
+export interface InlineValueEntry {
+  indicatorId: string;
+  periodId: string;
+  label: string;
+}
+
+export const INLINE_VALUE_LIMIT = 5;
+
+/** The ids in an indicator-value assignment key (`INDICATOR_VALUE:<indicatorId>:<periodId>`); anything else is not one. */
+export function parseValueKey(key: string): { indicatorId: string; periodId: string } | null {
+  const parts = key.split(":");
+  if (parts.length !== 3 || parts[0] !== "INDICATOR_VALUE" || !parts[1] || !parts[2]) return null;
+  return { indicatorId: parts[1], periodId: parts[2] };
 }
 
 export interface NeedsYouInput {
@@ -464,6 +482,8 @@ export interface NeedsYouInput {
   canReviewActivity: boolean;
   canVerifyEvidence: boolean;
   canManageRisks: boolean;
+  /** May this person type indicator values (`indicator.update`)? Without it an overdue value is a link only. */
+  canEnterValues?: boolean;
   periods: ReadonlyArray<{ id: string; reportType: string; status: string; readinessScore: number; deadline: string; daysUntilDeadline: number }>;
   assignments: ReadonlyArray<{ key: string; kind: string; title: string; dueDate?: string | undefined; state: string; href: string; projectId: string; because?: string | undefined }>;
   risks: ReadonlyArray<{ id: string; title: string; reviewBy?: string | undefined; status: string }>;
@@ -479,6 +499,16 @@ const KIND_ORDER: Readonly<Record<NeedsYouKind, number>> = {
 };
 
 /** What waits on this person on this project, most pressing first. */
+function inlineEntries(values: ReadonlyArray<{ key: string; title: string }>): { entries: InlineValueEntry[] } | Record<string, never> {
+  const entries: InlineValueEntry[] = [];
+  for (const v of values) {
+    const ids = parseValueKey(v.key);
+    if (ids) entries.push({ ...ids, label: v.title });
+    if (entries.length === INLINE_VALUE_LIMIT) break;
+  }
+  return entries.length > 0 ? { entries } : {};
+}
+
 export function needsYouItems(input: NeedsYouInput): NeedsYouItem[] {
   const today = input.today.slice(0, 10) as PlainDate;
   const items: NeedsYouItem[] = [];
@@ -531,6 +561,7 @@ export function needsYouItems(input: NeedsYouInput): NeedsYouItem[] {
       why: values.map((a) => a.title).slice(0, 2).join(" · "),
       href: `/projects/${input.projectId}/data`,
       urgent: true,
+      ...(input.canEnterValues ? inlineEntries(values) : {}),
     });
   }
 

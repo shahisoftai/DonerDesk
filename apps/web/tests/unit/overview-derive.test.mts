@@ -12,6 +12,8 @@ import {
   lifecycle,
   movedThisQuarter,
   needsYouItems,
+  parseValueKey,
+  INLINE_VALUE_LIMIT,
   resultsPace,
   teamsWeek,
 } from "../../src/features/projects/domain/overview-derive.ts";
@@ -284,6 +286,26 @@ test("what is late comes before what is not", () => {
   });
   assert.equal(items[0]!.kind, "OVERDUE_VALUE");
   assert.equal(items[0]!.urgent, true);
+});
+
+test("an overdue value can be typed in the row, only by someone who may enter values, and at most five at a time", () => {
+  const late = (n: number) => ({ key: `INDICATOR_VALUE:ind-${n}:per-1`, kind: "INDICATOR_VALUE", title: `IND-${n} value`, dueDate: "2025-07-01", state: "LATE", href: "/x", projectId: "p1" });
+  const assignments = [1, 2, 3, 4, 5, 6, 7].map(late);
+  const without = needsYouItems({ ...needsYouBase, assignments })[0]!;
+  assert.equal(without.kind, "OVERDUE_VALUE");
+  assert.equal(without.entries, undefined);
+  const withEntry = needsYouItems({ ...needsYouBase, canEnterValues: true, assignments })[0]!;
+  assert.equal(withEntry.entries?.length, INLINE_VALUE_LIMIT);
+  assert.deepEqual(withEntry.entries?.[0], { indicatorId: "ind-1", periodId: "per-1", label: "IND-1 value" });
+  assert.match(withEntry.title, /7 indicator values are overdue/);
+});
+
+test("a key that is not an indicator-value key gives no inline entry", () => {
+  assert.equal(parseValueKey("TASK:1"), null);
+  assert.equal(parseValueKey("INDICATOR_VALUE:only-one"), null);
+  assert.deepEqual(parseValueKey("INDICATOR_VALUE:a:b"), { indicatorId: "a", periodId: "b" });
+  const items = needsYouItems({ ...needsYouBase, canEnterValues: true, assignments: [{ key: "weird", kind: "INDICATOR_VALUE", title: "t", state: "LATE", href: "/x", projectId: "p1" }] });
+  assert.equal(items[0]!.entries, undefined);
 });
 
 /* ------------------------------------------------------------------ close-out */

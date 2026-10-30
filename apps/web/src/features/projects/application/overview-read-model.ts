@@ -203,6 +203,7 @@ export const loadProjectOverviewV2 = cache(
       canReviewActivity: capabilities.has("activity.review"),
       canVerifyEvidence: capabilities.has("evidence.verify"),
       canManageRisks: capabilities.has("risk.manage"),
+      canEnterValues: capabilities.has("indicator.update"),
       periods: periods.map((p) => ({
         id: p.id,
         reportType: p.reportType,

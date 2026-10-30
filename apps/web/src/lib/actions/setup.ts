@@ -101,3 +101,10 @@ export async function setRequireEvidenceForVerificationAction(projectId: string,
   return result.ok ? { ok: true, value: undefined } : result;
 }
 
+
+/** Simple review: saving an indicator value hands it in at once (and verifies it when the saver may and a file is attached). */
+export async function setSimpleReviewAction(projectId: string, value: boolean): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/simple-review`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: { value } });
+  return result.ok ? { ok: true, value: undefined } : result;
+}

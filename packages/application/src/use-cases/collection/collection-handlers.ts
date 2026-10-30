@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  DomainError, PlaceRegistry, Permissions, resolvePlace, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
+  DomainError, PlaceRegistry, Permissions, formFromIndicator, effectiveIndicatorSemantics, resolvePlace, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
   type FormDefinition, type FormField, type RecordAggregation, type RecordMapping, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { ApplyRecordsInput, CreateCollectionLinkInput, PublicSubmitInput, ReviewRecordInput, SaveCollectionFormInput, SubmitRecordInput } from "@donordesk/contracts";
@@ -624,5 +624,30 @@ export class GetOfflinePackHandler {
       forms: listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({ id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields] })),
       places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id) })),
     });
+  }
+}
+
+/**
+ * "Create a form from this indicator" (Phase 36): drafts the usual questions for an indicator that is a total of records and
+ * saves them as a DRAFT through the ordinary save, so every form rule still applies. Nothing is published; a person reviews it.
+ */
+export class CreateFormFromIndicatorHandler {
+  constructor(private readonly indicators: IIndicatorRepository, private readonly save: Pick<SaveCollectionFormHandler, "handle">) {}
+
+  async handle(ctx: AuthenticatedContext, indicatorId: string): Promise<Result<{ id: string; notes: string[] }, DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot design forms"));
+    const found = await this.indicators.findById(indicatorId, ctx.tenant.tenantId);
+    if (!found.ok) return found;
+    if (!found.value) return fail(DomainError.notFound("Indicator", indicatorId));
+    const ind = found.value;
+    const draft = formFromIndicator({
+      id: ind.id, code: ind.code, name: ind.name, unit: ind.unit,
+      aggregation: effectiveIndicatorSemantics({ type: ind.type, name: ind.name, unit: ind.unit, semantics: ind.semantics }).aggregation,
+      isCalculated: Boolean(ind.formula),
+    });
+    if (!draft.ok) return fail(DomainError.validation(draft.reason));
+    const saved = await this.save.handle(ctx, { projectId: ind.projectId, name: draft.name, fields: draft.fields, mappings: draft.mappings } as SaveCollectionFormInput);
+    if (!saved.ok) return saved;
+    return ok({ id: saved.value.id, notes: draft.notes });
   }
 }

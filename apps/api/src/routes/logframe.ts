@@ -14,6 +14,7 @@ import {
   ConfirmIndicatorSemanticsSchema,
   VerifyPeriodIndicatorUpdatesSchema,
   CreateIndicatorUpdateSchema,
+  QuickEnterIndicatorValueSchema,
   BulkUpsertIndicatorUpdatesSchema,
   ParseIndicatorSheetSchema,
   IndicatorUpdateReviewReasonSchema,
@@ -232,6 +233,13 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const body = CreateIndicatorUpdateSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.createIndicatorUpdate.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/indicator-updates/quick", async (req) => {
+    const body = QuickEnterIndicatorValueSchema.parse(req.body);
+    const r = await req.container.handlers.quickEnterIndicatorValue.handle({ tenant: req.tenant, requestId: req.id }, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

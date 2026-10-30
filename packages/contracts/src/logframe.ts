@@ -163,6 +163,27 @@ export const CreateIndicatorUpdateSchema = z.object({
 });
 export type CreateIndicatorUpdateInput = z.infer<typeof CreateIndicatorUpdateSchema>;
 
+/**
+ * Quick entry: one value for one indicator from a date. The reporting period is worked out from the date (or named
+ * explicitly), the running total is suggested for an indicator that adds up, and the project's review setting decides
+ * whether the value is handed in at once.
+ */
+export const QuickEnterIndicatorValueSchema = z.object({
+  indicatorId: z.string().min(1),
+  /** The day the value is for, YYYY-MM-DD. */
+  date: z.string().min(8).max(10),
+  /** Use this period instead of the one the date falls in. */
+  reportingPeriodId: z.string().min(1).optional(),
+  periodAchievement: z.string().max(200).default(""),
+  /** Omitted or empty = suggested for an indicator that adds up. */
+  cumulativeAchievement: z.string().max(200).optional(),
+  comments: z.string().max(2000).optional(),
+  dataSource: z.string().max(500).optional(),
+  notApplicableReason: z.string().max(500).optional(),
+  disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
+});
+export type QuickEnterIndicatorValueInput = z.infer<typeof QuickEnterIndicatorValueSchema>;
+
 /** One row of the spreadsheet-style indicator data entry grid. */
 export const UpsertIndicatorUpdateSchema = z.object({
   indicatorId: z.string().min(1),
@@ -183,6 +204,8 @@ export type UpsertIndicatorUpdateInput = z.infer<typeof UpsertIndicatorUpdateSch
 export const BulkUpsertIndicatorUpdatesSchema = z.object({
   reportingPeriodId: z.string().min(1),
   updates: z.array(UpsertIndicatorUpdateSchema).max(500).default([]),
+  /** An explicit save (not autosave): with the project's simple review on, the saved values are handed in. Ignored otherwise. */
+  handIn: z.boolean().optional(),
 });
 export type BulkUpsertIndicatorUpdatesInput = z.infer<typeof BulkUpsertIndicatorUpdatesSchema>;
 

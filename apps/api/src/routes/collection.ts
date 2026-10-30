@@ -22,6 +22,13 @@ export async function registerCollectionRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // A draft form with the usual questions for one indicator (an indicator that is a total of records). Nothing is published.
+  app.post("/v1/indicators/:indicatorId/collection-form", async (req, reply) => {
+    const r = await req.container.handlers.createFormFromIndicator.handle(ctx(req), param(req, "indicatorId"));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+
   app.post("/v1/collection-forms", async (req, reply) => {
     const r = await req.container.handlers.saveCollectionForm.handle(ctx(req), SaveCollectionFormSchema.parse(req.body));
     if (!r.ok) throw r.error;

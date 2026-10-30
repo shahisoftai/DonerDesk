@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { getProject } from "@/lib/server/project-queries";
@@ -34,6 +35,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
     { label: "Dashboards", href: `/dashboards?project=${project.id}`, secondary: true },
     { label: "Infographics", href: `/projects/${project.id}/infographics`, secondary: true },
     { label: "Evidence", href: `/projects/${project.id}/evidence`, secondary: true },
+    { label: "Bring in data", href: `/projects/${project.id}/import`, secondary: true },
     // One-time setup; placed last so it reads as configuration, not a workflow.
     { label: "Templates", href: `/projects/${project.id}/templates`, secondary: true },
     { label: "Team", href: `/projects/${project.id}/team`, secondary: true },
@@ -53,7 +55,10 @@ export default async function ProjectLayout({ params, children }: { params: Prom
             {formatDate(project.startDate)} – {formatDate(project.endDate)} · {project.reportingFrequency.replace(/_/g, " ").toLowerCase()} reporting
           </p>
         </div>
-        <span className="tag tag-blue">{project.status.replace(/_/g, " ")}</span>
+        <div className="flex items-center gap-2">
+          {ctx.capabilities.has("indicator.update") && <Link className="btn-primary" href={`/projects/${project.id}/enter`}>Enter data</Link>}
+          <span className="tag tag-blue">{project.status.replace(/_/g, " ")}</span>
+        </div>
       </div>
       <ProjectLifecycleBanner projectId={project.id} status={project.status} canEdit={ctx.capabilities.has("project.edit")} />
       <div className="mt-4">

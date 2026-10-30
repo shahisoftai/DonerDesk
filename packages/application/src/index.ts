@@ -345,6 +345,8 @@ export * from "./use-cases/logframe/submit-period-indicator-updates.js";
 export * from "./use-cases/logframe/return-period-indicator-updates.js";
 export * from "./use-cases/logframe/set-period-entry-window.js";
 export * from "./services/entry-window-guard.js";
+export * from "./services/auto-review.js";
+export * from "./use-cases/logframe/quick-enter-indicator-value.js";
 export * from "./use-cases/places/place-results.js";
 export * from "./ports/portfolio.js";
 export * from "./use-cases/funding/funding-handlers.js";

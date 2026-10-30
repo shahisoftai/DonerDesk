@@ -8,12 +8,17 @@ import type { BulkUpsertIndicatorUpdatesInput } from "@donordesk/contracts";
 import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
 import { upsertIndicatorUpdate } from "./upsert-indicator-update.js";
 import { checkEntryWindow } from "../../services/entry-window-guard.js";
+import type { AutoReviewService } from "../../services/auto-review.js";
 
 export interface BulkUpsertOutcome {
   saved: number;
   skipped: number;
   /** One entry per accepted row, so callers can verify without a second lookup. */
   updates: Array<{ indicatorId: string; updateId: string; changed: boolean }>;
+  /** Plain sentences about what the project's simple review did with the saved values (empty when it is off or `handIn` was not asked). */
+  notices: string[];
+  /** How many saved values were handed in or verified by simple review. */
+  handedIn: number;
 }
 
 import type { ITaskReconciliation } from "../../ports/tasks.js";
@@ -28,6 +33,8 @@ export class BulkUpsertIndicatorUpdatesHandler {
     private readonly linker?: IEvidenceLinker,
     private readonly tasks?: ITaskReconciliation,
     private readonly now: () => Date = () => new Date(),
+    /** With this, an explicit save (`handIn`) in a project with simple review on also hands the saved values in. */
+    private readonly autoReview?: AutoReviewService,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: BulkUpsertIndicatorUpdatesInput): Promise<Result<BulkUpsertOutcome, DomainError>> {
@@ -117,6 +124,20 @@ export class BulkUpsertIndicatorUpdatesHandler {
     }
 
     if (saved > 0) await this.tasks?.reconcileForCurrentUser(ctx);
-    return { ok: true, value: { saved, skipped, updates } };
+
+    // Autosave never reaches here with handIn: only the person pressing Save hands values in, and only when the project chose to.
+    const notices: string[] = [];
+    let handedIn = 0;
+    if (input.handIn && this.autoReview) {
+      const reviews = await this.autoReview.afterSave(ctx, periodResult.value.projectId, updates.filter((u) => u.changed).map((u) => u.updateId));
+      handedIn = reviews.filter((r) => r.outcome !== "SAVED_DRAFT").length;
+      const verified = reviews.filter((r) => r.outcome === "VERIFIED").length;
+      const waiting = reviews.filter((r) => r.outcome === "HANDED_IN").length;
+      if (verified > 0) notices.push(`${verified} ${verified === 1 ? "value was" : "values were"} handed in and verified.`);
+      if (waiting > 0) notices.push(`${waiting} ${waiting === 1 ? "value was" : "values were"} handed in for review.`);
+      const stuck = reviews.filter((r) => r.outcome === "SAVED_DRAFT" && r.notice && !r.notice.startsWith("Saved as a draft: there is no figure"));
+      for (const r of stuck) if (r.notice) notices.push(r.notice);
+    }
+    return { ok: true, value: { saved, skipped, updates, notices, handedIn } };
   }
 }

@@ -80,6 +80,7 @@ export function IndicatorEntryGrid({
   canManageWindow = false,
   history,
   places,
+  simpleReview = false,
 }: {
   projectId: string;
   periodId: string;
@@ -104,6 +105,8 @@ export function IndicatorEntryGrid({
   history?: { periods: Array<{ id: string; label: string }>; values: Record<string, Record<string, string>> };
   /** Place names the project knows, offered by place in the sheet. */
   places?: string[];
+  /** The project hands a value in as soon as it is saved with Save all (autosave still only keeps drafts). */
+  simpleReview?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -439,14 +442,14 @@ export function IndicatorEntryGrid({
       // The same write plan the sheet's automatic save uses: the version each row was saved against, "" clears, a reason makes the
       // row "not applicable" and its figures are ignored, a breakdown only when required or typed.
       const payload = toWritePlan(rows.map(toSheetRow), values as ValuesById<DisaggregationEntryInput>, dirty) as BulkSaveRow[];
-      const result = await bulkSaveIndicatorUpdatesAction(periodId, payload);
+      const result = await bulkSaveIndicatorUpdatesAction(periodId, payload, { handIn: true });
       if (!result.ok) {
         toast.push({ title: "Could not save indicator data", description: result.error.message, tone: "danger" });
         return;
       }
       toast.push({
         title: "Indicator data saved",
-        description: `${result.value.saved} row${result.value.saved === 1 ? "" : "s"} saved${result.value.skipped ? `, ${result.value.skipped} verified row${result.value.skipped === 1 ? "" : "s"} left unchanged` : ""}.`,
+        description: [`${result.value.saved} row${result.value.saved === 1 ? "" : "s"} saved${result.value.skipped ? `, ${result.value.skipped} verified row${result.value.skipped === 1 ? "" : "s"} left unchanged` : ""}.`, ...result.value.notices].join(" "),
         tone: "success",
       });
       setDirty(new Set());
@@ -551,8 +554,8 @@ export function IndicatorEntryGrid({
             </Button>
           )}
           {canEdit && (
-            <Button size="sm" onClick={() => void saveAll()} pending={saving} disabled={dirtyCount === 0}>
-              Save all
+            <Button size="sm" onClick={() => void saveAll()} pending={saving} disabled={dirtyCount === 0} title={simpleReview ? "This project hands values in when you save them" : undefined}>
+              {simpleReview ? "Save and hand in" : "Save all"}
             </Button>
           )}
           {canEdit && (

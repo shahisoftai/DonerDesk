@@ -358,6 +358,8 @@ model ReportingProfile {
   requireSecondApprover    Boolean  @default(false)
   /// When on, an indicator value needs an attached file before it can be verified.
   requireEvidenceForVerification Boolean @default(false)
+  /// When on, saving an indicator value hands it in at once (and verifies it when the saver may and a file is attached).
+  simpleReview          Boolean  @default(false)
   /// JSON {key: text}: statements that hold for every period (branding policy, waste procedure).
   standingStatementsJson   String   @default("{}")
   version                  Int      @default(1)

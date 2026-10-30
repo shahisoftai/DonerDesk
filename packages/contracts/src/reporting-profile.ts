@@ -5,6 +5,7 @@ export const SetTemplateDefaultForTypeSchema = z.object({ reportType: z.string()
 export const SetStandingStatementSchema = z.object({ key: z.string().min(1).max(120), text: z.string().max(4000) });
 export const SetRequireSecondApproverSchema = z.object({ value: z.boolean() });
 export const SetRequireEvidenceForVerificationSchema = z.object({ value: z.boolean() });
+export const SetSimpleReviewSchema = z.object({ value: z.boolean() });
 
 export const ProfileToneSchema = z.enum(["FORMAL", "CONCISE", "NARRATIVE", "TECHNICAL"]);
 

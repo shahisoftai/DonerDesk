@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdateIndicatorSchema, MoveIndicatorSchema, CreateIndicatorSchema, CreateIndicatorUpdateSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema, IndicatorUpdateReviewReasonSchema } from "@donordesk/contracts";
+import { UpdateIndicatorSchema, MoveIndicatorSchema, CreateIndicatorSchema, CreateIndicatorUpdateSchema, QuickEnterIndicatorValueSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema, IndicatorUpdateReviewReasonSchema } from "@donordesk/contracts";
 import type { UpsertIndicatorUpdateInput } from "@donordesk/contracts";
 import { z } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
@@ -15,6 +15,8 @@ import {
   ParseIndicatorSheetResponseSchema,
   ValueHistoryResponseSchema,
   BulkUpsertResponseSchema,
+  QuickEntryResponseSchema,
+  type QuickEntryResponse,
   CreateIndicatorResponseSchema,
   ConfirmSemanticsResponseSchema,
   VerifyAllResponseSchema,
@@ -88,6 +90,19 @@ export async function createIndicatorUpdateAction(input: unknown): Promise<Resul
   });
 }
 
+/**
+ * Quick entry: one value from a date. The server finds the reporting period, suggests the running total and, in a project with
+ * simple review, hands the value in. The answer carries plain sentences for the person (never blocks).
+ */
+export async function quickEnterValueAction(input: unknown): Promise<Result<QuickEntryResponse, AppError>> {
+  const context = await requireSession();
+  const parsed = QuickEnterIndicatorValueSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest("/v1/indicator-updates/quick", QuickEntryResponseSchema, context.token, { method: "POST", body: parsed.data });
+}
+
 export type BulkSaveRow = UpsertIndicatorUpdateInput;
 
 export type BulkSaveIndicatorUpdatesResult = Result<import("zod").infer<typeof BulkUpsertResponseSchema>, AppError>;
@@ -95,9 +110,11 @@ export type BulkSaveIndicatorUpdatesResult = Result<import("zod").infer<typeof B
 export async function bulkSaveIndicatorUpdatesAction(
   reportingPeriodId: string,
   rows: BulkSaveRow[],
+  /** `handIn`: an explicit Save (never autosave). With the project's simple review on, the saved values are handed in. */
+  options: { handIn?: boolean } = {},
 ): Promise<BulkSaveIndicatorUpdatesResult> {
   const context = await requireSession();
-  const parsed = BulkUpsertIndicatorUpdatesSchema.safeParse({ reportingPeriodId, updates: rows });
+  const parsed = BulkUpsertIndicatorUpdatesSchema.safeParse({ reportingPeriodId, updates: rows, ...(options.handIn ? { handIn: true } : {}) });
   if (!parsed.success) {
     return {
       ok: false,

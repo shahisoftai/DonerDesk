@@ -24,3 +24,4 @@ export * from "./indicator-formula.js";
 export * from "./period-data-status.js";
 export * from "./value-history.js";
 export * from "./indicator-sheet-file.js";
+export * from "./quick-entry.js";

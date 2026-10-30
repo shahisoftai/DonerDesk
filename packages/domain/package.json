@@ -98,6 +98,10 @@
       "types": "./dist/contexts/activities/activity-narrative.d.ts",
       "import": "./dist/contexts/activities/activity-narrative.js"
     },
+    "./contexts/logframe/quick-entry.js": {
+      "types": "./dist/contexts/logframe/quick-entry.d.ts",
+      "import": "./dist/contexts/logframe/quick-entry.js"
+    },
     "./contexts/logframe/indicator-entry-suggestions.js": {
       "types": "./dist/contexts/logframe/indicator-entry-suggestions.d.ts",
       "import": "./dist/contexts/logframe/indicator-entry-suggestions.js"

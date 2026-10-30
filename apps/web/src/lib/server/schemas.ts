@@ -503,7 +503,21 @@ export const BulkUpsertResponseSchema = z.object({
   skipped: z.number(),
   /** One entry per accepted row, so a caller can verify without a second lookup. */
   updates: z.array(z.object({ indicatorId: z.string(), updateId: z.string(), changed: z.boolean() })).default([]),
+  /** What the project's simple review did with the saved values, in plain sentences (empty when it is off). */
+  notices: z.array(z.string()).default([]),
+  handedIn: z.number().default(0),
 });
+
+export const QuickEntryResponseSchema = z.object({
+  id: z.string(),
+  reportingPeriodId: z.string(),
+  chosenBy: z.enum(["DATE", "PERIOD"]),
+  cumulative: z.string(),
+  cumulativeSource: z.enum(["TYPED", "SUGGESTED", "NONE"]),
+  outcome: z.enum(["SAVED_DRAFT", "HANDED_IN", "VERIFIED"]),
+  notices: z.array(z.string()).default([]),
+});
+export type QuickEntryResponse = z.infer<typeof QuickEntryResponseSchema>;
 
 export const SemanticsDescriptionSchema = z.object({
   aggregationLabel: z.string(),
@@ -1157,6 +1171,7 @@ export const ReportingProfileSchema = z.object({
   defaultTemplateByType: z.record(z.string()).default({}),
   requireSecondApprover: z.boolean().default(false),
   requireEvidenceForVerification: z.boolean().default(false),
+  simpleReview: z.boolean().default(false),
   standingStatements: z.record(z.string()).default({}),
   version: z.number(),
   createdAt: z.string(),

@@ -143,6 +143,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           defaultTemplateByTypeJson: JSON.stringify(p.defaultTemplateByType),
           requireSecondApprover: p.requireSecondApprover,
           requireEvidenceForVerification: p.requireEvidenceForVerification,
+          simpleReview: p.simpleReview,
           standingStatementsJson: JSON.stringify(p.standingStatements),
           version: p.version,
           createdById: p.createdById,
@@ -174,6 +175,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           defaultTemplateByTypeJson: JSON.stringify(p.defaultTemplateByType),
           requireSecondApprover: p.requireSecondApprover,
           requireEvidenceForVerification: p.requireEvidenceForVerification,
+          simpleReview: p.simpleReview,
           standingStatementsJson: JSON.stringify(p.standingStatements),
           version: p.version,
           updatedById: p.updatedById,
@@ -211,6 +213,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
     defaultTemplateByTypeJson?: string | null;
     requireSecondApprover?: boolean | null;
     requireEvidenceForVerification?: boolean | null;
+    simpleReview?: boolean | null;
     standingStatementsJson?: string | null;
     version: number;
     createdById: string;
@@ -232,6 +235,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
       defaultTemplateByType: parseStringMap(row.defaultTemplateByTypeJson),
       requireSecondApprover: row.requireSecondApprover ?? false,
       requireEvidenceForVerification: row.requireEvidenceForVerification ?? false,
+      simpleReview: row.simpleReview ?? false,
       standingStatements: parseStringMap(row.standingStatementsJson),
       version: row.version,
       createdById: row.createdById,

@@ -97,7 +97,7 @@ export default async function ProjectDetail({
       ) : null}
 
       {has("NEEDS_YOU") && data.needsYou.ok ? (
-        <NeedsYouSection items={data.needsYou.value} projectId={identity.id} />
+        <NeedsYouSection items={data.needsYou.value} projectId={identity.id} today={new Date().toISOString().slice(0, 10)} />
       ) : null}
 
       {has("PULSE") && data.pulse.ok ? <PulseSection pulse={data.pulse.value} projectId={identity.id} /> : null}

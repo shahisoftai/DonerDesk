@@ -8,6 +8,7 @@ import { ActivitiesResponseSchema, DataSheetResponseSchema, TemplatesResponseSch
 import { PlaceListSchema } from "@/lib/server/schemas-places";
 import { PeriodFinanceResponseSchema, PlanSuggestionResponseSchema, StoryContextResponseSchema } from "@/lib/actions/_schemas";
 import { loadPeriodIndicatorsAction } from "@/lib/actions/indicators";
+import { loadReportingProfileAction } from "@/lib/actions/setup";
 import { InlineError } from "@/components/feedback/PageState";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { IndicatorEntryGrid } from "@/features/reporting/presentation/IndicatorEntryGrid";
@@ -55,6 +56,8 @@ export default async function ReportInputsPage({
     gatewayRequest(`/v1/reporting-periods/${periodId}/plan-suggestion`, PlanSuggestionResponseSchema, ctx.token),
   ]);
   if (!indicatorsResult.ok && indicatorsResult.error.kind === "not_found") notFound();
+  // Simple review is a project choice; if the profile cannot be read the full workflow is assumed.
+  const simpleReview = tabParam === "indicators" || tabParam === undefined ? await loadReportingProfileAction(projectId).then((r) => (r.ok ? r.value.profile?.simpleReview === true : false)) : false;
 
   const period = periodsResult.ok ? periodsResult.value.items.find((p) => p.id === periodId) : undefined;
   // Mirrors `isPeriodLocked` (domain): an approved, submitted or closed report's figures cannot change; the server enforces it.
@@ -181,6 +184,7 @@ export default async function ReportInputsPage({
             canAsk={ctx.capabilities.has("task.assign")}
             history={earlierPeriods.length > 0 ? { periods: earlierPeriods, values: earlierValues } : undefined}
             places={placeNames}
+            simpleReview={simpleReview}
           />
         ) : (
           <InlineError title={indicatorsResult.error.message} referenceId={indicatorsResult.error.referenceId} />
