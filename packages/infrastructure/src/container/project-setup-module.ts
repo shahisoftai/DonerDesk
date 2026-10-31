@@ -1,3 +1,4 @@
+import type { TenantId } from "@donordesk/domain";
 import type { PrismaClient } from "@prisma/client";
 import {
   DiscardSetupProposalHandler, EditSetupProposalHandler, GetSetupProposalHandler, ListSetupProposalsHandler,
@@ -31,6 +32,8 @@ export interface ProjectSetupModuleDeps {
   /** Overrides the registered area extractors (tests); by default every `SETUP_EXTRACTION_SPECS` area over the tenant LLM. */
   extractors?: ReadonlyArray<ISetupAreaExtractor>;
   maxRunsPerDay: number;
+  /** True for an organisation whose plan has no daily document cap. */
+  hasNoDailyCap?: (tenantId: TenantId) => Promise<boolean>;
   /** How many areas of one document are read at the same time. */
   concurrency?: number;
 }
@@ -44,7 +47,7 @@ export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
   const extractors = deps.extractors ?? withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm));
   const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, undefined, deps.concurrency);
   const handlers = {
-    startSetupExtraction: new StartSetupExtractionHandler(deps.orgs, proposals, runs, deps.documents, llm, orchestrator, deps.audits, deps.clock, deps.ids, deps.runInBackground, deps.maxRunsPerDay),
+    startSetupExtraction: new StartSetupExtractionHandler(deps.orgs, proposals, runs, deps.documents, llm, orchestrator, deps.audits, deps.clock, deps.ids, deps.runInBackground, deps.maxRunsPerDay, deps.hasNoDailyCap),
     getSetupProposal: new GetSetupProposalHandler(proposals, runs, deps.clock),
     listSetupProposals: new ListSetupProposalsHandler(proposals, deps.clock),
     editSetupProposal: new EditSetupProposalHandler(proposals, deps.audits, deps.clock),

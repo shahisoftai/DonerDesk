@@ -1303,6 +1303,11 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     onProviderError: (info) => logger.warn("Project setup: the AI service refused a request", info),
     runInBackground,
     maxRunsPerDay: Number.parseInt(process.env.SETUP_ASSIST_RUNS_PER_DAY ?? "10", 10) || 10,
+    // Enterprise has no daily document cap; any failure to read the plan keeps the cap.
+    hasNoDailyCap: async (tenantId) => {
+      const entitlement = await entitlements.resolve({ tenantId: tenantId.toString() }).catch(() => null);
+      return !!entitlement?.ok && entitlement.value.planCode === "ENTERPRISE";
+    },
     concurrency: Math.min(8, Math.max(1, Number.parseInt(process.env.SETUP_ASSIST_CONCURRENCY ?? "3", 10) || 3)),
   });
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);

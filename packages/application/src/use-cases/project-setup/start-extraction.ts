@@ -46,6 +46,8 @@ export class StartSetupExtractionHandler {
     private readonly ids: IIdGenerator,
     private readonly runInBackground: BackgroundRunner,
     private readonly maxRunsPerDay: number,
+    /** True when the organisation's plan has no daily cap (Enterprise); a failed lookup keeps the cap. */
+    private readonly hasNoDailyCap: (tenantId: TenantId) => Promise<boolean> = async () => false,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: StartSetupExtractionInput): Promise<Result<SetupExtractionStarted, DomainError>> {
@@ -72,7 +74,7 @@ export class StartSetupExtractionHandler {
     const now = this.clock.now();
     const started = await this.proposals.countStartedSince(tenantId, new Date(now.getTime() - 24 * 60 * 60 * 1000));
     if (!started.ok) return started;
-    if (started.value >= this.maxRunsPerDay) {
+    if (started.value >= this.maxRunsPerDay && !(await this.hasNoDailyCap(tenantId))) {
       return { ok: false, error: new DomainError("RATE_LIMITED", `At most ${this.maxRunsPerDay} documents a day across the organisation. Try again tomorrow.`) };
     }
     if (!(await this.documents.available(tenantId))) {
