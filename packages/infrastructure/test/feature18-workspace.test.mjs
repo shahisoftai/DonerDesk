@@ -8,6 +8,7 @@ import {
   LocalProjectWorkspaceService,
   GoogleDriveProjectWorkspaceService,
   PROJECT_WORKSPACE_FOLDERS,
+  ORGANISATION_FOLDERS,
   GoogleDriveWorkspaceDrive,
 } from "../dist/index.js";
 
@@ -109,6 +110,9 @@ test("GoogleDriveProjectWorkspaceService builds the full tree", async () => {
       folderCounter += 1;
       return { ok: true, value: { id: `folder-${folderCounter}` } };
     },
+    ensureTenantFolderStrict: async ({ role }) => ({ ok: true, value: { id: `org-${role}`, created: false } }),
+    fileInfo: async () => ({ ok: true, value: { parents: [] } }),
+    moveFile: async () => ({ ok: true, value: undefined }),
     verifyAccess: async () => ({ ok: true, value: undefined }),
   };
   const service = new GoogleDriveProjectWorkspaceService(
@@ -127,6 +131,9 @@ test("GoogleDriveProjectWorkspaceService repair delegates to ensure (idempotent)
   const drive = {
     ensureRoot: async () => ({ ok: true, value: { id: "root-1" } }),
     ensureFolder: async () => ({ ok: true, value: { id: "f" } }),
+    ensureTenantFolderStrict: async ({ role }) => ({ ok: true, value: { id: `org-${role}`, created: false } }),
+    fileInfo: async () => ({ ok: true, value: { parents: [] } }),
+    moveFile: async () => ({ ok: true, value: undefined }),
     verifyAccess: async () => ({ ok: true, value: undefined }),
   };
   const service = new GoogleDriveProjectWorkspaceService(
@@ -146,7 +153,10 @@ test("GoogleDriveProjectWorkspaceService remembers the folder tree: listing seve
     {
       ensureRoot: async () => ({ ok: true, value: { id: "root" } }),
       ensureFolder: async ({ role }) => { ensureCalls += 1; return { ok: true, value: { id: `f-${role}` } }; },
-      verifyAccess: async () => ({ ok: true, value: undefined }),
+      ensureTenantFolderStrict: async ({ role }) => ({ ok: true, value: { id: `org-${role}`, created: false } }),
+    fileInfo: async () => ({ ok: true, value: { parents: [] } }),
+    moveFile: async () => ({ ok: true, value: undefined }),
+    verifyAccess: async () => ({ ok: true, value: undefined }),
       listFiles: async () => { listCalls += 1; return { ok: true, value: [] }; },
     },
   );
@@ -157,4 +167,68 @@ test("GoogleDriveProjectWorkspaceService remembers the folder tree: listing seve
   assert.equal(listCalls, 3);
   await service.repairProjectWorkspace(tenantId, "p1");
   assert.equal(ensureCalls, 2 * (1 + PROJECT_WORKSPACE_FOLDERS.length));
+});
+
+function fakeOrganisationDrive(existing = new Set()) {
+  const calls = { created: [], moved: [] };
+  return {
+    calls,
+    ensureRoot: async () => ({ ok: true, value: { id: "root" } }),
+    ensureFolder: async ({ role }) => ({ ok: true, value: { id: `p-${role}` } }),
+    ensureTenantFolderStrict: async ({ role, parentId }) => {
+      if (existing.has(role)) return { ok: true, value: { id: `org-${role}`, created: false } };
+      existing.add(role);
+      calls.created.push({ role, parentId });
+      return { ok: true, value: { id: `org-${role}`, created: true } };
+    },
+    fileInfo: async () => ({ ok: true, value: { parents: ["root"] } }),
+    moveFile: async (_t, fileId, to) => { calls.moved.push({ fileId, to }); return { ok: true, value: undefined }; },
+    verifyAccess: async () => ({ ok: true, value: undefined }),
+    listFiles: async () => ({ ok: true, value: [] }),
+  };
+}
+
+test("organisation folders: first run creates the tree, a second run creates nothing", async () => {
+  const drive = fakeOrganisationDrive();
+  const service = new GoogleDriveProjectWorkspaceService({ projectLabel: async () => "P", tenantLabel: async () => "D" }, drive);
+  const first = await service.ensureOrganisationFolders(tenantId);
+  assert.equal(first.ok, true);
+  assert.equal(first.value.folders.length, ORGANISATION_FOLDERS.length);
+  assert.equal(first.value.folders.every((f) => f.created), true);
+  const second = await service.ensureOrganisationFolders(tenantId);
+  assert.equal(second.value.folders.some((f) => f.created), false);
+  assert.equal(drive.calls.created.length, ORGANISATION_FOLDERS.length);
+});
+
+test("organisation folders: a subfolder is created inside its own parent", async () => {
+  const drive = fakeOrganisationDrive();
+  const service = new GoogleDriveProjectWorkspaceService({ projectLabel: async () => "P", tenantLabel: async () => "D" }, drive);
+  await service.ensureOrganisationFolders(tenantId);
+  const legal = drive.calls.created.find((c) => c.role === "ORG/00-Organisation/Legal-Registration");
+  assert.equal(legal.parentId, "org-ORG/00-Organisation");
+  assert.equal(drive.calls.created.find((c) => c.role === "ORG/03-Projects").parentId, "root");
+});
+
+test("organisation folders: a lookup Drive cannot answer stops the run instead of creating a copy", async () => {
+  const drive = fakeOrganisationDrive();
+  drive.ensureTenantFolderStrict = async () => ({ ok: false, error: new Error("Google Drive folder lookup failed (503)") });
+  const service = new GoogleDriveProjectWorkspaceService({ projectLabel: async () => "P", tenantLabel: async () => "D" }, drive);
+  assert.equal((await service.ensureOrganisationFolders(tenantId)).ok, false);
+});
+
+test("organisation folders: two clicks at once share one run", async () => {
+  const drive = fakeOrganisationDrive();
+  const service = new GoogleDriveProjectWorkspaceService({ projectLabel: async () => "P", tenantLabel: async () => "D" }, drive);
+  await Promise.all([service.ensureOrganisationFolders(tenantId), service.ensureOrganisationFolders(tenantId)]);
+  assert.equal(drive.calls.created.length, ORGANISATION_FOLDERS.length);
+});
+
+test("a project tree is made under 03-Projects, and one made earlier is moved in", async () => {
+  const drive = fakeOrganisationDrive();
+  let projectParent;
+  drive.ensureFolder = async ({ parentId, role }) => { if (role === "PROJECT_ROOT") projectParent = parentId; return { ok: true, value: { id: `p-${role}` } }; };
+  const service = new GoogleDriveProjectWorkspaceService({ projectLabel: async () => "P", tenantLabel: async () => "D" }, drive);
+  assert.equal((await service.ensureProjectWorkspace(tenantId, "p1")).ok, true);
+  assert.equal(projectParent, "org-ORG/03-Projects");
+  assert.deepEqual(drive.calls.moved, [{ fileId: "p-PROJECT_ROOT", to: "org-ORG/03-Projects" }]);
 });

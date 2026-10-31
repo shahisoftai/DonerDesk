@@ -205,6 +205,42 @@ export class GoogleDriveWorkspaceDrive {
     }
   }
 
+  /**
+   * Like `findByAppProperty`, but a failed lookup is an error, not "not found": setting folders up must never create a second
+   * copy of a folder just because Drive could not be asked.
+   */
+  private async findStrict(config: GoogleDriveStorageConfig, tenantId: string, role: string): Promise<Result<DriveFolder | null, DomainError>> {
+    try {
+      const accessToken = await this.refreshAccessToken(config);
+      const q = [
+        `mimeType='${FOLDER_MIME}'`,
+        `trashed=false`,
+        `appProperties has { key='tenantId' and value='${this.escape(tenantId)}' }`,
+        `appProperties has { key='role' and value='${this.escape(role)}' }`,
+      ];
+      const response = await fetch(
+        `${DRIVE_API}/files?q=${encodeURIComponent(q.join(" and "))}&fields=files(id,webViewLink)&pageSize=10&includeItemsFromAllDrives=true&supportsAllDrives=true`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+      if (!response.ok) throw new Error(`Google Drive folder lookup failed (${response.status})`);
+      const data = (await response.json()) as { files?: DriveFolder[] };
+      return ok(data.files?.[0] ?? null);
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "Google Drive folder lookup failed");
+    }
+  }
+
+  /** Finds a tenant folder by its role, or creates it. Unlike `ensureTenantFolder`, an unanswered lookup stops instead of creating. */
+  async ensureTenantFolderStrict(input: { tenantId: string; parentId: string; name: string; role: string }): Promise<Result<{ id: string; created: boolean }, DomainError>> {
+    const config = await this.tokens.getAccessToken(input.tenantId);
+    if (!config) return fail("Google Drive is not connected for this tenant");
+    const found = await this.findStrict(config, input.tenantId, input.role);
+    if (!found.ok) return found;
+    if (found.value) return ok({ id: found.value.id, created: false });
+    const created = await this.createFolder(config, { name: input.name, parentId: input.parentId, tenantId: input.tenantId, projectId: undefined, role: input.role });
+    return created.ok ? ok({ id: created.value.id, created: true }) : created;
+  }
+
   private async findByAppProperty(
     config: GoogleDriveStorageConfig,
     tenantId: string,

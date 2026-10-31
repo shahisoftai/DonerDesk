@@ -48,6 +48,21 @@ export async function completeGoogleDriveAuthAction(code: string): Promise<Googl
   return { ok: true, value: { storageProvider: result.value.storageProvider } };
 }
 
+const OrganisationFoldersResponseSchema = z.object({
+  created: z.number(),
+  existing: z.number(),
+  projectsChecked: z.number(),
+  deepLink: z.string().optional(),
+});
+
+export type SetupOrganisationFoldersResult = Result<z.infer<typeof OrganisationFoldersResponseSchema>, AppError>;
+
+/** Creates the organisation folder tree in the tenant's Drive; folders already there are not copied. */
+export async function setupOrganisationFoldersAction(): Promise<SetupOrganisationFoldersResult> {
+  const context = await requireSession();
+  return gatewayRequest("/v1/drive/organisation-folders", OrganisationFoldersResponseSchema, context.token, { method: "POST", body: {} });
+}
+
 export type LinkDriveEvidenceResult = Result<{ id: string; fileUrl: string }, AppError>;
 
 /** Link an existing Google Drive file as evidence (no byte copy). */

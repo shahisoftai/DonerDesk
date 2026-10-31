@@ -80,7 +80,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`docs/architecture/decisions/0008-submission-snapshots.md`](docs/architecture/decisions/0008-submission-snapshots.md) | ADR: immutable submission snapshots |
 | [`docs/architecture/decisions/0009-donor-native-rendering.md`](docs/architecture/decisions/0009-donor-native-rendering.md) | ADR: donor-native rendering behind the export builder |
 | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md) | **Free Kestra plugins** (Tika, Redis, JDBC-Postgres, GDrive, SFTP) — implementation + gating |
-| [`gdrive.md`](gdrive.md) | **Google Drive primary storage (link-first) + R2 optional tier** — status, architecture, implementation (Phases A–E), **+ login-page Google Sign-In (§9)** |
+| [`gdrive.md`](gdrive.md) | **Google Drive primary storage (link-first) + R2 optional tier** — status, architecture, implementation (Phases A–E), **+ login-page Google Sign-In (§9)**, **+ organisation folder tree / Set up folders (§11)** |
 | [`docs/security/threat-model.md`](docs/security/threat-model.md) | Security threat model |
 | [`docs/api/openapi-3.1.json`](docs/api/openapi-3.1.json) | OpenAPI spec |
 

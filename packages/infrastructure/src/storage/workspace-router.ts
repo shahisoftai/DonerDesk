@@ -54,6 +54,12 @@ export class ProjectWorkspaceServiceResolver implements IProjectWorkspaceService
     return this.pick(provider.value.provider).ensureTenantRoot(tenantId);
   }
 
+  async ensureOrganisationFolders(tenantId: TenantId) {
+    const provider = await this.resolve(tenantId);
+    if (!provider.ok) return provider;
+    return this.pick(provider.value.provider).ensureOrganisationFolders(tenantId);
+  }
+
   async ensureProjectWorkspace(tenantId: TenantId, projectId: string) {
     const provider = await this.resolve(tenantId);
     if (!provider.ok) return provider;

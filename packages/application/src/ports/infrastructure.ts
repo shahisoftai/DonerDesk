@@ -213,6 +213,13 @@ export interface DriveFileEntry {
   webViewLink?: string;
 }
 
+/** The organisation folder tree (legal, donors, finance, projects, ...) as it stands after being set up. */
+export interface OrganisationFoldersResult {
+  rootId: string;
+  deepLink?: string;
+  folders: Array<{ role: string; name: string; id: string; created: boolean }>;
+}
+
 /**
  * Provisions and verifies a tenant-scoped project workspace (folder tree) in the
  * configured storage provider. Implementations are idempotent and repairable.
@@ -220,6 +227,8 @@ export interface DriveFileEntry {
 export interface IProjectWorkspaceService {
   /** Ensure the tenant "DonorDesk" root folder exists; returns its Drive id. */
   ensureTenantRoot(tenantId: TenantId): Promise<Result<WorkspaceReference, DomainError>>;
+  /** Ensure the organisation folder tree exists under the tenant root; a folder already there is found, never copied. */
+  ensureOrganisationFolders(tenantId: TenantId): Promise<Result<OrganisationFoldersResult, DomainError>>;
   /** Ensure THIS project's folder tree exists under the tenant root. */
   ensureProjectWorkspace(tenantId: TenantId, projectId: string): Promise<Result<WorkspaceReference, DomainError>>;
   /** Verify the tenant can still access a previously provisioned root. */

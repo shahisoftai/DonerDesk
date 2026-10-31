@@ -25,6 +25,8 @@ export class ProvisionTenantWorkspacesHandler {
   async handle(ctx: AuthenticatedContext): Promise<Result<{ provisioned: number }, DomainError>> {
     const rootResult = await this.workspace.ensureTenantRoot(ctx.tenant.tenantId);
     if (!rootResult.ok) return rootResult;
+    const tree = await this.workspace.ensureOrganisationFolders(ctx.tenant.tenantId);
+    if (!tree.ok) return tree;
 
     const projectsResult = await this.projects.listByTenant(ctx.tenant.tenantId);
     if (!projectsResult.ok) return projectsResult;
@@ -65,5 +67,45 @@ export class ProvisionTenantWorkspacesHandler {
     });
 
     return { ok: true, value: { provisioned } };
+  }
+}
+
+/**
+ * "Set up folders": creates the organisation folder tree in the tenant's Drive and puts every project's tree under
+ * "03-Projects". Safe to press any number of times: folders are found by their stable identity, so nothing is copied
+ * when the DonorDesk folder already holds them.
+ */
+export class SetupOrganisationFoldersHandler {
+  constructor(
+    private readonly workspace: IProjectWorkspaceService,
+    private readonly projects: IProjectRepository,
+    private readonly audit: IAuditLogger,
+  ) {}
+
+  async handle(ctx: AuthenticatedContext): Promise<Result<{ created: number; existing: number; projectsChecked: number; deepLink?: string }, DomainError>> {
+    const tree = await this.workspace.ensureOrganisationFolders(ctx.tenant.tenantId);
+    if (!tree.ok) return tree;
+
+    // Each project's own tree is ensured too: that is what moves one made before "03-Projects" existed into it.
+    const projectsResult = await this.projects.listByTenant(ctx.tenant.tenantId);
+    if (!projectsResult.ok) return projectsResult;
+    for (const project of projectsResult.value) {
+      const workspace = await this.workspace.ensureProjectWorkspace(ctx.tenant.tenantId, project.id);
+      if (!workspace.ok) return workspace;
+      project.setWorkspaceRoot(workspace.value.rootId);
+      await this.projects.update(project);
+    }
+
+    const created = tree.value.folders.filter((f) => f.created).length;
+    const existing = tree.value.folders.length - created;
+    await this.audit.record({
+      tenantId: ctx.tenant.tenantId,
+      actorId: ctx.tenant.userId,
+      eventType: "storage.organisation_folders.set_up",
+      entityType: "organization",
+      entityId: ctx.tenant.tenantId.toString(),
+      newValue: JSON.stringify({ created, existing, projects: projectsResult.value.length }),
+    });
+    return { ok: true, value: { created, existing, projectsChecked: projectsResult.value.length, ...(tree.value.deepLink ? { deepLink: tree.value.deepLink } : {}) } };
   }
 }

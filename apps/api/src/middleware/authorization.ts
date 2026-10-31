@@ -128,6 +128,7 @@ export const RULES: ReadonlyArray<{
   { method: "PUT", route: /^\/v1\/organization\/reporting-defaults$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/drive\/auth-url$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/drive\/callback$/, permission: "org.manage" },
+  { method: "POST", route: /^\/v1\/drive\/organisation-folders$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/evidence\/link-drive$/, permission: "evidence.upload" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/drive\/import-template$/, permission: "template.manage" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/drive\/import-logframe$/, permission: "logframe.manage" },

@@ -15,6 +15,7 @@ export { refreshGoogleAccessToken, parseSpreadsheetId } from "./storage/google-o
 export { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 export { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
 export { LocalProjectWorkspaceService, GoogleDriveProjectWorkspaceService, PROJECT_WORKSPACE_FOLDERS } from "./storage/project-workspace.js";
+export { ORGANISATION_FOLDERS, PROJECTS_FOLDER_ROLE } from "./storage/organisation-folders.js";
 export { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
 export { R2EvidenceStorage } from "./storage/r2.js";
 export { JwtAuthProvider } from "./auth/jwt.js";
