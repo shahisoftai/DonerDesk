@@ -12,6 +12,9 @@ interface WorkerParseResponse {
   ocr?: { confidence: number | null; pagesRead: number; pagesTotal: number };
 }
 
+/** Office files the worker's own readers can try when the first parser got no words from them (including the old .xls format). */
+const WORKER_READABLE = new Set(["xls", "xlsx", "xlsm", "docx"]);
+
 const extensionOf = (name: string): string => name.toLowerCase().split(".").pop() ?? "";
 
 /**
@@ -31,7 +34,7 @@ export class OcrFallbackDocumentParser implements IDocumentParser {
   async parse(input: ParseInput): Promise<ParseOutput> {
     const first = await this.inner.parse(input);
     const ext = extensionOf(input.fileName);
-    const isScanCandidate = ext === "pdf" || input.fileType === "application/pdf" ? first.text.trim() === "" : IMAGE_EXTENSIONS.has(ext);
+    const isScanCandidate = ext === "pdf" || input.fileType === "application/pdf" ? first.text.trim() === "" : IMAGE_EXTENSIONS.has(ext) || WORKER_READABLE.has(ext);
     if (!isScanCandidate || !this.workerUrl || process.env.OCR_ENABLED === "0") return first;
     try {
       const form = new FormData();
@@ -44,8 +47,9 @@ export class OcrFallbackDocumentParser implements IDocumentParser {
       });
       if (!response.ok) return first;
       const body = (await response.json()) as WorkerParseResponse;
-      if (body.status !== "EXTRACTED" || !body.ocr || !body.text || body.text.trim() === "") return first;
+      if (body.status !== "EXTRACTED" || !body.text || body.text.trim() === "") return first;
       // The first parser's parse error (if any) is dropped: the file was read.
+      if (!body.ocr) return { text: body.text };
       return { text: body.text, metadata: { ocr: body.ocr, ocrNote: body.note ?? "Read by text recognition: check names and numbers." } };
     } catch {
       return first;

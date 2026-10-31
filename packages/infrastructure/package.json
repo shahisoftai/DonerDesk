@@ -59,7 +59,8 @@
     "pino": "9.5.0",
     "pptxgenjs": "4.0.1",
     "sharp": "^0.35.3",
-    "svg-to-pdfkit": "0.1.8"
+    "svg-to-pdfkit": "0.1.8",
+    "word-extractor": "1.0.4"
   },
   "devDependencies": {
     "@types/archiver": "6.0.3",

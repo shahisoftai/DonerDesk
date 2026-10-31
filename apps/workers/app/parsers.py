@@ -56,6 +56,18 @@ def _parse_xlsx(data: bytes) -> str:
     return "\n".join(parts)
 
 
+def _parse_xls(data: bytes) -> str:
+    import xlrd
+
+    book = xlrd.open_workbook(file_contents=data)
+    parts: list[str] = []
+    for sheet in book.sheets():
+        parts.append(f"# {sheet.name}")
+        for r in range(sheet.nrows):
+            parts.append("\t".join(str(c.value) if c.value not in ("", None) else "" for c in sheet.row(r)))
+    return "\n".join(parts)
+
+
 def _parse_pdf(data: bytes) -> str:
     from PyPDF2 import PdfReader
 
@@ -145,9 +157,9 @@ def parse(data: bytes, filename: str, content_type: str | None) -> dict[str, Any
                 logger.exception("docx parse failed for %s", filename)
                 text = ""
                 failed = True
-        elif handler == "xlsx":
+        elif handler in ("xlsx", "xls"):
             try:
-                text = _parse_xlsx(data)
+                text = _parse_xlsx(data) if handler == "xlsx" else _parse_xls(data)
             except Exception:
                 logger.exception("xlsx parse failed for %s", filename)
                 text = ""

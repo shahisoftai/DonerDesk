@@ -41,7 +41,8 @@ INDICATOR_NAME_MATCH_PREFIX: int = 8
 
 PARSE_ROUTES: list[dict[str, Any]] = [
     {"handler": "docx", "extensions": ["docx"], "contentTypeContains": ["officedocument.wordprocessingml"]},
-    {"handler": "xlsx", "extensions": ["xlsx"], "contentTypeContains": ["spreadsheetml"]},
+    {"handler": "xlsx", "extensions": ["xlsx", "xlsm"], "contentTypeContains": ["spreadsheetml"]},
+    {"handler": "xls", "extensions": ["xls"], "contentTypeContains": ["ms-excel"]},
     {"handler": "text", "extensions": ["txt"], "contentTypeContains": ["text/"]},
     {"handler": "csv", "extensions": ["csv"], "contentTypeContains": []},
     {"handler": "pdf", "extensions": ["pdf"], "contentTypeContains": ["application/pdf"]},

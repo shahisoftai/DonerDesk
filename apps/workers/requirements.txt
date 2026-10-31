@@ -11,3 +11,4 @@ anthropic>=1.8,<2
 pypdfium2>=4.30
 rapidocr-onnxruntime==1.4.4
 pillow>=10.3
+xlrd==2.0.1

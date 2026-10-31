@@ -75,7 +75,7 @@ export function UploadSlide({ recent }: { recent: RecentSetup[] }) {
           >
             <p aria-hidden="true" className="text-3xl">📄</p>
             <p className="mt-2 text-sm font-medium text-slate-800 dark:text-slate-100">{u.drop}</p>
-            <input ref={input} id="setup-file" type="file" multiple accept=".pdf,.docx,.xlsx,.csv,.txt" className="sr-only"
+            <input ref={input} id="setup-file" type="file" multiple accept=".pdf,.docx,.doc,.xlsx,.xls,.csv,.txt" className="sr-only"
               onChange={(e) => {
                 // Copy the chosen files first: clearing the input empties its (live) list, and React reads it later.
                 const chosen = e.target.files ? Array.from(e.target.files) : [];
