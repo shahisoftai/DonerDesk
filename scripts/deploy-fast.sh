@@ -118,13 +118,22 @@ fi
 # --------------------------------------------------------------------------- #
 
 if [[ "${SKIP_BUILD}" != "1" ]]; then
-  echo "==> Local build (full)"
+  # Build only what the scope ships: the web and superadmin builds take many minutes and an api-only change needs neither.
+  # superadmin is not shipped by this script. SCOPE=auto is resolved after the build, so it builds api and web.
+  BUILD_FILTER=()
+  case "${SCOPE}" in
+    api)  BUILD_FILTER=(--filter '!@donordesk/web' --filter '!@donordesk/superadmin') ;;
+    web)  BUILD_FILTER=(--filter '!@donordesk/api' --filter '!@donordesk/superadmin') ;;
+    *)    BUILD_FILTER=(--filter '!@donordesk/superadmin') ;;
+  esac
+  echo "==> Local build (scope=${SCOPE})"
   BUILD_LOG="${WORK}/build.log"
-  pnpm -r build 2>&1 | tee "${BUILD_LOG}" | tail -3 || {
+  # pipefail so a failed build stops the deploy instead of being hidden by tee/tail.
+  if ! (set -o pipefail; pnpm -r "${BUILD_FILTER[@]}" build 2>&1 | tee "${BUILD_LOG}" | tail -3); then
     echo "ERROR: build failed — see ${BUILD_LOG}" >&2
     tail -40 "${BUILD_LOG}" >&2
     exit 1
-  }
+  fi
 fi
 
 # --------------------------------------------------------------------------- #
