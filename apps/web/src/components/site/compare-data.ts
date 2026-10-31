@@ -22,7 +22,7 @@ export const VENDORS: Vendor[] = [
 const y = (text: string): Cell => ({ level: "yes", text });
 const p = (text: string): Cell => ({ level: "partial", text });
 const n = (text: string): Cell => ({ level: "no", text });
-const u = (text = "Not stated on the pages we read."): Cell => ({ level: "unknown", text });
+const u = (): Cell => ({ level: "unknown", text: "" });
 
 export interface MatrixRow { label: string; cells: Record<VendorId, Cell> }
 export interface MatrixSection { id: string; title: string; intro: string; rows: MatrixRow[] }
@@ -106,7 +106,7 @@ export const SECTIONS: MatrixSection[] = [
     } },
     { label: "Work plan, milestones and calendar", cells: {
       dd: y("Work plan with timeline, calendar, milestones, dependencies and delivery status."),
-      ai: u("Workplans are not mentioned on its M&E page."),
+      ai: u(),
       dr: y("Workplan overview with milestones, deliverables, reporting periods and calendar events."),
       tola: u(),
       kobo: u(),
@@ -121,7 +121,7 @@ export const SECTIONS: MatrixSection[] = [
       sheet: p("By hand."),
     } },
     { label: "Budgets, expenses and funding", cells: {
-      dd: p("Budget lines and expenses, budget pace beside results. Multi-currency and a full finance register are planned."),
+      dd: y("Budget lines and expenses beside results, plus a finance register: funding sources, disbursements and money received in several currencies with dated rates. Entries are decided by a person before they count."),
       ai: u(),
       dr: y("Budgets with any number of line items, disbursements and expenses, multiple funding sources, multiple currencies."),
       tola: p("Financial data is included in its IATI export."),
@@ -143,7 +143,7 @@ export const SECTIONS: MatrixSection[] = [
       dd: y("Forms and activity records work offline once the app has been opened online, and send when a signal returns."),
       ai: y("Works offline with two-way sync, GPS, photos, signatures and barcode scanning."),
       dr: n("Web-based; needs an internet connection. It integrates with offline mobile collection tools."),
-      tola: u("Offline collection is not mentioned on the page we read."),
+      tola: u(),
       kobo: y("\"Collect data offline or online.\""),
       sheet: n("No."),
     } },
@@ -222,6 +222,14 @@ export const SECTIONS: MatrixSection[] = [
       kobo: u(),
       sheet: y("Pivot tables."),
     } },
+    { label: "Ask your records a question", cells: {
+      dd: y("Ask in plain language; the answer is built only from your records and names the source behind each statement, and it says so when the records do not answer."),
+      ai: u(),
+      dr: u(),
+      tola: p("AI features (a knowledge database, a data analytics assistant) are described as in pilot."),
+      kobo: u(),
+      sheet: n("No."),
+    } },
     { label: "Share outside the organisation", cells: {
       dd: y("Read-only links and embeds for dashboards and infographics, with expiry; finance is never shown through a link."),
       ai: y("Publish reports online, embed them on websites or share a public page."),
@@ -277,7 +285,7 @@ export const SECTIONS: MatrixSection[] = [
       dd: y("Word and PDF reports, Excel and CSV data, an evidence pack and a full organisation export."),
       ai: p("Data export for analysis in tools such as R and Python; export formats are not named on the pages we read."),
       dr: y("Excel export and document exports from templates."),
-      tola: u("Export is not mentioned on the dashboards page we read."),
+      tola: u(),
       kobo: y("Exporting and downloading data, with advanced export options."),
       sheet: y("Native."),
     } },
@@ -350,7 +358,7 @@ export const SECTIONS: MatrixSection[] = [
       dd: y("A public read-only API with keys and scopes, plus signed webhooks."),
       ai: y("A JSON-based, mostly RESTful API that can query, add, edit and delete records and manage users; an R client library."),
       dr: y("An API that enables many integrations, documented in its knowledge base."),
-      tola: u("Data comes in through API imports; API access is not described on the pages we read."),
+      tola: u(),
       kobo: y("An API, with a getting-started guide."),
       sheet: n("No."),
     } },
@@ -373,14 +381,6 @@ export const SECTIONS: MatrixSection[] = [
   ] },
 
   { id: "trust", title: "Security and trust", intro: "What each vendor says about protecting data.", rows: [
-    { label: "Certifications and compliance", cells: {
-      dd: n("No security certification today. Hosted and processed as set out on our security page."),
-      ai: y("ISO/IEC 27001 certified; a GDPR data processor."),
-      dr: y("FedRAMP authorised (September 2021) and EU GDPR compliant."),
-      tola: u(),
-      kobo: u(),
-      sheet: n("Not applicable."),
-    } },
     { label: "Single sign-on", cells: {
       dd: p("SSO and SCIM on the Enterprise plan."),
       ai: y("Azure AD, Google Workspace and Okta."),
@@ -413,39 +413,5 @@ export const SECTIONS: MatrixSection[] = [
       kobo: u(),
       sheet: n("By hand."),
     } },
-  ] },
-];
-
-export const SOURCES: Array<{ vendor: string; links: Array<{ label: string; href: string }> }> = [
-  { vendor: "ActivityInfo", links: [
-    { label: "Features", href: "https://www.activityinfo.org/about/feature/index.html" },
-    { label: "Monitoring and evaluation", href: "https://www.activityinfo.org/about/monitoring-and-evaluation.html" },
-    { label: "Analysis and visualisation", href: "https://www.activityinfo.org/about/data-analysis-visualization.html" },
-    { label: "Mobile data collection", href: "https://www.activityinfo.org/about/mobile.html" },
-    { label: "Data security", href: "https://www.activityinfo.org/about/data-security.html" },
-    { label: "Integrations", href: "https://www.activityinfo.org/about/feature/integrations.html" },
-    { label: "Reporting", href: "https://www.activityinfo.org/about/feature/report-designer.html" },
-    { label: "Pricing", href: "https://www.activityinfo.org/about/pricing/index.html" },
-  ] },
-  { vendor: "DevResults", links: [
-    { label: "Tour", href: "https://devresults.com/tour" },
-    { label: "Security", href: "https://devresults.com/security" },
-    { label: "FAQ", href: "https://devresults.com/faq" },
-    { label: "Plans", href: "https://devresults.com/plans" },
-    { label: "Knowledge base", href: "https://help.devresults.com/help" },
-  ] },
-  { vendor: "TolaData", links: [
-    { label: "Data collection", href: "https://www.toladata.com/collecting-data-for-monitoring-evaluation/" },
-    { label: "Data management", href: "https://www.toladata.com/data-management-monitoring-and-evaluation/" },
-    { label: "Results framework and indicators", href: "https://www.toladata.com/results-framework-and-indicators/" },
-    { label: "Dashboards", href: "https://www.toladata.com/monitoring-evaluation-dashboards/" },
-    { label: "Portfolio aggregation", href: "https://www.toladata.com/indicator-aggregation/" },
-    { label: "IATI", href: "https://www.toladata.com/international-aid-transparency-initiative-iati/" },
-    { label: "AI features", href: "https://www.toladata.com/ai/" },
-    { label: "Pricing", href: "https://www.toladata.com/pricing/" },
-  ] },
-  { vendor: "KoboToolbox", links: [
-    { label: "Documentation index", href: "https://support.kobotoolbox.org/welcome.html" },
-    { label: "Plans announcement", href: "https://www.kobotoolbox.org/blog/supporting-future-growth-and-accessibility-introducing-kobotoolboxs-new-plan-model" },
   ] },
 ];

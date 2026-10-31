@@ -7,7 +7,7 @@ const MARK: Record<Level, { symbol: string; label: string; className: string }> 
   yes: { symbol: "✓", label: "Stated", className: "sx-lv-yes" },
   partial: { symbol: "~", label: "Partly", className: "sx-lv-partial" },
   no: { symbol: "✕", label: "Not offered", className: "sx-lv-no" },
-  unknown: { symbol: "–", label: "Not stated", className: "sx-lv-unknown" },
+  unknown: { symbol: "✕", label: "Not stated", className: "sx-lv-unknown" },
 };
 
 function CellView({ cell }: { cell: Cell }) {
@@ -57,10 +57,6 @@ export function CompareMatrix() {
             <tr>
               <th scope="col"><span className="sx-sr">Feature</span></th>
               {shown.map((v) => <th key={v.id} scope="col" className={v.id === "dd" ? "sx-us" : undefined}>{v.name}</th>)}
-            </tr>
-            <tr className="sx-built">
-              <th scope="row">Built for</th>
-              {shown.map((v) => <td key={v.id} className={v.id === "dd" ? "sx-us" : undefined}>{v.summary}</td>)}
             </tr>
           </thead>
           {SECTIONS.map((s) => (

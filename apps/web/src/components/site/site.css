@@ -246,6 +246,7 @@
 @media (max-width:560px){.sx .sx-hide-xs{display:none}.sx .sx-tools{gap:6px}.sx .sx-nav{gap:10px}.sx .sx-lang select{padding:7px 6px;max-width:112px}}
 
 /* comparison matrix */
+.sx .sx-wrap-wide{max-width:1720px}
 .sx .sx-cmp-controls{display:grid;gap:16px;margin-bottom:20px}
 .sx .sx-key{display:flex;flex-wrap:wrap;gap:6px 18px;list-style:none;margin:0;padding:0;font-size:13px;color:var(--muted)}
 .sx .sx-jump{display:flex;flex-wrap:wrap;gap:8px}
@@ -256,13 +257,13 @@
 .sx .sx-lv-partial{background:color-mix(in srgb,var(--accent) 28%,var(--surface));color:var(--warn)}
 .sx .sx-lv-no{background:color-mix(in srgb,var(--bad) 14%,var(--surface));color:var(--bad)}
 .sx .sx-lv-unknown{background:var(--wash);color:var(--muted)}
-.sx table.sx-cmp{min-width:1100px}
+.sx table.sx-cmp{min-width:900px}
 .sx table.sx-cmp thead th{position:sticky;top:0;z-index:3}
 .sx table.sx-cmp tr.sx-built td{font-size:13px;color:var(--muted);background:var(--surface)}
 .sx table.sx-cmp tr.sx-built td.sx-us{background:color-mix(in srgb,var(--brand) 8%,var(--surface))}
 .sx table.sx-cmp .sx-sec-row th{background:var(--wash);position:static;font:700 16px var(--display);padding:16px 14px;border-inline-start:0}
 .sx table.sx-cmp .sx-sec-row th small{display:block;font:400 13px var(--body);color:var(--muted);margin-top:2px}
-.sx table.sx-cmp td{min-width:190px;max-width:260px}
+.sx table.sx-cmp td{min-width:0;max-width:340px}
 .sx .sx-cmp-wrap{position:relative}
 .sx .sx-feature{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:28px;padding:28px;scroll-margin-top:96px}
 @media (max-width:860px){.sx .sx-feature{grid-template-columns:1fr;padding:20px}}

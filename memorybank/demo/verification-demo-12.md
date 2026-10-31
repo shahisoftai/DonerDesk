@@ -439,9 +439,9 @@ Driver: a headed Chromium on CDP port 9340 driven by Playwright scripts (the use
 
 | # | Sev | What happened | Status |
 | --- | --- | --- | --- |
-| F-7 | H | "Save profile" saved but showed "Received an unexpected response shape." | Fixed in code, committed `6a008b4`, **not deployed** |
-| F-12 | H | Logframe import parented outputs/activities to the nearest earlier item | Fixed in code (`inferParentByCode`) `6a008b4`, **not deployed** |
-| F-34 | H | A span of days ("15 to 30 November", "26 and 27 November") was read as a figure and blocked submission; a note cannot clear it | Fixed in code (`contradiction-lint.ts` + test), committed, **not deployed** |
+| F-7 | H | "Save profile" saved but showed "Received an unexpected response shape." | Fixed in code, committed `6a008b4`; deployed (in every release since 2026-10-27; live as of `20261030110007`) |
+| F-12 | H | Logframe import parented outputs/activities to the nearest earlier item | Fixed in code (`inferParentByCode`) `6a008b4`; deployed (live as of `20261030110007`) |
+| F-34 | H | A span of days ("15 to 30 November", "26 and 27 November") was read as a figure and blocked submission; a note cannot clear it | Fixed in code (`contradiction-lint.ts` + test) `6b0583fd`; deployed (live as of `20261030110007`) |
 | F-27 | H | Evidence upload "Use as proof for → Indicator" has no reporting-period choice; the file does not count for an existing value and the grid does not say why | Open |
 | F-28 | H | Story panel said "20 of the 20 activities planned … were not held" while all 20 rows were Done; Overview says "Delivery 0 of 94", infographic "0 / 94 completed" | Open |
 | F-30 | H | Report results table shows "155 % of target" for a lower-is-better indicator (OP1-3); baseline readings labelled "Below expectation" | Open |

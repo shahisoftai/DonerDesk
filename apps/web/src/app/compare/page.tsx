@@ -4,12 +4,12 @@ import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { CompareMatrix } from "@/components/site/CompareMatrix";
-import { CHECKED, SOURCES } from "@/components/site/compare-data";
+import { CHECKED } from "@/components/site/compare-data";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/compare" },
   title: "DonorDesk compared: ActivityInfo, DevResults, TolaData and KoboToolbox",
-  description: "A feature-by-feature comparison of DonorDesk with ActivityInfo, DevResults, TolaData, KoboToolbox and spreadsheets, using only what each vendor states on its own site, with sources and where DonorDesk is behind.",
+  description: "A feature-by-feature comparison of DonorDesk with ActivityInfo, DevResults, TolaData, KoboToolbox and spreadsheets, using only what each vendor states on its own site.",
 };
 
 export default function ComparePage() {
@@ -25,23 +25,9 @@ export default function ComparePage() {
       </section>
 
       <section style={{ paddingTop: 16 }}>
-        <div className="sx-wrap">
+        <div className="sx-wrap sx-wrap-wide">
           <CompareMatrix />
-          <p className="sx-fine">A dash means we did not find the feature on the pages we read, not that the tool lacks it. Prices and features change; check the vendor before you decide. Product names belong to their owners.</p>
-        </div>
-      </section>
-
-      <section className="sx-band" id="gaps">
-        <div className="sx-wrap">
-          <div className="sx-sec-head"><p className="sx-eyebrow">Plainly</p><h2>Where DonorDesk is behind today.</h2><p className="sx-lede">A fair comparison names these. If one of them decides it for you, we would rather you know now.</p></div>
-          <div className="sx-grid sx-g3">
-            <div className="sx-card"><h3>No security certification</h3><p>ActivityInfo states ISO/IEC 27001 certification and DevResults states FedRAMP authorisation. DonorDesk holds neither today. Our security page says exactly what we do and do not claim.</p></div>
-            <div className="sx-card"><h3>Fewer field-form extras</h3><p>ActivityInfo states signatures, barcode scanning and XLSForm import. DonorDesk forms have GPS, photo and document questions, but no signature or barcode questions.</p></div>
-            <div className="sx-card"><h3>Finance is lighter</h3><p>DevResults states multi-currency budgets, disbursements and expenses, and TolaData and DevResults state IATI publishing. DonorDesk has budget lines and expenses; multi-currency and IATI are planned.</p></div>
-            <div className="sx-card"><h3>Fewer interface languages</h3><p>DevResults lists ten interface languages. DonorDesk has four, and the French, Spanish and Arabic translations are still being reviewed.</p></div>
-            <div className="sx-card"><h3>No native BI connectors</h3><p>ActivityInfo states Power BI, Python, R, ArcGIS and QGIS, and TolaData names Power BI, Tableau and Superset. DonorDesk connects through its API and exports.</p></div>
-            <div className="sx-card"><h3>A newer product</h3><p>The vendors above have longer track records and published case studies. DonorDesk is newer; you can try it free and bring a real grant before you decide.</p></div>
-          </div>
+          <p className="sx-fine" style={{ maxWidth: "120ch" }}>A grey cross means we did not find the feature on the pages we read, not that the tool lacks it. Prices and features change; check the vendor before you decide. Product names belong to their owners.</p>
         </div>
       </section>
 
@@ -56,7 +42,7 @@ export default function ComparePage() {
         </div>
       </section>
 
-      <section>
+      <section className="sx-band">
         <div className="sx-wrap">
           <div className="sx-sec-head"><p className="sx-eyebrow">Which fits</p><h2>When another tool is the better choice, we say so.</h2></div>
           <div className="sx-grid sx-g2">
@@ -65,23 +51,6 @@ export default function ComparePage() {
             <div className="sx-card sx-fit"><h3>A vendor-led platform fits when…</h3><p>You are a large programme that wants a bespoke set-up and hands-on training, and has budgeted for it. DonorDesk is self-serve and priced for teams that want to start this week.</p></div>
             <div className="sx-card sx-fit"><h3>DonorDesk fits when…</h3><p>You want planning, field data, results, evidence and donor reports in one record, you report to more than one funder, and you want to see where you stand before they ask.</p></div>
           </div>
-        </div>
-      </section>
-
-      <section className="sx-band" id="sources">
-        <div className="sx-wrap">
-          <div className="sx-sec-head"><p className="sx-eyebrow">Sources</p><h2>Where every statement comes from.</h2><p className="sx-lede">We read these pages on {CHECKED}. Each cell above says what the vendor states there.</p></div>
-          <div className="sx-grid sx-g2">
-            {SOURCES.map((v) => (
-              <div className="sx-card" key={v.vendor}>
-                <h3>{v.vendor}</h3>
-                <ul style={{ margin: 0, paddingInlineStart: 18, fontSize: 14 }}>
-                  {v.links.map((l) => <li key={l.href}><a className="sx-link" href={l.href} target="_blank" rel="noopener noreferrer">{l.label}</a></li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-          <p className="sx-fine">KoboToolbox&apos;s main website could not be read automatically, so its column rests on its documentation index and its published plan announcement. Spreadsheets and email are described generally.</p>
         </div>
       </section>
 

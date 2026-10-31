@@ -2,7 +2,7 @@
 
 **DonorDesk Version 3.007**
 
-Built 2026-10-30 (Phase 36). Plan and decisions: [`../imp/phase36-easy-data-entry.md`](../imp/phase36-easy-data-entry.md). Not deployed.
+Built 2026-10-30 (Phase 36). Plan and decisions: [`../imp/phase36-easy-data-entry.md`](../imp/phase36-easy-data-entry.md). Deployed 2026-10-30 (`releaseId=20261030110007`, commit `4726a4ac`, migration `20261101090000_simple_review` applied first; verified on the host — `/ready` 200, new routes 401 unauthenticated). Not yet tried in a signed-in browser.
 
 ## What a person gets
 
