@@ -57,6 +57,8 @@ export interface OrganizationProps {
   agentMemoryEnabled: boolean;
   /** Ask DonorDesk (Phase 33.9): off until an administrator opts in; existing organisations stay off. */
   askEnabled: boolean;
+  /** Project setup assistance (Phase 36): the assistant may read uploaded project documents. Off until an administrator opts in. */
+  setupAssistEnabled?: boolean | undefined;
   /** Two-step sign-in is required of everyone from this moment (undefined = optional). Off under single sign-on. */
   mfaRequiredFrom?: Date | undefined;
   /** Set when a NonprofitVerification for this tenant is APPROVED; gates the discounted Creem checkout product (Phase 22 WS-G). */
@@ -121,6 +123,7 @@ export class Organization extends Entity<string> {
   get aiEnabled(): boolean { return this.props.aiEnabled; }
   get agentMemoryEnabled(): boolean { return this.props.agentMemoryEnabled; }
   get askEnabled(): boolean { return this.props.askEnabled === true; }
+  get setupAssistEnabled(): boolean { return this.props.setupAssistEnabled === true; }
   get mfaRequiredFrom(): Date | undefined { return this.props.mfaRequiredFrom; }
   get storageProvider(): StorageProvider { return this.props.storageProvider; }
   get timeZone(): string { return this.props.timeZone ?? "UTC"; }
@@ -158,6 +161,12 @@ export class Organization extends Entity<string> {
   /** Administrator opt-in for Ask DonorDesk. */
   updateAskSettings(patch: { enabled: boolean }): void {
     this.props.askEnabled = patch.enabled;
+    this.touch();
+  }
+
+  /** Administrator opt-in for the project setup assistant (Phase 36). */
+  updateSetupAssistSettings(patch: { enabled: boolean }): void {
+    this.props.setupAssistEnabled = patch.enabled;
     this.touch();
   }
 

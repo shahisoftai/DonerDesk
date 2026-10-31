@@ -1,0 +1,39 @@
+/**
+ * Decorator (Phase 36.2 follow-up): tries an area's deterministic sheet reader first and falls back to the model extractor
+ * when the document is not a sheet. The wrapped extractor is unchanged, so the contract holds for both paths.
+ */
+import type { DomainError, Result, SetupAreaKey, SourceBlock } from "@donordesk/domain";
+import type { ExtractedArea, ISetupAreaExtractor, SetupExtractInput } from "@donordesk/application";
+import { logframeSheetReader, workPlanSheetReader, type SheetReader } from "./sheet-readers.js";
+
+export const SHEET_PROMPT_VERSION = "sheet-reader-v1";
+
+export class SheetFirstExtractor implements ISetupAreaExtractor {
+  readonly area: SetupAreaKey;
+
+  constructor(private readonly read: SheetReader, private readonly fallback: ISetupAreaExtractor) {
+    this.area = fallback.area;
+  }
+
+  canReadWithoutModel(blocks: ReadonlyArray<SourceBlock>): boolean {
+    return this.read(blocks) !== null;
+  }
+
+  async extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>> {
+    const fields = this.read(input.blocks);
+    if (fields) return { ok: true, value: { fields, promptVersion: SHEET_PROMPT_VERSION } };
+    return this.fallback.extract(input);
+  }
+}
+
+/** Which areas have a sheet reader; an area not listed is always read by the model. */
+export const SHEET_READERS: Readonly<Partial<Record<SetupAreaKey, SheetReader>>> = {
+  LOGFRAME: logframeSheetReader,
+  PLAN: workPlanSheetReader,
+};
+
+export const withSheetShortcuts = (extractors: ReadonlyArray<ISetupAreaExtractor>): ISetupAreaExtractor[] =>
+  extractors.map((e) => {
+    const read = SHEET_READERS[e.area];
+    return read ? new SheetFirstExtractor(read, e) : e;
+  });

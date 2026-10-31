@@ -162,6 +162,10 @@
       "types": "./dist/contexts/ask/index.d.ts",
       "import": "./dist/contexts/ask/index.js"
     },
+    "./contexts/project-setup/index.js": {
+      "types": "./dist/contexts/project-setup/index.d.ts",
+      "import": "./dist/contexts/project-setup/index.js"
+    },
     "./contexts/reporting/chart-spec-v2.js": {
       "types": "./dist/contexts/reporting/chart-spec-v2.d.ts",
       "import": "./dist/contexts/reporting/chart-spec-v2.js"

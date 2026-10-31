@@ -5,6 +5,7 @@ import type { IProjectWorkspaceService, DriveFileEntry } from "../../ports/infra
 import type { IProjectRepository } from "../../ports/projects.js";
 
 export const WORKSPACE_FOLDER_LABELS: Record<string, string> = {
+  "00-Project-Documents": "Project documents",
   "01-Donor-Templates": "Donor templates",
   "02-Logframe": "Logframe",
   "03-Data-Files": "Data files",

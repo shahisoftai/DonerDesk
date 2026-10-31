@@ -506,8 +506,10 @@ Remaining backend dependencies that unblock the next UI tier (tracked, not claim
   400 "credit balance is too low", so every AI section currently falls back to the
   deterministic draft. After topping up, generate one report and check
   `llm_runs.responseText` for `parseOutcome: VALID`.
-- [ ] Ship the stub fallback-text fix ("Performance: positive (undefined)" guard in
-  `report-draft-generator.ts`, committed, not yet deployed) with the next deploy.
+- [x] Stub fallback-text fix ("Performance: positive (undefined)" guard) — **obsolete**:
+  the stub was rewritten in Phase 25 (`StubReportDraftGenerator`, chosen by section kind) and
+  the old sentence no longer exists in the code; every release since 2026-09-27 shipped the new
+  stub (live as of `20261030110007`). Closed 2026-10-30.
 - [ ] Optional: teach `deploy-fast.sh` to run `pip install -r requirements.txt` in
   the worker venv.
 
@@ -1224,3 +1226,17 @@ Plan, rules and deploy steps: `imp/phase36-easy-data-entry.md`.
 - [ ] Decide whether the old form view of the grid can go once narrow screens are covered by the sheet or Enter data.
 - [x] Local API tests: fixed 2026-10-30 by creating a local `donordesk` database (migrations + `rls.sql`); the API suite is 67/67 when run with `DATABASE_URL=postgresql://najeeb@localhost/donordesk`. The API tests default to a `test` role that does not exist here.
 
+## Phase 36 (AI project setup wizard) (2026-10-31, DEPLOYED; plan `imp/phase36-ai-project-setup-wizard.md` §0a)
+
+Not the same phase as "Phase 36: easier data entry" above; both were numbered 36.
+
+- [x] Built and deployed: extraction (8 areas, parallel by dependency layer), review as slides (welcome, 11 steps, finish), apply through the existing handlers, project documents in the organisation's own Drive (staged, then moved into the project's `00-Project-Documents`), up to five documents per setup, token usage and priced cost, four languages, per-part "Read again", browser harness `test:setup-wizard`.
+- [ ] **Real-model quality run** (`pnpm --filter @donordesk/infrastructure setup:eval`, 8 to 10 real anonymised proposals; bars in plan §10). Blocked: the Anthropic account has no credit ("credit balance is too low"); the previous provider key is out of weekly quota. Do not advertise the feature until the numbers are recorded.
+- [ ] Haiku 5.5 performance test once credit exists (speed, items found, items dropped as ungrounded). Superadmin config: provider `anthropic`, model `claude-haiku-5-5` typed exactly (a blank model defaults to `claude-opus-5`), key created inside a workspace (a workspace-less key is refused with HTTP 400).
+- [ ] Native review of the French, Spanish and Arabic wording (`apps/web/src/features/project-setup/copy/`); the Settings card and the server's own error sentences are still English.
+- [ ] **Decision for the owner: picking an existing Drive file** needs a wider Drive permission than `drive.file` (a new consent for every organisation). Not built.
+- [ ] A cost estimate before reading (today only the actual usage afterwards).
+- [ ] Add prices for Claude models to `LLM_PRICES_JSON` so cost shows as a number, not "not priced".
+- [ ] Remove the `ZZ TEST` data on production when the owner says so: two draft projects ("ZZ TEST Blue Water (setup wizard test)", "ZZ TEST Drive check (setup wizard)"), about seven setup proposals, and six old test documents still on the server's disk under `/opt/donordesk/shared/storage/project-setup/` (made before documents moved to Drive).
+- [ ] Add a check to `deploy-fast.sh` that starts `donordesk-superadmin` when it is enabled but not running (it was left stopped from 2026-10-27 to 2026-10-31).
+- [ ] Signed-in browser check of the multi-document upload on production (single-document upload, move into the project folder and the finish slide were checked on 2026-10-31).

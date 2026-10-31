@@ -450,3 +450,11 @@ in the same Google Cloud OAuth client used for Drive.
   can be swapped in via env without code changes.
 - **No offline/refresh token for sign-in** — only `openid email profile` scopes;
   Drive access continues to use the separate onboarding OAuth flow.
+
+## 10. Project setup documents (2026-10-31)
+
+- The AI project setup wizard keeps its source documents **in the organisation's own Google Drive, not on DonorDesk's servers** (`ISetupDocumentStore`, `GoogleDriveSetupDocuments`). Bytes pass through server memory while they are sent to Drive and read back; they are not stored.
+- Before the project exists the files sit in a staging folder `DonorDesk / Project setup (documents in progress)` (role `SETUP_STAGING`). When the project is created each file moves into the project's new `00-Project-Documents` folder (a new role in `PROJECT_WORKSPACE_FOLDERS`, created for every project's tree on its next ensure).
+- The proposal keeps only a reference, `sourceStorageKey = "drive:<file id>[,<file id>…]"`. A key without that prefix is a proposal made before the change (server storage; it cannot be read again and is cleaned from disk when discarded).
+- A tenant without Drive connected is refused with a plain sentence; there is no fallback to server storage. The connection has only the `drive.file` scope, so only files and folders the app created are readable or movable: picking a file the person already has in Drive is not possible without a wider permission (an owner decision).
+- Discard removes a file only while it is still in staging (and only if its parent is the staging folder); once a project was created the document is the organisation's record and is never deleted.

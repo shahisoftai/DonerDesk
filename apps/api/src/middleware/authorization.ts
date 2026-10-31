@@ -366,6 +366,18 @@ export const RULES: ReadonlyArray<{
   // ── Organisation, users, agent memory ─────────────────────────────────────
   { method: "PUT", route: /^\/v1\/organization\/agent-memory-settings$/, permission: "report.manage-agent-memory" },
   { method: "PUT", route: /^\/v1\/organization\/ask-settings$/, permission: "org.manage" },
+  { method: "PUT", route: /^\/v1\/organization\/setup-assist$/, permission: "org.manage" },
+  // The project setup wizard (Phase 36): proposals are private to their creator (and org managers), which the
+  // handlers enforce; the route's permission only says who may reach the surface at all.
+  { method: "POST", route: /^\/v1\/project-setup\/proposals$/, permission: "project.create" },
+  { method: "GET", route: /^\/v1\/project-setup\/proposals$/, permission: "project.create" },
+  { method: "GET", route: /^\/v1\/project-setup\/proposals\/[^/]+$/, permission: "project.create" },
+  { method: "PATCH", route: /^\/v1\/project-setup\/proposals\/[^/]+$/, permission: "project.create" },
+  { method: "POST", route: /^\/v1\/project-setup\/proposals\/[^/]+\/areas\/[^/]+\/rerun$/, permission: "project.create" },
+  { method: "DELETE", route: /^\/v1\/project-setup\/proposals\/[^/]+$/, permission: "project.create" },
+  // Apply re-checks each area's own permission inside the delegated handler (logframe, plan, places, finance, risks).
+  { method: "POST", route: /^\/v1\/project-setup\/proposals\/[^/]+\/preview$/, permission: "project.create" },
+  { method: "POST", route: /^\/v1\/project-setup\/proposals\/[^/]+\/apply$/, permission: "project.create" },
   { method: "PUT", route: /^\/v1\/organization\/mfa-requirement$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/users\/invitations$/, permission: "users.manage" },
   { method: "GET", route: /^\/v1\/scim\/credentials$/, permission: "users.manage" },

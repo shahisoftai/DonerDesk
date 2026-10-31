@@ -23,6 +23,7 @@ import { registerPublicInfographicRoutes } from "./routes/infographics.js";
 import { scimRouteOptions } from "./scim/service.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerProjectSetupRoutes } from "./routes/project-setup.js";
+import { registerProjectSetupWizardRoutes } from "./routes/project-setup-wizard.js";
 import { registerTemplateRoutes } from "./routes/templates.js";
 import { registerDonorTemplateMappingRoutes } from "./routes/donor-template-mapping.js";
 import { registerLogframeRoutes } from "./routes/logframe.js";
@@ -201,6 +202,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerScimAdminRoutes(instance);
     await registerProjectRoutes(instance);
     await registerProjectSetupRoutes(instance);
+    await registerProjectSetupWizardRoutes(instance);
     await registerTemplateRoutes(instance);
     await registerDonorTemplateMappingRoutes(instance);
     await registerLogframeRoutes(instance);

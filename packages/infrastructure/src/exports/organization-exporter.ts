@@ -40,6 +40,8 @@ export const ORG_EXPORT_OMITTED_FIELDS: Readonly<Record<string, readonly string[
   User: ["passwordHash", "mfaSecretEnc", "mfaPendingSecretEnc"],
   Invitation: ["token"],
   DataConnector: ["credentialEnc"],
+  // The stored setup document never leaves the tenant's storage (Phase 36); the proposal's other fields export.
+  ProjectSetupProposal: ["sourceStorageKey"],
 };
 
 const PAGE = 500;

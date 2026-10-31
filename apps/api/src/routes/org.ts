@@ -20,6 +20,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
         reportingDefaults: { tone: "FORMAL", formattingRules: [], autoPeriodCreation: false },
         agentMemoryEnabled: false,
         askEnabled: false,
+        setupAssistEnabled: false,
         agentMemoryPlatformEnabled,
       };
     }
@@ -44,6 +45,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       reportingDefaults: o.reportingDefaults,
       agentMemoryEnabled: o.agentMemoryEnabled,
       askEnabled: o.askEnabled,
+      setupAssistEnabled: o.setupAssistEnabled === true,
       mfaRequiredFrom: o.mfaRequiredFrom ? o.mfaRequiredFrom.toISOString() : null,
       agentMemoryPlatformEnabled,
     };

@@ -56,6 +56,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           reportingDefaults: JSON.stringify(org.reportingDefaults),
           agentMemoryEnabled: org.agentMemoryEnabled,
           askEnabled: org.askEnabled,
+          setupAssistEnabled: org.setupAssistEnabled,
           mfaRequiredFrom: org.mfaRequiredFrom ?? null,
           nonprofitVerifiedAt: org.nonprofitVerifiedAt,
         } as Parameters<typeof this.prisma.organization.create>[0]["data"],
@@ -89,6 +90,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           reportingDefaults: JSON.stringify(org.reportingDefaults),
           agentMemoryEnabled: org.agentMemoryEnabled,
           askEnabled: org.askEnabled,
+          setupAssistEnabled: org.setupAssistEnabled,
           mfaRequiredFrom: org.mfaRequiredFrom ?? null,
           nonprofitVerifiedAt: org.nonprofitVerifiedAt,
         } as Parameters<typeof this.prisma.organization.update>[0]["data"],
@@ -102,13 +104,13 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
   async findByTenant(tenantId: TenantId): Promise<Result<Organization | null, DomainError>> {
     const row = await this.prisma.organization.findUnique({ where: { tenantId: tenantId.toString() } });
     if (!row) return ok(null);
-    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean; askEnabled?: boolean; mfaRequiredFrom?: Date | null }));
+    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean; askEnabled?: boolean; setupAssistEnabled?: boolean; mfaRequiredFrom?: Date | null }));
   }
 
   async findById(id: string, tenantId: TenantId): Promise<Result<Organization | null, DomainError>> {
     const row = await this.prisma.organization.findFirst({ where: { id, tenantId: tenantId.toString() } });
     if (!row) return ok(null);
-    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean; askEnabled?: boolean; mfaRequiredFrom?: Date | null }));
+    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean; askEnabled?: boolean; setupAssistEnabled?: boolean; mfaRequiredFrom?: Date | null }));
   }
 
   private toDomain(row: {
@@ -132,6 +134,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     reportingDefaults?: string | null;
     agentMemoryEnabled?: boolean;
     askEnabled?: boolean;
+    setupAssistEnabled?: boolean;
     mfaRequiredFrom?: Date | null;
     nonprofitVerifiedAt?: Date | null;
     createdAt: Date;
@@ -160,6 +163,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         reportingDefaults: JSON.parse(row.reportingDefaults ?? "{}") as import("@donordesk/domain").OrganizationReportingDefaults,
         agentMemoryEnabled: row.agentMemoryEnabled ?? false,
         askEnabled: row.askEnabled ?? false,
+        setupAssistEnabled: row.setupAssistEnabled ?? false,
         mfaRequiredFrom: row.mfaRequiredFrom ?? undefined,
         nonprofitVerifiedAt: row.nonprofitVerifiedAt ?? undefined,
       },

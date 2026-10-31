@@ -30,6 +30,9 @@ export function createFinanceModule(deps: FinanceModuleDeps) {
   const registerFinanceRows = new RegisterFinanceRows(sources, fundings, expenses);
   return {
     registerFinanceRows,
+    /** The project funding rows, read by the setup wizard's funding applier to skip an allocation already recorded. */
+    fundings,
+    sources,
     handlers: {
       listFundingSources: new ListFundingSourcesHandler(sources),
       createFundingSource: new CreateFundingSourceHandler(sources, d),

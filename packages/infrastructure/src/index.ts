@@ -16,7 +16,6 @@ export { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credent
 export { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
 export { LocalProjectWorkspaceService, GoogleDriveProjectWorkspaceService, PROJECT_WORKSPACE_FOLDERS } from "./storage/project-workspace.js";
 export { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
-export { GoogleDriveWorkspaceDrive } from "./storage/google-drive-workspace.js";
 export { R2EvidenceStorage } from "./storage/r2.js";
 export { JwtAuthProvider } from "./auth/jwt.js";
 export { OidcAuthProvider } from "./auth/oidc.js";
@@ -50,3 +49,9 @@ export { SecretCipher } from "./security/secret-cipher.js";
 export * from "./exports/templates/index.js";
 export { buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME } from "./exports/data-sheet-workbook.js";
 export { buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME } from "./exports/indicator-entry-workbook.js";
+export * from "./project-setup/prompted-area-extractor.js";
+export * from "./project-setup/prompts/index.js";
+export type { AreaExtractionSpec } from "./project-setup/area-spec.js";
+export { TenantSetupLlm } from "./project-setup/setup-llm.js";
+export { GoogleDriveSetupDocuments, SETUP_STAGING_NAME, SETUP_STAGING_ROLE, PROJECT_DOCUMENTS_ROLE } from "./storage/google-drive-setup-documents.js";
+export { GoogleDriveWorkspaceDrive } from "./storage/google-drive-workspace.js";

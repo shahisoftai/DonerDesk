@@ -88,6 +88,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "ReportingProfile", field: "requireSecondApprover" },
   { model: "ReportingProfile", field: "requireEvidenceForVerification" },
   { model: "ReportingProfile", field: "simpleReview" },
+  { model: "ProjectSetupProposal", field: "proposalJson" },
+  { model: "Organization", field: "setupAssistEnabled" },
   { model: "Indicator", field: "targetScheduleJson" },
   { model: "Indicator", field: "countedElsewhere" },
   { model: "EvidenceFile", field: "reviewNote" },

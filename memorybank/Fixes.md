@@ -1517,3 +1517,18 @@ Full detail: [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-P
 | Application data-sheet tests failed after the sheet began to carry breakdowns | The test fakes had no `disaggregation` on their updates | The handler reads `u.disaggregation?.length` defensively |
 | Harness check "Not available yet" for Sankey failed | Sankey became a built kind | The check names the population pyramid, the only kind still unavailable |
 
+## 2026-10-31: AI project setup wizard (Phase 36, AI setup)
+
+| Problem | Cause | Fix |
+|---|---|---|
+| The second edit of a proposal from the page was refused as "someone else changed it" | `create` ignored the proposal's own timestamps, and the edit handler handed out the clock's time instead of the stored version | `create` stores the timestamps; the handler reads the stored `updatedAt` back (found by the real-database repository test) |
+| Extractors were given the unredacted document | The orchestrator and the re-read passed the raw blocks | Each block is redacted first and the grounding text is joined from the same blocks |
+| An ungrounded fact removed its key, leaving the facts incomplete; linked items were dropped | The patch deleted the field; `parentCode`, `logframeCode` and `adminLevel` were treated as figures that must appear in the item's own quote | A dropped fact becomes "Not stated"; those three fields are `NON_FIGURE_FIELDS`, checked by `checkProposal` instead |
+| Raw provider text ("GLM API error: 429") reached people, and a rate limit made the run ask the model for every area | The adapter threw the status only, the run kept going | `plainProviderError` (one sentence + status code, `RATE_LIMITED` also for an empty credit balance), the provider's own words go to the server log, the run stops asking the model but still reads areas a sheet can answer |
+| Superadmin portal returned 502 | `donordesk-superadmin` was stopped on 2026-10-27 (the rolled-back deploy) and never restarted | Started it; follow-up: deploy check (pending.md) |
+| Anthropic Test passed but real calls failed | Test only lists models (free); the account had no credit; and a key without a workspace is refused with HTTP 400 | Create the key inside a workspace and add credit; the Test button should show the provider's reason (not done) |
+| Welcome page claimed documents are "never used to train anything" and "stored for 30 days" | Wording the code could not back | Now says what is true: saved in the organisation's own Drive, not kept by the servers, text sent to the AI service with personal details removed |
+| Project documents were stored on the server | First design used server storage | `ISetupDocumentStore` over Google Drive; no fallback (see `gdrive.md` §10) |
+| Rail ticked every step merely clicked past; empty fact slots counted as "to decide"; two main landmarks on the page | Position-only ticks; counts included "Not stated" slots; the wizard rendered its own `<main>` inside the portal's | Ticks only where something was accepted; counts only stated items; the wizard is a `<div>` |
+| Choosing several files again after removing one added nothing | The file input was cleared before React read its live `FileList` | Copy the files first (found by the new browser harness) |
+| The database stored a proposal's version differently from the one handed out | see first row | see first row |

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { OrganizationProfileSchema, ProjectsResponseSchema } from "@/lib/server/schemas";
@@ -17,10 +18,15 @@ export default async function NewProjectPage() {
   const projects = (projectsResult.ok ? projectsResult.value.items : []).filter((p) => !p.isDemo);
   const { data, suggestions } = projectWizardDefaults({ organization: org, projects });
   return (
+    <>
+    <p className="mx-auto max-w-3xl px-6 pt-6 text-sm">
+      <Link href="/projects/new/document" className="underline">Set up from a project document instead</Link>
+    </p>
     <NewProjectWizard
       defaults={data}
       suggestions={suggestions}
       startFrom={projects.map((p) => ({ id: p.id, title: p.title, project: p }))}
     />
+    </>
   );
 }

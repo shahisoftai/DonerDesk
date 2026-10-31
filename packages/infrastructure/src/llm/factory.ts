@@ -359,7 +359,16 @@ function createGlmAdapter(config: { apiKey: string; model?: string; baseUrl?: st
       });
 
       if (!response.ok) {
-        throw new Error(`GLM API error: ${response.status}`);
+        // The provider says why (rate limit, balance, bad key); keep a short, non-secret copy of it for the logs.
+        const body = await response.text().catch(() => "");
+        let reason = "";
+        try {
+          const parsed = JSON.parse(body) as { error?: { message?: unknown } };
+          reason = typeof parsed.error?.message === "string" ? parsed.error.message : "";
+        } catch {
+          reason = body;
+        }
+        throw new Error(`GLM API error: ${response.status}${reason ? ` (${reason.replace(/\s+/g, " ").trim().slice(0, 200)})` : ""}`);
       }
 
       const data = await response.json() as {

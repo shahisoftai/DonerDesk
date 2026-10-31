@@ -33,7 +33,8 @@
     "postinstall": "prisma generate",
     "test:journey-db": "node --test test/journey/real-stack.test.mjs",
     "test:journey": "node --test test/journey/*.test.mjs",
-    "db:migrate:deploy": "tsx src/db/migrate-deploy.ts"
+    "db:migrate:deploy": "tsx src/db/migrate-deploy.ts",
+    "setup:eval": "node test/setup-corpus/eval.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

@@ -38,6 +38,8 @@ model Organization {
   agentMemoryEnabled Boolean @default(false)
   /// Ask DonorDesk (Phase 33.9): questions answered from the organisation's own records. Off until an administrator opts in.
   askEnabled Boolean @default(false)
+  /// Project setup assistance (Phase 36): the assistant may read uploaded project documents and propose a setup. Off until an administrator opts in.
+  setupAssistEnabled Boolean @default(false)
   /// Two-step sign-in is required of everyone in the organisation from this moment (Phase 33.12); null = optional.
   mfaRequiredFrom DateTime?
   /// Set when a NonprofitVerification for this tenant is APPROVED (Phase 22 WS-G).
@@ -2551,4 +2553,51 @@ model CurrencyRate {
   createdAt   DateTime @default(now())
 
   @@index([tenantId, fromCurrency, toCurrency, effectiveOn])
+}
+
+/// A project setup the assistant proposed from an uploaded document (Phase 36). The proposal is stored data a person
+/// reviews and then applies through the ordinary import handlers; the model never writes project records directly. The
+/// stored source document is encrypted, deleted at expiry (30 days) or on discard, and never exported.
+model ProjectSetupProposal {
+  id                String   @id
+  tenantId          String
+  createdById       String
+  /// EXTRACTING | READY | APPLYING | APPLIED | PARTIAL | FAILED | DISCARDED.
+  status            String
+  sourceName        String
+  /// Storage key of the uploaded document (the encrypting storage); never exported, deleted at expiry or on discard.
+  sourceStorageKey  String
+  sourceHash        String
+  sourceLength      Int
+  /// The areas as `ProjectSetupProposal` (domain), stored as JSON and read back unchanged.
+  proposalJson      String   @default("{}")
+  /// The latest `checkProposal` problems, as JSON.
+  problemsJson      String   @default("[]")
+  appliedProjectId  String?
+  promptVersion     String?
+  model             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  expiresAt         DateTime
+
+  @@index([tenantId, createdById])
+  @@index([tenantId, status])
+}
+
+/// One extraction or apply run over (part of) a proposal (Phase 36): counts, dropped items and timings, never document text.
+model ProjectSetupRun {
+  id          String    @id
+  tenantId    String
+  proposalId  String
+  /// EXTRACT | APPLY.
+  kind        String
+  /// The one area a rerun or apply step covered; null for a whole-document extraction.
+  area        String?
+  /// RUNNING | FINISHED | FAILED.
+  status      String
+  detailJson  String    @default("{}")
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+
+  @@index([tenantId, proposalId])
 }

@@ -33,6 +33,7 @@ function mimeFor(name: string): string {
 
 /** Stable folder roles under a project workspace root. */
 export const PROJECT_WORKSPACE_FOLDERS = [
+  "00-Project-Documents",
   "01-Donor-Templates",
   "02-Logframe",
   "03-Data-Files",
