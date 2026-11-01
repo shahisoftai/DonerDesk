@@ -1,6 +1,6 @@
 # Phase 37 — AI project setup wizard v2: proper extraction, proper placement
 
-**DonorDesk Version 3.007** · plan written 2026-11-01 · status: built and tested 2026-11-01 (uncommitted, not deployed, not yet run against the real model) — see §8
+**DonorDesk Version 3.007** · plan written 2026-11-01 · status: **built, tested and DEPLOYED 2026-11-01** (final release `20261101195215`, branch `0015-compitition`, local commits only), evaluated on the real model (§9) — current state in §8, open items in §10, invariants in §11
 
 Builds on Phase 36 (`phase36-ai-project-setup-wizard.md`) and the optimisation pass of
 2026-11-01 (memory note `phase36-wizard-optimisation-2026-11-01`). Test corpus: the four AMAN
@@ -199,21 +199,22 @@ in the tenant's Drive.
 Generating indicators the documents do not contain (beyond explicit person choice), OCR'd scanned
 Gantt images, IATI export (separate phase), donor-template extraction (Phase 26/28 already).
 
-## 8. Status (2026-11-01)
+## 8. Status — final state (2026-11-01)
 
-| Batch | State | Where |
+| Batch | State | Where / what |
 | --- | --- | --- |
-| 37.1 classify + typed blocks | Built | `domain/.../document-kind.ts` (`classifyDocument`, `splitSheets`, `DOCUMENT_SIGNALS`); `SourceBlock.docKind` set per sheet in `source-reader.ts`; `AreaExtractionSpec.readsFrom` + `document-scope.ts`. AMAN: Part C = PROPOSAL, Gantt = WORK_PLAN_GANTT, budget sheets = BUDGET. |
-| 37.2 readers | Built | Gantt by its own header row, task headings kept as `group`, unscheduled rows listed with no dates, leading tab kept by `toBlocks` (the "Project Organogram" title bug); AMAN: 112/112 dated rows + 11 undated, 0 dropped. `logframe-matrix.ts` (EU/GCF matrix, EN/FR/ES) feeds both the logframe reader and the indicator reader so each indicator is tied to its row's result; `indicator-sheet-reader.ts` (PITT/M&E plan, partial, APPEND). Generated codes skip the figure check (`codeSource: GENERATED`). Not built: budget detail sheets, budget reconciliation. |
-| 37.3 three passes | Built | `area-passes.ts` (`recallBlocks`, `runRefinement`); `LOGFRAME_STRUCTURE` (3 votes, majority, tree order) in `prompts/logframe.ts`; `results-chain.ts` (`tidyResultsChain`, `applyStructure`, `majorityStructure`). Recall on logframe, indicators, facts. Not built: example-leak check. |
-| 37.4 facts | Partly | facts prompt v2 (countries in words, currency line), recall pass fills Not stated facts; `FACTS_DATES_FROM_PLAN` advice. Not built: gazetteer country normalisation, picking between conflicting quotes. |
-| 37.5 link resolver | Built | `setup-links.ts` (`linkProposal`, `bestLink`: clear winner only, SUGGESTED, stale suggestions withdrawn); runs after `proposeCodes(…, "LIVE")` at the end of reading and rerun, and after `proposeCodes` at preview/apply. Placement checks (`placement-checks.ts`): several goals, missing level, unplaced indicators/activities. |
-| 37.6 review | Partly | Result picker per indicator/activity/budget line (`LINK` edit, `linkItem`, `linkSource: PERSON`), work-plan heading shown, section-level advice, "Left out" panel from `groundAreaPatch.leftOut` (stored on the run). Copy in en/fr/es/ar (drafts). Not built: drag-to-reparent tree, manual indicator entry in the wizard, mini-Gantt, document-kind override, highlight-in-source. |
-| 37.7 apply | Built | `PeriodsApplier` waits for the project's Drive folders (`SetupWorkspaceProbe`, 30 × 3 s) and otherwise fails with a sentence; Finish creating retries. |
-| 37.8 eval | Partly | Deterministic tests for every reader and rule; the model eval on real proposals is still owed. |
-| 37.9 caching/routing | Not built | Area prompts select different blocks, so a shared cached prefix gains little; revisit with the eval numbers. |
+| 37.1 classify + typed blocks | **Built, deployed** | `domain/.../document-kind.ts` (`classifyDocument`, `splitSheets`, `DOCUMENT_SIGNALS`); `SourceBlock.docKind` per sheet (`source-reader.ts`); `AreaExtractionSpec.readsFrom` + `document-scope.ts`; a person can overrule a file's kind (`SetSetupDocumentKindHandler`, re-reads every part). AMAN: Part C = PROPOSAL, Gantt = WORK_PLAN_GANTT, budget sheets = BUDGET. |
+| 37.2 readers | **Built, deployed** | Gantt by its own header row (task headings kept as `group`, unscheduled rows listed, leading-tab bug fixed); `logframe-matrix.ts` (EU/GCF matrix, EN/FR/ES) feeds the logframe and indicator readers; `indicator-sheet-reader.ts` (PITT/M&E plan); budget summary **and** detailed sheet (`kind` LINE/DETAIL/TOTAL, `ref`) with `checkBudgetTotals`; `sheet-rows.ts` (`joinedRows`) puts rows split by line breaks back together (budget and Gantt); `fit-text.ts` cuts reader values to the contract's limits. AMAN: Gantt 123 rows (112 dated), budget 127 rows reconciling to 62,272,809.46. |
+| 37.3 three passes | **Built, deployed** | `area-passes.ts` (`recallBlocks`, `runRefinement`, `dropPromptEchoes`); `LOGFRAME_STRUCTURE` (3 votes, majority, tree order); `results-chain.ts`; `isHeadingOnly` drops "Goal"/"Outputs"-only titles. Recall on logframe, indicators, facts. |
+| 37.4 facts | **Built, deployed** | `country-names.ts`, `fact-readings.ts` (alternatives, `offerPlanDates`, `offerPlaceCountries`), `facts-from-text.ts` + `fact-pairs.ts` (labelled cells/lines read exactly, model's differing value kept as alternative), checks `FACTS_*`/`COUNTRY_NOT_RECOGNISED`. Facts prompt v4 (work country, donor programme). |
+| 37.5 link resolver | **Built, deployed** | `setup-links.ts` (`linkProposal`, clear winner only, `SUGGESTED`, stale suggestions withdrawn); placement checks (`placement-checks.ts`). |
+| 37.6 review | **Built, deployed** (one gap) | Result picker (`LINK`), move a result (`MOVE`), add an indicator by hand (`ADD_INDICATOR`), other readings (`CHOOSE`), mini-Gantt, "Your documents" panel (kind override + **which parts each file feeds**), "Show in the document" (`GET …/passages/…`), Left-out panel. Copy in en/fr/es/ar (drafts). **Gap:** moving a result is a pair of dropdowns, not drag-and-drop. |
+| 37.7 apply | **Built, deployed** | `PeriodsApplier` waits for the project's Drive folders (30 × 3 s) and otherwise fails with a sentence; Finish creating retries. Re-read saves check the version and retry. |
+| 37.8 eval | **Done once, manual** | Real-model table in §9 (runs 2–10, production). `setup:eval` stays the synthetic CI-less check; there is no automated real-model eval. |
+| 37.9 caching/routing | **Decided not to build** | Shared prompt ~300 tokens, below the cacheable minimum, and each part sends different passages. |
+| §9 document map + section router | **Built, deployed** | `document-map.ts`, `section-router.ts`, `AreaExtractionSpec.sectionTitles`, `SourceBlock.section`, `§` labels in the prompt. |
 
-Deploy: no migration, no env. Ship api + web together (`SCOPE=both`): the web reads `linkSource`, `group`, `leftOut` and the new problem codes, the api accepts `op: "LINK"`.
+Deploy: no migration, no env. API + web together (`SCOPE=both`). Routes added (all in `RULES`): `PUT /v1/project-setup/proposals/:id/documents/:documentId/kind`, `GET /v1/project-setup/proposals/:id/passages/:documentId/:block`; `PATCH …/proposals/:id` gained ops `LINK`, `CHOOSE`, `MOVE`, `ADD_INDICATOR`. Releases: `20261101174948` (first, both), `…182102`, `…183407`, `…185035`, `…190353`, `…192917` (api), `20261101195215` (final, both).
 
 ### Second pass (2026-11-01, same day)
 - **Budget detail and totals**: `BudgetLineDef.kind` (LINE / DETAIL / TOTAL) and `ref`; the reader adds the Detailed Budget's referenced rows and both stated grand totals; `checkBudgetTotals` (`budget-checks.ts`) sets the categories and the most detailed rows (`leafRows`) against each grand total, advice only, never across currencies. AMAN: 6 lines, 119 details, 2 totals, all reconcile to 62272809.4617. Only LINE rows count in `budgetNotApplied`.
@@ -221,7 +222,7 @@ Deploy: no migration, no env. Ship api + web together (`SCOPE=both`): the web re
 - **Example echoes**: `dropPromptEchoes` removes items whose quote (12+ characters) is the prompt's own words.
 - **Review**: `MOVE` (`moveResult`: level and parent, no circle, tree order kept), `ADD_INDICATOR` (`addIndicator`, the person's own, EDITED), mini-Gantt (`plan-gantt.ts`, `PlanGantt`), "Your documents" panel with a kind override (`ProjectSetupProposal.sources`, `describeSources`, `applyKindOverrides`; `PUT …/documents/:documentId/kind` re-reads every part; rerun saves now check the version and retry), "Show in the document" (`GET …/passages/:documentId/:block`, the redacted block with the quote marked, `highlightParts`). Copy in four languages (drafts). Browser harness `test:setup-wizard` covers all of it (20 checks).
 - **Prompt caching: deliberately not built.** The shared system prompt is ~1.2 k characters (~300 tokens), below Anthropic's minimum cacheable prefix, and each area sends different passages; there is no repeated prefix worth caching.
-- **Still owed**: the real-model evaluation (needs the production key: deploy, then run the wizard on the AMAN pack 3-5 times and record per-area counts, variance, time and cost).
+- **Real-model evaluation**: done afterwards, see the table at the end of §9.
 - Deploy: no migration, no env; ship api + web together. New routes in `RULES`: `PUT /v1/project-setup/proposals/:id/documents/:documentId/kind`, `GET /v1/project-setup/proposals/:id/passages/:documentId/:block`.
 
 ## 9. Document map and section router (decided 2026-11-01, replaces keyword-only passage picking)
@@ -236,7 +237,7 @@ Deploy: no migration, no env. Ship api + web together (`SCOPE=both`): the web re
 5. **Facts as label–value pairs** (`fact-pairs.ts`): a cover or summary table row or `Label: value` line whose label is a known one (project title, award number, donor, country, start date, end date, currency; EN/FR/ES) is read exactly, with its line as the quote; it is the primary reading and the model's differing value is kept as the alternative.
 6. **Level-word headings are not results** (`isHeadingOnly`): a result titled only "Goal", "Outputs", "Specific objective 2" is dropped before grounding.
 
-**Not built:** one cheap model call to assign headings that match no list (the list-first design makes it a refinement), and showing each file's contribution per part in the documents panel.
+**Built since:** each file's contribution per part is shown in the documents panel (`ISetupAreaExtractor.feeds`, `SetupSourceInfo.feeds`). **Not built:** one cheap model call to assign headings that match no list (the list-first design makes it a refinement).
 
 ### Real-model evaluation, Haiku, AMAN pack (4 files), 2026-11-01 — runs 2–10 on production
 | Run (release) | Time | Requests / tokens | Goal / Outcome / Output / Activity | Plan rows | Placed under a result | Budget reconciles |
@@ -251,3 +252,25 @@ Deploy: no migration, no env. Ship api + web together (`SCOPE=both`): the web re
 | 10 (document map + feeds) | 79 s | 17 / 76.0 k | 1 / 2 / 3 / 11 | 123 | 6 | yes |
 
 **Reading:** time is 79–88 s and steady; the Gantt gives 123 rows every run (112 dated + 11 undated); the budget (127 rows, 2 stated totals) reconciles to 62,272,809.46 from run 6; with the document map the goal is 1 and the outcomes 2 in every run (before: goals 1–2, outcomes 1–4). **Still open:** only 4–13 of 123 activities are placed under a result (the Gantt's wording differs from the proposal's activities; only clear wording matches are linked, by design), and the narrative has few outputs so the Output count moves between runs. Facts: country and dates come from the documents; donor and dates show the "documents also say" choice.
+
+## 10. Open items (what is left, with reasons)
+
+1. **Activities placed under a result** — only 4–13 of 123 Gantt activities link, because the Gantt's wording differs from the proposal's activities. Linking is by clear wording only, by design. Options: (a) accept and let the person place them with the picker (works today); (b) link to the nearest *outcome* when no activity/output wins — **check first** that `ImportWorkPlanHandler` accepts a non-activity logframe code; (c) a model pass that matches Gantt rows to results over titles only (small input), grounded on the titles.
+2. **Headings that match no list** — one cheap model call over the heading list only. Build when a donor pack shows a part finding no section.
+3. **Drag-and-drop in the results tree** — the move control is two dropdowns (keyboard friendly, no circles); drag is polish.
+4. **Native review** of the French, Spanish and Arabic wording (all new screens).
+5. **More donor packs** — the evaluation is one pack (AMAN, USAID Part C). Run an EU, a UNICEF and a GCF pack through the wizard and record the same table; add their headings to the `sectionTitles` lists where a part found nothing.
+6. **Test data on production** (demo tenant): projects "AMAN.01", "AMAN.01-VERIFY", "AMAN.01-VERIFY2", about 20 setup proposals (including every evaluation run) and their Drive files. Remove only when the owner says so.
+7. **The infographic share-link test** (`packages/application/test/infographic-studio.test.mjs`) fails with or without this work (date dependent); not part of this phase.
+
+## 11. Invariants to add to AGENTS.md (not yet added there)
+
+- **A part reads sections, not keywords.** Blocks follow the document's headings (`document-map.ts`) and carry their path; each part's `sectionTitles` (EN/FR/ES) say which headings hold its information; matching sections are read first and whole, keywords only fill the rest and are the fallback. A new part or a new donor layout is a new list of titles, never a branch.
+- **Each file is mapped on its own**; a part reads the matching sections of every file, so a file focused on a few sections feeds only those parts (`feeds` shows it).
+- **A labelled cell is the document's own statement** (`fact-pairs.ts`): it is the primary reading of a fact and the model's different value is kept as an alternative; alternatives are grounded like any value.
+- **A reader's value is cut to the contract's limits** (`fit-text.ts`): one over-long cell must never make the whole proposal unreadable (it once made the page say "unexpected response shape").
+- **A row split by line breaks is one row** (`sheet-rows.ts`); the quote check reads a break as a space, so the joined row is still a verbatim quote. Find the block by the row's first line.
+- **A missing link is never guessed** (`setup-links.ts`): a clear wording winner is `SUGGESTED`, a person's choice is `PERSON` and is never replaced.
+- **The review's structural edits are pure and refuse in a sentence** (`review-operations.ts`: `chooseAlternative`, `moveResult`, `addIndicator`); the handler asks the area registry, never an area name.
+- **Re-read saves are version-checked** (`RerunSetupAreaHandler`): parts finishing together retry instead of overwriting each other.
+- **The phone pattern needs the same separator twice** (`pii-firewall.ts`): an amount with four decimals is not a phone number.

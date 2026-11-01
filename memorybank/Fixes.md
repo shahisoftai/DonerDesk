@@ -1517,6 +1517,21 @@ Full detail: [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-P
 | Application data-sheet tests failed after the sheet began to carry breakdowns | The test fakes had no `disaggregation` on their updates | The handler reads `u.disaggregation?.length` defensively |
 | Harness check "Not available yet" for Sankey failed | Sankey became a built kind | The check names the population pyramid, the only kind still unavailable |
 
+## 2026-11-01: AI setup wizard v2 (Phase 37)
+
+| Problem | Cause | Fix |
+|---|---|---|
+| A Gantt activity read with a deliverable ("Project Organogram") as its title | `toBlocks` trimmed a block's leading tab, so a row whose first cell was empty shifted every cell one column left | `trimBlock` keeps a leading tab; the Gantt is read by its header row, not by position |
+| The review page said "Received an unexpected response shape" | Two Gantt titles were longer than the contract's 300 characters | Readers cut values to the contract's limits (`fit-text.ts`); a test pins it |
+| Amounts such as 567282.9617 became `[REDACTED]`, so budget rows were lost and the budget did not add up | The phone pattern `\d{3}[-.]?\d{3}[-.]?\d{4}` matched three digits, a dot, three digits and four digits | The same separator twice (`\1`); a test pins an amount and real phone numbers |
+| Two budget rows (and any Gantt row with a long note) lost their code or amount | A description cell with line breaks split its row across lines, and the continuation could run into the next block | `joinedRows` puts the pieces back together and finds the block by the row's first line |
+| Results titled only "Goal" or "Outputs" were proposed as results | The model listed headings as items | `isHeadingOnly` drops them before grounding |
+| Goals/outcomes varied from run to run | One call decided content and structure; passages were picked by keywords across block boundaries | Voted structure pass; document map and section router (plan §9); goal 1 and outcomes 2 in every run afterwards |
+| Parts finishing together could overwrite each other's results | Re-read saves did not check the proposal's version | Version-checked save with retry |
+| Dates and amounts in table cells became headings in the document map | Standalone short lines were accepted as titles | A title must be mostly letters; "C. 4" is read as "C.4" |
+| Reporting periods failed while a new project's Drive folders were still being made | `CreateReportingPeriodHandler` refuses until the workspace is ready | `PeriodsApplier` waits (30 × 3 s) and otherwise says "press Finish creating" |
+| The architecture guard failed on the edit handler | It tested for the indicators step by name | `addIndicator` asks the area registry (`SETUP_AREAS[area].fields`) |
+
 ## 2026-10-31: AI project setup wizard (Phase 36, AI setup)
 
 | Problem | Cause | Fix |

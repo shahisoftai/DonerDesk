@@ -1226,13 +1226,27 @@ Plan, rules and deploy steps: `imp/phase36-easy-data-entry.md`.
 - [ ] Decide whether the old form view of the grid can go once narrow screens are covered by the sheet or Enter data.
 - [x] Local API tests: fixed 2026-10-30 by creating a local `donordesk` database (migrations + `rls.sql`); the API suite is 67/67 when run with `DATABASE_URL=postgresql://najeeb@localhost/donordesk`. The API tests default to a `test` role that does not exist here.
 
+## Phase 37 (AI setup wizard v2) (2026-11-01, DEPLOYED, final release `20261101195215`; plan `imp/phase37-setup-wizard-v2.md`)
+
+- [x] Built, tested and deployed: document kinds, document map + section router, exact readers (Gantt, budget summary and detail with reconciliation, logframe matrix, indicator table, labelled fact cells), voted results structure, link resolver, review tools, apply waits for Drive folders. Run on the real model (table in plan §9). Commits `80417cef` … `48a78d70` on `0015-compitition`, **not pushed**.
+- [x] Real-model run (Haiku, AMAN pack, runs 2–10): 79–88 s; goal 1 / outcomes 2 stable after the document map; budget reconciles. This closes the Phase 36 "real-model run" item for one pack.
+- [ ] More donor packs through the wizard (EU, UNICEF, GCF), then widen the `sectionTitles` lists where a part found no section; record the same table.
+- [ ] Only 4–13 of 123 Gantt activities are placed under a result automatically (see plan §10 for the options; check the work-plan import accepts a non-activity logframe code before linking to outcomes).
+- [ ] Assign headings that match no list with one cheap model call (build when a pack shows a gap).
+- [ ] Drag-and-drop for the results tree (today: level and parent dropdowns).
+- [ ] Native review of the French, Spanish and Arabic wording of the new screens.
+- [ ] Add the Phase 37 invariants (plan §11) to AGENTS.md.
+- [ ] Remove the test data on the demo tenant when the owner says so: projects "AMAN.01", "AMAN.01-VERIFY", "AMAN.01-VERIFY2", about 20 setup proposals (incl. all evaluation runs) and their Drive files.
+- [ ] Push the branch (all Phase 37 commits are local).
+- [ ] `packages/application/test/infographic-studio.test.mjs` "share links…" fails with or without Phase 37 (date dependent).
+
 ## Phase 36 (AI project setup wizard) (2026-10-31, DEPLOYED; plan `imp/phase36-ai-project-setup-wizard.md` §0a)
 
 Not the same phase as "Phase 36: easier data entry" above; both were numbered 36.
 
 - [x] **Deployed 2026-10-31, final release `20261031162744`** (commits `86d812e1` the wizard, `05879cb5` small site and doc corrections; branch `0015-compitition`; no migration after `20261102100000_project_setup_proposals`). Checked on production afterwards: French welcome, two documents accepted and referenced from Drive (none on the server's disk), sheet results read, AI-read parts report "Could not read" with a "Read again" button because the Anthropic account has no credit. The file transfer step took 586 s that day: if deploys keep stalling, give `scp` keepalive options in `scripts/deploy-fast.sh`.
 - [x] Built: extraction (8 areas, parallel by dependency layer), review as slides (welcome, 11 steps, finish), apply through the existing handlers, project documents in the organisation's own Drive (staged, then moved into the project's `00-Project-Documents`), up to five documents per setup, token usage and priced cost, four languages, per-part "Read again", browser harness `test:setup-wizard`.
-- [ ] **Real-model quality run** (`pnpm --filter @donordesk/infrastructure setup:eval`, 8 to 10 real anonymised proposals; bars in plan §10). Blocked: the Anthropic account has no credit ("credit balance is too low"); the previous provider key is out of weekly quota. Do not advertise the feature until the numbers are recorded.
+- [ ] **Real-model quality run** on 8 to 10 real anonymised proposals (bars in plan §10). Credit exists now and one pack (AMAN) was measured in Phase 37; the other packs are still owed. Do not advertise the feature until the numbers are recorded.
 - [ ] Haiku 5.5 performance test once credit exists (speed, items found, items dropped as ungrounded). Superadmin config: provider `anthropic`, model `claude-haiku-5-5` typed exactly (a blank model defaults to `claude-opus-5`), key created inside a workspace (a workspace-less key is refused with HTTP 400).
 - [ ] Native review of the French, Spanish and Arabic wording (`apps/web/src/features/project-setup/copy/`); the Settings card and the server's own error sentences are still English.
 - [ ] **Decision for the owner: picking an existing Drive file** needs a wider Drive permission than `drive.file` (a new consent for every organisation). Not built.

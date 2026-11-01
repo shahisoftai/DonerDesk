@@ -1,5 +1,7 @@
 # Phase 36 — AI Project Setup Wizard (2026-10-29)
 
+> **Continued in Phase 37** (`imp/phase37-setup-wizard-v2.md`, 2026-11-01): document kinds, the document map and section router, exact sheet readers, a voted results-chain structure pass, link resolver, budget reconciliation, fact readings and the review tools. It was run on the real model (Haiku) and its numbers are in that file. This file remains the Phase 36 design and quality bars.
+
 **DonorDesk Version 3.007.** Status: 36.0–36.5 built and tested (not deployed). Owed before any public claim: the real-model evaluation (§10), a signed-in browser pass and the four-language copy.
 
 ## 0a. Implementation notes (2026-10-31 — batches 36.0–36.5 built)

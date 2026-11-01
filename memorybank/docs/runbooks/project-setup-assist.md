@@ -26,3 +26,12 @@ Run `setup:eval` with `LLM_PROVIDER` and its key set against 8–10 real, anonym
 - Document text is never in audit rows or logs (lengths and counts only).
 - The document is not on the server: it is in the organisation's Drive. The proposal row holds only `drive:<file id>` in `sourceStorageKey`, which is omitted from the organisation export and from API responses. Proposals made before 2026-10-31 point at server storage (`project-setup/...`): they cannot be read again (the person is told to add the document again) and are cleaned from server storage on discard.
 - Redaction applies before any model call; `LLM_PII_POLICY=allow` sends text unchanged — do not set it for this feature.
+
+## Phase 37 notes (2026-11-01)
+
+- **Deploy:** no migration, no env. API and web together. Routes added: `PUT /v1/project-setup/proposals/:id/documents/:documentId/kind`, `GET /v1/project-setup/proposals/:id/passages/:documentId/:block`.
+- **Checking a run on a real pack:** upload the files, wait for "Your documents are read" (about 80 s for four files), then open each step. Healthy signs: one goal and the outcomes the narrative names; the Funding step shows no "budget states a total … but its rows add up" warning for a workbook that reconciles; the Activities step shows the timeline; "Your documents" lists what each file was read as and which steps it feeds.
+- **A part found nothing / the wrong thing:** open "Your documents" on the Facts step — if a file was read as the wrong kind, change it (every part is re-read and the decisions in those parts are replaced). If a heading is unusual, add its words to that part's `sectionTitles` (`packages/infrastructure/src/project-setup/prompts/<area>.ts`); keywords still work as a fallback.
+- **"Show in the document"** re-reads the file from the organisation's Drive and shows the block with personal details removed; if it fails, check that Drive is still connected.
+- **Support questions:** "Why is this activity not under a result?" — only a clear wording match is linked; use "Place under". "Why do I see two readings?" — the documents state the fact in two places; choose one.
+- **Timing and cost on four files:** 79–88 s, 16–17 requests, 71–79 k tokens (Haiku).
