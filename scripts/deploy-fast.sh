@@ -340,7 +340,9 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     ${SSH} "
       set -eu
       cd ${REMOTE_APP}
-      rm -rf packages
+      # Replace each package's files but keep its node_modules (the links to the pnpm store): they are not part of the tar,
+      # and deleting them made the api unable to find @donordesk/domain until a pnpm install put them back.
+      if [ -d packages ]; then find packages -mindepth 2 -maxdepth 2 ! -name node_modules -exec rm -rf {} +; fi
       tar -xzf /tmp/dd-pkgs.tgz -C ${REMOTE_APP}
       rm -f /tmp/dd-pkgs.tgz
       chown -R donordesk:donordesk ${REMOTE_APP}/packages
@@ -410,7 +412,8 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     # drift between the local build and the host store). Non-silent so a
     # genuine failure surfaces instead of silently shipping a broken api.
     cd ${REMOTE_APP}/apps/api
-    if [ -f package.json ] && [ '${DEPS_UNCHANGED}' != '1' ]; then
+    # The install is skipped only when the lockfile is unchanged AND the workspace links are in place.
+    if [ -f package.json ] && { [ '${DEPS_UNCHANGED}' != '1' ] || [ ! -e ${REMOTE_APP}/packages/infrastructure/node_modules/@donordesk/domain ]; }; then
       echo '  regenerating api symlink farm (pnpm install)'
       CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile --prefer-offline >/tmp/dd-api-pnpm-install.log 2>&1 \\
         || { echo '  WARNING: api pnpm install failed — deps may not resolve' >&2; cat /tmp/dd-api-pnpm-install.log >&2; }
