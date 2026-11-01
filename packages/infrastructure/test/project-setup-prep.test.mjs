@@ -379,3 +379,13 @@ test("a Gantt row whose title cell has line breaks keeps its code and its dates"
   assert.deepEqual([plan[0].value.planCode, plan[0].value.title, plan[0].value.start], ["1.1", "Attend the kick-off meeting with partners", "2023-07-22"]);
   assert.equal(ground37("PLAN", { plan }, join37(blocks)).dropped, 0);
 });
+
+test("a broken budget row that runs into the next block is still found and still grounds", () => {
+  const head = ["# Summary Budget", "\tBudgets developed in Pakistani Rupee (PKRs.)", "\tPersonnel\t\t1530000\t1530000", "\tTOTAL PROJECT COSTS\t\t1530000\t1530000",
+    "# Detailed Budget", "Ref No. \tLine Item / Description\tDescription \tUnit\tUnits\tCost/Unit\tCost", "D.2.1\tTablets for Outreach"].join("\n");
+  const tail = ["[SAMSUNG Galaxy Tab A7 Lite - LTE T225\t\tNo.\t20\t76500\t1530000", "\tTOTAL ESTIMATED COST\t\t\t\t\t1530000"].join("\n");
+  const blocks = [{ documentId: "s", index: 0, text: head }, { documentId: "s", index: 1, text: tail }];
+  const rows = readBudgetSheet(blocks).fields.budget.filter((r) => r.value.kind === "DETAIL");
+  assert.deepEqual(rows.map((r) => [r.value.ref, r.value.amount, r.sourceRef.block]), [["D.2.1", "1530000", 0]]);
+  assert.equal(ground37("FUNDING_BUDGET", { budget: rows }, join37(blocks)).dropped, 0);
+});

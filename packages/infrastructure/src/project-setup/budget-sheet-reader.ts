@@ -6,7 +6,7 @@
  */
 import { FIELD_LIMITS, fit } from "./fit-text.js";
 import type { BudgetLineDef, Proposed, SourceBlock } from "@donordesk/domain";
-import { joinBrokenRows } from "./sheet-rows.js";
+import { joinedRows } from "./sheet-rows.js";
 
 export interface PartialSheetRead {
   fields: Record<string, unknown>;
@@ -101,7 +101,7 @@ function detailRows(document: ReadonlyArray<SourceBlock>, currency: string | nul
   if (header < 0) return [];
   const costAt = sheet[header]!.split("\t").findIndex((c) => c.trim().toLowerCase() === "cost");
   const out: Proposed<BudgetLineDef>[] = [];
-  for (const line of joinBrokenRows(sheet.slice(header + 1), (first) => DETAIL_REF.test(first))) {
+  for (const { line, first } of joinedRows(sheet.slice(header + 1), (cell) => DETAIL_REF.test(cell))) {
     const cells = line.split("\t");
     const ref = (cells[0] ?? "").trim();
     const amount = (cells[costAt] ?? "").trim();
@@ -109,7 +109,7 @@ function detailRows(document: ReadonlyArray<SourceBlock>, currency: string | nul
     const isTotal = !ref && DETAIL_GRAND_TOTAL.test(label);
     if (!isTotal && !DETAIL_REF.test(ref)) continue;
     if (!NUMBER.test(amount) || Number(amount.replace(/,/g, "")) === 0) continue;
-    const block = document.find((b) => b.text.replace(/\s+/g, " ").includes(line.trim().replace(/\s+/g, " ")));
+    const block = document.find((b) => b.text.includes(first.trim()));
     if (!block) continue;
     const description = label || (cells[2] ?? "").trim() || ref;
     out.push({
