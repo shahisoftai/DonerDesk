@@ -223,3 +223,17 @@ Deploy: no migration, no env. Ship api + web together (`SCOPE=both`): the web re
 - **Prompt caching: deliberately not built.** The shared system prompt is ~1.2 k characters (~300 tokens), below Anthropic's minimum cacheable prefix, and each area sends different passages; there is no repeated prefix worth caching.
 - **Still owed**: the real-model evaluation (needs the production key: deploy, then run the wizard on the AMAN pack 3-5 times and record per-area counts, variance, time and cost).
 - Deploy: no migration, no env; ship api + web together. New routes in `RULES`: `PUT /v1/project-setup/proposals/:id/documents/:documentId/kind`, `GET /v1/project-setup/proposals/:id/passages/:documentId/:block`.
+
+## 9. Document map and section router (decided 2026-11-01, replaces keyword-only passage picking)
+
+**Why.** Until now a part found its text by keywords over 1,600-character blocks that ignore headings. The structure of a document is the strongest clue to where a fact is, so a part should read the *sections* that normally hold its information, whole and labelled, and use keywords only as a fallback.
+
+**How it works (all deterministic, no model):**
+1. **Document map** (`document-map.ts`): every non-tabular document is split into sections from its own headings — lettered or numbered codes (`C.3.`, `2.1`), "Section/Part/Annex", labelled lines (`Goal:`, `Objective 1:`), all-capitals titles and short title-like lines alone between blank lines. The result is a tree; each block is cut inside one section and carries its path (`C.3 Goals and Objectives > Objectives:`). A workbook sheet is a section named after the sheet. Text before the first heading is "Start of document" (cover, summary table).
+2. **Section roadmap per part** (`AreaExtractionSpec.sectionTitles`, English, French, Spanish): the headings that normally hold that part's information. USAID Part C ("Statement of Purpose", "Goals and Objectives"), EU "Description of the Action" and similar donor layouts are simply titles in these lists, so no separate donor-profile mechanism is needed.
+3. **Routing is per section, across every file.** Each file is mapped on its own, so a file that holds only the budget, only the work plan or only the narrative contributes just its sections to the parts that list them; a part reads the matching sections of all files, in reading order. Document kind (Phase 37.1) still decides which files a part may read at all.
+4. **Selection:** routed sections are read first and whole (up to the part's budget); keyword ranking fills the rest of the budget, so a heading that matches nothing is never fatal. The prompt marks each section with a `§` label line (a label, not text to quote).
+5. **Facts as label–value pairs** (`fact-pairs.ts`): a cover or summary table row or `Label: value` line whose label is a known one (project title, award number, donor, country, start date, end date, currency; EN/FR/ES) is read exactly, with its line as the quote; it is the primary reading and the model's differing value is kept as the alternative.
+6. **Level-word headings are not results** (`isHeadingOnly`): a result titled only "Goal", "Outputs", "Specific objective 2" is dropped before grounding.
+
+**Not built:** one cheap model call to assign headings that match no list (the list-first design makes it a refinement), and showing each file's contribution per part in the documents panel.

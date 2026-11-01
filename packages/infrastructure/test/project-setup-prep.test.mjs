@@ -389,3 +389,91 @@ test("a broken budget row that runs into the next block is still found and still
   assert.deepEqual(rows.map((r) => [r.value.ref, r.value.amount, r.sourceRef.block]), [["D.2.1", "1530000", 0]]);
   assert.equal(ground37("FUNDING_BUDGET", { budget: rows }, join37(blocks)).dropped, 0);
 });
+
+// Phase 37 §9: the document map, the section router and the facts as label–value pairs.
+import { buildDocumentMap, detectHeading } from "../dist/project-setup/document-map.js";
+import { compileSectionTitles, sectionMatches } from "../dist/project-setup/section-router.js";
+import { toSectionBlocks } from "../dist/project-setup/source-reader.js";
+import { readFactPairs } from "../dist/project-setup/fact-pairs.js";
+import { SETUP_EXTRACTION_SPECS } from "../dist/project-setup/prompts/index.js";
+
+const PART_C = [
+  "Association for Mothers and Newborns (AMAN.01)", "", "PART C", "", "PROGRAM DESCRIPTION", "",
+  "C.1.\tStatement of Purpose ", "", "The grant pilots a technology-based solution and trains health care providers in District Upper Dir.", "",
+  "C.2.\tBackground ", "", "The activity is designed to increase the availability and use of health care services by strengthening systems.", "",
+  "C.3.\tGoals and Objectives ", "", "Goal:", "", "To contribute to reducing maternal mortality and morbidity in the district.", "",
+  "Objectives:", "", "To improve access to essential and basic emergency obstetric services.", "",
+  "Geographical Areas for Activity Implementation", "", "Project activities will be implemented in 10 health facilities in the district.", "",
+  "Jul. 31, 2023", "", "PKR. 6,020,543.60", "",
+  "C. 4 Milestones", "", "The payment schedule follows the milestones below and the deliverables.", "",
+  "C.7\tMonitoring and Evaluation", "", "AMAN will track the indicators every quarter.",
+].join("\n");
+
+test("the document map follows the document's own headings, keeps code levels, and ignores dates and amounts in table cells", () => {
+  const map = buildDocumentMap(PART_C.split("\n"));
+  assert.deepEqual(map.map((s) => s.path), [
+    "Association for Mothers and Newborns (AMAN.01)", "Association for Mothers and Newborns (AMAN.01) > PART C", "PROGRAM DESCRIPTION", "C.1 Statement of Purpose", "C.2 Background",
+    "C.3 Goals and Objectives", "C.3 Goals and Objectives > Goal:", "C.3 Goals and Objectives > Objectives:", "C.3 Goals and Objectives > Geographical Areas for Activity Implementation",
+    "C.4 Milestones", "C.7 Monitoring and Evaluation",
+  ]);
+  assert.equal(detectHeading("Jul. 31, 2023", true), null);
+  assert.equal(detectHeading("PKR. 6,020,543.60", true), null);
+  assert.equal(detectHeading("The grant pilots a technology-based solution and trains health care providers.", true), null);
+  assert.deepEqual(detectHeading("2.1 Background", false), { level: 2, title: "2.1 Background" });
+  assert.equal(detectHeading("Project title\tBlue Water", true), null, "a table row is not a heading");
+});
+
+test("blocks follow sections: none crosses a heading, each carries its path, a sheet is one section, text before the first heading is kept", () => {
+  const blocks = toSectionBlocks(PART_C, null);
+  assert.ok(blocks.every((b) => b.section));
+  const goal = blocks.find((b) => b.text.includes("reducing maternal mortality"));
+  assert.equal(goal.section, "C.3 Goals and Objectives > Goal:");
+  assert.ok(!blocks.some((b) => b.text.includes("C.2.") && b.text.includes("C.3.")), "no block holds two headings");
+  assert.equal(blocks[0].index, 0);
+  assert.deepEqual(blocks.map((b) => b.index), blocks.map((_, i) => i));
+  const sheet = toSectionBlocks("# Summary Budget\n\tPersonnel\t\t100\t100\n\tTravel\t\t50\t50", "Summary Budget");
+  assert.deepEqual(sheet.map((b) => b.section), ["Summary Budget"]);
+});
+
+test("a part's section titles match whole words anywhere in a block's section path, in three languages", () => {
+  const logframe = compileSectionTitles(SETUP_EXTRACTION_SPECS.find((s) => s.area === "LOGFRAME").sectionTitles);
+  assert.equal(sectionMatches("C.3 Goals and Objectives > Objectives:", logframe), true);
+  assert.equal(sectionMatches("Cadre logique > Résultats attendus", logframe), true);
+  assert.equal(sectionMatches("C.2 Background", logframe), false);
+  assert.equal(sectionMatches("Consultation notes", compileSectionTitles(["result"])), false, "whole words only");
+  assert.equal(sectionMatches(undefined, logframe), false);
+  for (const spec of SETUP_EXTRACTION_SPECS) assert.ok(spec.sectionTitles?.length > 0, `${spec.area} lists its sections`);
+});
+
+test("a part reads the sections it lists first and whole, labelled by section, and keywords fill the rest of the budget", () => {
+  const blocks = toSectionBlocks(PART_C, null).map((b, i) => ({ ...b, documentId: "d", index: i }));
+  const matcher = compileSectionTitles(["goals and objectives"]);
+  const out = selectBlocks(blocks, ["objective"], 100_000, 0, undefined, (b) => sectionMatches(b.section, matcher));
+  assert.match(out.text, /^§ /m);
+  assert.match(out.text, /§ C\.3 Goals and Objectives > Goal:\n\[\d+\] Goal:/);
+  assert.ok(out.text.includes("To contribute to reducing maternal mortality") && out.text.includes("essential and basic emergency obstetric services"));
+  const tight = selectBlocks(blocks, ["objective"], 420, 0, undefined, (b) => sectionMatches(b.section, matcher));
+  assert.ok(tight.text.includes("reducing maternal mortality"), "with little room the listed sections win over the rest");
+  assert.ok(!tight.text.includes("payment schedule"));
+});
+
+test("facts are read from labelled cells and lines exactly; a different model reading is kept as the alternative", async () => {
+  const blocks = [
+    { documentId: "s1", index: 0, docKind: "PROPOSAL", text: "Project title\tImproving maternal and newborn health in Upper Dir\nAward number\tAMAN.01\nDonor:\tNPI EXPAND HDA\nCountry\tPakistan\nStart date\t1 July 2023\nEnd date\tApril 30, 2024\nCurrency\tPKR\nDuration\t10 months" },
+  ];
+  const pairs = readFactPairs(blocks);
+  assert.deepEqual(Object.fromEntries(Object.entries(pairs).map(([k, v]) => [k, v.value])), {
+    name: "Improving maternal and newborn health in Upper Dir", code: "AMAN.01", donor: "NPI EXPAND HDA", countries: ["Pakistan"], startDate: "2023-07-01", endDate: "2024-04-30", currency: "PKR",
+  });
+  assert.equal(pairs.startDate.sourceQuote, "Start date 1 July 2023");
+  assert.deepEqual(readFactPairs([{ documentId: "g", index: 0, docKind: "WORK_PLAN_GANTT", text: "Start date\t1 July 2023" }]), {});
+  assert.deepEqual(readFactPairs([{ documentId: "d", index: 0, text: "Start date\tJuly 2023\nCurrency\tdollars" }]), {}, "a month alone or a word is not a date or a code");
+  const N = { value: null, sourceQuote: null, sourceRef: null, confidence: "LOW", status: "PROPOSED" };
+  const model = { ...N, value: "Association for Mothers and Newborns", sourceQuote: "Association for Mothers and Newborns (AMAN.01)", confidence: "HIGH" };
+  const inner = { area: "FACTS", extract: async () => ({ ok: true, value: { fields: { facts: { name: model, code: N, donor: N, countries: { ...N, value: ["Pakistan"], sourceQuote: "Pakistan" } } } } }) };
+  const out = (await new FactsFromTextExtractor(inner).extract({ blocks })).value.fields.facts;
+  assert.equal(out.name.value, "Improving maternal and newborn health in Upper Dir");
+  assert.deepEqual(out.name.alternatives.map((a) => a.value), ["Association for Mothers and Newborns"]);
+  assert.equal(out.code.value, "AMAN.01");
+  assert.equal(out.countries.alternatives, undefined, "the same reading is not offered twice");
+});

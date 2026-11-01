@@ -1,4 +1,5 @@
 import { classifyDocument, DomainError, ok, splitSheets, type Result, type SourceBlock } from "@donordesk/domain";
+import { buildDocumentMap } from "./document-map.js";
 import { compactSheetText, dropNearDuplicates } from "./document-prep.js";
 import { driveFileIdsOf, type ISetupDocumentStore, type ISourceDocumentReader, type ParseUploadedFileHandler, type SetupSourceRef } from "@donordesk/application";
 
@@ -37,12 +38,37 @@ export class StoredSetupDocumentReader implements ISourceDocumentReader {
       // Each sheet of a workbook is typed on its own (a workbook may hold a budget and a Gantt chart side by side).
       for (const section of splitSheets(document.text)) {
         const docKind = classifyDocument(section.text).kind;
-        for (const block of toBlocks(section.text)) blocks.push({ ...block, documentId: `source-${document.n + 1}`, index: blocks.length, docKind, documentName: document.name, sheet: section.title });
+        for (const block of toSectionBlocks(section.text, section.title)) blocks.push({ ...block, documentId: `source-${document.n + 1}`, index: blocks.length, docKind, documentName: document.name, sheet: section.title });
       }
     }
     return ok(blocks);
   }
 }
+
+/** More than this share of lines holding tab-separated cells makes the text a sheet. */
+const TABULAR_SHARE = 0.3;
+
+const isTabular = (lines: ReadonlyArray<string>): boolean => {
+  const filled = lines.filter((l) => l.trim());
+  return filled.length > 0 && filled.filter((l) => l.split("\t").filter((c) => c.trim()).length >= 2).length / filled.length > TABULAR_SHARE;
+};
+
+/**
+ * Blocks that follow the document's own sections (Phase 37 §9): a sheet is one section named after it (its blocks are cut as
+ * before); any other text is mapped by its headings and every block is cut inside one section, carrying that section's path.
+ */
+export function toSectionBlocks(text: string, sheetTitle: string | null, blockChars = BLOCK_CHARS): SourceBlock[] {
+  const lines = text.split(/\r?\n/);
+  if (isTabular(lines)) return toBlocks(text, blockChars).map((b) => ({ ...b, section: sheetTitle ?? PREAMBLE_SHEET }));
+  const blocks: SourceBlock[] = [];
+  for (const section of buildDocumentMap(lines)) {
+    const body = lines.slice(section.start, section.end).join("\n");
+    for (const block of toBlocks(body, blockChars)) blocks.push({ ...block, index: blocks.length, section: section.path });
+  }
+  return blocks;
+}
+
+const PREAMBLE_SHEET = "Document";
 
 /**
  * Cuts the document's text into blocks of whole lines, numbered in reading order. Lines are kept verbatim — tabs and

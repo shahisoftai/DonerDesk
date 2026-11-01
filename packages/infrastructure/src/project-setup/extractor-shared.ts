@@ -6,6 +6,7 @@
 import { DomainError, err, ok, tryParseJson } from "@donordesk/domain";
 import type { ExtractedArea, ISetupLlm, SetupUsage } from "@donordesk/application";
 import type { Result, SourceBlock, TenantId } from "@donordesk/domain";
+import { sectionLabel } from "./section-router.js";
 
 /** What one area reads of a document: the best-matching passages up to this many characters, in at most MAX_CHUNKS calls. */
 export const SELECTION_BUDGET_CHARS = 30_000;
@@ -36,6 +37,8 @@ export interface RunAreaExtractionInput {
   /** Blocks always read from the start of each document (titles, cover pages), before any keyword match. */
   headBlocks?: number | undefined;
   skipBlock?: ((block: SourceBlock) => boolean) | undefined;
+  /** Blocks of the sections this area normally reads: taken first, whole, before keyword ranking fills the rest. */
+  preferBlock?: ((block: SourceBlock) => boolean) | undefined;
   buildPrompt: (blocksText: string, prior: Readonly<Record<string, unknown>>) => { system: string; user: string };
   parseChunk: ChunkParser;
   merge: ChunkMerger;
@@ -54,7 +57,7 @@ export interface ExtractorRun {
  * different keywords, until the budget is spent, returned in reading order. A document that names fewer than three of the
  * area's words is read from the top (capped) instead.
  */
-export function selectBlocks(blocks: ReadonlyArray<SourceBlock>, keywords: ReadonlyArray<string>, budget = SELECTION_BUDGET_CHARS, headBlocks = 0, skipBlock?: (block: SourceBlock) => boolean): { text: string; truncated: boolean } {
+export function selectBlocks(blocks: ReadonlyArray<SourceBlock>, keywords: ReadonlyArray<string>, budget = SELECTION_BUDGET_CHARS, headBlocks = 0, skipBlock?: (block: SourceBlock) => boolean, preferBlock?: (block: SourceBlock) => boolean): { text: string; truncated: boolean } {
   const scored = blocks.filter((b) => !skipBlock?.(b)).map((block) => {
     const lower = block.text.toLowerCase();
     return { block, score: keywords.reduce((n, k) => n + (lower.includes(k) ? 1 : 0), 0) };
@@ -67,7 +70,13 @@ export function selectBlocks(blocks: ReadonlyArray<SourceBlock>, keywords: Reado
     if (seen < headBlocks) head.add(block.index);
     seenPerDocument.set(block.documentId, seen + 1);
   }
-  const candidates = matching.length >= 3 ? [...scored.filter((x) => head.has(x.block.index)), ...[...matching].filter((x) => !head.has(x.block.index)).sort((a, b) => b.score - a.score || a.block.index - b.block.index)] : scored;
+  // Sections the area normally reads come first and whole, in reading order; keywords rank what is left.
+  const routed = scored.filter((x) => preferBlock?.(x.block) && !head.has(x.block.index));
+  const routedIds = new Set(routed.map((x) => x.block.index));
+  const ranked = matching.length >= 3
+    ? [...scored.filter((x) => head.has(x.block.index)), ...routed, ...[...matching].filter((x) => !head.has(x.block.index) && !routedIds.has(x.block.index)).sort((a, b) => b.score - a.score || a.block.index - b.block.index)]
+    : routed.length > 0 ? [...scored.filter((x) => head.has(x.block.index)), ...routed, ...scored.filter((x) => !head.has(x.block.index) && !routedIds.has(x.block.index))] : scored;
+  const candidates = ranked;
   const chosen: SourceBlock[] = [];
   let truncated = false;
   let length = 0;
@@ -76,14 +85,22 @@ export function selectBlocks(blocks: ReadonlyArray<SourceBlock>, keywords: Reado
     if (length + size > budget) {
       truncated = true;
       // Ranked selection may still fit a smaller, lower-ranked block; an in-order read stops at the first that does not fit.
-      if (matching.length >= 3) continue;
+      if (matching.length >= 3 || routed.length > 0) continue;
       break;
     }
     chosen.push(block);
     length += size;
   }
   chosen.sort((a, b) => a.index - b.index);
-  return { text: chosen.map((b) => `[${b.index}] ${b.text}`).join("\n"), truncated };
+  // A label line names the section each run of blocks belongs to, so the model knows where it is reading.
+  const lines: string[] = [];
+  let current: string | undefined;
+  for (const b of chosen) {
+    if (b.section && b.section !== current) lines.push(sectionLabel(b.section));
+    current = b.section;
+    lines.push(`[${b.index}] ${b.text}`);
+  }
+  return { text: lines.join("\n"), truncated };
 }
 
 /** Whole blocks per call, at most MAX_CHUNKS calls; anything beyond is reported, never read silently. */
@@ -140,7 +157,7 @@ async function readChunk(input: RunAreaExtractionInput, chunk: string): Promise<
 
 /** The whole per-area run: select, chunk, call (the chunks at the same time), parse, merge in reading order. */
 export async function runAreaExtraction(input: RunAreaExtractionInput): Promise<Result<ExtractedArea, DomainError>> {
-  const selected = selectBlocks(input.blocks, input.keywords, input.budgetChars ?? SELECTION_BUDGET_CHARS, input.headBlocks ?? 0, input.skipBlock);
+  const selected = selectBlocks(input.blocks, input.keywords, input.budgetChars ?? SELECTION_BUDGET_CHARS, input.headBlocks ?? 0, input.skipBlock, input.preferBlock);
   const { chunks, partlyRead: chunked } = chunkBlocksText(selected.text);
   const partlyRead = selected.truncated || chunked;
   if (chunks.length === 0) {

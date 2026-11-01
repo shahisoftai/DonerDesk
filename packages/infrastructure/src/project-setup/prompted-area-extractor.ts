@@ -11,13 +11,18 @@ import type { AreaExtractionSpec } from "./area-spec.js";
 import { addUsage, dropPromptEchoes, recallBlocks, runRefinement } from "./area-passes.js";
 import { blocksInScope } from "./document-scope.js";
 import { runAreaExtraction } from "./extractor-shared.js";
+import { compileSectionTitles, sectionMatches } from "./section-router.js";
 import { BLOCKS_HEADER, SETUP_SYSTEM_RULES } from "./prompts/rules.js";
 
 export class PromptedAreaExtractor implements ISetupAreaExtractor {
   readonly area: SetupAreaKey;
 
+  private readonly preferBlock: ((block: SourceBlock) => boolean) | undefined;
+
   constructor(private readonly spec: AreaExtractionSpec, private readonly llm: ISetupLlm) {
     this.area = spec.area;
+    const matcher = compileSectionTitles(spec.sectionTitles ?? []);
+    this.preferBlock = matcher ? (block) => sectionMatches(block.section, matcher) : undefined;
   }
 
   async extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>> {
@@ -69,6 +74,7 @@ export class PromptedAreaExtractor implements ISetupAreaExtractor {
       budgetChars: spec.budgetChars,
       headBlocks: spec.headBlocks,
       skipBlock: spec.skipBlock,
+      preferBlock: this.preferBlock,
       buildPrompt: (blocksText, prior) => ({
         system: SETUP_SYSTEM_RULES,
         user: [spec.instructions, spec.context ? spec.context(prior) : "", BLOCKS_HEADER, blocksText].filter(Boolean).join("\n\n"),

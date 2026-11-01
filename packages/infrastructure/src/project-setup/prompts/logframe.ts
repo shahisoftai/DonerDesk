@@ -19,10 +19,15 @@ const level = (x: unknown): SetupLogLevel | null => {
   return LEVEL_ALIASES[word] ?? oneOf(word, LEVELS);
 };
 
+/** A title that only names a level ("Goal", "Outputs", "Specific objective 2") is a heading, not a result. */
+const HEADING_ONLY = /^(the\s+)?(goal|goals|impact|overall objective|general objective|objectives?|specific objectives?|outcomes?|outputs?|results?|expected results?|activities|activity|purpose|deliverables?)(\s*[\divx.:-]+)?\s*:?$/i;
+
+export const isHeadingOnly = (title: string): boolean => HEADING_ONLY.test(title.trim());
+
 const read = (raw: Record<string, unknown>): LogframeNodeDef | null => {
   const lv = level(raw.level);
   const title = text(raw.title);
-  if (!lv || !title) return null;
+  if (!lv || !title || isHeadingOnly(title)) return null;
   const code = text(raw.code);
   return { level: lv, code, title, description: text(raw.description), parentCode: text(raw.parentCode), ...(code ? { codeSource: "DOCUMENT" as const } : {}) };
 };
@@ -75,6 +80,7 @@ export const LOGFRAME_STRUCTURE: AreaRefinement = {
 export const LOGFRAME_SPEC: AreaExtractionSpec = {
   area: "LOGFRAME",
   promptVersion: "setup-logframe-v5",
+  sectionTitles: ["goals and objectives", "goal", "objective", "objectives", "specific objective", "expected results", "expected outcomes", "results framework", "logical framework", "logframe", "theory of change", "outcomes", "outputs", "statement of purpose", "project description", "program description", "description of the action", "intervention logic", "cadre logique", "resultats attendus", "objectif", "marco logico", "resultados esperados", "objetivo", "resultado"],
   // A Gantt chart is the work plan and a budget is money: their rows are not results (Phase 37.1).
   readsFrom: ["PROPOSAL", "LOGFRAME_MATRIX", "INDICATOR_TABLE"],
   // A block of a Gantt chart that was not recognised as one still carries "[scheduled <dates>]" rows.

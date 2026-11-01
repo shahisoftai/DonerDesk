@@ -15,6 +15,7 @@ const read = (raw: Record<string, unknown>): PlannedActivityDef | null => {
 export const PLAN_SPEC: AreaExtractionSpec = {
   area: "PLAN",
   promptVersion: "setup-plan-v2",
+  sectionTitles: ["work plan", "workplan", "implementation plan", "timeline", "schedule", "activities", "activity", "gantt", "implementation", "plan de travail", "chronogramme", "activites", "plan de trabajo", "cronograma", "actividades"],
   readsFrom: ["WORK_PLAN_GANTT", "PROPOSAL"],
   keywords: ["activity", "activities", "work plan", "workplan", "timeline", "schedule", "gantt", "month", "quarter", "milestone", "training", "distribution"],
   instructions: [

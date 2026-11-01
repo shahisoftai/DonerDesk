@@ -19,4 +19,4 @@ export const SETUP_SYSTEM_RULES = [
 ].join("\n");
 
 /** One numbered line per block, as the extractors send it. */
-export const BLOCKS_HEADER = "Document text (each block starts with its number in square brackets):";
+export const BLOCKS_HEADER = "Document text (each block starts with its number in square brackets; a line starting with § names the section the blocks after it belong to: it is a label, never text to quote):";

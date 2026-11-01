@@ -32,6 +32,7 @@ function merge(a: Record<string, unknown>, b: Record<string, unknown>): Record<s
 export const FACTS_SPEC: AreaExtractionSpec = {
   area: "FACTS",
   promptVersion: "setup-facts-v4",
+  sectionTitles: ["start of document", "project information", "project summary", "summary of the project", "grant summary", "basic data", "project data", "project profile", "project details", "executive summary", "abstract", "statement of purpose", "description of the action", "fiche projet", "resume du projet", "informations sur le projet", "resumen del proyecto", "datos del proyecto", "resumen ejecutivo", "title page"],
   headBlocks: 3,
   budgetChars: 14_000,
   // A fact the first read left Not stated is looked for again in the passages it did not quote (the merge only fills gaps).

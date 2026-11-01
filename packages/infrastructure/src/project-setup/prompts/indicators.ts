@@ -20,6 +20,7 @@ const read = (raw: Record<string, unknown>): IndicatorDef | null => {
 export const INDICATORS_SPEC: AreaExtractionSpec = {
   area: "INDICATORS",
   promptVersion: "setup-indicators-v1",
+  sectionTitles: ["indicator", "indicators", "monitoring and evaluation", "monitoring evaluation", "m&e", "meal", "performance monitoring", "performance management", "results measurement", "baseline", "targets", "suivi et evaluation", "indicateur", "seguimiento y evaluacion", "indicador", "metas"],
   readsFrom: ["PROPOSAL", "LOGFRAME_MATRIX", "INDICATOR_TABLE"],
   recallPass: true,
   keywords: ["indicator", "baseline", "target", "means of verification", "measured", "frequency", "disaggregat", "%", "number of", "proportion"],

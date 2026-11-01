@@ -17,6 +17,8 @@ export interface SourceBlock {
   /** The file's name and, for a workbook, the sheet's name: so the review can say where a passage is. */
   documentName?: string;
   sheet?: string | null;
+  /** The headings the block sits under ("C.3 Goals and Objectives > Objectives:"), from the document map; absent = not mapped. */
+  section?: string;
 }
 
 export const normaliseForMatch = (text: string): string => text.replace(/\s+/g, " ").trim();

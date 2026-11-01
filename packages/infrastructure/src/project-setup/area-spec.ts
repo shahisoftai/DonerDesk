@@ -25,6 +25,11 @@ export interface AreaExtractionSpec {
   skipBlock?: (block: SourceBlock) => boolean;
   /** Blocks always read from the start of each document (the cover and summary pages). */
   headBlocks?: number;
+  /**
+   * Fragments of the headings that normally hold this area's information (English, French, Spanish; lower case). Sections
+   * whose path contains one are read first and whole; keywords fill the rest. A document with no such heading is still read.
+   */
+  sectionTitles?: readonly string[];
   /** The document kinds this area reads (`classifyDocument`); OTHER and unclassified documents are always read. Absent = all. */
   readsFrom?: readonly SetupDocumentKind[];
   /** After the main read, ask again over the relevant blocks no kept item quotes (recall for long documents). */

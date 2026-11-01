@@ -26,6 +26,7 @@ const read = (raw: Record<string, unknown>): PlaceDef | null => {
 export const PLACES_SPEC: AreaExtractionSpec = {
   area: "PLACES",
   promptVersion: "setup-places-v2",
+  sectionTitles: ["geographic", "geographical", "target area", "target areas", "location", "locations", "project sites", "coverage", "area of intervention", "catchment", "beneficiaries", "zone d'intervention", "zones d'intervention", "area de intervencion", "cobertura", "ubicacion"],
   readsFrom: ["PROPOSAL", "LOGFRAME_MATRIX", "INDICATOR_TABLE"],
   budgetChars: 16_000,
   keywords: ["district", "province", "region", "state", "county", "village", "site", "location", "camp", "municipality", "target area", "governorate"],

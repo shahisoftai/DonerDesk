@@ -15,6 +15,7 @@ const read = (raw: Record<string, unknown>): PeriodDef | null => {
 export const PERIODS_SPEC: AreaExtractionSpec = {
   area: "PERIODS",
   promptVersion: "setup-periods-v2",
+  sectionTitles: ["reporting", "reports", "deliverables", "milestones", "period of performance", "duration", "reporting requirements", "rapports", "calendrier", "informes", "duracion", "duree"],
   readsFrom: ["PROPOSAL"],
   budgetChars: 12_000,
   keywords: ["report", "reporting", "quarterly", "monthly", "semi-annual", "annual", "final report", "due", "submit"],
