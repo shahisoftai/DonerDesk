@@ -79,6 +79,17 @@ export function acceptItem(proposal: ProjectSetupProposal, ref: SetupItemRef): P
   return mutate(proposal, ref, (node) => (node.status === "ACCEPTED" ? node : { ...node, status: "ACCEPTED" }));
 }
 
+/** Accepts several items of one area in one change; the first one that cannot be accepted stops it and nothing is changed. */
+export function acceptMany(proposal: ProjectSetupProposal, area: SetupAreaKey, paths: ReadonlyArray<string>): ProposalEditResult {
+  let current = proposal;
+  for (const path of paths) {
+    const done = acceptItem(current, { area, path });
+    if (!done.ok) return done;
+    current = done.proposal;
+  }
+  return { ok: true, proposal: current };
+}
+
 /** Leaves an item out: it is counted, shown as rejected, and never applied. */
 export function rejectItem(proposal: ProjectSetupProposal, ref: SetupItemRef): ProposalEditResult {
   return mutate(proposal, ref, (node) => (node.status === "REJECTED" ? node : { ...node, status: "REJECTED" }));

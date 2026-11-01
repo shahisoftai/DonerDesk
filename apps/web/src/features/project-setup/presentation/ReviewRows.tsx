@@ -61,7 +61,10 @@ export function ReviewRows({ view, area, readOnly }: { view: SetupProposalView; 
   const acceptAll = () => {
     setMessage(null);
     startTransition(async () => {
-      for (const row of waiting) if (!(await send(row, "ACCEPT"))) break;
+      // One save for the whole list: a sheet of 100 activities is one request, not a hundred.
+      const r = await editSetupItemAction(proposal.id, { area, paths: waiting.map((row) => row.path), op: "ACCEPT_MANY", expectedUpdatedAt: version.current });
+      if (r.ok) version.current = r.value.updatedAt;
+      else setMessage(r.error.kind === "conflict" ? c.common.stale : r.error.message || c.common.unknownError);
       router.refresh();
     });
   };

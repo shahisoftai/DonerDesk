@@ -152,14 +152,20 @@ export const SetupProblemSchema = z.object({
 });
 export type SetupProblemDto = z.infer<typeof SetupProblemSchema>;
 
-/** One review edit: which area, which item, what to do with it. */
+const ITEM_PATH = /^[a-z][a-zA-Z0-9_]{0,39}\.[a-zA-Z0-9_]{1,40}$/;
+const ITEM_PATH_MESSAGE = "An item path names the area's field and the item (facts.name, logframe.0).";
+
+/** One review edit: which area, which item, what to do with it. ACCEPT_MANY accepts a list of items in one save ("Accept all"). */
 export const EditSetupProposalSchema = z.object({
   area: SetupAreaKeySchema,
-  path: z.string().regex(/^[a-z][a-zA-Z0-9_]{0,39}\.[a-zA-Z0-9_]{1,40}$/, "An item path names the area's field and the item (facts.name, logframe.0)."),
-  op: z.enum(["ACCEPT", "REJECT", "EDIT", "FILL"]),
+  path: z.string().regex(ITEM_PATH, ITEM_PATH_MESSAGE).optional(),
+  paths: z.array(z.string().regex(ITEM_PATH, ITEM_PATH_MESSAGE)).min(1).max(500).optional(),
+  op: z.enum(["ACCEPT", "REJECT", "EDIT", "FILL", "ACCEPT_MANY"]),
   value: z.unknown().optional(),
   /** The `updatedAt` the person was looking at; when someone else has saved since, the edit is refused. */
   expectedUpdatedAt: z.string().max(40).optional(),
+}).superRefine((v, ctx) => {
+  if (v.op === "ACCEPT_MANY" ? !v.paths : !v.path) ctx.addIssue({ code: z.ZodIssueCode.custom, message: v.op === "ACCEPT_MANY" ? "List the items to accept." : "Name the item.", path: [v.op === "ACCEPT_MANY" ? "paths" : "path"] });
 });
 export type EditSetupProposalInput = z.infer<typeof EditSetupProposalSchema>;
 

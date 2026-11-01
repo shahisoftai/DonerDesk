@@ -525,3 +525,18 @@ test("a background re-read answers at once, is not started twice, and a part stu
   assert.equal(view.value.runs.find((r) => r.id === "stuck").status, "FAILED");
   assert.match(view.value.runs.find((r) => r.id === "stuck").detail.reason, /Read it again/);
 });
+
+test("accept many takes a whole list in one save, and a bad path changes nothing", async () => {
+  const w = world();
+  const started = await w.start.handle(creator, { fileName: "d.txt", fileType: "text/plain", buffer: Buffer.from(DOCUMENT) });
+  await w.flush();
+  const id = started.value.proposalId;
+  const paths = w.proposalsById.get(id).proposal.logframe.map((_, i) => `logframe.${i}`);
+  assert.ok(paths.length > 0);
+  const refused = await w.edits.handle(creator, id, { area: "LOGFRAME", paths: [...paths, "logframe.99"], op: "ACCEPT_MANY" });
+  assert.equal(refused.ok, false);
+  assert.ok(w.proposalsById.get(id).proposal.logframe.every((i) => i.status === "PROPOSED"), "nothing changed");
+  const done = await w.edits.handle(creator, id, { area: "LOGFRAME", paths, op: "ACCEPT_MANY" });
+  assert.ok(done.ok);
+  assert.ok(w.proposalsById.get(id).proposal.logframe.every((i) => i.status === "ACCEPTED"));
+});

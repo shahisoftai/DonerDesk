@@ -1,5 +1,5 @@
 import type { Result, Role } from "@donordesk/domain";
-import { DomainError, acceptItem, checkProposal, editValue, fillNotStated, rejectItem } from "@donordesk/domain";
+import { DomainError, acceptItem, acceptMany, checkProposal, editValue, fillNotStated, rejectItem } from "@donordesk/domain";
 import type { EditSetupProposalInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock } from "../../ports/core.js";
@@ -33,10 +33,11 @@ export class EditSetupProposalHandler {
     if (stored.value.status !== "READY" && stored.value.status !== "PARTIAL") {
       return { ok: false, error: DomainError.validation("Only a proposal that is ready for review, or partly applied, can be edited.") };
     }
-    const ref = { area: input.area, path: input.path };
+    const ref = { area: input.area, path: input.path ?? "" };
     const op = input.op;
     const result =
-      op === "ACCEPT" ? acceptItem(stored.value.proposal, ref)
+      op === "ACCEPT_MANY" ? acceptMany(stored.value.proposal, input.area, input.paths ?? [])
+        : op === "ACCEPT" ? acceptItem(stored.value.proposal, ref)
         : op === "REJECT" ? rejectItem(stored.value.proposal, ref)
           : op === "FILL" ? fillNotStated(stored.value.proposal, ref, input.value)
             : editValue(stored.value.proposal, ref, input.value);
