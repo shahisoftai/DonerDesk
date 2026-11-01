@@ -6,6 +6,7 @@
  * tied to the result on its own row and the two can never disagree. A code the matrix does not give is made here from the
  * tree (G1, OC1, OP1.1) and marked GENERATED; a row the parse cannot place is left to the model. Pure.
  */
+import { FIELD_LIMITS, fit } from "./fit-text.js";
 import type { IndicatorDef, LogframeNodeDef, Proposed, SetupLogLevel, SourceBlock } from "@donordesk/domain";
 
 const fold = (t: string): string => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -107,7 +108,7 @@ export function parseLogframeMatrix(blocks: ReadonlyArray<SourceBlock>): MatrixN
         code = `${PREFIX[level]}${numbering}`;
         codeSource = "GENERATED";
       }
-      const value: LogframeNodeDef = { level, code, title: (title ?? logic)!, description: null, parentCode: parent?.code ?? null, codeSource };
+      const value: LogframeNodeDef = { level, code: fit(code, FIELD_LIMITS.code), title: fit((title ?? logic)!, FIELD_LIMITS.title), description: null, parentCode: parent?.code ?? null, codeSource };
       lastAt[rank] = value;
       lastAt.length = rank + 1;
       current = { node: { value, sourceQuote: quoteOf(line), sourceRef: refOf(block), confidence: "HIGH", status: "PROPOSED" }, indicators: [] };
@@ -117,9 +118,9 @@ export function parseLogframeMatrix(blocks: ReadonlyArray<SourceBlock>): MatrixN
     if (current && indicator && indicator.length >= 6 && !levelCell(indicator)) {
       const target = cellAt(cells, columns.target);
       const value: IndicatorDef = {
-        code: null, title: indicator, logframeCode: current.node.value!.code, type: /%|percent|pourcent|porcentaje/i.test(`${indicator} ${target ?? ""}`) ? "PERCENTAGE" : null,
-        unit: null, baseline: cellAt(cells, columns.baseline), target, targetSchedule: null, frequency: null, direction: null, disaggregation: null,
-        meansOfVerification: cellAt(cells, columns.verification), linkSource: "DOCUMENT",
+        code: null, title: fit(indicator, FIELD_LIMITS.title), logframeCode: current.node.value!.code, type: /%|percent|pourcent|porcentaje/i.test(`${indicator} ${target ?? ""}`) ? "PERCENTAGE" : null,
+        unit: null, baseline: fit(cellAt(cells, columns.baseline), FIELD_LIMITS.figure), target: fit(target, FIELD_LIMITS.figure), targetSchedule: null, frequency: null, direction: null, disaggregation: null,
+        meansOfVerification: fit(cellAt(cells, columns.verification), FIELD_LIMITS.verification), linkSource: "DOCUMENT",
       };
       current.indicators.push({ value, sourceQuote: quoteOf(line), sourceRef: refOf(block), confidence: "HIGH", status: "PROPOSED" });
     }

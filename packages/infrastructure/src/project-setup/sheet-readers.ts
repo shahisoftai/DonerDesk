@@ -4,6 +4,7 @@
  * each item's quote is its own sheet line, verbatim. A document that is not clearly a sheet (no header row naming the
  * columns) returns null and the model extractor runs as usual.
  */
+import { FIELD_LIMITS, fit } from "./fit-text.js";
 import { parseLogframeMatrix } from "./logframe-matrix.js";
 import { parseLogframeText, parseWorkPlanText, type LogframeNodeDef, type PlannedActivityDef, type Proposed, type SourceBlock } from "@donordesk/domain";
 
@@ -133,8 +134,8 @@ const readGanttWorkPlan: SheetReader = (blocks) => {
         continue;
       }
       const value: PlannedActivityDef = {
-        title, logframeCode: null, start: scheduled?.[1] ?? null, end: scheduled?.[2] ?? null, location: null, lead: null,
-        group, planCode: code || null,
+        title: fit(title, FIELD_LIMITS.title), logframeCode: null, start: scheduled?.[1] ?? null, end: scheduled?.[2] ?? null, location: null, lead: null,
+        group: fit(group, FIELD_LIMITS.title), planCode: fit(code || null, FIELD_LIMITS.code),
       };
       plan.push(proposed(value, { line: quoteOf(line), block }));
     }

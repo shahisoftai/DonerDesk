@@ -343,3 +343,18 @@ test("items quoting the prompt's own example words are removed", () => {
   assert.equal(out.dropped, 1);
   assert.deepEqual(out.fields.logframe.map((i) => i.sourceQuote), ["Mothers deliver in facilities", "0"]);
 });
+
+import { fit } from "../dist/project-setup/fit-text.js";
+
+test("a Gantt row whose title is longer than a title may be is cut at a word, never breaking the proposal, and still grounds", () => {
+  assert.equal(fit("short", 300), "short");
+  assert.equal(fit(null, 10), null);
+  const long = `Identify and adapt training modules on ${"postpartum haemorrhage care and hypertensive disorders ".repeat(8)}for 16 providers`;
+  const cut = fit(long, 300);
+  assert.ok(cut.length <= 300 && cut.endsWith("…"));
+  const sheet = ["Activity Code\tActivities\tLOP Target\tJuly\tAugust, 2023", GANTT_WEEKS, `5.1\t${long}\t\tx`, "5.2\tB task\t\tx", "5.3\tC task\t\tx"].join("\n");
+  const blocks = blocksOf(compactSheetText(sheet));
+  const plan = workPlanSheetReader(blocks).plan;
+  assert.ok(plan[0].value.title.length <= 300);
+  assert.equal(ground37("PLAN", { plan }, join37(blocks)).dropped, 0);
+});

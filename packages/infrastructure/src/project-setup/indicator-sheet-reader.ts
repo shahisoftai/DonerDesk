@@ -5,6 +5,7 @@
  * link only when it holds a code, otherwise the link is left to `linkProposal`. Headers are matched in English, French and
  * Spanish. The model still reads the documents the table does not come from (indicators named in the narrative).
  */
+import { FIELD_LIMITS, fit } from "./fit-text.js";
 import type { IndicatorDef, Proposed, SourceBlock } from "@donordesk/domain";
 import type { PartialSheetRead, PartialSheetReader } from "./budget-sheet-reader.js";
 import { parseLogframeMatrix } from "./logframe-matrix.js";
@@ -68,11 +69,11 @@ function readDocument(blocks: ReadonlyArray<SourceBlock>): Proposed<IndicatorDef
     const code = cell(cells, columns.code);
     const disaggregation = cell(cells, columns.disaggregation);
     const value: IndicatorDef = {
-      code, title, logframeCode: result && CODE_LIKE.test(result) ? result : null,
+      code: fit(code, FIELD_LIMITS.code), title: fit(title, FIELD_LIMITS.title), logframeCode: result && CODE_LIKE.test(result) ? fit(result, FIELD_LIMITS.code) : null,
       type: /%|percent|pourcent|porcentaje/i.test(`${unit ?? ""} ${title} ${target ?? ""}`) ? "PERCENTAGE" : null,
-      unit, baseline, target, targetSchedule: null, frequency: cell(cells, columns.frequency), direction: null,
+      unit: fit(unit, FIELD_LIMITS.unit), baseline: fit(baseline, FIELD_LIMITS.figure), target: fit(target, FIELD_LIMITS.figure), targetSchedule: null, frequency: fit(cell(cells, columns.frequency), FIELD_LIMITS.frequency), direction: null,
       disaggregation: disaggregation ? disaggregation.split(/[,;/]| and /).map((d) => d.trim()).filter(Boolean).slice(0, 10) : null,
-      meansOfVerification: cell(cells, columns.verification),
+      meansOfVerification: fit(cell(cells, columns.verification), FIELD_LIMITS.verification),
       ...(code ? { codeSource: "DOCUMENT" as const } : {}),
     };
     out.push({

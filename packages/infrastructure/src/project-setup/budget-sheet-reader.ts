@@ -4,6 +4,7 @@
  * indented rows under them are their parts), subtotals and totals are never lines, and an empty category is left out. The
  * currency is taken only when the sheet names it; otherwise it stays Not stated.
  */
+import { FIELD_LIMITS, fit } from "./fit-text.js";
 import type { BudgetLineDef, Proposed, SourceBlock } from "@donordesk/domain";
 
 export interface PartialSheetRead {
@@ -68,7 +69,7 @@ export const readBudgetSheet: PartialSheetReader = (blocks) => {
       const block = document.find((b) => b.text.includes(line.trim()));
       if (!block) continue;
       found.push({
-        value: { category: label, amount: amountText(amount), currency, logframeCode: null, kind: grandTotal ? "TOTAL" : "LINE" },
+        value: { category: fit(label, FIELD_LIMITS.category), amount: amountText(amount), currency, logframeCode: null, kind: grandTotal ? "TOTAL" : "LINE" },
         sourceQuote: line.trim().replace(/\s+/g, " ").slice(0, QUOTE_LIMIT),
         sourceRef: { documentId: block.documentId, block: block.index, ...(block.page !== undefined ? { page: block.page } : {}) },
         confidence: "HIGH",
@@ -111,7 +112,7 @@ function detailRows(document: ReadonlyArray<SourceBlock>, currency: string | nul
     if (!block) continue;
     const description = label || (cells[2] ?? "").trim() || ref;
     out.push({
-      value: { category: description.slice(0, 200), amount: amountText(amount), currency, logframeCode: null, kind: isTotal ? "TOTAL" : "DETAIL", ref: isTotal ? null : ref },
+      value: { category: fit(description, FIELD_LIMITS.category), amount: amountText(amount), currency, logframeCode: null, kind: isTotal ? "TOTAL" : "DETAIL", ref: isTotal ? null : fit(ref, FIELD_LIMITS.code) },
       sourceQuote: line.trim().replace(/\s+/g, " ").slice(0, 1000),
       sourceRef: { documentId: block.documentId, block: block.index, ...(block.page !== undefined ? { page: block.page } : {}) },
       confidence: "HIGH",
