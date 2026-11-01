@@ -13,6 +13,9 @@ import type { GoogleDriveWorkspaceDrive } from "./google-drive-workspace.js";
 export const SETUP_STAGING_ROLE = "SETUP_STAGING";
 export const SETUP_STAGING_NAME = "Project setup (documents in progress)";
 export const PROJECT_DOCUMENTS_ROLE = "00-Project-Documents";
+/** Google refuses the saved permission (revoked, or expired): only the person can grant it again. */
+const DRIVE_RECONNECT = "Your Google Drive connection has expired. Go to Settings, open Storage and connect Google Drive again, then add the documents again.";
+
 const SETUP_SOURCE_ROLE = "SETUP_SOURCE";
 
 const ok = <T>(value: T): Result<T, DomainError> => ({ ok: true, value });
@@ -32,7 +35,7 @@ export class GoogleDriveSetupDocuments implements ISetupDocumentStore {
 
   async stage(tenantId: TenantId, doc: { name: string; mimeType: string; bytes: Buffer }): Promise<Result<StagedSetupDocument, DomainError>> {
     const staging = await this.stagingFolder(tenantId);
-    if (!staging.ok) return staging;
+    if (!staging.ok) return /oauth refresh failed|invalid_grant/i.test(staging.error.message) ? fail(DRIVE_RECONNECT) : staging;
     const uploaded = await this.drive.uploadFile({ tenantId: tenantId.toString(), parentId: staging.value, name: doc.name, mimeType: doc.mimeType, bytes: doc.bytes, role: SETUP_SOURCE_ROLE });
     if (!uploaded.ok) return fail("The document could not be saved to your Google Drive. Check that Drive is still connected in Settings and try again.");
     return ok({ fileId: uploaded.value.id, ...(uploaded.value.webViewLink ? { webLink: uploaded.value.webViewLink } : {}) });
