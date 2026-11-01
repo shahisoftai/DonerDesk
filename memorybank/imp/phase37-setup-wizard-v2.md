@@ -237,3 +237,17 @@ Deploy: no migration, no env. Ship api + web together (`SCOPE=both`): the web re
 6. **Level-word headings are not results** (`isHeadingOnly`): a result titled only "Goal", "Outputs", "Specific objective 2" is dropped before grounding.
 
 **Not built:** one cheap model call to assign headings that match no list (the list-first design makes it a refinement), and showing each file's contribution per part in the documents panel.
+
+### Real-model evaluation, Haiku, AMAN pack (4 files), 2026-11-01 — runs 2–10 on production
+| Run (release) | Time | Requests / tokens | Goal / Outcome / Output / Activity | Plan rows | Placed under a result | Budget reconciles |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2 (before line-break fix) | 88 s | 16 / 72.7 k | 1 / 4 / 0 / 10 | 124 | 10 | no (-1.6 M) |
+| 3 | 85 s | 16 / 71.8 k | 2 / 3 / 0 / 9 | 123 | 13 | no |
+| 4 | 82 s | 16 / 72.4 k | 1 / 2 / 0 / 10 | 123 | 9 | no |
+| 5 | 88 s | 16 / 74.9 k | 2 / 1 / 0 / 10 | 123 | 7 | no |
+| 6 (after line-break fix) | 82 s | 16 / 70.7 k | 1 / 4 / 0 / 8 | 123 | 8 | **yes** |
+| 8 (document map) | 79 s | 17 / 78.1 k | 1 / 2 / 0 / 13 | 123 | 4 | yes |
+| 9 (document map) | 85 s | 17 / 79.2 k | 1 / 2 / 2 / 12 | 123 | 10 | yes |
+| 10 (document map + feeds) | 79 s | 17 / 76.0 k | 1 / 2 / 3 / 11 | 123 | 6 | yes |
+
+**Reading:** time is 79–88 s and steady; the Gantt gives 123 rows every run (112 dated + 11 undated); the budget (127 rows, 2 stated totals) reconciles to 62,272,809.46 from run 6; with the document map the goal is 1 and the outcomes 2 in every run (before: goals 1–2, outcomes 1–4). **Still open:** only 4–13 of 123 activities are placed under a result (the Gantt's wording differs from the proposal's activities; only clear wording matches are linked, by design), and the narrative has few outputs so the Output count moves between runs. Facts: country and dates come from the documents; donor and dates show the "documents also say" choice.
