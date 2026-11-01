@@ -358,3 +358,24 @@ test("a Gantt row whose title is longer than a title may be is cut at a word, ne
   assert.ok(plan[0].value.title.length <= 300);
   assert.equal(ground37("PLAN", { plan }, join37(blocks)).dropped, 0);
 });
+
+test("a detailed-budget row whose description cell has line breaks is put back together and still adds up", () => {
+  const book = [
+    "# Summary Budget", "\tBudgets developed in Pakistani Rupee (PKRs.)", "\tPersonnel\t\t1530100\t1530100", "\tTOTAL PROJECT COSTS\t\t1530100\t1530100",
+    "# Detailed Budget", "Ref No. \tLine Item / Description\tDescription \tUnit\tUnits\tCost/Unit\tCost",
+    "D.2.1\tTablets for Outreach", "", "[SAMSUNG Galaxy Tab A7 Lite - LTE T225\t\tNo.\t20\t76500\t1530000", "D.2.2\tCases\t\tNo.\t1\t100\t100",
+    "\tTOTAL ESTIMATED COST\t\t\t\t\t1530100",
+  ].join("\n");
+  const blocks = blocksOf(compactSheetText(book));
+  const rows = readBudgetSheet(blocks).fields.budget.filter((r) => r.value.kind === "DETAIL");
+  assert.deepEqual(rows.map((r) => [r.value.ref, r.value.amount]), [["D.2.1", "1530000"], ["D.2.2", "100"]]);
+  assert.equal(ground37("FUNDING_BUDGET", { budget: rows }, join37(blocks)).dropped, 0);
+});
+
+test("a Gantt row whose title cell has line breaks keeps its code and its dates", () => {
+  const sheet = ["Activity Code\tActivities\tLOP Target\tJuly\tAugust, 2023", GANTT_WEEKS, "1.1\tAttend the kick-off", "meeting with partners\t1 meeting\tx", "1.2\tB task\t\tx", "1.3\tC task\t\tx"].join("\n");
+  const blocks = blocksOf(compactSheetText(sheet));
+  const plan = workPlanSheetReader(blocks).plan;
+  assert.deepEqual([plan[0].value.planCode, plan[0].value.title, plan[0].value.start], ["1.1", "Attend the kick-off meeting with partners", "2023-07-22"]);
+  assert.equal(ground37("PLAN", { plan }, join37(blocks)).dropped, 0);
+});

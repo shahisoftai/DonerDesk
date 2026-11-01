@@ -85,6 +85,11 @@ function scheduledLabel(first: WeekColumn, last: WeekColumn): string {
   return first.start && last.end ? `[scheduled ${first.start} to ${last.end} (${words})]` : `[scheduled ${words}]`;
 }
 
+const ROW_START = /^(\d+(?:\.\d+)*|(task|tache|tarea|component)\b.*\d|#.*)$/i;
+
+/** A line that carries on the row above it: it has more cells, and its first cell is text, not a code or a heading. */
+const continuesRow = (cells: ReadonlyArray<string>): boolean => cells.length > 1 && cells[0]!.trim() !== "" && !ROW_START.test(cells[0]!.trim());
+
 /** Tab-separated sheet text with the grid noise removed; text that is not tab-separated passes through unchanged. */
 export function compactSheetText(text: string): string {
   if (!text.includes("\t")) return text;
@@ -98,6 +103,13 @@ export function compactSheetText(text: string): string {
       if (found && found.at >= r) { calendar = found.calendar; calendarAt = found.at; }
     }
     let cells = rows[r]!;
+    // A title typed over several lines splits its Gantt row: the code and the start of the title on one line, the rest of the
+    // title, the target and the "x" marks on the next. The pieces are put back together (a space for each break) before the
+    // marks are read, so the row keeps its code and its weeks.
+    while (calendar && r > calendarAt && cells.length <= 2 && r + 1 < rows.length && continuesRow(rows[r + 1]!)) {
+      cells = `${cells.join("\t")} ${rows[r + 1]!.join("\t")}`.split("\t");
+      r += 1;
+    }
     // A new sheet in the workbook starts its own calendar.
     if (cells.length === 1 && cells[0]!.startsWith("# ")) { calendar = null; calendarAt = -1; }
     if (calendar && r > calendarAt) {

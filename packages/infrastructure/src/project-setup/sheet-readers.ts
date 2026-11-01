@@ -6,6 +6,7 @@
  */
 import { FIELD_LIMITS, fit } from "./fit-text.js";
 import { parseLogframeMatrix } from "./logframe-matrix.js";
+import { joinBrokenRows } from "./sheet-rows.js";
 import { parseLogframeText, parseWorkPlanText, type LogframeNodeDef, type PlannedActivityDef, type Proposed, type SourceBlock } from "@donordesk/domain";
 
 export type SheetReader = (blocks: ReadonlyArray<SourceBlock>) => Record<string, unknown> | null;
@@ -121,7 +122,8 @@ const readGanttWorkPlan: SheetReader = (blocks) => {
   const plan: Proposed<PlannedActivityDef>[] = [];
   let group: string | null = null;
   for (const block of blocks) {
-    for (const line of block.text.split("\n")) {
+    // A title typed over several lines in its cell splits the row; it is put back together before it is read.
+    for (const line of joinBrokenRows(block.text.split("\n"), (first) => ROW_CODE.test(first) || TASK_HEADING.test(first) || /^activity code$/i.test(first))) {
       const cells = line.split("\t");
       const code = columns.code === null ? "" : (cells[columns.code] ?? "").trim();
       const title = (cells[columns.title] ?? "").trim();
@@ -137,7 +139,7 @@ const readGanttWorkPlan: SheetReader = (blocks) => {
         title: fit(title, FIELD_LIMITS.title), logframeCode: null, start: scheduled?.[1] ?? null, end: scheduled?.[2] ?? null, location: null, lead: null,
         group: fit(group, FIELD_LIMITS.title), planCode: fit(code || null, FIELD_LIMITS.code),
       };
-      plan.push(proposed(value, { line: quoteOf(line), block }));
+      plan.push(proposed(value, { line: quoteOf(line).replace(/\s+/g, " "), block }));
     }
   }
   return plan.filter((p) => p.value!.start).length >= 3 ? { plan } : null;
