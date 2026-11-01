@@ -39,7 +39,7 @@ export function indicatorSheet(p: ProjectSetupProposal): SheetForImport {
   const notes: string[] = [];
   const rows = chosen(p.indicators).flatMap((i) => {
     if (!i.logframeCode) {
-      notes.push(`"${i.title}" is not linked to a logframe item, so it was left out. Link it in the review and apply again.`);
+      notes.push(`"${i.title}" is not tied to a result in the documents, so it was left out. Add it on the Logframe page once the project exists.`);
       return [];
     }
     const type = i.type && INDICATOR_TYPES.has(i.type) ? i.type : /%/.test(`${i.target ?? ""}${i.baseline ?? ""}${i.unit ?? ""}`) ? "PERCENTAGE" : "NUMBER";
@@ -52,7 +52,7 @@ export function workPlanSheet(p: ProjectSetupProposal): SheetForImport {
   const notes: string[] = [];
   const rows = chosen(p.plan).flatMap((a) => {
     if (!a.start) {
-      notes.push(`"${a.title}" has no start date in the document, so it was left out. Give it dates in the review or on the plan.`);
+      notes.push(`"${a.title}" has no start date in the documents, so it was left out. Add it on the Work plan page once the project exists.`);
       return [];
     }
     return [[a.logframeCode, a.title, a.start, a.end, a.location]];

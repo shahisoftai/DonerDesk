@@ -21,6 +21,7 @@ test("compactSheetText turns Gantt marks into the weeks they cover", () => {
     "1.3\tNo marks\t\t\t\t\t\t\t",
   ].join("\n");
   const out = compactSheetText(sheet).split("\n");
+  // No year on the month labels: the weeks are kept as the sheet's words, never turned into dates.
   assert.ok(out.some((l) => l === "1.1\tKick-off\t1 meeting\t[scheduled July Wk -4]"));
   assert.ok(out.some((l) => l.startsWith("1.2\tHire staff\tOrganogram\t[scheduled July Wk -4 to August Wk - 2]")));
   assert.ok(out.includes("1.3\tNo marks"));
@@ -99,4 +100,20 @@ test("chunks are asked at the same time and merged in reading order", async () =
   assert.ok(peak >= 2, `expected overlapping calls, peak was ${peak}`);
   const keys = Object.keys(run.value.fields);
   assert.deepEqual(keys, [...keys].sort((a, b) => Number(a.slice(1)) - Number(b.slice(1))));
+});
+
+test("compactSheetText gives a Gantt row real dates when the month labels carry a year", () => {
+  const sheet = [
+    "Code\tActivity\tTarget\tJuly\tAugust, 2023\t\t\t\tSeptember, 2023\t\t\t\t\tDecember, 2023\tJanuary, 2024",
+    "\t\t\tWk -4\tWk - 1\tWk - 2\tWk - 3\tWk - 4\tWk - 1\tWk - 2\tWk - 3\tWk - 4\tWk - 5\tWk - 4\tWk - 5",
+    "1.1\tKick-off\t1 meeting\tx",
+    "1.2\tHire staff\t\tx\tx",
+    "1.3\tClose-out\t\t\t\t\t\t\t\t\t\t\t\t\tx",
+  ].join("\n");
+  const out = compactSheetText(sheet).split("\n");
+  // July is before the first labelled month (August 2023): it is July 2023. Week 4 of July is days 22-28.
+  assert.ok(out.includes("1.1\tKick-off\t1 meeting\t[scheduled 2023-07-22 to 2023-07-28 (July Wk -4)]"), out.join("|"));
+  assert.ok(out.some((l) => l.startsWith("1.2\tHire staff\t\t[scheduled 2023-07-22 to 2023-08-07 (July Wk -4 to August, 2023 Wk - 1)]")), out.join("|"));
+  // The last week of a month runs to its end; a month after December is the next year.
+  assert.ok(out.some((l) => l.includes("[scheduled 2024-01-29 to 2024-01-31 (January, 2024 Wk - 5)]")), out.join("|"));
 });

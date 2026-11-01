@@ -18,11 +18,32 @@ const tidyNumber = (cell: string): string => {
   return Number.isFinite(n) ? String(Number(n.toPrecision(12))) : cell;
 };
 
+interface WeekColumn {
+  /** "August, 2023 Wk - 1": the sheet's own words. */
+  label: string;
+  /** The week as plain days, when the sheet's months give a year. */
+  start: string | null;
+  end: string | null;
+}
+
 interface Calendar {
   /** First column holding a week label. */
   firstColumn: number;
-  /** Label of each week column ("August, 2023 Wk - 1"). */
-  labels: ReadonlyMap<number, string>;
+  weeks: ReadonlyMap<number, WeekColumn>;
+}
+
+const MONTH_NUMBERS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+const pad = (n: number): string => String(n).padStart(2, "0");
+
+/**
+ * Week n of a month is days 7(n-1)+1 to 7n, and the last week runs to the end of the month. One fixed rule, written next to
+ * the dates it makes, so a person can see where they came from (the sheet's own week label stays beside them).
+ */
+function weekDays(year: number, month: number, week: number): { start: string; end: string } {
+  const last = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  const startDay = Math.min((week - 1) * 7 + 1, last);
+  const endDay = week >= 5 ? last : Math.min(week * 7, last);
+  return { start: `${year}-${pad(month + 1)}-${pad(startDay)}`, end: `${year}-${pad(month + 1)}-${pad(endDay)}` };
 }
 
 /** The week header of a Gantt sheet and the month row above it, or null when the sheet is not a Gantt chart. */
@@ -32,16 +53,36 @@ function findCalendar(rows: ReadonlyArray<ReadonlyArray<string>>, from: number):
     const weekColumns = row.flatMap((cell, c) => (WEEK.test(cell.trim()) ? [c] : []));
     if (weekColumns.length < 6) continue;
     const monthRow = rows.slice(Math.max(0, r - 3), r).reverse().find((candidate) => candidate.filter((cell) => MONTH.test(cell.trim())).length >= 2);
-    const labels = new Map<number, string>();
-    let month = "";
-    for (let c = 0; c < row.length; c++) {
-      const m = monthRow?.[c]?.trim();
-      if (m && MONTH.test(m)) month = m;
-      if (WEEK.test((row[c] ?? "").trim())) labels.set(c, `${month ? `${month} ` : ""}${row[c]!.trim()}`.replace(/\s+/g, " "));
+    // The months in order, each with the column it starts at; a year the label gives is kept, the others are worked out from
+    // their neighbours (a month that comes after December of the year before is in the next year).
+    const months: { col: number; text: string; index: number; year: number | null }[] = [];
+    for (let c = 0; c < (monthRow?.length ?? 0); c++) {
+      const text = monthRow![c]!.trim();
+      if (!text || !MONTH.test(text)) continue;
+      const index = MONTH_NUMBERS.indexOf(text.slice(0, 3).toLowerCase());
+      const year = /\b(20\d\d)\b/.exec(text)?.[1];
+      months.push({ col: c, text, index, year: year ? Number(year) : null });
     }
-    return { calendar: { firstColumn: Math.min(...weekColumns), labels }, at: r };
+    for (let i = 1; i < months.length; i++) if (months[i]!.year === null && months[i - 1]!.year !== null) months[i]!.year = months[i - 1]!.year! + (months[i]!.index < months[i - 1]!.index ? 1 : 0);
+    for (let i = months.length - 2; i >= 0; i--) if (months[i]!.year === null && months[i + 1]!.year !== null) months[i]!.year = months[i + 1]!.year! - (months[i]!.index > months[i + 1]!.index ? 1 : 0);
+    const weeks = new Map<number, WeekColumn>();
+    for (const c of weekColumns) {
+      const month = [...months].reverse().find((m) => m.col <= c);
+      const text = row[c]!.trim();
+      const label = `${month ? `${month.text} ` : ""}${text}`.replace(/\s+/g, " ");
+      const number = Number(/\d+/.exec(text)?.[0]);
+      const days = month && month.year !== null && month.index >= 0 && number >= 1 ? weekDays(month.year, month.index, number) : null;
+      weeks.set(c, { label, start: days?.start ?? null, end: days?.end ?? null });
+    }
+    return { calendar: { firstColumn: Math.min(...weekColumns), weeks }, at: r };
   }
   return null;
+}
+
+/** "[scheduled 2023-07-22 to 2023-08-07 (July Wk -4 to August, 2023 Wk - 1)]": the dates and the words they come from. */
+function scheduledLabel(first: WeekColumn, last: WeekColumn): string {
+  const words = first.label === last.label ? first.label : `${first.label} to ${last.label}`;
+  return first.start && last.end ? `[scheduled ${first.start} to ${last.end} (${words})]` : `[scheduled ${words}]`;
 }
 
 /** Tab-separated sheet text with the grid noise removed; text that is not tab-separated passes through unchanged. */
@@ -62,10 +103,10 @@ export function compactSheetText(text: string): string {
     if (calendar && r > calendarAt) {
       const marked = cells.flatMap((cell, c) => (c >= calendar!.firstColumn && /^x+$/i.test(cell.trim()) ? [c] : []));
       if (marked.length > 0) {
-        const first = calendar.labels.get(marked[0]!);
-        const last = calendar.labels.get(marked[marked.length - 1]!);
-        const label = first && last ? (first === last ? first : `${first} to ${last}`) : null;
-        cells = [...cells.slice(0, calendar.firstColumn), ...(label ? [`[scheduled ${label}]`] : [])];
+        const first = calendar.weeks.get(marked[0]!);
+        const last = calendar.weeks.get(marked[marked.length - 1]!);
+        const label = first && last ? scheduledLabel(first, last) : null;
+        cells = [...cells.slice(0, calendar.firstColumn), ...(label ? [label] : [])];
       }
     }
     while (cells.length > 0 && cells[cells.length - 1]!.trim() === "") cells = cells.slice(0, -1);
