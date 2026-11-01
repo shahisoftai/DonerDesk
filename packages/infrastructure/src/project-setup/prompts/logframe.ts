@@ -28,7 +28,9 @@ const read = (raw: Record<string, unknown>): LogframeNodeDef | null => {
 
 export const LOGFRAME_SPEC: AreaExtractionSpec = {
   area: "LOGFRAME",
-  promptVersion: "setup-logframe-v3",
+  promptVersion: "setup-logframe-v4",
+  // A Gantt chart (its rows carry "[scheduled <dates>]") is the work plan: its task headings are not results.
+  skipBlock: (block) => /\[scheduled \d{4}-\d{2}-\d{2}/.test(block.text),
   keywords: ["goal", "impact", "objective", "outcome", "output", "result", "activity", "activities", "logframe", "logical framework", "results framework"],
   instructions: [
     "Extract the results hierarchy (logframe). Answer:",
@@ -37,6 +39,7 @@ export const LOGFRAME_SPEC: AreaExtractionSpec = {
     "parentCode is the code of the item one level up, only when the document's numbering or layout shows it; otherwise null.",
     "If the document has no logframe table, build the hierarchy from its own structure: the stated goal is the GOAL; each numbered or named objective or result area under it is an OUTCOME; the deliverables or components that deliver it are OUTPUTs; the actions it lists are ACTIVITYs. Give every item a level.",
     "There is one GOAL. Each objective (statements under a heading such as \"Objectives\", or sections headed \"Objective 1\", \"Objective 2\") is an OUTCOME of its own: list every one, before the items that belong to it, even when the document gives it no code (use null).",
+    "A heading that only names a level (\"Goal\", \"Objectives\", \"Outputs\", \"Activities\") is not an item: list the statement under it instead.",
     "Use the narrative description of the work for structure. Milestone, payment-schedule, pricing and budget tables are not results: do not list their rows or invent a parentCode from their numbering.",
     "parentCode is only the code of another item you list in this answer; if that parent has no code or is not listed, use null.",
     "List items in the document's order. Do not repeat an item.",

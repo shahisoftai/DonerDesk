@@ -247,6 +247,8 @@ export const en: SetupCopy = {
     donts: ["Don't create the project while a red problem is listed: fix it in its step.", "Don't press Create twice to be safe: nothing is created twice anyway."],
     options: [{ label: "Choose the parts", text: "Create only the parts you tick." }, { label: "Go back", text: "Return to any step to change a decision." }],
     tip: "The project starts as a draft. You can activate it when you are ready to report.",
+    creatingNote: "Creating your project. A long work plan can take a few minutes; you can stay here, the page follows the progress.",
+    creatingProgress: (done, total) => `Created ${done} of ${total} parts`,
     partsTitle: "What will be created", detailsTitle: "Project details", createButton: "Create my project", resumeButton: "Finish creating",
     working: "Creating…", previewButton: "Refresh the preview", previewing: "Checking…", leftOut: "Left out, and why", nothingLeftOut: "Nothing is being left out.",
     theProject: "The project itself", nothingAccepted: "Nothing accepted", accepted: (n) => `${n} accepted`, choose: "Choose",

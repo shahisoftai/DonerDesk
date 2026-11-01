@@ -229,6 +229,8 @@ export const fr: SetupCopy = {
     donts: ["Ne créez pas le projet tant qu'un problème rouge est listé : corrigez-le dans son étape.", "N'appuyez pas deux fois sur Créer par précaution : rien n'est créé en double de toute façon."],
     options: [{ label: "Choisir les parties", text: "Créer seulement les parties cochées." }, { label: "Revenir en arrière", text: "Retourner à n'importe quelle étape pour changer une décision." }],
     tip: "Le projet démarre en brouillon. Vous pouvez l'activer quand vous êtes prêt à faire des rapports.",
+    creatingNote: "Création du projet. Un long plan de travail peut prendre quelques minutes ; vous pouvez rester ici, la page suit l'avancement.",
+    creatingProgress: (done, total) => `${done} parties sur ${total} créées`,
     partsTitle: "Ce qui sera créé", detailsTitle: "Détails du projet", createButton: "Créer mon projet", resumeButton: "Terminer la création",
     working: "Création…", previewButton: "Actualiser l'aperçu", previewing: "Vérification…", leftOut: "Écarté, et pourquoi", nothingLeftOut: "Rien n'est écarté.",
     theProject: "Le projet lui-même", nothingAccepted: "Rien d'accepté", accepted: (n) => `${n} accepté(s)`, choose: "Choisir",

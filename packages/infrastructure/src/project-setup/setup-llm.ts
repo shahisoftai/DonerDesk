@@ -32,7 +32,7 @@ export class TenantSetupLlm implements ISetupLlm {
         userPrompt: input.user,
         jsonMode: true,
         maxTokens: input.maxTokens,
-        temperature: 0.1,
+        temperature: 0,
         timeoutMs: input.timeoutMs,
       });
       return ok({ text: reply.text, model: provider.model, promptVersion: provider.promptVersion, ...(reply.usage ? { usage: { inputTokens: reply.usage.inputTokens, outputTokens: reply.usage.outputTokens } } : {}) });

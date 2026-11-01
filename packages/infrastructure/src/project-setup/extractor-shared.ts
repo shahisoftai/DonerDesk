@@ -35,6 +35,7 @@ export interface RunAreaExtractionInput {
   budgetChars?: number | undefined;
   /** Blocks always read from the start of each document (titles, cover pages), before any keyword match. */
   headBlocks?: number | undefined;
+  skipBlock?: ((block: SourceBlock) => boolean) | undefined;
   buildPrompt: (blocksText: string, prior: Readonly<Record<string, unknown>>) => { system: string; user: string };
   parseChunk: ChunkParser;
   merge: ChunkMerger;
@@ -53,8 +54,8 @@ export interface ExtractorRun {
  * different keywords, until the budget is spent, returned in reading order. A document that names fewer than three of the
  * area's words is read from the top (capped) instead.
  */
-export function selectBlocks(blocks: ReadonlyArray<SourceBlock>, keywords: ReadonlyArray<string>, budget = SELECTION_BUDGET_CHARS, headBlocks = 0): { text: string; truncated: boolean } {
-  const scored = blocks.map((block) => {
+export function selectBlocks(blocks: ReadonlyArray<SourceBlock>, keywords: ReadonlyArray<string>, budget = SELECTION_BUDGET_CHARS, headBlocks = 0, skipBlock?: (block: SourceBlock) => boolean): { text: string; truncated: boolean } {
+  const scored = blocks.filter((b) => !skipBlock?.(b)).map((block) => {
     const lower = block.text.toLowerCase();
     return { block, score: keywords.reduce((n, k) => n + (lower.includes(k) ? 1 : 0), 0) };
   });
@@ -139,7 +140,7 @@ async function readChunk(input: RunAreaExtractionInput, chunk: string): Promise<
 
 /** The whole per-area run: select, chunk, call (the chunks at the same time), parse, merge in reading order. */
 export async function runAreaExtraction(input: RunAreaExtractionInput): Promise<Result<ExtractedArea, DomainError>> {
-  const selected = selectBlocks(input.blocks, input.keywords, input.budgetChars ?? SELECTION_BUDGET_CHARS, input.headBlocks ?? 0);
+  const selected = selectBlocks(input.blocks, input.keywords, input.budgetChars ?? SELECTION_BUDGET_CHARS, input.headBlocks ?? 0, input.skipBlock);
   const { chunks, partlyRead: chunked } = chunkBlocksText(selected.text);
   const partlyRead = selected.truncated || chunked;
   if (chunks.length === 0) {

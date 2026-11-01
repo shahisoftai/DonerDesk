@@ -143,3 +143,17 @@ test("a Gantt chart is read as a work plan: code, title and the dates its weeks 
   ]);
   assert.match(read.plan[0].sourceQuote, /^1\.1 Attend the kick-off meeting.*\[scheduled 2023-07-22 to 2023-07-28/);
 });
+
+test("a block an area must not read is left out of its selection", () => {
+  const blocks = [
+    { documentId: "d", index: 0, text: "goal: reduce mortality objective outcome result" },
+    { documentId: "d", index: 1, text: "Task- 1\\tgoal objective\\t[scheduled 2023-07-22 to 2023-07-28 (July Wk -4)]" },
+    { documentId: "d", index: 2, text: "output result objective" },
+    { documentId: "d", index: 3, text: "outcome goal objective" },
+  ];
+  const keywords = ["goal", "objective", "outcome", "output", "result"];
+  assert.match(selectBlocks(blocks, keywords, 10_000).text, /\[1\]/);
+  const skipped = selectBlocks(blocks, keywords, 10_000, 0, (b) => /\[scheduled \d{4}-/.test(b.text)).text;
+  assert.doesNotMatch(skipped, /\[1\]/);
+  assert.match(skipped, /\[0\]/);
+});

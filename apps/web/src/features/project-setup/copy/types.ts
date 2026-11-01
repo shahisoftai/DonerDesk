@@ -69,6 +69,7 @@ export interface SetupCopy {
   };
   create: {
     short: string; title: string; lead: string; checks: string[]; dos: string[]; donts: string[]; options: Option[]; tip: string;
+    creatingNote: string; creatingProgress: (done: Count, total: Count) => string;
     partsTitle: string; detailsTitle: string; createButton: string; resumeButton: string; working: string; previewButton: string; previewing: string;
     leftOut: string; nothingLeftOut: string; theProject: string; nothingAccepted: string; accepted: (n: number) => string; choose: string;
     blocking: string; missing: string; viewProject: string;

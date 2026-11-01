@@ -3,7 +3,7 @@
  * proposal fields and how chunk results merge. A new area is a new spec file plus one entry in `SETUP_EXTRACTION_SPECS`;
  * the extractor that runs specs is never edited.
  */
-import type { SetupAreaKey } from "@donordesk/domain";
+import type { SetupAreaKey, SourceBlock } from "@donordesk/domain";
 import type { ChunkMerger, ChunkParser } from "./extractor-shared.js";
 
 export interface AreaExtractionSpec {
@@ -21,6 +21,8 @@ export interface AreaExtractionSpec {
   maxTokens?: number;
   /** How much of the document this area reads, in characters (default: SELECTION_BUDGET_CHARS). */
   budgetChars?: number;
+  /** Blocks this area never reads (another area owns them: a Gantt chart belongs to the work plan, not the results framework). */
+  skipBlock?: (block: SourceBlock) => boolean;
   /** Blocks always read from the start of each document (the cover and summary pages). */
   headBlocks?: number;
 }

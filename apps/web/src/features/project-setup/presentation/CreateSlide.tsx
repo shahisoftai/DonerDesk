@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { ReportingFrequencySchema, SETUP_AREA_KEYS, SectorSchema } from "@donordesk/contracts";
 import { applySetupProposalAction, previewSetupApplyAction } from "@/lib/actions/project-setup";
@@ -25,6 +26,10 @@ export function CreateSlide({ view, result, onApplied }: { view: SetupProposalVi
   const [form, setForm] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  // After Create is pressed the server keeps applying even when the answer is slow or never arrives (a long work plan takes
+  // minutes): the slide then follows the proposal's own status and finishes by itself.
+  const [applying, setApplying] = useState(false);
   const chosen = useMemo(() => SETUP_AREA_KEYS.filter((a) => selected[a]), [selected]);
   const chosenKey = chosen.join(",");
 
@@ -37,6 +42,33 @@ export function CreateSlide({ view, result, onApplied }: { view: SetupProposalVi
   });
   useEffect(() => { refresh(); /* the preview follows the choice of parts, and the proposal's own version */ }, [chosenKey, view.proposal.updatedAt]); // eslint-disable-line
 
+  const applyRuns = view.runs.filter((r) => r.kind === "APPLY" && r.area !== undefined);
+  const doneAreas = new Set(applyRuns.filter((r) => r.status !== "RUNNING").map((r) => r.area)).size;
+  useEffect(() => {
+    if (!applying && status !== "APPLYING") return;
+    const poll = setInterval(() => router.refresh(), 4_000);
+    return () => clearInterval(poll);
+  }, [applying, status, router]);
+  useEffect(() => {
+    if (result !== null || (status !== "APPLIED" && status !== "PARTIAL") || !applying) return;
+    // Applied while we were waiting: the result is what each area's run recorded.
+    const latest = new Map(applyRuns.map((r) => [r.area as AreaKey, r]));
+    onApplied({
+      projectId: view.proposal.appliedProjectId ?? "",
+      status: status === "PARTIAL" ? "PARTIAL" : "APPLIED",
+      areas: SETUP_AREA_KEYS.filter((a) => latest.has(a)).map((a) => {
+        const run = latest.get(a)!;
+        const failed = run.status === "FAILED";
+        return {
+          area: a, status: failed ? "FAILED" as const : "APPLIED" as const,
+          created: typeof run.detail.created === "number" ? run.detail.created : 0,
+          skipped: typeof run.detail.skipped === "number" ? run.detail.skipped : 0,
+          notes: [], ...(failed && typeof run.detail.reason === "string" ? { error: run.detail.reason } : {}),
+        };
+      }),
+    });
+  }, [applying, status, result]); // eslint-disable-line
+
   function create() {
     setError(null);
     const project = {
@@ -44,9 +76,17 @@ export function CreateSlide({ view, result, onApplied }: { view: SetupProposalVi
       country: form.country ?? "", sector: form.sector ?? "", startDate: asDateTime(form.startDate ?? ""), endDate: asDateTime(form.endDate ?? ""), reportingFrequency: form.reportingFrequency ?? "",
       ...(form.description ? { description: form.description } : {}),
     };
+    setApplying(true);
     startTransition(async () => {
-      const r = await applySetupProposalAction(view.proposal.id, { project, areas: chosen });
-      if (!r.ok) { setError((r.error.kind === "validation" ? Object.values(r.error.fields)[0]?.[0] : undefined) ?? r.error.message ?? c.common.unknownError); return; }
+      let r;
+      try { r = await applySetupProposalAction(view.proposal.id, { project, areas: chosen }); } catch { return; /* the answer was lost: the page follows the proposal instead */ }
+      if (!r.ok) {
+        // A slow answer is not a failure: the server is still creating, and the page follows it.
+        if (r.error.kind === "unavailable") return;
+        setApplying(false);
+        setError((r.error.kind === "validation" ? Object.values(r.error.fields)[0]?.[0] : undefined) ?? r.error.message ?? c.common.unknownError);
+        return;
+      }
       onApplied(r.value);
     });
   }
@@ -54,7 +94,8 @@ export function CreateSlide({ view, result, onApplied }: { view: SetupProposalVi
   const resuming = status === "PARTIAL" || result?.status === "PARTIAL";
   const blocking = preview?.blocking ?? [];
   const notes = preview?.areas.flatMap((a) => a.notes) ?? [];
-  const missing = preview?.missing ?? [];
+  // What is still empty in the form as it stands now, not what the documents lacked when the preview was made.
+  const missing = (preview?.missing ?? []).filter((k) => !(form[k] ?? "").trim());
   const problemText = (p: (typeof blocking)[number]) => c.review.problems[p.code]?.(p.params ?? {}) ?? p.message;
   return (
     <>
@@ -133,8 +174,11 @@ export function CreateSlide({ view, result, onApplied }: { view: SetupProposalVi
         {view.proposal.appliedProjectId && resuming && <p className="text-sm"><Link className="underline" href={`/projects/${encodeURIComponent(view.proposal.appliedProjectId)}`}>{cr.viewProject}</Link></p>}
         <div className="flex flex-wrap gap-3">
           <button type="button" className="btn-secondary" disabled={pending} onClick={refresh}>{pending ? cr.previewing : cr.previewButton}</button>
-          <button type="submit" className="btn px-8" disabled={pending || blocking.length > 0}>{pending ? cr.working : resuming ? cr.resumeButton : cr.createButton}</button>
+          <button type="submit" className="btn px-8" disabled={pending || applying || status === "APPLYING" || blocking.length > 0}>{pending || applying ? cr.working : resuming ? cr.resumeButton : cr.createButton}</button>
         </div>
+        {(applying || status === "APPLYING") && (
+          <p role="status" className="text-sm text-slate-700 dark:text-slate-200">{cr.creatingNote} {doneAreas > 0 ? cr.creatingProgress(String(doneAreas), String(chosen.length)) : ""}</p>
+        )}
       </form>
     </>
   );

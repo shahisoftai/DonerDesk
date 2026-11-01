@@ -229,6 +229,8 @@ export const es: SetupCopy = {
     donts: ["No cree el proyecto mientras haya un problema en rojo: corríjalo en su paso.", "No pulse Crear dos veces por si acaso: de todos modos no se crea nada dos veces."],
     options: [{ label: "Elegir las partes", text: "Crear solo las partes marcadas." }, { label: "Volver", text: "Regresar a cualquier paso para cambiar una decisión." }],
     tip: "El proyecto empieza como borrador. Puede activarlo cuando esté listo para informar.",
+    creatingNote: "Creando el proyecto. Un plan de trabajo largo puede tardar unos minutos; puede quedarse aquí, la página sigue el avance.",
+    creatingProgress: (done, total) => `${done} de ${total} partes creadas`,
     partsTitle: "Qué se creará", detailsTitle: "Detalles del proyecto", createButton: "Crear mi proyecto", resumeButton: "Terminar de crear",
     working: "Creando…", previewButton: "Actualizar la vista previa", previewing: "Comprobando…", leftOut: "Dejado fuera, y por qué", nothingLeftOut: "No se deja nada fuera.",
     theProject: "El proyecto en sí", nothingAccepted: "Nada aceptado", accepted: (n) => `${n} aceptado(s)`, choose: "Elegir",
