@@ -60,6 +60,7 @@ export interface SetupCopy {
   review: {
     counts: (accepted: number, pending: number, total: number) => string; acceptAll: (n: number) => string;
     readAgain: string; readAgainYes: string; readAgainKeep: string; readAgainNote: string;
+    levels: Record<string, string>;
     accept: string; reject: string; writeOwn: string; save: string; cancel: string; from: string; notStated: string; noItems: string;
     status: { PROPOSED: string; ACCEPTED: string; REJECTED: string; EDITED: string; NOT_IN_DOCUMENT: string };
     confidence: { HIGH: string; MEDIUM: string; LOW: string };

@@ -201,6 +201,7 @@ export const fr: SetupCopy = {
     readAgainYes: "Oui, la relire",
     readAgainKeep: "Garder ce que j'ai",
     readAgainNote: "Cela remplace les décisions prises dans cette étape par une nouvelle lecture.",
+    levels: { GOAL: "Objectif global", OUTCOME: "Résultat", OUTPUT: "Produit", ACTIVITY: "Activité" },
     accept: "Accepter", reject: "Rejeter", writeOwn: "Écrire ma version", save: "Enregistrer", cancel: "Annuler", from: "Extrait du document", notStated: "Non indiqué",
     noItems: "Rien n'a été proposé pour cette étape. Vous pouvez la passer ou appuyer sur Relire cette partie.",
     status: { PROPOSED: "En attente de vous", ACCEPTED: "Accepté", REJECTED: "Rejeté", EDITED: "Votre version", NOT_IN_DOCUMENT: "Absent du document" },

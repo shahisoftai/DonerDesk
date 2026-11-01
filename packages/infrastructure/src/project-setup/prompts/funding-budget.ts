@@ -23,7 +23,7 @@ const readBudget = (raw: Record<string, unknown>): BudgetLineDef | null => {
 
 export const FUNDING_BUDGET_SPEC: AreaExtractionSpec = {
   area: "FUNDING_BUDGET",
-  promptVersion: "setup-funding-budget-v1",
+  promptVersion: "setup-funding-budget-v2",
   budgetChars: 20_000,
   keywords: ["budget", "funding", "grant", "contribution", "co-financ", "cost", "usd", "eur", "gbp", "total", "personnel", "equipment", "travel"],
   instructions: [
@@ -31,6 +31,7 @@ export const FUNDING_BUDGET_SPEC: AreaExtractionSpec = {
     '{"funding": [{"sourceName": "...", "amount": "...", "currency": "USD", "quote": "...", "block": N, "confidence": "..."}],',
     ' "budget": [{"category": "...", "amount": "...", "currency": "USD", "logframeCode": null, "quote": "...", "block": N, "confidence": "..."}]}',
     "amount exactly as written (\"1,250,000\", \"1.250.000,00\"); the currency only when the document names it for that amount.",
+    "sourceName is the organisation that provides the money (a donor, a government, or the implementer's own cost share). Never use a programme, project, round or document title as a source name. Give an amount only when the document states one for that source; otherwise null.",
     "Budget lines are the document's own categories or lines. Do not add subtotals or totals the document does not list as a line.",
   ].join("\n"),
   context: (prior) => `Project currency already read: ${factValue(prior.facts, "currency") ?? "not stated"}. Use it only where the document applies it to the amount.`,

@@ -104,7 +104,9 @@ export function ReviewRows({ view, area, readOnly }: { view: SetupProposalView; 
               return (
                 <li key={row.path} className={`rounded-xl border p-4 transition ${TONE[key]}`}>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <p className="font-medium text-slate-900 dark:text-slate-100">{labelOf(row)}</p>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">
+                      {row.level && rv.levels[row.level] ? <span className="tag me-2">{rv.levels[row.level]}</span> : null}{labelOf(row)}
+                    </p>
                     <p className="flex items-center gap-2 text-xs">
                       <span className={`tag ${TAG[key]}`}>{rv.status[key]}</span>
                       {showsConfidence(row) && <span className="text-slate-600 dark:text-slate-300">{rv.confidence[row.confidence as keyof typeof rv.confidence] ?? row.confidence}</span>}

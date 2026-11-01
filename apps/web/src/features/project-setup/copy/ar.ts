@@ -201,6 +201,7 @@ export const ar: SetupCopy = {
     readAgainYes: "نعم، اقرأه مرة أخرى",
     readAgainKeep: "أبقِ ما لدي",
     readAgainNote: "يستبدل هذا قراراتك في هذه الخطوة بقراءة جديدة.",
+    levels: { GOAL: "الهدف العام", OUTCOME: "النتيجة", OUTPUT: "المخرَج", ACTIVITY: "النشاط" },
     accept: "قبول", reject: "رفض", writeOwn: "اكتب بنفسي", save: "حفظ", cancel: "إلغاء", from: "من المستند", notStated: "غير مذكور",
     noItems: "لم يُقترح شيء لهذه الخطوة. يمكنك تخطيها أو الضغط على اقرأ هذا الجزء مرة أخرى.",
     status: { PROPOSED: "بانتظارك", ACCEPTED: "مقبول", REJECTED: "مرفوض", EDITED: "نسختك", NOT_IN_DOCUMENT: "غير موجود في المستند" },

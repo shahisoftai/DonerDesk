@@ -27,6 +27,8 @@ export interface ReviewRow {
   field: string;
   /** For a fact: which one ("name", "startDate", ...). */
   factKey?: string;
+  /** A results item's level (GOAL, OUTCOME, OUTPUT, ACTIVITY), so a screen can show where it sits. */
+  level?: string;
   /** A list item with no title of its own: the screen names it by its field and position. */
   untitled: boolean;
   index: number;
@@ -95,6 +97,11 @@ export function summarise(value: unknown): string {
   return parts.length > 0 ? parts.join(" · ") : NOT_STATED;
 }
 
+function levelOf(value: unknown): string | null {
+  const level = value && typeof value === "object" ? (value as Record<string, unknown>).level : null;
+  return typeof level === "string" ? level : null;
+}
+
 function titleOf(value: unknown): string | null {
   if (value && typeof value === "object") {
     const o = value as Record<string, unknown>;
@@ -132,6 +139,7 @@ export function rowsForField(proposal: ProposalData, field: string, problems: Re
       path, label: title ?? `${FIELD_HEADINGS[field] ?? field} ${index + 1}`, summary: summarise(item.value),
       quote: item.sourceQuote, status: item.status, confidence: item.confidence, problems: problemsAt(problems, path), isFact: false,
       field, untitled: title === null, index,
+      ...(levelOf(item.value) ? { level: levelOf(item.value)! } : {}),
     };
   });
   return { field, rows };

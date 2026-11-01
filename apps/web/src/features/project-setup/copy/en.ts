@@ -217,6 +217,7 @@ export const en: SetupCopy = {
     readAgainYes: "Yes, read it again",
     readAgainKeep: "Keep what I have",
     readAgainNote: "This replaces the decisions you made in this step with a fresh reading.",
+    levels: { GOAL: "Goal", OUTCOME: "Outcome", OUTPUT: "Output", ACTIVITY: "Activity" },
     accept: "Accept", reject: "Reject", writeOwn: "Write my own", save: "Save", cancel: "Cancel",
     from: "From the document", notStated: "Not stated", noItems: "Nothing was proposed for this step. You can skip it or press Read this part again.",
     status: { PROPOSED: "Waiting for you", ACCEPTED: "Accepted", REJECTED: "Rejected", EDITED: "Your version", NOT_IN_DOCUMENT: "Not in the document" },

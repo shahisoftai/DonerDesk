@@ -14,15 +14,22 @@ const read = (raw: Record<string, unknown>): PeriodDef | null => {
 
 export const PERIODS_SPEC: AreaExtractionSpec = {
   area: "PERIODS",
-  promptVersion: "setup-periods-v1",
+  promptVersion: "setup-periods-v2",
   budgetChars: 12_000,
   keywords: ["report", "reporting", "quarterly", "monthly", "semi-annual", "annual", "final report", "due", "submit"],
   instructions: [
     "Extract the reports the document says must be submitted. Answer:",
     '{"periods": [{"type": "MONTHLY|QUARTERLY|SEMI_ANNUAL|ANNUAL|FINAL", "start": "YYYY-MM-DD", "end": "YYYY-MM-DD", "quote": "...", "block": N, "confidence": "..."}]}',
     "One item per stated reporting obligation. When the document states only a cadence (\"quarterly reports\"), give one item with that type and null dates; never work out the periods yourself.",
+    "Give each reporting obligation once: a cadence or a final report stated in several sentences is still one item (use the clearest quote).",
   ].join("\n"),
   context: (prior) => datesLine(prior.facts),
-  parse: parseLists({ periods: read }),
+  parse: (raw, ctx) => {
+    const parsed = parseLists({ periods: read })(raw, ctx);
+    if (typeof parsed === "string" || !Array.isArray(parsed.periods)) return parsed;
+    // The same obligation quoted twice in one reply is one period.
+    const seen = new Set<string>();
+    return { periods: (parsed.periods as Record<string, unknown>[]).filter((item) => { const key = valueKey("type", "start", "end")(item); return seen.has(key) ? false : (seen.add(key), true); }) };
+  },
   merge: mergeLists(valueKey("type", "start", "end"), "periods"),
 };

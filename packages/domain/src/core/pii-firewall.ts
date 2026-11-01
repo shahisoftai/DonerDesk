@@ -42,7 +42,15 @@ const DEFAULT_RECOGNIZERS: Recognizer[] = [
   },
   {
     type: "PHONE",
-    patterns: [/\+?\d[\d\s().-]{7,}\d/g, /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g],
+    // A phone number has a shape: a leading +, a bracketed area code, a leading 0 with separators, or 3-3-4 groups. A bare
+    // run of digits, dots, hyphens and tabs is NOT one: it is a year range (2021-2024), a table of amounts or a decimal.
+    patterns: [
+      /\+\d[\d ().-]{6,}\d/g,
+      /\(\d{2,4}\)[ .-]?\d{3,4}[ .-]?\d{3,4}\b/g,
+      /\b0\d{2,4}[ .-]\d{3,4}[ .-]?\d{3,4}\b/g,
+      /\b\d{3}[ .-]\d{3}[ .-]\d{4}\b/g,
+      /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g,
+    ],
     score: 0.8,
     normalize: (m) => m.replace(/\D/g, ""),
   },
