@@ -56,3 +56,10 @@ test("neighbours and progress", () => {
   assert.equal(progressPercent(deck, "done"), 100);
   assert.ok(progressPercent(deck, "places") > progressPercent(deck, "facts"));
 });
+
+test("while the project is being created the Create slide stays open and the review steps stay locked", () => {
+  const create = deck.find((s) => s.kind === "create")!;
+  const area = deck.find((s) => s.kind === "area")!;
+  assert.equal(lockReason(create, "APPLYING", false), null);
+  assert.notEqual(lockReason(area, "APPLYING", false), null);
+});

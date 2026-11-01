@@ -45,6 +45,8 @@ export function lockReason(slide: DeckSlide, status: ProposalStatus | null, appl
       return status === null ? "Add your document first." : null;
     case "area":
     case "create":
+      // While the project is being created the Create slide stays open and shows the progress; nothing else is.
+      if (slide.kind === "create" && status === "APPLYING") return null;
       if (status === null) return "Add your document first.";
       if (status === "EXTRACTING") return "DonorDesk is still reading your document.";
       if (status === "FAILED" || status === "DISCARDED") return "This document could not be read. Go back and add it again.";
