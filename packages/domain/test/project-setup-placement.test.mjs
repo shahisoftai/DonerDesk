@@ -233,3 +233,16 @@ test("addIndicator adds a person's own indicator under a live result, and refuse
   assert.equal(addIndicator(p, { title: "x", logframeCode: "NOPE" }).ok, false);
   assert.equal(addIndicator(p, { title: "  " }).ok, false);
 });
+
+import { offerPlaceCountries } from "../dist/index.js";
+
+test("offerPlaceCountries offers the country the places name when the facts read another one, never swapping it in", () => {
+  const p = offerPlaceCountries(proposal({
+    facts: facts({ countries: A(["United States"], "United States Agency for International Development") }),
+    places: [A({ name: "Upper Dir", adminLevel: 2, parentName: "Pakistan", latitude: null, longitude: null }, "District Upper Dir, Khyber Pakhtunkhwa, Pakistan")],
+  }));
+  assert.deepEqual(p.facts.countries.value, ["United States"]);
+  assert.deepEqual(p.facts.countries.alternatives.map((a) => a.value), [["Pakistan"]]);
+  const same = proposal({ facts: facts({ countries: A(["Pakistan"], "Pakistan") }), places: [A({ name: "Pakistan", adminLevel: 0, parentName: null, latitude: null, longitude: null }, "in Pakistan")] });
+  assert.equal(offerPlaceCountries(same), same);
+});

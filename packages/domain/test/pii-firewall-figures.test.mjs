@@ -30,3 +30,8 @@ test("a caller can keep a kind of entity (a project document's dates)", () => {
   assert.equal(redactForLlm(text, undefined, ["DATE_OF_BIRTH"]), text);
   assert.ok(!redactForLlm("Mail a@b.org 29-11-2023", undefined, ["DATE_OF_BIRTH"]).includes("a@b.org"));
 });
+
+test("an amount with four decimals is not a phone number, while real phone shapes still are", () => {
+  assert.equal(redactForLlm("Cost\t567282.9617\t10"), "Cost\t567282.9617\t10");
+  assert.match(redactForLlm("Call 555.123.4567 or 5551234567"), /^Call \[REDACTED\] or \[REDACTED\]$/);
+});

@@ -31,7 +31,7 @@ function merge(a: Record<string, unknown>, b: Record<string, unknown>): Record<s
 
 export const FACTS_SPEC: AreaExtractionSpec = {
   area: "FACTS",
-  promptVersion: "setup-facts-v3",
+  promptVersion: "setup-facts-v4",
   headBlocks: 3,
   budgetChars: 14_000,
   // A fact the first read left Not stated is looked for again in the passages it did not quote (the merge only fills gaps).
@@ -42,7 +42,8 @@ export const FACTS_SPEC: AreaExtractionSpec = {
     '{"name": F, "code": F, "donor": F, "countries": F, "sectors": F, "startDate": F, "endDate": F, "currency": F, "summary": F}',
     'where each F is {"value": ..., "quote": "...", "block": N, "confidence": "HIGH|MEDIUM|LOW"} or null when not stated.',
     "countries and sectors are lists of strings; startDate/endDate are YYYY-MM-DD; currency is a three-letter code; summary is one or two sentences copied from the document.",
-    "countries: every country the text names in words (in a title, a location, a staff or office list); quote the line that names it. A province, district or city is not a country, and a currency name is not a country.",
+    "countries: the country or countries where the project's work takes place, as the text names them in words; quote the line that names it. The donor's or a funding agency's own country (\"United States Agency for International Development\") is not where the work is. A province, district or city is not a country, and a currency name is not a country.",
+    "donor: the organisation that funds this grant; when the text names a funding programme or a prime award that makes the grant (\"provides a fixed amount award to\"), that programme is the donor.",
     "currency: from the line that states the money (\"Budgets developed in ...\", a currency column, a code beside an amount).",
   ].join("\n"),
   parse,

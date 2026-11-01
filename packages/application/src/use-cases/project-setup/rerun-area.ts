@@ -1,5 +1,5 @@
 import type { Result, SetupAreaKey } from "@donordesk/domain";
-import { DomainError, SETUP_AREAS, checkProposal, groundAreaPatch, applyKindOverrides, joinBlocks, linkProposal, offerPlanDates, proposeCodes, redactForLlm } from "@donordesk/domain";
+import { DomainError, SETUP_AREAS, checkProposal, groundAreaPatch, applyKindOverrides, joinBlocks, linkProposal, offerPlaceCountries, offerPlanDates, proposeCodes, redactForLlm } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ISourceDocumentReader, ISetupAreaExtractor, ISetupProposalRepository, ISetupRunRepository, StoredSetupProposal } from "../../ports/project-setup.js";
@@ -99,7 +99,7 @@ export class RerunSetupAreaHandler {
       const latest = await this.proposals.findById(id, ctx.tenant.tenantId);
       const base = latest.ok && latest.value ? latest.value : proposal;
       // Replaces this area's fields; the other areas keep whatever the person accepted and edited.
-      nextProposal = offerPlanDates(linkProposal(proposeCodes({ ...base.proposal, ...grounded.fields } as typeof proposal.proposal, "LIVE")));
+      nextProposal = offerPlaceCountries(offerPlanDates(linkProposal(proposeCodes({ ...base.proposal, ...grounded.fields } as typeof proposal.proposal, "LIVE"))));
       saved = await this.proposals.update({
         ...base,
         proposal: nextProposal,

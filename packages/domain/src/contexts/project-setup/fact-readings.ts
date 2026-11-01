@@ -6,7 +6,7 @@
  * written and flagged. Pure.
  */
 import { compareDates, isPlainDate } from "../workplan/plain-date.js";
-import { recogniseCountry } from "./country-names.js";
+import { countriesInText, recogniseCountry } from "./country-names.js";
 import type { Alternative, ProjectSetupProposal, Proposed, ProposedFacts } from "./proposal.js";
 
 export const MAX_ALTERNATIVES = 3;
@@ -47,3 +47,23 @@ export function offerPlanDates(proposal: ProjectSetupProposal): ProjectSetupProp
 }
 
 const dedupe = <T>(list: Alternative<T>[]): Alternative<T>[] => list.filter((a, i) => list.findIndex((b) => same(a.value, b.value)) === i).slice(0, MAX_ALTERNATIVES);
+
+/**
+ * The countries the proposed places name (a place of level 0, or a parent that is a country), offered for the project's
+ * countries when the facts do not name them — the facts may have read a donor's country ("United States Agency for…") where
+ * the places say where the work is. Offered, never swapped in.
+ */
+export function offerPlaceCountries(proposal: ProjectSetupProposal): ProjectSetupProposal {
+  const item = proposal.facts.countries;
+  if (item.status === "EDITED" || item.status === "REJECTED") return proposal;
+  const stated = new Set((item.value ?? []).map((c) => recogniseCountry(c) ?? c));
+  let next: Proposed<string[]> = item;
+  for (const place of proposal.places) {
+    if (place.status === "REJECTED" || !place.value || !place.sourceQuote) continue;
+    const named = [place.value.name, place.value.parentName].flatMap((n) => (n ? [recogniseCountry(n) ?? countriesInText(n)[0] ?? null] : [])).filter((c): c is string => c !== null);
+    const missing = named.filter((c) => !stated.has(c) && countriesInText(place.sourceQuote!).includes(c));
+    if (missing.length === 0) continue;
+    next = withAlternative(next, { value: [...new Set(missing)], sourceQuote: place.sourceQuote, sourceRef: place.sourceRef });
+  }
+  return next === item ? proposal : { ...proposal, facts: { ...proposal.facts, countries: next } };
+}

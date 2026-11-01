@@ -49,7 +49,8 @@ const DEFAULT_RECOGNIZERS: Recognizer[] = [
       /\(\d{2,4}\)[ .-]?\d{3,4}[ .-]?\d{3,4}\b/g,
       /\b0\d{2,4}[ .-]\d{3,4}[ .-]?\d{3,4}\b/g,
       /\b\d{3}[ .-]\d{3}[ .-]\d{4}\b/g,
-      /\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g,
+      // The same separator twice (or none): "567282.9617" is an amount with four decimals, not 567-282-9617.
+      /\b\d{3}([-.]?)\d{3}\1\d{4}\b/g,
     ],
     score: 0.8,
     normalize: (m) => m.replace(/\D/g, ""),
