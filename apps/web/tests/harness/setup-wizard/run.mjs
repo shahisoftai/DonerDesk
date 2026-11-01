@@ -139,6 +139,20 @@ await check("writing your own facts saves them as 'Your version', and the projec
   assert.equal((await rail(page).getByRole("button", { name: /^facts/i }).innerText()).includes("✓") || true, true);
 });
 
+await check("another reading of a fact can be chosen, and the documents panel says what each file was read as and lets you change it", async () => {
+  const donor = page.locator("li", { has: page.getByText("Donor", { exact: true }) }).first();
+  await donor.getByText("The documents also say").waitFor();
+  await donor.getByRole("button", { name: /^use this$/i }).click();
+  await page.waitForFunction(() => document.body.innerText.includes("Grant agreement with ECHO."));
+  assert.deepEqual((await calls(page, "edit")).at(-1).args[1].op, "CHOOSE");
+  await page.getByText("Your documents").click();
+  const panel = await text(page.locator("details", { has: page.getByText("Your documents") }));
+  assert.match(panel, /Budget\.xlsx Read as: Budget, Something else/);
+  await page.locator("#kind-source-2").selectOption("WORK_PLAN_GANTT");
+  await page.getByText(/Every part is being read again/).waitFor();
+  assert.deepEqual((await calls(page, "kind"))[0].args.slice(1), ["source-2", "WORK_PLAN_GANTT"]);
+});
+
 await check("Accept all accepts every clearly stated result at once, and the rail ticks only steps where something was accepted", async () => {
   await page.getByRole("button", { name: /^next: results/i }).click();
   await page.getByRole("heading", { level: 1, name: /results framework/i }).waitFor();
@@ -161,6 +175,45 @@ await check("Accept all accepts every clearly stated result at once, and the rai
   await page.getByRole("heading", { level: 1, name: /results framework/i }).waitFor();
 });
 
+await check("a result opens its passage with the quote marked, and can be moved under another result", async () => {
+  await page.getByRole("heading", { level: 1, name: /results framework/i }).waitFor();
+  await page.getByRole("button", { name: /show in the document/i }).first().click();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator("mark").waitFor();
+  assert.equal(await text(dialog.locator("mark")), "Goal 1: Improved health of households.");
+  await dialog.getByRole("button", { name: /^close$/i }).click();
+  const output = page.locator("li", { hasText: "Output 1.1.1: 40 boreholes rehabilitated" }).first();
+  await output.getByText("Move this result").click();
+  await output.locator("select").first().selectOption("OUTCOME");
+  await output.locator("select").nth(1).selectOption("1");
+  await output.getByRole("button", { name: /^move$/i }).click();
+  await page.waitForFunction(() => (window.__h.calls.filter((c) => c.name === "edit").at(-1)?.args[1].op === "MOVE"));
+  const moved = (await calls(page, "edit")).at(-1).args[1];
+  assert.deepEqual(moved.value, { level: "OUTCOME", parentCode: "1" });
+});
+
+await check("an indicator the documents do not list can be typed under a result", async () => {
+  await page.keyboard.press("ArrowRight");
+  await page.getByRole("heading", { level: 1, name: /^indicators$/i }).waitFor();
+  await page.getByText(/^＋ Add an indicator$/).click();
+  await page.locator("#add-ind-title").fill("Number of water committees trained");
+  await page.locator("#add-ind-result").selectOption("1.1");
+  await page.locator("#add-ind-target").fill("20");
+  await page.getByRole("button", { name: /^add$/i }).click();
+  await page.getByText("Number of water committees trained", { exact: true }).waitFor();
+  const added = (await calls(page, "edit")).at(-1).args[1];
+  assert.equal(added.op, "ADD_INDICATOR");
+  assert.equal(added.value.logframeCode, "1.1");
+  await page.keyboard.press("ArrowLeft");
+});
+
+await check("the activities step draws the work plan on a timeline", async () => {
+  await rail(page).getByRole("button", { name: /^activities/i }).click();
+  await page.getByText("The work plan on a timeline").waitFor();
+  assert.match(await text(page.locator("details", { has: page.getByText("The work plan on a timeline") })), /From 2027-04-01 to 2027-09-30/);
+  await rail(page).getByRole("button", { name: /^results/i }).click();
+});
+
 await check("the arrow keys move between open steps, and never into a locked one", async () => {
   await page.getByRole("heading", { level: 1, name: /results framework/i }).waitFor();
   await page.keyboard.press("ArrowRight");
@@ -175,7 +228,7 @@ await check("creating shows every document in the project's folder with a link t
   const parts = await text(page.getByRole("region", { name: /what will be created/i }));
   assert.match(parts, /Facts The project itself/);
   assert.match(parts, /Results 3 accepted/);
-  assert.match(parts, /Indicators Nothing accepted/);
+  assert.match(parts, /Indicators 1 accepted/, "the indicator typed by hand is the person's own, so it counts");
   await page.locator("#setup-projectCode").fill("ZZT-1");
   await page.locator("#setup-donorName").fill("European Union");
   await page.locator("#setup-implementingOrganization").fill("ZZ Test Org");
@@ -191,7 +244,7 @@ await check("creating shows every document in the project's folder with a link t
   assert.equal(links.length, 5);
   assert.ok(links.every((h) => h.startsWith("https://drive.example/")));
   const applied = (await calls(page, "apply"))[0];
-  assert.ok(applied.args[1].areas.includes("FACTS") && applied.args[1].areas.includes("LOGFRAME") && !applied.args[1].areas.includes("INDICATORS"));
+  assert.ok(applied.args[1].areas.includes("FACTS") && applied.args[1].areas.includes("LOGFRAME") && applied.args[1].areas.includes("INDICATORS"));
   assert.equal(applied.args[1].project.startDate, "2027-03-01T00:00:00.000Z");
 });
 

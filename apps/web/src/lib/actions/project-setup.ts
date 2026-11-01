@@ -1,6 +1,6 @@
 "use server";
 
-import { ApplySetupProposalSchema, EditSetupProposalSchema, SetupAreaSelectionSchema, StartSetupTextSchema } from "@donordesk/contracts";
+import { ApplySetupProposalSchema, EditSetupProposalSchema, SetSetupDocumentKindSchema, SetupAreaSelectionSchema, StartSetupTextSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -8,7 +8,7 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { OkResponseSchema } from "./_schemas";
 import {
-  SetupApplyResultSchema, SetupEditedSchema, SetupPreviewSchema, SetupProposalListSchema, SetupProposalViewSchema, SetupStartedSchema,
+  SetupApplyResultSchema, SetupEditedSchema, SetupPassageSchema, SetupRereadSchema, type SetupPassage, SetupPreviewSchema, SetupProposalListSchema, SetupProposalViewSchema, SetupStartedSchema,
   type SetupApplyResult, type SetupPreview, type SetupProposalView,
 } from "@/lib/server/schemas-project-setup";
 
@@ -77,4 +77,18 @@ export async function discardSetupProposalAction(id: string): Promise<Result<und
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/project-setup/proposals/${encodeURIComponent(id)}`, OkResponseSchema, context.token, { method: "DELETE" });
   return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** A person says what a document is (null = the reading stands); every part is then read again. */
+export async function setSetupDocumentKindAction(id: string, documentId: string, kind: string | null): Promise<Result<{ rereading: string[] }, AppError>> {
+  const context = await requireSession();
+  const parsed = SetSetupDocumentKindSchema.safeParse({ kind });
+  if (!parsed.success) return invalid(parsed.error);
+  return gatewayRequest(`/v1/project-setup/proposals/${encodeURIComponent(id)}/documents/${encodeURIComponent(documentId)}/kind`, SetupRereadSchema, context.token, { method: "PUT", body: parsed.data });
+}
+
+/** The passage a proposed item was read from, to show the quote in its place. */
+export async function getSetupPassageAction(id: string, documentId: string, block: number): Promise<Result<SetupPassage, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/project-setup/proposals/${encodeURIComponent(id)}/passages/${encodeURIComponent(documentId)}/${block}`, SetupPassageSchema, context.token);
 }

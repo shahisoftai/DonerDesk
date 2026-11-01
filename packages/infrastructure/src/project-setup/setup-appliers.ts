@@ -7,7 +7,7 @@ import {
   type AuthenticatedContext, type CreateAllPeriodsHandler, type CreateFundingSourceHandler, type AddProjectFundingHandler,
   type CreateRiskHandler, type IProjectFundingRepository, type IProjectRepository, type ISetupAreaApplier, type ImportIndicatorsHandler,
   type ImportLogframeHandler, type ImportPlacesHandler, type ImportWorkPlanHandler, type ListFundingSourcesHandler, type ListRisksHandler,
-  type SetupFundingWriter, type SetupRiskWriter,
+  type SetupFundingWriter, type SetupRiskWriter, type SetupWorkspaceProbe,
 } from "@donordesk/application";
 import { ok } from "@donordesk/domain";
 
@@ -24,6 +24,7 @@ export interface SetupApplierDeps {
   addProjectFunding: AddProjectFundingHandler;
   fundings: IProjectFundingRepository;
   projects: IProjectRepository;
+  workspace: SetupWorkspaceProbe;
 }
 
 /**
@@ -53,7 +54,7 @@ export function createSetupAppliers(deps: () => SetupApplierDeps): ISetupAreaApp
     new FactsApplier(),
     new LogframeApplier({ handle: (ctx, input) => d.importLogframe.handle(ctx, input) }),
     new IndicatorsApplier({ handle: (ctx, input) => d.importIndicators.handle(ctx, input) }),
-    new PeriodsApplier({ handle: (ctx, projectId, options) => d.createAllPeriods.handle(ctx, projectId, options) }),
+    new PeriodsApplier({ handle: (ctx, projectId, options) => d.createAllPeriods.handle(ctx, projectId, options) }, { stillPreparing: (ctx, projectId) => d.workspace.stillPreparing(ctx, projectId) }),
     new PlanApplier({ handle: (ctx, projectId, input) => d.importWorkPlan.handle(ctx, projectId, input) }),
     new PlacesApplier({ handle: (ctx, input) => d.importPlaces.handle(ctx, input) }),
     new FundingBudgetApplier(finance),

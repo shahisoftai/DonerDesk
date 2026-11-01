@@ -2,7 +2,8 @@ import { oneOf, text } from "../proposed-item.js";
 import { parseLists, valueKey } from "../list-area.js";
 import { mergeLists } from "../extractor-shared.js";
 import type { AreaExtractionSpec } from "../area-spec.js";
-import type { LogframeNodeDef, SetupLogLevel } from "@donordesk/domain";
+import { applyStructure, majorityStructure, tidyResultsChain, type LogframeNodeDef, type Proposed, type SetupLogLevel } from "@donordesk/domain";
+import type { AreaRefinement } from "../area-spec.js";
 
 const LEVELS: readonly SetupLogLevel[] = ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"];
 
@@ -26,11 +27,60 @@ const read = (raw: Record<string, unknown>): LogframeNodeDef | null => {
   return { level: lv, code, title, description: text(raw.description), parentCode: text(raw.parentCode), ...(code ? { codeSource: "DOCUMENT" as const } : {}) };
 };
 
+/** More items than this are not re-structured (the answer would not fit one small call); the first read's order stands. */
+const REFINE_MAX_ITEMS = 150;
+
+const itemsOf = (fields: Readonly<Record<string, unknown>>): Proposed<LogframeNodeDef>[] =>
+  (Array.isArray(fields.logframe) ? fields.logframe : []) as Proposed<LogframeNodeDef>[];
+
+/** One structure answer as a decision per item index; anything malformed is no decision for that item. */
+function decisionsOf(answer: unknown, count: number): ({ level: SetupLogLevel | null; parent: number | null } | undefined)[] {
+  const out: ({ level: SetupLogLevel | null; parent: number | null } | undefined)[] = Array.from({ length: count }, () => undefined);
+  const list = answer && typeof answer === "object" ? (answer as { items?: unknown }).items : undefined;
+  if (!Array.isArray(list)) return out;
+  for (const raw of list) {
+    if (!raw || typeof raw !== "object") continue;
+    const { i, level: lv, parent } = raw as Record<string, unknown>;
+    if (typeof i !== "number" || !Number.isInteger(i) || i < 0 || i >= count) continue;
+    out[i] = { level: level(lv), parent: typeof parent === "number" && Number.isInteger(parent) ? parent : null };
+  }
+  return out;
+}
+
+/** Pass B (Phase 37.3): the levels and parents of the statements found, decided over those statements only, by majority. */
+export const LOGFRAME_STRUCTURE: AreaRefinement = {
+  promptVersion: "structure-v1",
+  votes: 3,
+  prompt: (fields) => {
+    const items = itemsOf(fields);
+    if (items.length < 2 || items.length > REFINE_MAX_ITEMS) return null;
+    return [
+      "These results-chain statements were read from one project's documents, in document order. Decide each one's level and its parent.",
+      'Answer: {"items": [{"i": 0, "level": "GOAL|OUTCOME|OUTPUT|ACTIVITY", "parent": <i of the parent, or null>}]} with one entry per statement.',
+      "Rules: exactly one GOAL (the overall aim), with parent null. An OUTCOME's parent is the GOAL. An OUTPUT's parent is the OUTCOME it delivers. An ACTIVITY's parent is the OUTPUT it produces.",
+      "A parent is always one level above its child and is chosen by meaning and by the document's numbering and order; when nothing says which, use the nearest earlier statement one level up.",
+      "Keep the level a statement was read with unless it is plainly wrong (a deliverable read as an outcome, a task read as an output).",
+      "",
+      ...items.map((item, i) => `${i}. [${item.value?.level ?? "?"}]${item.value?.code ? ` ${item.value.code}` : ""} ${item.value?.title ?? ""}`.slice(0, 260)),
+    ].join("\n");
+  },
+  apply: (fields, answers) => {
+    const items = itemsOf(fields);
+    const votes = answers.map((a) => decisionsOf(a, items.length));
+    const decided = majorityStructure(votes, items.length);
+    return { ...fields, logframe: applyStructure(items, decided) };
+  },
+};
+
 export const LOGFRAME_SPEC: AreaExtractionSpec = {
   area: "LOGFRAME",
-  promptVersion: "setup-logframe-v4",
-  // A Gantt chart (its rows carry "[scheduled <dates>]") is the work plan: its task headings are not results.
+  promptVersion: "setup-logframe-v5",
+  // A Gantt chart is the work plan and a budget is money: their rows are not results (Phase 37.1).
+  readsFrom: ["PROPOSAL", "LOGFRAME_MATRIX", "INDICATOR_TABLE"],
+  // A block of a Gantt chart that was not recognised as one still carries "[scheduled <dates>]" rows.
   skipBlock: (block) => /\[scheduled \d{4}-\d{2}-\d{2}/.test(block.text),
+  recallPass: true,
+  refine: LOGFRAME_STRUCTURE,
   keywords: ["goal", "impact", "objective", "outcome", "output", "result", "activity", "activities", "logframe", "logical framework", "results framework"],
   instructions: [
     "Extract the results hierarchy (logframe). Answer:",
@@ -50,6 +100,8 @@ export const LOGFRAME_SPEC: AreaExtractionSpec = {
     const items = (Array.isArray(merged.logframe) ? merged.logframe : []) as { value: LogframeNodeDef }[];
     const codes = new Set(items.map((i) => i.value.code).filter((c): c is string => !!c));
     // A parent the document names but the answer does not list is no parent: the item then sits under the nearest item above it.
-    return { ...merged, logframe: items.map((i) => (i.value.parentCode && !codes.has(i.value.parentCode) ? { ...i, value: { ...i.value, parentCode: null } } : i)) };
+    const cleared = items.map((i) => (i.value.parentCode && !codes.has(i.value.parentCode) ? { ...i, value: { ...i.value, parentCode: null } } : i));
+    // A statement read twice in other words is kept once, and the chain is put in tree order.
+    return { ...merged, logframe: tidyResultsChain(cleared as unknown as Proposed<LogframeNodeDef>[]) };
   },
 };

@@ -1,5 +1,5 @@
 import type { DomainError, Result, TenantId } from "@donordesk/domain";
-import { SETUP_AREA_APPLY_ORDER, SETUP_AREAS, checkProposal, extractionLayers, groundAreaPatch, joinBlocks, redactForLlm, type SetupAreaKey } from "@donordesk/domain";
+import { SETUP_AREA_APPLY_ORDER, SETUP_AREAS, checkProposal, extractionLayers, groundAreaPatch, applyKindOverrides, describeSources, joinBlocks, linkProposal, offerPlanDates, proposeCodes, redactForLlm, type SetupAreaKey } from "@donordesk/domain";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ISourceDocumentReader, ISetupAreaExtractor, ISetupProposalRepository, ISetupRunRepository, SetupUsage, StoredSetupProposal } from "../../ports/project-setup.js";
 import { SETUP_PII_KEEP } from "./proposal-state.js";
@@ -52,7 +52,7 @@ export class SetupExtractionOrchestrator {
     // The model and the grounding check read the same redacted text, so a figure the model quotes is compared with
     // exactly what it was shown.
     // Each block is redacted before any extractor sees it, and the grounding text is joined from those same blocks.
-    const redacted = blocks.value.map((b) => ({ ...b, text: redactForLlm(b.text, undefined, SETUP_PII_KEEP) }));
+    const redacted = applyKindOverrides(blocks.value, proposal.proposal.sources).map((b) => ({ ...b, text: redactForLlm(b.text, undefined, SETUP_PII_KEEP) }));
     const sourceText = joinBlocks(redacted);
 
     const byArea = new Map(this.extractors.map((e) => [e.area, e]));
@@ -113,6 +113,7 @@ export class SetupExtractionOrchestrator {
         state.promptVersion = state.promptVersion ?? extracted.value.promptVersion;
         await this.runs.finish(runId, input.tenantId, {
           checked: grounded.checked, dropped: grounded.dropped, ...usageDetail,
+          ...(grounded.leftOut.length > 0 ? { leftOut: JSON.stringify(grounded.leftOut) } : {}),
           ...(extracted.value.partlyRead ? { partlyRead: true } : {}),
         }, this.clock.now());
         // Saved after every area, so a later failure keeps what earlier areas read and the screen can poll real progress.
@@ -124,7 +125,9 @@ export class SetupExtractionOrchestrator {
     };
 
     for (const layer of extractionLayers(ordered)) await runPool(layer, this.concurrency, readArea);
-    const { data, checked, dropped, okAreas, failedAreas, model, promptVersion, usage } = state;
+    const { checked, dropped, okAreas, failedAreas, model, promptVersion, usage } = state;
+    // Every area is read: items the documents did not tie to a result are placed by their wording where one result clearly fits.
+    const data = { ...offerPlanDates(linkProposal(proposeCodes(state.data, "LIVE"))), sources: describeSources(redacted, proposal.proposal.sources) };
 
     const problems = checkProposal(data);
     const status = okAreas > 0 ? "READY" : "FAILED";

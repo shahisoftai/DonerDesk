@@ -1,4 +1,4 @@
-import { DomainError, ok, type Result, type SourceBlock } from "@donordesk/domain";
+import { classifyDocument, DomainError, ok, splitSheets, type Result, type SourceBlock } from "@donordesk/domain";
 import { compactSheetText, dropNearDuplicates } from "./document-prep.js";
 import { driveFileIdsOf, type ISetupDocumentStore, type ISourceDocumentReader, type ParseUploadedFileHandler, type SetupSourceRef } from "@donordesk/application";
 
@@ -34,7 +34,11 @@ export class StoredSetupDocumentReader implements ISourceDocumentReader {
     const blocks: SourceBlock[] = [];
     for (const document of kept) {
       // Blocks are numbered across the whole set, so a block number points at exactly one place; the document id says which file.
-      for (const block of toBlocks(document.text)) blocks.push({ ...block, documentId: `source-${document.n + 1}`, index: blocks.length });
+      // Each sheet of a workbook is typed on its own (a workbook may hold a budget and a Gantt chart side by side).
+      for (const section of splitSheets(document.text)) {
+        const docKind = classifyDocument(section.text).kind;
+        for (const block of toBlocks(section.text)) blocks.push({ ...block, documentId: `source-${document.n + 1}`, index: blocks.length, docKind, documentName: document.name, sheet: section.title });
+      }
     }
     return ok(blocks);
   }
@@ -52,17 +56,23 @@ export function toBlocks(text: string, blockChars = BLOCK_CHARS): SourceBlock[] 
   for (const line of lines) {
     const trimmed = line.replace(/\s+$/g, "");
     if (length > 0 && length + trimmed.length + 1 > blockChars) {
-      blocks.push({ documentId: "source", index: blocks.length, text: carry.join("\n").trim() });
+      blocks.push({ documentId: "source", index: blocks.length, text: trimBlock(carry.join("\n")) });
       carry = [];
       length = 0;
     }
     carry.push(trimmed);
     length += trimmed.length + 1;
   }
-  const rest = carry.join("\n").trim();
+  const rest = trimBlock(carry.join("\n"));
   if (rest) blocks.push({ documentId: "source", index: blocks.length, text: rest });
   return blocks;
 }
+
+/**
+ * Blank lines at the ends of a block go; a leading tab stays. A sheet row whose first cell is empty starts with a tab, and
+ * trimming it would move every cell one column to the left (a deliverable read as the activity's title).
+ */
+const trimBlock = (text: string): string => text.replace(/^(?:[ \t]*\n)+/, "").replace(/\s+$/, "");
 
 function guessContentType(fileName: string): string {
   const lower = fileName.toLowerCase();

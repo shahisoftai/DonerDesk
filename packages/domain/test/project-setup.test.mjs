@@ -178,7 +178,7 @@ test("LOGFRAME_PARENT_UNKNOWN and LOGFRAME_CYCLE are hard problems at the offend
     P(node({ code: "GOAL-2", parentCode: "GOAL-1" }), "q"),
   ];
   const cycleProblems = checkProposal(cycle);
-  assert.deepEqual(cycleProblems.map((x) => x.code), ["LOGFRAME_CYCLE"]);
+  assert.deepEqual(cycleProblems.filter((x) => x.severity === "HARD").map((x) => x.code), ["LOGFRAME_CYCLE"]);
   const self = clean();
   self.logframe = [P(node({ code: "GOAL-1", parentCode: "GOAL-1" }), "q")];
   assert.deepEqual(checkProposal(self).map((x) => x.code), ["LOGFRAME_CYCLE"]);

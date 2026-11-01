@@ -11,3 +11,5 @@ export * from "./apply-registry.js";
 export * from "./preview-apply.js";
 export * from "./apply-proposal.js";
 export * from "./appliers/index.js";
+export * from "./set-document-kind.js";
+export * from "./get-source-passage.js";

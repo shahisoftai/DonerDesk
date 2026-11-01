@@ -3,7 +3,7 @@
  * proposal fields and how chunk results merge. A new area is a new spec file plus one entry in `SETUP_EXTRACTION_SPECS`;
  * the extractor that runs specs is never edited.
  */
-import type { SetupAreaKey, SourceBlock } from "@donordesk/domain";
+import type { SetupAreaKey, SetupDocumentKind, SourceBlock } from "@donordesk/domain";
 import type { ChunkMerger, ChunkParser } from "./extractor-shared.js";
 
 export interface AreaExtractionSpec {
@@ -25,4 +25,21 @@ export interface AreaExtractionSpec {
   skipBlock?: (block: SourceBlock) => boolean;
   /** Blocks always read from the start of each document (the cover and summary pages). */
   headBlocks?: number;
+  /** The document kinds this area reads (`classifyDocument`); OTHER and unclassified documents are always read. Absent = all. */
+  readsFrom?: readonly SetupDocumentKind[];
+  /** After the main read, ask again over the relevant blocks no kept item quotes (recall for long documents). */
+  recallPass?: boolean;
+  /** A second, small call that decides structure over the items found (the results chain's levels and parents). */
+  refine?: AreaRefinement;
+}
+
+/** A follow-up call over the first answer's items only: small, fixed input, so its answer is stable. */
+export interface AreaRefinement {
+  promptVersion: string;
+  /** How many independent answers to take; the majority wins (1 = no vote). */
+  votes: number;
+  /** The prompt for these fields, or null when there is nothing to refine. */
+  prompt: (fields: Readonly<Record<string, unknown>>) => string | null;
+  /** The refined fields from the answers (each a parsed JSON reply, or null when that answer was unreadable). */
+  apply: (fields: Readonly<Record<string, unknown>>, answers: ReadonlyArray<unknown>) => Record<string, unknown>;
 }

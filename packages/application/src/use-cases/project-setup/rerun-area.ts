@@ -1,5 +1,5 @@
 import type { Result, SetupAreaKey } from "@donordesk/domain";
-import { DomainError, SETUP_AREAS, checkProposal, groundAreaPatch, joinBlocks, redactForLlm } from "@donordesk/domain";
+import { DomainError, SETUP_AREAS, checkProposal, groundAreaPatch, applyKindOverrides, joinBlocks, linkProposal, offerPlanDates, proposeCodes, redactForLlm } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ISourceDocumentReader, ISetupAreaExtractor, ISetupProposalRepository, ISetupRunRepository, StoredSetupProposal } from "../../ports/project-setup.js";
@@ -10,6 +10,9 @@ import { SETUP_PII_KEEP, STALE_AREA_RUN_MS, assertProposalAccess } from "./propo
  * Re-extracts one area, keeping every edit in the other areas (Phase 36). The area's own decisions are replaced by the new
  * reading; the screen warns about that before running it. Same caps and grounding as the first read.
  */
+/** How many times a re-read part tries to save over a proposal that another part saved in the meantime. */
+const SAVE_ATTEMPTS = 5;
+
 export class RerunSetupAreaHandler {
   constructor(
     private readonly proposals: ISetupProposalRepository,
@@ -74,7 +77,7 @@ export class RerunSetupAreaHandler {
     const blocks = await this.reader.read({ tenantId: proposal.tenantId, storageKey: proposal.sourceStorageKey, fileName: proposal.sourceName });
     if (!blocks.ok) return failRun(blocks.error);
     // Each block is redacted before any extractor sees it, and the grounding text is joined from those same blocks.
-    const redacted = blocks.value.map((b) => ({ ...b, text: redactForLlm(b.text, undefined, SETUP_PII_KEEP) }));
+    const redacted = applyKindOverrides(blocks.value, proposal.proposal.sources).map((b) => ({ ...b, text: redactForLlm(b.text, undefined, SETUP_PII_KEEP) }));
     const sourceText = joinBlocks(redacted);
     const prior: Record<string, unknown> = {};
     for (const dependency of SETUP_AREAS[area].dependsOn) {
@@ -88,22 +91,29 @@ export class RerunSetupAreaHandler {
     if (!extracted.ok) return failRun(extracted.error);
     const grounded = groundAreaPatch(area, extracted.value.fields, sourceText);
     if ("error" in grounded) return failRun(DomainError.validation(grounded.error), grounded.error);
-    // The proposal is read again now: another part may have been saved while this one was being read.
-    const latest = await this.proposals.findById(id, ctx.tenant.tenantId);
-    const base = latest.ok && latest.value ? latest.value : proposal;
-    // Replaces this area's fields; the other areas keep whatever the person accepted and edited.
-    const nextProposal = { ...base.proposal, ...grounded.fields } as typeof proposal.proposal;
-    const saved = await this.proposals.update({
-      ...base,
-      proposal: nextProposal,
-      problems: checkProposal(nextProposal),
-      model: extracted.value.model ?? base.model,
-      promptVersion: extracted.value.promptVersion ?? base.promptVersion,
-    });
+    // The proposal is read again just before saving: another part may have been saved while this one was being read. The
+    // save names the version it built on, so two parts finishing together never overwrite each other (the later one retries).
+    let saved: Awaited<ReturnType<ISetupProposalRepository["update"]>> = { ok: true, value: false };
+    let nextProposal = proposal.proposal;
+    for (let attempt = 0; attempt < SAVE_ATTEMPTS && saved.ok && saved.value === false; attempt += 1) {
+      const latest = await this.proposals.findById(id, ctx.tenant.tenantId);
+      const base = latest.ok && latest.value ? latest.value : proposal;
+      // Replaces this area's fields; the other areas keep whatever the person accepted and edited.
+      nextProposal = offerPlanDates(linkProposal(proposeCodes({ ...base.proposal, ...grounded.fields } as typeof proposal.proposal, "LIVE")));
+      saved = await this.proposals.update({
+        ...base,
+        proposal: nextProposal,
+        problems: checkProposal(nextProposal),
+        model: extracted.value.model ?? base.model,
+        promptVersion: extracted.value.promptVersion ?? base.promptVersion,
+      }, base.updatedAt);
+    }
+    if (saved.ok && saved.value === false) return failRun(new DomainError("CONFLICT", "The proposal kept changing while this part was saved. Read this part again."));
     if (!saved.ok) return failRun(saved.error);
     const used = extracted.value.usage;
     await this.runs.finish(runId, ctx.tenant.tenantId, {
       checked: grounded.checked, dropped: grounded.dropped,
+      ...(grounded.leftOut.length > 0 ? { leftOut: JSON.stringify(grounded.leftOut) } : {}),
       ...(extracted.value.partlyRead ? { partlyRead: true } : {}),
       ...(used ? { calls: used.calls, inputTokens: used.inputTokens, outputTokens: used.outputTokens } : {}),
     }, this.clock.now());

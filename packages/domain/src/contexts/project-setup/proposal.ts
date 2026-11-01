@@ -5,6 +5,7 @@
  * guessed and never 0. Pure types: no behaviour lives here.
  */
 import type { PlainDate } from "../workplan/plain-date.js";
+import type { SetupSourceInfo } from "./document-sources.js";
 
 /** How surely a value was read from its quote; grounding certifies HIGH, a model's own caution can only lower it. */
 export type SetupConfidence = "HIGH" | "MEDIUM" | "LOW";
@@ -28,6 +29,15 @@ export interface Proposed<T> {
   sourceRef: SourceRef | null;
   confidence: SetupConfidence;
   status: ProposedStatus;
+  /** Other readings of the same fact that the documents also state (Phase 37.4): a person can choose one. Each is grounded. */
+  alternatives?: Alternative<T>[];
+}
+
+/** A second reading of a fact, with the words it was read from. */
+export interface Alternative<T> {
+  value: T;
+  sourceQuote: string;
+  sourceRef: SourceRef | null;
 }
 
 export type SetupLogLevel = "GOAL" | "OUTCOME" | "OUTPUT" | "ACTIVITY";
@@ -60,7 +70,12 @@ export interface IndicatorDef {
   disaggregation: string[] | null;
   meansOfVerification: string | null;
   codeSource?: "DOCUMENT" | "GENERATED";
+  /** SUGGESTED when `linkProposal` chose the result by wording (never shown as the document's own link); absent = the document's. */
+  linkSource?: LinkSource;
 }
+
+/** Who tied an item to a result: the document (its code or row), the wording match of `linkProposal`, or a person in the review. */
+export type LinkSource = "DOCUMENT" | "SUGGESTED" | "PERSON";
 
 export interface PeriodDef {
   /** The cadence (MONTHLY, QUARTERLY, ...); the applier validates it with the period-type rules. */
@@ -77,6 +92,11 @@ export interface PlannedActivityDef {
   location: string | null;
   /** A lead is proposed as text only; assigning a real person stays manual. */
   lead: string | null;
+  /** The work-plan heading the row sits under ("Task- 7 Conduct Trainings"), used only to find its result. */
+  group?: string | null;
+  /** The row's own code in the work plan ("7.1"); never a logframe code. */
+  planCode?: string | null;
+  linkSource?: LinkSource;
 }
 
 export interface PlaceDef {
@@ -101,7 +121,14 @@ export interface BudgetLineDef {
   amount: string | null;
   currency: string | null;
   logframeCode: string | null;
+  linkSource?: LinkSource;
+  /** LINE = a budget category (absent = LINE); DETAIL = a row of the detailed budget; TOTAL = a total the budget states. */
+  kind?: BudgetLineKind;
+  /** The detailed budget's own reference for the row ("F2.9.1"). */
+  ref?: string | null;
 }
+
+export type BudgetLineKind = "LINE" | "DETAIL" | "TOTAL";
 
 export interface RiskDef {
   kind: string | null;
@@ -124,6 +151,8 @@ export interface ProposedFacts {
 }
 
 export interface ProjectSetupProposal {
+  /** The files read and the kind each was read as (Phase 37.6); absent on proposals read before. */
+  sources?: SetupSourceInfo[];
   facts: ProposedFacts;
   logframe: Proposed<LogframeNodeDef>[];
   indicators: Proposed<IndicatorDef>[];

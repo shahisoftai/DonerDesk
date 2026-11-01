@@ -150,6 +150,7 @@ export function fundingInputs(p: ProjectSetupProposal): { inputs: FundingInputDr
 
 /** Budget lines need a planned activity to hang from in DonorDesk today; they are kept in the review, not applied. */
 export const budgetNotApplied = (p: ProjectSetupProposal): string[] => {
-  const n = chosen(p.budget).length;
+  // Detail rows and stated totals are there to check the budget, not to be created.
+  const n = chosen(p.budget).filter((b) => (b.kind ?? "LINE") === "LINE").length;
   return n > 0 ? [`${n} budget line(s) were read but are not created automatically: add them to planned activities on the Finance page.`] : [];
 };

@@ -1,5 +1,5 @@
 import type { Result, Role } from "@donordesk/domain";
-import { DomainError, acceptItem, acceptMany, checkProposal, editValue, fillNotStated, rejectItem } from "@donordesk/domain";
+import { DomainError, acceptItem, acceptMany, checkProposal, editValue, addIndicator, chooseAlternative, fillNotStated, linkItem, moveResult, rejectItem } from "@donordesk/domain";
 import type { EditSetupProposalInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock } from "../../ports/core.js";
@@ -40,6 +40,10 @@ export class EditSetupProposalHandler {
         : op === "ACCEPT" ? acceptItem(stored.value.proposal, ref)
         : op === "REJECT" ? rejectItem(stored.value.proposal, ref)
           : op === "FILL" ? fillNotStated(stored.value.proposal, ref, input.value)
+          : op === "LINK" ? linkItem(stored.value.proposal, ref, input.value ?? null)
+          : op === "CHOOSE" ? chooseAlternative(stored.value.proposal, ref, input.value)
+          : op === "MOVE" ? moveResult(stored.value.proposal, ref, input.value)
+          : op === "ADD_INDICATOR" ? addIndicator(stored.value.proposal, input.value, input.area)
             : editValue(stored.value.proposal, ref, input.value);
     if (!result.ok) return { ok: false, error: DomainError.validation(result.reason) };
     const expected = input.expectedUpdatedAt ? new Date(input.expectedUpdatedAt) : undefined;

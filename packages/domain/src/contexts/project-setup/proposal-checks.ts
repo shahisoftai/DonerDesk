@@ -5,6 +5,9 @@
  * path to the item, and the values the sentence needs. Checks run over every item a person has not rejected. Pure.
  */
 import { compareDates, isPlainDate } from "../workplan/plain-date.js";
+import { checkBudgetTotals } from "./budget-checks.js";
+import { checkFactReadings } from "./facts-checks.js";
+import { checkDatesFromPlan, checkPlacement, checkResultsChain } from "./placement-checks.js";
 import type { ProjectSetupProposal, Proposed } from "./proposal.js";
 
 export type SetupProblemSeverity = "HARD" | "SOFT";
@@ -21,6 +24,14 @@ export const SETUP_PROBLEM_CODES = [
   "PERIOD_OUTSIDE_DATES",
   "ACTIVITY_OUTSIDE_DATES",
   "CURRENCY_NOT_STATED",
+  "LOGFRAME_SEVERAL_GOALS",
+  "LOGFRAME_LEVEL_MISSING",
+  "INDICATORS_NOT_PLACED",
+  "ACTIVITIES_NOT_PLACED",
+  "FACTS_DATES_FROM_PLAN",
+  "BUDGET_TOTAL_MISMATCH",
+  "COUNTRY_NOT_RECOGNISED",
+  "FACTS_READINGS_DIFFER",
 ] as const;
 
 export type SetupProblemCode = (typeof SETUP_PROBLEM_CODES)[number];
@@ -239,5 +250,6 @@ export function checkProposal(proposal: ProjectSetupProposal): SetupProblem[] {
   problems.push(...checkPlan(proposal, factsStart, factsEnd));
   problems.push(...checkCurrency(proposal.funding, "funding"));
   problems.push(...checkCurrency(proposal.budget, "budget"));
+  problems.push(...checkResultsChain(proposal), ...checkPlacement(proposal), ...checkDatesFromPlan(proposal), ...checkBudgetTotals(proposal), ...checkFactReadings(proposal));
   return problems;
 }

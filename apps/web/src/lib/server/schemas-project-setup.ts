@@ -82,3 +82,9 @@ export const SetupApplyResultSchema = z.object({
 export type SetupApplyResult = z.infer<typeof SetupApplyResultSchema>;
 
 export const SetupEditedSchema = z.object({ ok: z.literal(true), updatedAt: z.string() });
+
+/** The passage a proposed item was read from, as the model saw it. */
+export const SetupPassageSchema = z.object({ documentName: z.string(), sheet: z.string().nullable(), text: z.string(), before: z.string().nullable() });
+export type SetupPassage = z.infer<typeof SetupPassageSchema>;
+
+export const SetupRereadSchema = z.object({ rereading: z.array(z.string()) });

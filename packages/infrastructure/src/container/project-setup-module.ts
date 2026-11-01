@@ -2,7 +2,7 @@ import type { TenantId } from "@donordesk/domain";
 import type { PrismaClient } from "@prisma/client";
 import {
   DiscardSetupProposalHandler, EditSetupProposalHandler, GetSetupProposalHandler, ListSetupProposalsHandler,
-  ParseUploadedFileHandler, RerunSetupAreaHandler, SetupExtractionOrchestrator, StartSetupExtractionHandler,
+  ParseUploadedFileHandler, RerunSetupAreaHandler, SetSetupDocumentKindHandler, GetSetupSourcePassageHandler, SetupExtractionOrchestrator, StartSetupExtractionHandler,
   UpdateSetupAssistSettingsHandler,
   type BackgroundRunner, type IAuditLogger, type IClock, type IIdGenerator, type ILLMProvider, type IOrganizationRepository,
   type ISetupAreaExtractor, type ISetupDocumentStore, type ISetupLlm, type ISetupProposalRepository, type ISetupRunRepository, type IStorage,
@@ -48,12 +48,15 @@ export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
   const llm: ISetupLlm = new TenantSetupLlm(deps.llmFor, deps.onProviderError);
   const extractors = deps.extractors ?? withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm));
   const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.concurrency);
+  const rerun = new RerunSetupAreaHandler(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.runInBackground);
   const handlers = {
     startSetupExtraction: new StartSetupExtractionHandler(deps.orgs, proposals, runs, deps.documents, llm, orchestrator, deps.audits, deps.clock, deps.ids, deps.runInBackground, deps.maxRunsPerDay, deps.hasNoDailyCap),
     getSetupProposal: new GetSetupProposalHandler(proposals, runs, deps.clock),
     listSetupProposals: new ListSetupProposalsHandler(proposals, deps.clock),
     editSetupProposal: new EditSetupProposalHandler(proposals, deps.audits, deps.clock),
-    rerunSetupArea: new RerunSetupAreaHandler(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.runInBackground),
+    rerunSetupArea: rerun,
+    setSetupDocumentKind: new SetSetupDocumentKindHandler(proposals, rerun, deps.audits, deps.clock),
+    getSetupSourcePassage: new GetSetupSourcePassageHandler(proposals, reader, deps.clock),
     discardSetupProposal: new DiscardSetupProposalHandler(proposals, runs, deps.storage, deps.documents, deps.audits, deps.clock),
     updateSetupAssistSettings: new UpdateSetupAssistSettingsHandler(deps.orgs, deps.audits),
   };

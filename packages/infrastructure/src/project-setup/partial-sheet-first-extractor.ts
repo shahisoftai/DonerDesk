@@ -5,7 +5,7 @@
  */
 import type { DomainError, Result, SetupAreaKey, SourceBlock } from "@donordesk/domain";
 import type { ExtractedArea, ISetupAreaExtractor, SetupExtractInput } from "@donordesk/application";
-import type { PartialSheetReader } from "./budget-sheet-reader.js";
+import type { PartialSheetRead, PartialSheetReader } from "./budget-sheet-reader.js";
 import { SHEET_PROMPT_VERSION } from "./sheet-first-extractor.js";
 
 export class PartialSheetFirstExtractor implements ISetupAreaExtractor {
@@ -26,8 +26,19 @@ export class PartialSheetFirstExtractor implements ISetupAreaExtractor {
     const rest = input.blocks.filter((b) => !sheet.documentIds.includes(b.documentId));
     const modelRun = rest.length > 0 ? await this.fallback.extract({ ...input, blocks: rest }) : null;
     if (modelRun && modelRun.ok) {
-      return { ok: true, value: { ...modelRun.value, fields: { ...modelRun.value.fields, ...sheet.fields } } };
+      return { ok: true, value: { ...modelRun.value, fields: combineFields(modelRun.value.fields, sheet) } };
     }
     return { ok: true, value: { fields: sheet.fields, partlyRead: modelRun !== null, promptVersion: SHEET_PROMPT_VERSION } };
   }
+}
+
+/** The sheet's fields over the model's: replaced, or (APPEND) list fields joined with the sheet's items first. */
+export function combineFields(model: Readonly<Record<string, unknown>>, sheet: PartialSheetRead): Record<string, unknown> {
+  if (sheet.combine !== "APPEND") return { ...model, ...sheet.fields };
+  const out: Record<string, unknown> = { ...model };
+  for (const [key, value] of Object.entries(sheet.fields)) {
+    const theirs = model[key];
+    out[key] = Array.isArray(value) && Array.isArray(theirs) ? [...value, ...theirs] : value;
+  }
+  return out;
 }

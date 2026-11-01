@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { SETUP_AREA_KEYS, type SetupAreaKey } from "@donordesk/domain";
 import { MAX_SETUP_DOCUMENTS } from "@donordesk/application";
-import { ApplySetupProposalSchema, EditSetupProposalSchema, SetupAreaSelectionSchema, SetupAssistSettingsSchema, SetupAreaKeySchema, StartSetupTextSchema } from "@donordesk/contracts";
+import { ApplySetupProposalSchema, EditSetupProposalSchema, SetSetupDocumentKindSchema, SetupAreaSelectionSchema, SetupAssistSettingsSchema, SetupAreaKeySchema, StartSetupTextSchema } from "@donordesk/contracts";
 
 /**
  * The AI project setup wizard's routes (Phase 36). The older `project-setup.ts` file is the setup checklist; these are
@@ -54,6 +54,25 @@ export async function registerProjectSetupWizardRoutes(app: FastifyInstance) {
     const id = (req.params as { id: string }).id;
     const area = SetupAreaKeySchema.parse((req.params as { area: string }).area);
     const r = await req.container.handlers.rerunSetupArea.handle({ tenant: req.tenant, requestId: req.id }, id, area);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // A person says what a document is; every part is then read again (Phase 37.6).
+  app.put("/v1/project-setup/proposals/:id/documents/:documentId/kind", async (req) => {
+    const { id, documentId } = req.params as { id: string; documentId: string };
+    const body = SetSetupDocumentKindSchema.parse(req.body);
+    const r = await req.container.handlers.setSetupDocumentKind.handle({ tenant: req.tenant, requestId: req.id }, id, documentId, body.kind);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // The passage a proposed item was read from, as the model saw it (Phase 37.6).
+  app.get("/v1/project-setup/proposals/:id/passages/:documentId/:block", async (req) => {
+    const { id, documentId, block } = req.params as { id: string; documentId: string; block: string };
+    const index = Number(block);
+    if (!Number.isInteger(index) || index < 0) return { ok: false };
+    const r = await req.container.handlers.getSetupSourcePassage.handle({ tenant: req.tenant, requestId: req.id }, id, documentId, index);
     if (!r.ok) throw r.error;
     return r.value;
   });

@@ -20,6 +20,11 @@ export interface SetupIndicatorImporter {
 export interface SetupPeriodCreator {
   handle(ctx: AuthenticatedContext, projectId: string, options?: { limit?: number }): R<{ created: unknown[]; failed: Array<{ error: string }> }>;
 }
+/** Whether the new project's folders are still being made; reporting periods cannot be created until they are. */
+export interface SetupWorkspaceProbe {
+  stillPreparing(ctx: AuthenticatedContext, projectId: string): Promise<boolean>;
+}
+
 export interface SetupWorkPlanImporter {
   handle(ctx: AuthenticatedContext, projectId: string, input: { apply: boolean; text: string; sourceName?: string }): R<{ created: number; skipped: number; warnings: string[]; problems: string[] }>;
 }

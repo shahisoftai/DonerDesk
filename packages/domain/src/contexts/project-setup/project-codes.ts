@@ -18,7 +18,14 @@ function unique(base: string, taken: Set<string>): string {
   return code;
 }
 
-export function proposeCodes(proposal: ProjectSetupProposal): ProjectSetupProposal {
+/**
+ * `CHOSEN` (apply) codes only what will be written; `LIVE` (end of reading) codes everything not rejected, so the review can
+ * already place indicators and activities under a result that the document left without a code.
+ */
+export type CodeScope = "CHOSEN" | "LIVE";
+
+export function proposeCodes(proposal: ProjectSetupProposal, scope: CodeScope = "CHOSEN"): ProjectSetupProposal {
+  const inScope = (item: Proposed<unknown>): boolean => (scope === "CHOSEN" ? willApplyItem(item) : item.status !== "REJECTED" && item.value !== null);
   const taken = new Set<string>();
   for (const item of [...proposal.logframe, ...proposal.indicators]) {
     const code = item.value?.code;
@@ -30,7 +37,7 @@ export function proposeCodes(proposal: ProjectSetupProposal): ProjectSetupPropos
   const lastAt: Array<LogframeNodeDef | undefined> = [];
 
   const logframe = proposal.logframe.map((item) => {
-    if (!willApplyItem(item)) return item;
+    if (!inScope(item)) return item;
     const node = item.value!;
     const rank = RANK[node.level];
     const parent = rank > 0 ? lastAt.slice(0, rank).reverse().find((n) => n !== undefined) : undefined;
@@ -48,7 +55,7 @@ export function proposeCodes(proposal: ProjectSetupProposal): ProjectSetupPropos
   });
 
   const indicators = proposal.indicators.map((item) => {
-    if (!willApplyItem(item) || item.value!.code) return item;
+    if (!inScope(item) || item.value!.code) return item;
     const value: IndicatorDef = { ...item.value!, code: unique(`IND${next("IND")}`, taken), codeSource: "GENERATED" };
     return { ...item, value };
   });

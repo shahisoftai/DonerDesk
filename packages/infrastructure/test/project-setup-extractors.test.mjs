@@ -89,7 +89,8 @@ test("a transient failure is retried once, never twice", async () => {
 test("end to end: the real orchestrator reads the fixture, grounds it, and drops what the document does not say", async () => {
   const llm = fakeLlm((input) => {
     const spec = SETUP_EXTRACTION_SPECS.find((s) => input.user.startsWith(s.instructions));
-    return okReply(REPLIES[spec.area]);
+    // A follow-up (structure) call that the fixture does not script answers nothing: the first read stands.
+    return okReply(spec ? REPLIES[spec.area] : {});
   });
   let stored = {
     id: "p1", tenantId: T, createdById: "u1", status: "EXTRACTING", sourceName: "blue.docx", sourceStorageKey: "k", sourceHash: "h", sourceLength: 1,

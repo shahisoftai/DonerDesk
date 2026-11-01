@@ -376,6 +376,8 @@ export const RULES: ReadonlyArray<{
   { method: "PATCH", route: /^\/v1\/project-setup\/proposals\/[^/]+$/, permission: "project.create" },
   { method: "POST", route: /^\/v1\/project-setup\/proposals\/[^/]+\/areas\/[^/]+\/rerun$/, permission: "project.create" },
   { method: "DELETE", route: /^\/v1\/project-setup\/proposals\/[^/]+$/, permission: "project.create" },
+  { method: "PUT", route: /^\/v1\/project-setup\/proposals\/[^/]+\/documents\/[^/]+\/kind$/, permission: "project.create" },
+  { method: "GET", route: /^\/v1\/project-setup\/proposals\/[^/]+\/passages\/[^/]+\/[^/]+$/, permission: "project.create" },
   // Apply re-checks each area's own permission inside the delegated handler (logframe, plan, places, finance, risks).
   { method: "POST", route: /^\/v1\/project-setup\/proposals\/[^/]+\/preview$/, permission: "project.create" },
   { method: "POST", route: /^\/v1\/project-setup\/proposals\/[^/]+\/apply$/, permission: "project.create" },

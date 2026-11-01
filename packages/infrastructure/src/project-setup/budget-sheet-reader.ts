@@ -10,6 +10,8 @@ export interface PartialSheetRead {
   fields: Record<string, unknown>;
   /** Documents this read fully accounts for: the model is not shown them again. */
   documentIds: ReadonlyArray<string>;
+  /** REPLACE (default): the sheet's fields replace the model's. APPEND: list fields are joined, the sheet's items first. */
+  combine?: "REPLACE" | "APPEND";
 }
 
 export type PartialSheetReader = (blocks: ReadonlyArray<SourceBlock>) => PartialSheetRead | null;
@@ -58,20 +60,63 @@ export const readBudgetSheet: PartialSheetReader = (blocks) => {
       const labelCell = cells.find((c) => c.trim() !== "");
       if (!labelCell || (/^ */.exec(labelCell)?.[0].length ?? 0) > 2) continue;
       const label = labelCell.trim();
-      if (/^(sub)?total\b/i.test(label) || /\b(total|subtotal)\b/i.test(label) && /\bcosts?\b/i.test(label)) continue;
       const amount = [...cells].reverse().map((c) => c.trim()).find((c) => NUMBER.test(c));
+      // The grand total is kept, as a TOTAL, to check the categories against; sub-totals are neither lines nor totals.
+      const grandTotal = /^total project costs?$/i.test(label) && !found.some((f) => f.value!.kind === "TOTAL");
+      if (!grandTotal && (/^(sub)?total\b/i.test(label) || /\b(total|subtotal)\b/i.test(label) && /\bcosts?\b/i.test(label))) continue;
       if (amount === undefined || Number(amount.replace(/,/g, "")) === 0) continue;
       const block = document.find((b) => b.text.includes(line.trim()));
       if (!block) continue;
       found.push({
-        value: { category: label, amount: amountText(amount), currency, logframeCode: null },
+        value: { category: label, amount: amountText(amount), currency, logframeCode: null, kind: grandTotal ? "TOTAL" : "LINE" },
         sourceQuote: line.trim().replace(/\s+/g, " ").slice(0, QUOTE_LIMIT),
         sourceRef: { documentId: block.documentId, block: block.index, ...(block.page !== undefined ? { page: block.page } : {}) },
         confidence: "HIGH",
         status: "PROPOSED",
       });
     }
-    budget = found;
+    budget = [...found, ...detailRows(document, currency)];
   }
   return consumed.length > 0 && budget && budget.length > 0 ? { fields: { budget }, documentIds: consumed } : null;
 };
+
+const DETAIL_TITLE = /^#\s*detailed budget\s*$/i;
+const DETAIL_REF = /^[A-Z]{1,2}\s?\.?\s?\d+(?:\s?\.\s?\d+)*$/;
+const DETAIL_GRAND_TOTAL = /^total estimated costs?$/i;
+
+/**
+ * The rows of a "Detailed Budget" sheet (Phase 37.2): every referenced row with a cost in the sheet's own Cost column, as a
+ * DETAIL (headings and rows of 0 are left out), and the sheet's grand total as a TOTAL, so `checkBudgetTotals` can say
+ * whether the rows add up. A row with no description of its own is named by its reference.
+ */
+function detailRows(document: ReadonlyArray<SourceBlock>, currency: string | null): Proposed<BudgetLineDef>[] {
+  const lines = document.map((b) => b.text).join("\n").split(/\r?\n/);
+  const start = lines.findIndex((l) => DETAIL_TITLE.test(l.trim()));
+  if (start < 0) return [];
+  const end = lines.findIndex((l, i) => i > start && l.startsWith("# "));
+  const sheet = lines.slice(start + 1, end < 0 ? undefined : end);
+  const header = sheet.findIndex((l) => l.split("\t").some((c) => c.trim().toLowerCase() === "cost"));
+  if (header < 0) return [];
+  const costAt = sheet[header]!.split("\t").findIndex((c) => c.trim().toLowerCase() === "cost");
+  const out: Proposed<BudgetLineDef>[] = [];
+  for (const line of sheet.slice(header + 1)) {
+    const cells = line.split("\t");
+    const ref = (cells[0] ?? "").trim();
+    const amount = (cells[costAt] ?? "").trim();
+    const label = (cells[1] ?? "").trim();
+    const isTotal = !ref && DETAIL_GRAND_TOTAL.test(label);
+    if (!isTotal && !DETAIL_REF.test(ref)) continue;
+    if (!NUMBER.test(amount) || Number(amount.replace(/,/g, "")) === 0) continue;
+    const block = document.find((b) => b.text.includes(line.trim()));
+    if (!block) continue;
+    const description = label || (cells[2] ?? "").trim() || ref;
+    out.push({
+      value: { category: description.slice(0, 200), amount: amountText(amount), currency, logframeCode: null, kind: isTotal ? "TOTAL" : "DETAIL", ref: isTotal ? null : ref },
+      sourceQuote: line.trim().replace(/\s+/g, " ").slice(0, 1000),
+      sourceRef: { documentId: block.documentId, block: block.index, ...(block.page !== undefined ? { page: block.page } : {}) },
+      confidence: "HIGH",
+      status: "PROPOSED",
+    });
+  }
+  return out;
+}

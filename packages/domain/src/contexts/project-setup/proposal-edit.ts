@@ -56,7 +56,7 @@ function setNode(root: unknown, segments: readonly string[], value: unknown): un
   return copy;
 }
 
-function mutate(
+export function mutateItem(
   proposal: ProjectSetupProposal,
   ref: SetupItemRef,
   change: (node: Proposed<unknown>) => Proposed<unknown> | string,
@@ -76,7 +76,7 @@ function mutate(
 
 /** Marks an item as applied. Accepting twice changes nothing. */
 export function acceptItem(proposal: ProjectSetupProposal, ref: SetupItemRef): ProposalEditResult {
-  return mutate(proposal, ref, (node) => (node.status === "ACCEPTED" ? node : { ...node, status: "ACCEPTED" }));
+  return mutateItem(proposal, ref, (node) => (node.status === "ACCEPTED" ? node : { ...node, status: "ACCEPTED" }));
 }
 
 /** Accepts several items of one area in one change; the first one that cannot be accepted stops it and nothing is changed. */
@@ -92,12 +92,12 @@ export function acceptMany(proposal: ProjectSetupProposal, area: SetupAreaKey, p
 
 /** Leaves an item out: it is counted, shown as rejected, and never applied. */
 export function rejectItem(proposal: ProjectSetupProposal, ref: SetupItemRef): ProposalEditResult {
-  return mutate(proposal, ref, (node) => (node.status === "REJECTED" ? node : { ...node, status: "REJECTED" }));
+  return mutateItem(proposal, ref, (node) => (node.status === "REJECTED" ? node : { ...node, status: "REJECTED" }));
 }
 
 /** Replaces the value with the person's own; the original quote stays for reference, the item becomes EDITED. */
 export function editValue(proposal: ProjectSetupProposal, ref: SetupItemRef, value: unknown): ProposalEditResult {
-  return mutate(proposal, ref, (node) => {
+  return mutateItem(proposal, ref, (node) => {
     if (value === undefined) return "A value is required: clear a value with an edit to null, not by sending nothing.";
     return { ...node, value, status: "EDITED" };
   });
@@ -105,9 +105,30 @@ export function editValue(proposal: ProjectSetupProposal, ref: SetupItemRef, val
 
 /** Fills a value the document did not state; refused when a value is already there (edit that one instead). */
 export function fillNotStated(proposal: ProjectSetupProposal, ref: SetupItemRef, value: unknown): ProposalEditResult {
-  return mutate(proposal, ref, (node) => {
+  return mutateItem(proposal, ref, (node) => {
     if (node.value !== null) return "This item already has a value; edit it instead of filling it.";
     if (value === undefined || value === null) return "Filling a \"Not stated\" item needs a value.";
     return { ...node, value, status: "EDITED" };
+  });
+}
+
+/** The proposal fields whose items hang from a result. */
+export const LINKABLE_FIELDS: readonly string[] = ["indicators", "plan", "budget"];
+
+/**
+ * A person places an item under a result (Phase 37.6), or takes it out (null). The result must be one of the proposed
+ * results that is not rejected; the choice is marked as theirs (`linkSource: "PERSON"`), so no later suggestion replaces it.
+ * The item keeps its quote and its status: choosing where it goes is not rewriting it.
+ */
+export function linkItem(proposal: ProjectSetupProposal, ref: SetupItemRef, logframeCode: unknown): ProposalEditResult {
+  const field = ref.path.split(".")[0] ?? "";
+  if (!LINKABLE_FIELDS.includes(field)) return { ok: false, reason: "Only indicators, planned activities and budget lines are placed under a result." };
+  if (logframeCode !== null && typeof logframeCode !== "string") return { ok: false, reason: "Choose a result, or none." };
+  if (logframeCode !== null && !proposal.logframe.some((n) => n.status !== "REJECTED" && n.value?.code === logframeCode)) {
+    return { ok: false, reason: "That result is not among the proposed results." };
+  }
+  return mutateItem(proposal, ref, (node) => {
+    if (!node.value || typeof node.value !== "object") return "This item has nothing to place.";
+    return { ...node, value: { ...(node.value as Record<string, unknown>), logframeCode, linkSource: "PERSON" } };
   });
 }

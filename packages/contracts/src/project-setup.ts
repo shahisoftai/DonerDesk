@@ -25,6 +25,14 @@ export const SETUP_PROBLEM_CODES = [
   "PERIOD_OUTSIDE_DATES",
   "ACTIVITY_OUTSIDE_DATES",
   "CURRENCY_NOT_STATED",
+  "LOGFRAME_SEVERAL_GOALS",
+  "LOGFRAME_LEVEL_MISSING",
+  "INDICATORS_NOT_PLACED",
+  "ACTIVITIES_NOT_PLACED",
+  "FACTS_DATES_FROM_PLAN",
+  "BUDGET_TOTAL_MISMATCH",
+  "COUNTRY_NOT_RECOGNISED",
+  "FACTS_READINGS_DIFFER",
 ] as const;
 export type SetupProblemCode = (typeof SETUP_PROBLEM_CODES)[number];
 
@@ -38,10 +46,11 @@ const SourceRefSchema = z.object({
 const proposedOf = <T extends z.ZodTypeAny>(value: T) =>
   z.object({
     value: value.nullable(),
-    sourceQuote: z.string().max(400).nullable(),
+    sourceQuote: z.string().max(1000).nullable(),
     sourceRef: SourceRefSchema.nullable(),
     confidence: z.enum(["HIGH", "MEDIUM", "LOW"]),
     status: z.enum(["PROPOSED", "ACCEPTED", "REJECTED", "EDITED"]),
+    alternatives: z.array(z.object({ value, sourceQuote: z.string().max(1000), sourceRef: SourceRefSchema.nullable() })).max(3).optional(),
   });
 
 const ProposedString = proposedOf(z.string().max(2000));
@@ -85,6 +94,7 @@ const IndicatorDefSchema = z.object({
   disaggregation: z.array(z.string().max(40)).max(10).nullable(),
   meansOfVerification: z.string().max(300).nullable(),
   codeSource: z.enum(["DOCUMENT", "GENERATED"]).optional(),
+  linkSource: z.enum(["DOCUMENT", "SUGGESTED", "PERSON"]).optional(),
 });
 
 const PeriodDefSchema = z.object({
@@ -100,6 +110,9 @@ const PlannedActivityDefSchema = z.object({
   end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable(),
   location: z.string().max(200).nullable(),
   lead: z.string().max(200).nullable(),
+  group: z.string().max(300).nullable().optional(),
+  planCode: z.string().max(40).nullable().optional(),
+  linkSource: z.enum(["DOCUMENT", "SUGGESTED", "PERSON"]).optional(),
 });
 
 const PlaceDefSchema = z.object({
@@ -121,6 +134,9 @@ const BudgetLineDefSchema = z.object({
   amount: z.string().max(100).nullable(),
   currency: z.string().max(10).nullable(),
   logframeCode: z.string().max(40).nullable(),
+  linkSource: z.enum(["DOCUMENT", "SUGGESTED", "PERSON"]).optional(),
+  kind: z.enum(["LINE", "DETAIL", "TOTAL"]).optional(),
+  ref: z.string().max(40).nullable().optional(),
 });
 
 const RiskDefSchema = z.object({
@@ -130,7 +146,22 @@ const RiskDefSchema = z.object({
   mitigation: z.string().max(1000).nullable(),
 });
 
+export const SETUP_DOCUMENT_KINDS = ["PROPOSAL", "LOGFRAME_MATRIX", "WORK_PLAN_GANTT", "BUDGET", "INDICATOR_TABLE", "OTHER"] as const;
+export const SetupDocumentKindSchema = z.enum(SETUP_DOCUMENT_KINDS);
+
+const SetupSourceInfoSchema = z.object({
+  documentId: z.string().max(64),
+  name: z.string().max(300),
+  sheets: z.array(z.object({ title: z.string().max(200).nullable(), kind: SetupDocumentKindSchema })).max(60),
+  override: SetupDocumentKindSchema.optional(),
+});
+
+/** A person's choice of what a document is; null puts the reading back. */
+export const SetSetupDocumentKindSchema = z.object({ kind: SetupDocumentKindSchema.nullable() });
+export type SetSetupDocumentKindInput = z.infer<typeof SetSetupDocumentKindSchema>;
+
 export const ProjectSetupProposalSchema = z.object({
+  sources: z.array(SetupSourceInfoSchema).max(10).optional(),
   facts: ProposedFactsSchema,
   logframe: z.array(proposedOf(LogframeNodeDefSchema)).max(300),
   indicators: z.array(proposedOf(IndicatorDefSchema)).max(300),
@@ -138,7 +169,7 @@ export const ProjectSetupProposalSchema = z.object({
   plan: z.array(proposedOf(PlannedActivityDefSchema)).max(400),
   places: z.array(proposedOf(PlaceDefSchema)).max(400),
   funding: z.array(proposedOf(FundingDefSchema)).max(100),
-  budget: z.array(proposedOf(BudgetLineDefSchema)).max(300),
+  budget: z.array(proposedOf(BudgetLineDefSchema)).max(600),
   risks: z.array(proposedOf(RiskDefSchema)).max(100),
 });
 export type ProjectSetupProposalDto = z.infer<typeof ProjectSetupProposalSchema>;
@@ -155,12 +186,12 @@ export type SetupProblemDto = z.infer<typeof SetupProblemSchema>;
 const ITEM_PATH = /^[a-z][a-zA-Z0-9_]{0,39}\.[a-zA-Z0-9_]{1,40}$/;
 const ITEM_PATH_MESSAGE = "An item path names the area's field and the item (facts.name, logframe.0).";
 
-/** One review edit: which area, which item, what to do with it. ACCEPT_MANY accepts a list of items in one save ("Accept all"). */
+/** One review edit: which area, which item, what to do with it. ACCEPT_MANY accepts a list of items in one save ("Accept all"); LINK places an item under the result whose code is `value` (null = none); CHOOSE takes alternative number `value`; MOVE gives a result `{ level, parentCode }`; ADD_INDICATOR adds the indicator in `value` (path "indicators.new"). */
 export const EditSetupProposalSchema = z.object({
   area: SetupAreaKeySchema,
   path: z.string().regex(ITEM_PATH, ITEM_PATH_MESSAGE).optional(),
   paths: z.array(z.string().regex(ITEM_PATH, ITEM_PATH_MESSAGE)).min(1).max(500).optional(),
-  op: z.enum(["ACCEPT", "REJECT", "EDIT", "FILL", "ACCEPT_MANY"]),
+  op: z.enum(["ACCEPT", "REJECT", "EDIT", "FILL", "ACCEPT_MANY", "LINK", "CHOOSE", "MOVE", "ADD_INDICATOR"]),
   value: z.unknown().optional(),
   /** The `updatedAt` the person was looking at; when someone else has saved since, the edit is refused. */
   expectedUpdatedAt: z.string().max(40).optional(),

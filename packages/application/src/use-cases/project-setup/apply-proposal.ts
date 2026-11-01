@@ -1,6 +1,6 @@
 import type { CreateProjectInput } from "@donordesk/contracts";
 import type { ApplyPlan, Result, SetupAreaKey } from "@donordesk/domain";
-import { DomainError, blockingProblems, checkProposal, planApply, proposeCodes } from "@donordesk/domain";
+import { DomainError, blockingProblems, checkProposal, linkProposal, planApply, proposeCodes } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import { driveFileIdsOf, type ISetupAreaApplier, type ISetupDocumentStore, type ISetupProposalRepository, type ISetupRunRepository } from "../../ports/project-setup.js";
@@ -71,7 +71,7 @@ export class ApplySetupProposalHandler {
     if (!APPLYABLE.has(found.value.status)) {
       return { ok: false, error: DomainError.conflict("This proposal cannot be applied now: it is still being read, is being applied, or is already applied.") };
     }
-    const proposal = proposeCodes(found.value.proposal);
+    const proposal = linkProposal(proposeCodes(found.value.proposal));
     const blocking = blockingProblems(checkProposal(proposal));
     if (blocking.length > 0) {
       return { ok: false, error: DomainError.validation(`Fix ${blocking.length} problem(s) in the review before applying.`) };

@@ -8,7 +8,14 @@ import type { SETUP_AREA_KEYS } from "@donordesk/contracts";
 export type AreaKey = (typeof SETUP_AREA_KEYS)[number];
 export type ProblemCode =
   | "FACTS_NAME_REQUIRED" | "LOGFRAME_CYCLE" | "LOGFRAME_PARENT_UNKNOWN" | "LOGFRAME_DUPLICATE_CODE" | "INDICATOR_DUPLICATE_CODE"
-  | "INDICATOR_LOGFRAME_UNKNOWN" | "END_BEFORE_START" | "PERIOD_OUTSIDE_DATES" | "ACTIVITY_OUTSIDE_DATES" | "CURRENCY_NOT_STATED";
+  | "INDICATOR_LOGFRAME_UNKNOWN" | "END_BEFORE_START" | "PERIOD_OUTSIDE_DATES" | "ACTIVITY_OUTSIDE_DATES" | "CURRENCY_NOT_STATED"
+  | "LOGFRAME_SEVERAL_GOALS" | "LOGFRAME_LEVEL_MISSING" | "INDICATORS_NOT_PLACED" | "ACTIVITIES_NOT_PLACED" | "FACTS_DATES_FROM_PLAN"
+  | "BUDGET_TOTAL_MISMATCH" | "COUNTRY_NOT_RECOGNISED" | "FACTS_READINGS_DIFFER";
+
+export type DocumentKindKey = "PROPOSAL" | "LOGFRAME_MATRIX" | "WORK_PLAN_GANTT" | "BUDGET" | "INDICATOR_TABLE" | "OTHER";
+export type IndicatorFieldKey = "title" | "code" | "result" | "type" | "unit" | "baseline" | "target" | "frequency" | "meansOfVerification";
+
+export type LeftOutReasonKey = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE";
 
 /** A number as the caller wrote it for the language (already formatted), or a plain number. */
 export type Count = number | string;
@@ -66,6 +73,26 @@ export interface SetupCopy {
     confidence: { HIGH: string; MEDIUM: string; LOW: string };
     fieldHeadings: Record<string, string>; factLabels: Record<string, string>; untitled: (field: string, n: number) => string;
     problems: Record<ProblemCode, (p: Record<string, string | number>) => string>;
+    /** Where an indicator, activity or budget line sits, and the control to change it. */
+    placedUnder: (result: string) => string; notPlaced: string; chooseResult: string; noResult: string;
+    linkSource: { DOCUMENT: string; SUGGESTED: string; PERSON: string };
+    underHeading: (heading: string) => string;
+    /** Items the reading found but could not find word for word in the documents. */
+    leftOutTitle: (n: Count) => string; leftOutLead: string; leftOutShown: (shown: Count, total: Count) => string;
+    leftOutReasons: Record<LeftOutReasonKey, string>;
+    /** Other readings of a fact, and where a quote sits in its document. */
+    otherReadings: string; useThis: string;
+    showInDocument: string; passageTitle: (document: string, sheet: string | null) => string; passageBefore: string; passageLoading: string; passageFailed: string; close: string;
+    budgetKinds: { DETAIL: string; TOTAL: string };
+    /** Moving a result in the tree. */
+    moveTitle: string; levelLabel: string; parentLabel: string; topLevel: string; moveButton: string;
+    /** An indicator typed by hand. */
+    addIndicatorOpen: string; addIndicatorTitle: string; addIndicatorLead: string; addIndicatorButton: string;
+    indicatorFields: Record<IndicatorFieldKey, string>; indicatorTypes: { NUMBER: string; PERCENTAGE: string; RATIO: string; CURRENCY: string }; anyType: string;
+    /** The work plan as a chart. */
+    ganttTitle: string; ganttSpan: (start: string, end: string) => string; ganttUndated: (n: Count) => string;
+    /** What each document was read as. */
+    documentsTitle: string; documentsLead: string; readAs: string; documentKinds: Record<DocumentKindKey, string>; kindChosen: string; useReading: string; rereadingNote: string;
   };
   create: {
     short: string; title: string; lead: string; checks: string[]; dos: string[]; donts: string[]; options: Option[]; tip: string;

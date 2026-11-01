@@ -540,3 +540,75 @@ test("accept many takes a whole list in one save, and a bad path changes nothing
   assert.ok(done.ok);
   assert.ok(w.proposalsById.get(id).proposal.logframe.every((i) => i.status === "ACCEPTED"));
 });
+
+// Phase 37.7: periods wait for the new project's folders, and say so plainly when they are still not ready.
+import { PeriodsApplier as PeriodsApplier37 } from "../dist/index.js";
+
+test("the periods step waits while the project's folders are being prepared, then creates the periods", async () => {
+  let checks = 0;
+  const probe = { stillPreparing: async () => ++checks < 3 };
+  const made = [];
+  const periods = { handle: async (_c, projectId) => { made.push(projectId); return { ok: true, value: { created: [1, 2], failed: [] } }; } };
+  const slept = [];
+  const applier = new PeriodsApplier37(periods, probe, { attempts: 5, delayMs: 7, sleep: async (ms) => { slept.push(ms); } });
+  const out = await applier.apply({ auth: {}, proposalId: "p" }, "proj");
+  assert.equal(out.ok, true);
+  assert.equal(out.value.created, 2);
+  assert.deepEqual(slept, [7, 7]);
+  assert.deepEqual(made, ["proj"]);
+  const never = new PeriodsApplier37(periods, { stillPreparing: async () => true }, { attempts: 2, delayMs: 1, sleep: async () => {} });
+  const refused = await never.apply({ auth: {}, proposalId: "p" }, "proj");
+  assert.equal(refused.ok, false);
+  assert.match(refused.error.message, /Finish creating/);
+  assert.deepEqual(made, ["proj"], "no period is attempted while the folders are not ready");
+});
+
+// Phase 37.6: what a document is, and the passage a quote came from.
+import { SetSetupDocumentKindHandler, GetSetupSourcePassageHandler } from "../dist/index.js";
+import { applyKindOverrides as applyKinds37, describeSources as describe37 } from "@donordesk/domain";
+
+const ctx37 = { tenant: { tenantId: { toString: () => "t1", equals: () => true }, userId: "u1", role: "ADMIN" }, requestId: "r" };
+
+test("describeSources lists each file's sheets and keeps a person's choice; applyKindOverrides reads the whole file as it", () => {
+  const blocks = [
+    { documentId: "source-1", index: 0, text: "a", docKind: "BUDGET", documentName: "Budget.xlsx", sheet: "Summary" },
+    { documentId: "source-1", index: 1, text: "b", docKind: "OTHER", documentName: "Budget.xlsx", sheet: "LOE" },
+    { documentId: "source-2", index: 2, text: "c", docKind: "PROPOSAL", documentName: "Part C.docx", sheet: null },
+  ];
+  const sources = describe37(blocks, [{ documentId: "source-2", name: "x", sheets: [], override: "LOGFRAME_MATRIX" }]);
+  assert.deepEqual(sources, [
+    { documentId: "source-1", name: "Budget.xlsx", sheets: [{ title: "Summary", kind: "BUDGET" }, { title: "LOE", kind: "OTHER" }] },
+    { documentId: "source-2", name: "Part C.docx", sheets: [{ title: null, kind: "PROPOSAL" }], override: "LOGFRAME_MATRIX" },
+  ]);
+  assert.deepEqual(applyKinds37(blocks, sources).map((b) => b.docKind), ["BUDGET", "OTHER", "LOGFRAME_MATRIX"]);
+});
+
+test("setting a document's kind saves the choice and reads every part again; another person or an unknown file is refused", async () => {
+  let stored = { id: "p", tenantId: ctx37.tenant.tenantId, createdById: "u1", status: "READY", proposal: { sources: [{ documentId: "source-1", name: "B.xlsx", sheets: [] }] }, updatedAt: new Date(1), expiresAt: new Date(Date.now() + 1e9) };
+  const proposals = { findById: async () => ({ ok: true, value: stored }), update: async (p) => { stored = p; return { ok: true, value: true }; } };
+  const reread = [];
+  const handler = new SetSetupDocumentKindHandler(proposals, { handle: async (_c, _id, area) => { reread.push(area); return { ok: true, value: { checked: 0, dropped: 0 } }; } }, { record: async () => {} }, { now: () => new Date() });
+  const r = await handler.handle(ctx37, "p", "source-1", "BUDGET");
+  assert.equal(r.ok, true);
+  assert.equal(stored.proposal.sources[0].override, "BUDGET");
+  assert.equal(reread.length, 8);
+  assert.equal((await handler.handle(ctx37, "p", "source-9", "BUDGET")).ok, false);
+  await handler.handle(ctx37, "p", "source-1", null);
+  assert.equal("override" in stored.proposal.sources[0], false, "null puts the reading back");
+  stored = { ...stored, createdById: "someone-else" };
+  assert.equal((await handler.handle(ctx37, "p", "source-1", "BUDGET")).ok, false);
+});
+
+test("the passage handler returns the quoted block and the one before it, with personal details removed", async () => {
+  const stored = { id: "p", tenantId: ctx37.tenant.tenantId, createdById: "u1", status: "READY", sourceName: "x", sourceStorageKey: "drive:a", proposal: {}, expiresAt: new Date(Date.now() + 1e9) };
+  const blocks = [
+    { documentId: "source-1", index: 0, text: "Contact jane@example.org for details.", documentName: "Part C.docx", sheet: null },
+    { documentId: "source-1", index: 1, text: "Output 1.1 Providers trained.", documentName: "Part C.docx", sheet: null },
+  ];
+  const handler = new GetSetupSourcePassageHandler({ findById: async () => ({ ok: true, value: stored }) }, { read: async () => ({ ok: true, value: blocks }) }, { now: () => new Date() });
+  const r = await handler.handle(ctx37, "p", "source-1", 1);
+  assert.equal(r.ok, true);
+  assert.equal(r.value.text, "Output 1.1 Providers trained.");
+  assert.ok(!r.value.before.includes("jane@example.org"));
+  assert.equal((await handler.handle(ctx37, "p", "source-1", 9)).ok, false);
+});

@@ -1,5 +1,5 @@
 import type { ApplyPlan, ProjectDraft, Result, SetupAreaKey, SetupProblem } from "@donordesk/domain";
-import { DomainError, blockingProblems, checkProposal, planApply, projectDraftFromProposal, proposeCodes } from "@donordesk/domain";
+import { DomainError, blockingProblems, checkProposal, linkProposal, planApply, projectDraftFromProposal, proposeCodes } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IClock } from "../../ports/core.js";
 import type { ISetupAreaApplier, ISetupProposalRepository } from "../../ports/project-setup.js";
@@ -32,7 +32,7 @@ export class PreviewSetupApplyHandler {
     if (!stored.value) return { ok: false, error: DomainError.notFound("Setup proposal", id) };
     const access = assertProposalAccess(ctx, stored.value, this.clock.now());
     if (!access.ok) return access;
-    const proposal = proposeCodes(stored.value.proposal);
+    const proposal = linkProposal(proposeCodes(stored.value.proposal));
     const plan = planApply(proposal, selected);
     const byArea = appliersByArea(this.appliers);
     const areas: SetupApplyPreviewView["areas"] = [];

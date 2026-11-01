@@ -1,7 +1,7 @@
 // A stand-in for the wizard's server actions: an in-memory proposal that the REAL domain rules edit, check and plan.
 import {
-  SETUP_AREAS, SETUP_AREA_KEYS, acceptItem, blockingProblems, checkProposal, editValue, fillNotStated, planApply, projectDraftFromProposal,
-  proposeCodes, rejectItem, type ProjectSetupProposal,
+  SETUP_AREAS, SETUP_AREA_KEYS, acceptItem, acceptMany, addIndicator, blockingProblems, checkProposal, chooseAlternative, editValue, fillNotStated, linkItem,
+  moveResult, planApply, projectDraftFromProposal, proposeCodes, rejectItem, type ProjectSetupProposal,
 } from "@donordesk/domain/contexts/project-setup/index.js";
 
 type Call = { name: string; args: unknown[] };
@@ -18,7 +18,11 @@ const none = () => ({ value: null, sourceQuote: null, sourceRef: null, confidenc
 /** What a finished reading found: a donor, three results, an indicator and a risk; no name or dates (to be written by hand). */
 export function fixture(withPlan: boolean): ProjectSetupProposal {
   return {
-    facts: { name: none(), code: none(), donor: item("European Union", "Funded by the European Union."), countries: none(), sectors: none(), startDate: none(), endDate: none(), currency: none(), summary: none() },
+    sources: [
+      { documentId: "source-1", name: "Proposal.docx", sheets: [{ title: null, kind: "PROPOSAL" }] },
+      { documentId: "source-2", name: "Budget.xlsx", sheets: [{ title: "Summary Budget", kind: "BUDGET" }, { title: "LOE", kind: "OTHER" }] },
+    ],
+    facts: { name: none(), code: none(), donor: { ...item("European Union", "Funded by the European Union."), alternatives: [{ value: "ECHO", sourceQuote: "Grant agreement with ECHO.", sourceRef: null }] }, countries: none(), sectors: none(), startDate: none(), endDate: none(), currency: none(), summary: none() },
     logframe: [
       item({ level: "GOAL", code: "1", title: "Improved health of households", description: null, parentCode: null }, "Goal 1: Improved health of households."),
       item({ level: "OUTCOME", code: "1.1", title: "Households use safe water", description: null, parentCode: "1" }, "Outcome 1.1: Households use safe water."),
@@ -75,7 +79,16 @@ export async function editSetupItemAction(id: string, input: { area: string; pat
   rec("edit", id, input);
   const s = h().store.get(id)!;
   const ref = { area: input.area as never, path: input.path };
-  const r = input.op === "ACCEPT" ? acceptItem(s.proposal, ref) : input.op === "REJECT" ? rejectItem(s.proposal, ref) : input.op === "FILL" ? fillNotStated(s.proposal, ref, input.value) : editValue(s.proposal, ref, input.value);
+  const op = input.op;
+  const r = op === "ACCEPT" ? acceptItem(s.proposal, ref)
+    : op === "ACCEPT_MANY" ? acceptMany(s.proposal, input.area as never, (input as { paths?: string[] }).paths ?? [])
+    : op === "REJECT" ? rejectItem(s.proposal, ref)
+    : op === "FILL" ? fillNotStated(s.proposal, ref, input.value)
+    : op === "LINK" ? linkItem(s.proposal, ref, input.value ?? null)
+    : op === "CHOOSE" ? chooseAlternative(s.proposal, ref, input.value)
+    : op === "MOVE" ? moveResult(s.proposal, ref, input.value)
+    : op === "ADD_INDICATOR" ? addIndicator(s.proposal, input.value, input.area as never)
+    : editValue(s.proposal, ref, input.value);
   if (!r.ok) return { ok: false as const, error: { kind: "validation" as const, message: r.reason, fields: {} } };
   s.proposal = r.proposal;
   s.updatedAt += 1;
@@ -90,6 +103,19 @@ export async function rerunSetupAreaAction(id: string, area: string) {
   s.usage = { ...s.usage, calls: s.usage.calls + 1, inputTokens: s.usage.inputTokens + 500 };
   s.updatedAt += 1;
   return ok({});
+}
+
+export async function setSetupDocumentKindAction(id: string, documentId: string, kind: string | null) {
+  rec("kind", id, documentId, kind);
+  const s = h().store.get(id)!;
+  s.proposal = { ...s.proposal, sources: (s.proposal.sources ?? []).map((d) => (d.documentId === documentId ? (kind ? { ...d, override: kind as never } : { documentId: d.documentId, name: d.name, sheets: d.sheets }) : d)) };
+  s.updatedAt += 1;
+  return ok({ rereading: [...SETUP_AREA_KEYS] });
+}
+
+export async function getSetupPassageAction(id: string, documentId: string, block: number) {
+  rec("passage", id, documentId, block);
+  return ok({ documentName: "Proposal.docx", sheet: null, text: "Introduction.\nGoal 1: Improved health of households.\nMore text.", before: "Title page" });
 }
 
 export async function previewSetupApplyAction(id: string, areas?: string[]) {

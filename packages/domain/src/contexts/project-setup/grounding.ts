@@ -81,11 +81,13 @@ function valueFigures(raw: string): { figures: string[]; dates: PlainDate[] } {
  * numbering, the logframe item an indicator or activity serves, a place's admin level. `checkProposal` checks the links
  * against the proposal itself; requiring them in the item's own quote would drop every correctly linked item.
  */
-export const NON_FIGURE_FIELDS: readonly string[] = ["parentCode", "logframeCode", "adminLevel"];
+export const NON_FIGURE_FIELDS: readonly string[] = ["parentCode", "logframeCode", "adminLevel", "group", "planCode", "linkSource", "kind", "ref"];
 
 function withoutLinks(value: unknown): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value ?? "";
-  return Object.fromEntries(Object.entries(value as Record<string, unknown>).filter(([k]) => !NON_FIGURE_FIELDS.includes(k)));
+  // A code the domain made (G1, OC1.2) is not the document's figure: only a code the document gave must be in its quote.
+  const generated = (value as Record<string, unknown>).codeSource === "GENERATED";
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).filter(([k]) => !NON_FIGURE_FIELDS.includes(k) && !(generated && k === "code")));
 }
 
 /**
@@ -131,7 +133,25 @@ export interface GroundedAreaPatch {
   /** Items the check looked at, and how many were dropped before anyone saw them. */
   checked: number;
   dropped: number;
+  /** What was left out and why (at most `LEFT_OUT_LIMIT`), so the review can show it instead of dropping it silently. */
+  leftOut: LeftOutItem[];
 }
+
+export interface LeftOutItem {
+  /** The proposal field the item was read for ("logframe", "facts.countries"). */
+  field: string;
+  /** The words the item claimed to be read from (cut to 200 characters), or its title when it had no quote. */
+  text: string;
+  reason: GroundingFailure;
+}
+
+export const LEFT_OUT_LIMIT = 40;
+
+const describeItem = (item: Proposed<unknown>): string => {
+  const value = item.value as Record<string, unknown> | string | null;
+  const title = typeof value === "string" ? value : value && typeof value === "object" ? (value.title ?? value.name ?? value.category ?? value.sourceName) : null;
+  return String(item.sourceQuote ?? title ?? "").slice(0, 200);
+};
 
 /**
  * Grounds every proposed item in one area's extracted patch against the document text and removes the ones that fail, so an
@@ -149,9 +169,10 @@ export function groundAreaPatch(
     return { error: `The ${def.labelKey} extraction returned fields it does not own (${outside.join(", ")}).` };
   }
   const counts = { checked: 0, dropped: 0 };
-  const ground = (value: unknown): unknown => {
+  const leftOut: LeftOutItem[] = [];
+  const ground = (value: unknown, field: string): unknown => {
     if (Array.isArray(value)) {
-      return value.map(ground).filter((v) => v !== DROPPED);
+      return value.map((v) => ground(v, field)).filter((v) => v !== DROPPED);
     }
     if (isProposedNode(value)) {
       if (value.value === null || value.value === undefined) return value;
@@ -159,14 +180,21 @@ export function groundAreaPatch(
       const outcome = groundProposed(value, sourceText);
       if (!outcome.grounded) {
         counts.dropped += 1;
+        if (leftOut.length < LEFT_OUT_LIMIT) leftOut.push({ field, text: describeItem(value), reason: outcome.reason });
         return DROPPED;
+      }
+      // A second reading is held to the same rule as the first: one that is not in the documents is simply not offered.
+      if (value.alternatives) {
+        const alternatives = value.alternatives.filter((a) => groundProposed({ ...a, confidence: "HIGH", status: "PROPOSED" }, sourceText).grounded);
+        const { alternatives: _dropped, ...rest } = value;
+        return alternatives.length > 0 ? { ...rest, alternatives } : rest;
       }
       return value;
     }
     if (value && typeof value === "object") {
       const out: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-        const next = ground(v);
+        const next = ground(v, `${field}.${k}`);
         // A named field (a fact) is never removed: an ungrounded one becomes "Not stated", so the record keeps its shape.
         out[k] = next === DROPPED ? NOT_STATED_ITEM() : next;
       }
@@ -175,8 +203,9 @@ export function groundAreaPatch(
     return value;
   };
   return {
-    fields: Object.fromEntries(Object.keys(fields).map((k) => [k, ground(fields[k])])),
+    fields: Object.fromEntries(Object.keys(fields).map((k) => [k, ground(fields[k], k)])),
     checked: counts.checked,
     dropped: counts.dropped,
+    leftOut,
   };
 }

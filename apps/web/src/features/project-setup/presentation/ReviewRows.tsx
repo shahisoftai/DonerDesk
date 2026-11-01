@@ -4,12 +4,19 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { editSetupItemAction, rerunSetupAreaAction } from "@/lib/actions/project-setup";
 import type { SetupProposalView } from "@/lib/server/schemas-project-setup";
-import { canAccept, canReject, countRows, editableText, rowsForField, showsConfidence, statusKey, type ReviewRow } from "../domain/review-state";
+import { canAccept, canReject, countRows, editableText, leftOutFor, resultOptions, rowsForField, showsConfidence, statusKey, type ReviewRow } from "../domain/review-state";
 import type { AreaKey } from "../domain/slide-deck";
 import type { ProblemCode } from "../copy";
+import { ganttLayout } from "../domain/plan-gantt";
+import { AddIndicatorForm } from "./AddIndicatorForm";
+import { LeftOutPanel } from "./LeftOutPanel";
+import { PassageButton } from "./PassageButton";
+import { PlanGantt } from "./PlanGantt";
+import { ResultMover } from "./ResultMover";
+import { ResultPicker } from "./ResultPicker";
 import { useSetupCopy } from "./useSetupCopy";
 
-type Op = "ACCEPT" | "REJECT" | "EDIT" | "FILL";
+type Op = "ACCEPT" | "REJECT" | "EDIT" | "FILL" | "LINK" | "CHOOSE" | "MOVE";
 
 /** Facts that take one plain value: the only items a person may write their own version of (lists are accepted or rejected). */
 const WRITABLE_FACTS = new Set(["name", "code", "donor", "currency", "summary", "startDate", "endDate"]);
@@ -40,12 +47,14 @@ export function ReviewRows({ view, area, readOnly }: { view: SetupProposalView; 
   const [confirmAgain, setConfirmAgain] = useState(false);
   const [pending, startTransition] = useTransition();
   const waiting = rows.filter((r) => r.status === "PROPOSED" && canAccept(r));
+  const results = resultOptions(proposal.proposal);
+  const leftOut = leftOutFor(view.runs, area);
 
   /** A row's name in the person's language: a fact by its label, an untitled item by its field and place, else its own title. */
   const labelOf = (row: ReviewRow) =>
     row.factKey ? rv.factLabels[row.factKey] ?? row.label : row.untitled ? rv.untitled(rv.fieldHeadings[row.field] ?? row.field, row.index + 1) : row.label;
 
-  async function send(row: ReviewRow, op: Op, value?: string): Promise<boolean> {
+  async function send(row: ReviewRow, op: Op, value?: unknown): Promise<boolean> {
     const r = await editSetupItemAction(proposal.id, { area, path: row.path, op, value, expectedUpdatedAt: version.current });
     if (!r.ok) {
       setMessage(r.error.kind === "conflict" ? c.common.stale : r.error.message || c.common.unknownError);
@@ -54,7 +63,7 @@ export function ReviewRows({ view, area, readOnly }: { view: SetupProposalView; 
     version.current = r.value.updatedAt;
     return true;
   }
-  const act = (row: ReviewRow, op: Op, value?: string) => {
+  const act = (row: ReviewRow, op: Op, value?: unknown) => {
     setMessage(null);
     startTransition(async () => { if (await send(row, op, value)) { setEditing(null); router.refresh(); } });
   };
@@ -68,6 +77,18 @@ export function ReviewRows({ view, area, readOnly }: { view: SetupProposalView; 
       router.refresh();
     });
   };
+  const addIndicator = async (value: Record<string, string | null>): Promise<boolean> => {
+    setMessage(null);
+    const r = await editSetupItemAction(proposal.id, { area, path: "indicators.new", op: "ADD_INDICATOR", value, expectedUpdatedAt: version.current });
+    if (!r.ok) {
+      setMessage(r.error.kind === "conflict" ? c.common.stale : r.error.message || c.common.unknownError);
+      return false;
+    }
+    version.current = r.value.updatedAt;
+    router.refresh();
+    return true;
+  };
+  const gantt = area === "PLAN" ? ganttLayout(proposal.proposal.plan.map((item, i) => ({ path: `plan.${i}`, title: item.value?.title ?? "", start: item.value?.start ?? null, end: item.value?.end ?? null, status: item.status }))) : null;
   const readAgain = () => {
     setMessage(null);
     setConfirmAgain(false);
@@ -95,11 +116,18 @@ export function ReviewRows({ view, area, readOnly }: { view: SetupProposalView; 
         )}
       </div>
       {confirmAgain && <p role="status" className="text-xs text-amber-800 dark:text-amber-200">{rv.readAgainNote}</p>}
+      <LeftOutPanel items={leftOut.items} total={leftOut.total} />
+      {gantt && <PlanGantt layout={gantt} />}
+      {area === "INDICATORS" && !readOnly && <AddIndicatorForm results={results} disabled={pending} onAdd={addIndicator} />}
       {message && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-400/30 dark:bg-red-400/10 dark:text-red-100">{message}</p>}
 
       {sections.map((section) => (
         <section key={section.field} aria-label={rv.fieldHeadings[section.field]} className="space-y-3">
           {sections.length > 1 && <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{rv.fieldHeadings[section.field]}</h3>}
+          {view.problems.filter((p) => p.path === section.field).map((p) => {
+            const say = rv.problems[p.code as ProblemCode];
+            return <p key={p.code} role="status" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs font-medium text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100">{say ? say(p.params ?? {}) : p.message}</p>;
+          })}
           {section.rows.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-600 dark:border-white/15 dark:text-slate-300">{rv.noItems}</p>}
           <ul className="space-y-3">
             {section.rows.map((row) => {
@@ -108,7 +136,8 @@ export function ReviewRows({ view, area, readOnly }: { view: SetupProposalView; 
                 <li key={row.path} className={`rounded-xl border p-4 transition ${TONE[key]}`}>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="font-medium text-slate-900 dark:text-slate-100">
-                      {row.level && rv.levels[row.level] ? <span className="tag me-2">{rv.levels[row.level]}</span> : null}{labelOf(row)}
+                      {row.level && rv.levels[row.level] ? <span className="tag me-2">{rv.levels[row.level]}</span> : null}
+                      {row.budgetKind ? <span className="tag tag-slate me-2">{rv.budgetKinds[row.budgetKind]}</span> : null}{labelOf(row)}
                     </p>
                     <p className="flex items-center gap-2 text-xs">
                       <span className={`tag ${TAG[key]}`}>{rv.status[key]}</span>
@@ -116,10 +145,32 @@ export function ReviewRows({ view, area, readOnly }: { view: SetupProposalView; 
                     </p>
                   </div>
                   <p className={`mt-1 text-sm ${row.summary === "Not stated" ? "italic text-slate-500" : "text-slate-800 dark:text-slate-100"}`}>{row.summary === "Not stated" ? rv.notStated : row.summary}</p>
+                  {row.group && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{rv.underHeading(row.group)}</p>}
+                  {row.link && row.status !== "REJECTED" && (
+                    <ResultPicker id={`link-${row.path}`} link={row.link} options={results} disabled={readOnly || pending} onChoose={(code) => act(row, "LINK", code)} />
+                  )}
                   {row.quote && (
                     <blockquote className="mt-2 border-s-2 border-brand-300 ps-3 text-xs text-slate-600 dark:text-slate-300">
                       <span className="font-medium">{rv.from}: </span>“{row.quote}”
+                      {row.sourceRef && <PassageButton proposalId={proposal.id} sourceRef={row.sourceRef} quote={row.quote} />}
                     </blockquote>
+                  )}
+                  {row.alternatives && row.status !== "REJECTED" && (
+                    <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50/60 p-2 text-xs dark:border-amber-400/30 dark:bg-amber-400/5">
+                      <p className="font-medium text-amber-900 dark:text-amber-100">{rv.otherReadings}</p>
+                      <ul className="mt-1 space-y-1">
+                        {row.alternatives.map((alt, i) => (
+                          <li key={`${row.path}-alt-${i}`} className="flex flex-wrap items-baseline gap-2">
+                            <span className="font-medium text-slate-900 dark:text-slate-100">{alt.summary}</span>
+                            <span className="text-slate-600 dark:text-slate-300">“{alt.quote}”</span>
+                            {!readOnly && <button type="button" className="btn-secondary py-0.5 text-xs" disabled={pending} onClick={() => act(row, "CHOOSE", i)}>{rv.useThis}</button>}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {row.code && row.level && !readOnly && row.status !== "REJECTED" && (
+                    <ResultMover id={`move-${row.path}`} code={row.code} level={row.level} parentCode={row.parentCode ?? null} options={results} disabled={pending} onMove={(move) => act(row, "MOVE", move)} />
                   )}
                   {row.problems.map((p) => {
                     const say = rv.problems[p.code as ProblemCode];
