@@ -36,6 +36,8 @@ export interface ProjectSetupModuleDeps {
   hasNoDailyCap?: (tenantId: TenantId) => Promise<boolean>;
   /** How many areas of one document are read at the same time. */
   concurrency?: number;
+  /** The longest one AI call may take, in milliseconds (default 90 000). A call that is slower is retried once, then the part fails. */
+  callTimeoutMs?: number;
 }
 
 /** The project setup wizard (Phase 36) as one module: its repositories, reader, LLM facade, orchestrator and handlers. */
@@ -45,13 +47,13 @@ export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
   const reader = new StoredSetupDocumentReader(deps.documents, deps.parseUploadedFile);
   const llm: ISetupLlm = new TenantSetupLlm(deps.llmFor, deps.onProviderError);
   const extractors = deps.extractors ?? withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm));
-  const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, undefined, deps.concurrency);
+  const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.concurrency);
   const handlers = {
     startSetupExtraction: new StartSetupExtractionHandler(deps.orgs, proposals, runs, deps.documents, llm, orchestrator, deps.audits, deps.clock, deps.ids, deps.runInBackground, deps.maxRunsPerDay, deps.hasNoDailyCap),
     getSetupProposal: new GetSetupProposalHandler(proposals, runs, deps.clock),
     listSetupProposals: new ListSetupProposalsHandler(proposals, deps.clock),
     editSetupProposal: new EditSetupProposalHandler(proposals, deps.audits, deps.clock),
-    rerunSetupArea: new RerunSetupAreaHandler(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids),
+    rerunSetupArea: new RerunSetupAreaHandler(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.runInBackground),
     discardSetupProposal: new DiscardSetupProposalHandler(proposals, runs, deps.storage, deps.documents, deps.audits, deps.clock),
     updateSetupAssistSettings: new UpdateSetupAssistSettingsHandler(deps.orgs, deps.audits),
   };

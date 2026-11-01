@@ -501,3 +501,27 @@ test("if the second document cannot be saved, the first is taken back out and no
   assert.equal(w.proposalsById.size, 0);
   assert.equal(w.tasks.length, 0);
 });
+
+test("a background re-read answers at once, is not started twice, and a part stuck reading is shown as failed", async () => {
+  const w = world({ logframeFails: true });
+  const started = await w.start.handle(creator, { fileName: "d.txt", fileType: "text/plain", buffer: Buffer.from(DOCUMENT) });
+  await w.flush();
+  const id = started.value.proposalId;
+  const reader = { read: async () => ok([{ documentId: "source", index: 0, text: DOCUMENT }]) };
+  const later = [];
+  const reruns = new RerunSetupAreaHandler(w.proposals, w.runs, reader, [factsExtractor(), logframeExtractor(false)], w.audit, w.clock, { generate: () => `rr-${Math.random().toString(36).slice(2, 8)}` }, undefined, undefined, (task) => { later.push(task); });
+  const first = await reruns.handle(creator, id, "LOGFRAME");
+  assert.ok(first.ok, "answers before the model has been asked");
+  assert.equal(w.proposalsById.get(id).proposal.logframe.length, 0, "nothing is read yet");
+  const second = await reruns.handle(creator, id, "LOGFRAME");
+  assert.equal(second.ok, false, "the same part is not read twice at once");
+  await later.shift()();
+  assert.equal(w.proposalsById.get(id).proposal.logframe.length, 1);
+
+  // A run left RUNNING long ago (a restart, a lost request) is reported as failed so the screen stops waiting.
+  const stuck = { id: "stuck", tenantId: w.proposalsById.get(id).tenantId, proposalId: id, kind: "EXTRACT", area: "PLAN", status: "RUNNING", detail: {}, startedAt: new Date(w.clock.now().getTime() - 7 * 60_000) };
+  await w.runs.start(stuck);
+  const view = await w.gets.handle(creator, id);
+  assert.equal(view.value.runs.find((r) => r.id === "stuck").status, "FAILED");
+  assert.match(view.value.runs.find((r) => r.id === "stuck").detail.reason, /Read it again/);
+});

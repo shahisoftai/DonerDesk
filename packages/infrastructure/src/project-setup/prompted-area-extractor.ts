@@ -28,6 +28,8 @@ export class PromptedAreaExtractor implements ISetupAreaExtractor {
       maxTokens: spec.maxTokens ?? input.maxTokens,
       timeoutMs: input.timeoutMs,
       keywords: spec.keywords,
+      budgetChars: spec.budgetChars,
+      headBlocks: spec.headBlocks,
       buildPrompt: (blocksText, prior) => ({
         system: SETUP_SYSTEM_RULES,
         user: [spec.instructions, spec.context ? spec.context(prior) : "", BLOCKS_HEADER, blocksText].filter(Boolean).join("\n\n"),

@@ -2,8 +2,11 @@
  * Decorator (Phase 36.2 follow-up): tries an area's deterministic sheet reader first and falls back to the model extractor
  * when the document is not a sheet. The wrapped extractor is unchanged, so the contract holds for both paths.
  */
+import type { PartialSheetReader } from "./budget-sheet-reader.js";
 import type { DomainError, Result, SetupAreaKey, SourceBlock } from "@donordesk/domain";
 import type { ExtractedArea, ISetupAreaExtractor, SetupExtractInput } from "@donordesk/application";
+import { readBudgetSheet } from "./budget-sheet-reader.js";
+import { PartialSheetFirstExtractor } from "./partial-sheet-first-extractor.js";
 import { logframeSheetReader, workPlanSheetReader, type SheetReader } from "./sheet-readers.js";
 
 export const SHEET_PROMPT_VERSION = "sheet-reader-v1";
@@ -32,8 +35,15 @@ export const SHEET_READERS: Readonly<Partial<Record<SetupAreaKey, SheetReader>>>
   PLAN: workPlanSheetReader,
 };
 
+/** Areas a sheet answers only in part: the sheet gives its fields, the model reads the rest of the documents. */
+export const PARTIAL_SHEET_READERS: Readonly<Partial<Record<SetupAreaKey, PartialSheetReader>>> = {
+  FUNDING_BUDGET: readBudgetSheet,
+};
+
 export const withSheetShortcuts = (extractors: ReadonlyArray<ISetupAreaExtractor>): ISetupAreaExtractor[] =>
   extractors.map((e) => {
     const read = SHEET_READERS[e.area];
-    return read ? new SheetFirstExtractor(read, e) : e;
+    if (read) return new SheetFirstExtractor(read, e);
+    const partial = PARTIAL_SHEET_READERS[e.area];
+    return partial ? new PartialSheetFirstExtractor(partial, e) : e;
   });

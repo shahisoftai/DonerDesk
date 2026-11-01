@@ -12,6 +12,7 @@ const read = (raw: Record<string, unknown>): RiskDef | null => {
 export const RISKS_SPEC: AreaExtractionSpec = {
   area: "RISKS",
   promptVersion: "setup-risks-v1",
+  budgetChars: 16_000,
   keywords: ["risk", "assumption", "mitigat", "likelihood", "impact", "contingency", "threat"],
   instructions: [
     "Extract the risks and assumptions. Answer:",

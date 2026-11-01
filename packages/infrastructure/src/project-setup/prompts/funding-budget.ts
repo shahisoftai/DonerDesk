@@ -24,6 +24,7 @@ const readBudget = (raw: Record<string, unknown>): BudgetLineDef | null => {
 export const FUNDING_BUDGET_SPEC: AreaExtractionSpec = {
   area: "FUNDING_BUDGET",
   promptVersion: "setup-funding-budget-v1",
+  budgetChars: 20_000,
   keywords: ["budget", "funding", "grant", "contribution", "co-financ", "cost", "usd", "eur", "gbp", "total", "personnel", "equipment", "travel"],
   instructions: [
     "Extract who funds the project and the budget lines. Answer:",

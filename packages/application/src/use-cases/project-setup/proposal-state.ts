@@ -3,6 +3,9 @@ import { DomainError, Permissions } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { StoredSetupProposal } from "../../ports/project-setup.js";
 
+/** A part still "reading" after this long has stopped (a restart, a lost request); it is shown as failed so it can be read again. */
+export const STALE_AREA_RUN_MS = 6 * 60_000;
+
 const notStated = <T>(value: T | null = null): Proposed<T> => ({
   value,
   sourceQuote: null,

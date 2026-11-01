@@ -53,6 +53,7 @@ export interface SetupCopy {
     state: { WAITING: string; RUNNING: string; FINISHED: string; FAILED: string; NOT_READ: string };
     reading: (done: Count, total: Count) => string; found: (n: Count) => string; partlyRead: string;
     readAgain: string; readingAgain: string;
+    partlyReadEmpty: string; elapsed: (time: string) => string; stoppedHint: string;
     usage: (requests: string, tokens: string) => string; usageCost: (cost: string) => string; usageUnpriced: string;
   };
   areas: Record<AreaKey, Guidance>;

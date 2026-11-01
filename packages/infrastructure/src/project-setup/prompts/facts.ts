@@ -29,6 +29,8 @@ function merge(a: Record<string, unknown>, b: Record<string, unknown>): Record<s
 export const FACTS_SPEC: AreaExtractionSpec = {
   area: "FACTS",
   promptVersion: "setup-facts-v1",
+  headBlocks: 3,
+  budgetChars: 14_000,
   keywords: ["project", "title", "donor", "funded", "duration", "start", "end", "country", "sector", "budget", "currency", "summary"],
   instructions: [
     "Extract the project's basic facts. Answer:",

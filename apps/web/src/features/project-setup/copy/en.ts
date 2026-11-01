@@ -90,7 +90,7 @@ export const en: SetupCopy = {
   reading: {
     short: "Reading",
     title: "DonorDesk is reading your documents",
-    lead: "This takes a minute or two for Word or PDF files. You can stay here; the page updates by itself.",
+    lead: "A few minutes for most documents; long files and spreadsheets take longer. You can stay here; the page updates by itself.",
     tips: [
       "Every suggestion keeps the exact words it was read from, so you can check it.",
       "If the documents do not say something, DonorDesk leaves it empty instead of guessing.",
@@ -119,6 +119,9 @@ export const en: SetupCopy = {
     reading: (done, total) => `Reading… ${done} of ${total} parts`,
     found: (n) => `${n} found`,
     partlyRead: "The documents were long; only part was read.",
+    partlyReadEmpty: "Only part of the documents was read and nothing was found here. Read it again, or fill it in yourself.",
+    elapsed: (time) => `Reading for ${time}`,
+    stoppedHint: "If a part stays on Reading for more than a few minutes, it stops by itself and can be read again.",
     readAgain: "Read again",
     readingAgain: "Reading…",
     usage: (requests, tokens) => `Reading used ${requests} requests to the AI service and about ${tokens} tokens.`,

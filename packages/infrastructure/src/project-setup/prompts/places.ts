@@ -25,13 +25,15 @@ const read = (raw: Record<string, unknown>): PlaceDef | null => {
 
 export const PLACES_SPEC: AreaExtractionSpec = {
   area: "PLACES",
-  promptVersion: "setup-places-v1",
+  promptVersion: "setup-places-v2",
+  budgetChars: 16_000,
   keywords: ["district", "province", "region", "state", "county", "village", "site", "location", "camp", "municipality", "target area", "governorate"],
   instructions: [
     "Extract the places where the project works. Answer:",
     '{"places": [{"name": "...", "adminLevel": 0, "parentName": "...", "latitude": null, "longitude": null, "quote": "...", "block": N, "confidence": "..."}]}',
     "adminLevel: 0 country, 1 province/region/state, 2 district, 3 sub-district, 4 site or village, only when the document makes the level clear.",
     "parentName is the larger area the document places it in. Coordinates only when the document writes them.",
+    "List only places where THIS project works. A place named only for a wider programme, the donor's other projects, a headquarters, a referral hospital outside the project area or as background is not a project place; leave it out.",
   ].join("\n"),
   context: (prior) => {
     const locations = Array.isArray(prior.plan)

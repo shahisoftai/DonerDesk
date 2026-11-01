@@ -1,4 +1,5 @@
 import { DomainError, ok, type Result, type SourceBlock } from "@donordesk/domain";
+import { compactSheetText, dropNearDuplicates } from "./document-prep.js";
 import { driveFileIdsOf, type ISetupDocumentStore, type ISourceDocumentReader, type ParseUploadedFileHandler, type SetupSourceRef } from "@donordesk/application";
 
 const BLOCK_CHARS = 1600;
@@ -17,7 +18,7 @@ export class StoredSetupDocumentReader implements ISourceDocumentReader {
     if (fileIds.length === 0) {
       return { ok: false, error: DomainError.validation("This document was added before documents were kept in your Google Drive. Add it again.") };
     }
-    const blocks: SourceBlock[] = [];
+    const parsedDocuments: { n: number; name: string; text: string }[] = [];
     for (const [n, fileId] of fileIds.entries()) {
       const file = await this.documents.read(source.tenantId, fileId);
       if (!file.ok) {
@@ -26,8 +27,14 @@ export class StoredSetupDocumentReader implements ISourceDocumentReader {
       const name = file.value.name || source.fileName;
       const parsed = await this.parse.handle({ buffer: file.value.bytes, fileName: name, fileType: file.value.mimeType || guessContentType(name) });
       if (!parsed.ok) return { ok: false, error: DomainError.validation(fileIds.length > 1 ? `${name}: ${parsed.error.message}` : parsed.error.message) };
+      parsedDocuments.push({ n, name, text: compactSheetText(parsed.value.text) });
+    }
+    // A draft and its revision say the same thing: read it once.
+    const { kept } = dropNearDuplicates(parsedDocuments);
+    const blocks: SourceBlock[] = [];
+    for (const document of kept) {
       // Blocks are numbered across the whole set, so a block number points at exactly one place; the document id says which file.
-      for (const block of toBlocks(parsed.value.text)) blocks.push({ ...block, documentId: `source-${n + 1}`, index: blocks.length });
+      for (const block of toBlocks(document.text)) blocks.push({ ...block, documentId: `source-${document.n + 1}`, index: blocks.length });
     }
     return ok(blocks);
   }

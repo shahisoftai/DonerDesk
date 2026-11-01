@@ -19,4 +19,8 @@ export interface AreaExtractionSpec {
   parse: ChunkParser;
   merge: ChunkMerger;
   maxTokens?: number;
+  /** How much of the document this area reads, in characters (default: SELECTION_BUDGET_CHARS). */
+  budgetChars?: number;
+  /** Blocks always read from the start of each document (the cover and summary pages). */
+  headBlocks?: number;
 }

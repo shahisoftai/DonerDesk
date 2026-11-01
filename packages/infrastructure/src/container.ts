@@ -740,6 +740,8 @@ export async function disconnectAllPooledClients(): Promise<void> {
   await Promise.all(clients.map((c) => c.$disconnect()));
 }
 
+let aiReporterFlagLogged = false;
+
 export function createContainer(options?: { tenantId?: string; useAdminConnection?: boolean }): Container {
   const baseUrl = options?.useAdminConnection ? process.env.DATABASE_ADMIN_URL : process.env.DATABASE_URL;
   const tenantUrl = baseUrl && options?.tenantId ? withTenantSession(baseUrl, options.tenantId) : baseUrl;
@@ -963,14 +965,16 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // Resolved once per process so it is visible in startup logs without
   // waiting for the first /v1/reporting-periods/:id/generate-draft request.
   const aiReporterFlagEnabled = isTruthyFlag(process.env.AI_REPORTER_ENABLED);
-  if (aiReporterFlagEnabled) {
+  // A tenant container is built per request: say it once per process, not on every request.
+  if (aiReporterFlagEnabled && !aiReporterFlagLogged) {
+    aiReporterFlagLogged = true;
     logger?.info("AI Reporter flag is enabled; the dedicated Python worker will be used for report drafting", {
       url: process.env.AI_REPORTER_URL ?? "http://127.0.0.1:8092 (default)",
       httpTimeoutMs: process.env.AI_REPORTER_HTTP_TIMEOUT_MS ?? `derived from AI_REPORTER_DRAFT_TIMEOUT_MS=${process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? "90000 (default)"} (2x + 30s)`,
       writerContractVersion: process.env.AI_REPORTER_CONTRACT_VERSION ?? "4 (default)",
       internalTokenSet: Boolean(process.env.INTERNAL_TOKEN),
     });
-  } else if (process.env.AI_REPORTER_ENABLED !== undefined) {
+  } else if (!aiReporterFlagEnabled && process.env.AI_REPORTER_ENABLED !== undefined) {
     logger?.warn("AI_REPORTER_ENABLED is set but unrecognised; treating as disabled. Accepted values: 1, true, on, yes, enabled (case-insensitive).", {
       raw: process.env.AI_REPORTER_ENABLED,
     });
@@ -1309,6 +1313,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       return !!entitlement?.ok && entitlement.value.planCode === "ENTERPRISE";
     },
     concurrency: Math.min(8, Math.max(1, Number.parseInt(process.env.SETUP_ASSIST_CONCURRENCY ?? "3", 10) || 3)),
+    callTimeoutMs: Math.min(240_000, Math.max(15_000, Number.parseInt(process.env.SETUP_ASSIST_CALL_TIMEOUT_MS ?? "90000", 10) || 90_000)),
   });
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
   const planDelivery = new PlanDeliveryService(plannedActivities, planRevisions);

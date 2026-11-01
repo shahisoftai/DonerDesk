@@ -70,7 +70,8 @@ async function readWithExcelJs(buffer: Buffer): Promise<string> {
       row.eachCell((cell) => {
         let value = "";
         try { value = cell.text ?? ""; } catch { value = ""; }
-        cells.push(value);
+        // A line break inside a cell would split one row into two and shift every column after it.
+        cells.push(value.replace(/\s*\r?\n\s*/g, " "));
       });
       parts.push(cells.join("\t"));
     });
@@ -117,7 +118,7 @@ async function readXlsxXml(buffer: Buffer): Promise<string> {
         const ref = /\br="([^"]*)"/.exec(attrs)?.[1];
         const at = ref ? columnIndex(ref) : cells.length;
         while (cells.length < at) cells.push("");
-        cells[at] = value;
+        cells[at] = value.replace(/\s*\r?\n\s*/g, " ");
       }
       if (cells.some((v) => v !== "")) parts.push(cells.join("\t"));
     }
