@@ -37,6 +37,10 @@ REMOTE_BACKUPS="${REMOTE_BACKUPS:-${REMOTE_BASE}/backups}"
 mkdir -p "${WORK}"
 ROLLBACK_ON_FAIL="${ROLLBACK_ON_FAIL:-1}"
 
+# Per-phase timing, so a slow deploy says where the time went.
+T_ALL=$(date +%s); T_LAST=${T_ALL}
+phase() { local now; now=$(date +%s); echo "    [time] $1: $((now-T_LAST))s (total $((now-T_ALL))s)"; T_LAST=${now}; }
+
 echo "==> Release: ${RELEASE_ID}  scope=${SCOPE}  host=contabo"
 
 # --------------------------------------------------------------------------- #
@@ -102,6 +106,8 @@ if [[ -d "${ROOT}/apps/api/node_modules/@sentry" ]]; then
 fi
 
 
+phase "preflight"
+
 # --------------------------------------------------------------------------- #
 # 1. Typecheck
 # --------------------------------------------------------------------------- #
@@ -112,6 +118,8 @@ if [[ "${SKIP_TYPECHECK}" != "1" ]]; then
   mkdir -p "${WORK}"
   pnpm -r typecheck 2>&1 | tee "${TC_LOG}" | tail -5
 fi
+
+phase "typecheck"
 
 # --------------------------------------------------------------------------- #
 # 2. Build
@@ -129,6 +137,8 @@ if [[ "${SKIP_BUILD}" != "1" ]]; then
   echo "==> Local build (scope=${SCOPE})"
   BUILD_LOG="${WORK}/build.log"
   # pipefail so a failed build stops the deploy instead of being hidden by tee/tail.
+  # The type-check has its own step (or the caller has just run it, see SKIP_TYPECHECK): `next build` repeating it costs minutes.
+  export DD_SKIP_NEXT_TYPECHECK=1
   if ! (set -o pipefail; pnpm -r "${BUILD_FILTER[@]}" build 2>&1 | tee "${BUILD_LOG}" | tail -3); then
     echo "ERROR: build failed — see ${BUILD_LOG}" >&2
     tail -40 "${BUILD_LOG}" >&2
@@ -152,6 +162,8 @@ if [[ "${SCOPE}" == "auto" ]]; then
   fi
   echo "  auto-detected SCOPE=${SCOPE}"
 fi
+
+phase "build"
 
 # --------------------------------------------------------------------------- #
 # 3. Stage artifacts
@@ -245,6 +257,8 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
 fi
 echo "    stage: $(($(date +%s)-STAGE_START))s"
 
+phase "stage"
+
 # --------------------------------------------------------------------------- #
 # 4. Snapshot previous deploy (full app, includes node_modules)
 # --------------------------------------------------------------------------- #
@@ -279,11 +293,31 @@ else
 fi
 echo "    snapshot: $(($(date +%s)-SNAPSHOT_START))s"
 
+phase "snapshot"
+
 # --------------------------------------------------------------------------- #
 # 5. Stream-extract into /opt/donordesk/app/
 # --------------------------------------------------------------------------- #
 
 XFER_START=$(date +%s)
+
+# What the host already has: the pnpm store, the generated Prisma client and the api's symlink farm only change when the
+# lockfile or the schema does. Markers (written after a deploy that verified) let an unchanged one be skipped.
+# FORCE_FULL=1 ignores them.
+MARKER_DIR="${REMOTE_BASE}/shared/.deploy-markers"
+LOCK_SHA="$(sha256sum "${ROOT}/pnpm-lock.yaml" 2>/dev/null | cut -c1-16)"
+SCHEMA_SHA="$(sha256sum "${ROOT}/packages/infrastructure/prisma/schema.prisma" 2>/dev/null | cut -c1-16)"
+REMOTE_LOCK=""; REMOTE_SCHEMA=""
+if [[ "${FORCE_FULL:-0}" != "1" && -n "${LOCK_SHA}" ]]; then
+  MARKERS="$(${SSH} "for f in lock schema; do printf '%s=%s\n' \$f \"\$(cat ${MARKER_DIR}/\$f 2>/dev/null)\"; done" 2>/dev/null || true)"
+  REMOTE_LOCK="$(sed -n 's/^lock=//p' <<<"${MARKERS}" | head -1)"
+  REMOTE_SCHEMA="$(sed -n 's/^schema=//p' <<<"${MARKERS}" | head -1)"
+fi
+DEPS_UNCHANGED=0
+if [[ -n "${LOCK_SHA}" && "${LOCK_SHA}" == "${REMOTE_LOCK}" ]]; then DEPS_UNCHANGED=1; fi
+SCHEMA_UNCHANGED=0
+if [[ "${DEPS_UNCHANGED}" == "1" && -n "${SCHEMA_SHA}" && "${SCHEMA_SHA}" == "${REMOTE_SCHEMA}" ]]; then SCHEMA_UNCHANGED=1; fi
+echo "  host markers: deps unchanged=${DEPS_UNCHANGED} schema unchanged=${SCHEMA_UNCHANGED}"
 
 if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   # The web tar's root IS the Next.js standalone output (it contains
@@ -315,7 +349,10 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
 
   # Stage B: ship pnpm store contents. The api tar ships apps/api/node_modules
   # with only symlinks; the real package files live under node_modules/.pnpm/.
-  if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
+  # The store is content-addressed and only changes with the lockfile: skipped when the host already has this lockfile.
+  if [[ "${DEPS_UNCHANGED}" == "1" ]]; then
+    echo "==> pnpm store unchanged (lockfile marker): not shipped"
+  else
     echo "==> Ship pnpm store -> ${REMOTE_APP}/node_modules/.pnpm/"
     ${SSH} "mkdir -p ${REMOTE_APP}/node_modules"
     rsync -a --delete --no-owner --no-group -e "ssh -o ConnectTimeout=15" \
@@ -331,20 +368,25 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
   # on any model operation that uses the newer field. Re-running prisma
   # generate here, against the just-shipped schema.prisma, guarantees the
   # running client matches the schema the api code expects.
-  echo "==> Regenerate Prisma client against shipped schema"
-  ${SSH} "
-    set -eu
-    if [ ! -f ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma ]; then
-      echo 'ERROR: ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma missing on host' >&2
-      exit 1
-    fi
-    cd ${REMOTE_APP}/packages/infrastructure
-    npx -y prisma@5.22.0 generate --schema prisma/schema.prisma \
-      >/tmp/dd-prisma-generate.log 2>&1 \
-      || (echo 'prisma generate FAILED — see /tmp/dd-prisma-generate.log on host' >&2; cat /tmp/dd-prisma-generate.log >&2; exit 1)
-    chown -R donordesk:donordesk ${REMOTE_APP}/node_modules/.pnpm
-    echo '  prisma generate: ok'
-  "
+  if [[ "${SCHEMA_UNCHANGED}" == "1" ]]; then
+    echo "==> Prisma client unchanged (schema and lockfile markers): not regenerated"
+  else
+    echo "==> Regenerate Prisma client against shipped schema"
+    ${SSH} "
+      set -eu
+      if [ ! -f ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma ]; then
+        echo 'ERROR: ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma missing on host' >&2
+        exit 1
+      fi
+      cd ${REMOTE_APP}/packages/infrastructure
+      npx -y prisma@5.22.0 generate --schema prisma/schema.prisma \
+        >/tmp/dd-prisma-generate.log 2>&1 \
+        || (echo 'prisma generate FAILED — see /tmp/dd-prisma-generate.log on host' >&2; cat /tmp/dd-prisma-generate.log >&2; exit 1)
+      chown -R donordesk:donordesk ${REMOTE_APP}/node_modules/.pnpm
+      echo '  prisma generate: ok'
+    "
+
+  fi
 
   # Stage C: ship the api tree. apps/api/dist + apps/api/node_modules
   # (symlinks) + apps/api/src land at /opt/donordesk/app/apps/api/. The
@@ -368,7 +410,7 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     # drift between the local build and the host store). Non-silent so a
     # genuine failure surfaces instead of silently shipping a broken api.
     cd ${REMOTE_APP}/apps/api
-    if [ -f package.json ]; then
+    if [ -f package.json ] && [ '${DEPS_UNCHANGED}' != '1' ]; then
       echo '  regenerating api symlink farm (pnpm install)'
       CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile --prefer-offline >/tmp/dd-api-pnpm-install.log 2>&1 \\
         || { echo '  WARNING: api pnpm install failed — deps may not resolve' >&2; cat /tmp/dd-api-pnpm-install.log >&2; }
@@ -406,6 +448,8 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
 fi
 echo "    xfer+extract: $(($(date +%s)-XFER_START))s"
 
+phase "transfer"
+
 # --------------------------------------------------------------------------- #
 # 6. Write release.json, restart, verify
 # --------------------------------------------------------------------------- #
@@ -427,6 +471,8 @@ esac
 echo "==> Restart ${SERVICES}"
 ${SSH} "systemctl restart ${SERVICES}"
 echo "    restart: $(($(date +%s)-ACTIVATE_START))s"
+
+phase "restart"
 
 # --------------------------------------------------------------------------- #
 # 7. Verify
@@ -521,6 +567,11 @@ if ! ${SSH} "
   exit 1
 fi
 echo "    verify: $(($(date +%s)-VERIFY_START))s"
+if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]] && [[ -n "${LOCK_SHA}" ]]; then
+  ${SSH} "mkdir -p ${MARKER_DIR} && echo ${LOCK_SHA} > ${MARKER_DIR}/lock && echo ${SCHEMA_SHA} > ${MARKER_DIR}/schema" || echo "  (could not write the deploy markers; the next deploy will do the full steps)" >&2
+fi
+
+phase "verify"
 
 # --------------------------------------------------------------------------- #
 # 8. Cleanup
@@ -530,4 +581,5 @@ if [[ -z "${KEEP_WORK:-}" ]]; then
   rm -rf "${WORK}"
 fi
 
+phase "cleanup"
 echo "==> Done. releaseId=${RELEASE_ID}"
