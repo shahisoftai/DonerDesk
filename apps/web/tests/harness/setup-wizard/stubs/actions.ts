@@ -19,8 +19,8 @@ const none = () => ({ value: null, sourceQuote: null, sourceRef: null, confidenc
 export function fixture(withPlan: boolean): ProjectSetupProposal {
   return {
     sources: [
-      { documentId: "source-1", name: "Proposal.docx", sheets: [{ title: null, kind: "PROPOSAL" }] },
-      { documentId: "source-2", name: "Budget.xlsx", sheets: [{ title: "Summary Budget", kind: "BUDGET" }, { title: "LOE", kind: "OTHER" }] },
+      { documentId: "source-1", name: "Proposal.docx", sheets: [{ title: null, kind: "PROPOSAL" }], feeds: ["FACTS", "LOGFRAME"] },
+      { documentId: "source-2", name: "Budget.xlsx", sheets: [{ title: "Summary Budget", kind: "BUDGET" }, { title: "LOE", kind: "OTHER" }], feeds: ["FACTS", "FUNDING_BUDGET"] },
     ],
     facts: { name: none(), code: none(), donor: { ...item("European Union", "Funded by the European Union."), alternatives: [{ value: "ECHO", sourceQuote: "Grant agreement with ECHO.", sourceRef: null }] }, countries: none(), sectors: none(), startDate: none(), endDate: none(), currency: none(), summary: none() },
     logframe: [

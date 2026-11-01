@@ -37,6 +37,7 @@ export function DocumentsPanel({ view, readOnly }: { view: SetupProposalView; re
             <p className="text-xs text-slate-600 dark:text-slate-300">
               {rv.readAs}: {s.override ? `${rv.documentKinds[s.override]} (${rv.kindChosen})` : [...new Set(s.sheets.map((sh) => rv.documentKinds[sh.kind]))].join(", ")}
             </p>
+            {s.feeds && s.feeds.length > 0 && <p className="text-xs text-slate-600 dark:text-slate-300">{rv.feedsLabel}: {s.feeds.map((a) => c.areas[a].short).join(", ")}</p>}
             {!readOnly && (
               <>
                 <label htmlFor={`kind-${s.documentId}`} className="sr-only">{rv.readAs}</label>

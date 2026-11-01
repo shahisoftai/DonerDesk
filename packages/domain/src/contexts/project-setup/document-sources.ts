@@ -4,6 +4,7 @@
  * every block of that file before any area reads it again. Pure.
  */
 import type { SetupDocumentKind } from "./document-kind.js";
+import type { SetupAreaKey } from "./proposal-areas.js";
 import type { SourceBlock } from "./source-document.js";
 
 export interface SetupSourceInfo {
@@ -12,10 +13,12 @@ export interface SetupSourceInfo {
   sheets: Array<{ title: string | null; kind: SetupDocumentKind }>;
   /** The kind a person chose for the whole file; absent = the reading stands. */
   override?: SetupDocumentKind;
+  /** The parts this file feeds (by its kind or its headings), so the person sees what each file contributes. */
+  feeds?: SetupAreaKey[];
 }
 
 /** One entry per file, in reading order, keeping each file's override from `previous`. */
-export function describeSources(blocks: ReadonlyArray<SourceBlock>, previous: ReadonlyArray<SetupSourceInfo> = []): SetupSourceInfo[] {
+export function describeSources(blocks: ReadonlyArray<SourceBlock>, previous: ReadonlyArray<SetupSourceInfo> = [], feeds?: ReadonlyMap<string, SetupAreaKey[]>): SetupSourceInfo[] {
   const out = new Map<string, SetupSourceInfo>();
   for (const block of blocks) {
     const entry = out.get(block.documentId) ?? { documentId: block.documentId, name: block.documentName ?? block.documentId, sheets: [] };
@@ -25,7 +28,8 @@ export function describeSources(blocks: ReadonlyArray<SourceBlock>, previous: Re
   }
   return [...out.values()].map((entry) => {
     const override = previous.find((p) => p.documentId === entry.documentId)?.override;
-    return override ? { ...entry, override } : entry;
+    const fed = feeds?.get(entry.documentId);
+    return { ...entry, ...(override ? { override } : {}), ...(fed ? { feeds: fed } : {}) };
   });
 }
 

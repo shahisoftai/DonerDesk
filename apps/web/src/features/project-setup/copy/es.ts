@@ -246,7 +246,7 @@ export const es: SetupCopy = {
     ganttTitle: "El plan de trabajo en una línea de tiempo", ganttSpan: (a, b) => `Del ${a} al ${b}`, ganttUndated: (n) => `Actividades sin fechas (no dibujadas): ${n}`,
     documentsTitle: "Sus documentos", documentsLead: "Cada documento se lee para las partes que contiene. Si se leyó como otro tipo, cámbielo y se volverán a leer todas las partes.", readAs: "Leído como",
     documentKinds: { PROPOSAL: "Propuesta o narrativa", LOGFRAME_MATRIX: "Marco lógico", WORK_PLAN_GANTT: "Plan de trabajo o Gantt", BUDGET: "Presupuesto", INDICATOR_TABLE: "Tabla de indicadores", OTHER: "Otra cosa" },
-    kindChosen: "su elección", useReading: "Volver a la lectura", rereadingNote: "Se están volviendo a leer todas las partes con su elección. Sus decisiones en esas partes se reemplazarán.",
+    kindChosen: "su elección", useReading: "Volver a la lectura", rereadingNote: "Se están volviendo a leer todas las partes con su elección. Sus decisiones en esas partes se reemplazarán.", feedsLabel: "Alimenta estos pasos",
   },
   create: {
     short: "Crear", title: "Revise y cree su proyecto", lead: "Una última mirada. Elija qué crear, complete los detalles del proyecto y pulse Crear.",

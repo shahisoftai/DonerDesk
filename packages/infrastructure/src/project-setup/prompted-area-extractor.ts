@@ -18,11 +18,23 @@ export class PromptedAreaExtractor implements ISetupAreaExtractor {
   readonly area: SetupAreaKey;
 
   private readonly preferBlock: ((block: SourceBlock) => boolean) | undefined;
+  private readonly matcher: RegExp | null;
 
   constructor(private readonly spec: AreaExtractionSpec, private readonly llm: ISetupLlm) {
     this.area = spec.area;
     const matcher = compileSectionTitles(spec.sectionTitles ?? []);
+    this.matcher = matcher;
     this.preferBlock = matcher ? (block) => sectionMatches(block.section, matcher) : undefined;
+  }
+
+  feeds(block: SourceBlock): boolean {
+    const spec = this.spec;
+    const inKind = !block.docKind || block.docKind === "OTHER" || !spec.readsFrom || spec.readsFrom.includes(block.docKind);
+    // A part that always reads the opening blocks of every file (the facts) is fed by every file it may read.
+    if ((spec.headBlocks ?? 0) > 0 && inKind) return true;
+    if (sectionMatches(block.section, this.matcher)) return !block.docKind || block.docKind === "OTHER" || !spec.readsFrom || spec.readsFrom.includes(block.docKind);
+    // A specialised file (budget, Gantt, logframe or indicator table) feeds every part that reads its kind; a narrative file only through its headings.
+    return !!block.docKind && block.docKind !== "PROPOSAL" && block.docKind !== "OTHER" && !!spec.readsFrom?.includes(block.docKind);
   }
 
   async extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>> {

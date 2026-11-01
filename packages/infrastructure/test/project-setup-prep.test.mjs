@@ -477,3 +477,25 @@ test("facts are read from labelled cells and lines exactly; a different model re
   assert.equal(out.code.value, "AMAN.01");
   assert.equal(out.countries.alternatives, undefined, "the same reading is not offered twice");
 });
+
+import { PromptedAreaExtractor } from "../dist/project-setup/prompted-area-extractor.js";
+import { SheetFirstExtractor, withSheetShortcuts } from "../dist/project-setup/sheet-first-extractor.js";
+import { describeSources } from "@donordesk/domain";
+
+test("what a file feeds: a specialised file feeds the parts that read its kind, a narrative file only through its headings, and decorators say the same", () => {
+  const llm = { available: async () => true, completeJson: async () => ({ ok: true, value: null }) };
+  const extractors = withSheetShortcuts(SETUP_EXTRACTION_SPECS.map((spec) => new PromptedAreaExtractor(spec, llm)));
+  const blocks = [
+    { documentId: "d1", index: 0, docKind: "PROPOSAL", section: "C.3 Goals and Objectives > Objectives:", text: "x" },
+    { documentId: "d1", index: 1, docKind: "PROPOSAL", section: "C.7 Monitoring and Evaluation", text: "x" },
+    { documentId: "d2", index: 2, docKind: "BUDGET", section: "Summary Budget", text: "x", documentName: "Budget.xlsx", sheet: "Summary Budget" },
+    { documentId: "d3", index: 3, docKind: "WORK_PLAN_GANTT", section: "Sheet1", text: "x" },
+  ];
+  const feeds = new Map();
+  for (const e of extractors) for (const id of new Set(blocks.filter((b) => e.feeds?.(b)).map((b) => b.documentId))) feeds.set(id, [...(feeds.get(id) ?? []), e.area]);
+  assert.deepEqual(feeds.get("d1").sort(), ["FACTS", "INDICATORS", "LOGFRAME"].sort());
+  assert.deepEqual(feeds.get("d2").sort(), ["FACTS", "FUNDING_BUDGET"], "the facts read the opening of every file");
+  assert.deepEqual(feeds.get("d3").sort(), ["FACTS", "PLAN"]);
+  const sources = describeSources(blocks, [], feeds);
+  assert.deepEqual(sources.map((s) => s.feeds?.length), [3, 2, 2]);
+});

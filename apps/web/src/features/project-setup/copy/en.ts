@@ -262,7 +262,7 @@ export const en: SetupCopy = {
     ganttTitle: "The work plan on a timeline", ganttSpan: (a, b) => `From ${a} to ${b}`, ganttUndated: (n) => `Activities without dates (not drawn): ${n}`,
     documentsTitle: "Your documents", documentsLead: "Each document is read for the parts it holds. If one was read as the wrong kind, change it and every part is read again.", readAs: "Read as",
     documentKinds: { PROPOSAL: "Proposal or narrative", LOGFRAME_MATRIX: "Logframe table", WORK_PLAN_GANTT: "Work plan or Gantt chart", BUDGET: "Budget", INDICATOR_TABLE: "Indicator table", OTHER: "Something else" },
-    kindChosen: "your choice", useReading: "Use the reading", rereadingNote: "Every part is being read again with your choice. Your decisions in these parts will be replaced.",
+    kindChosen: "your choice", useReading: "Use the reading", rereadingNote: "Every part is being read again with your choice. Your decisions in these parts will be replaced.", feedsLabel: "Feeds these steps",
   },
   create: {
     short: "Create",

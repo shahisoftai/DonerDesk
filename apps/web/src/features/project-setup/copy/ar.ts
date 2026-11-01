@@ -246,7 +246,7 @@ export const ar: SetupCopy = {
     ganttTitle: "خطة العمل على خط زمني", ganttSpan: (a, b) => `من ${a} إلى ${b}`, ganttUndated: (n) => `أنشطة بلا تواريخ (غير مرسومة): ${n}`,
     documentsTitle: "وثائقك", documentsLead: "تُقرأ كل وثيقة للأجزاء التي تحتويها. إذا قُرئت على أنها نوع خاطئ، غيّره وستُقرأ كل الأجزاء مجدداً.", readAs: "قُرئت على أنها",
     documentKinds: { PROPOSAL: "مقترح أو سرد", LOGFRAME_MATRIX: "جدول الإطار المنطقي", WORK_PLAN_GANTT: "خطة عمل أو مخطط غانت", BUDGET: "ميزانية", INDICATOR_TABLE: "جدول مؤشرات", OTHER: "شيء آخر" },
-    kindChosen: "اختيارك", useReading: "عُد إلى القراءة", rereadingNote: "تُعاد قراءة كل الأجزاء باختيارك. ستُستبدل قراراتك في هذه الأجزاء.",
+    kindChosen: "اختيارك", useReading: "عُد إلى القراءة", rereadingNote: "تُعاد قراءة كل الأجزاء باختيارك. ستُستبدل قراراتك في هذه الأجزاء.", feedsLabel: "يغذّي هذه الخطوات",
   },
   create: {
     short: "الإنشاء", title: "راجع مشروعك وأنشئه", lead: "نظرة أخيرة. اختر ما سيُنشأ، وأكمل تفاصيل المشروع، ثم اضغط إنشاء.",

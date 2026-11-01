@@ -154,6 +154,7 @@ const SetupSourceInfoSchema = z.object({
   name: z.string().max(300),
   sheets: z.array(z.object({ title: z.string().max(200).nullable(), kind: SetupDocumentKindSchema })).max(60),
   override: SetupDocumentKindSchema.optional(),
+  feeds: z.array(SetupAreaKeySchema).max(8).optional(),
 });
 
 /** A person's choice of what a document is; null puts the reading back. */

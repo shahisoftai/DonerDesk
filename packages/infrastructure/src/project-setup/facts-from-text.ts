@@ -38,6 +38,10 @@ export class FactsFromTextExtractor implements ISetupAreaExtractor {
     this.area = inner.area;
   }
 
+  feeds(block: SourceBlock): boolean {
+    return this.inner.feeds?.(block) ?? false;
+  }
+
   async extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>> {
     const run = await this.inner.extract(input);
     if (!run.ok) return run;

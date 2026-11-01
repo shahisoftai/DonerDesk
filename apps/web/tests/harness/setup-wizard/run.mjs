@@ -147,7 +147,8 @@ await check("another reading of a fact can be chosen, and the documents panel sa
   assert.deepEqual((await calls(page, "edit")).at(-1).args[1].op, "CHOOSE");
   await page.getByText("Your documents").click();
   const panel = await text(page.locator("details", { has: page.getByText("Your documents") }));
-  assert.match(panel, /Budget\.xlsx Read as: Budget, Something else/);
+  assert.match(panel, /Budget\.xlsx Read as: Budget, Something else Feeds these steps: Facts, Funding/);
+  assert.match(panel, /Proposal\.docx Read as: Proposal or narrative Feeds these steps: Facts, Results/);
   await page.locator("#kind-source-2").selectOption("WORK_PLAN_GANTT");
   await page.getByText(/Every part is being read again/).waitFor();
   assert.deepEqual((await calls(page, "kind"))[0].args.slice(1), ["source-2", "WORK_PLAN_GANTT"]);

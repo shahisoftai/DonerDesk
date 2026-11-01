@@ -160,6 +160,8 @@ export interface ISetupAreaExtractor {
    * Optional: an extractor that always needs the model leaves it out. Used to keep going when the AI is rate limited.
    */
   canReadWithoutModel?(blocks: ReadonlyArray<SourceBlock>): boolean;
+  /** True when this block belongs to the area by what it is (a budget sheet, a Gantt chart) or by its heading; used to show what each file feeds. */
+  feeds?(block: SourceBlock): boolean;
   extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>>;
 }
 

@@ -1,4 +1,4 @@
-import type { DomainError, Result, TenantId } from "@donordesk/domain";
+import type { DomainError, Result, SourceBlock, TenantId } from "@donordesk/domain";
 import { SETUP_AREA_APPLY_ORDER, SETUP_AREAS, checkProposal, extractionLayers, groundAreaPatch, applyKindOverrides, describeSources, joinBlocks, linkProposal, offerPlaceCountries, offerPlanDates, proposeCodes, redactForLlm, type SetupAreaKey } from "@donordesk/domain";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ISourceDocumentReader, ISetupAreaExtractor, ISetupProposalRepository, ISetupRunRepository, SetupUsage, StoredSetupProposal } from "../../ports/project-setup.js";
@@ -127,7 +127,7 @@ export class SetupExtractionOrchestrator {
     for (const layer of extractionLayers(ordered)) await runPool(layer, this.concurrency, readArea);
     const { checked, dropped, okAreas, failedAreas, model, promptVersion, usage } = state;
     // Every area is read: items the documents did not tie to a result are placed by their wording where one result clearly fits.
-    const data = { ...offerPlaceCountries(offerPlanDates(linkProposal(proposeCodes(state.data, "LIVE")))), sources: describeSources(redacted, proposal.proposal.sources) };
+    const data = { ...offerPlaceCountries(offerPlanDates(linkProposal(proposeCodes(state.data, "LIVE")))), sources: describeSources(redacted, proposal.proposal.sources, this.feedsByDocument(redacted)) };
 
     const problems = checkProposal(data);
     const status = okAreas > 0 ? "READY" : "FAILED";
@@ -158,5 +158,15 @@ export class SetupExtractionOrchestrator {
       entityType: "project_setup_proposal", entityId: proposal.id,
       newValue: JSON.stringify({ reason }),
     });
+  }
+
+  /** For each file, the parts whose extractors take it (by its kind or its headings). */
+  private feedsByDocument(blocks: ReadonlyArray<SourceBlock>): Map<string, SetupAreaKey[]> {
+    const out = new Map<string, SetupAreaKey[]>();
+    for (const e of this.extractors) {
+      const documents = new Set(blocks.filter((b) => e.feeds?.(b)).map((b) => b.documentId));
+      for (const id of documents) out.set(id, [...(out.get(id) ?? []), e.area]);
+    }
+    return out;
   }
 }

@@ -24,6 +24,10 @@ export class SheetFirstExtractor implements ISetupAreaExtractor {
     return this.read(blocks) !== null;
   }
 
+  feeds(block: SourceBlock): boolean {
+    return this.fallback.feeds?.(block) ?? false;
+  }
+
   async extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>> {
     const fields = this.read(input.blocks);
     if (fields) return { ok: true, value: { fields, promptVersion: SHEET_PROMPT_VERSION } };

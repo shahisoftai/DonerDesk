@@ -20,6 +20,10 @@ export class PartialSheetFirstExtractor implements ISetupAreaExtractor {
     return false;
   }
 
+  feeds(block: SourceBlock): boolean {
+    return this.fallback.feeds?.(block) ?? false;
+  }
+
   async extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>> {
     const sheet = this.read(input.blocks);
     if (!sheet) return this.fallback.extract(input);

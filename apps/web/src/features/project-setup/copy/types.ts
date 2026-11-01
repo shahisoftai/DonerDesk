@@ -92,7 +92,7 @@ export interface SetupCopy {
     /** The work plan as a chart. */
     ganttTitle: string; ganttSpan: (start: string, end: string) => string; ganttUndated: (n: Count) => string;
     /** What each document was read as. */
-    documentsTitle: string; documentsLead: string; readAs: string; documentKinds: Record<DocumentKindKey, string>; kindChosen: string; useReading: string; rereadingNote: string;
+    documentsTitle: string; documentsLead: string; readAs: string; documentKinds: Record<DocumentKindKey, string>; kindChosen: string; useReading: string; rereadingNote: string; feedsLabel: string;
   };
   create: {
     short: string; title: string; lead: string; checks: string[]; dos: string[]; donts: string[]; options: Option[]; tip: string;
