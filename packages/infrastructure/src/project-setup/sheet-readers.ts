@@ -81,6 +81,27 @@ const readWorkPlan: SheetReader = (blocks) => {
   return plan.length > 0 ? { plan } : null;
 };
 
+/**
+ * A Gantt chart (document-prep turns its "x" marks into `[scheduled 2023-07-22 to 2023-07-28 (July Wk -4)]`): each scheduled
+ * row is a planned activity with its code, title and dates, read exactly. A row without dates is not an activity here (a task
+ * heading, or a chart whose months carry no year), and the activity code is the chart's own, never a logframe code.
+ */
+const GANTT_ROW = /^([^\t]*)\t([^\t]{3,})(?:\t[^\t]*)*\t\[scheduled (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2}) \(/;
+
+const readGanttWorkPlan: SheetReader = (blocks) => {
+  const plan: Proposed<PlannedActivityDef>[] = [];
+  for (const block of blocks) {
+    for (const line of block.text.split("\n")) {
+      const row = GANTT_ROW.exec(line);
+      if (!row) continue;
+      const [, code, title, start, end] = row;
+      const value: PlannedActivityDef = { title: title!.trim(), logframeCode: null, start: start!, end: end!, location: null, lead: null };
+      plan.push(proposed(value, { line: `${code ? `${code} ` : ""}${line.slice(line.indexOf("\t") + 1).replace(/\t+/g, " ")}`.trim().slice(0, QUOTE_LIMIT), block }));
+    }
+  }
+  return plan.length >= 3 ? { plan } : null;
+};
+
 /** A setup may use several documents; a sheet is read from the first one that is a sheet, never from lines mixed across files. */
 const perDocument = (read: SheetReader): SheetReader => (blocks) => {
   const byDocument = new Map<string, SourceBlock[]>();
@@ -93,4 +114,4 @@ const perDocument = (read: SheetReader): SheetReader => (blocks) => {
 };
 
 export const logframeSheetReader: SheetReader = perDocument(readLogframe);
-export const workPlanSheetReader: SheetReader = perDocument(readWorkPlan);
+export const workPlanSheetReader: SheetReader = perDocument((blocks) => readWorkPlan(blocks) ?? readGanttWorkPlan(blocks));

@@ -117,3 +117,29 @@ test("compactSheetText gives a Gantt row real dates when the month labels carry 
   // The last week of a month runs to its end; a month after December is the next year.
   assert.ok(out.some((l) => l.includes("[scheduled 2024-01-29 to 2024-01-31 (January, 2024 Wk - 5)]")), out.join("|"));
 });
+
+import { workPlanSheetReader } from "../dist/project-setup/sheet-readers.js";
+
+test("a Gantt chart is read as a work plan: code, title and the dates its weeks give, no model", () => {
+  const gantt = [
+    "# Sheet1", "Activity Code\tActivities\tLOP Target\tJuly\tAugust, 2023",
+    "Task- 1\tProject Start-Up and Kick-off Meeting",
+    "1.1\tAttend the kick-off meeting\t1 meeting\tx",
+    "1.2\tPrepare the work plan\tApproved WP\tx\tx",
+    "1.3\tSubmit the NOC application\t\tx",
+  ].join("\n");
+  const compact = compactSheetText(gantt.replace("Wk", "Wk")); // no week row: not a Gantt, so nothing is read
+  assert.equal(workPlanSheetReader(blocksOf(compact)), null);
+  const withWeeks = [
+    "Code\tActivity\tTarget\tJuly\tAugust, 2023\t\t\t\t\tSeptember, 2023", "\t\t\tWk -4\tWk - 1\tWk - 2\tWk - 3\tWk - 4\tWk - 5\tWk - 1\tWk - 2",
+    "1.1\tAttend the kick-off meeting\t1 meeting\tx", "1.2\tPrepare the work plan\t\tx\tx", "1.3\tSubmit the NOC application\t\tx",
+  ].join("\n");
+  const read = workPlanSheetReader(blocksOf(compactSheetText(withWeeks)));
+  assert.ok(read);
+  assert.deepEqual(read.plan.map((i) => [i.value.title, i.value.start, i.value.end, i.value.logframeCode]), [
+    ["Attend the kick-off meeting", "2023-07-22", "2023-07-28", null],
+    ["Prepare the work plan", "2023-07-22", "2023-08-07", null],
+    ["Submit the NOC application", "2023-07-22", "2023-07-28", null],
+  ]);
+  assert.match(read.plan[0].sourceQuote, /^1\.1 Attend the kick-off meeting.*\[scheduled 2023-07-22 to 2023-07-28/);
+});
