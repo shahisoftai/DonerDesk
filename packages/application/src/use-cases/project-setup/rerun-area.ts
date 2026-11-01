@@ -4,7 +4,7 @@ import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ISourceDocumentReader, ISetupAreaExtractor, ISetupProposalRepository, ISetupRunRepository, StoredSetupProposal } from "../../ports/project-setup.js";
 import type { BackgroundRunner } from "../../services/background-runner.js";
-import { STALE_AREA_RUN_MS, assertProposalAccess } from "./proposal-state.js";
+import { SETUP_PII_KEEP, STALE_AREA_RUN_MS, assertProposalAccess } from "./proposal-state.js";
 
 /**
  * Re-extracts one area, keeping every edit in the other areas (Phase 36). The area's own decisions are replaced by the new
@@ -74,7 +74,7 @@ export class RerunSetupAreaHandler {
     const blocks = await this.reader.read({ tenantId: proposal.tenantId, storageKey: proposal.sourceStorageKey, fileName: proposal.sourceName });
     if (!blocks.ok) return failRun(blocks.error);
     // Each block is redacted before any extractor sees it, and the grounding text is joined from those same blocks.
-    const redacted = blocks.value.map((b) => ({ ...b, text: redactForLlm(b.text) }));
+    const redacted = blocks.value.map((b) => ({ ...b, text: redactForLlm(b.text, undefined, SETUP_PII_KEEP) }));
     const sourceText = joinBlocks(redacted);
     const prior: Record<string, unknown> = {};
     for (const dependency of SETUP_AREAS[area].dependsOn) {

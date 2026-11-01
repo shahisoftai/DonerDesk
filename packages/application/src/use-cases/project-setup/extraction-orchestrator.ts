@@ -2,6 +2,7 @@ import type { DomainError, Result, TenantId } from "@donordesk/domain";
 import { SETUP_AREA_APPLY_ORDER, SETUP_AREAS, checkProposal, extractionLayers, groundAreaPatch, joinBlocks, redactForLlm, type SetupAreaKey } from "@donordesk/domain";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ISourceDocumentReader, ISetupAreaExtractor, ISetupProposalRepository, ISetupRunRepository, SetupUsage, StoredSetupProposal } from "../../ports/project-setup.js";
+import { SETUP_PII_KEEP } from "./proposal-state.js";
 import { runPool } from "./run-pool.js";
 
 const addUsage = (a: SetupUsage, b: SetupUsage | undefined): SetupUsage =>
@@ -51,7 +52,7 @@ export class SetupExtractionOrchestrator {
     // The model and the grounding check read the same redacted text, so a figure the model quotes is compared with
     // exactly what it was shown.
     // Each block is redacted before any extractor sees it, and the grounding text is joined from those same blocks.
-    const redacted = blocks.value.map((b) => ({ ...b, text: redactForLlm(b.text) }));
+    const redacted = blocks.value.map((b) => ({ ...b, text: redactForLlm(b.text, undefined, SETUP_PII_KEEP) }));
     const sourceText = joinBlocks(redacted);
 
     const byArea = new Map(this.extractors.map((e) => [e.area, e]));

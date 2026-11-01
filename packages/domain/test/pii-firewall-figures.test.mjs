@@ -15,3 +15,18 @@ test("phone numbers in common shapes are still hidden", () => {
     assert.ok(!redactForLlm(`Call ${phone} today`).includes(phone), phone);
   }
 });
+
+test("an address needs a house number, a few name words and a street word of its own", () => {
+  const prose = "AMAN will conduct the assessment of the 10 targeted health facilities using a preparedness tool and checklist adapted from the guide.";
+  assert.equal(redactForLlm(prose), prose);
+  const multiline = "1\nProject start-up\nPrepare life of project work plan and submit the first draft";
+  assert.equal(redactForLlm(multiline), multiline);
+  for (const address of ["12 Baker St.", "221 Main Street", "5 Old Mill Road"]) assert.ok(!redactForLlm(`Office at ${address} today`).includes(address), address);
+});
+
+test("a caller can keep a kind of entity (a project document's dates)", () => {
+  const text = "Revised 29-11-2023, ready by Jul. 31, 2023 or 04/12/2023";
+  assert.notEqual(redactForLlm(text), text);
+  assert.equal(redactForLlm(text, undefined, ["DATE_OF_BIRTH"]), text);
+  assert.ok(!redactForLlm("Mail a@b.org 29-11-2023", undefined, ["DATE_OF_BIRTH"]).includes("a@b.org"));
+});

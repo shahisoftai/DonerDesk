@@ -75,7 +75,9 @@ const DEFAULT_RECOGNIZERS: Recognizer[] = [
   {
     type: "ADDRESS",
     patterns: [
-      /\b\d+\s+[\w\s]+(?:street|st|avenue|ave|road|rd|boulevard|blvd|lane|ln|drive|dr|court|ct)\b\.?/gi,
+      // A house number, one to four name words on the same line, then the street word as a word of its own ("12 Baker St.").
+      // (Without the word boundary and the single line, "10 targeted health facilities ... checklist" matched: "checklist" ends in "st".)
+      /\b\d{1,5}[ ]+(?:[A-Za-z0-9'.-]+[ ]+){1,4}(?:street|st|avenue|ave|road|rd|boulevard|blvd|lane|ln|drive|dr|court|ct)\b\.?/gi,
     ],
     score: 0.65,
   },
@@ -90,8 +92,8 @@ export class PiiFirewall {
   private readonly recognizers: Recognizer[];
   private readonly defaultPolicy: PiiPolicy;
 
-  constructor(recognizers = DEFAULT_RECOGNIZERS, defaultPolicy: PiiPolicy = "redact") {
-    this.recognizers = recognizers;
+  constructor(recognizers = DEFAULT_RECOGNIZERS, defaultPolicy: PiiPolicy = "redact", keep: ReadonlyArray<PiiEntityType> = []) {
+    this.recognizers = keep.length === 0 ? recognizers : recognizers.filter((r) => !keep.includes(r.type));
     this.defaultPolicy = defaultPolicy;
   }
 
@@ -230,8 +232,8 @@ export class PiiFirewall {
   }
 }
 
-export function createPiiFirewall(policy?: PiiPolicy): PiiFirewall {
-  return new PiiFirewall(DEFAULT_RECOGNIZERS, policy ?? "redact");
+export function createPiiFirewall(policy?: PiiPolicy, keep: ReadonlyArray<PiiEntityType> = []): PiiFirewall {
+  return new PiiFirewall(DEFAULT_RECOGNIZERS, policy ?? "redact", keep);
 }
 
 /** The policy used when nothing is configured. */
@@ -250,15 +252,18 @@ export function resolvePiiPolicy(raw: string | undefined): PiiPolicy {
   return policy;
 }
 
-/** Redacts text for a model, honouring the policy. "allow" sends it unchanged. */
-export function redactForLlm(text: string, policy: PiiPolicy = DEFAULT_PII_POLICY): string {
+/**
+ * Redacts text for a model, honouring the policy. "allow" sends it unchanged. `keep` names kinds of entity that are left
+ * as they are for a caller whose text is not about people (a project document's dates are content, not birth dates).
+ */
+export function redactForLlm(text: string, policy: PiiPolicy = DEFAULT_PII_POLICY, keep: ReadonlyArray<PiiEntityType> = []): string {
   if (!text) return text;
   if (policy === "allow") return text;
   if (policy === "reject") {
-    const firewall = createPiiFirewall(policy);
+    const firewall = createPiiFirewall(policy, keep);
     const result = firewall.apply(text, policy);
     if (result.hasPii) throw new Error("LLM request rejected because it contains PII");
     return text;
   }
-  return createPiiFirewall(policy).redact(text);
+  return createPiiFirewall(policy, keep).redact(text);
 }
