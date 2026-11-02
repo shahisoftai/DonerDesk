@@ -373,6 +373,7 @@ export * from "./use-cases/logframe/indicator-entry-file.js";
 export * from "./use-cases/ask/ask-project.js";
 export * from "./ports/project-setup.js";
 export * from "./ports/project-setup-apply.js";
+export * from "./ports/project-setup-launch.js";
 export * from "./use-cases/project-setup/index.js";
 export * from "./services/webhook-audit.js";
 export * from "./services/mcp-server.js";
@@ -380,3 +381,4 @@ export * from "./use-cases/collection/connector-handlers.js";
 
 export * from "./use-cases/dashboards/home-pin-handlers.js";
 export * from "./use-cases/dashboards/map-overlay-handlers.js";
+export * from "./use-cases/identity/pending-member-resolver.js";

@@ -112,6 +112,7 @@ const PlannedActivityDefSchema = z.object({
   lead: z.string().max(200).nullable(),
   group: z.string().max(300).nullable().optional(),
   planCode: z.string().max(40).nullable().optional(),
+  key: z.string().max(80).optional(),
   linkSource: z.enum(["DOCUMENT", "SUGGESTED", "PERSON"]).optional(),
 });
 
@@ -137,6 +138,7 @@ const BudgetLineDefSchema = z.object({
   linkSource: z.enum(["DOCUMENT", "SUGGESTED", "PERSON"]).optional(),
   kind: z.enum(["LINE", "DETAIL", "TOTAL"]).optional(),
   ref: z.string().max(40).nullable().optional(),
+  key: z.string().max(80).optional(),
 });
 
 const RiskDefSchema = z.object({
@@ -227,3 +229,16 @@ export const SourceBlockSchema = z.object({
   text: z.string().max(20000),
 });
 export type SourceBlockDto = z.infer<typeof SourceBlockSchema>;
+
+/** The organisation's default pack for a sector, as the Settings screen sends it. The domain's `checkPackInput` is the real judge. */
+export const SetupPackSchema = z.object({
+  sector: z.string().max(40).nullable().optional(),
+  label: z.string().max(200),
+  cadence: z.string().max(20).nullable().optional(),
+  reportRules: z.array(z.object({ reportType: z.string().max(40), template: z.string().max(100).optional(), dueDaysAfterEnd: z.number() })).max(12).optional(),
+  reviewMode: z.string().max(10).nullable().optional(),
+  windowRule: z.object({ opensDaysBefore: z.number(), closesDaysAfter: z.number() }).nullable().optional(),
+  risks: z.array(z.object({ kind: z.string().max(20).optional(), title: z.string().max(400), seriousness: z.string().max(10), mitigation: z.string().max(1000).optional() })).max(30).optional(),
+  dashboardTemplate: z.string().max(100).nullable().optional(),
+});
+export type SetupPackInput = z.infer<typeof SetupPackSchema>;

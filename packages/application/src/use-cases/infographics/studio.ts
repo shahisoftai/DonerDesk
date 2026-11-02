@@ -471,11 +471,11 @@ export class CreateInfographicShareLinkHandler {
 }
 
 export class ListInfographicShareLinksHandler {
-  constructor(private readonly shares: IInfographicShareRepository) {}
+  constructor(private readonly shares: IInfographicShareRepository, private readonly clock?: IClock) {}
   async handle(ctx: AuthenticatedContext, infographicId: string): Promise<Result<Array<Omit<InfographicShareLinkRecord, "tokenHash"> & { live: boolean }>, DomainError>> {
     const rows = await this.shares.listByInfographic(infographicId, ctx.tenant.tenantId);
     if (!rows.ok) return rows;
-    const now = new Date();
+    const now = this.clock?.now() ?? new Date();
     return { ok: true, value: rows.value.map(({ tokenHash: _hash, ...rest }) => ({ ...rest, live: isShareLinkLive(rest, now) })) };
   }
 }

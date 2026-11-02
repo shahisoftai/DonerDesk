@@ -19,7 +19,9 @@ export default async function NewProjectPage() {
   const { data, suggestions } = projectWizardDefaults({ organization: org, projects });
   return (
     <>
-    <p className="mx-auto max-w-3xl px-6 pt-6 text-sm">
+    <p className="mx-auto flex max-w-3xl flex-wrap gap-x-6 gap-y-1 px-6 pt-6 text-sm">
+      {/* A plain anchor: the wizard starts a new draft on the server, so the page must load fresh. */}
+      <a href="/projects/new/wizard" className="font-medium underline">Set up step by step (guided, with or without documents)</a>
       <Link href="/projects/new/document" className="underline">Set up from a project document instead</Link>
     </p>
     <NewProjectWizard

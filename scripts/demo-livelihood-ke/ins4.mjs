@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const per = readFileSync("periods.txt","utf8").trim().split("\n"); const { page, browser } = await attach("ins");
+await page.goto(`${BASE}/projects/${P}/reports/${per[0]}/inputs`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(2500);
+await page.getByRole("button",{name:"Sheet",exact:true}).click(); await page.waitForTimeout(1000);
+const row = page.locator("tr", {hasText:"KE-OP1.1"}).first();
+const cells = row.locator("td"); console.log(await cells.count());
+await cells.nth(5).click(); await page.keyboard.type("4"); await page.keyboard.press("Enter"); await page.waitForTimeout(1200);
+console.log(await page.getByText("By place").count(), await page.getByLabel("Details for KE-OP1.1").count());
+await page.screenshot({path:"sheet2.png"});
+await browser.close(); process.exit(0);

@@ -1,5 +1,5 @@
 import type { CreateProjectInput } from "@donordesk/contracts";
-import type { ApplyPlan, Result, SetupAreaKey } from "@donordesk/domain";
+import type { ApplyPlan, ProjectSetupProposal, Result, SetupAreaKey } from "@donordesk/domain";
 import { DomainError, blockingProblems, checkProposal, linkProposal, planApply, proposeCodes } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
@@ -12,6 +12,8 @@ export interface ApplySetupInput {
   /** The person's completed project form, started from the preview's draft. */
   project: CreateProjectInput;
   areas: Readonly<Partial<Record<SetupAreaKey, boolean>>>;
+  /** A proposal to apply in place of the stored one (the wizard folds its own decisions into the fields the appliers write). */
+  proposal?: ProjectSetupProposal;
 }
 
 export interface AppliedArea {
@@ -71,7 +73,7 @@ export class ApplySetupProposalHandler {
     if (!APPLYABLE.has(found.value.status)) {
       return { ok: false, error: DomainError.conflict("This proposal cannot be applied now: it is still being read, is being applied, or is already applied.") };
     }
-    const proposal = linkProposal(proposeCodes(found.value.proposal));
+    const proposal = linkProposal(proposeCodes(input.proposal ?? found.value.proposal));
     const blocking = blockingProblems(checkProposal(proposal));
     if (blocking.length > 0) {
       return { ok: false, error: DomainError.validation(`Fix ${blocking.length} problem(s) in the review before applying.`) };

@@ -37,9 +37,9 @@ test("the setup proposal contract accepts a well-formed proposal", () => {
   assert.equal(parsed.funding[0].value.amount, "1,234.56");
 });
 
-test("a quote longer than 400 characters, a bad date or a missing status are refused", () => {
+test("a quote longer than 1000 characters, a bad date or a missing status are refused", () => {
   const p = validProposal();
-  p.facts.name.sourceQuote = "x".repeat(401);
+  p.facts.name.sourceQuote = "x".repeat(1001);
   assert.equal(ProjectSetupProposalSchema.safeParse(p).success, false);
   const q = validProposal();
   q.facts.startDate.value = "March 2026";
@@ -71,5 +71,5 @@ test("apply, settings and problem contracts keep their small shapes", () => {
   assert.equal(problem.success, true);
   assert.equal(SetupProblemSchema.safeParse({ code: "NOT_A_CODE", path: "x", severity: "HARD", message: "m" }).success, false);
   assert.deepEqual([...SETUP_AREA_KEYS].sort(), ["FACTS", "FUNDING_BUDGET", "INDICATORS", "LOGFRAME", "PERIODS", "PLAN", "PLACES", "RISKS"].sort());
-  assert.equal(SETUP_PROBLEM_CODES.length, 10);
+  assert.equal(SETUP_PROBLEM_CODES.length, 18);
 });

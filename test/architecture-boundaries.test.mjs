@@ -114,3 +114,75 @@ test("setup problem codes are the same list in the domain and the contracts (Pha
   assert.ok(domain.length >= 10, "the domain list looks truncated");
   assert.deepEqual(contracts, domain);
 });
+
+test("wizard operation kinds are the same list in the domain and the contracts (Phase 38 mirror pin)", () => {
+  const kinds = (text, re) => {
+    const m = text.match(re);
+    assert.ok(m, "operation list not found");
+    return [...m[1].matchAll(/"([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  };
+  const domain = readFileSync(join(ROOT, "packages/domain/src/contexts/project-setup/pcw/operations.ts"), "utf8");
+  const contracts = readFileSync(join(ROOT, "packages/contracts/src/project-setup-draft.ts"), "utf8");
+  const fromDomain = [...domain.matchAll(/\{ kind: "([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  const fromContracts = kinds(contracts, /SETUP_OPERATION_KINDS\s*=\s*\[([\s\S]*?)\]/);
+  assert.ok(fromDomain.length >= 10);
+  assert.deepEqual(fromContracts, fromDomain);
+  const schemaKinds = [...contracts.slice(0, contracts.indexOf("SetupResultOperationSchema")).matchAll(/z\.literal\("([A-Z_]+)"\)/g)].map((x) => x[1]).sort();
+  assert.deepEqual(schemaKinds, fromDomain);
+});
+
+test("wizard result operation kinds are the same list in the domain and the contracts (Phase 38.3 mirror pin)", () => {
+  const domain = readFileSync(join(ROOT, "packages/domain/src/contexts/project-setup/pcw/result-operations.ts"), "utf8");
+  const contracts = readFileSync(join(ROOT, "packages/contracts/src/project-setup-draft.ts"), "utf8");
+  const fromDomain = [...domain.matchAll(/\{ kind: "([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  const list = contracts.match(/SETUP_RESULT_OPERATION_KINDS\s*=\s*\[([\s\S]*?)\]/);
+  assert.ok(list, "result operation list not found");
+  const fromContracts = [...list[1].matchAll(/"([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  assert.deepEqual(fromContracts, fromDomain);
+  const block = contracts.slice(contracts.indexOf("SetupResultOperationSchema"), contracts.indexOf("SetupPlaceOperationSchema"));
+  assert.deepEqual([...block.matchAll(/z\.literal\("([A-Z_]+)"\)/g)].map((x) => x[1]).sort(), fromDomain);
+});
+
+test("wizard place operation kinds are the same list in the domain and the contracts (Phase 38.4 mirror pin)", () => {
+  const domain = readFileSync(join(ROOT, "packages/domain/src/contexts/project-setup/pcw/place-operations.ts"), "utf8");
+  const contracts = readFileSync(join(ROOT, "packages/contracts/src/project-setup-draft.ts"), "utf8");
+  const fromDomain = [...domain.matchAll(/\{ kind: "([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  const list = contracts.match(/SETUP_PLACE_OPERATION_KINDS\s*=\s*\[([\s\S]*?)\]/);
+  assert.ok(list, "place operation list not found");
+  assert.deepEqual([...list[1].matchAll(/"([A-Z_]+)"/g)].map((x) => x[1]).sort(), fromDomain);
+  const block = contracts.slice(contracts.indexOf("SetupPlaceOperationSchema"), contracts.indexOf("SetupPlanOperationSchema"));
+  assert.deepEqual([...block.matchAll(/z\.literal\("([A-Z_]+)"\)/g)].map((x) => x[1]).sort(), fromDomain);
+});
+
+test("wizard plan operation kinds are the same list in the domain and the contracts (Phase 38.5 mirror pin)", () => {
+  const domain = readFileSync(join(ROOT, "packages/domain/src/contexts/project-setup/pcw/plan-operations.ts"), "utf8");
+  const contracts = readFileSync(join(ROOT, "packages/contracts/src/project-setup-draft.ts"), "utf8");
+  const fromDomain = [...domain.matchAll(/\{ kind: "([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  const list = contracts.match(/SETUP_PLAN_OPERATION_KINDS\s*=\s*\[([\s\S]*?)\]/);
+  assert.ok(list, "plan operation list not found");
+  assert.deepEqual([...list[1].matchAll(/"([A-Z_]+)"/g)].map((x) => x[1]).sort(), fromDomain);
+  const block = contracts.slice(contracts.indexOf("SetupPlanOperationSchema"), contracts.indexOf("SetupFinanceOperationSchema"));
+  assert.deepEqual([...block.matchAll(/z\.literal\("([A-Z_]+)"\)/g)].map((x) => x[1]).sort(), fromDomain);
+});
+
+test("wizard finance operation kinds are the same list in the domain and the contracts (Phase 38.8 mirror pin)", () => {
+  const domain = readFileSync(join(ROOT, "packages/domain/src/contexts/project-setup/pcw/finance-operations.ts"), "utf8");
+  const contracts = readFileSync(join(ROOT, "packages/contracts/src/project-setup-draft.ts"), "utf8");
+  const fromDomain = [...domain.matchAll(/\{ kind: "([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  const list = contracts.match(/SETUP_FINANCE_OPERATION_KINDS\s*=\s*\[([\s\S]*?)\]/);
+  assert.ok(list, "finance operation list not found");
+  assert.deepEqual([...list[1].matchAll(/"([A-Z_]+)"/g)].map((x) => x[1]).sort(), fromDomain);
+  const block = contracts.slice(contracts.indexOf("SetupFinanceOperationSchema"), contracts.indexOf("SetupRiskOperationSchema"));
+  assert.deepEqual([...block.matchAll(/z\.literal\("([A-Z_]+)"\)/g)].map((x) => x[1]).sort(), fromDomain);
+});
+
+test("wizard risk operation kinds are the same list in the domain and the contracts (Phase 38.9 mirror pin)", () => {
+  const domain = readFileSync(join(ROOT, "packages/domain/src/contexts/project-setup/pcw/risk-operations.ts"), "utf8");
+  const contracts = readFileSync(join(ROOT, "packages/contracts/src/project-setup-draft.ts"), "utf8");
+  const fromDomain = [...domain.matchAll(/\{ kind: "([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  const list = contracts.match(/SETUP_RISK_OPERATION_KINDS\s*=\s*\[([\s\S]*?)\]/);
+  assert.ok(list, "risk operation list not found");
+  assert.deepEqual([...list[1].matchAll(/"([A-Z_]+)"/g)].map((x) => x[1]).sort(), fromDomain);
+  const block = contracts.slice(contracts.indexOf("SetupRiskOperationSchema"));
+  assert.deepEqual([...block.matchAll(/z\.literal\("([A-Z_]+)"\)/g)].map((x) => x[1]).sort(), fromDomain);
+});

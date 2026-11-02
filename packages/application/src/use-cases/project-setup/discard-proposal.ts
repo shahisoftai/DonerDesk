@@ -36,7 +36,8 @@ export class DiscardSetupProposalHandler {
     // in the organisation's Drive is removed only while it is still in the staging folder; once a project was created from it,
     // it lives in that project's folder and is the organisation's record, so discarding the proposal never deletes it.
     const fileIds = driveFileIdsOf(proposal.sourceStorageKey);
-    if (fileIds.length === 0) await this.legacyStorage.remove(proposal.sourceStorageKey);
+    // A wizard project started with no documents has no source at all.
+    if (fileIds.length === 0) { if (proposal.sourceStorageKey) await this.legacyStorage.remove(proposal.sourceStorageKey); }
     else if (!proposal.appliedProjectId) for (const fileId of fileIds) await this.documents.removeStaged(ctx.tenant.tenantId, fileId);
     const runsRemoved = await this.runs.deleteByProposal(id, ctx.tenant.tenantId);
     if (!runsRemoved.ok) return runsRemoved;

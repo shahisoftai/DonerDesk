@@ -16,12 +16,14 @@ export const BUDGET_TOLERANCE = 1;
 
 const live = (b: Proposed<BudgetLineDef>): boolean => b.status !== "REJECTED" && b.value !== null;
 
-const amountOf = (b: BudgetLineDef): number | null => {
-  // A sheet's own number ("5661165.9617") is plain; anything written for people goes through the locale-aware reading.
-  if (b.amount && /^-?\d+(\.\d+)?$/.test(b.amount.trim())) return Number(b.amount);
-  const text = normaliseAmountText(b.amount);
+/** An amount as a number: a sheet's own number is plain; anything written for people goes through the locale-aware reading. */
+export function parseAmount(raw: string | null): number | null {
+  if (raw && /^-?\d+(\.\d+)?$/.test(raw.trim())) return Number(raw);
+  const text = normaliseAmountText(raw);
   return text === null ? null : Number(text);
-};
+}
+
+const amountOf = (b: BudgetLineDef): number | null => parseAmount(b.amount);
 
 /** The rows with no row under them, by reference ("F 2.1" and "F2.1" are the same reference). */
 export function leafRows(rows: ReadonlyArray<BudgetLineDef>): BudgetLineDef[] {

@@ -1,6 +1,6 @@
 import { SETUP_MAX_DOCUMENTS } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../context.js";
-import type { DomainError, ProjectSetupProposal, Result, SetupAreaKey, SetupProblem, SourceBlock, TenantId } from "@donordesk/domain";
+import type { DefaultPack, DomainError, ProjectSetupProposal, Result, SetupAreaKey, SetupExtras, SetupProblem, SourceBlock, TenantId } from "@donordesk/domain";
 
 /** The stored proposal's lifecycle: EXTRACTING while the document is being read, READY for review, the APPLY* states come with Phase 36.3. */
 export type SetupProposalStatus = "EXTRACTING" | "READY" | "APPLYING" | "APPLIED" | "PARTIAL" | "FAILED" | "DISCARDED";
@@ -16,6 +16,8 @@ export interface StoredSetupProposal {
   sourceHash: string;
   sourceLength: number;
   proposal: ProjectSetupProposal;
+  /** The wizard's own decisions (team, owners, collection, schedule, finance, answers, sign-off); absent on a proposal made before the wizard. */
+  extras?: SetupExtras | undefined;
   /** The latest `checkProposal` problems (recomputed on read as well). */
   problems: SetupProblem[];
   appliedProjectId?: string | undefined;
@@ -31,7 +33,7 @@ export interface StoredSetupRun {
   id: string;
   tenantId: TenantId;
   proposalId: string;
-  kind: "EXTRACT" | "APPLY";
+  kind: "EXTRACT" | "APPLY" | "LAUNCH";
   /** The one area a rerun or apply step covered; undefined for a whole-document extraction. */
   area?: SetupAreaKey | undefined;
   status: "RUNNING" | "FINISHED" | "FAILED";
@@ -46,6 +48,8 @@ export interface ISetupProposalRepository {
   findById(id: string, tenantId: TenantId): Promise<Result<StoredSetupProposal | null>>;
   /** Writes every mutable field (`?? null`); with `expectedUpdatedAt` the write happens only if nobody saved in between, else `false`. */
   update(p: StoredSetupProposal, expectedUpdatedAt?: Date): Promise<Result<boolean>>;
+  /** Writes only the wizard's decisions, and only if nobody saved since `expectedUpdatedAt`; `false` = someone did. Never touches the proposal, so a running extraction cannot lose an edit. */
+  updateExtras(id: string, tenantId: TenantId, extras: SetupExtras, expectedUpdatedAt: Date): Promise<Result<boolean>>;
   /** The person's own proposals, newest first. */
   listForCreator(tenantId: TenantId, createdById: string): Promise<Result<StoredSetupProposal[]>>;
   /** How many proposals the organisation started in the window, for the daily cap. */
@@ -205,3 +209,17 @@ export interface ISetupLlm {
   available(tenantId: TenantId): Promise<boolean>;
   completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number }): Promise<Result<SetupLlmCompletion | null, DomainError>>;
 }
+
+/** Where the default packs come from: the ones that ship with DonorDesk, and (later) the organisation's own copies. */
+export interface IDefaultPackSource {
+  list(tenantId: TenantId): Promise<DefaultPack[]>;
+}
+
+/** The organisation's own default packs, one per sector (or "GENERAL"). The pack is the checked `DefaultPack`, stored whole. */
+export interface ISetupPackRepository {
+  list(tenantId: TenantId): Promise<Result<StoredSetupPack[], DomainError>>;
+  save(tenantId: TenantId, sectorKey: string, pack: DefaultPack, updatedById: string): Promise<Result<void, DomainError>>;
+  remove(tenantId: TenantId, sectorKey: string): Promise<Result<boolean, DomainError>>;
+}
+
+export interface StoredSetupPack { sectorKey: string; pack: DefaultPack; updatedAt: Date; updatedById: string }

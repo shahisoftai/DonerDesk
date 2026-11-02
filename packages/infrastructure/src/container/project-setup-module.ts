@@ -1,13 +1,15 @@
-import type { TenantId } from "@donordesk/domain";
+import { applyFinanceOperation, applyPlaceOperation, applyPlanOperation, applyResultOperation, applyRiskOperation, type FinanceOperation, type PlaceOperation, type PlanOperation, type ResultOperation, type RiskOperation, type TenantId } from "@donordesk/domain";
 import type { PrismaClient } from "@prisma/client";
 import {
-  DiscardSetupProposalHandler, EditSetupProposalHandler, GetSetupProposalHandler, ListSetupProposalsHandler,
+  ApplyDefaultPackHandler, ChangeSetupProposalHandler, DraftViewer, SignOffSetupHandler, DiscardSetupProposalHandler, EditSetupDraftHandler, EditSetupProposalHandler, GetSetupDraftHandler, StartBlankSetupHandler, GetSetupProposalHandler, ListSetupProposalsHandler,
   ParseUploadedFileHandler, RerunSetupAreaHandler, SetSetupDocumentKindHandler, GetSetupSourcePassageHandler, SetupExtractionOrchestrator, StartSetupExtractionHandler,
-  UpdateSetupAssistSettingsHandler,
+  UpdateSetupAssistSettingsHandler, ListOrganisationPacksHandler, SaveOrganisationPackHandler, RemoveOrganisationPackHandler,
   type BackgroundRunner, type IAuditLogger, type IClock, type IIdGenerator, type ILLMProvider, type IOrganizationRepository,
   type ISetupAreaExtractor, type ISetupDocumentStore, type ISetupLlm, type ISetupProposalRepository, type ISetupRunRepository, type IStorage,
 } from "@donordesk/application";
 import { PrismaSetupProposalRepository, PrismaSetupRunRepository } from "../repositories/project-setup.js";
+import { OrganisationPackSource } from "../project-setup/organisation-pack-source.js";
+import { PrismaSetupPackRepository } from "../repositories/setup-packs.js";
 import { StoredSetupDocumentReader } from "../project-setup/source-reader.js";
 import { TenantSetupLlm } from "../project-setup/setup-llm.js";
 import { createSetupExtractors } from "../project-setup/prompted-area-extractor.js";
@@ -49,6 +51,8 @@ export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
   const extractors = deps.extractors ?? withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm));
   const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.concurrency);
   const rerun = new RerunSetupAreaHandler(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.runInBackground);
+  const viewer = new DraftViewer(runs, deps.clock);
+  const packRepo = new PrismaSetupPackRepository(deps.prisma);
   const handlers = {
     startSetupExtraction: new StartSetupExtractionHandler(deps.orgs, proposals, runs, deps.documents, llm, orchestrator, deps.audits, deps.clock, deps.ids, deps.runInBackground, deps.maxRunsPerDay, deps.hasNoDailyCap),
     getSetupProposal: new GetSetupProposalHandler(proposals, runs, deps.clock),
@@ -59,6 +63,19 @@ export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
     getSetupSourcePassage: new GetSetupSourcePassageHandler(proposals, reader, deps.clock),
     discardSetupProposal: new DiscardSetupProposalHandler(proposals, runs, deps.storage, deps.documents, deps.audits, deps.clock),
     updateSetupAssistSettings: new UpdateSetupAssistSettingsHandler(deps.orgs, deps.audits),
+    startBlankSetup: new StartBlankSetupHandler(proposals, deps.audits, deps.clock, deps.ids),
+    getSetupDraft: new GetSetupDraftHandler(proposals, deps.clock, viewer),
+    editSetupDraft: new EditSetupDraftHandler(proposals, deps.audits, deps.clock, viewer),
+    changeSetupResults: new ChangeSetupProposalHandler<ResultOperation>(proposals, deps.audits, deps.clock, applyResultOperation, "setup.results.changed", viewer),
+    changeSetupRisks: new ChangeSetupProposalHandler<RiskOperation>(proposals, deps.audits, deps.clock, applyRiskOperation, "setup.risks.changed", viewer),
+    signOffSetup: new SignOffSetupHandler(proposals, deps.audits, deps.clock, viewer),
+    changeSetupFinance: new ChangeSetupProposalHandler<FinanceOperation>(proposals, deps.audits, deps.clock, applyFinanceOperation, "setup.finance.changed", viewer),
+    changeSetupPlan: new ChangeSetupProposalHandler<PlanOperation>(proposals, deps.audits, deps.clock, applyPlanOperation, "setup.plan.changed", viewer),
+    changeSetupPlaces: new ChangeSetupProposalHandler<PlaceOperation>(proposals, deps.audits, deps.clock, applyPlaceOperation, "setup.places.changed", viewer),
+    applyDefaultPack: new ApplyDefaultPackHandler(proposals, new OrganisationPackSource(packRepo), deps.audits, deps.clock, viewer),
+    listOrganisationPacks: new ListOrganisationPacksHandler(packRepo),
+    saveOrganisationPack: new SaveOrganisationPackHandler(packRepo, deps.audits),
+    removeOrganisationPack: new RemoveOrganisationPackHandler(packRepo, deps.audits),
   };
   return { proposals, runs, reader, llm, orchestrator, handlers };
 }

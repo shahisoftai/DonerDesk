@@ -1,0 +1,7 @@
+Code,Name,Type,Baseline,Target,Unit,Means of Verification,Data Source,Frequency,Disaggregation Required,Logframe Code
+KE-OC1,"Percentage of targeted households with a second source of income",Percentage,28,60,"%","Household livelihoods survey","Baseline and end-line survey",Annual,no,O1
+KE-OP1.1,"Number of savings and loan groups formed or strengthened",Number,0,25,groups,"Group registers","Field officer records",Monthly,no,1.1
+KE-OP1.2,"Number of households trained in drought-tolerant crops and livestock husbandry",Number,0,1200,households,"Training attendance sheets","Field officer records",Monthly,no,1.2
+KE-OP1.3,"Number of goats distributed to vulnerable households",Number,0,1500,goats,"Distribution lists","Field officer records",Monthly,no,1.3
+KE-OP2.1,"Number of producers linked to markets",Number,0,600,producers,"Buyer agreements and sales records","Field officer records",Monthly,no,2.1
+KE-OP2.2,"Number of community early-warning groups established",Number,0,10,groups,"Group registers","Field officer records",Monthly,no,2.2

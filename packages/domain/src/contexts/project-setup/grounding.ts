@@ -81,7 +81,7 @@ function valueFigures(raw: string): { figures: string[]; dates: PlainDate[] } {
  * numbering, the logframe item an indicator or activity serves, a place's admin level. `checkProposal` checks the links
  * against the proposal itself; requiring them in the item's own quote would drop every correctly linked item.
  */
-export const NON_FIGURE_FIELDS: readonly string[] = ["parentCode", "logframeCode", "adminLevel", "group", "planCode", "linkSource", "kind", "ref"];
+export const NON_FIGURE_FIELDS: readonly string[] = ["parentCode", "logframeCode", "adminLevel", "group", "planCode", "key", "linkSource", "kind", "ref"];
 
 function withoutLinks(value: unknown): unknown {
   if (!value || typeof value !== "object" || Array.isArray(value)) return value ?? "";

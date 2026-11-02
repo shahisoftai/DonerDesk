@@ -96,6 +96,8 @@ export interface PlannedActivityDef {
   group?: string | null;
   /** The row's own code in the work plan ("7.1"); never a logframe code. */
   planCode?: string | null;
+  /** The wizard's stable address for the row (set the first time a person edits it), so links already chosen survive a change of title or date. */
+  key?: string;
   linkSource?: LinkSource;
 }
 
@@ -126,6 +128,8 @@ export interface BudgetLineDef {
   kind?: BudgetLineKind;
   /** The detailed budget's own reference for the row ("F2.9.1"). */
   ref?: string | null;
+  /** The wizard's stable address for the row (set the first time a person edits it), so the activity chosen for it survives a new category or amount. */
+  key?: string;
 }
 
 export type BudgetLineKind = "LINE" | "DETAIL" | "TOTAL";

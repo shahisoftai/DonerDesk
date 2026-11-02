@@ -46,6 +46,8 @@ export class AcceptInvitationHandler {
     private readonly entitlements: EntitlementService,
     /** With this, the projects an invitation names become the new member's project memberships (what lets them open those projects). */
     private readonly members?: IProjectMemberRepository,
+    /** With this, a person named in a project setup before they had an account joins that project and gets what the setup gave them. */
+    private readonly pending?: { resolve(input: { tenantId: string; userId: string; email: string }): Promise<unknown> },
   ) {}
 
   /** Read-side preview for the accept page: who was invited, where, as what. */
@@ -160,6 +162,13 @@ export class AcceptInvitationHandler {
       entityId: invitation.id,
       newValue: JSON.stringify({ email: invitation.email.toString(), role: invitation.role, invitedById: invitation.invitedById, external: invitation.external }),
     });
+
+    // Joining never fails because of this: what cannot be done is kept for the project's people to finish by hand.
+    try {
+      await this.pending?.resolve({ tenantId: tenantId.toString(), userId, email: invitation.email.toString() });
+    } catch {
+      /* the person has joined; the pending record stays */
+    }
 
     const token = await this.auth.sign(
       { sub: userId, tid: tenantId.toString(), role: invitation.role, name: cmd.name, email: invitation.email.toString(), ...(invitation.external ? { ext: true } : {}) },

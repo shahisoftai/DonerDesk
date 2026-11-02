@@ -27,3 +27,4 @@ export * from "./collection.js";
 export * from "./dashboards.js";
 export * from "./finance-register.js";
 export * from "./project-setup.js";
+export * from "./project-setup-draft.js";

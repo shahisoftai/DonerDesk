@@ -2573,6 +2573,8 @@ model ProjectSetupProposal {
   proposalJson      String   @default("{}")
   /// The latest `checkProposal` problems, as JSON.
   problemsJson      String   @default("[]")
+  /// The wizard's own decisions as `SetupExtras` (domain): team, owners, collection, schedule, finance extras, answers, sign-off (Phase 38).
+  extrasJson        String   @default("{}")
   appliedProjectId  String?
   promptVersion     String?
   model             String?
@@ -2600,4 +2602,37 @@ model ProjectSetupRun {
   finishedAt  DateTime?
 
   @@index([tenantId, proposalId])
+}
+
+/// A person named when a project was set up who had no account yet (Phase 38.9c), and what they are to own once they join. Joining
+/// (by any invitation to this email) makes them a member of the project and applies `responsibilitiesJson`; the record is then removed.
+model ProjectPendingMember {
+  id                   String   @id
+  tenantId             String
+  projectId            String
+  /// Lower case.
+  email                String
+  name                 String
+  role                 String
+  /// Who launched the project; the resolver acts with their authority.
+  createdById          String
+  responsibilitiesJson String   @default("[]")
+  createdAt            DateTime @default(now())
+
+  @@unique([tenantId, projectId, email])
+  @@index([tenantId, email])
+}
+
+/// An organisation's own default pack for one sector (Phase 38): the starting answers its wizard offers instead of the built-in ones.
+/// `sectorKey` is a sector or "GENERAL". The pack is stored whole as JSON (`DefaultPack`, checked by `checkPackInput`); it holds no people or donor.
+model SetupDefaultPack {
+  id          String   @id
+  tenantId    String
+  sectorKey   String
+  packJson    Json
+  updatedById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, sectorKey])
 }

@@ -4,7 +4,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { PrismaClient } from "@prisma/client";
 import { TenantId } from "@donordesk/domain";
-import { PrismaSetupProposalRepository, PrismaSetupRunRepository } from "../dist/repositories/project-setup.js";
+import { PrismaSetupProposalRepository, PrismaSetupRunRepository, PrismaPendingMemberRepository } from "../dist/repositories/project-setup.js";
+import { emptyExtras } from "@donordesk/domain";
 
 const url = process.env.SETUP_VERIFY_DATABASE_URL;
 const skip = url ? false : "SETUP_VERIFY_DATABASE_URL not set";
@@ -97,4 +98,62 @@ test("row-level security: another tenant's session sees nothing", { skip }, with
   await tx.$executeRawUnsafe(`SET LOCAL "app.current_tenant" = 'tenant-setup-other'`);
   assert.equal((await repo.findById("psp-2", TenantId.create("tenant-setup-other"))).value, null);
   assert.equal((await repo.countStartedSince(TenantId.create("tenant-setup-other"), new Date(0))).value, 0);
+}));
+
+// ---------- the wizard's decisions (Phase 38) ----------
+
+test("the decisions are stored beside the proposal; update never writes them; updateExtras writes only them, and only against the version read", { skip }, withDb(async (tx) => {
+  const repo = new PrismaSetupProposalRepository(tx);
+  await repo.create(makeProposal("psp-x1", { status: "READY" }));
+  const legacy = await repo.findById("psp-x1", T);
+  assert.equal(legacy.value.extras, undefined, "a proposal made before the wizard has no decisions, not a half-empty object");
+
+  const extras = { ...emptyExtras(false), start: { withDocuments: false, donor: "EU", sector: "WASH", country: "Uganda" } };
+  assert.equal((await repo.updateExtras("psp-x1", T, extras, NOW)).value, true);
+  const read = await repo.findById("psp-x1", T);
+  assert.deepEqual(read.value.extras.start, { withDocuments: false, donor: "EU", sector: "WASH", country: "Uganda" });
+  assert.equal(read.value.status, "READY", "only the decisions changed");
+
+  // A running extraction saves the proposal it read earlier: it must not undo the decisions made meanwhile.
+  const stale = { ...read.value, status: "EXTRACTING", extras: undefined };
+  assert.equal((await repo.update(stale)).value, true);
+  const after = await repo.findById("psp-x1", T);
+  assert.equal(after.value.status, "EXTRACTING");
+  assert.equal(after.value.extras.start.donor, "EU", "update left the decisions alone");
+
+  // Saving the decisions against an old version is refused, so two tabs cannot overwrite each other.
+  assert.equal((await repo.updateExtras("psp-x1", T, { ...extras, projectArea: "x" }, NOW)).value, false);
+  assert.equal((await repo.updateExtras("psp-x1", T, { ...extras, projectArea: "x" }, after.value.updatedAt)).value, true);
+  assert.equal((await repo.findById("psp-x1", T)).value.extras.projectArea, "x");
+  assert.equal((await repo.updateExtras("psp-x1", TenantId.create("tenant-setup-other"), extras, after.value.updatedAt)).value, false, "another tenant cannot write them");
+}));
+
+// ---------- people named before they have an account (Phase 38.9c) ----------
+
+const pm = (extra = {}) => ({ id: "pm-1", tenantId: T.toString(), projectId: "proj-1", email: "pat@x.org", name: "Pat", role: "PROJECT_MANAGER", createdById: "u1", responsibilitiesJson: '[{"kind":"INDICATOR_OWNER","indicatorCode":"I1"}]', createdAt: NOW, ...extra });
+
+test("a pending member is stored once per project and email, found by email across projects, and removed", { skip }, withDb(async (tx) => {
+  const repo = new PrismaPendingMemberRepository(tx);
+  assert.equal((await repo.create(pm())).ok, true);
+  assert.equal((await repo.create(pm({ id: "pm-2", projectId: "proj-2" }))).ok, true);
+  assert.equal((await repo.find(T.toString(), "proj-1", "pat@x.org")).value.name, "Pat");
+  assert.equal((await repo.find(T.toString(), "proj-9", "pat@x.org")).value, null);
+  const byEmail = (await repo.listByEmail(T.toString(), "pat@x.org")).value;
+  assert.deepEqual(byEmail.map((m) => m.projectId), ["proj-1", "proj-2"]);
+  assert.equal(byEmail[0].responsibilitiesJson, pm().responsibilitiesJson);
+  assert.equal((await repo.listByEmail("other-tenant", "pat@x.org")).value.length, 0, "never across organisations");
+  await repo.delete("pm-1", "other-tenant");
+  assert.equal((await repo.listByEmail(T.toString(), "pat@x.org")).value.length, 2, "another tenant cannot delete it");
+  await repo.delete("pm-1", T.toString());
+  assert.deepEqual((await repo.listByEmail(T.toString(), "pat@x.org")).value.map((m) => m.id), ["pm-2"]);
+  // Last, because a refused duplicate aborts the surrounding transaction.
+  assert.equal((await repo.create(pm({ id: "pm-dup", projectId: "proj-2" }))).ok, false, "the same person is not stored twice for one project");
+}));
+
+test("only setups that read documents count towards the daily cap: a draft started with no documents does not", { skip }, withDb(async (tx) => {
+  const repo = new PrismaSetupProposalRepository(tx);
+  await repo.create(makeProposal("psp-cap-doc"));
+  await repo.create(makeProposal("psp-cap-blank-1", { sourceName: "", sourceStorageKey: "", sourceHash: "", sourceLength: 0, status: "READY" }));
+  await repo.create(makeProposal("psp-cap-blank-2", { sourceName: "", sourceStorageKey: "", sourceHash: "", sourceLength: 0, status: "READY" }));
+  assert.equal((await repo.countStartedSince(T, new Date(NOW.getTime() - 1000))).value, 1);
 }));

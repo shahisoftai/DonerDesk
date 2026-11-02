@@ -1,10 +1,16 @@
 import type { PrismaClient } from "@prisma/client";
-import { TenantId, DomainError, ok, err, type ProjectSetupProposal, type Result, type SetupAreaKey, type SetupProblem } from "@donordesk/domain";
+import { TenantId, DomainError, ok, err, type ProjectSetupProposal, type Result, type SetupExtras, type SetupAreaKey, type SetupProblem } from "@donordesk/domain";
 import type {
-  ISetupProposalRepository, ISetupRunRepository, StoredSetupProposal, StoredSetupRun, SetupProposalStatus,
+  IPendingMemberRepository, ISetupProposalRepository, ISetupRunRepository, PendingMember, StoredSetupProposal, StoredSetupRun, SetupProposalStatus,
 } from "@donordesk/application";
 
 type ProposalRow = Awaited<ReturnType<PrismaClient["projectSetupProposal"]["findUnique"]>> & { updatedAt: Date };
+
+/** A proposal made before the wizard has no decisions: `{}` reads as absent, never as a half-empty object. */
+const parseExtras = (json: string): SetupExtras | undefined => {
+  const parsed = JSON.parse(json) as Partial<SetupExtras>;
+  return parsed && typeof parsed === "object" && "start" in parsed ? (parsed as SetupExtras) : undefined;
+};
 
 const fromRow = (r: NonNullable<ProposalRow>): StoredSetupProposal => ({
   id: r.id,
@@ -17,6 +23,7 @@ const fromRow = (r: NonNullable<ProposalRow>): StoredSetupProposal => ({
   sourceLength: r.sourceLength,
   proposal: JSON.parse(r.proposalJson) as ProjectSetupProposal,
   problems: JSON.parse(r.problemsJson) as SetupProblem[],
+  extras: parseExtras(r.extrasJson),
   appliedProjectId: r.appliedProjectId ?? undefined,
   promptVersion: r.promptVersion ?? undefined,
   model: r.model ?? undefined,
@@ -43,6 +50,7 @@ export class PrismaSetupProposalRepository implements ISetupProposalRepository {
           sourceLength: p.sourceLength,
           proposalJson: JSON.stringify(p.proposal),
           problemsJson: JSON.stringify(p.problems),
+          extrasJson: JSON.stringify(p.extras ?? {}),
           appliedProjectId: p.appliedProjectId ?? null,
           // The proposal's own timestamps: the version the handler hands out is the one stored.
           createdAt: p.createdAt,
@@ -77,6 +85,18 @@ export class PrismaSetupProposalRepository implements ISetupProposalRepository {
     }
   }
 
+  async updateExtras(id: string, tenantId: TenantId, extras: SetupExtras, expectedUpdatedAt: Date): Promise<Result<boolean>> {
+    try {
+      const done = await this.prisma.projectSetupProposal.updateMany({
+        where: { id, tenantId: tenantId.toString(), updatedAt: expectedUpdatedAt },
+        data: { extrasJson: JSON.stringify(extras) },
+      });
+      return ok(done.count > 0);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
   async findById(id: string, tenantId: TenantId): Promise<Result<StoredSetupProposal | null>> {
     try {
       const row = await this.prisma.projectSetupProposal.findFirst({ where: { id, tenantId: tenantId.toString() } });
@@ -101,7 +121,8 @@ export class PrismaSetupProposalRepository implements ISetupProposalRepository {
   async countStartedSince(tenantId: TenantId, since: Date): Promise<Result<number>> {
     try {
       const n = await this.prisma.projectSetupProposal.count({
-        where: { tenantId: tenantId.toString(), createdAt: { gte: since } },
+        // Only setups that read documents count towards the daily cap on reading: a draft started with no documents costs nothing.
+        where: { tenantId: tenantId.toString(), createdAt: { gte: since }, sourceLength: { gt: 0 } },
       });
       return ok(n);
     } catch (e) {
@@ -212,6 +233,46 @@ export class PrismaSetupRunRepository implements ISetupRunRepository {
   async deleteByProposal(proposalId: string, tenantId: TenantId): Promise<Result<void>> {
     try {
       await this.prisma.projectSetupRun.deleteMany({ where: { proposalId, tenantId: tenantId.toString() } });
+      return ok(undefined);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+}
+
+/** The people named in a project setup who have not joined yet. One row per project and email. */
+export class PrismaPendingMemberRepository implements IPendingMemberRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(m: PendingMember): Promise<Result<void>> {
+    try {
+      await this.prisma.projectPendingMember.create({ data: { id: m.id, tenantId: m.tenantId, projectId: m.projectId, email: m.email, name: m.name, role: m.role, createdById: m.createdById, responsibilitiesJson: m.responsibilitiesJson, createdAt: m.createdAt } });
+      return ok(undefined);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async find(tenantId: string, projectId: string, email: string): Promise<Result<PendingMember | null>> {
+    try {
+      const row = await this.prisma.projectPendingMember.findFirst({ where: { tenantId, projectId, email } });
+      return ok(row ?? null);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async listByEmail(tenantId: string, email: string): Promise<Result<PendingMember[]>> {
+    try {
+      return ok(await this.prisma.projectPendingMember.findMany({ where: { tenantId, email }, orderBy: { createdAt: "asc" } }));
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async delete(id: string, tenantId: string): Promise<Result<void>> {
+    try {
+      await this.prisma.projectPendingMember.deleteMany({ where: { id, tenantId } });
       return ok(undefined);
     } catch (e) {
       return err(new DomainError("CONFLICT", String(e)));

@@ -258,7 +258,7 @@ test("share links: only the hash is stored; the link opens exactly one export un
   const later = new ResolveInfographicShareHandler(shares, repo, storage, { now: () => new Date("2026-11-02T00:00:00Z") });
   assert.equal((await later.handle(token)).ok, false, "expired");
 
-  const list = await new ListInfographicShareLinksHandler(shares).handle(ctxOf(), d.id);
+  const list = await new ListInfographicShareLinksHandler(shares, clock).handle(ctxOf(), d.id);
   assert.equal(list.value.length, 1);
   assert.equal("tokenHash" in list.value[0], false, "the list never shows the hash");
   assert.equal(list.value[0].live, true);
