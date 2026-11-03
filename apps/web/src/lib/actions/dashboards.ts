@@ -1,6 +1,6 @@
 "use server";
 
-import { AddDashboardWidgetSchema, ApplyDashboardTemplateSchema, CreateDashboardShareSchema, DashboardTemplateBodySchema, SaveDashboardSchema } from "@donordesk/contracts";
+import { AddDashboardWidgetSchema, ApplyDashboardTemplateSchema, PreviewDashboardSchema, CreateDashboardShareSchema, DashboardTemplateBodySchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -48,6 +48,15 @@ export async function deleteDashboardAction(dashboardId: string): Promise<Result
 export async function getDashboardChartsAction(dashboardId: string, periodId?: string): Promise<Result<ChartDrawing[], AppError>> {
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/dashboards/${enc(dashboardId)}/data${periodId ? `?periodId=${encodeURIComponent(periodId)}` : ""}`, DashboardDataSchema, context.token);
+  return result.ok ? { ok: true, value: result.value.charts } : result;
+}
+
+/** Draws widgets that are not saved yet (a tile just added or changed in edit mode), for the person looking; nothing is saved. */
+export async function previewDashboardChartsAction(widgets: unknown, periodId?: string): Promise<Result<ChartDrawing[], AppError>> {
+  const context = await requireSession();
+  const parsed = PreviewDashboardSchema.safeParse({ widgets, ...(periodId ? { periodId } : {}) });
+  if (!parsed.success) return invalid(parsed.error);
+  const result = await gatewayRequest("/v1/dashboard-preview", DashboardDataSchema, context.token, { method: "POST", body: parsed.data });
   return result.ok ? { ok: true, value: result.value.charts } : result;
 }
 

@@ -361,6 +361,7 @@ export * from "./ports/finance-register.js";
 export * from "./use-cases/identity/update-ask-settings.js";
 export * from "./use-cases/identity/update-mfa-requirement.js";
 export * from "./use-cases/dashboards/dashboard-handlers.js";
+export * from "./services/share-link-extras.js";
 export * from "./use-cases/dashboards/dataset-handlers.js";
 export * from "./services/dataset-extras.js";
 export * from "./use-cases/dashboards/saved-chart-handlers.js";

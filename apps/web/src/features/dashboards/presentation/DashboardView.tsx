@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addWidget, resizeWidget, settleLayout, updateWidgetSettings, widgetProblems, type DashboardWidget, type MapWidgetQuery, type MetricQuery, type ProjectListQuery, type WidgetChange } from "@donordesk/domain/contexts/dashboards/index.js";
 import {
-  createDashboardLinkAction, deleteDashboardAction, getDashboardChartsAction, listDashboardLinksAction, revokeDashboardLinkAction, saveDashboardAction,
+  createDashboardLinkAction, deleteDashboardAction, getDashboardChartsAction, listDashboardLinksAction, previewDashboardChartsAction, revokeDashboardLinkAction, saveDashboardAction,
 } from "@/lib/actions/dashboards";
 import { useActionState } from "@/lib/client/action-state";
 import type { ChartDrawing, DashboardLinkView, DashboardView as DashboardData } from "@/lib/server/schemas-dashboards";
@@ -20,6 +20,8 @@ import { AddMapPanel } from "./AddMapPanel";
 import { AddProjectListPanel } from "./AddProjectListPanel";
 import { AddNotePanel } from "./AddNotePanel";
 import { DownloadImageButton } from "./DownloadImageButton";
+import { renderAllCharts } from "@/features/design/presentation/render-when-seen";
+import { useLowData } from "@/features/design/presentation/use-low-data";
 import { EditWidgetPanel } from "./EditWidgetPanel";
 import { DashboardTabBar, TabAssigner, useDashboardTabs } from "./DashboardTabs";
 
@@ -37,11 +39,35 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
   const [saved, setSaved] = useState(true);
   const [charts, setCharts] = useState(initialCharts);
   const [periodId, setPeriodId] = useState("");
+  const low = useLowData();
+  const [hoverName, setHoverName] = useState<string | null>(null);
   const [periodError, setPeriodError] = useState<string | null>(null);
   useEffect(() => setCharts(initialCharts), [initialCharts]);
   const byId = useMemo(() => new Map(charts.map((c) => [c.widgetId, c])), [charts]);
   const [projectFilter, setProjectFilter] = useState("");
+  // A tile with no drawing yet (just added, or its settings just changed) is drawn at once for the person looking, without saving.
+  const drawing = useRef(new Set<string>());
+  useEffect(() => {
+    if (!editing) return;
+    const missing = widgets.filter((w) => !byId.has(w.id) && !drawing.current.has(w.id));
+    if (missing.length === 0) return;
+    missing.forEach((w) => drawing.current.add(w.id));
+    void previewDashboardChartsAction(missing, periodId || undefined).then((r) => {
+      const ids = new Set(missing.map((w) => w.id));
+      const drawn: ChartDrawing[] = r.ok ? r.value : missing.map((w) => ({ widgetId: w.id, unavailable: r.error.message }));
+      setCharts((prev) => [...prev.filter((c) => !ids.has(c.widgetId)), ...drawn]);
+      ids.forEach((id) => drawing.current.delete(id));
+    });
+  }, [widgets, editing, byId, periodId]);
   const tv = useTvMode(60, () => router.refresh());
+  const [screenHeight, setScreenHeight] = useState(0);
+  useEffect(() => {
+    if (!tv.active) { setScreenHeight(0); return; }
+    const read = () => setScreenHeight(window.innerHeight);
+    read();
+    window.addEventListener("resize", read);
+    return () => window.removeEventListener("resize", read);
+  }, [tv.active]);
   const projectIds = useMemo(() => [...new Set(widgets.map((w) => (w as { projectId?: string }).projectId).filter((x): x is string => !!x))], [widgets]);
   const tabbed = useDashboardTabs(widgets);
   const shown = useMemo(() => (projectFilter && !editing ? settleLayout(tabbed.visible.filter((w) => (w as { projectId?: string }).projectId === projectFilter)) : tabbed.visible), [tabbed.visible, projectFilter, editing]);
@@ -87,6 +113,7 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
     const problem = next ? widgetProblems(next)[0] : { message: "That change does not fit this widget." };
     if (!next || problem) { setChangeError(problem?.message ?? "That change could not be made."); return; }
     setChangeError(null);
+    setCharts((prev) => prev.filter((c) => c.widgetId !== editingId));
     setWidgets(next);
     setSaved(false);
     setEditingId(null);
@@ -137,21 +164,22 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
         </div>
         <div className="flex flex-wrap items-center gap-2" data-no-print>
           {!editing && projectIds.length > 1 && (
-            <select aria-label="Show one project" className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm dark:border-white/15 dark:bg-white/5" value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)}>
+            <select aria-label="Show one project" className="h-9 w-full min-w-0 max-w-[16rem] truncate rounded-lg border border-slate-300 bg-white px-2 text-sm sm:w-auto dark:border-white/15 dark:bg-white/5" value={projectFilter} onChange={(e) => setProjectFilter(e.target.value)}>
               <option value="">All projects</option>
               {projectIds.map((id) => <option key={id} value={id}>{projectNames[id] ?? "A project"}</option>)}
             </select>
           )}
           {!editing && periodChoices.length > 0 && (
-            <select aria-label="Show one period" className="h-9 rounded-lg border border-slate-300 bg-white px-2 text-sm dark:border-white/15 dark:bg-white/5" value={periodId} onChange={(e) => void choosePeriod(e.target.value)}>
+            <select aria-label="Show one period" className="h-9 w-full min-w-0 max-w-[16rem] truncate rounded-lg border border-slate-300 bg-white px-2 text-sm sm:w-auto dark:border-white/15 dark:bg-white/5" value={periodId} onChange={(e) => void choosePeriod(e.target.value)}>
               <option value="">All periods (as saved)</option>
               {periodChoices.map(([id, label]) => <option key={id} value={id}>{label}</option>)}
             </select>
           )}
           {!editing && <PinToHomeButton dashboardId={dashboard.id} orgWide={dashboard.scope === "ORG"} />}
           {!editing && <Button variant="secondary" onClick={tv.toggle}>{tv.active ? "Leave full screen" : "Full screen"}</Button>}
-          {!editing && <Button variant="secondary" onClick={() => window.print()}>Print</Button>}
+          {!editing && <Button variant="secondary" onClick={() => void renderAllCharts().then(() => window.print())}>Print</Button>}
           {!editing && <DownloadImageButton name={name} />}
+          {!editing && <Button variant="secondary" aria-pressed={low.lowData} onClick={() => low.set(!low.lowData)}>{low.lowData ? "Low-data mode: on" : "Low-data mode"}</Button>}
         </div>
         {dashboard.canEdit && (
           <div className="flex flex-wrap gap-2" data-no-print>
@@ -186,7 +214,7 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
             <button type="button" className="underline" onClick={() => void choosePeriod("")}>show all periods</button>
           </p>
         )}
-        <DashboardCanvas widgets={shown} charts={byId} editing={editing} labels={projectNames} onChange={applyShown} onPick={onPick} onEdit={setEditingId} />
+        <DashboardCanvas widgets={shown} charts={byId} editing={editing} labels={projectNames} onChange={applyShown} onPick={onPick} hoverName={hoverName} onHover={setHoverName} onEdit={setEditingId} fitHeight={tv.active && screenHeight > 0 ? screenHeight - 140 : undefined} />
         </>
       )}
 

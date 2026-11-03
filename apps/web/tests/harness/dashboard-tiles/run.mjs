@@ -92,13 +92,17 @@ await check("the activities map plots the plan, says what could not be placed, a
 
 if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT.replace(".png", "-maps.png"), fullPage: true });
 
-await check("editing offers a map for a project; adding it is full width and awaits save, and saving sends only what it shows", async () => {
+await check("editing offers a map for a project; adding it is full width and it is drawn at once, before any save, and saving sends only what it shows", async () => {
   await page.getByRole("button", { name: "Edit" }).click();
   const form = page.getByRole("form", { name: "Add a map" });
   await form.getByLabel("Map").selectOption("ACTIVITIES");
   await form.getByLabel("Name (optional)").fill("Field sites");
   await form.getByRole("button", { name: "Add the map" }).click();
-  await page.getByText("Save the dashboard to draw this.").waitFor();
+  const field = page.locator("section[aria-label='Field sites']");
+  await field.waitFor();
+  assert.equal(await page.evaluate(() => window.__h.saves.length), 0, "nothing was saved to draw it");
+  assert.equal(await page.getByText("Save the dashboard to draw this.").count(), 0, "no tile asks for a save before it is drawn");
+  await field.getByText(/Late|On time|Done|Cancelled|places|activities/).first().waitFor();
   await page.getByRole("button", { name: "Save", exact: true }).click();
   await page.waitForFunction(() => window.__h.saves.length === 1);
   const sent = (await page.evaluate(() => window.__h.saves[0])).input;
@@ -110,7 +114,7 @@ await check("editing offers a map for a project; adding it is full width and awa
   await page.getByRole("button", { name: "Edit" }).waitFor();
 });
 
-await check("editing offers a number tile with a choice of figure, colour and name; adding it puts a tile on the canvas awaiting save", async () => {
+await check("editing offers a number tile with a choice of figure, colour and name; adding it puts a drawn tile on the canvas at once", async () => {
   await page.getByRole("button", { name: "Edit" }).click();
   const form = page.getByRole("form", { name: "Add a number tile" });
   await form.getByLabel("Figure").selectOption("ACTIVITIES_LATE");
@@ -118,7 +122,10 @@ await check("editing offers a number tile with a choice of figure, colour and na
   assert.equal(await form.getByLabel("Currency (optional)").count(), 0, "only a money figure has a currency");
   await form.getByLabel("Name (optional)").fill("Behind schedule");
   await form.getByRole("button", { name: "Add the tile" }).click();
-  await page.getByText("Save the dashboard to draw this.").last().waitFor();
+  const tile = page.locator("section[aria-label='Behind schedule']");
+  await tile.waitFor();
+  assert.match(await text(tile), /3\s*activities/, "the new tile shows its figure before any save");
+  assert.equal(await page.getByText("Save the dashboard to draw this.").count(), 0);
 });
 
 await check("saving sends the new tile as a number tile with exactly the chosen figure, colour and name", async () => {

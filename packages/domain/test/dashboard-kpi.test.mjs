@@ -36,3 +36,25 @@ test("the viewer's period filter ends a KPI at that period; a KPI widget needs a
   assert.equal(widgetProblems([w]).length, 0);
   assert.equal(widgetProblems([{ ...w, kpi: undefined }]).length, 1);
 });
+
+import { kpiChange, kpiStatusOf, KPI_STATUSES, KPI_STATUS_RULES } from "../dist/index.js";
+
+test("a KPI compares the latest figure with the earlier one, and says whether that direction is the wanted one", () => {
+  const r = buildKpi(sheet, { indicatorId: "a", includeDraft: true });
+  assert.deepEqual(r.tile.change, { direction: "UP", delta: 10, percent: 100, sincePeriod: "Jan", good: true });
+  assert.equal(buildKpi(sheet, { indicatorId: "a", includeDraft: false }).tile.change, null);
+});
+test("a lower-is-better indicator that fell is good; no change is neither; a zero start has no percent", () => {
+  assert.equal(kpiChange({ value: 5 }, { value: 8, periodLabel: "x" }, true).good, true);
+  assert.equal(kpiChange({ value: 5 }, { value: 5, periodLabel: "x" }, false).good, null);
+  assert.equal(kpiChange({ value: 5 }, { value: 0, periodLabel: "x" }, false).percent, null);
+  assert.equal(kpiChange({ value: 5 }, null, false), null);
+});
+test("status: nothing recorded, not judged (rate or no target), target met, in progress; every status has a rule", () => {
+  assert.equal(kpiStatusOf({ value: null, percentOfTarget: null }), "NO_DATA");
+  assert.equal(kpiStatusOf({ value: 60, percentOfTarget: null }), "NOT_JUDGED");
+  assert.equal(kpiStatusOf({ value: 100, percentOfTarget: 100 }), "TARGET_MET");
+  assert.equal(kpiStatusOf({ value: 20, percentOfTarget: 30 }), "IN_PROGRESS");
+  assert.deepEqual(KPI_STATUS_RULES.map((r) => r.status).sort(), [...KPI_STATUSES].sort());
+  assert.equal(buildKpi(sheet, { indicatorId: "r", includeDraft: true }).tile.status, "NOT_JUDGED");
+});

@@ -59,6 +59,10 @@ export const SaveDashboardSchema = z.object({
 });
 export type SaveDashboardInput = z.infer<typeof SaveDashboardSchema>;
 
+/** Widgets to draw now without saving them (a tile just added in edit mode), optionally for the viewer's own period. */
+export const PreviewDashboardSchema = z.object({ widgets: z.array(DashboardWidgetSchema).min(1).max(24), periodId: z.string().max(64).optional() });
+export type PreviewDashboardInput = z.infer<typeof PreviewDashboardSchema>;
+
 export const AddDashboardWidgetSchema = z.object({ projectId: z.string().min(1), spec: WidgetSpecSchema.optional(), report: ReportQuerySchema.optional(), kpi: KpiQuerySchema.optional(), metric: MetricQuerySchema.optional(), map: MapWidgetSchema.optional(), title: z.string().trim().max(120).optional() }).refine((v) => (v.spec ? 1 : 0) + (v.report ? 1 : 0) + (v.kpi ? 1 : 0) + (v.metric ? 1 : 0) + (v.map ? 1 : 0) === 1, { message: "Add either a chart, a report, a KPI tile or a number tile." });
 export type AddDashboardWidgetInput = z.infer<typeof AddDashboardWidgetSchema>;
 

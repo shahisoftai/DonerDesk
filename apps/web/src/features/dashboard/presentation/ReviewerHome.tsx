@@ -11,7 +11,7 @@ import { InlineError } from "@/components/feedback/PageState";
 import { needsYouItems, reportsDueWithin, upcomingReports } from "../domain/home-derive";
 import { HomePinsPanel } from "@/features/home-pins/presentation/HomePinsPanel";
 import { BookmarksPanel } from "@/features/bookmarks/presentation/BookmarksPanel";
-import { HomeHeader, NeedsYouStrip, NotificationsList, Panel, QuickLinks, Tile, type QuickLink } from "./HomeParts";
+import { HomeHeader, NeedsYouStrip, NotificationsList, Panel, QuickLinks, HomeCard, type QuickLink } from "./HomeParts";
 import { DeadlineTiles, StatList } from "./HomeWidgets";
 
 type Ctx = Awaited<ReturnType<typeof requireSession>>;
@@ -81,17 +81,17 @@ export async function ReviewerHome({ ctx, variant }: { ctx: Ctx; variant: "GRANT
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Headline figures">
           {grants ? (
             <>
-              <Tile label="Reports due in 30 days" value={String(reportsDueWithin(rows, 30))} hint={totals.reportsOverdue > 0 ? `${totals.reportsOverdue} overdue` : "None overdue"} href="/reports" />
-              <Tile label="Active awards" value={funding?.ok ? String(allGrants.filter((g) => g.status === "ACTIVE").length) : "—"} hint={funding?.ok ? `${endingSoon.length} ending within 6 months` : "Needs organisation access"} href="/programmes" />
-              <Tile label="Projects behind" value={String(totals.behind)} hint={`${totals.needAttention} need attention`} href="/portfolio" />
-              <Tile label="Reports overdue" value={String(totals.reportsOverdue)} hint="past their donor deadline" href="/reports" />
+              <HomeCard label="Reports due in 30 days" value={String(reportsDueWithin(rows, 30))} hint={totals.reportsOverdue > 0 ? `${totals.reportsOverdue} overdue` : "None overdue"} href="/reports" />
+              <HomeCard label="Active awards" value={funding?.ok ? String(allGrants.filter((g) => g.status === "ACTIVE").length) : "—"} hint={funding?.ok ? `${endingSoon.length} ending within 6 months` : "Needs organisation access"} href="/programmes" />
+              <HomeCard label="Projects behind" value={String(totals.behind)} hint={`${totals.needAttention} need attention`} href="/portfolio" />
+              <HomeCard label="Reports overdue" value={String(totals.reportsOverdue)} hint="past their donor deadline" href="/reports" />
             </>
           ) : (
             <>
-              <Tile label="Compliance blockers" value={work.ok ? String(checklist.length) : "—"} hint="open checklist items" href="/compliance" />
-              <Tile label="Files to verify" value={pendingEvidence === null ? "—" : String(pendingEvidence)} hint="awaiting review" href="/evidence" />
-              <Tile label="Reports in 30 days" value={String(reportsDueWithin(rows, 30))} hint={totals.reportsOverdue > 0 ? `${totals.reportsOverdue} overdue` : "None overdue"} href="/reports" />
-              <Tile label="Serious problems" value={String(totals.highRisks)} hint={`${totals.openRisks} open in total`} href="/portfolio" />
+              <HomeCard label="Compliance blockers" value={work.ok ? String(checklist.length) : "—"} hint="open checklist items" href="/compliance" />
+              <HomeCard label="Files to verify" value={pendingEvidence === null ? "—" : String(pendingEvidence)} hint="awaiting review" href="/evidence" />
+              <HomeCard label="Reports in 30 days" value={String(reportsDueWithin(rows, 30))} hint={totals.reportsOverdue > 0 ? `${totals.reportsOverdue} overdue` : "None overdue"} href="/reports" />
+              <HomeCard label="Serious problems" value={String(totals.highRisks)} hint={`${totals.openRisks} open in total`} href="/portfolio" />
             </>
           )}
         </section>

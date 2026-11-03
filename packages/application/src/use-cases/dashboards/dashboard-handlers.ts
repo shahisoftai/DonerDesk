@@ -11,6 +11,7 @@ import type { IDashboardLinkRepository, IDashboardRepository, StoredDashboard, S
 import type { VisibleProjects } from "../../services/visible-projects.js";
 import type { GetProjectDataSheetHandler } from "../data-center/data-sheet.js";
 import type { IDatasetExtras } from "../../services/dataset-extras.js";
+import { ShareLinkExtras, type IShareMapReader } from "../../services/share-link-extras.js";
 
 /**
  * Dashboards of saved Data Center charts (Phase 33.8). A dashboard stores chart specs and positions only; the figures are drawn
@@ -174,7 +175,7 @@ export interface DashboardChartDto {
   /** A coloured number tile: a money or activity figure. */
   metric?: MetricTile;
   /** An interactive map: the screen draws it, for the viewer, from their own access (nothing is sent here). */
-  map?: { view: "RESULTS" | "ACTIVITIES"; title: string; projectId: string };
+  map?: { view: "RESULTS" | "ACTIVITIES"; title: string; projectId: string; /** Only on a share link: the data the card shows, read on the server because a link holder has no session. */ preloaded?: Record<string, unknown> };
   /** A text block. */
   text?: string;
   /** Why it is not drawn: not available to this viewer, or the chart's own reason (an indicator was removed). */
@@ -182,13 +183,15 @@ export interface DashboardChartDto {
 }
 
 /** Draws every chart of a set of widgets from the projects' data sheets. One sheet read per project, however many charts. */
-async function drawCharts(
+export async function drawCharts(
   widgets: ReadonlyArray<DashboardWidget>,
   readSheet: (projectId: string) => Promise<DataSheet | null>,
   /** The plan, activity days and budget, read for this caller; absent for a share link, which never shows them. */
   extras?: { ctx: AuthenticatedContext; service: IDatasetExtras },
   /** The viewer's own period for this visit; the saved dashboard is not changed. */
   viewerPeriodId?: string,
+  /** Present only for a share link: maps are drawn from data read here, and lists of projects are not shown. */
+  share?: { maps: IShareMapReader },
 ): Promise<DashboardChartDto[]> {
   const sheets = new Map<string, DataSheet | null>();
   for (const w of widgets) if (!sheets.has(w.projectId)) sheets.set(w.projectId, await readSheet(w.projectId));
@@ -217,7 +220,7 @@ async function drawCharts(
     if (w.kind === "PROJECT_LIST") {
       if (!w.projectList) return { widgetId: w.id, unavailable: "This list has no filters." };
       // The list is made for the person opening the dashboard (the projects they can see); a share link has no such person and shows none.
-      if (!extras) return { widgetId: w.id, unavailable: "Project lists are not shown through a share link." };
+      if (!extras || share) return { widgetId: w.id, unavailable: "Project lists are not shown through a share link." };
       const sources = await extra("visible-projects", () => extras.service.visibleProjects(extras.ctx));
       if (!sources) return { widgetId: w.id, unavailable: "The projects could not be read just now." };
       const starred = w.projectList.affiliation === "BOOKMARKED" ? await extra("bookmarked-projects", () => extras.service.bookmarkedProjectIds(extras.ctx)) : undefined;
@@ -229,7 +232,19 @@ async function drawCharts(
       if (!w.map) return { widgetId: w.id, unavailable: "This map has no settings." };
       // A map reads recorded values and the plan as the person opening the dashboard: it is never drawn for a share link (no extras there).
       if (!extras) return { widgetId: w.id, unavailable: "Maps are not shown through a share link." };
-      return { widgetId: w.id, map: { view: w.map.view, title: w.map.title?.trim() || MAP_VIEW_LABEL[w.map.view], projectId: w.projectId } };
+      const title = w.map.title?.trim() || MAP_VIEW_LABEL[w.map.view];
+      if (share && extras) {
+        const gx = extras.ctx;
+        if (w.map.view === "RESULTS") {
+          const [places, results] = await Promise.all([share.maps.places(gx), share.maps.results(gx, w.projectId)]);
+          if (places === undefined || results === undefined) return { widgetId: w.id, unavailable: "This map could not be read just now." };
+          return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, preloaded: { places, results } } };
+        }
+        const activities = await share.maps.activities(gx, w.projectId);
+        if (!activities) return { widgetId: w.id, unavailable: "This map could not be read just now." };
+        return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, preloaded: activities as unknown as Record<string, unknown> } };
+      }
+      return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId } };
     }
     if (w.kind === "METRIC") {
       if (!w.metric) return { widgetId: w.id, unavailable: "This tile has no figure." };
@@ -265,26 +280,52 @@ async function drawCharts(
   }));
 }
 
+type DashboardPeriod = { projectId: string; id: string; label: string };
+
+/** Reads a project's sheet for the viewer (only the projects they may see) and notes its periods. The one reader both handlers draw through. */
+function viewerSheetReader(ctx: AuthenticatedContext, sheets: GetProjectDataSheetHandler, allowed: ReadonlySet<string>, periods: DashboardPeriod[]) {
+  return async (projectId: string): Promise<DataSheet | null> => {
+    if (!allowed.has(projectId)) return null;
+    const sheet = await sheets.handle(ctx, projectId);
+    if (!sheet.ok) return null;
+    for (const p of sheet.value.periods) periods.push({ projectId, id: p.id, label: p.label });
+    return sheet.value;
+  };
+}
+
 export class GetDashboardDataHandler {
   constructor(private readonly repo: IDashboardRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly visible: VisibleProjects, private readonly extras?: IDatasetExtras) {}
 
-  async handle(ctx: AuthenticatedContext, id: string, options: { periodId?: string } = {}): Promise<Result<{ charts: DashboardChartDto[]; periods: Array<{ projectId: string; id: string; label: string }> }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, id: string, options: { periodId?: string } = {}): Promise<Result<{ charts: DashboardChartDto[]; periods: DashboardPeriod[] }, DomainError>> {
     if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see dashboards"));
     const d = await load(this.repo, ctx, id);
     if (!d.ok) return d;
     const mine = await this.visible.for(ctx);
     if (!mine.ok) return mine;
-    const allowed = new Set(mine.value.map((p) => p.id));
     // The periods of the projects the viewer may see: what the dashboard's period filter offers.
-    const periods: Array<{ projectId: string; id: string; label: string }> = [];
-    const charts = await drawCharts(d.value.widgets, async (projectId) => {
-      if (!allowed.has(projectId)) return null;
-      const sheet = await this.sheets.handle(ctx, projectId);
-      if (!sheet.ok) return null;
-      for (const p of sheet.value.periods) periods.push({ projectId, id: p.id, label: p.label });
-      return sheet.value;
-    }, this.extras ? { ctx, service: this.extras } : undefined, options.periodId);
+    const periods: DashboardPeriod[] = [];
+    const charts = await drawCharts(d.value.widgets, viewerSheetReader(ctx, this.sheets, new Set(mine.value.map((p) => p.id)), periods), this.extras ? { ctx, service: this.extras } : undefined, options.periodId);
     return ok({ charts, periods });
+  }
+}
+
+/**
+ * Draws widgets that are not saved yet (a tile just added or changed in edit mode), so it appears at once with its real figures.
+ * The same drawing, for the same viewer, under the same visibility rules as a saved dashboard; nothing is stored and nothing is audited.
+ */
+export class PreviewDashboardChartsHandler {
+  constructor(private readonly sheets: GetProjectDataSheetHandler, private readonly visible: VisibleProjects, private readonly extras?: IDatasetExtras) {}
+
+  async handle(ctx: AuthenticatedContext, widgets: ReadonlyArray<DashboardWidget>, options: { periodId?: string } = {}): Promise<Result<{ charts: DashboardChartDto[] }, DomainError>> {
+    if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see dashboards"));
+    // A size outside the grid is fitted, not refused, exactly as a save does it; then the rest is checked.
+    const fitted = settleLayout([...widgets]);
+    const problems = widgetProblems(fitted);
+    if (problems.length > 0) return fail(DomainError.validation(problems[0]!.message));
+    const mine = await this.visible.for(ctx);
+    if (!mine.ok) return mine;
+    const charts = await drawCharts(fitted, viewerSheetReader(ctx, this.sheets, new Set(mine.value.map((p) => p.id)), []), this.extras ? { ctx, service: this.extras } : undefined, options.periodId);
+    return ok({ charts });
   }
 }
 
@@ -363,7 +404,8 @@ export class ResolveDashboardShareHandler {
  * reads "not available") and without anything that names a person. The reader is an outside guest, never a member.
  */
 export class PublicDashboardHandler {
-  constructor(private readonly repo: IDashboardRepository, private readonly sheets: GetProjectDataSheetHandler) {}
+  /** `extras` and `maps` are what a link may show beyond indicator figures (see `ShareLinkExtras`); without them a link shows indicator charts only. */
+  constructor(private readonly repo: IDashboardRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly extras?: IDatasetExtras, private readonly maps?: IShareMapReader) {}
 
   async handle(tenantId: TenantId, dashboardId: string): Promise<Result<{ name: string; widgets: DashboardWidget[]; charts: DashboardChartDto[] }, DomainError>> {
     const found = await this.repo.findById(dashboardId, tenantId);
@@ -374,7 +416,7 @@ export class PublicDashboardHandler {
       if (!sheet.ok) return null;
       // Finance never goes out through a link.
       return { ...sheet.value, finance: [], registerFinance: undefined, financeEnabled: false } as DataSheet;
-    });
+    }, this.extras ? { ctx: guest, service: new ShareLinkExtras(this.extras) } : undefined, undefined, this.maps ? { maps: this.maps } : undefined);
     return ok({ name: found.value.name, widgets: found.value.widgets, charts });
   }
 }

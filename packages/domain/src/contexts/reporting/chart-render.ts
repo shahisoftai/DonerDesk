@@ -1,8 +1,12 @@
+import { LIGHT_ROLES } from "./chart-theme-roles.js";
 import { CHART_PALETTES, DATA_CHART_TEMPLATES, HEX_COLOUR } from "./data-charts.js";
 import { CHART_KINDS, TEMPLATE_SHAPE, type ChartAnnotation, type ChartKind, type ChartShape, type ChartSize, type ChartSpecV2, type NumberFormat, type SeriesStyle } from "./chart-spec-v2.js";
 import { planCounts } from "./plan-counts.js";
 import type { DatasetBudgetLine, DatasetDay, DatasetFinanceRow, DatasetPlace, DatasetPlanRow, DatasetPoint, DatasetQuery, DatasetResult, DatasetSource } from "./dataset-query.js";
 import { hasShareOfTarget, type DataSheetIndicator } from "./data-sheet.js";
+
+/** Colour roles (see `chart-theme-roles.ts`): the light map is what a stored or exported picture uses; a screen swaps roles with `retheme`. */
+const R = LIGHT_ROLES;
 
 /**
  * The Chart Studio's builder (Phase 34.1): a `ChartSpecV2` and the dataset it asks for in, a drawn chart out. Pure and deterministic,
@@ -202,7 +206,7 @@ function annotationsOf(spec: ChartSpecV2, horizontal: boolean, extra: ChartAnnot
   return {
     ...(lines.length > 0 ? { markLine: { symbol: "none", silent: true, data: lines.map((l) => ({ [axis]: l.value, name: l.text ?? "", lineStyle: { type: "dashed", ...(l.color && HEX_COLOUR.test(l.color) ? { color: l.color } : {}) }, label: { formatter: l.text ?? "{c}" } })) } } : {}),
     ...(bands.length > 0 ? { markArea: { silent: true, data: bands.map((b) => [{ [axis]: b.from, name: b.text ?? "", itemStyle: { color: b.color && HEX_COLOUR.test(b.color) ? `${b.color}33` : "rgba(120,120,120,0.12)" } }, { [axis]: b.to }]) } } : {}),
-    graphic: notes.map((n, i) => ({ type: "text", left: 12, top: 36 + i * 18, silent: true, style: { text: n.text, fill: n.color && HEX_COLOUR.test(n.color) ? n.color : "#555", fontSize: 12 } })),
+    graphic: notes.map((n, i) => ({ type: "text", left: 12, top: 36 + i * 18, silent: true, style: { text: n.text, fill: n.color && HEX_COLOUR.test(n.color) ? n.color : R.muted, fontSize: 12 } })),
   };
 }
 
@@ -357,7 +361,7 @@ function waffle(spec: ChartSpecV2, norm: Norm, title: string): Built {
       grid: { left: 24, right: 24, top: 64, bottom: 64 },
       xAxis: { type: "category", show: false, data: Array.from({ length: 10 }, (_, i) => i) }, yAxis: { type: "category", show: false, data: Array.from({ length: 10 }, (_, i) => i) },
       visualMap: { type: "piecewise", orient: "horizontal", left: "center", bottom: 0, itemGap: 12, pieces: parts.map((p, i) => ({ value: i, label: `${p.name} (${Math.round((cells[i]! ) )}%)`, color: color[i % color.length] })) },
-      series: [{ type: "heatmap", data, itemStyle: { borderColor: "#fff", borderWidth: 3 }, emphasis: { itemStyle: { borderColor: "#333" } }, tooltip: { formatter: (p: { data: number[] }) => `${parts[p.data[2]!]!.name}: ${formatChartNumber(parts[p.data[2]!]!.value)} of ${formatChartNumber(total)}` } }],
+      series: [{ type: "heatmap", data, itemStyle: { borderColor: R.surface, borderWidth: 3 }, emphasis: { itemStyle: { borderColor: R.emphasis } }, tooltip: { formatter: (p: { data: number[] }) => `${parts[p.data[2]!]!.name}: ${formatChartNumber(parts[p.data[2]!]!.value)} of ${formatChartNumber(total)}` } }],
     },
     notes: ["Each square is 1% of the total."],
   };
@@ -423,8 +427,8 @@ function waterfall(spec: ChartSpecV2, norm: Norm, title: string): Built {
       xAxis: axisOf(spec.axes?.x, { type: "category", data: names }), yAxis: axisOf(spec.axes?.y, { type: "value", min: 0 }),
       series: [
         { type: "bar", name: "base", stack: "w", itemStyle: { color: "transparent" }, tooltip: { show: false }, data: base },
-        { type: "bar", name: "Increase", stack: "w", data: up, itemStyle: { color: "#10b981" } },
-        { type: "bar", name: "Decrease", stack: "w", data: down, itemStyle: { color: "#ef4444" } },
+        { type: "bar", name: "Increase", stack: "w", data: up, itemStyle: { color: R.positive } },
+        { type: "bar", name: "Decrease", stack: "w", data: down, itemStyle: { color: R.negative } },
         { type: "bar", name: "Total", stack: "w", data: total, itemStyle: { color: palette(spec)[0] } },
       ],
     },
@@ -483,7 +487,7 @@ function heatmap(spec: ChartSpecV2, norm: Norm, title: string): Built {
     option: {
       ...baseOption(spec, title, palette(spec), false, annotationsOf(spec, false, [])), tooltip: { position: "top" }, grid: { left: 90, right: 24, top: 56, bottom: 64, containLabel: true },
       xAxis: { type: "category", data: norm.categories, splitArea: { show: true } }, yAxis: { type: "category", data: norm.series.map((s) => s.name), splitArea: { show: true } },
-      visualMap: { min: Math.min(...vs), max: Math.max(...vs), calculable: true, orient: "horizontal", left: "center", bottom: 0, inRange: { color: ["#e0f2fe", palette(spec)[0]!] } },
+      visualMap: { min: Math.min(...vs), max: Math.max(...vs), calculable: true, orient: "horizontal", left: "center", bottom: 0, inRange: { color: [R.rampStart, palette(spec)[0]!] } },
       series: [{ type: "heatmap", data, label: { show: spec.labels?.show ?? false } }],
     },
     notes: ["Blank cells have no value recorded."],
@@ -505,14 +509,14 @@ function progress(spec: ChartSpecV2, norm: Norm, title: string): Built {
     case "GAUGE":
       return { option: { ...common, series: [{ type: "gauge", min: 0, max: Math.max(100, pct), progress: { show: true, width: 14 }, axisLine: { lineStyle: { width: 14 } }, detail: { valueAnimation: false, formatter: "{value}%", fontSize: 24 }, data: [{ value: pct, name: caption }] }] } };
     case "PROGRESS_RING":
-      return { option: { ...common, series: [{ type: "pie", radius: ["62%", "80%"], silent: true, label: { show: false }, data: [{ name: "Done", value: Math.min(pct, 100) }, { name: "Remaining", value: Math.max(0, 100 - pct), itemStyle: { color: "rgba(150,150,150,0.25)" } }] }], graphic: [{ type: "text", left: "center", top: "42%", style: { text: `${pct}%`, fontSize: 28, fontWeight: "bold", fill: "#333", textAlign: "center" } }, { type: "text", left: "center", top: "58%", style: { text: caption, fontSize: 12, fill: "#666", textAlign: "center" } }] } };
+      return { option: { ...common, series: [{ type: "pie", radius: ["62%", "80%"], silent: true, label: { show: false }, data: [{ name: "Done", value: Math.min(pct, 100) }, { name: "Remaining", value: Math.max(0, 100 - pct), itemStyle: { color: R.track } }] }], graphic: [{ type: "text", left: "center", top: "42%", style: { text: `${pct}%`, fontSize: 28, fontWeight: "bold", fill: R.text, textAlign: "center" } }, { type: "text", left: "center", top: "58%", style: { text: caption, fontSize: 12, fill: R.muted, textAlign: "center" } }] } };
     case "PROGRESS_BAR":
-      return { option: { ...common, grid: { left: 24, right: 24, top: 70, bottom: 30 }, xAxis: { type: "value", min: 0, max: Math.max(100, pct), axisLabel: { formatter: "{value}%" } }, yAxis: { type: "category", data: [t.indicator.code], show: false }, series: [{ type: "bar", data: [100], barWidth: 22, silent: true, itemStyle: { color: "rgba(150,150,150,0.25)" }, barGap: "-100%" }, { type: "bar", data: [pct], barWidth: 22, label: { show: true, position: "right", formatter: `${pct}%` } }] }, notes: [caption] };
+      return { option: { ...common, grid: { left: 24, right: 24, top: 70, bottom: 30 }, xAxis: { type: "value", min: 0, max: Math.max(100, pct), axisLabel: { formatter: "{value}%" } }, yAxis: { type: "category", data: [t.indicator.code], show: false }, series: [{ type: "bar", data: [100], barWidth: 22, silent: true, itemStyle: { color: R.track }, barGap: "-100%" }, { type: "bar", data: [pct], barWidth: 22, label: { show: true, position: "right", formatter: `${pct}%` } }] }, notes: [caption] };
     case "KPI_NUMBER":
-      return { option: { ...common, graphic: [{ type: "text", left: "center", top: "32%", style: { text: formatChartNumber(t.latest, fmt), fontSize: 44, fontWeight: "bold", fill: "#222", textAlign: "center" } }, { type: "text", left: "center", top: "60%", style: { text: `${pct}% of the target (${formatChartNumber(t.target, fmt)})`, fontSize: 14, fill: "#555", textAlign: "center" } }] } };
+      return { option: { ...common, graphic: [{ type: "text", left: "center", top: "32%", style: { text: formatChartNumber(t.latest, fmt), fontSize: 44, fontWeight: "bold", fill: R.text, textAlign: "center" } }, { type: "text", left: "center", top: "60%", style: { text: `${pct}% of the target (${formatChartNumber(t.target, fmt)})`, fontSize: 14, fill: R.muted, textAlign: "center" } }] } };
     default: {
       // BULLET: the result over a band that reaches the target.
-      return { option: { ...common, grid: { left: 24, right: 40, top: 70, bottom: 30 }, xAxis: { type: "value", min: 0, max: Math.max(t.target, t.latest) * 1.1 }, yAxis: { type: "category", data: [t.indicator.code], show: false }, series: [{ type: "bar", data: [t.target], barWidth: 30, silent: true, itemStyle: { color: "rgba(150,150,150,0.25)" }, barGap: "-100%" }, { type: "bar", data: [t.latest], barWidth: 12, label: { show: true, position: "right", formatter: formatChartNumber(t.latest, fmt) }, markLine: { symbol: "none", silent: true, data: [{ xAxis: t.target, label: { formatter: "Target" } }] } }] }, notes: [caption] };
+      return { option: { ...common, grid: { left: 24, right: 40, top: 70, bottom: 30 }, xAxis: { type: "value", min: 0, max: Math.max(t.target, t.latest) * 1.1 }, yAxis: { type: "category", data: [t.indicator.code], show: false }, series: [{ type: "bar", data: [t.target], barWidth: 30, silent: true, itemStyle: { color: R.track }, barGap: "-100%" }, { type: "bar", data: [t.latest], barWidth: 12, label: { show: true, position: "right", formatter: formatChartNumber(t.latest, fmt) }, markLine: { symbol: "none", silent: true, data: [{ xAxis: t.target, label: { formatter: "Target" } }] } }] }, notes: [caption] };
     }
   }
 }
@@ -542,7 +546,7 @@ const dayNumber = (iso: string): number => Math.floor(Date.UTC(Number(iso.slice(
 const dayLabel = (n: number): string => new Date(n * DAY_MS).toISOString().slice(0, 10);
 
 /** Signal colours for the timeline: the delivery signal, never a score. */
-const SIGNAL_COLOUR: Record<string, string> = { LATE: "#ef4444", ON_TIME: "#10b981", DONE: "#6b7280", CANCELLED: "#d1d5db" };
+const SIGNAL_COLOUR: Record<string, string> = { LATE: R.negative, ON_TIME: R.positive, DONE: R.neutral, CANCELLED: R.faint };
 export const MAX_GANTT_ROWS = 60;
 
 function gantt(spec: ChartSpecV2, rows: ReadonlyArray<DatasetPlanRow>, title: string, notes: string[]): Built {
@@ -562,7 +566,7 @@ function gantt(spec: ChartSpecV2, rows: ReadonlyArray<DatasetPlanRow>, title: st
       yAxis: { type: "category", inverse: true, data: names, axisLabel: { width: 180, overflow: "truncate" } },
       series: [
         { type: "bar", stack: "t", silent: true, itemStyle: { color: "transparent" }, data: shown.map((r) => dayNumber(r.start) - first) },
-        { type: "bar", stack: "t", barMaxWidth: 18, data: shown.map((r) => ({ value: dayNumber(r.end) - dayNumber(r.start) + 1, name: r.title, start: r.start, end: r.end, label: r.signalLabel, itemStyle: { color: SIGNAL_COLOUR[r.signal] ?? "#6b7280" } })) },
+        { type: "bar", stack: "t", barMaxWidth: 18, data: shown.map((r) => ({ value: dayNumber(r.end) - dayNumber(r.start) + 1, name: r.title, start: r.start, end: r.end, label: r.signalLabel, itemStyle: { color: SIGNAL_COLOUR[r.signal] ?? R.neutral } })) },
       ],
     },
     notes: [...notes, "Colour shows whether each item is on time, late, done or cancelled."],
@@ -586,7 +590,7 @@ function calendar(spec: ChartSpecV2, days: ReadonlyArray<DatasetDay>, title: str
     option: {
       ...baseOption(spec, title, palette(spec), false, annotationsOf(spec, false, [])),
       tooltip: { formatter: (p: { data: [string, number] }) => `${p.data[0]}: ${p.data[1]} completed` },
-      visualMap: { min: 0, max, calculable: false, orient: "horizontal", left: "center", bottom: 0, inRange: { color: ["#e0f2fe", palette(spec)[0]!] } },
+      visualMap: { min: 0, max, calculable: false, orient: "horizontal", left: "center", bottom: 0, inRange: { color: [R.rampStart, palette(spec)[0]!] } },
       calendar: { top: 64, left: 40, right: 24, cellSize: ["auto", 16], range: [from, to], itemStyle: { borderWidth: 1 }, yearLabel: { show: true } },
       series: [{ type: "heatmap", coordinateSystem: "calendar", data: shown.map((d) => [d.date, d.count]) }],
     },
@@ -681,8 +685,8 @@ function graduatedSymbols(spec: ChartSpecV2, places: ReadonlyArray<DatasetPlace>
     option: {
       ...baseOption(spec, title, palette(spec), false, annotationsOf(spec, false, [])),
       tooltip: { trigger: "item", formatter: (p: { name: string; value: number[] }) => `${p.name}: ${formatChartNumber(p.value[2]!)}${unit ? ` ${unit}` : ""}` },
-      geo: { map: WORLD_MAP, roam: true, silent: false, itemStyle: { areaColor: "#e7e5e4", borderColor: "#ffffff" }, emphasis: { itemStyle: { areaColor: "#d6d3d1" } }, ...fitTo(pinned) },
-      series: [{ type: "scatter", coordinateSystem: "geo", data: pinned.map((p) => ({ name: p.name, value: [p.longitude!, p.latitude!, p.value!] })), symbolSize: (v: number[]) => 8 + 36 * Math.sqrt((v[2] ?? 0) / max), itemStyle: { color: palette(spec)[0], opacity: 0.7, borderColor: "#fff" }, emphasis: { scale: 1.2 } }],
+      geo: { map: WORLD_MAP, roam: true, silent: false, itemStyle: { areaColor: R.mapArea, borderColor: R.surface }, emphasis: { itemStyle: { areaColor: R.mapAreaHover } }, ...fitTo(pinned) },
+      series: [{ type: "scatter", coordinateSystem: "geo", data: pinned.map((p) => ({ name: p.name, value: [p.longitude!, p.latitude!, p.value!] })), symbolSize: (v: number[]) => 8 + 36 * Math.sqrt((v[2] ?? 0) / max), itemStyle: { color: palette(spec)[0], opacity: 0.7, borderColor: R.surface }, emphasis: { scale: 1.2 } }],
     },
     notes: [...notes, "Symbol area shows the value; only places with a pin are drawn."],
   };
@@ -705,8 +709,8 @@ function choropleth(spec: ChartSpecV2, places: ReadonlyArray<DatasetPlace>, titl
     option: {
       ...baseOption(spec, title, palette(spec), false, annotationsOf(spec, false, [])),
       tooltip: { trigger: "item", formatter: (p: { name: string; value: number }) => `${p.name}: ${Number.isFinite(p.value) ? formatChartNumber(p.value) : "no value"}` },
-      visualMap: { min: lo, max: hi === lo ? lo + 1 : hi, calculable: true, orient: "horizontal", left: "center", bottom: 0, inRange: { color: ["#e0f2fe", palette(spec)[0]!] }, text: [formatChartNumber(hi), formatChartNumber(lo)] },
-      series: [{ type: "map", map: WORLD_MAP, roam: true, data: countries.map((c) => ({ name: c.name, value: c.value })), itemStyle: { areaColor: "#e7e5e4", borderColor: "#ffffff" }, emphasis: { label: { show: false } } }],
+      visualMap: { min: lo, max: hi === lo ? lo + 1 : hi, calculable: true, orient: "horizontal", left: "center", bottom: 0, inRange: { color: [R.rampStart, palette(spec)[0]!] }, text: [formatChartNumber(hi), formatChartNumber(lo)] },
+      series: [{ type: "map", map: WORLD_MAP, roam: true, data: countries.map((c) => ({ name: c.name, value: c.value })), itemStyle: { areaColor: R.mapArea, borderColor: R.surface }, emphasis: { label: { show: false } } }],
     },
     notes: [...notes, "A country with no value recorded is grey, not zero."],
   };

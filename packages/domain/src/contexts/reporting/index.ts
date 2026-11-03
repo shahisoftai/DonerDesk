@@ -68,6 +68,8 @@ export * from "./management-report.js";
 export * from "./location-analytics.js";
 export * from "./place-rollup.js";
 export * from "./chart-render.js";
+export * from "./chart-theme-roles.js";
+export * from "./chart-screen.js";
 export * from "./places-export.js";
 export * from "./report-query.js";
 export * from "./breakdown-chart.js";

@@ -20,7 +20,7 @@ import { loadPortfolioMap } from "../application/portfolio-map-read-model";
 import { FilterNote, ProjectBreakdown, type HomeFilter } from "./ProjectBreakdown";
 import { filterProjects } from "../domain/home-breakdown";
 import { showsTile } from "../domain/home-tiles";
-import { HomeHeader, NeedsYouStrip, NotificationsList, Panel, QuickLinks, Tile, type QuickLink } from "./HomeParts";
+import { HomeHeader, NeedsYouStrip, NotificationsList, Panel, QuickLinks, HomeCard, type QuickLink } from "./HomeParts";
 
 type Ctx = Awaited<ReturnType<typeof requireSession>>;
 const BAND_TONE = { ON_TRACK: "success", AT_RISK: "warning", OFF_TRACK: "danger", NO_PLAN: "neutral" } as const;
@@ -90,11 +90,11 @@ export async function PortfolioHome({ ctx, variant, filter = {} }: { ctx: Ctx; v
 
       {overview.ok && totals && (
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" aria-label="Headline figures">
-          <Tile label="Delivery" value={`${health.onTrack} on track`} hint={`${health.atRisk} need attention · ${health.offTrack} behind`} href="/portfolio" />
-          <Tile label="Reports due in 30 days" value={String(reportsDueWithin(rows, 30))} hint={totals.reportsOverdue > 0 ? `${totals.reportsOverdue} overdue` : "None overdue"} href="/reports" />
-          <Tile label="Open problems and risks" value={String(totals.openRisks)} hint={`${totals.highRisks} serious`} href="/portfolio" />
-          <Tile label="Evidence to verify" value={snapshot.pendingEvidence.ok && snapshot.pendingEvidence.value !== null ? String(snapshot.pendingEvidence.value) : "—"} hint="awaiting review" href="/evidence" />
-          <Tile label="Late planned activities" value={String(rows.reduce((n, r) => n + r.delivery.lateActivities, 0))} hint={`${rows.reduce((n, r) => n + r.delivery.valuesOverdue, 0)} indicator values overdue`} href="/my-work" />
+          <HomeCard label="Delivery" value={`${health.onTrack} on track`} hint={`${health.atRisk} need attention · ${health.offTrack} behind`} href="/portfolio" />
+          <HomeCard label="Reports due in 30 days" value={String(reportsDueWithin(rows, 30))} hint={totals.reportsOverdue > 0 ? `${totals.reportsOverdue} overdue` : "None overdue"} href="/reports" />
+          <HomeCard label="Open problems and risks" value={String(totals.openRisks)} hint={`${totals.highRisks} serious`} href="/portfolio" />
+          <HomeCard label="Evidence to verify" value={snapshot.pendingEvidence.ok && snapshot.pendingEvidence.value !== null ? String(snapshot.pendingEvidence.value) : "—"} hint="awaiting review" href="/evidence" />
+          <HomeCard label="Late planned activities" value={String(rows.reduce((n, r) => n + r.delivery.lateActivities, 0))} hint={`${rows.reduce((n, r) => n + r.delivery.valuesOverdue, 0)} indicator values overdue`} href="/my-work" />
         </section>
       )}
 

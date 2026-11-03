@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { renderAllCharts } from "@/features/design/presentation/render-when-seen";
 
 const fileSafe = (s: string): string => s.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "dashboard";
 
@@ -19,6 +20,7 @@ export function DownloadImageButton({ name }: { name: string }) {
         if (!node) { setState({ tone: "error", text: "There is nothing on the page to take a picture of." }); return; }
         setBusy(true); setState(null);
         try {
+          await renderAllCharts();
           const { toPng } = await import("html-to-image");
           const dark = document.documentElement.classList.contains("dark") || document.documentElement.getAttribute("data-theme") === "dark";
           const url = await toPng(node, { pixelRatio: 2, cacheBust: true, backgroundColor: dark ? "#0f172a" : "#ffffff", filter: (n) => !(n instanceof HTMLElement && n.hasAttribute("data-no-print")) });

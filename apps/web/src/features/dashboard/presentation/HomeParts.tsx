@@ -41,7 +41,7 @@ export function NeedsYouStrip({ items }: { items: ReadonlyArray<NeedsYouItem> })
   );
 }
 
-export function Tile({ label, value, hint, href }: { label: string; value: string; hint?: string; href: string }) {
+export function HomeCard({ label, value, hint, href }: { label: string; value: string; hint?: string; href: string }) {
   return (
     <Link href={href} className="card min-w-0 transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
       <div className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</div>

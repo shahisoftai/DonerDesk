@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { CHART_KINDS, CHART_KIND_ORDER, CHART_ASPECT, buildChart, datasetQueryFor, resolveDataset, formatChartNumber, kindsForTemplate, waffleCells } from "../dist/index.js";
+import { LIGHT_ROLES } from "../dist/contexts/reporting/chart-theme-roles.js";
 
 const periods = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"].map((label, i) => ({ id: `p${i + 1}`, label, start: `2026-0${i + 1}-01`, end: `2026-0${i + 1}-28`, reportType: "MONTHLY", locked: false }));
 const ind = (id, extra = {}) => ({ id, code: id.toUpperCase(), name: `Indicator ${id}`, level: "OUTPUT", type: "COUNT", unit: "people", baseline: "10", target: "200", isRate: false, ...extra });
@@ -361,7 +362,7 @@ test("a Gantt puts every dated plan item on a timeline, coloured by its delivery
   const [offset, bars] = seriesOf(b);
   assert.deepEqual(offset.data, [0, 27, 130], "days from the first start");
   assert.deepEqual(bars.data.map((d) => d.value), [47, 89, 1], "a milestone is one day wide");
-  assert.deepEqual(bars.data.map((d) => d.itemStyle.color), ["#6b7280", "#ef4444", "#10b981"]);
+  assert.deepEqual(bars.data.map((d) => d.itemStyle.color), [LIGHT_ROLES.neutral, LIGHT_ROLES.negative, LIGHT_ROLES.positive]);
   assert.equal(b.option.yAxis.inverse, true);
   assert.ok(b.notes.some((n) => /on time, late, done or cancelled/.test(n)));
   const many = { ...EXTRA, plan: Array.from({ length: 70 }, (_, i) => ({ id: `${i}`, title: `T${i}`, kind: "ACTIVITY", start: "2026-01-01", end: "2026-01-02", status: "PLANNED", signal: "ON_TIME", signalLabel: "On time" })) };

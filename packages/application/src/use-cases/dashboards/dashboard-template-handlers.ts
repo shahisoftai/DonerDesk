@@ -1,5 +1,5 @@
 import {
-  DomainError, Permissions, SECTOR_TEMPLATES, TEMPLATE_SECTORS, applyTemplate, settleLayout, templateProblems,
+  DomainError, HEADLINE_HEIGHT, Permissions, SECTOR_TEMPLATES, TEMPLATE_SECTORS, applyTemplate, headlinePicks, settleLayout, templateProblems,
   type DashboardTemplate, type DashboardWidget, type Result, type Role, type SectorKey,
 } from "@donordesk/domain";
 import type { ApplyDashboardTemplateInput, DashboardTemplateBody } from "@donordesk/contracts";
@@ -146,6 +146,12 @@ export class ApplyDashboardTemplateHandler {
       else left.push({ title: a.widget.title, missingRoles: a.missingRoles });
     }
     if (widgets.length === 0) return fail(DomainError.validation("None of this template's charts can be drawn until you choose which indicators it should use."));
+    // A headline row of KPI tiles for the mapped roles goes first; the charts move down to make room.
+    const headline = headlinePicks(f.value.template.roles, input.mapping, widgets.length);
+    if (headline.length > 0) {
+      for (let i = 0; i < widgets.length; i++) widgets[i] = { ...widgets[i]!, y: widgets[i]!.y + HEADLINE_HEIGHT };
+      headline.forEach((h) => widgets.unshift({ id: this.ids.generate().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40), projectId: input.projectId, kind: "KPI", kpi: { indicatorId: h.indicatorId, includeDraft: true }, x: h.x, y: 0, w: h.w, h: HEADLINE_HEIGHT }));
+    }
     const saved = await this.save.handle(ctx, { name: input.name, scope: input.scope, projectId: input.scope === "PROJECT" ? input.projectId : undefined, widgets: settleLayout(widgets) as never } as never);
     if (!saved.ok) return saved;
     return ok({ dashboardId: saved.value.id, updatedAt: saved.value.updatedAt, chartsLeftOut: left });

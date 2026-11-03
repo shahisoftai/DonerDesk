@@ -33,7 +33,7 @@ export default async function SharedDashboardPage({ params }: { params: Promise<
   return (
     <main className="mx-auto max-w-6xl px-4 py-6">
       <h1 className="text-2xl font-bold tracking-tight">{dashboard.name}</h1>
-      <p className="mt-1 text-xs text-slate-500">Read-only. The charts are drawn from the recorded values each time this page opens. Finance figures are not shown.</p>
+      <p className="mt-1 text-xs text-slate-500">Read-only. The figures are drawn from the recorded values each time this page opens, and maps show the work plan and results by place as they stand. Money, budgets and lists of projects are not shown.</p>
       <div className="mt-4"><PublicDashboard widgets={dashboard.widgets as never} charts={dashboard.charts} /></div>
     </main>
   );

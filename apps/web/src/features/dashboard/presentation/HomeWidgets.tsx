@@ -7,15 +7,15 @@ import { pipelineBoard } from "../domain/home-derive";
 
 /** A bar with a tick for the share of time that has passed. A missing value is a dashed track, never an empty bar. */
 export function PaceBar({ reading, tone }: { reading: PaceReading; tone: "results" | "budget" }) {
-  const fill = tone === "results" ? "bg-brand-500" : "bg-warning-500";
+  const fill = tone === "results" ? "bg-[var(--viz-1)]" : "bg-[var(--viz-2)]";
   if (reading.value === null) return <span className="text-xs text-slate-400 dark:text-slate-500">Not measured</span>;
   return (
     <div className="min-w-[110px]" title={`${reading.value}% against ${reading.timeElapsed}% of time elapsed`}>
-      <div className="relative h-2 rounded-full bg-slate-200 dark:bg-white/10" role="img" aria-label={`${reading.value} percent, time elapsed ${reading.timeElapsed} percent`}>
+      <div className="relative h-2 rounded-full bg-[var(--tile-border)]" role="img" aria-label={`${reading.value} percent, time elapsed ${reading.timeElapsed} percent`}>
         <div className={`h-full rounded-full ${fill}`} style={{ width: `${reading.value}%` }} />
-        <div className="absolute -top-1 -bottom-1 w-0.5 rounded bg-slate-900 dark:bg-white" style={{ left: `${reading.timeElapsed}%` }} />
+        <div className="absolute -top-1 -bottom-1 w-0.5 rounded bg-[var(--tile-title)]" style={{ left: `${reading.timeElapsed}%` }} />
       </div>
-      <div className="mt-1 flex justify-between text-[11px] tabular-nums text-slate-500 dark:text-slate-400"><span>{reading.value}%</span><span>time {reading.timeElapsed}%</span></div>
+      <div className="mt-1 flex justify-between text-[11px] tabular-nums text-[var(--tile-meta)]"><span>{reading.value}%</span><span>time {reading.timeElapsed}%</span></div>
     </div>
   );
 }
@@ -23,9 +23,9 @@ export function PaceBar({ reading, tone }: { reading: PaceReading; tone: "result
 export function PaceLegend() {
   return (
     <p className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-      <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-brand-500 align-[-1px]" />Results (% of target)</span>
-      <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-warning-500 align-[-1px]" />Budget spent</span>
-      <span><i className="mr-1.5 inline-block h-3 w-0.5 bg-slate-900 align-[-2px] dark:bg-white" />Time elapsed</span>
+      <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-[var(--viz-1)] align-[-1px]" />Results (% of target)</span>
+      <span><i className="mr-1.5 inline-block h-2.5 w-2.5 rounded-sm bg-[var(--viz-2)] align-[-1px]" />Budget spent</span>
+      <span><i className="mr-1.5 inline-block h-3 w-0.5 bg-[var(--tile-title)] align-[-2px]" />Time elapsed</span>
     </p>
   );
 }
@@ -93,7 +93,7 @@ export function ResultsBars({ rows }: { rows: Array<{ projectId: string; title: 
         <li key={r.projectId}>
           <Link href={`/projects/${r.projectId}/indicators`} className="grid grid-cols-[minmax(90px,150px)_minmax(0,1fr)_44px] items-center gap-3 rounded-md px-1 py-1.5 transition hover:bg-slate-100 dark:hover:bg-white/5">
             <span className="min-w-0 break-words text-sm leading-5">{r.title}</span>
-            {r.reading.value === null ? <span className="text-xs text-slate-400">Not measured</span> : <span className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10"><span className="block h-full rounded-full bg-brand-500" style={{ width: `${r.reading.value}%` }} /></span>}
+            {r.reading.value === null ? <span className="text-xs text-slate-400">Not measured</span> : <span className="h-2 overflow-hidden rounded-full bg-[var(--tile-border)]"><span className="block h-full rounded-full bg-[var(--viz-1)]" style={{ width: `${r.reading.value}%` }} /></span>}
             <span className="text-right text-sm tabular-nums">{r.reading.value === null ? "—" : `${r.reading.value}%`}</span>
           </Link>
         </li>
@@ -132,11 +132,11 @@ export function DeliverySparkline({ points }: { points: ReadonlyArray<WeekPoint>
   return (
     <div>
       <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label={`Share of planned work finished on time, last 8 weeks. Latest week ${last.percent}%.`} className="block h-20 w-full overflow-visible">
-        {[25, 50, 75].map((g) => <line key={g} x1="0" x2={w} y1={y(g)} y2={y(g)} className="stroke-slate-200 dark:stroke-white/10" strokeWidth="1" />)}
+        {[25, 50, 75].map((g) => <line key={g} x1="0" x2={w} y1={y(g)} y2={y(g)} style={{ stroke: "var(--tile-border)" }} strokeWidth="1" strokeDasharray="3 3" />)}
         {runs.map((r, k) => (
-          <polyline key={k} fill="none" className="stroke-brand-500" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" points={r.map((p) => `${x(p.i)},${y(p.v)}`).join(" ")} />
+          <polyline key={k} fill="none" style={{ stroke: "var(--viz-1)" }} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" strokeLinecap="round" points={r.map((p) => `${x(p.i)},${y(p.v)}`).join(" ")} />
         ))}
-        <circle cx={x(lastIndex)} cy={y(last.percent!)} r="4" className="fill-brand-500 stroke-white dark:stroke-slate-900" strokeWidth="2" />
+        <circle cx={x(lastIndex)} cy={y(last.percent!)} r="4" style={{ fill: "var(--viz-1)", stroke: "var(--tile-bg)" }} strokeWidth="2" />
       </svg>
       <p className="mt-1 text-xs tabular-nums text-slate-500 dark:text-slate-400">Latest week {last.percent}% on time · {points.reduce((n, p) => n + p.judged, 0)} activities judged in 8 weeks</p>
     </div>

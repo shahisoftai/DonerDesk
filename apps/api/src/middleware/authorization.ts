@@ -80,6 +80,7 @@ export const RULES: ReadonlyArray<{
   { method: "DELETE", route: /^\/v1\/dashboards\/[^/]+$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/dashboards\/[^/]+\/charts$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/dashboards\/[^/]+\/data$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/dashboard-preview$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/dashboards\/[^/]+\/links$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/dashboards\/[^/]+\/links$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/dashboard-links\/[^/]+\/revoke$/, permission: "project.view" },

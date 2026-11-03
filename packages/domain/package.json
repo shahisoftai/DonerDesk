@@ -194,6 +194,14 @@
       "types": "./dist/contexts/reporting/export-indicator-columns.d.ts",
       "import": "./dist/contexts/reporting/export-indicator-columns.js"
     },
+    "./contexts/reporting/chart-screen.js": {
+      "types": "./dist/contexts/reporting/chart-screen.d.ts",
+      "import": "./dist/contexts/reporting/chart-screen.js"
+    },
+    "./contexts/reporting/chart-theme-roles.js": {
+      "types": "./dist/contexts/reporting/chart-theme-roles.d.ts",
+      "import": "./dist/contexts/reporting/chart-theme-roles.js"
+    },
     "./contexts/reporting/chart-render.js": {
       "types": "./dist/contexts/reporting/chart-render.d.ts",
       "import": "./dist/contexts/reporting/chart-render.js"

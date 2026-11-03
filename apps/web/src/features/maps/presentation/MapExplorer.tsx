@@ -29,7 +29,15 @@ const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], region
  * switch the indicator, and show, hide, fade or reorder layers. It composes the pieces; the rules are in `domain/`.
  */
 /** `compact` is the dashboard card: one column, no layer panel, no file layer and no side-by-side periods; everything else (hover, click, drill, detail, indicator, time slider) is the same. */
-export function MapExplorer({ projectId, places, initial, periods, compact = false }: { projectId: string; places: readonly PlaceItem[]; initial: PlaceResults | null; periods: ReadonlyArray<{ id: string; label: string }>; compact?: boolean }) {
+/** How the explorer reads results for a level and period: the signed-in action by default, or a fixed answer (a share link, which has no session). */
+export type PlaceResultsLoader = (projectId: string, level: number, periodId?: string) => ReturnType<typeof getPlaceResultsAction>;
+
+export function MapExplorer({ projectId, places, initial, periods, compact = false, loadResults, staticData = false }: {
+  /** Read results some other way than the signed-in action. */
+  loadResults?: PlaceResultsLoader | undefined;
+  /** The data is a fixed snapshot (a share link): no drilling into finer levels and no side-by-side periods. */
+  staticData?: boolean | undefined; projectId: string; places: readonly PlaceItem[]; initial: PlaceResults | null; periods: ReadonlyArray<{ id: string; label: string }>; compact?: boolean }) {
+  const read: PlaceResultsLoader = loadResults ?? ((id, level, period) => getPlaceResultsAction(id, level, period));
   const [view, setView] = useState<DrillState>(() => defaultView(places));
   const [results, setResults] = useState<PlaceResults | null>(initial);
   const [indicatorId, setIndicatorId] = useState(initial?.indicators[0]?.id ?? "");
@@ -51,7 +59,7 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
   useEffect(() => {
     const level = levelForView(view, results?.levelsAvailable ?? []);
     let live = true;
-    void getPlaceResultsAction(projectId, level, periodId ?? undefined).then((out) => {
+    void read(projectId, level, periodId ?? undefined).then((out) => {
       if (!live) return;
       if (!out.ok) { setError(out.error.message); return; }
       setError(null);
@@ -68,7 +76,7 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
     if (!compare) return;
     let live = true;
     const lvl = levelForView(view, results?.levelsAvailable ?? []);
-    void Promise.all(panelPeriodsList.map((p) => getPlaceResultsAction(projectId, lvl, p.id).then((o) => (o.ok ? { label: p.label, results: o.value } : null)))).then((all) => {
+    void Promise.all(panelPeriodsList.map((p) => read(projectId, lvl, p.id).then((o) => (o.ok ? { label: p.label, results: o.value } : null)))).then((all) => {
       if (live) setPanels(all.filter((x): x is { label: string; results: PlaceResults } => x !== null));
     });
     return () => { live = false; };
@@ -108,7 +116,7 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
 
   const level = levelForView(view, results?.levelsAvailable ?? []);
   const panel = selected?.placeId ? placePanel(selected.placeId, places, results, indicatorId) : null;
-  const canDrill = view.kind === "WORLD" && !!geo && !!selected && provincesOf(geo.admin1, selected.name) !== null;
+  const canDrill = !staticData && view.kind === "WORLD" && !!geo && !!selected && provincesOf(geo.admin1, selected.name) !== null;
 
   const showOverlay = useCallback((o: Overlay | null) => {
     setOverlay(o);
@@ -131,7 +139,7 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
         <nav aria-label="Map location" className="flex items-center gap-1">
           <button type="button" className="underline" onClick={() => { setView(drillUp(view)); setSelected(null); }} disabled={view.kind === "WORLD"}>World</button>
           {view.kind === "COUNTRY" && <><span aria-hidden>›</span><strong>{view.country}</strong></>}
-          {view.kind === "COUNTRY" && levelsFor(countryFiles).length > 0 && (
+          {view.kind === "COUNTRY" && !staticData && levelsFor(countryFiles).length > 0 && (
             <span role="group" aria-label="Detail" className="ms-2 flex gap-1">
               {([1, ...levelsFor(countryFiles)] as const).map((d) => (
                 <button key={d} type="button" aria-pressed={view.depth === d} className={`rounded-full border px-2 ${view.depth === d ? "border-brand-600 bg-brand-50" : ""}`} onClick={() => setView(withDepth(view, d))}>{d === 1 ? "Provinces" : d === 2 ? "Districts" : "Sub-districts"}</button>

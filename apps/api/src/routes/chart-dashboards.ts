@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { SetFeaturedSchema, AddMapOverlaySchema, AddHomePinSchema, MoveHomePinSchema, AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
+import { PreviewDashboardSchema, SetFeaturedSchema, AddMapOverlaySchema, AddHomePinSchema, MoveHomePinSchema, AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { createContainer, type Container } from "@donordesk/infrastructure";
 
 /** Dashboards of saved Data Center charts (Phase 33.8). Thin: validate, call one handler, throw its error; the rules are in the handlers. */
@@ -216,6 +216,14 @@ export async function registerChartDashboardRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.addDashboardWidget.handle(ctx(req), param(req, "dashboardId"), AddDashboardWidgetSchema.parse(req.body));
     if (!r.ok) throw r.error;
     return reply.status(201).send(r.value);
+  });
+
+  // Draws widgets that are not saved yet (a tile just added in edit mode): read-only, same visibility rules as a saved dashboard.
+  app.post("/v1/dashboard-preview", async (req) => {
+    const { widgets, periodId } = PreviewDashboardSchema.parse(req.body);
+    const r = await req.container.handlers.previewDashboardCharts.handle(ctx(req), widgets as never, periodId ? { periodId } : {});
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.get("/v1/dashboards/:dashboardId/data", async (req) => {

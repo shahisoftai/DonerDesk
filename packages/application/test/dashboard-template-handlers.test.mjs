@@ -93,6 +93,10 @@ test("applying a template makes a dashboard of the charts whose roles are chosen
   assert.ok(titles.length >= 2, "charts whose roles were not chosen are named, never drawn from a guess");
   assert.ok(r.value.chartsLeftOut.every((c) => c.missingRoles.length > 0));
   assert.ok(!dash.widgets.some((x) => x.spec && JSON.stringify(x.spec).includes("people_basic_sanitation")), "no role key leaks into a spec");
+  const heads = dash.widgets.filter((x) => x.kind === "KPI");
+  assert.deepEqual(heads.map((x) => x.kpi.indicatorId), ["i1"], "one mapped role gives one headline tile, first");
+  assert.ok(heads.every((x) => x.y === 0 && x.h === 3));
+  assert.ok(dash.widgets.filter((x) => x.kind !== "KPI").every((x) => x.y >= 3), "charts sit under the headline row");
 });
 
 test("a built-in template applies too; with no role chosen nothing can be drawn and the person is told to choose; a project the person cannot see is refused", async () => {
