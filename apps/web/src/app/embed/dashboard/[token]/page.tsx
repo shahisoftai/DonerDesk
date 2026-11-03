@@ -20,5 +20,5 @@ export default async function EmbeddedDashboardPage({ params }: { params: Promis
     }
   }
   if (!dashboard) return <p className="p-4 text-center text-sm text-slate-500">This link is not available.</p>;
-  return <div className="p-2"><PublicDashboard widgets={dashboard.widgets as never} charts={dashboard.charts} /></div>;
+  return <div className="p-2"><PublicDashboard widgets={dashboard.widgets as never} charts={dashboard.charts} token={token} /></div>;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { SiteMapFigure } from "@/features/workplan/presentation/SiteMapFigure";
+import { SiteMap } from "@/features/maps/presentation/SiteMap";
 import { SITE_SIGNAL_COLOR, type SiteMapPoint } from "@/features/workplan/domain/site-map";
 import { BAND_SIGNAL, BAND_WORDS, portfolioMapSummary, type PortfolioMapData, type ProjectBand } from "../domain/portfolio-map";
 
@@ -20,7 +20,7 @@ export function PortfolioMapPanel({ data, total }: { data: PortfolioMapData; tot
           <span key={b} className="inline-flex items-center gap-1.5"><span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: SITE_SIGNAL_COLOR[BAND_SIGNAL[b]] }} />{BAND_WORDS[b]}</span>
         ))}
       </div>
-      {data.points.length > 0 ? <SiteMapFigure points={data.points} /> : <p className="rounded-lg border border-slate-200 p-3 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300">No project has planned work with a known place yet. Add a place to a planned activity and it appears here.</p>}
+      {data.points.length > 0 ? <SiteMap points={data.points} /> : <p className="rounded-lg border border-slate-200 p-3 text-sm text-slate-600 dark:border-white/10 dark:text-slate-300">No project has planned work with a known place yet. Add a place to a planned activity and it appears here.</p>}
       <p className="text-sm text-slate-600 dark:text-slate-300">{portfolioMapSummary(data, total)}</p>
       {byPlace.length > 0 && (
         <details className="text-sm">

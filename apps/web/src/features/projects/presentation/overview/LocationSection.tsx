@@ -4,7 +4,7 @@ import type { DeliverySignal } from "@donordesk/domain/contexts/workplan/index.j
 import { OVERVIEW_SECTION_LABEL } from "@/features/projects/domain/overview-sections";
 import { SITE_SIGNAL_COLOR, groupUnplaced, siteMapSummary } from "@/features/workplan/domain/site-map";
 import type { LocationData } from "@/features/projects/application/overview-view";
-import { SiteMapFigure } from "@/features/workplan/presentation/SiteMapFigure";
+import { SiteMap } from "@/features/maps/presentation/SiteMap";
 import { OverviewSection } from "./overview-pieces";
 
 const SIGNALS: readonly DeliverySignal[] = ["LATE", "ON_TIME", "DONE", "CANCELLED"];
@@ -30,7 +30,7 @@ export function LocationSection({ location, projectId }: { location: LocationDat
           ))}
         </div>
         <div className="mt-3">
-          <SiteMapFigure points={sites.points} country={location.country} customLayerUrl={location.mapLayerUrl} />
+          <SiteMap points={sites.points} country={location.country} customLayerUrl={location.mapLayerUrl} />
         </div>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{siteMapSummary(sites)}</p>
         {sites.unplaced.length > 0 ? (

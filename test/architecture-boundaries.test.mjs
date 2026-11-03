@@ -186,3 +186,81 @@ test("wizard risk operation kinds are the same list in the domain and the contra
   const block = contracts.slice(contracts.indexOf("SetupRiskOperationSchema"));
   assert.deepEqual([...block.matchAll(/z\.literal\("([A-Z_]+)"\)/g)].map((x) => x[1]).sort(), fromDomain);
 });
+
+// ---- Phase 41: the interactive map (dependency inversion and single responsibility) --------------------------------------------
+const MAPS = "apps/web/src/features/maps";
+const MAP_LIBRARIES = /^(maplibre-gl|terra-draw|terra-draw-maplibre-gl-adapter|pmtiles|@protomaps\/basemaps)(\/|$)/;
+const isUnder = (file, sub) => relative(join(ROOT, MAPS), file).startsWith(`${sub}/`);
+
+test("only the map adapters import a map library (maplibre-gl, terra-draw, pmtiles, @protomaps/basemaps)", () => {
+  const found = [];
+  for (const file of sourceFiles(join(ROOT, "apps/web/src"))) {
+    if (isUnder(file, "adapters") && file.includes(`${MAPS}/adapters/`)) continue;
+    for (const spec of importsOf(file)) if (MAP_LIBRARIES.test(spec) && !spec.endsWith(".css")) found.push(`${relative(ROOT, file)} imports ${spec}`);
+  }
+  assert.deepEqual(found, []);
+});
+
+test("map screens reach adapters only through the composition file, never directly", () => {
+  const found = [];
+  for (const file of sourceFiles(join(ROOT, MAPS, "presentation"))) {
+    for (const spec of importsOf(file)) if (/(^|\/)adapters\//.test(spec)) found.push(`${relative(ROOT, file)} imports ${spec}`);
+  }
+  assert.deepEqual(found, []);
+});
+
+test("map ports and map domain depend on nothing but themselves (ports are interfaces, domain is pure)", () => {
+  const found = [];
+  for (const sub of ["ports"]) {
+    for (const file of sourceFiles(join(ROOT, MAPS, sub))) {
+      for (const spec of importsOf(file)) if (!spec.startsWith(".")) found.push(`${relative(ROOT, file)} imports ${spec}`);
+      if (/\bclass\s+\w+/.test(readFileSync(file, "utf8"))) found.push(`${relative(ROOT, file)} declares a class (a port is an interface)`);
+    }
+  }
+  assert.deepEqual(found, []);
+});
+
+test("map files stay small and single-purpose: at most 300 lines, at most one class each", () => {
+  const found = [];
+  for (const file of sourceFiles(join(ROOT, MAPS))) {
+    const text = readFileSync(file, "utf8");
+    const lines = text.split("\n").length;
+    const classes = (text.match(/^export (?:default )?class\s/gm) ?? []).length;
+    if (lines > 300) found.push(`${relative(ROOT, file)} has ${lines} lines`);
+    if (classes > 1) found.push(`${relative(ROOT, file)} exports ${classes} classes`);
+  }
+  assert.deepEqual(found, []);
+});
+
+test("every map renderer, basemap and boundary source implements its port", () => {
+  const expect = [
+    ["adapters/maplibre/renderer.ts", "implements MapRenderer"],
+    ["adapters/basemap/protomaps-basemap.ts", "implements BasemapSource"],
+    ["adapters/boundaries/files-boundary-source.ts", "implements BoundarySource"],
+    ["adapters/maplibre/pin-placer.ts", "implements PinPlacer"],
+    ["adapters/maplibre/area-tool.ts", "implements DrawingTool"],
+    ["adapters/boundaries/tenant-layer-boundary-source.ts", "implements BoundarySource"],
+  ];
+  for (const [file, clause] of expect) assert.ok(readFileSync(join(ROOT, MAPS, file), "utf8").includes(clause), `${file} must ${clause}`);
+});
+
+test("the ways a place can be located are the same list in the domain and the contracts (Phase 41.6 mirror pin)", () => {
+  const domain = readFileSync(join(ROOT, "packages/domain/src/contexts/places/geometry.ts"), "utf8");
+  const contracts = readFileSync(join(ROOT, "packages/contracts/src/places.ts"), "utf8");
+  const fromDomain = [...domain.match(/PLACED_BY\s*=\s*\[([\s\S]*?)\]\s*as const/)[1].matchAll(/"([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  const fromContracts = [...contracts.match(/PLACED_BY_VALUES\s*=\s*\[([\s\S]*?)\]\s*as const/)[1].matchAll(/"([A-Z_]+)"/g)].map((x) => x[1]).sort();
+  assert.ok(fromDomain.length >= 6);
+  assert.deepEqual(fromContracts, fromDomain);
+});
+
+test("domain files the browser imports by subpath use nothing that exists only in Node (Buffer, process, node: modules)", () => {
+  const pkg = JSON.parse(readFileSync(join(ROOT, "packages/domain/package.json"), "utf8"));
+  const found = [];
+  for (const key of Object.keys(pkg.exports)) {
+    if (!key.startsWith("./contexts/")) continue;
+    const source = join(ROOT, "packages/domain/src", key.replace(/^\.\//, "").replace(/\.js$/, ".ts"));
+    const text = readFileSync(source, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+    if (/\bBuffer\b|\bprocess\.|from\s+["']node:/.test(text)) found.push(`${relative(ROOT, source)} uses a Node-only feature`);
+  }
+  assert.deepEqual(found, []);
+});

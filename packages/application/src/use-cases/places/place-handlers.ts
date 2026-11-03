@@ -6,6 +6,7 @@ import type { CreatePlaceInput, ImportPlacesInput, ResolvePlacesInput, UpdatePla
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IIdGenerator } from "../../ports/core.js";
 import type { IPlaceRepository, IPlaceUsageReader, StoredPlace } from "../../ports/places.js";
+import { canEdit, canView, forbidden, loadAll, toRecord } from "./place-support.js";
 
 /**
  * The organisation's list of places (Phase 33.1). Reading is for every member (the entry screens
@@ -27,18 +28,12 @@ export interface PlaceDto {
   aliases: string[];
   facility?: boolean;
   code?: string;
+  /** "POLYGON" (an outline) or "LINE" (a route) when a shape is stored; the shape itself is read from its own route. */
+  geometryKind?: "POLYGON" | "LINE";
+  placedBy?: string;
   archived: boolean;
   /** How many live places sit directly inside it. */
   childCount: number;
-}
-
-const canEdit = (ctx: AuthenticatedContext) => Permissions.can(ctx.tenant.role as Role, "project.edit");
-const canView = (ctx: AuthenticatedContext) => Permissions.can(ctx.tenant.role as Role, "project.view");
-const forbidden = () => err(DomainError.forbidden("You cannot change the list of places"));
-
-function toRecord(p: StoredPlace): PlaceRecord {
-  const { tenantId: _t, createdById: _c, archivedAt: _a, ...record } = p;
-  return { ...record, archived: p.archived || p.archivedAt !== undefined };
 }
 
 function toDto(p: StoredPlace, registry: PlaceRegistry): PlaceDto {
@@ -47,14 +42,8 @@ function toDto(p: StoredPlace, registry: PlaceRegistry): PlaceDto {
     id: p.id, name: p.name, kind: p.kind, adminLevel: p.adminLevel, ...(p.parentId ? { parentId: p.parentId } : {}),
     path: live ? registry.pathLabel(p.id) : p.name,
     ...(p.country ? { country: p.country } : {}), ...(p.latitude !== undefined ? { latitude: p.latitude, longitude: p.longitude } : {}),
-    aliases: p.aliases, ...(p.code ? { code: p.code } : {}), ...(p.facility ? { facility: true } : {}), archived: !live, childCount: live ? registry.childrenOf(p.id).length : 0,
+    aliases: p.aliases, ...(p.code ? { code: p.code } : {}), ...(p.facility ? { facility: true } : {}), ...(p.geometryKind ? { geometryKind: p.geometryKind } : {}), ...(p.placedBy ? { placedBy: p.placedBy } : {}), archived: !live, childCount: live ? registry.childrenOf(p.id).length : 0,
   };
-}
-
-async function loadAll(repo: IPlaceRepository, ctx: AuthenticatedContext, includeArchived = false): Promise<Result<{ stored: StoredPlace[]; registry: PlaceRegistry }, DomainError>> {
-  const listed = await repo.list(ctx.tenant.tenantId, { includeArchived });
-  if (!listed.ok) return listed;
-  return ok({ stored: listed.value, registry: new PlaceRegistry(listed.value.map(toRecord)) });
 }
 
 export class ListPlacesHandler {
@@ -83,7 +72,7 @@ export class CreatePlaceHandler {
       id: this.ids.generate(), name: input.name, kind, adminLevel: input.adminLevel as PlaceRecord["adminLevel"],
       ...(input.parentId ? { parentId: input.parentId } : {}), ...(input.country ? { country: input.country } : {}),
       ...(input.latitude !== undefined ? { latitude: input.latitude } : {}), ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
-      aliases: input.aliases, ...(input.code ? { code: input.code } : {}), ...(input.facility ? { facility: true } : {}), archived: false,
+      aliases: input.aliases, ...(input.code ? { code: input.code } : {}), ...(input.facility ? { facility: true } : {}), ...(input.placedBy ? { placedBy: input.placedBy } : {}), archived: false,
     };
     const valid = validatePlace(record, all.value.stored.map(toRecord));
     if (!valid.ok) return valid;
@@ -116,6 +105,9 @@ export class UpdatePlaceHandler {
       else (merged as unknown as Record<string, unknown>)[key] = v;
     }
     if (merged.latitude !== undefined && input.kind === undefined) merged.kind = "POINT";
+    if (input.placedBy !== undefined) merged.placedBy = input.placedBy;
+    // With neither a pin nor a shape left, there is nothing for "how it was placed" to describe.
+    if (merged.latitude === undefined && !merged.geometryKind) delete merged.placedBy;
     const valid = validatePlace(merged, all.value.stored.map(toRecord));
     if (!valid.ok) return valid;
     const saved = await this.repo.update({ ...valid.value, tenantId: current.tenantId, createdById: current.createdById, ...(current.archivedAt ? { archivedAt: current.archivedAt } : {}) });

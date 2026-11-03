@@ -8,12 +8,12 @@
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { licenceVerdict, roundGeometry } from "../src/features/maps/domain/boundary-sources.ts";
+import { licenceVerdict, requiresShareAlike, roundGeometry, ROUND_DIGITS } from "../src/features/maps/domain/boundary-sources.ts";
 import { HUMANITARIAN_COUNTRIES } from "../src/features/maps/domain/humanitarian-countries.ts";
 
 const args = new Map();
 for (let i = 2; i < process.argv.length; i += 2) args.set(process.argv[i].replace(/^--/, ""), process.argv[i + 1]);
-const levels = (args.get("levels") ?? "2,3").split(",").map((n) => Number(n)).filter((n) => [1, 2, 3].includes(n));
+const levels = (args.get("levels") ?? "2,3").split(",").map((n) => Number(n)).filter((n) => [1, 2, 3, 4].includes(n));
 // --countries SDN,UGA names countries; --set humanitarian (the default is every country geoBoundaries has) takes the editable list.
 const only = args.get("countries") ? new Set(args.get("countries").split(",").map((s) => s.trim().toUpperCase())) : args.get("set") === "humanitarian" ? new Set(HUMANITARIAN_COUNTRIES) : null;
 const OUT = args.get("out") ?? join(dirname(fileURLToPath(import.meta.url)), "../public/geo");
@@ -49,17 +49,18 @@ for (const level of levels) {
   async function worker() {
     for (let m = queue.shift(); m; m = queue.shift()) {
       const iso = m.boundaryISO;
+      if (countries.get(iso)?.files.some((f) => f.level === level && f.origin === "OCHA COD-AB")) continue; // OCHA's file stands; geoBoundaries never replaces it
       if (licenceVerdict(m.boundaryLicense) === "HOLD") { held.push({ iso, name: m.boundaryName, level, licence: m.boundaryLicense ?? "" }); continue; }
       try {
         const geo = await getJson(m.simplifiedGeometryGeoJSON);
-        const features = geo.features.map((f) => ({ type: "Feature", properties: { name: f.properties.shapeName, id: f.properties.shapeID }, geometry: roundGeometry(f.geometry) }));
+        const features = geo.features.map((f) => ({ type: "Feature", properties: { name: f.properties.shapeName, id: f.properties.shapeID }, geometry: roundGeometry(f.geometry, ROUND_DIGITS[level]) }));
         const text = JSON.stringify({ type: "FeatureCollection", features });
         mkdirSync(join(OUT, iso), { recursive: true });
         writeFileSync(join(OUT, iso, `ADM${level}.json`), text);
         const country = countries.get(iso) ?? { iso, name: m.boundaryName, source: "", licence: "", yearRepresented: "", files: [] };
         // The attribution shown is that of the finest file shipped for the country.
         Object.assign(country, { source: m.boundarySource, licence: m.boundaryLicense, yearRepresented: m.boundaryYearRepresented });
-        country.files = country.files.filter((f) => f.level !== level).concat({ level, file: `${iso}/ADM${level}.json`, units: features.length, bytes: Buffer.byteLength(text) }).sort((a, b) => a.level - b.level);
+        country.files = country.files.filter((f) => f.level !== level).concat({ level, file: `${iso}/ADM${level}.json`, units: features.length, bytes: Buffer.byteLength(text), origin: "geoBoundaries", source: m.boundarySource, licence: m.boundaryLicense, yearRepresented: m.boundaryYearRepresented, ...(requiresShareAlike(m.boundaryLicense) ? { shareAlike: true } : {}) }).sort((a, b) => a.level - b.level);
         countries.set(iso, country);
         written++; bytes += Buffer.byteLength(text);
       } catch (e) {

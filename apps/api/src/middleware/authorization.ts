@@ -26,6 +26,11 @@ export const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/organization\/map-layer$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/organization\/map-layer\/data$/, permission: "project.view" },
   { method: "DELETE", route: /^\/v1\/organization\/map-layer$/, permission: "org.manage" },
+  // Boundary files per country and level (Phase 41.7): administrators upload and remove; every member reads what their maps draw.
+  { method: "GET", route: /^\/v1\/organization\/boundary-layers$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/organization\/boundary-layers\/[^/]+\/[^/]+\/data$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/organization\/boundary-layers$/, permission: "org.manage" },
+  { method: "DELETE", route: /^\/v1\/organization\/boundary-layers\/[^/]+\/[^/]+$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/place-results$/, permission: "project.view" },
   // ── Finance register (Phase 35.F) ──────────────────────────────────────────
   { method: "GET", route: /^\/v1\/finance\/(funding-sources|budget-categories|rates)$/, permission: "project.view" },
@@ -115,6 +120,9 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/places$/, permission: "project.edit" },
   { method: "PUT", route: /^\/v1\/places\/[^/]+$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/places\/[^/]+\/(archive|restore)$/, permission: "project.edit" },
+  { method: "GET", route: /^\/v1\/places\/[^/]+\/geometry$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/places\/[^/]+\/geometry$/, permission: "project.edit" },
+  { method: "DELETE", route: /^\/v1\/places\/[^/]+\/geometry$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/places\/import$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/places\/resolve$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/places\/unconfirmed$/, permission: "project.view" },

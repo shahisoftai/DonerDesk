@@ -27,6 +27,9 @@ export const unitCode = (props: Record<string, unknown>, level: number): string 
   return typeof v === "string" ? v : "";
 };
 
+/** The P-code of the unit one level up (COD-AB carries it on every unit); empty at the top or when the file does not say. */
+export const parentCode = (props: Record<string, unknown>, level: number): string => (level > 1 ? unitCode(props, level - 1) : "");
+
 /** `valid_to` arrives as a date, a timestamp or empty. Empty means open-ended. */
 function endsBefore(valid: unknown, today: string): boolean {
   if (typeof valid !== "string" || valid.trim() === "") return false;
@@ -37,7 +40,7 @@ function endsBefore(valid: unknown, today: string): boolean {
 export interface CodFeature { type?: string; properties?: Record<string, unknown> | null; geometry?: unknown }
 
 export interface ReadResult {
-  features: Array<{ type: "Feature"; properties: { name: string; id: string }; geometry: unknown }>;
+  features: Array<{ type: "Feature"; properties: { name: string; id: string; parentId: string }; geometry: unknown }>;
   /** Units left out: no name, no shape, or replaced by a newer boundary. */
   skipped: { noName: number; replaced: number; noShape: number };
   /** The version label of the newest feature, for the manifest. */
@@ -52,7 +55,7 @@ export function readLevel(features: readonly CodFeature[], level: number, today:
     if (endsBefore(props.valid_to, today)) { out.skipped.replaced++; continue; }
     const name = unitName(props, level);
     if (!name) { out.skipped.noName++; continue; }
-    out.features.push({ type: "Feature", properties: { name, id: unitCode(props, level) }, geometry: f.geometry });
+    out.features.push({ type: "Feature", properties: { name, id: unitCode(props, level), parentId: parentCode(props, level) }, geometry: f.geometry });
     const v = String(props.valid_on ?? props.version ?? "").slice(0, 10);
     if (v > out.version) out.version = v;
   }

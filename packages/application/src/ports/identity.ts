@@ -133,3 +133,29 @@ export interface ITenantMapLayerRepository {
   save(layer: TenantMapLayerRecord): Promise<void>;
   remove(tenantId: TenantId): Promise<void>;
 }
+
+/** A boundary file an organisation uploaded for one country and level (Phase 41.7): metadata only, the bytes live in storage. */
+export interface TenantBoundaryLayerRecord {
+  id: string;
+  tenantId: TenantId;
+  iso: string;
+  countryName: string;
+  adminLevel: number;
+  name: string;
+  nameField: string;
+  pcodeField: string | null;
+  parentPcodeField: string | null;
+  storageKey: string;
+  sizeBytes: number;
+  featureCount: number;
+  uploadedById: string;
+  updatedAt: Date;
+}
+
+export interface ITenantBoundaryLayerRepository {
+  list(tenantId: TenantId): Promise<TenantBoundaryLayerRecord[]>;
+  find(tenantId: TenantId, iso: string, adminLevel: number): Promise<TenantBoundaryLayerRecord | null>;
+  save(layer: TenantBoundaryLayerRecord): Promise<void>;
+  /** True when a layer was there to remove. */
+  remove(tenantId: TenantId, iso: string, adminLevel: number): Promise<boolean>;
+}

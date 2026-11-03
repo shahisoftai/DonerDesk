@@ -1,0 +1,17 @@
+# Map basemap and label fonts (Phase 41): /tiles/basemap-<region>.pmtiles (one file per region, read with byte ranges by PMTiles in the browser)
+# and /tiles/fonts/<font>/<range>.pbf. Install on the host (Hestia includes nginx.ssl.conf_*), then `nginx -t && systemctl reload nginx`:
+#   cp infra/nginx/donordesk.online.nginx.ssl.conf_tiles /home/shahisoft/conf/web/donordesk.online/nginx.ssl.conf_tiles
+# The zone `dd_tiles` is in infra/nginx/donordesk-api-limit.conf (install that first). The files live in /opt/donordesk/shared/tiles (filled by
+# scripts/sync-tiles.sh), outside any release. A PMTiles file is already compressed inside, so nginx does not gzip it; the fonts are protobuf
+# and are not worth gzip either. Same origin as the app, so no CORS header is needed (and none is sent).
+location ^~ /tiles/ {
+	alias /opt/donordesk/shared/tiles/;
+	# A map opens with many small range reads at once, and panning makes more: a high burst per address, never unlimited.
+	limit_req zone=dd_tiles burst=300 nodelay;
+	limit_req_status 429;
+	add_header Accept-Ranges bytes;
+	add_header Cache-Control "public, max-age=604800, immutable";
+	types { application/octet-stream pmtiles; application/x-protobuf pbf; }
+	default_type application/octet-stream;
+	try_files $uri =404;
+}

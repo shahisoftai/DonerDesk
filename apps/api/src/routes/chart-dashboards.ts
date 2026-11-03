@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { z } from "zod";
 import { PreviewDashboardSchema, SetFeaturedSchema, AddMapOverlaySchema, AddHomePinSchema, MoveHomePinSchema, AddBookmarkSchema, SaveReportSchema, ApplyDashboardTemplateSchema, DashboardTemplateBodySchema, AskQuestionSchema, AddDashboardWidgetSchema, CreateDashboardShareSchema, ListChartsQuerySchema, ListDashboardsQuerySchema, ResolveDatasetsSchema, SaveChartSchema, SaveDashboardSchema } from "@donordesk/contracts";
 import { createContainer, type Container } from "@donordesk/infrastructure";
 
@@ -264,6 +265,20 @@ export async function registerPublicDashboardRoutes(app: FastifyInstance, admin:
     if (!link.ok) { reply.code(404); return { title: "This link is not available" }; }
     const tenant = createContainer({ tenantId: link.value.tenantId.toString() });
     const r = await tenant.handlers.publicDashboard.handle(link.value.tenantId, link.value.dashboardId);
+    if (!r.ok) { reply.code(404); return { title: "This link is not available" }; }
+    return r.value;
+  });
+
+  // A results map on the shared dashboard asking for another level or period (Phase 41.8). The widget is named, the project never: it comes from the dashboard.
+  app.get("/public/dashboards/:token/map-results", async (req, reply) => {
+    reply.header("cache-control", "private, no-store");
+    reply.header("x-robots-tag", "noindex, nofollow");
+    const query = z.object({ widget: z.string().min(1).max(80), level: z.coerce.number().int().min(0).max(4), periodId: z.string().min(1).max(80).optional() }).safeParse(req.query);
+    if (!query.success) { reply.code(400); return { title: "That map request is not valid" }; }
+    const link = await admin.resolveDashboardShare.handle((req.params as { token: string }).token);
+    if (!link.ok) { reply.code(404); return { title: "This link is not available" }; }
+    const tenant = createContainer({ tenantId: link.value.tenantId.toString() });
+    const r = await tenant.handlers.publicDashboardMapResults.handle(link.value.tenantId, link.value.dashboardId, { widgetId: query.data.widget, level: query.data.level, periodId: query.data.periodId });
     if (!r.ok) { reply.code(404); return { title: "This link is not available" }; }
     return r.value;
   });

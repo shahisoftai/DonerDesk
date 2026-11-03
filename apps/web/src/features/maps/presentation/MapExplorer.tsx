@@ -21,6 +21,15 @@ import { OverlayPanel } from "./OverlayPanel";
 import { loadBoundaryFile, loadBoundaryManifest } from "@/lib/client/boundary-loader";
 import { attributionLine, fileFor, findCountry, levelsFor, type BoundaryManifest } from "../domain/boundary-sources";
 import { periodSteps } from "../domain/period-steps";
+import { ResultsMap } from "./ResultsMap";
+import { useMapEngine } from "./useMapEngine";
+import { useMapText } from "./useMapText";
+import { LowDataResults } from "./LowDataResults";
+import { useLowData } from "../../design/presentation/use-low-data";
+import type { ExplorerProps, PlaceResultsLoader } from "./results-loader";
+
+/** The ECharts explorer draws down to level 3; deeper levels are for the new map. */
+const legacyLevels = (c: ReturnType<typeof findCountry>) => levelsFor(c).filter((l): l is 1 | 2 | 3 => l <= 3);
 
 const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], regions: [], unmapped: [], bands: [], isRate: false };
 
@@ -29,10 +38,21 @@ const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], region
  * switch the indicator, and show, hide, fade or reorder layers. It composes the pieces; the rules are in `domain/`.
  */
 /** `compact` is the dashboard card: one column, no layer panel, no file layer and no side-by-side periods; everything else (hover, click, drill, detail, indicator, time slider) is the same. */
-/** How the explorer reads results for a level and period: the signed-in action by default, or a fixed answer (a share link, which has no session). */
-export type PlaceResultsLoader = (projectId: string, level: number, periodId?: string) => ReturnType<typeof getPlaceResultsAction>;
+export type { PlaceResultsLoader } from "./results-loader";
 
-export function MapExplorer({ projectId, places, initial, periods, compact = false, loadResults, staticData = false }: {
+export function MapExplorer(props: ExplorerProps) {
+  const { engine, markFailed } = useMapEngine();
+  const { lowData } = useLowData();
+  const [showAnyway, setShowAnyway] = useState(false);
+  const { t } = useMapText();
+  // Low-data mode comes first, whichever engine would draw: the table needs no map library, no tiles and no boundary files.
+  if (lowData && !showAnyway) return <LowDataResults {...props} onShowMap={() => setShowAnyway(true)} />;
+  if (engine === "echarts") return <EChartsMapExplorer {...props} />;
+  if (engine === "pending") return <p className="text-sm text-slate-500">{t("maps.loading")}</p>;
+  return <ResultsMap {...props} onUnavailable={markFailed} />;
+}
+
+function EChartsMapExplorer({ projectId, places, initial, periods, compact = false, loadResults, staticData = false }: {
   /** Read results some other way than the signed-in action. */
   loadResults?: PlaceResultsLoader | undefined;
   /** The data is a fixed snapshot (a share link): no drilling into finer levels and no side-by-side periods. */
@@ -139,9 +159,9 @@ export function MapExplorer({ projectId, places, initial, periods, compact = fal
         <nav aria-label="Map location" className="flex items-center gap-1">
           <button type="button" className="underline" onClick={() => { setView(drillUp(view)); setSelected(null); }} disabled={view.kind === "WORLD"}>World</button>
           {view.kind === "COUNTRY" && <><span aria-hidden>›</span><strong>{view.country}</strong></>}
-          {view.kind === "COUNTRY" && !staticData && levelsFor(countryFiles).length > 0 && (
+          {view.kind === "COUNTRY" && !staticData && legacyLevels(countryFiles).length > 0 && (
             <span role="group" aria-label="Detail" className="ms-2 flex gap-1">
-              {([1, ...levelsFor(countryFiles)] as const).map((d) => (
+              {([1, ...legacyLevels(countryFiles)] as const).map((d) => (
                 <button key={d} type="button" aria-pressed={view.depth === d} className={`rounded-full border px-2 ${view.depth === d ? "border-brand-600 bg-brand-50" : ""}`} onClick={() => setView(withDepth(view, d))}>{d === 1 ? "Provinces" : d === 2 ? "Districts" : "Sub-districts"}</button>
               ))}
             </span>

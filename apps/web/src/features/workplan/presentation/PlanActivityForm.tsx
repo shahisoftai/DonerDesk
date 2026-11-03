@@ -12,6 +12,7 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
+import { PinPicker } from "../../maps/presentation/PinPicker";
 import { LocationPickerFigure } from "./LocationPickerFigure";
 
 export interface PlanFormOption { id: string; label: string }
@@ -137,29 +138,15 @@ export function PlanActivityForm({ projectId, leads, activities, country, custom
               )}
               {(pinOpen || pin) && (
                 <div className="space-y-2">
-                  <LocationPickerFigure
+                  <PinPicker
                     value={pin}
                     country={country}
-                    customLayerUrl={customLayerUrl}
                     onChange={(next) => {
                       setPin(next);
                       if (next) setPinOpen(true);
                     }}
+                    legacy={({ value, onChange }) => <LocationPickerFigure value={value} country={country} customLayerUrl={customLayerUrl} onChange={onChange} />}
                   />
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {pin ? `${pin.latitude}, ${pin.longitude}` : WORKPLAN_COPY.pinHint}
-                    </p>
-                    {pin && (
-                      <button
-                        type="button"
-                        className="text-sm font-medium text-slate-600 hover:underline dark:text-slate-300"
-                        onClick={() => setPin(null)}
-                      >
-                        {WORKPLAN_COPY.clearPin}
-                      </button>
-                    )}
-                  </div>
                 </div>
               )}
             </div>

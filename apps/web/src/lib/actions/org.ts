@@ -9,6 +9,7 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { OkResponseSchema } from "./_schemas";
 import { MapLayerMetaResponseSchema } from "@/lib/server/schemas";
+import { BoundaryLayerListSchema, BoundaryLayerMetaSchema, BoundaryLayerRemovedSchema, type BoundaryLayerMeta } from "@/lib/server/schemas-boundary-layers";
 
 export type UpdateOrganizationResult = Result<undefined, AppError>;
 
@@ -117,4 +118,34 @@ export async function removeMapLayerAction(): Promise<Result<undefined, AppError
   const result = await gatewayRequest("/v1/organization/map-layer", OkResponseSchema, context.token, { method: "DELETE" });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+/** The boundary files this organisation uploaded, per country and level (Phase 41.7). */
+export async function listBoundaryLayersAction(): Promise<Result<BoundaryLayerMeta[], AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest("/v1/organization/boundary-layers", BoundaryLayerListSchema, context.token);
+  return result.ok ? { ok: true, value: result.value.layers } : result;
+}
+
+/**
+ * Uploads one boundary file for a country and level; a new upload replaces the old one. The choices are sent first and the file last
+ * (the server reads the fields that arrive before the file). The server normalises the file and refuses it, naming the boundary, if any does not fit.
+ */
+export async function uploadBoundaryLayerAction(formData: FormData): Promise<Result<BoundaryLayerMeta, AppError>> {
+  const context = await requireSession();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: { kind: "validation", message: "Choose a GeoJSON file to upload.", fields: {} } };
+  const body = new FormData();
+  for (const key of ["iso", "countryName", "adminLevel", "nameField", "pcodeField", "parentPcodeField"]) {
+    const value = formData.get(key);
+    if (typeof value === "string" && value.trim() !== "") body.set(key, value.trim());
+  }
+  body.set("file", file);
+  return gatewayRequest("/v1/organization/boundary-layers", BoundaryLayerMetaSchema, context.token, { method: "PUT", formData: body });
+}
+
+export async function removeBoundaryLayerAction(iso: string, adminLevel: number): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/organization/boundary-layers/${encodeURIComponent(iso)}/${encodeURIComponent(String(adminLevel))}`, BoundaryLayerRemovedSchema, context.token, { method: "DELETE" });
+  return result.ok ? { ok: true, value: undefined } : result;
 }

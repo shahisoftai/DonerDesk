@@ -1961,6 +1961,34 @@ model ProjectAdaptation {
   @@index([projectId, recordedOn])
 }
 
+/// Boundary files an organisation uploads for one country and one admin level (Phase 41.7): districts, sub-districts, wards or
+/// communities where no open file exists. Normalised on upload into the app's own boundary format (name, P-code, parent P-code) and kept in
+/// storage; the row says which file it is. A layer replaces the bundled file for that country and level, for this organisation only.
+model TenantBoundaryLayer {
+  id               String   @id
+  tenantId         String
+  /// ISO 3166-1 alpha-3, upper case.
+  iso              String
+  countryName      String
+  /// 1 state/province ... 4 community or ward.
+  adminLevel       Int
+  /// What the file was called when it was uploaded.
+  name             String
+  nameField        String
+  pcodeField       String?
+  parentPcodeField String?
+  /// Where the normalised GeoJSON lives (storage key). Never sent to a browser.
+  storageKey       String
+  sizeBytes        Int
+  featureCount     Int
+  uploadedById     String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([tenantId, iso, adminLevel])
+  @@index([tenantId])
+}
+
 /// The workspace's own map boundaries: one uploaded GeoJSON layer (districts, sub-districts) that the
 /// site map draws instead of the bundled country outlines. One layer per organization; a new upload
 /// replaces it.
@@ -2119,6 +2147,13 @@ model Place {
   code        String?
   /// A place people go to for a service (clinic, school, water point, distribution site), as opposed to an area.
   facility    Boolean   @default(false)
+  /// POLYGON (an outline) or LINE (a route) when a drawn shape is stored for this area; the shape itself is a GeoJSON file in storage, never in the row.
+  geometryKind  String?
+  /// Where the shape's file is kept (`places/<tenantId>/<placeId>.geojson`). Never sent to a browser.
+  geometryKey   String?
+  geometryBytes Int?
+  /// How the location came to be: TYPED, MAP_PIN, MAP_DRAWN, SNAPPED, IMPORT or GPS.
+  placedBy      String?
   archivedAt  DateTime?
   createdById String
   createdAt   DateTime  @default(now())

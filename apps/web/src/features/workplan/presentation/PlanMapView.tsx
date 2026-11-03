@@ -6,7 +6,7 @@ import type { WorkPlanRow } from "@/lib/server/schemas";
 import { DELIVERY_SIGNAL_LABEL, WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import type { DeliverySignal } from "@donordesk/domain/contexts/workplan/index.js";
 import { SITE_SIGNAL_COLOR, groupUnplaced, siteMapData, siteMapSummary, type SiteRiskInput } from "../domain/site-map";
-import { SiteMapFigure } from "./SiteMapFigure";
+import { SiteMap } from "@/features/maps/presentation/SiteMap";
 
 const SIGNALS: readonly DeliverySignal[] = ["LATE", "ON_TIME", "DONE", "CANCELLED"];
 
@@ -40,7 +40,7 @@ export default function PlanMapView({ projectId, rows, risks, country, mapLayerU
           {WORKPLAN_COPY.mapNoSites}
         </p>
       ) : (
-        <SiteMapFigure points={data.points} country={country} customLayerUrl={mapLayerUrl} />
+        <SiteMap points={data.points} country={country} customLayerUrl={mapLayerUrl} />
       )}
       {data.points.length > 0 && <p className="text-sm text-slate-600 dark:text-slate-300">{siteMapSummary(data)}</p>}
       {data.unplaced.length > 0 && (

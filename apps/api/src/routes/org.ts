@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema, UpdateMfaRequirementSchema, SaveProgrammeSchema, SaveGrantSchema, PlaceProjectSchema } from "@donordesk/contracts";
+import { UploadBoundaryLayerFieldsSchema, OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema, UpdateMfaRequirementSchema, SaveProgrammeSchema, SaveGrantSchema, PlaceProjectSchema } from "@donordesk/contracts";
+import { z } from "zod";
 import { isTruthyFlag } from "@donordesk/infrastructure";
 
 // Resolved once per process, mirroring container.ts's own read of the same
@@ -92,6 +93,43 @@ export async function registerOrgRoutes(app: FastifyInstance) {
 
   app.delete("/v1/organization/map-layer", async (req) => {
     const r = await req.container.handlers.removeMapLayer.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Boundary files per country and level (Phase 41.7). Multipart: the choices come first, the file last.
+  app.put("/v1/organization/boundary-layers", async (req, reply) => {
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const buffer = await data.toBuffer();
+    const field = (name: string): string | undefined => { const f = (data.fields as Record<string, { value?: unknown } | undefined>)[name]; return typeof f?.value === "string" ? f.value : undefined; };
+    const fields = UploadBoundaryLayerFieldsSchema.parse({
+      iso: field("iso"), countryName: field("countryName"), adminLevel: field("adminLevel"), nameField: field("nameField"),
+      pcodeField: field("pcodeField"), parentPcodeField: field("parentPcodeField"),
+    });
+    const r = await req.container.handlers.uploadBoundaryLayer.handle({ tenant: req.tenant, requestId: req.id }, { ...fields, fileName: data.filename, buffer });
+    if (!r.ok) throw r.error;
+    return reply.send(r.value);
+  });
+
+  app.get("/v1/organization/boundary-layers", async (req) => {
+    const r = await req.container.handlers.listBoundaryLayers.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return { layers: r.value };
+  });
+
+  app.get("/v1/organization/boundary-layers/:iso/:level/data", async (req, reply) => {
+    const { iso, level } = z.object({ iso: z.string().regex(/^[A-Za-z]{3}$/), level: z.coerce.number().int().min(1).max(4) }).parse(req.params);
+    const r = await req.container.handlers.readBoundaryLayer.handle({ tenant: req.tenant, requestId: req.id }, iso, level);
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/json; charset=utf-8");
+    reply.header("cache-control", "private, no-store");
+    return reply.send(r.value);
+  });
+
+  app.delete("/v1/organization/boundary-layers/:iso/:level", async (req) => {
+    const { iso, level } = z.object({ iso: z.string().regex(/^[A-Za-z]{3}$/), level: z.coerce.number().int().min(1).max(4) }).parse(req.params);
+    const r = await req.container.handlers.removeBoundaryLayer.handle({ tenant: req.tenant, requestId: req.id }, iso, level);
     if (!r.ok) throw r.error;
     return r.value;
   });

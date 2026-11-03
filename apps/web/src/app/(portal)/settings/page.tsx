@@ -4,6 +4,8 @@ import { MapLayerMetaSchema, OrganizationProfileSchema } from "@/lib/server/sche
 import { InlineError } from "@/components/feedback/PageState";
 import { SettingsPanel } from "@/features/settings/presentation/SettingsPanel";
 import { MapLayerCard } from "@/features/settings/presentation/MapLayerCard";
+import { BoundaryLayersCard } from "@/features/settings/presentation/BoundaryLayersCard";
+import { BoundaryLayerListSchema } from "@/lib/server/schemas-boundary-layers";
 import { AskSettingsCard } from "@/features/ask/presentation/AskSettingsCard";
 import { SetupAssistSettingsCard } from "@/features/project-setup/presentation/SetupAssistSettingsCard";
 import Link from "next/link";
@@ -68,7 +70,10 @@ export default async function SettingsPage() {
       <AskSettingsCard initialEnabled={result.value.askEnabled === true} canEdit={ctx.capabilities.has("org.manage")} />
       <SetupAssistSettingsCard initialEnabled={result.value.setupAssistEnabled === true} canEdit={ctx.capabilities.has("org.manage")} />
       {ctx.capabilities.has("org.manage") && (
-        <MapLayerSettings />
+        <>
+          <BoundaryLayerSettings />
+          <MapLayerSettings />
+        </>
       )}
     </div>
   );
@@ -79,4 +84,11 @@ async function MapLayerSettings() {
   const ctx = await requireSession();
   const layer = await gatewayRequest("/v1/organization/map-layer", MapLayerMetaSchema, ctx.token);
   return <MapLayerCard layer={layer.ok ? layer.value : null} />;
+}
+
+/** Boundary files per country and level (Phase 41.7) — administrators only. */
+async function BoundaryLayerSettings() {
+  const ctx = await requireSession();
+  const layers = await gatewayRequest("/v1/organization/boundary-layers", BoundaryLayerListSchema, ctx.token);
+  return <BoundaryLayersCard layers={layers.ok ? layers.value.layers : []} />;
 }

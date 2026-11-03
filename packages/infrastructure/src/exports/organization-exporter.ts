@@ -2,7 +2,7 @@ import { PassThrough, type Readable } from "node:stream";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { ZipArchive } from "archiver";
 import { DomainError } from "@donordesk/domain";
-import type { IOrganizationExporter, OrganizationExport } from "@donordesk/application";
+import { boundaryLayerKey, placeGeometryKey, type IOrganizationExporter, type OrganizationExport } from "@donordesk/application";
 
 /**
  * Tenant tables that are NOT in the organisation export, each with the reason. Every other tenant-scoped table is
@@ -42,6 +42,10 @@ export const ORG_EXPORT_OMITTED_FIELDS: Readonly<Record<string, readonly string[
   DataConnector: ["credentialEnc"],
   // The stored setup document never leaves the tenant's storage (Phase 36); the proposal's other fields export.
   ProjectSetupProposal: ["sourceStorageKey"],
+  // Where a drawn shape is kept is internal; the shape itself is exported as a file (files/places/<id>.geojson).
+  Place: ["geometryKey"],
+  // Likewise for an uploaded boundary file (exported as files/boundary-layers/<iso>-<level>.json).
+  TenantBoundaryLayer: ["storageKey"],
 };
 
 const PAGE = 500;
@@ -88,6 +92,8 @@ export class OrganizationExporter implements IOrganizationExporter {
 
   private async fill(archive: ZipArchive, tenantId: string, options: { includeFiles: boolean }): Promise<void> {
     const counts: Record<string, number> = {};
+    const shapes: string[] = [];
+    const boundaryFiles: Array<{ iso: string; level: number }> = [];
     const evidence: Array<{ id: string; fileName: string; storageKey: string | null; storageProvider: string | null }> = [];
     for (const model of exportedModels()) {
       const delegate = (this.prisma as unknown as Record<string, { findMany(args: unknown): Promise<Array<Record<string, unknown>>> }>)[model.delegate];
@@ -104,6 +110,8 @@ export class OrganizationExporter implements IOrganizationExporter {
         });
         for (const row of rows) {
           lines.push(json(row));
+          if (model.name === "Place" && row.geometryKind) shapes.push(String(row.id));
+          if (model.name === "TenantBoundaryLayer") boundaryFiles.push({ iso: String(row.iso), level: Number(row.adminLevel) });
           if (model.name === "EvidenceFile") {
             evidence.push({ id: String(row.id), fileName: String(row.fileName), storageKey: (row.storageKey as string | null) ?? null, storageProvider: (row.storageProvider as string | null) ?? null });
           }
@@ -132,11 +140,27 @@ export class OrganizationExporter implements IOrganizationExporter {
       }
     }
 
+    // Drawn outlines and routes: small GeoJSON files, included with the other files.
+    const shapesIncluded: string[] = [];
+    for (const id of shapes) {
+      if (!options.includeFiles) break;
+      try { archive.append(await this.storage.read(placeGeometryKey(tenantId, id)), { name: `files/places/${id}.geojson` }); shapesIncluded.push(id); } catch { /* listed below as not included */ }
+    }
+
+    // Boundary files the organisation uploaded: the normalised GeoJSON, with the other files.
+    const boundariesIncluded: string[] = [];
+    for (const b of boundaryFiles) {
+      if (!options.includeFiles) break;
+      try { archive.append(await this.storage.read(boundaryLayerKey(tenantId, b.iso, b.level)), { name: `files/boundary-layers/${b.iso}-${b.level}.json` }); boundariesIncluded.push(`${b.iso}-${b.level}`); } catch { /* counted below as not included */ }
+    }
+
     archive.append(json({
       exportedAt: new Date().toISOString(),
       format: "donordesk-organization-export/1",
       tables: counts,
       files: { included: filesIncluded.length, skipped: filesSkipped },
+      placeShapes: { included: shapesIncluded.length, notIncluded: shapes.length - shapesIncluded.length },
+      boundaryLayers: { included: boundariesIncluded.length, notIncluded: boundaryFiles.length - boundariesIncluded.length },
       notes: [
         "Each file in data/ holds one record per line (JSON). Dates are ISO 8601 in UTC.",
         "Password hashes and invitation tokens are never exported.",

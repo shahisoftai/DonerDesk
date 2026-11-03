@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { CreatePlaceSchema, ImportPlacesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, UpdatePlaceSchema } from "@donordesk/contracts";
+import { CreatePlaceSchema, ImportPlacesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, SetPlaceGeometrySchema, UpdatePlaceSchema } from "@donordesk/contracts";
 
 /** The organisation's list of places (Phase 33.1). Thin: validate, call one handler, throw its error; permissions are in the handlers and the authorization table. */
 export async function registerPlaceRoutes(app: FastifyInstance) {
@@ -34,6 +34,25 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
 
   app.post("/v1/places/:placeId/restore", async (req) => {
     const r = await req.container.handlers.archivePlace.handle(ctx(req), param(req, "placeId"), false);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  // The outline or route of an area. The shape is checked by the domain (`validateGeometry`); the file lives in storage.
+  app.get("/v1/places/:placeId/geometry", async (req) => {
+    const r = await req.container.handlers.getPlaceGeometry.handle(ctx(req), param(req, "placeId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/places/:placeId/geometry", async (req) => {
+    const r = await req.container.handlers.setPlaceGeometry.handle(ctx(req), param(req, "placeId"), SetPlaceGeometrySchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.delete("/v1/places/:placeId/geometry", async (req) => {
+    const r = await req.container.handlers.clearPlaceGeometry.handle(ctx(req), param(req, "placeId"));
     if (!r.ok) throw r.error;
     return { ok: true };
   });

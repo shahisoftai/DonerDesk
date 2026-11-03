@@ -13,6 +13,9 @@ export const PlaceSchema = z.object({
   aliases: z.array(z.string()),
   code: z.string().optional(),
   facility: z.boolean().optional(),
+  /** An outline ("POLYGON") or a route ("LINE") is stored for this area; read it from its own route. */
+  geometryKind: z.enum(["POLYGON", "LINE"]).optional(),
+  placedBy: z.string().optional(),
   archived: z.boolean(),
   childCount: z.number().int(),
 });
@@ -84,3 +87,11 @@ export const PlaceResultsSchema = z.object({
   withoutLocation: z.array(z.object({ id: z.string(), code: z.string(), name: z.string() })),
 });
 export type PlaceResults = z.infer<typeof PlaceResultsSchema>;
+
+/** A stored outline or route: GeoJSON geometry, as the server validated it. */
+export const PlaceGeometrySchema = z.object({
+  kind: z.enum(["POLYGON", "LINE"]),
+  geometry: z.object({ type: z.enum(["Polygon", "LineString"]), coordinates: z.unknown() }),
+});
+export type PlaceGeometryDto = z.infer<typeof PlaceGeometrySchema>;
+export const SetGeometryResultSchema = z.object({ kind: z.enum(["POLYGON", "LINE"]), vertices: z.number().int() });

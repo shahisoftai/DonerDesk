@@ -7,6 +7,7 @@ import { updatePlannedActivityAction } from "@/lib/actions/workplan";
 import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { PinPicker } from "../../maps/presentation/PinPicker";
 import { LocationPickerFigure } from "./LocationPickerFigure";
 
 /**
@@ -63,11 +64,8 @@ export function LocationEditor({ itemId, location, latitude, longitude, country,
           )}
           {(pinOpen || pin) && (
             <div className="max-w-xl space-y-2">
-              <LocationPickerFigure value={pin} country={country} customLayerUrl={customLayerUrl} onChange={(next) => { setPin(next); if (next) setPinOpen(true); }} />
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-slate-500 dark:text-slate-400">{pin ? `${pin.latitude}, ${pin.longitude}` : WORKPLAN_COPY.pinHint}</p>
-                {pin && <button type="button" className="text-sm font-medium text-slate-600 hover:underline dark:text-slate-300" onClick={() => setPin(null)}>{WORKPLAN_COPY.clearPin}</button>}
-              </div>
+              <PinPicker value={pin} country={country} onChange={(next) => { setPin(next); if (next) setPinOpen(true); }}
+                legacy={({ value, onChange }) => <LocationPickerFigure value={value} country={country} customLayerUrl={customLayerUrl} onChange={onChange} />} />
             </div>
           )}
           <Button size="sm" onClick={save} pending={state.busy} disabled={unchanged}>Save place</Button>

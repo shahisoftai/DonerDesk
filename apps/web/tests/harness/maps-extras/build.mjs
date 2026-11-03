@@ -11,12 +11,12 @@ export async function build(outfile) {
   await esbuild.build({
     entryPoints: [join(here, "main.tsx")],
     bundle: true, outfile, format: "iife", jsx: "automatic", platform: "browser", absWorkingDir: web, nodePaths: [join(web, "node_modules")],
-    alias: {
+    alias: { "@/lib/actions/org": join(here, "../maps-v2/stubs/actions-org.ts"),
       "@/lib/actions/map-overlays": join(here, "stubs/actions-map-overlays.ts"),
       "@/features/workplan/presentation/SiteMapFigure": join(here, "stubs/SiteMapFigure.tsx"),
       "next/link": join(here, "stubs/link.tsx"),
       "@": join(web, "src"),
     },
-    define: { "process.env.NODE_ENV": '"development"' }, logLevel: "error",
+    define: { "process.env.NODE_ENV": '"development"', "process.env.NEXT_PUBLIC_MAP_ENGINE": '"echarts"' }, logLevel: "error",
   });
 }

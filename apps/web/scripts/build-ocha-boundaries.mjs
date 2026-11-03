@@ -6,19 +6,20 @@
 // stands). A level present in OCHA's file REPLACES the geoBoundaries file for that country and level; the manifest records the origin, source,
 // licence and year per file. Only CC BY / CC BY-IGO style licences ship (see boundary-sources.ts); anything else is listed under `held`.
 // Needs the `unzip` command. Nothing is read from HDX at run time.
-import { execFileSync } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
+import { promisify } from "node:util";
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { licenceVerdict, roundGeometry } from "../src/features/maps/domain/boundary-sources.ts";
+import { licenceVerdict, requiresShareAlike, roundGeometry, ROUND_DIGITS, SIMPLIFY_EPSILON } from "../src/features/maps/domain/boundary-sources.ts";
 import { codFileName, geojsonZipUrl, readLevel } from "../src/features/maps/domain/ocha-cod.ts";
 import { simplifyGeometry } from "../src/features/maps/domain/simplify-geometry.ts";
 
 const args = new Map();
 for (let i = 2; i < process.argv.length; i += 2) args.set(process.argv[i].replace(/^--/, ""), process.argv[i + 1]);
-const levels = (args.get("levels") ?? "2,3").split(",").map(Number).filter((n) => [2, 3].includes(n));
+const levels = (args.get("levels") ?? "2,3").split(",").map(Number).filter((n) => [2, 3, 4].includes(n));
 const only = args.get("countries") ? new Set(args.get("countries").split(",").map((s) => s.trim().toUpperCase())) : null;
-const epsilon = Number(args.get("epsilon") ?? 0.01);
+const epsilonArg = args.get("epsilon") ? Number(args.get("epsilon")) : null; // overrides the per-level tolerance
 const OUT = args.get("out") ?? join(dirname(fileURLToPath(import.meta.url)), "../public/geo");
 const HDX = "https://data.humdata.org/api/3/action";
 const today = new Date().toISOString().slice(0, 10);
@@ -29,10 +30,16 @@ async function getJson(url, tries = 4) {
     catch (e) { if (attempt >= tries) throw e; await new Promise((res) => setTimeout(res, 1000 * attempt)); }
   }
 }
+// HDX answers 202 with an empty body to some clients (Node's fetch among them) and serves `curl`, so the zips are downloaded with curl itself.
+// An empty body is "not ready", never a result.
+const execFileAsync = promisify(execFile);
 async function getBuffer(url, tries = 4) {
   for (let attempt = 1; ; attempt++) {
-    try { const r = await fetch(url, { redirect: "follow", signal: AbortSignal.timeout(600_000) }); if (!r.ok) throw new Error(`${r.status} ${url}`); return Buffer.from(await r.arrayBuffer()); }
-    catch (e) { if (attempt >= tries) throw e; await new Promise((res) => setTimeout(res, 1500 * attempt)); }
+    try {
+      const { stdout } = await execFileAsync("curl", ["-sSL", "--fail", "--retry", "3", "--max-time", "900", url], { encoding: "buffer", maxBuffer: 1024 * 1024 * 1024 });
+      if (stdout.length === 0) throw new Error(`empty body ${url}`);
+      return stdout;
+    } catch (e) { if (attempt >= tries) throw e; await new Promise((res) => setTimeout(res, 3000 * attempt)); }
   }
 }
 const unzipOne = (zip, name) => { try { return execFileSync("unzip", ["-p", zip, name], { maxBuffer: 512 * 1024 * 1024, stdio: ["ignore", "pipe", "ignore"] }).toString("utf8"); } catch { return null; } };
@@ -77,16 +84,16 @@ async function worker() {
       writeFileSync(zip, await getBuffer(url));
       for (const level of levels) {
         const text = unzipOne(zip, codFileName(iso, level));
-        if (!text) continue; // this country has no such level
+        if (!text) continue; // this country has no such level (the zip itself was checked non-empty above)
         const read = readLevel(JSON.parse(text).features ?? [], level, today);
         if (read.features.length === 0) continue;
-        const features = read.features.map((f) => ({ ...f, geometry: roundGeometry(simplifyGeometry(f.geometry, epsilon)) })).filter((f) => f.geometry);
+        const features = read.features.map((f) => ({ ...f, geometry: roundGeometry(simplifyGeometry(f.geometry, epsilonArg ?? SIMPLIFY_EPSILON[level]), ROUND_DIGITS[level]) })).filter((f) => f.geometry);
         const body = JSON.stringify({ type: "FeatureCollection", features });
         mkdirSync(join(OUT, iso), { recursive: true });
         writeFileSync(join(OUT, iso, `ADM${level}.json`), body);
         const country = countries.get(iso) ?? { iso, name: (pkg.title ?? iso).replace(/ - Subnational Administrative Boundaries$/i, ""), source: "OCHA COD-AB", licence, yearRepresented: read.version.slice(0, 4), files: [] };
         if (country.files.some((f) => f.level === level && f.origin !== "OCHA COD-AB")) report.replaced++;
-        country.files = country.files.filter((f) => f.level !== level).concat({ level, file: `${iso}/ADM${level}.json`, units: features.length, bytes: Buffer.byteLength(body), origin: "OCHA COD-AB", source: "OCHA COD-AB", licence, yearRepresented: read.version.slice(0, 4) || "" }).sort((a, b) => a.level - b.level);
+        country.files = country.files.filter((f) => f.level !== level).concat({ level, file: `${iso}/ADM${level}.json`, units: features.length, bytes: Buffer.byteLength(body), origin: "OCHA COD-AB", source: "OCHA COD-AB", licence, yearRepresented: read.version.slice(0, 4) || "", ...(requiresShareAlike(licence) ? { shareAlike: true } : {}) }).sort((a, b) => a.level - b.level);
         countries.set(iso, country);
         held = held.filter((h) => !(h.iso === iso && h.level === level)); // OCHA fills a level geoBoundaries had to hold
         report.written++;

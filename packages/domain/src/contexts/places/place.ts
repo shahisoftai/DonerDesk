@@ -10,6 +10,7 @@
 import { normalizeLocationKey } from "../workplan/location-key.js";
 import { DomainError } from "../../core/domain-error.js";
 import { err, ok, type Result } from "../../core/result.js";
+import { isPlacedBy, type GeometryKind, type PlacedBy } from "./geometry.js";
 
 export type PlaceKind = "POINT" | "AREA";
 
@@ -39,6 +40,13 @@ export interface PlaceRecord {
   code?: string;
   /** A place people go to for a service (clinic, school, water point). Optional: absent means not marked. */
   facility?: boolean;
+  /** Set when an outline (a polygon) or a route (a line) is stored for this place; the shape itself is in storage, never in the row. */
+  geometryKind?: GeometryKind;
+  /** Where the shape's file is kept. Never sent to a browser. */
+  geometryKey?: string;
+  geometryBytes?: number;
+  /** How the location came to be (typed, pinned, drawn, snapped, imported, the device's own fix). */
+  placedBy?: PlacedBy;
   archived: boolean;
 }
 
@@ -78,6 +86,8 @@ export function validatePlace(place: PlaceRecord, existing: readonly PlaceRecord
   if (hasLat && (place.latitude! < -90 || place.latitude! > 90 || place.longitude! < -180 || place.longitude! > 180)) {
     return err(DomainError.validation("That pin is outside the map (latitude -90 to 90, longitude -180 to 180)", { field: "latitude" }));
   }
+  if (place.geometryKind && place.kind === "POINT") return err(DomainError.validation("A point has a pin, not an outline; use an area for a boundary or a route", { field: "kind" }));
+  if (place.placedBy !== undefined && !isPlacedBy(place.placedBy)) return err(DomainError.validation("That is not a way a place can be located", { field: "placedBy" }));
   if (place.kind === "AREA" && hasLat) return err(DomainError.validation("An area has no pin; use a point for a single site", { field: "kind" }));
 
   const byId = new Map(existing.map((p) => [p.id, p]));

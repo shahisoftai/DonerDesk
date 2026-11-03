@@ -2,6 +2,10 @@ import { z } from "zod";
 
 const level = z.number().int().min(0).max(4);
 
+/** How a place's location came to be. Mirrors `PLACED_BY` in the domain (pinned by the architecture test). */
+export const PLACED_BY_VALUES = ["TYPED", "MAP_PIN", "MAP_DRAWN", "SNAPPED", "IMPORT", "GPS"] as const;
+const placedBy = z.enum(PLACED_BY_VALUES);
+
 /** What a person says when adding a place: its name, what kind of place, what it is inside, and (for a site) a pin. */
 export const CreatePlaceSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -14,6 +18,7 @@ export const CreatePlaceSchema = z.object({
   aliases: z.array(z.string().trim().min(1).max(120)).max(12).default([]),
   code: z.string().trim().max(60).optional(),
   facility: z.boolean().optional(),
+  placedBy: placedBy.optional(),
 });
 export type CreatePlaceInput = z.infer<typeof CreatePlaceSchema>;
 
@@ -29,6 +34,7 @@ export const UpdatePlaceSchema = z.object({
   aliases: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
   code: z.string().trim().max(60).nullable().optional(),
   facility: z.boolean().optional(),
+  placedBy: placedBy.optional(),
 });
 export type UpdatePlaceInput = z.infer<typeof UpdatePlaceSchema>;
 
@@ -49,3 +55,24 @@ export type ResolvePlacesInput = z.infer<typeof ResolvePlacesSchema>;
 export const ListPlacesQuerySchema = z.object({
   includeArchived: z.enum(["true", "false"]).default("false").transform((v) => v === "true"),
 });
+
+/**
+ * A drawn outline or route for an area. The shape is checked by the domain (`validateGeometry`), the one rule for server and browser;
+ * here it is only required to be present, so every refusal comes back as a plain sentence about the shape.
+ */
+export const SetPlaceGeometrySchema = z.object({ geometry: z.unknown().refine((g) => g !== undefined, "Draw an outline or a route on the map") });
+export type SetPlaceGeometryInput = z.infer<typeof SetPlaceGeometrySchema>;
+
+/**
+ * The fields sent beside a boundary file when it is uploaded (multipart: these come first, the file last). The file's own contents are
+ * checked by the domain (`validateBoundaryLayer`); here only the shape of the choices is.
+ */
+export const UploadBoundaryLayerFieldsSchema = z.object({
+  iso: z.string().trim().min(1).max(8),
+  countryName: z.string().trim().min(1).max(80),
+  adminLevel: z.coerce.number().int().min(1).max(4),
+  nameField: z.string().trim().min(1).max(120),
+  pcodeField: z.string().trim().max(120).optional(),
+  parentPcodeField: z.string().trim().max(120).optional(),
+});
+export type UploadBoundaryLayerFields = z.infer<typeof UploadBoundaryLayerFieldsSchema>;

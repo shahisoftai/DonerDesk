@@ -21,6 +21,7 @@ const STATIC: Array<{ path: string; priority: number; changeFrequency: "weekly" 
   { path: "/subprocessors", priority: 0.3, changeFrequency: "yearly" },
   { path: "/acceptable-use", priority: 0.3, changeFrequency: "yearly" },
   { path: "/refunds", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/maps/sources", priority: 0.2, changeFrequency: "yearly" },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

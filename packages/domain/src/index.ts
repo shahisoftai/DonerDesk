@@ -23,6 +23,7 @@ export * from "./contexts/memory/index.js";
 export * from "./contexts/finance/index.js";
 export * from "./contexts/workplan/index.js";
 export * from "./contexts/places/index.js";
+export * from "./contexts/identity/boundary-layer.js";
 export * from "./contexts/integrations/index.js";
 export * from "./contexts/collection/index.js";
 export * from "./contexts/collection/connector.js";

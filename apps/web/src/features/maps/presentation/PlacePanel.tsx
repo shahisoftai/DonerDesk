@@ -3,11 +3,13 @@
 import type { PlacePanel as Panel } from "../domain/map-explorer";
 
 /** What a click on the map shows: the place, its figures for every indicator, and the places inside it. */
-export function PlacePanel({ panel, name, canDrill, onDrill, onSelect, onClose }: {
+export function PlacePanel({ panel, name, canDrill, drillLabel = "Open its provinces", onDrill, onSelect, onClose }: {
   panel: Panel | null;
   /** The clicked boundary's own name, shown even when no place in the list matches it. */
   name: string;
   canDrill: boolean;
+  /** The button text; it names the level that would open. */
+  drillLabel?: string;
   onDrill: () => void;
   onSelect: (placeId: string) => void;
   onClose: () => void;
@@ -22,7 +24,7 @@ export function PlacePanel({ panel, name, canDrill, onDrill, onSelect, onClose }
         </div>
         <button type="button" className="rounded border px-2" aria-label="Close place details" onClick={onClose}>×</button>
       </div>
-      {canDrill && <button type="button" className="btn-secondary" onClick={onDrill}>Open its provinces</button>}
+      {canDrill && <button type="button" className="btn-secondary" onClick={onDrill}>{drillLabel}</button>}
       {!panel || panel.figures.length === 0 ? (
         <p className="text-slate-600">No figures are recorded for this place.</p>
       ) : (

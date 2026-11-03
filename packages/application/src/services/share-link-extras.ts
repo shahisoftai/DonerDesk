@@ -23,8 +23,8 @@ export class ShareLinkExtras implements IDatasetExtras {
 export interface IShareMapReader {
   /** The organisation's places, as the places screen returns them. */
   places(ctx: AuthenticatedContext): Promise<unknown | undefined>;
-  /** One project's results by place at the province level, as the Data Center returns them. */
-  results(ctx: AuthenticatedContext, projectId: string): Promise<unknown | undefined>;
+  /** One project's results by place, as the Data Center returns them: the province level and the latest period unless asked otherwise. */
+  results(ctx: AuthenticatedContext, projectId: string, options?: { level?: 0 | 1 | 2 | 3 | 4; periodId?: string }): Promise<unknown | undefined>;
   /** One project's planned activities and its country, as the plan's map reads them. */
   activities(ctx: AuthenticatedContext, projectId: string): Promise<{ rows: unknown[]; country?: string } | undefined>;
 }
@@ -32,13 +32,13 @@ export interface IShareMapReader {
 export class ShareMapReader implements IShareMapReader {
   constructor(
     private readonly listPlaces: { handle(ctx: AuthenticatedContext, options?: { includeArchived?: boolean }): Promise<Result<unknown, DomainError>> },
-    private readonly placeResults: { handle(ctx: AuthenticatedContext, projectId: string, level: 1): Promise<Result<unknown, DomainError>> },
+    private readonly placeResults: { handle(ctx: AuthenticatedContext, projectId: string, level: 0 | 1 | 2 | 3 | 4, options?: { periodId?: string }): Promise<Result<unknown, DomainError>> },
     private readonly listPlan: { handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<unknown[], DomainError>> },
     private readonly projects: Pick<IProjectRepository, "findById">,
   ) {}
 
   async places(ctx: AuthenticatedContext) { const r = await this.listPlaces.handle(ctx); return r.ok ? r.value : undefined; }
-  async results(ctx: AuthenticatedContext, projectId: string) { const r = await this.placeResults.handle(ctx, projectId, 1); return r.ok ? r.value : undefined; }
+  async results(ctx: AuthenticatedContext, projectId: string, options: { level?: 0 | 1 | 2 | 3 | 4; periodId?: string } = {}) { const r = await this.placeResults.handle(ctx, projectId, options.level ?? 1, options.periodId ? { periodId: options.periodId } : {}); return r.ok ? r.value : undefined; }
   async activities(ctx: AuthenticatedContext, projectId: string) {
     const rows = await this.listPlan.handle(ctx, projectId);
     if (!rows.ok) return undefined;

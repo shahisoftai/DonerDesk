@@ -15,6 +15,14 @@ import { DEFAULT_PLACE_COLUMNS, PLACE_COLUMNS, cellFor, filterPlaces, placesCsv,
 import { loadBoundaryFile, loadBoundaryManifest } from "@/lib/client/boundary-loader";
 import { fileFor, findCountry, levelsFor } from "@/features/maps/domain/boundary-sources";
 import { containingFeature } from "@/features/maps/domain/point-in-area";
+import { PinPicker } from "@/features/maps/presentation/PinPicker";
+import { parsePin } from "@/features/maps/domain/marking/pin";
+import { describeAreas, suggestParent, type ContainingArea } from "@/features/maps/domain/marking/snap";
+import { useMapText } from "@/features/maps/presentation/useMapText";
+import { LocationPickerFigure } from "@/features/workplan/presentation/LocationPickerFigure";
+import { useMapEngine } from "@/features/maps/presentation/useMapEngine";
+import { PlaceShapeEditor } from "./PlaceShapeEditor";
+import { BulkPlaceWalk } from "./BulkPlaceWalk";
 
 interface Draft {
   name: string;
@@ -47,6 +55,14 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
   const [facilitiesOnly, setFacilitiesOnly] = useState(false);
   const [columns, setColumns] = useState<readonly PlaceColumn[]>(DEFAULT_PLACE_COLUMNS);
   const [inside, setInside] = useState<string | null>(null);
+  // "Place on map": the pin picker, and the areas its pin falls inside (a suggestion for the parent; never written for the person).
+  const [mapOpen, setMapOpen] = useState(false);
+  // Drawing an outline or a route needs the new map; with the old one the buttons are not offered.
+  const canDraw = useMapEngine().engine === "maplibre";
+  const [outlineOf, setOutlineOf] = useState<string | null>(null);
+  const [walkOpen, setWalkOpen] = useState(false);
+  const { t: mt, levelSingular } = useMapText();
+  const [areas, setAreas] = useState<ContainingArea[]>([]);
 
   const live = useMemo(() => places.filter((p) => !p.archived), [places]);
   const base = useMemo(() => (showRetired ? places : live), [places, live, showRetired]);
@@ -130,6 +146,10 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
           ) : (
             <>
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{C.confirmIntro}</p>
+              {canEdit && !walkOpen && unconfirmed.items.some((i) => i.status === "UNRESOLVED") && (
+                <Button type="button" size="sm" variant="secondary" className="mt-2" onClick={() => setWalkOpen(true)}>{mt("maps.places.walkStart")}</Button>
+              )}
+              {walkOpen && <div className="mt-3"><BulkPlaceWalk texts={unconfirmed.items.filter((i) => i.status === "UNRESOLVED").map((i) => i.text)} places={places} onClose={() => setWalkOpen(false)} /></div>}
               <ul className="mt-3 divide-y divide-slate-200 text-sm dark:divide-white/10">
                 {unconfirmed.items.slice(0, 40).map((item) => (
                   <li key={item.text} className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -190,7 +210,24 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
                 <Input inputMode="decimal" value={draft.longitude} onChange={(e) => set("longitude", e.target.value)} disabled={busy} />
               </Field>
             </div>
-            {inside && <p className="text-sm text-slate-600 sm:col-span-2 dark:text-slate-300">This pin falls inside <strong>{inside}</strong>. Add it below that area if it is listed.</p>}
+            <div className="space-y-2 sm:col-span-2">
+              {!mapOpen && <button type="button" className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400" onClick={() => setMapOpen(true)}>{mt("maps.places.placeOnMap")}</button>}
+              {mapOpen && (() => {
+                const typed = parsePin(draft.latitude, draft.longitude);
+                const pin = typed && typed.ok ? typed.pin : null;
+                const countryName = places.find((p) => !p.archived && p.adminLevel === 0)?.name;
+                const parent = suggestParent(areas, live, draft.parentId || null);
+                return (
+                  <>
+                    <PinPicker value={pin} country={countryName} onAreas={setAreas}
+                      onChange={(next) => setDraft((d) => ({ ...d, latitude: next ? String(next.latitude) : "", longitude: next ? String(next.longitude) : "" }))}
+                      legacy={({ value, onChange }) => <LocationPickerFigure value={value} {...(countryName ? { country: countryName } : {})} onChange={onChange} />} />
+                    {parent && <p className="text-sm text-slate-600 dark:text-slate-300">{mt("maps.places.fallsInside", { areas: describeAreas(areas, levelSingular) })} <button type="button" className="font-medium underline" onClick={() => set("parentId", parent.id)}>{mt("maps.places.addUnder", { name: parent.name })}</button></p>}
+                  </>
+                );
+              })()}
+              {!mapOpen && inside && <p className="text-sm text-slate-600 dark:text-slate-300">This pin falls inside <strong>{inside}</strong>. Add it below that area if it is listed.</p>}
+            </div>
             <div className="sm:col-span-2">
               <Button type="submit" disabled={busy || draft.name.trim() === ""}>{add.busy ? C.adding : C.add}</Button>
               {add.error && <p role="alert" className="mt-2 text-sm text-danger-600">{add.error}</p>}
@@ -244,15 +281,27 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
                   </span>
                 </span>
                 {canEdit && (
-                  <button type="button" className="text-xs font-medium text-brand-700 hover:underline disabled:opacity-50 dark:text-brand-300" disabled={busy} onClick={() => toggle(p)}>
-                    {p.archived ? C.restore : C.retire}
-                  </button>
+                  <span className="flex items-center gap-3">
+                    {canDraw && p.kind === "AREA" && !p.archived && (
+                      <button type="button" className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-300" onClick={() => setOutlineOf(outlineOf === p.id ? null : p.id)}>
+                        {p.geometryKind === "LINE" ? mt("maps.places.editRoute") : p.geometryKind === "POLYGON" ? mt("maps.places.editOutline") : mt("maps.places.drawOutline")}
+                      </button>
+                    )}
+                    <button type="button" className="text-xs font-medium text-brand-700 hover:underline disabled:opacity-50 dark:text-brand-300" disabled={busy} onClick={() => toggle(p)}>
+                      {p.archived ? C.restore : C.retire}
+                    </button>
+                  </span>
                 )}
               </li>
             ))}
           </ul>
         )}
         {retire.error && <p role="alert" className="mt-2 text-sm text-danger-600">{retire.error}</p>}
+        {outlineOf && (() => {
+          const target = places.find((x) => x.id === outlineOf);
+          if (!target) return null;
+          return <div className="mt-3"><PlaceShapeEditor key={target.id} place={target} parent={places.find((x) => x.id === target.parentId)} country={places.find((x) => !x.archived && x.adminLevel === 0)?.name} onClose={() => setOutlineOf(null)} /></div>;
+        })()}
       </section>
 
       {canEdit && (

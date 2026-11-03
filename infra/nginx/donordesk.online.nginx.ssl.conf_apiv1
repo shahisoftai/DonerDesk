@@ -38,3 +38,14 @@ location ^~ /embed/dashboard/ {
 	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 	proxy_set_header X-Forwarded-Proto $scheme;
 }
+
+# A results map on a shared dashboard asking for another level or period (Phase 41.8). Each question reads the database, so it shares the
+# dashboard zone; a map that is moved around asks a few times, hence the burst.
+location ^~ /api/shared/dashboard/ {
+	limit_req zone=dd_public_dashboards burst=30 nodelay;
+	proxy_pass http://127.0.0.1:3002;
+	proxy_set_header Host $host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+}

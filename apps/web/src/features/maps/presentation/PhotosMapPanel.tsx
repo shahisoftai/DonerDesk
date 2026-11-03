@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { SiteMapFigure } from "@/features/workplan/presentation/SiteMapFigure";
+import { SiteMap } from "./SiteMap";
 import { protectedFileDownloadHref, isByteStoredEvidence } from "@/lib/shared/downloads";
 import { photoMapData, photoMapSummary, photoPoints, type PhotoInput, type PlaceWithPin } from "../domain/photo-map";
 
@@ -21,7 +21,7 @@ export function PhotosMapPanel({ projectId, photos, places, country }: { project
     <section aria-labelledby="photos-map" className="space-y-3">
       <h2 id="photos-map" className="text-lg font-semibold">Photos on the map</h2>
       <p className="text-sm text-slate-600 dark:text-slate-300">{photoMapSummary(data)}</p>
-      {points.length > 0 && <SiteMapFigure points={points} {...(country ? { country } : {})} />}
+      {points.length > 0 && <SiteMap points={points} {...(country ? { country } : {})} />}
       <ul className="space-y-4">
         {data.sites.map((s) => {
           const all = open === s.name;

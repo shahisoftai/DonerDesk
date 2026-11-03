@@ -224,12 +224,18 @@ export function placeForRegion(regionName: string, places: readonly PlaceItem[],
   return sameName.find((p) => p.adminLevel === level) ?? sameName[0] ?? null;
 }
 
-/** One sentence under the map, so the picture is never the only account of it. */
+/** The numbers behind the sentence under the map (the screen says them in the person's language). */
+export interface SummaryCounts { withValue: number; total: number; pinned: number; unmapped: number }
+export function summaryCounts(model: ExplorerModel): SummaryCounts {
+  return { withValue: model.regions.filter((r) => r.value !== null).length, total: model.regions.length, pinned: model.pins.length, unmapped: model.unmapped.length };
+}
+
+/** One English sentence under the map (the older ECharts explorer and its tests); the new screens use `summaryCounts` and the catalogue. */
 export function mapSummary(model: ExplorerModel): string {
-  const withValue = model.regions.filter((r) => r.value !== null).length;
-  const parts = [`${withValue} of ${model.regions.length} places have a figure`];
-  if (model.pins.length > 0) parts.push(`${model.pins.length} pinned`);
-  if (model.unmapped.length > 0) parts.push(`${model.unmapped.length} not on the map (no pin)`);
+  const c = summaryCounts(model);
+  const parts = [`${c.withValue} of ${c.total} places have a figure`];
+  if (c.pinned > 0) parts.push(`${c.pinned} pinned`);
+  if (c.unmapped > 0) parts.push(`${c.unmapped} not on the map (no pin)`);
   return parts.join("; ") + ".";
 }
 
