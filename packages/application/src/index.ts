@@ -357,6 +357,7 @@ export * from "./use-cases/integrations/integration-handlers.js";
 export * from "./ports/collection.js";
 export * from "./use-cases/collection/collection-handlers.js";
 export * from "./ports/dashboards.js";
+export * from "./ports/home-layout.js";
 export * from "./ports/finance-register.js";
 export * from "./use-cases/identity/update-ask-settings.js";
 export * from "./use-cases/identity/update-mfa-requirement.js";
@@ -381,5 +382,6 @@ export * from "./services/mcp-server.js";
 export * from "./use-cases/collection/connector-handlers.js";
 
 export * from "./use-cases/dashboards/home-pin-handlers.js";
+export * from "./use-cases/home/home-layout-handlers.js";
 export * from "./use-cases/dashboards/map-overlay-handlers.js";
 export * from "./use-cases/identity/pending-member-resolver.js";

@@ -62,6 +62,10 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/map-overlays$/, permission: "project.edit" },
   { method: "DELETE", route: /^\/v1\/map-overlays\/[^/]+$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/home-pins$/, permission: "project.view" },
+  // A person's own arrangement of their Home: the handlers only ever touch the caller's row.
+  { method: "GET", route: /^\/v1\/home-layout$/, permission: "project.view" },
+  { method: "PUT", route: /^\/v1\/home-layout$/, permission: "project.view" },
+  { method: "DELETE", route: /^\/v1\/home-layout$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/dashboards\/[^/]+\/featured$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/dashboards\/[^/]+\/featured$/, permission: "org.manage" },
   { method: "PUT", route: /^\/v1\/home-pins\/[^/]+\/position$/, permission: "project.view" },

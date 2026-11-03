@@ -2407,6 +2407,20 @@ model HomePin {
   @@index([tenantId, userId])
 }
 
+/// How a person has arranged the panels of their Home (Phase 40): order, width and hidden flags only, never data. One row per person per Home variant.
+model HomeLayout {
+  id         String   @id
+  tenantId   String
+  userId     String
+  variant    String
+  layoutJson String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tenantId, userId, variant])
+  @@index([tenantId, userId])
+}
+
 /// A dashboard template the organisation keeps (Phase 34.3): the whole template (roles and charts by role) as JSON. Always a draft,
 /// always editable. Built-in templates live in code and are never stored; copying one makes a row here.
 model DashboardTemplate {

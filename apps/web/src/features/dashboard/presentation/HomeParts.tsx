@@ -63,6 +63,16 @@ export function Panel({ title, href, linkLabel, children }: { title: string; hre
   );
 }
 
+/** What a panel shows when it has nothing to show: one slim line in its own place, never a tall empty card. */
+export function CollapsedPanel({ title, message, href, linkLabel }: { title: string; message: string; href?: string; linkLabel?: string }) {
+  return (
+    <section aria-label={title} className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-lg border border-dashed border-slate-200 px-3 py-2 text-sm dark:border-white/10">
+      <p className="min-w-0 text-slate-500 dark:text-slate-400"><span className="font-medium text-slate-700 dark:text-slate-200">{title}</span> · {message}</p>
+      {href && <Link href={href} className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">{linkLabel ?? "Open →"}</Link>}
+    </section>
+  );
+}
+
 export type QuickLink = { href: string; label: string; hint?: string };
 
 export function QuickLinks({ links }: { links: ReadonlyArray<QuickLink> }) {

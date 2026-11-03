@@ -37,6 +37,7 @@ import { registerPlaceRoutes } from "./routes/places.js";
 import { registerFinanceRegisterRoutes } from "./routes/finance-register.js";
 import { registerCollectionRoutes, registerPublicCollectionRoutes } from "./routes/collection.js";
 import { registerChartDashboardRoutes, registerPublicDashboardRoutes } from "./routes/chart-dashboards.js";
+import { registerHomeLayoutRoutes } from "./routes/home-layout.js";
 import { registerIntegrationRoutes } from "./routes/integrations.js";
 import { registerPublicApiRoutes } from "./routes/public-api.js";
 import { registerReportingRoutes } from "./routes/reporting.js";
@@ -216,6 +217,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerFinanceRegisterRoutes(instance);
     await registerCollectionRoutes(instance);
     await registerChartDashboardRoutes(instance);
+    await registerHomeLayoutRoutes(instance);
     await registerIntegrationRoutes(instance);
     await registerReportingRoutes(instance);
     await registerAgentMemoryRoutes(instance);

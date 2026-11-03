@@ -150,3 +150,20 @@ export const AddHomePinSchema = z.object({ kind: z.string().max(20), ref: z.stri
 export const MoveHomePinSchema = z.object({ to: z.number().int().min(0).max(50) });
 export const AddMapOverlaySchema = z.object({ name: z.string().trim().min(1).max(120), geojson: z.string().min(2).max(6_000_000) });
 export const SetFeaturedSchema = z.object({ audiences: z.array(z.string().min(1).max(64)).max(200) });
+
+/**
+ * A person's arrangement of Home (Phase 40). The server checks the shape only (known Home variant, a short list of well-formed entries, no repeats):
+ * which panels a role may see is the web's rule and is applied again every time the layout is read, so a stored layout can never reveal anything.
+ */
+export const HOME_VARIANTS = ["DIRECTOR", "MANAGER", "FIELD", "GRANTS", "COMPLIANCE"] as const;
+export const HomeVariantSchema = z.enum(HOME_VARIANTS);
+export const HomeLayoutEntrySchema = z.object({ key: z.string().regex(/^[A-Z][A-Z_]{1,30}$/), span: z.union([z.literal(4), z.literal(6), z.literal(8), z.literal(12)]), hidden: z.boolean() });
+export const HomeLayoutBodySchema = z.array(HomeLayoutEntrySchema).max(40).refine((l) => new Set(l.map((e) => e.key)).size === l.length, "A panel appears twice.");
+export const HomeLayoutQuerySchema = z.object({ variant: HomeVariantSchema });
+export const SaveHomeLayoutSchema = z.object({
+  variant: HomeVariantSchema,
+  layout: HomeLayoutBodySchema,
+  /** The version this edit started from; null when the person had no saved layout. A newer one is a conflict. */
+  expectedUpdatedAt: z.string().datetime().nullable(),
+});
+export type SaveHomeLayoutInput = z.infer<typeof SaveHomeLayoutSchema>;

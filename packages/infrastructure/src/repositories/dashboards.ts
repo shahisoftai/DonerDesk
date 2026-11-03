@@ -1,5 +1,5 @@
 import { TenantId, ok, type DashboardTemplate, type DashboardWidget, type Result } from "@donordesk/domain";
-import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, IHomePinRepository, StoredHomePin, IMapOverlayRepository, StoredMapOverlay, IFeaturedDashboardRepository, StoredFeaturedDashboard, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
+import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, IHomePinRepository, StoredHomePin, IHomeLayoutRepository, StoredHomeLayout, IMapOverlayRepository, StoredMapOverlay, IFeaturedDashboardRepository, StoredFeaturedDashboard, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
 
 type DashboardRow = NonNullable<Awaited<ReturnType<PrismaClient["dashboard"]["findFirst"]>>>;
@@ -251,6 +251,33 @@ export class PrismaHomePinRepository implements IHomePinRepository {
   }
   async setOrder(tenantId: TenantId, userId: string, orderedIds: string[]): Promise<Result<void>> {
     await this.prisma.$transaction(orderedIds.map((id, i) => this.prisma.homePin.updateMany({ where: { id, tenantId: tenantId.toString(), userId }, data: { position: i } })));
+    return ok(undefined);
+  }
+}
+
+/** A person's own Home layout (Phase 40): one row per person per variant, replaced only if it is still the version the person opened. */
+export class PrismaHomeLayoutRepository implements IHomeLayoutRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+  async find(tenantId: TenantId, userId: string, variant: string): Promise<Result<StoredHomeLayout | null>> {
+    const r = await this.prisma.homeLayout.findFirst({ where: { tenantId: tenantId.toString(), userId, variant } });
+    return ok(r ? { id: r.id, tenantId: TenantId.create(r.tenantId), userId: r.userId, variant: r.variant, layoutJson: r.layoutJson, updatedAt: r.updatedAt } : null);
+  }
+  async save(row: Omit<StoredHomeLayout, "updatedAt">, expected: Date | null): Promise<Result<boolean>> {
+    const where = { tenantId: row.tenantId.toString(), userId: row.userId, variant: row.variant };
+    if (expected === null) {
+      try {
+        await this.prisma.homeLayout.create({ data: { id: row.id, ...where, layoutJson: row.layoutJson } });
+        return ok(true);
+      } catch (e) {
+        if ((e as { code?: string }).code === "P2002") return ok(false);
+        throw e;
+      }
+    }
+    const done = await this.prisma.homeLayout.updateMany({ where: { ...where, updatedAt: expected }, data: { layoutJson: row.layoutJson } });
+    return ok(done.count > 0);
+  }
+  async delete(tenantId: TenantId, userId: string, variant: string): Promise<Result<void>> {
+    await this.prisma.homeLayout.deleteMany({ where: { tenantId: tenantId.toString(), userId, variant } });
     return ok(undefined);
   }
 }

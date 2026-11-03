@@ -4,12 +4,20 @@
  */
 import type { HomeVariant } from "../../navigation/domain/role-navigation.ts";
 
-export const HOME_TILES = ["NEEDS_YOU", "PINNED", "BOOKMARKS", "HEADLINES", "FUNDING", "MAP", "BREAKDOWNS", "PROJECT_HEALTH", "GRANTS"] as const;
+export const HOME_TILES = [
+  "NEEDS_YOU", "PINNED", "BOOKMARKS", "HEADLINES", "FUNDING", "MAP", "BREAKDOWNS", "PROJECT_HEALTH", "GRANTS",
+  "UPCOMING_REPORTS", "PIPELINE", "RISKS", "DELIVERY", "DATA_EVIDENCE", "RESULTS", "YOUR_WORK", "NOTIFICATIONS", "QUICK_LINKS",
+] as const;
 export type HomeTile = (typeof HOME_TILES)[number];
 
+/** The body panels a director and a manager share; a director adds Grants. */
+const PORTFOLIO_BODY: ReadonlyArray<HomeTile> = [
+  "HEADLINES", "FUNDING", "MAP", "BREAKDOWNS", "PROJECT_HEALTH", "UPCOMING_REPORTS", "PIPELINE", "RISKS", "DELIVERY", "DATA_EVIDENCE", "RESULTS", "YOUR_WORK", "NOTIFICATIONS", "QUICK_LINKS",
+];
+
 export const HOME_TILES_BY_VARIANT: Readonly<Record<HomeVariant, ReadonlySet<HomeTile>>> = {
-  DIRECTOR: new Set<HomeTile>(["NEEDS_YOU", "PINNED", "BOOKMARKS", "HEADLINES", "FUNDING", "MAP", "BREAKDOWNS", "PROJECT_HEALTH", "GRANTS"]),
-  MANAGER: new Set<HomeTile>(["NEEDS_YOU", "PINNED", "BOOKMARKS", "HEADLINES", "FUNDING", "MAP", "BREAKDOWNS", "PROJECT_HEALTH"]),
+  DIRECTOR: new Set<HomeTile>([...PORTFOLIO_BODY, "NEEDS_YOU", "PINNED", "BOOKMARKS", "GRANTS"]),
+  MANAGER: new Set<HomeTile>([...PORTFOLIO_BODY, "NEEDS_YOU", "PINNED", "BOOKMARKS"]),
   // Field, grants and compliance Homes keep their own screens; they gain the person's pins and bookmarks only.
   FIELD: new Set<HomeTile>(["PINNED", "BOOKMARKS"]),
   GRANTS: new Set<HomeTile>(["NEEDS_YOU", "PINNED", "BOOKMARKS", "FUNDING", "MAP"]),
