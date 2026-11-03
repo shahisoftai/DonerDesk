@@ -46,7 +46,7 @@ export const SetupDraftViewSchema = z.object({
   risks: z.array(item<RiskDef>()),
   summary: z.object({
     results: z.number(), indicators: z.number(), places: z.number(), plannedActivities: z.number(), budgetLines: z.number(), fundingSources: z.number(),
-    risks: z.number(), assumptions: z.number(), checklistItems: z.number(), people: z.number(), invitedAtLaunch: z.number(), invitedLater: z.number(),
+    risks: z.number(), assumptions: z.number(), people: z.number(), invitedAtLaunch: z.number(), invitedLater: z.number(),
     fromDocuments: z.object({ accepted: z.number(), leftOut: z.number() }),
   }),
   launch: z.object({ ok: z.boolean(), blockers: z.array(z.discriminatedUnion("kind", [z.object({ kind: z.literal("OPEN_REQUIREMENTS"), count: z.number() }), z.object({ kind: z.literal("SIGN_OFF_MISSING") }), z.object({ kind: z.literal("SIGN_OFF_STALE") })])) }),

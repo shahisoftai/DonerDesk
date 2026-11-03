@@ -58,7 +58,7 @@ export const PLAN_REQUIREMENTS: readonly RequirementDef[] = [
   },
   {
     key: "plan.coverage", slide: "WORK_PLAN", coversSteps: [19, 20], allowsNotUsed: false,
-    check: (d) => allOf(uncoveredActivities(d), "activityWithoutPlan"),
+    check: (d) => (planRows(d).length === 0 ? open("planEmpty") : allOf(uncoveredActivities(d), "activityWithoutPlan")),
   },
   {
     key: "plan.complete", slide: "WORK_PLAN", coversSteps: [21, 23, 24, 33], allowsNotUsed: false,

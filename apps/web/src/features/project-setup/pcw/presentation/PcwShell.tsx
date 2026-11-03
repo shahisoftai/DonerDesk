@@ -12,7 +12,6 @@ import { anyAreaRunning } from "../domain/parity-view";
 import { DocumentsList } from "./DocumentsList";
 import { LeftOutNote } from "./LeftOutNote";
 import { RereadPart } from "./RereadPart";
-import { GapInbox } from "./GapInbox";
 import { DataEntrySlide } from "./DataEntrySlide";
 import { FinanceSlide } from "./FinanceSlide";
 import { IndicatorsSlide } from "./IndicatorsSlide";
@@ -55,24 +54,25 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
   const gaps = slideGaps(view, current, pcw.sentences);
 
   return (
-    <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-6 px-4 py-6 lg:grid-cols-[230px_minmax(0,1fr)_260px]">
-      <nav aria-label={PCW_COPY.title} className="lg:sticky lg:top-6 lg:self-start">
-        <ol className="space-y-1">
+    <div className="mx-auto w-full max-w-[1600px] space-y-4 px-4 py-6">
+      <nav aria-label={PCW_COPY.title}>
+        <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:grid-cols-10">
           {rail.map((r, i) => (
             <li key={r.slide}>
               <button
                 type="button"
                 aria-current={r.slide === current ? "step" : undefined}
+                title={r.status}
                 onClick={() => go(r.slide)}
-                className={`w-full rounded-lg px-3 py-2 text-start text-sm ${r.slide === current ? "bg-brand-100 font-semibold text-brand-900 dark:bg-brand-900/40 dark:text-white" : "hover:bg-slate-100 dark:hover:bg-white/10"}`}
+                className={`h-full w-full rounded-lg px-2 py-2 text-start text-xs font-medium text-white ${r.complete ? "bg-green-700 hover:bg-green-800" : "bg-red-700 hover:bg-red-800"} ${r.slide === current ? "ring-2 ring-slate-900 ring-offset-2 dark:ring-white dark:ring-offset-slate-900" : ""}`}
               >
                 <span className="block">{i + 1}. {PCW_SLIDES[r.slide].label}</span>
-                <span className="block text-xs text-slate-600 dark:text-slate-300">{r.complete ? "✓ " : ""}{r.status}</span>
+                <span className="block text-xs font-normal">{r.complete ? "✓ " : ""}{r.status}</span>
               </button>
             </li>
           ))}
         </ol>
-        <p className="mt-4 px-3 text-xs"><a className="underline" href="/projects/new/wizard?new=1">{PCW_COPY.startNewDraft}</a></p>
+        <p className="mt-2 text-xs"><a className="underline" href="/projects/new/wizard?new=1">{PCW_COPY.startNewDraft}</a></p>
       </nav>
       <div className="space-y-4">
       {reading === "READING" ? <p role="status" className="rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm dark:border-brand-500/30 dark:bg-brand-900/20">{PCW_COPY.documents.reading}</p> : null}
@@ -118,7 +118,6 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
         </div>
       </SlideFrame>
       </div>
-      <GapInbox view={view} onOpen={go} />
     </div>
   );
 }

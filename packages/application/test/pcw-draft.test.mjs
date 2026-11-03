@@ -286,3 +286,15 @@ test("every answer carries where each item was read from, the files, what the re
   assert.equal((await s.get.handle(as("u1"), typed)).value.logframe.length, 0);
   assert.deepEqual((await s.get.handle(as("u1"), typed)).value.sources, [], "a draft started with no documents lists no files");
 });
+
+test("a launch that has begun is not blocked by a stale sign-off in the view (the launch handler already ignores it)", async () => {
+  const s = setup();
+  const r = await s.start.handle(as("u1"), {});
+  const stored = s.proposals.byId.get(r.value.proposalId);
+  const stale = { ...stored, extras: { ...stored.extras, signOff: { byUserId: "u1", at: "2026-11-02T08:00:00.000Z", fingerprint: "old" } } };
+  const before = (await s.viewer.describe(stale)).value;
+  assert.equal(before.launch.blockers.some((b) => b.kind === "SIGN_OFF_STALE"), true);
+  s.runs.list.push({ proposalId: stored.id, kind: "LAUNCH", area: "", status: "FINISHED", detailJson: {} });
+  const after = (await s.viewer.describe(stale)).value;
+  assert.equal(after.launch.blockers.some((b) => b.kind === "SIGN_OFF_STALE"), false);
+});

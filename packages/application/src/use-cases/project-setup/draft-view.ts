@@ -90,6 +90,13 @@ export interface SetupDraftView {
   progress: SlideProgress[];
 }
 
+/** A launch that has begun rewrote the stored proposal, so a stale sign-off no longer blocks it (the launch handler applies the same rule). */
+function launchVerdict(v: LaunchVerdict, resumed: boolean): LaunchVerdict {
+  if (!resumed) return v;
+  const blockers = v.blockers.filter((b) => b.kind !== "SIGN_OFF_STALE");
+  return { ...v, blockers, ok: blockers.length === 0 };
+}
+
 /** The reading runs of the draft, when they are known (a view built without them says nothing about readings). */
 export interface ReadingRuns { runs: readonly StoredSetupRun[]; now: Date }
 
@@ -116,7 +123,7 @@ export function describeDraft(stored: StoredSetupProposal, reading?: ReadingRuns
     financeSummary: financeSummary(draft),
     risks: itemsOf("risks", draft.proposal.risks),
     summary: launchSummary(draft),
-    launch: canLaunch(results, draft),
+    launch: launchVerdict(canLaunch(results, draft), Boolean(stored.appliedProjectId) || Boolean(reading?.runs.some((r) => r.kind === "LAUNCH"))),
     dashboardOptions: SECTOR_TEMPLATES.map((t) => ({ id: t.id, title: t.title, sector: t.sector })),
     sources: stored.proposal.sources ?? [],
     leftOut: reading ? leftOutFromRuns(reading.runs) : [],

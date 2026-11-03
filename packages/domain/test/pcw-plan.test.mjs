@@ -145,3 +145,10 @@ test("coverage counts the same things the requirements ask", () => {
   assert.ok(open(d).includes("plan.complete") && open(d).includes("plan.indicatorFed"));
   assert.deepEqual(open(done), []);
 });
+
+test("a blank draft is not complete on the Indicators and Work plan slides (an empty slide is not a finished one)", () => {
+  const results = evaluateRequirements(emptyDraft(), SETUP_REQUIREMENTS);
+  const open = (slide) => results.filter((r) => r.slide === slide && r.status === "OPEN").map((r) => r.code);
+  assert.ok(open("INDICATORS").includes("indicatorsEmpty"));
+  assert.ok(open("WORK_PLAN").includes("planEmpty"));
+});

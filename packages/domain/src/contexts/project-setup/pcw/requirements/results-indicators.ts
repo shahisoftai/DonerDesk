@@ -47,6 +47,7 @@ export const INDICATOR_REQUIREMENTS: readonly RequirementDef[] = [
     key: "indicators.perOutput", slide: "INDICATORS", coversSteps: [8], allowsNotUsed: false,
     check: (d) => {
       const indicators = live(d.proposal.indicators);
+      if (indicators.length === 0) return open("indicatorsEmpty");
       const problems = live(d.proposal.logframe)
         .filter((n) => n.level === "OUTPUT" && !indicators.some((i) => i.logframeCode !== null && i.logframeCode === n.code))
         .map((n) => label(n.code, n.title));
