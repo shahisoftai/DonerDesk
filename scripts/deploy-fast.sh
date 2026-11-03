@@ -8,6 +8,9 @@
 # Usage:
 #   RELEASE_ID="20260901120000" SCOPE=both scripts/deploy-fast.sh
 #   SCOPE: web|api|both (default: auto-detect from git diff)
+#   BUILD_ON=host builds (and type-checks) on the Contabo host in a memory-capped, lowest-priority job (scripts/host-build.sh):
+#   ~3 min instead of ~12 on the dev machine. Default is local. If the host refuses before building (low memory or disk,
+#   unreachable, another build running) the script builds locally instead; a build that fails on the host stops the deploy.
 #
 # Exit codes: 0 on full success, non-zero on any gate failure. Every step
 # prints progress; tail the output to find the first failing gate.
@@ -22,6 +25,7 @@ SCOPE="${SCOPE:-auto}"
 NO_BACKUP="${NO_BACKUP:-0}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 SKIP_TYPECHECK="${SKIP_TYPECHECK:-0}"
+BUILD_ON="${BUILD_ON:-local}"
 RELEASE_ID="${RELEASE_ID:-$(date -u +%Y%m%d%H%M%S)}"
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -109,10 +113,33 @@ fi
 phase "preflight"
 
 # --------------------------------------------------------------------------- #
+# 0b. Build on the host (optional)
+# --------------------------------------------------------------------------- #
+# Done before the local type-check and build: when it works, both are skipped (the host ran the type-check too, unless SKIP_TYPECHECK=1).
+# A scope of "auto" builds api and web, exactly like the local build does.
+HOST_BUILT=0
+if [[ "${BUILD_ON}" == "host" && "${SKIP_BUILD}" != "1" ]]; then
+  echo "==> Build on the host"
+  HB_SCOPE="${SCOPE}"; [[ "${HB_SCOPE}" == "auto" ]] && HB_SCOPE="both"
+  HB_TYPECHECK=1; [[ "${SKIP_TYPECHECK}" == "1" ]] && HB_TYPECHECK=0
+  HB_RC=0
+  SCOPE="${HB_SCOPE}" TYPECHECK="${HB_TYPECHECK}" SSH="${SSH}" "${ROOT}/scripts/host-build.sh" run || HB_RC=$?
+  if [[ "${HB_RC}" == "0" ]]; then
+    HOST_BUILT=1
+  elif [[ "${HB_RC}" == "3" ]]; then
+    echo "  the host declined (see above); building locally instead." >&2
+  else
+    echo "ERROR: build on the host failed (exit ${HB_RC}); nothing was shipped." >&2
+    exit 1
+  fi
+  phase "host build"
+fi
+
+# --------------------------------------------------------------------------- #
 # 1. Typecheck
 # --------------------------------------------------------------------------- #
 
-if [[ "${SKIP_TYPECHECK}" != "1" ]]; then
+if [[ "${SKIP_TYPECHECK}" != "1" && "${HOST_BUILT}" != "1" ]]; then
   echo "==> Local typecheck"
   TC_LOG="${WORK}/typecheck.log"
   mkdir -p "${WORK}"
@@ -125,7 +152,7 @@ phase "typecheck"
 # 2. Build
 # --------------------------------------------------------------------------- #
 
-if [[ "${SKIP_BUILD}" != "1" ]]; then
+if [[ "${SKIP_BUILD}" != "1" && "${HOST_BUILT}" != "1" ]]; then
   # Build only what the scope ships: the web and superadmin builds take many minutes and an api-only change needs neither.
   # superadmin is not shipped by this script. SCOPE=auto is resolved after the build, so it builds api and web.
   BUILD_FILTER=()
