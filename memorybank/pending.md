@@ -1186,7 +1186,7 @@ Status by batch: `imp/phase33-competitive-parity-plan.md`. Operator facts: `docs
 **Built but unverified, or deliberately incomplete:**
 - [ ] 33.11 Finance and standards (cost per result, IATI export): not started.
 - [ ] Ask: follow-up questions, cross-project questions, saved answers: not built.
-- [ ] Dashboards: number-tile widgets, per-viewer filters (period, cross-filter), password-protected links: not built (table, text and report widgets, tabs, full screen, print and a project filter are built: Phase 34.3).
+- [ ] Dashboards: password-protected links and filtering by place, group or status: not built. (Number tiles, KPI tiles, map tiles, project lists, the viewer's period filter and pinning to Home were built in Phase 35; table, text and report widgets, tabs, full screen, print and a project filter in Phase 34.3; the look, View data, low-data mode and richer share links in Phase 39.)
 - [ ] Connectors: scheduled syncs, select-multiple and repeat groups, photos from the other tool: not built.
 - [ ] Places: place targets, map of the roll-up, "Where we work" assignment: not built.
 - [ ] Public API and MCP: per-key limits survive restarts? No (in memory). Pagination: not built.
@@ -1206,7 +1206,7 @@ Status by batch: `imp/phase33-competitive-parity-plan.md`. Operator facts: `docs
 - [ ] Boundary licence decision for "all possible boundaries" (34.4).
 
 **Left to build:**
-- [ ] Viewer-side period filter and cross-filtering (new data call); pin a dashboard as a Home tile; number-tile widget; sections in a tab.
+- [x] Viewer-side period filter, pin a dashboard as a Home tile and the number-tile widget were built in Phase 35. [ ] Cross-filtering by place, group or status (needs an API change); sections in a tab.
 - [ ] Maps Studio proper: layers, time slider, uploads (KML / GeoJSON / shapefile), photo layer, place panel, print, all-country boundaries, online-tile opt-in, choropleth below country level.
 - [ ] Linked forms; subtotal rows; place breakdown in reports.
 - [ ] 34.6 finance register (multi-currency with manual rates, advances, cost per result, IATI); 34.7 notes wall, library, gallery, calendar feed, merged timeline; 34.8 document templates and sign-off; 34.9 partner home and publishing; 34.10 accessibility audit and performance budgets.
@@ -1255,3 +1255,18 @@ Not the same phase as "Phase 36: easier data entry" above; both were numbered 36
 - [ ] Remove the `ZZ TEST` data on production when the owner says so: two draft projects ("ZZ TEST Blue Water (setup wizard test)", "ZZ TEST Drive check (setup wizard)"), about seven setup proposals, and six old test documents still on the server's disk under `/opt/donordesk/shared/storage/project-setup/` (made before documents moved to Drive), and the files of the unfinished test setups that sit in the Drive staging folder `DonorDesk / Project setup (documents in progress)` (discarding a setup removes its staged files).
 - [ ] Add a check to `deploy-fast.sh` that starts `donordesk-superadmin` when it is enabled but not running (it was left stopped from 2026-10-27 to 2026-10-31).
 - [ ] Signed-in browser check of the multi-document upload on production (single-document upload, move into the project folder and the finish slide were checked on 2026-10-31).
+
+## Phase 39 (dashboard visual quality, instant tiles, share links) (2026-11-03, DEPLOYED `releaseId=20261103044136` and `20261103054323`; plan `imp/phase39-enh-dashboards.md` §12)
+
+Verified in the signed-in test tenant on 2026-11-03 (`demo/verification-2026-11-03-dashboards.md`). Open:
+- [ ] Delete the test dashboard **"Phase 39 check - Nutrition"** and revoke its share link "share-check" in the test tenant when the owner says so.
+- [ ] Decide whether a share link needs a per-link switch to hide the plan and maps: today anyone with a link sees planned-activity titles, places and delivery state, and results by place (money, budgets and project lists stay out).
+- [ ] Template charts that cannot draw for the mapped indicators (a scatter and a waterfall were created from the Nutrition template): make a template apply leave out a chart whose kind cannot show the chosen indicators, or say so before creating.
+- [ ] The dashboard page's pin button should change to "Unpin" once pinned (the pin itself works).
+- [ ] A single-slice pie is a solid disc; a one-period line chart shows a lone dot on an empty grid; the dark page's side glow stops at 900 px.
+- [ ] The ⋯ menu for Edit/Remove (today visible buttons; the harnesses click them by name); filtering by place, group or status; hatched marks for unverified points; container-aware simplification of small charts.
+- [ ] Measure the dashboard route's added JavaScript against the 15 KB budget; a throttled-network check that headline tiles paint before charts; low-data mode does not cover maps.
+- [ ] Three of four maps added earlier to the test dashboard vanished before the second deploy; not reproduced (adding and saving a map works). Investigate if anyone reports lost tiles after a save.
+- [ ] Re-run `pnpm --filter @donordesk/web test:visuals -- --update` after any look change and review the pictures; the committed baselines were taken before the toolbar and axis-label fixes.
+- [ ] Native review of the new FR/ES/AR labels (KPI change and narrative sentences, Low-data mode, View data).
+- [ ] The first deploy (`20261103044136`) was built from an uncommitted tree; the commits (`d63e1c2a`, `2f3b254e`) were made afterwards. `Temp/` (third-party donor files) is intentionally uncommitted.

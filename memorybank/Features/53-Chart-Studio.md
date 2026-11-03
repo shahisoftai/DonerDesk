@@ -28,3 +28,7 @@
 ## Not built
 
 Population pyramid; a chart split by group or by place inside the studio (use the report builder or the By-place charts); server-side PNG for the donor-template Word export; translating the English sentences that the validator writes.
+
+## Appearance since Phase 39 (2026-11-03)
+
+The builder names colours by role (`chart-theme-roles.ts`; `LIGHT_ROLES` for stored and exported pictures, `retheme` for a dark screen) instead of writing hex, and a live tile prepares the option with `forScreen` (no embedded title, space given back to the plot, end labels for 2–4 lines). Reports, exports and the Studio keep the builder's own look and title. The light signal colours were deepened for contrast (`#059669`, `#dc2626`), which also changed exported pictures. See `imp/phase39-enh-dashboards.md` §12.

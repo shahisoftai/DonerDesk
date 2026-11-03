@@ -1,6 +1,8 @@
 # Phase 34 — Dashboards, Chart Studio, Entry Sheet, Maps Studio and the rest of the DevResults surface
 
 Status: **MOSTLY BUILT AND DEPLOYED (see "Implementation status, 2026-10-30" below for the exact list of what is and is not built).** Version: DonorDesk 3.007 (the next product version is set when the owner decides). Production has been checked in a signed-in session on the DEMO-13 test project (results at the end of the status section).
+> **Follow-up, 2026-11-03:** the dashboards' look, reading aids, instant tile drawing and richer share links were built and deployed in Phase 39: `phase39-enh-dashboards.md` (§12). That phase also supersedes this plan's "not built" rows for the viewer's period filter, pinning to Home and number tiles (built in Phase 35).
+
 ## Implementation status, 2026-10-30 (read this first; it replaces the older "what is left" table below)
 
 Sources used after 34.3: the DevResults help centre pages for Define a Dashboard, Mapping Functionality, Map Overlays, Dashboard Tile: Geotagged Photos Map, Project List tile (release note), Visualizations, MultiMatrix, Bookmarks, Partner Dashboards and the Program Statistic tile. Their pages describe behaviour in words only; no screen was seen.

@@ -219,6 +219,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 
 | Topic | Locations |
 |-------|-----------|
+| Dashboards (look, tiles, sharing) | [`Features/48-Dashboards.md`](Features/48-Dashboards.md), [`Features/55-Dashboard-Templates-Tabs-And-Viewing.md`](Features/55-Dashboard-Templates-Tabs-And-Viewing.md), [`imp/phase39-enh-dashboards.md`](imp/phase39-enh-dashboards.md) §12, [`demo/verification-2026-11-03-dashboards.md`](demo/verification-2026-11-03-dashboards.md), `AGENTS.md` → "Phase 39 invariants" |
 | Multi-tenancy / RLS | [`0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md), [`contabo-ops.md`](contabo-ops.md) §5.3, [`pending.md`](pending.md) |
 | LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md), [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md), [`pending.md`](pending.md) (BullMQ) |
 | AI credits / quotas | [`Features/19-Tiers-And-Payments.md`](Features/19-Tiers-And-Payments.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §14–15 |
@@ -374,6 +375,13 @@ memorybank/
 - Support articles drafted, unpublished: `docs/support/_unpublished-phase34/` (publish checklist in its README).
 - Website overhaul recommendations: `docs/marketing/07-website-overhaul-recommendations.md` (not yet decided or built).
 - Not yet checked by a person in the signed-in production app.
+
+## 2026-11-03: Phase 39 — dashboard visual quality, instant tiles and richer share links (Version 3.007)
+
+- Plan, per-batch as-built record, deviations and the open list: `imp/phase39-enh-dashboards.md` (§12). Feature specs updated: `Features/48-Dashboards.md`, `Features/55-Dashboard-Templates-Tabs-And-Viewing.md`, `Features/53-Chart-Studio.md` (appearance). Invariants: `AGENTS.md` → "Phase 39 invariants" and "Share links show maps and activity figures".
+- Deployed `releaseId=20261103044136` (Phase 39) and `20261103054323` (instant drawing through `POST /v1/dashboard-preview`, share links that show the plan, activity tiles and maps while money, budgets and project lists stay out, toolbar width, small-axis labels). Commits `d63e1c2a`, `2f3b254e`, `018152de` on `0016-pcw`. No migration, no env.
+- Browser record in the signed-in test tenant: `demo/verification-2026-11-03-dashboards.md`; before/after pictures in `imp/phase39-baseline/`. Visual regression baselines: `apps/web/tests/harness/dashboard-visuals/baseline/` (`pnpm --filter @donordesk/web test:visuals`).
+- A share link now exposes planned-activity titles, places and delivery state and results by place to anyone who holds it (a deliberate reversal of the earlier rule).
 
 ## 2026-11-01: Phase 37 (AI setup wizard v2) (Version 3.007)
 

@@ -1,6 +1,6 @@
 # Phase 39: Dashboard visual quality (enhancement plan)
 
-**DonorDesk Version 3.007** · created 2026-11-02 · branch: new `0017-dashboard-visuals` from `0016-pcw` · status: BUILT 39.0-39.11 (see AGENTS.md "Phase 39 invariants"); not deployed; not checked in a signed-in browser after the change
+**DonorDesk Version 3.007** · created 2026-11-02 · branch `0016-pcw` (the planned `0017-dashboard-visuals` branch was not made) · status: **BUILT AND DEPLOYED 2026-11-03** (`releaseId=20261103044136`, then `20261103054323`); checked in the signed-in test tenant (`../demo/verification-2026-11-03-dashboards.md`). As-built record in §12; invariants in AGENTS.md "Phase 39 invariants"
 
 Source: the dashboards audit of 2026-11-02 (code read of `features/dashboards/`, `features/dashboard/`, `components/ui/Tile.tsx`,
 `features/design/domain/tokens.ts`, `reporting/chart-render.ts`; **no browser pass yet**, see Batch 0).
@@ -263,3 +263,49 @@ fields reach the browser. No migration, no env, no `rls.sql`, no `/ready` change
 3. Low-data mode: automatic from `prefers-reduced-data`, per-device toggle, or both? (Recommended: both.)
 4. Do share-link and embed pages get the filter chips? (Recommended: yes, viewer-side, no stored change.)
 5. Findings from 39.0 that the code read missed: to be filled in.
+
+## 12. As built (2026-11-03)
+
+### 12.1 Deploys and commits
+| Release | What | Notes |
+|---|---|---|
+| `20261103044136` | Batches 39.0–39.11 and the first fixes, whole working tree, `SCOPE=both` | Built from the uncommitted tree (the user chose to ship the whole tree, including unfinished wizard work); verify green, 1086 s. No migration, no env. |
+| `20261103054323` | Toolbar select width cap, every label on small category axes, **instant tile drawing** (`POST /v1/dashboard-preview`), **richer share links** (plan, activity days, results by place and maps; money, budget and project lists still excluded), tile names kept when a tile cannot be drawn | Verify green, 948 s. No migration, no env. |
+
+Commits on `0016-pcw`: `d63e1c2a` (wizard follow-ups, kept apart), `2f3b254e` (dashboards: Phase 39, preview, share links, 75 files), `018152de` (AGENTS.md deploy note). `Temp/` (third-party donor spreadsheets) was deliberately not committed.
+
+### 12.2 What each batch became
+| Batch | Result | Where |
+|---|---|---|
+| 39.0 baseline | Four production pictures (two dashboards, light and dark) and a findings note, taken read-only from the user's Chrome over CDP | `phase39-baseline/` |
+| 39.1 frame and theme | Colour roles (`chart-theme-roles.ts`), chart-library theme from tokens (`chart-theme.ts`, `useColorMode`), every widget a `Tile` via `WIDGET_RENDERERS`, `HomeParts` card renamed `HomeCard` | `ariaLabel` added to `Tile` because the harnesses find widgets by `section[aria-label]` |
+| 39.2 states and touch | 44 px Edit/Remove/resize on touch | The ⋯ menu was **not** built (harnesses click the visible buttons) |
+| 39.3 titles | `splitEmbeddedTitle` drops the in-picture title on tiles; the subtitle is its own line | Reports and exports unchanged |
+| 39.4 KPI | `change`, `status`, compact numbers (`number-format.ts`), progress bar, fixed-shape sparkline | Status set is `NO_DATA / NOT_JUDGED / TARGET_MET / IN_PROGRESS`: **no "behind"** (share of target is against the final target) |
+| 39.5 chart styling | Theme styling, motion table (`MOTION`: 300 ms first draw, none on update), `forScreen` end labels | Hatched unverified marks **not** built (needs per-point verification in the option) |
+| 39.6 layout | Headline row (`headline-row.ts`, **three** rows tall, not two), phone heights per kind (`widget-heights.ts`), wall-display `fitHeight` | Container-aware simplification **not** built |
+| 39.7 interaction | View data (`optionToTable`), hover link; the existing period filter and notice kept | Place/group/status cross-filter **not** built: the period filter is applied by the API, other dimensions need an API change |
+| 39.8 Home | Bars and line drawn from `--viz-*` / `--tile-*`; no chart library | The plan allowed "one look, not one library" |
+| 39.9 narrative | `narrative.ts` (`NARRATIVE_RULES`, key + params, translated on screen) | No model, no forecast |
+| 39.10 field offices | `useRenderWhenSeen`, `renderAllCharts` for Print and Download image, `useLowData` | Maps not covered by low-data mode; the 15 KB budget was not measured; no throttled-network test |
+| 39.11 regression and docs | `test:visuals` (light/dark × 1300/768/390), AGENTS.md invariants | Baselines were regenerated after the first look found a halo on donut labels and a clipped KPI |
+
+### 12.3 Additions that were not in the plan
+- **Instant tile drawing**: `PreviewDashboardChartsHandler`, `POST /v1/dashboard-preview` (`project.view`, in `RULES`; a size outside the grid is fitted like a save), `previewDashboardChartsAction`, and an effect in `DashboardView` that asks for any tile without a drawing and redraws one whose settings changed. Asked for by the user ("a new tile must be generated in edit mode, not after a save").
+- **Share-link scope change**: `ShareLinkExtras` (plan, activity days and results by place delegate; budget, finance, project lists and bookmarks do not), `ShareMapReader` (places list, province-level results, planned activities and country, read once on the server and sent as `map.preloaded`), `MapWidget` → `SharedResultsMap` / `SharedActivityMap`, `MapExplorer` gained `staticData` and `loadResults`. This **reverses an earlier rule** ("a share link never carries the plan or maps"); the page text says so.
+- **A tile that cannot be drawn keeps its name** (`ownTitle`: chart, map, number tile, KPI or list title).
+- **`test:templates` repaired**: it had not built since Phase 35 (`MapWidget` imports server actions the harness did not stub); it now shares the tiles harness stubs.
+
+### 12.4 Verification at the time of writing
+- Browser harnesses on the final code: `test:tiles` 18/18, `test:templates` 12/12, `test:visuals` 6/6 against baselines taken the same day; application dashboard tests 9/9; domain tests for the new modules; `apps/api` authorization-coverage 2/2 (the new route has its rule).
+- Live, signed-in test tenant: see `../demo/verification-2026-11-03-dashboards.md`.
+
+### 12.5 Answers to the open questions (§11)
+1. KPI colour default: the plain card; colour is an option.
+2. Headline row on existing dashboards: new dashboards from templates only.
+3. Low-data mode: both (the toggle, and the browser's "reduce data" request when nothing is chosen).
+4. Filter chips on share links: not built (the public page has no period filter).
+5. What the baseline found beyond the code read: the toolbar wrapped badly with a short title, a one-period line chart showed a lone dot on an empty grid, and the dark page's side glow stopped at 900 px. The toolbar was fixed on 2026-11-03; the other two remain.
+
+### 12.6 Still open
+Template charts that cannot draw for the chosen indicators (a scatter and a waterfall were created and showed "needs two indicators" / "needs at least 2 values"); the dashboard page's pin button never changes to "Unpin" after pinning (the pin works); a single-slice pie is a solid disc; the ⋯ menu; non-period cross-filtering; hatching; bundle and slow-network checks; native review of the new FR/ES/AR labels; three of four test maps vanished from the test dashboard before the second deploy (not reproduced; adding and saving a map works).

@@ -2,7 +2,7 @@
 
 **DonorDesk Version 3.007**
 
-Record of fixes applied to DonorDesk. Last updated: 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
+Record of fixes applied to DonorDesk. Last updated: 2026-11-03 (dashboards: Phase 39 and live checks, see the section of that date); previously 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
 
 ## Demo 9 (Nepal CMAM, Phase 28 on production) — defects found and fixed (2026-10-18)
 
@@ -1516,6 +1516,25 @@ Full detail: [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-P
 | Web build failed after adding a connector hash (earlier, Phase 33) and again risked with new domain modules | A `"use client"` file imported the domain root, which pulls `node:crypto` into the browser bundle | Import a subpath export (`@donordesk/domain/contexts/...`) and add it to `packages/domain/package.json` `exports` (done for `report-query`, `breakdown-chart`, `places-export`) |
 | Application data-sheet tests failed after the sheet began to carry breakdowns | The test fakes had no `disaggregation` on their updates | The handler reads `u.disaggregation?.length` defensively |
 | Harness check "Not available yet" for Sankey failed | Sankey became a built kind | The check names the population pyramid, the only kind still unavailable |
+
+## 2026-11-03: dashboards (Phase 39 and the live checks that followed)
+
+Found by looking at the baseline pictures, by the browser harnesses, and by driving production in a visible browser (`demo/verification-2026-11-03-dashboards.md`). Deployed in `20261103044136` and `20261103054323`.
+
+| Problem | Cause | Fix |
+|---|---|---|
+| Charts unreadable in dark mode: chart titles and notes dark on dark, white gridlines, a white halo on donut labels | The builder wrote fixed hex colours; ECharts was created with no theme; its label defaults are outlined white | Colour roles (`chart-theme-roles.ts`) swapped by `retheme`; one registered theme per mode from the tokens; label defaults set to plain text in the role colour |
+| Every tile showed its title twice | The builder drew a title inside the picture and the tile header showed it again | `forScreen` drops the embedded title on live tiles (reports and exports keep it) |
+| KPI tile in the harness had no sentence and its sparkline was cut off | The view treated a missing `status` as "not judged"; the headline tiles were two rows tall | Status is worked out from the figure when absent; headline row is three rows tall; the sparkline shrinks instead of overflowing |
+| Dashboard crashed when a drawing had no `change` (harness data skipped the schema default) | `kpi.change.good` read on `undefined` | The view treats a missing change as none |
+| `test:templates` did not build (since Phase 35) | `MapWidget` imports server actions that the templates harness never stubbed | The harness shares the tiles harness's map, places and pin stubs |
+| Tiles harness lost the heading after adding a tile | The new preview stand-in answered text widgets with "not drawn" | The stand-in returns the text, as the real server does |
+| The dashboard page scrolled sideways at about 1080 px | Long project names in the toolbar's project and period selects set their width | Selects are capped (`max-w-[16rem]`, truncate) |
+| A "Target" bar lost its name on a narrow caregivers chart | ECharts skipped overlapping category labels | `forScreen` shows every label of a category axis with 12 or fewer entries |
+| A tile that could not be drawn was titled "Chart" (and "Edit widget" for screen readers) | The title came from the drawing, and there is none | `ownTitle` falls back to the chart, map, number tile, KPI or list title |
+| A new tile showed "Save the dashboard to draw this." until the dashboard was saved | Drawings came only from the saved dashboard | `POST /v1/dashboard-preview` draws unsaved widgets (read-only, same visibility rules); the edit screen asks for any tile without a drawing and redraws one whose settings changed |
+| A share link showed no maps and no activity number tiles ("Maps are not shown through a share link", "Not available here") | The public handler gave the drawing code no extras, and map cards read their data in the browser with a session a link holder does not have | `ShareLinkExtras` (plan, activity days, results by place; never money, budget, project lists) and `ShareMapReader` (map data read on the server and sent as `map.preloaded`); the page text says what is shown |
+| A queued test job waited forever | Its own `sh -c` command line matched the `pgrep -f` pattern it was watching | Killed by pid; harnesses are started directly (see the `phase39-dashboard-visuals` memory) |
 
 ## 2026-11-01: AI setup wizard v2 (Phase 37)
 
