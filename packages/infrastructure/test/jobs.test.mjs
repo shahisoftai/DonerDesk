@@ -88,3 +88,18 @@ test("dispatcher delegates to a remote queue in kestra/redis mode", async () => 
   await d.enqueue("export.run", { exportId: "x" });
   assert.deepEqual(delegated, { name: "export.run", payload: { exportId: "x" } });
 });
+
+test("a job the remote queue has no flow for runs its in-process handler; a mapped job still goes remote", async () => {
+  const remoteCalls = [];
+  const remote = new KestraJobQueue({ password: "secret", fetchImpl: async (u) => { remoteCalls.push(u); return { ok: true }; } });
+  const d = new JobDispatcher("kestra", silentLogger, remote);
+  const ran = [];
+  d.register("project.workspace.provision", async (p) => { ran.push(p.projectId); });
+  d.register("evidence.ingest", async () => { ran.push("never"); });
+  await d.enqueue("project.workspace.provision", { projectId: "p1" });
+  await new Promise((r) => setImmediate(r));
+  assert.deepEqual(ran, ["p1"]);
+  await d.enqueue("evidence.ingest", {});
+  assert.equal(remoteCalls.length, 1);
+  assert.deepEqual(ran, ["p1"]);
+});

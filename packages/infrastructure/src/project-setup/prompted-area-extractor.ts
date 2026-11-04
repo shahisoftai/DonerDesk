@@ -1,3 +1,4 @@
+import { withModel } from "./setup-llm.js";
 /**
  * The one extractor implementation (Phase 36.2): it runs an `AreaExtractionSpec` through the shared machinery. Every area
  * is the same class with a different spec (composition, no base class), so the LSP contract holds for all of them by
@@ -97,5 +98,5 @@ export class PromptedAreaExtractor implements ISetupAreaExtractor {
   }
 }
 
-export const createSetupExtractors = (specs: readonly AreaExtractionSpec[], llm: ISetupLlm): ISetupAreaExtractor[] =>
-  specs.map((spec) => new PromptedAreaExtractor(spec, llm));
+export const createSetupExtractors = (specs: readonly AreaExtractionSpec[], llm: ISetupLlm, heavyModel?: string): ISetupAreaExtractor[] =>
+  specs.map((spec) => new PromptedAreaExtractor(spec, spec.heavy ? withModel(llm, heavyModel) : llm));

@@ -398,3 +398,58 @@ test("extraction layers: an area waits only for the areas it depends on, everyth
   assert.deepEqual(extractionLayers(["LOGFRAME"]), [["LOGFRAME"]]);
   assert.deepEqual(extractionLayers([]), []);
 });
+
+test("a hyphenated day-month-year date (01-Sep-2025) is read as the day it states", async () => {
+  const { datesInText } = await import("../dist/index.js");
+  assert.deepEqual(datesInText("Implementation period 01-Sep-2025 - 28-Feb-2026").sort(), ["2025-09-01", "2026-02-28"]);
+});
+
+test("rejecting a result clears the parent link of what sat under it", async () => {
+  const { rejectItem } = await import("../dist/index.js");
+  const node = (code, parentCode) => ({ value: { level: "ACTIVITY", code, parentCode, title: code }, sourceQuote: null, sourceRef: null, confidence: "HIGH", status: "ACCEPTED" });
+  const p = { logframe: [node("SO2", null), node("A1", "SO2")], indicators: [], plan: [], places: [], periods: [], funding: [], budget: [], risks: [], facts: {} };
+  const r = rejectItem(p, { area: "LOGFRAME", path: "logframe.0" });
+  assert.equal(r.ok, true);
+  assert.equal(r.proposal.logframe[1].value.parentCode, null);
+});
+
+test("template placeholders: a slot nobody filled is left out, a placeholder inside real text is removed (one row per pattern)", async () => {
+  const { templatePlaceholder, withoutPlaceholders, groundAreaPatch } = await import("../dist/index.js");
+  for (const t of ["To be completed after identification of priority interventions.", "Activity 1.1.1", "Activity 1.1.1 - To be completed after identification of priority i...", "Standard Activity: Not Selected", "Outcome Indicator 1.1(Custom)", "[insert project title]"]) assert.equal(templatePlaceholder(t), "WHOLE", t);
+  assert.equal(templatePlaceholder("Emergency water trucking"), null);
+  assert.equal(templatePlaceholder("crisis-affected populations in [insert target districts/regions]. The target areas"), "PART");
+  assert.equal(withoutPlaceholders("crisis-affected populations in [insert target districts/regions]. The target areas"), "crisis-affected populations in. The target areas");
+  const text = "Activity 1.1.1 - To be completed after identification of priority interventions. Emergency water trucking.";
+  const item = (title, quote) => ({ value: { title, start: null, end: null, location: null, logframeCode: null }, sourceQuote: quote, sourceRef: null, confidence: "HIGH", status: "PROPOSED" });
+  const g = groundAreaPatch("PLAN", { plan: [item("Activity 1.1.1 - To be completed after identification of priority i...", "Activity 1.1.1 - To be completed"), item("Emergency water trucking", "Emergency water trucking")] }, text);
+  assert.equal(g.fields.plan.length, 1);
+  assert.equal(g.leftOut[0].reason, "TEMPLATE_PLACEHOLDER");
+});
+
+test("amounts with a currency mark are read, and the mark names the currency", async () => {
+  const { normaliseAmountText, splitAmountCurrency } = await import("../dist/index.js");
+  assert.equal(normaliseAmountText("$500,000.30"), "500000.30");
+  assert.equal(splitAmountCurrency("$500,000.30").currency, "USD");
+  assert.equal(splitAmountCurrency("€2.500,50").currency, "EUR");
+  assert.equal(normaliseAmountText("12500 KES"), "12500");
+  assert.equal(normaliseAmountText("US$ 1,250"), null, "still ambiguous without decimals");
+});
+
+test("a budget line with no currency is offered the project's stated currency (MEDIUM), never one it names itself", async () => {
+  const { offerProjectCurrency } = await import("../dist/index.js");
+  const P = (value, status = "PROPOSED") => ({ value, sourceQuote: "q", sourceRef: null, confidence: "HIGH", status });
+  const p = { facts: { currency: P("USD") }, funding: [], budget: [P({ category: "G.1", amount: "467,290.00", currency: null, logframeCode: null }), P({ category: "PSC", amount: "10", currency: "EUR", logframeCode: null })] };
+  const out = offerProjectCurrency(p);
+  assert.equal(out.budget[0].value.currency, "USD");
+  assert.equal(out.budget[0].confidence, "MEDIUM");
+  assert.equal(out.budget[1].value.currency, "EUR");
+});
+
+test("with no stated project currency, budget lines are offered the one currency the funding names", async () => {
+  const { offerProjectCurrency } = await import("../dist/index.js");
+  const P = (value) => ({ value, sourceQuote: "q", sourceRef: null, confidence: "HIGH", status: "PROPOSED" });
+  const line = P({ category: "G.1", amount: "1", currency: null, logframeCode: null });
+  const p = { facts: { currency: { value: null, status: "PROPOSED" } }, funding: [P({ sourceName: "CBPF", amount: "$1", currency: "USD" })], budget: [line] };
+  assert.equal(offerProjectCurrency(p).budget[0].value.currency, "USD");
+  assert.equal(offerProjectCurrency({ ...p, funding: [] }).budget[0].value.currency, null);
+});

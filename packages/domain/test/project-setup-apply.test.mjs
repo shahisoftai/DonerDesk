@@ -31,7 +31,7 @@ test("proposeCodes never changes a document code, never repeats one, and leaves 
   assert.equal(p.logframe[0].value.codeSource, "DOCUMENT");
   assert.notEqual(p.logframe[1].value.code.toLowerCase(), "g1");
   assert.equal(p.logframe[2].value.code, null);
-  assert.equal(p.indicators[0].value.code, "IND1-2");
+  assert.equal(p.indicators[0].value.code, "IND2");
 });
 
 test("the project draft uses accepted facts only and names what the person must still fill", () => {
@@ -87,6 +87,6 @@ test("items an importer could not take honestly are left out with a sentence, ne
 
 test("amounts: one reading or none", () => {
   const cases = [["1,250,000", "1250000"], ["1.250.000,00", "1250000.00"], ["1,250.50", "1250.50"], ["12.5", "12.5"], ["400 000", "400000"],
-    ["1,250", null], ["1.250", null], ["EUR 5", null], ["", null], ["1,25,000", null]];
+    ["1,250", null], ["1.250", null], ["EUR 5", "5"], ["", null], ["1,25,000", null]];
   for (const [raw, want] of cases) assert.equal(normaliseAmountText(raw), want, raw);
 });

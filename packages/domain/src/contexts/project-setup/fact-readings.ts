@@ -67,3 +67,22 @@ export function offerPlaceCountries(proposal: ProjectSetupProposal): ProjectSetu
   }
   return next === item ? proposal : { ...proposal, facts: { ...proposal.facts, countries: next } };
 }
+
+/**
+ * Budget lines and funding read with no currency get the project's own stated currency (the facts' reading, e.g. from
+ * "Project budget $500,000.30"), as a MEDIUM-confidence proposal the person still confirms. A line that names its own
+ * currency is never changed; nothing is offered when the project's currency is not stated.
+ */
+export function offerProjectCurrency(proposal: ProjectSetupProposal): ProjectSetupProposal {
+  const stated = proposal.facts.currency;
+  const fromFacts = stated.status !== "REJECTED" && typeof stated.value === "string" && /^[A-Z]{3}$/.test(stated.value) ? stated.value : null;
+  // With no stated project currency, the one currency all the funding names (from "$500,000.30") is the next best reading.
+  const funded = [...new Set(proposal.funding.flatMap((f) => (f.status !== "REJECTED" && f.value?.currency ? [f.value.currency] : [])))];
+  const code = fromFacts ?? (funded.length === 1 ? funded[0]! : null);
+  if (!code) return proposal;
+  const fill = <T extends { currency: string | null; amount: string | null }>(item: Proposed<T>): Proposed<T> =>
+    item.value && !item.value.currency && item.value.amount && item.status !== "EDITED" && item.status !== "REJECTED"
+      ? { ...item, value: { ...item.value, currency: code }, confidence: "MEDIUM" }
+      : item;
+  return { ...proposal, funding: proposal.funding.map(fill), budget: proposal.budget.map(fill) };
+}

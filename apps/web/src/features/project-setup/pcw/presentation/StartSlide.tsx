@@ -39,7 +39,7 @@ export function StartSlide({ id, view, onView }: { id: string; view: SetupDraftV
 
   return (
     <div className="space-y-6">
-      {view.status === "READY" && !start.withDocuments ? <StartDocuments /> : null}
+      {view.status === "READY" && !start.withDocuments ? <StartDocuments carry={{ donor: donor || start.donor, sector: start.sector, country: country || start.country }} /> : null}
     <div className="grid gap-4 sm:grid-cols-3">
       {(() => {
         const found = startSuggestions(view);

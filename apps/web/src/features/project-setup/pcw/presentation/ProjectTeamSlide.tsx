@@ -28,7 +28,8 @@ export function ProjectTeamSlide({ id, view, onView }: { id: string; view: Setup
   const team = view.extras.team;
 
   const saveFact = (key: FactKey) => {
-    if (!factChanged(view, key, typed[key])) return;
+    // A value read from a document is only a proposal until it is written by the person: leaving a filled box confirms it, even unchanged.
+    if (!factChanged(view, key, typed[key]) && typed[key].trim() === "") return;
     startTransition(async () => {
       const saved = await editSetupItemAction(id, factEdit(key, typed[key]));
       if (!saved.ok) return setError(saved.error.message);

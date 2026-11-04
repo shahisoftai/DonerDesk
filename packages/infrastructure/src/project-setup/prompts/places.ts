@@ -25,7 +25,7 @@ const read = (raw: Record<string, unknown>): PlaceDef | null => {
 
 export const PLACES_SPEC: AreaExtractionSpec = {
   area: "PLACES",
-  promptVersion: "setup-places-v2",
+  promptVersion: "setup-places-v3",
   sectionTitles: ["geographic", "geographical", "target area", "target areas", "location", "locations", "project sites", "coverage", "area of intervention", "catchment", "beneficiaries", "zone d'intervention", "zones d'intervention", "area de intervencion", "cobertura", "ubicacion"],
   readsFrom: ["PROPOSAL", "LOGFRAME_MATRIX", "INDICATOR_TABLE"],
   budgetChars: 16_000,
@@ -36,6 +36,7 @@ export const PLACES_SPEC: AreaExtractionSpec = {
     "adminLevel: 0 country, 1 province/region/state, 2 district, 3 sub-district, 4 site or village, only when the document makes the level clear.",
     "parentName is the larger area the document places it in. Coordinates only when the document writes them.",
     "List only places where THIS project works. A place named only for a wider programme, the donor's other projects, a headquarters, a referral hospital outside the project area or as background is not a project place; leave it out.",
+    "One place is one item: different spellings or names of the same place (\"Baidoa\", \"Baidoa District\", \"Baydhaba\") are a single item under the name a location table uses, or else the most formal one. A path such as \"Somalia > Bay > Baidoa\" gives each level as its own item with its parent; a path that repeats a name gives it once.",
   ].join("\n"),
   context: (prior) => {
     const locations = Array.isArray(prior.plan)

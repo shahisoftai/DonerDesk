@@ -10,8 +10,9 @@ import { isPlainDate, type PlainDate } from "../workplan/plain-date.js";
 import { normaliseForMatch } from "./source-document.js";
 import { SETUP_AREAS, type SetupAreaKey } from "./proposal-areas.js";
 import type { Proposed, SetupConfidence } from "./proposal.js";
+import { templatePlaceholder, withoutPlaceholders } from "./template-placeholders.js";
 
-export type GroundingFailure = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE";
+export type GroundingFailure = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE" | "TEMPLATE_PLACEHOLDER";
 
 export type GroundingOutcome = { grounded: true; confidence: "HIGH" } | { grounded: false; reason: GroundingFailure };
 
@@ -22,7 +23,7 @@ const MONTHS: Record<string, number> = {
 };
 
 const ISO_DATE = /(\d{4})-(\d{2})-(\d{2})/g;
-const DAY_MONTH_YEAR = /(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\.?,?\s+(\d{4})/g;
+const DAY_MONTH_YEAR = /(\d{1,2})(?:st|nd|rd|th)?[\s-]+([A-Za-z]{3,9})\.?,?[\s-]+(\d{4})/g;
 const MONTH_DAY_YEAR = /([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})/g;
 const NUMERIC_DATE = /(\d{1,2})[/](\d{1,2})[/](\d{4})/g;
 
@@ -147,6 +148,26 @@ export interface LeftOutItem {
 
 export const LEFT_OUT_LIMIT = 40;
 
+/** The text that names an item: a fact's own string, or a list item's title, name, category or source. */
+const mainText = (item: Proposed<unknown>): string | null => {
+  const value = item.value as Record<string, unknown> | string | null;
+  const t = typeof value === "string" ? value : value && typeof value === "object" ? (value.title ?? value.name ?? value.category ?? value.sourceName) : null;
+  return typeof t === "string" ? t : null;
+};
+
+const placeholderOf = (item: Proposed<unknown>): "WHOLE" | "PART" | null => templatePlaceholder(mainText(item));
+
+/** The item with the placeholder fragments taken out of its text fields, marked LOW so a person checks it. */
+function stripPlaceholders<T>(item: Proposed<T>): Proposed<T> {
+  const clean = (v: unknown): unknown => (typeof v === "string" ? withoutPlaceholders(v) : v);
+  const value = typeof item.value === "string"
+    ? clean(item.value)
+    : item.value && typeof item.value === "object"
+      ? Object.fromEntries(Object.entries(item.value as Record<string, unknown>).map(([k, v]) => [k, ["title", "name", "description", "category", "sourceName"].includes(k) ? clean(v) : v]))
+      : item.value;
+  return { ...item, value: value as T, confidence: "LOW" };
+}
+
 const describeItem = (item: Proposed<unknown>): string => {
   const value = item.value as Record<string, unknown> | string | null;
   const title = typeof value === "string" ? value : value && typeof value === "object" ? (value.title ?? value.name ?? value.category ?? value.sourceName) : null;
@@ -176,20 +197,28 @@ export function groundAreaPatch(
     }
     if (isProposedNode(value)) {
       if (value.value === null || value.value === undefined) return value;
+      let node: Proposed<unknown> = value;
       counts.checked += 1;
-      const outcome = groundProposed(value, sourceText);
+      const placeholder = node.status === "EDITED" ? null : placeholderOf(node);
+      if (placeholder === "WHOLE") {
+        counts.dropped += 1;
+        if (leftOut.length < LEFT_OUT_LIMIT) leftOut.push({ field, text: describeItem(node), reason: "TEMPLATE_PLACEHOLDER" });
+        return DROPPED;
+      }
+      if (placeholder === "PART") node = stripPlaceholders(node);
+      const outcome = groundProposed(node, sourceText);
       if (!outcome.grounded) {
         counts.dropped += 1;
-        if (leftOut.length < LEFT_OUT_LIMIT) leftOut.push({ field, text: describeItem(value), reason: outcome.reason });
+        if (leftOut.length < LEFT_OUT_LIMIT) leftOut.push({ field, text: describeItem(node), reason: outcome.reason });
         return DROPPED;
       }
       // A second reading is held to the same rule as the first: one that is not in the documents is simply not offered.
-      if (value.alternatives) {
-        const alternatives = value.alternatives.filter((a) => groundProposed({ ...a, confidence: "HIGH", status: "PROPOSED" }, sourceText).grounded);
-        const { alternatives: _dropped, ...rest } = value;
+      if (node.alternatives) {
+        const alternatives = node.alternatives.filter((a) => groundProposed({ ...a, confidence: "HIGH", status: "PROPOSED" }, sourceText).grounded);
+        const { alternatives: _dropped, ...rest } = node;
         return alternatives.length > 0 ? { ...rest, alternatives } : rest;
       }
-      return value;
+      return node;
     }
     if (value && typeof value === "object") {
       const out: Record<string, unknown> = {};

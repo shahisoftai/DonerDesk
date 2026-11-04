@@ -151,14 +151,22 @@ export class PrismaAuditRepository implements IAuditRepository, IAuditLogger {
   }
 
   private async append(input: { id: string; tenantId: string; actorId: string; eventType: string; entityType: string; entityId: string; projectId?: string; oldValue?: string; newValue?: string; ipAddress?: string; systemNote?: string }): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+    // Waiting for the tenant's chain lock can outlast Prisma's 5 s default under load (right after a restart, during a deploy):
+    // a longer window, and one more try when the transaction was dropped, rather than failing the change that is being audited.
+    const attempt = () => this.prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.tenantId}, 0))::text AS lock`;
       const head = await this.getChainHead(tx, input.tenantId);
       const prevHash = head.hash;
       const createdAt = new Date(Math.max(Date.now(), (head.createdAt?.getTime() ?? 0) + 1));
       const hash = computeAuditHash({ ...input, createdAt, prevHash }, this.chainKey);
       await tx.auditEvent.create({ data: { ...input, prevHash, hash, createdAt } });
-    });
+    }, { maxWait: 15_000, timeout: 20_000 });
+    try {
+      await attempt();
+    } catch (e) {
+      if ((e as { code?: string }).code !== "P2028") throw e;
+      await attempt();
+    }
   }
 
   async listByTenant(tenantId: TenantId, options?: { projectId?: string; limit?: number; offset?: number; eventType?: string; actorId?: string; entityType?: string; entityId?: string }): Promise<Result<Array<{ id: string; actorId: string; eventType: string; entityType: string; entityId: string; projectId?: string; oldValue?: string; newValue?: string; ipAddress?: string; systemNote?: string; prevHash: string; hash: string; createdAt: Date }>, DomainError>> {

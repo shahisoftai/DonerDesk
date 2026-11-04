@@ -1,5 +1,6 @@
 "use client";
 
+import { GapInbox } from "./GapInbox";
 import { useEffect, useState } from "react";
 import type { SlideKey } from "@donordesk/domain";
 import { SlideFrame } from "../../presentation/SlideFrame";
@@ -117,6 +118,7 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
           <RereadPart id={id} slide={current} view={view} onView={setView} />
         </div>
       </SlideFrame>
+      <GapInbox view={view} onOpen={go} />
       </div>
     </div>
   );

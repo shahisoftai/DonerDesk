@@ -104,13 +104,33 @@ export function riskInputs(p: ProjectSetupProposal): { inputs: RiskInputDraft[];
   return { inputs, notes };
 }
 
+/** Currency marks an amount may carry, and the currency each one names. "$" alone is read as US dollars, as pooled funds and most humanitarian budgets mean it. */
+const CURRENCY_MARKS: ReadonlyArray<[RegExp, string]> = [
+  [/^(US\$|USD\$)/i, "USD"], [/^\$/, "USD"], [/^€/, "EUR"], [/^£/, "GBP"],
+  [/^(EUR|GBP|USD|CHF|CAD|AUD|NOK|SEK|DKK|JPY|KES|UGX|ETB|SOS|PKR|INR|NGN|XOF|XAF)\b/i, ""],
+];
+
+/** The amount without its currency mark, and the currency the mark (or a leading/trailing ISO code) names. Pure. */
+export function splitAmountCurrency(raw: string | null): { amount: string | null; currency: string | null } {
+  let t = (raw ?? "").trim();
+  if (!t) return { amount: null, currency: null };
+  let currency: string | null = null;
+  const trailing = /\s*\b([A-Z]{3})$/.exec(t);
+  if (trailing && /\d/.test(t.slice(0, trailing.index))) { currency = trailing[1]!; t = t.slice(0, trailing.index).trim(); }
+  for (const [re, code] of CURRENCY_MARKS) {
+    const m = re.exec(t);
+    if (m) { currency = currency ?? (code || m[1]!.toUpperCase()); t = t.slice(m[0].length).trim(); break; }
+  }
+  return { amount: t || null, currency };
+}
+
 /**
  * An amount as the document wrote it, to the plain form the finance checks read ("1250000.00"). Both separators: the
  * last is the decimal mark. One kind repeated ("1,250,000", "1.250.000"): thousands. One single separator followed by
  * three digits ("1,250", "1.250") reads both ways, so it is ambiguous and refused. Pure.
  */
 export function normaliseAmountText(raw: string | null): string | null {
-  const t = (raw ?? "").replace(/[\s ']/g, "");
+  const t = (splitAmountCurrency(raw).amount ?? "").replace(/[\s ']/g, "");
   if (!/^\d[\d.,]*$/.test(t)) return null;
   const lastDot = t.lastIndexOf(".");
   const lastComma = t.lastIndexOf(",");

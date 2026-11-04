@@ -15,7 +15,7 @@ export type ProblemCode =
 export type DocumentKindKey = "PROPOSAL" | "LOGFRAME_MATRIX" | "WORK_PLAN_GANTT" | "BUDGET" | "INDICATOR_TABLE" | "OTHER";
 export type IndicatorFieldKey = "title" | "code" | "result" | "type" | "unit" | "baseline" | "target" | "frequency" | "meansOfVerification";
 
-export type LeftOutReasonKey = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE";
+export type LeftOutReasonKey = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE" | "TEMPLATE_PLACEHOLDER";
 
 /** A number as the caller wrote it for the language (already formatted), or a plain number. */
 export type Count = number | string;

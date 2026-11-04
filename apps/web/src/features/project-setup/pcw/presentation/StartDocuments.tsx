@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { SETUP_MAX_DOCUMENTS } from "@donordesk/contracts";
 import { startSetupAction } from "@/lib/actions/project-setup";
+import { editDraftAction } from "@/lib/actions/project-setup-draft";
 import { usePcwCopy } from "./usePcwCopy";
 import { addFiles } from "../domain/documents-view";
 
@@ -12,7 +13,7 @@ import { addFiles } from "../domain/documents-view";
  * need their own), so it is offered before anything has been typed. Without the AI service or Google Drive, the sentence the
  * server gives says what is missing, and the slides below still work by hand.
  */
-export function StartDocuments() {
+export function StartDocuments({ carry }: { carry?: { donor?: string | null; sector?: string | null; country?: string | null } }) {
   const pcw = usePcwCopy();
   const PCW_COPY = pcw.c;
   const c = PCW_COPY.documents;
@@ -29,6 +30,9 @@ export function StartDocuments() {
     startTransition(async () => {
       const r = await startSetupAction(form);
       if (!r.ok) return setError(r.error.message);
+      // The new draft starts empty: bring over what was already answered so nothing typed is lost.
+      const patch = Object.fromEntries(Object.entries(carry ?? {}).filter(([, v]) => typeof v === "string" && v.trim() !== ""));
+      if (Object.keys(patch).length > 0) await editDraftAction(r.value.proposalId, { kind: "SET_START", patch });
       router.push(`/projects/new/wizard?id=${encodeURIComponent(r.value.proposalId)}`);
     });
   };

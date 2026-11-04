@@ -235,7 +235,7 @@ export const ar: SetupCopy = {
     leftOutTitle: (n) => `ما تُرك (${n})`,
     leftOutLead: "وجدتها القراءة لكن كلماتها لم تُعثر عليها في وثائقك، لذلك لم تُقترح. أضف الصحيح منها يدوياً بعد إنشاء المشروع.",
     leftOutShown: (shown, total) => `يُعرض ${shown} من ${total}.`,
-    leftOutReasons: { QUOTE_NOT_FOUND: "الكلمات غير موجودة في الوثائق", FIGURE_NOT_IN_QUOTE: "رقم غير موجود في النص المقتبس", DATE_NOT_IN_QUOTE: "تاريخ غير موجود في النص المقتبس" },
+    leftOutReasons: { TEMPLATE_PLACEHOLDER: "نص قالب لم يُملأ", QUOTE_NOT_FOUND: "الكلمات غير موجودة في الوثائق", FIGURE_NOT_IN_QUOTE: "رقم غير موجود في النص المقتبس", DATE_NOT_IN_QUOTE: "تاريخ غير موجود في النص المقتبس" },
     otherReadings: "تذكر الوثائق أيضاً", useThis: "اعتمد هذه",
     showInDocument: "اعرض في الوثيقة", passageTitle: (d, sh) => (sh ? `${d}، الورقة ${sh}` : d), passageBefore: "قبلها مباشرة", passageLoading: "جارٍ فتح المقطع…", passageFailed: "تعذّر فتح المقطع. تحقق من أن Google Drive ما زال متصلاً.", close: "إغلاق",
     budgetKinds: { DETAIL: "تفصيل", TOTAL: "مجموع مذكور" },

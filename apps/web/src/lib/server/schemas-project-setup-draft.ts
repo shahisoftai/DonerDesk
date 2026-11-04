@@ -61,7 +61,7 @@ export const SetupDraftViewSchema = z.object({
     sheets: z.array(z.object({ title: z.string().nullable(), kind: z.string() })),
     override: z.string().optional(), feeds: z.array(z.string()).optional(),
   })).default([]),
-  leftOut: z.array(z.object({ area: z.string(), total: z.number(), items: z.array(z.object({ field: z.string(), text: z.string(), reason: z.enum(["QUOTE_NOT_FOUND", "FIGURE_NOT_IN_QUOTE", "DATE_NOT_IN_QUOTE"]) })) })).default([]),
+  leftOut: z.array(z.object({ area: z.string(), total: z.number(), items: z.array(z.object({ field: z.string(), text: z.string(), reason: z.enum(["QUOTE_NOT_FOUND", "FIGURE_NOT_IN_QUOTE", "DATE_NOT_IN_QUOTE", "TEMPLATE_PLACEHOLDER"]) })) })).default([]),
   areaRuns: z.record(z.enum(["RUNNING", "FAILED", "FINISHED"])).default({}),
   extras: z.custom<SetupExtras>((v) => typeof v === "object" && v !== null),
   results: z.array(Result),

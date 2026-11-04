@@ -84,6 +84,8 @@ export interface SetupStart {
   /** The default pack applied (fill-only); absent until one is chosen. */
   packId?: string;
   withDocuments: boolean;
+  /** The documents' own answers were put in once (`prefillFromDocuments`); never again, so a person's change stays. */
+  fromDocuments?: boolean;
 }
 
 export interface SetupSignOff {

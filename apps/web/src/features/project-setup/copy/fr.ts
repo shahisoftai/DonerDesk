@@ -235,7 +235,7 @@ export const fr: SetupCopy = {
     leftOutTitle: (n) => `Laissés de côté (${n})`,
     leftOutLead: "La lecture les a trouvés, mais leurs mots ne figurent pas dans vos documents ; ils n'ont donc pas été proposés. Ajoutez à la main ceux qui sont justes une fois le projet créé.",
     leftOutShown: (shown, total) => `${shown} affichés sur ${total}.`,
-    leftOutReasons: { QUOTE_NOT_FOUND: "mots introuvables dans les documents", FIGURE_NOT_IN_QUOTE: "un chiffre ne figure pas dans la citation", DATE_NOT_IN_QUOTE: "une date ne figure pas dans la citation" },
+    leftOutReasons: { TEMPLATE_PLACEHOLDER: "texte de modèle jamais rempli", QUOTE_NOT_FOUND: "mots introuvables dans les documents", FIGURE_NOT_IN_QUOTE: "un chiffre ne figure pas dans la citation", DATE_NOT_IN_QUOTE: "une date ne figure pas dans la citation" },
     otherReadings: "Les documents indiquent aussi", useThis: "Retenir celle-ci",
     showInDocument: "Voir dans le document", passageTitle: (d, sh) => (sh ? `${d}, feuille ${sh}` : d), passageBefore: "Juste avant", passageLoading: "Ouverture du passage…", passageFailed: "Le passage n'a pas pu être ouvert. Vérifiez que votre Google Drive est toujours connecté.", close: "Fermer",
     budgetKinds: { DETAIL: "Détail", TOTAL: "Total indiqué" },

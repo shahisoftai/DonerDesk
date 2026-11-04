@@ -60,6 +60,11 @@ export class KestraJobQueue implements IJobQueue {
     return `${this.baseUrl}/api/v1/executions/${ns}/${flow}`;
   }
 
+  /** Whether a flow is mapped for the job; the dispatcher runs an unmapped job's in-process handler instead. */
+  canHandle(name: string): boolean {
+    return name in FLOW_BY_JOB;
+  }
+
   async enqueue(name: string, payload: Record<string, unknown>): Promise<void> {
     const flow = FLOW_BY_JOB[name as JobName];
     if (!flow) throw new Error(`No Kestra flow mapped for job: ${name}`);

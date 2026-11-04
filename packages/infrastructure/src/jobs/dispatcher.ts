@@ -28,7 +28,9 @@ export class JobDispatcher implements IJobQueue {
   }
 
   async enqueue(name: string, payload: Record<string, unknown>): Promise<void> {
-    if (this.mode === "memory") {
+    // A job the remote queue has no flow for (a project's workspace, for one) runs in this process when a handler is registered.
+    const remoteHandles = (this.remote as { canHandle?: (job: string) => boolean } | undefined)?.canHandle?.(name) ?? true;
+    if (this.mode === "memory" || (!remoteHandles && this.handlers.has(name))) {
       const handler = this.handlers.get(name);
       if (handler) {
         setImmediate(() => {

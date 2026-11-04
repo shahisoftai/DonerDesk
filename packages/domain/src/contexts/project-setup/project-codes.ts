@@ -56,7 +56,9 @@ export function proposeCodes(proposal: ProjectSetupProposal, scope: CodeScope = 
 
   const indicators = proposal.indicators.map((item) => {
     if (!inScope(item) || item.value!.code) return item;
-    const value: IndicatorDef = { ...item.value!, code: unique(`IND${next("IND")}`, taken), codeSource: "GENERATED" };
+    let n = next("IND");
+    while (taken.has(`ind${n}`)) n = next("IND");
+    const value: IndicatorDef = { ...item.value!, code: unique(`IND${n}`, taken), codeSource: "GENERATED" };
     return { ...item, value };
   });
 

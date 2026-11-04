@@ -1,5 +1,5 @@
 import type { DomainError, Result, SourceBlock, TenantId } from "@donordesk/domain";
-import { SETUP_AREA_APPLY_ORDER, SETUP_AREAS, checkProposal, extractionLayers, groundAreaPatch, applyKindOverrides, describeSources, joinBlocks, linkProposal, offerPlaceCountries, offerPlanDates, proposeCodes, redactForLlm, type SetupAreaKey } from "@donordesk/domain";
+import { SETUP_AREA_APPLY_ORDER, SETUP_AREAS, checkProposal, extractionLayers, groundAreaPatch, applyKindOverrides, describeSources, joinBlocks, linkProposal, offerPlaceCountries, offerPlanDates, offerProjectCurrency, proposeCodes, redactForLlm, type SetupAreaKey } from "@donordesk/domain";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ISourceDocumentReader, ISetupAreaExtractor, ISetupProposalRepository, ISetupRunRepository, SetupUsage, StoredSetupProposal } from "../../ports/project-setup.js";
 import { SETUP_PII_KEEP } from "./proposal-state.js";
@@ -127,7 +127,7 @@ export class SetupExtractionOrchestrator {
     for (const layer of extractionLayers(ordered)) await runPool(layer, this.concurrency, readArea);
     const { checked, dropped, okAreas, failedAreas, model, promptVersion, usage } = state;
     // Every area is read: items the documents did not tie to a result are placed by their wording where one result clearly fits.
-    const data = { ...offerPlaceCountries(offerPlanDates(linkProposal(proposeCodes(state.data, "LIVE")))), sources: describeSources(redacted, proposal.proposal.sources, this.feedsByDocument(redacted)) };
+    const data = { ...offerProjectCurrency(offerPlaceCountries(offerPlanDates(linkProposal(proposeCodes(state.data, "LIVE"))))), sources: describeSources(redacted, proposal.proposal.sources, this.feedsByDocument(redacted)) };
 
     const problems = checkProposal(data);
     const status = okAreas > 0 ? "READY" : "FAILED";

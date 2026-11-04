@@ -295,7 +295,7 @@ export function nextPending(rows: ReadonlyArray<ReviewRow>, after?: string): Rev
   return pending[start] ?? pending[0];
 }
 
-export type LeftOutReason = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE";
+export type LeftOutReason = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE" | "TEMPLATE_PLACEHOLDER";
 
 export interface LeftOutView {
   field: string;
@@ -310,7 +310,7 @@ interface RunLike {
   detail: Record<string, string | number | boolean>;
 }
 
-const REASONS: readonly LeftOutReason[] = ["QUOTE_NOT_FOUND", "FIGURE_NOT_IN_QUOTE", "DATE_NOT_IN_QUOTE"];
+const REASONS: readonly LeftOutReason[] = ["QUOTE_NOT_FOUND", "FIGURE_NOT_IN_QUOTE", "DATE_NOT_IN_QUOTE", "TEMPLATE_PLACEHOLDER"];
 
 /**
  * What the last reading of an area left out because its words were not found in the documents, and how many in all (the

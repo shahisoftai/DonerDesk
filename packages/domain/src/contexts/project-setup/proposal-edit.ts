@@ -92,7 +92,15 @@ export function acceptMany(proposal: ProjectSetupProposal, area: SetupAreaKey, p
 
 /** Leaves an item out: it is counted, shown as rejected, and never applied. */
 export function rejectItem(proposal: ProjectSetupProposal, ref: SetupItemRef): ProposalEditResult {
-  return mutateItem(proposal, ref, (node) => (node.status === "REJECTED" ? node : { ...node, status: "REJECTED" }));
+  const done = mutateItem(proposal, ref, (node) => (node.status === "REJECTED" ? node : { ...node, status: "REJECTED" }));
+  if (!done.ok || ref.area !== "LOGFRAME") return done;
+  // What sat under a removed result is not left pointing at it (a dangling parent would look chosen but break the chain).
+  const index = Number(ref.path.split(".")[1]);
+  const code = (proposal.logframe[index]?.value as { code?: string | null } | null | undefined)?.code ?? null;
+  if (!code) return done;
+  const unlink = <T extends { parentCode?: string | null }>(item: Proposed<T>): Proposed<T> =>
+    item.value && item.value.parentCode === code ? { ...item, value: { ...item.value, parentCode: null } } : item;
+  return { ok: true, proposal: { ...done.proposal, logframe: done.proposal.logframe.map(unlink) } };
 }
 
 /** Replaces the value with the person's own; the original quote stays for reference, the item becomes EDITED. */

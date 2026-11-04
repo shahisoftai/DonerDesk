@@ -235,7 +235,7 @@ export const es: SetupCopy = {
     leftOutTitle: (n) => `Dejados fuera (${n})`,
     leftOutLead: "La lectura los encontró, pero sus palabras no aparecen en sus documentos, así que no se propusieron. Añada a mano los que sean correctos cuando el proyecto esté creado.",
     leftOutShown: (shown, total) => `Se muestran ${shown} de ${total}.`,
-    leftOutReasons: { QUOTE_NOT_FOUND: "palabras no encontradas en los documentos", FIGURE_NOT_IN_QUOTE: "una cifra no está en la cita", DATE_NOT_IN_QUOTE: "una fecha no está en la cita" },
+    leftOutReasons: { TEMPLATE_PLACEHOLDER: "texto de plantilla sin completar", QUOTE_NOT_FOUND: "palabras no encontradas en los documentos", FIGURE_NOT_IN_QUOTE: "una cifra no está en la cita", DATE_NOT_IN_QUOTE: "una fecha no está en la cita" },
     otherReadings: "Los documentos también dicen", useThis: "Usar esta",
     showInDocument: "Ver en el documento", passageTitle: (d, sh) => (sh ? `${d}, hoja ${sh}` : d), passageBefore: "Justo antes", passageLoading: "Abriendo el pasaje…", passageFailed: "No se pudo abrir el pasaje. Compruebe que su Google Drive sigue conectado.", close: "Cerrar",
     budgetKinds: { DETAIL: "Detalle", TOTAL: "Total indicado" },

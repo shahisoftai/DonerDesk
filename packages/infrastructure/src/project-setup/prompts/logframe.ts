@@ -79,7 +79,8 @@ export const LOGFRAME_STRUCTURE: AreaRefinement = {
 
 export const LOGFRAME_SPEC: AreaExtractionSpec = {
   area: "LOGFRAME",
-  promptVersion: "setup-logframe-v5",
+  heavy: true,
+  promptVersion: "setup-logframe-v6",
   sectionTitles: ["goals and objectives", "goal", "objective", "objectives", "specific objective", "expected results", "expected outcomes", "results framework", "logical framework", "logframe", "theory of change", "outcomes", "outputs", "statement of purpose", "project description", "program description", "description of the action", "intervention logic", "cadre logique", "resultats attendus", "objectif", "marco logico", "resultados esperados", "objetivo", "resultado"],
   // A Gantt chart is the work plan and a budget is money: their rows are not results (Phase 37.1).
   readsFrom: ["PROPOSAL", "LOGFRAME_MATRIX", "INDICATOR_TABLE"],
@@ -95,6 +96,8 @@ export const LOGFRAME_SPEC: AreaExtractionSpec = {
     "parentCode is the code of the item one level up, only when the document's numbering or layout shows it; otherwise null.",
     "If the document has no logframe table, build the hierarchy from its own structure: the stated goal is the GOAL; each numbered or named objective or result area under it is an OUTCOME; the deliverables or components that deliver it are OUTPUTs; the actions it lists are ACTIVITYs. Give every item a level.",
     "There is one GOAL. Each objective (statements under a heading such as \"Objectives\", or sections headed \"Objective 1\", \"Objective 2\") is an OUTCOME of its own: list every one, before the items that belong to it, even when the document gives it no code (use null).",
+    "Only the project's own results are items. Objectives of a response plan, cluster, sector strategy, allocation or fund (HRP or strategic objectives such as \"SO1\", \"Cluster objectives\", \"HRP objectives\", \"Contribution to cluster/sector objectives\") are context the project contributes to: never list them.",
+    "Template text that was never filled in (\"To be completed after identification of priority interventions\", \"[insert …]\", \"Not Selected\", a bare label such as \"Activity 1.1.1\" with no description) is not an item: skip it. When the results table is empty or unfilled, build the chain from the narrative description of the work (summary, justification, implementation).",
     "A heading that only names a level (\"Goal\", \"Objectives\", \"Outputs\", \"Activities\") is not an item: list the statement under it instead.",
     "Use the narrative description of the work for structure. Milestone, payment-schedule, pricing and budget tables are not results: do not list their rows or invent a parentCode from their numbering.",
     "parentCode is only the code of another item you list in this answer; if that parent has no code or is not listed, use null.",

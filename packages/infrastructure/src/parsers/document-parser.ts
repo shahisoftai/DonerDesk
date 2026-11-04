@@ -3,6 +3,7 @@ import * as ExcelJS from "exceljs";
 import JSZip from "jszip";
 import WordExtractor from "word-extractor";
 import type { IDocumentParser } from "@donordesk/application";
+import { docxHtmlToText } from "./docx-text.js";
 
 export class TolerantDocumentParser implements IDocumentParser {
   async parse(input: { buffer: Buffer; fileType: string; fileName: string }): Promise<{ text: string; metadata?: Record<string, unknown> }> {
@@ -10,6 +11,12 @@ export class TolerantDocumentParser implements IDocumentParser {
     const ext = name.split(".").pop() ?? "";
     try {
       if (ext === "docx" || input.fileType.includes("officedocument.wordprocessingml")) {
+        // Tables are kept as rows ("label | value"); raw text put every cell on its own line. Raw text stays the fallback.
+        try {
+          const html = await mammoth.convertToHtml({ buffer: input.buffer });
+          const text = docxHtmlToText(html.value);
+          if (text.trim()) return { text };
+        } catch { /* fall through to raw text */ }
         const result = await mammoth.extractRawText({ buffer: input.buffer });
         return { text: result.value };
       }

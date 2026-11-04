@@ -31,7 +31,7 @@ function merge(a: Record<string, unknown>, b: Record<string, unknown>): Record<s
 
 export const FACTS_SPEC: AreaExtractionSpec = {
   area: "FACTS",
-  promptVersion: "setup-facts-v4",
+  promptVersion: "setup-facts-v5",
   sectionTitles: ["start of document", "project information", "project summary", "summary of the project", "grant summary", "basic data", "project data", "project profile", "project details", "executive summary", "abstract", "statement of purpose", "description of the action", "fiche projet", "resume du projet", "informations sur le projet", "resumen del proyecto", "datos del proyecto", "resumen ejecutivo", "title page"],
   headBlocks: 3,
   budgetChars: 14_000,
@@ -46,6 +46,7 @@ export const FACTS_SPEC: AreaExtractionSpec = {
     "countries: the country or countries where the project's work takes place, as the text names them in words; quote the line that names it. The donor's or a funding agency's own country (\"United States Agency for International Development\") is not where the work is. A province, district or city is not a country, and a currency name is not a country.",
     "donor: the organisation that funds this grant; when the text names a funding programme or a prime award that makes the grant (\"provides a fixed amount award to\"), that programme is the donor.",
     "currency: from the line that states the money (\"Budgets developed in ...\", a currency column, a code beside an amount).",
+    "A \"$\" with no other currency named is USD; \"€\" is EUR; \"£\" is GBP: give the code in currency.",
   ].join("\n"),
   parse,
   merge,

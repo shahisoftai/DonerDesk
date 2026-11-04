@@ -246,3 +246,10 @@ test("offerPlaceCountries offers the country the places name when the facts read
   const same = proposal({ facts: facts({ countries: A(["Pakistan"], "Pakistan") }), places: [A({ name: "Pakistan", adminLevel: 0, parentName: null, latitude: null, longitude: null }, "in Pakistan")] });
   assert.equal(offerPlaceCountries(same), same);
 });
+
+test("a generated indicator code skips the codes the document already uses (IND2, not IND1-2)", async () => {
+  const { proposeCodes } = await import("../dist/index.js");
+  const ind = (code) => ({ value: { code, codeSource: code ? "DOCUMENT" : null, title: "x", logframeCode: null, type: null, unit: null, baseline: null, target: null, targetSchedule: null, frequency: null, direction: null, disaggregation: null, meansOfVerification: null }, sourceQuote: null, sourceRef: null, confidence: "HIGH", status: "EDITED" });
+  const out = proposeCodes({ logframe: [], indicators: [ind("IND1"), ind(null)], plan: [], places: [], periods: [], funding: [], budget: [], risks: [], facts: {} });
+  assert.equal(out.indicators[1].value.code, "IND2");
+});

@@ -46,7 +46,8 @@ export async function registerWebhookRoutes(app: FastifyInstance) {
     });
 
     instance.addHook("onResponse", async () => {
-      await container.prisma.$disconnect();
+      // The client is pooled and shared with requests in flight: never disconnected here (see createContainer).
+      await container.settleBackgroundWork();
     });
   });
 }

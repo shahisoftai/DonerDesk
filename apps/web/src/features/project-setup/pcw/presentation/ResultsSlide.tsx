@@ -69,18 +69,23 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
                 className="min-w-[12rem] flex-1 bg-transparent outline-none focus:underline"
                 onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== node.title && run(() => changeResultsAction(id, { kind: "EDIT_NODE_TITLE", path: item.path, title: e.target.value }))}
               />
-              {node.level !== "GOAL" ? (
-                <select
-                  aria-label={PCW_COPY.parity.moveUnder(node.code ?? node.title ?? PCW_COPY.parity.result)}
-                  className="input max-w-[11rem] py-1 text-xs"
-                  value={node.parentCode ?? ""}
-                  disabled={pending}
-                  onChange={(e) => move(item.path, node, e.target.value)}
-                >
-                  {!needsParent(node.level) ? <option value="">{c.none}</option> : null}
-                  {moveParents(node.level, view, node.code).map((p) => <option key={p.code} value={p.code}>{p.label}</option>)}
-                </select>
-              ) : null}
+              {node.level !== "GOAL" ? (() => {
+                const parents = moveParents(node.level, view, node.code);
+                // A stored parent that is no longer a choice (it was removed) must not be shown as the first option: show it as not chosen.
+                const valid = parents.some((p) => p.code === node.parentCode);
+                return (
+                  <select
+                    aria-label={PCW_COPY.parity.moveUnder(node.code ?? node.title ?? PCW_COPY.parity.result)}
+                    className="input max-w-[11rem] py-1 text-xs"
+                    value={valid ? (node.parentCode ?? "") : ""}
+                    disabled={pending}
+                    onChange={(e) => move(item.path, node, e.target.value)}
+                  >
+                    {!needsParent(node.level) ? <option value="">{c.none}</option> : !valid ? <option value="" disabled>{PCW_COPY.indicators.choose}</option> : null}
+                    {parents.map((p) => <option key={p.code} value={p.code}>{p.label}</option>)}
+                  </select>
+                );
+              })() : null}
               <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
               {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{c.accept}</button> : null}
               <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${c.remove} ${node.title ?? ""}`}>{c.remove}</button>

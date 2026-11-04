@@ -92,5 +92,5 @@ export async function signOffAction(id: string): Promise<Result<SetupDraftView, 
 /** Starts the project. The server re-checks everything; if it stops partway, the same call carries on where it left off. */
 export async function launchProjectAction(id: string): Promise<Result<LaunchReport, AppError>> {
   const context = await requireSession();
-  return gatewayRequest(`/v1/project-setup/drafts/${encodeURIComponent(id)}/launch`, LaunchReportSchema, context.token, { method: "POST", body: {} });
+  return gatewayRequest(`/v1/project-setup/drafts/${encodeURIComponent(id)}/launch`, LaunchReportSchema, context.token, { method: "POST", body: {}, timeoutMs: 180_000 });
 }

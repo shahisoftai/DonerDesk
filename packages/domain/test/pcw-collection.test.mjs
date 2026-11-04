@@ -74,3 +74,11 @@ test("the data entry requirements close from the slide's decisions", () => {
   d = applyOperation(d, { kind: "SET_COLLECTION", patch: { reviewMode: "FULL", windowRule: { opensDaysBefore: 10, closesDaysAfter: 15 } } }).draft;
   assert.deepEqual(open(d), [], "full review needs no named verifier: who verifies follows people's roles");
 });
+
+test("a rate is never offered a form, even when an activity records who took part", () => {
+  const d = draft();
+  d.proposal.indicators = [item({ ...indicator("I1").value, type: "PERCENTAGE", unit: "%" })];
+  const s = suggestMethods(d);
+  assert.equal(s[0].method, "MANUAL");
+  assert.match(s[0].reason, /rate/);
+});

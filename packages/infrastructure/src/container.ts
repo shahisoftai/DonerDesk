@@ -1315,12 +1315,14 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   };
   // Project setup wizard (Phase 36): the organisation must have AI on and have opted in (checked here) before any
   // document is read. The daily cap comes from the environment; 10 a day across the organisation by default.
-  const resolveSetupLlm = async (tenantId: string): Promise<ILLMProvider | null> => {
+  const resolveSetupLlm = async (tenantId: string, model?: string): Promise<ILLMProvider | null> => {
     try {
       const org = await organizations.findByTenant(TenantId.create(tenantId));
       if (!org.ok || !org.value?.aiEnabled || !org.value.setupAssistEnabled) return null;
       const resolved = await gateTenantLlm(await resolveTenantLlm(tenantId), tenantId, "project-setup");
-      const provider = resolved ? createLLMProvider(resolved) : process.env.LLM_PROVIDER ? createLLMProvider() : null;
+      // A heavier model for the structural areas is used only with the same provider (its key and endpoint stay the organisation's).
+      const pinned = (config?: Parameters<typeof createLLMProvider>[0]) => createLLMProvider(model ? { ...(config ?? {}), model } : config);
+      const provider = resolved ? pinned(resolved) : process.env.LLM_PROVIDER ? pinned() : null;
       if (!provider || provider.name === "stub") return null;
       return new UsageRecordingLlmProvider(provider, llmUsage, ids, { tenantId, operationType: "SETUP_ASSIST", promptId: "project-setup" });
     } catch (error) {
@@ -1338,6 +1340,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     documents: setupDocuments,
     parseUploadedFile: new ParseUploadedFileHandler(parser),
     llmFor: resolveSetupLlm,
+    heavyModel: process.env.SETUP_HEAVY_MODEL?.trim() || undefined,
     onProviderError: (info) => logger.warn("Project setup: the AI service refused a request", info),
     runInBackground,
     maxRunsPerDay: Number.parseInt(process.env.SETUP_ASSIST_RUNS_PER_DAY ?? "10", 10) || 10,

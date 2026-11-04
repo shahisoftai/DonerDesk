@@ -10,7 +10,7 @@ import type { ISetupLlm, SetupLlmCompletion } from "@donordesk/application";
 export class TenantSetupLlm implements ISetupLlm {
   /** `onProviderError` receives the provider's own words (server logs only); the person is shown a plain sentence. */
   constructor(
-    private readonly llmFor: (tenantId: string) => Promise<ILLMProvider | null>,
+    private readonly llmFor: (tenantId: string, model?: string) => Promise<ILLMProvider | null>,
     private readonly onProviderError?: (info: { tenantId: string; message: string }) => void,
   ) {}
 
@@ -18,10 +18,10 @@ export class TenantSetupLlm implements ISetupLlm {
     return (await this.llmFor(tenantId.toString())) !== null;
   }
 
-  async completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number }): Promise<Result<SetupLlmCompletion | null, DomainError>> {
+  async completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number; model?: string | undefined }): Promise<Result<SetupLlmCompletion | null, DomainError>> {
     let provider: ILLMProvider | null;
     try {
-      provider = await this.llmFor(input.tenantId.toString());
+      provider = await this.llmFor(input.tenantId.toString(), input.model);
     } catch (e) {
       return err(new DomainError("POLICY_DENIED", e instanceof Error ? e.message : String(e)));
     }
@@ -60,4 +60,10 @@ export function plainProviderError(raw: string): DomainError {
     return new DomainError("POLICY_DENIED", `The AI service did not accept this organisation's key${code}. An administrator should check the AI settings.`);
   }
   return new DomainError("BILLING_PROVIDER_UNAVAILABLE", `The AI service did not answer${code}. Try again in a few minutes.`);
+}
+
+/** The same LLM, asked to use another model for every call (the heavier model of the structural areas). */
+export function withModel(llm: ISetupLlm, model: string | undefined): ISetupLlm {
+  if (!model) return llm;
+  return { available: (t) => llm.available(t), completeJson: (input) => llm.completeJson({ ...input, model }) };
 }

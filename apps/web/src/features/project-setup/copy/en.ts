@@ -251,7 +251,7 @@ export const en: SetupCopy = {
     leftOutTitle: (n) => `Left out (${n})`,
     leftOutLead: "These were found by the reading but their words could not be found in your documents, so they were not proposed. Add any that are right by hand after the project is created.",
     leftOutShown: (shown, total) => `Showing ${shown} of ${total}.`,
-    leftOutReasons: { QUOTE_NOT_FOUND: "words not found in the documents", FIGURE_NOT_IN_QUOTE: "a figure is not in the quoted words", DATE_NOT_IN_QUOTE: "a date is not in the quoted words" },
+    leftOutReasons: { TEMPLATE_PLACEHOLDER: "template text that was never filled in", QUOTE_NOT_FOUND: "words not found in the documents", FIGURE_NOT_IN_QUOTE: "a figure is not in the quoted words", DATE_NOT_IN_QUOTE: "a date is not in the quoted words" },
     otherReadings: "The documents also say", useThis: "Use this",
     showInDocument: "Show in the document", passageTitle: (d, sh) => (sh ? `${d}, sheet ${sh}` : d), passageBefore: "Just before", passageLoading: "Opening the passage…", passageFailed: "The passage could not be opened. Check that your Google Drive is still connected.", close: "Close",
     budgetKinds: { DETAIL: "Detail", TOTAL: "Stated total" },

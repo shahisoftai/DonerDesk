@@ -11,7 +11,7 @@ export interface ReadingRunLike {
   startedAt: Date;
 }
 
-export const READING_LEFT_OUT_REASONS = ["QUOTE_NOT_FOUND", "FIGURE_NOT_IN_QUOTE", "DATE_NOT_IN_QUOTE"] as const;
+export const READING_LEFT_OUT_REASONS = ["QUOTE_NOT_FOUND", "FIGURE_NOT_IN_QUOTE", "DATE_NOT_IN_QUOTE", "TEMPLATE_PLACEHOLDER"] as const;
 export type ReadingLeftOutReason = (typeof READING_LEFT_OUT_REASONS)[number];
 
 export interface ReadingLeftOutItem { field: string; text: string; reason: ReadingLeftOutReason }

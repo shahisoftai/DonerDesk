@@ -41,9 +41,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
         req.container = createContainer({ tenantId: req.tenant.tenantId.toString() });
       },
     ] as never,
-    onResponse: async (req: { container?: { settleBackgroundWork(): Promise<void>; prisma: { $disconnect(): Promise<void> } } }) => {
+    // The client is pooled per tenant and shared with requests in flight: never disconnected here (see createContainer).
+    onResponse: async (req: { container?: { settleBackgroundWork(): Promise<void> } }) => {
       await req.container?.settleBackgroundWork();
-      await req.container?.prisma.$disconnect();
     },
   };
   const ctxOf = (req: { tenant: unknown; ip: string; id: string }) => ({ tenant: req.tenant as never, ipAddress: req.ip, requestId: req.id });

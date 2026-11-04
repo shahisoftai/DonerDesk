@@ -207,7 +207,7 @@ export interface SetupLlmCompletion {
 /** The narrow LLM facade extraction needs: one JSON completion, tenant-resolved; null provider = the feature is unavailable. */
 export interface ISetupLlm {
   available(tenantId: TenantId): Promise<boolean>;
-  completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number }): Promise<Result<SetupLlmCompletion | null, DomainError>>;
+  completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number; /** A model other than the organisation's own, for the areas that decide structure (env SETUP_HEAVY_MODEL). */ model?: string | undefined }): Promise<Result<SetupLlmCompletion | null, DomainError>>;
 }
 
 /** Where the default packs come from: the ones that ship with DonorDesk, and (later) the organisation's own copies. */

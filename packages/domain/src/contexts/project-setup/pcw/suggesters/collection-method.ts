@@ -24,7 +24,11 @@ export function suggestMethods(draft: SetupDraft): MethodSuggestion[] {
     if (code === null || draft.extras.indicatorSetup[code]?.method !== undefined) return [];
     const feeders = plans.filter((p) => p.setup?.indicatorCodes.includes(code));
     const recording = feeders.find((p) => p.setup?.recordsParticipants);
-    const [method, reason]: [CollectionMethod, string] = recording
+    // A percentage or ratio is worked out from totals: a form cannot add it up, so it is never offered one.
+    const isRate = indicator.type === "PERCENTAGE" || indicator.type === "RATIO" || (indicator.unit ?? "").trim() === "%";
+    const [method, reason]: [CollectionMethod, string] = recording && isRate
+      ? ["MANUAL", "It is a rate, which a form cannot add up, so its values are typed in."]
+      : recording
       ? ["FORM", `“${recording.title ?? "An activity"}” records who took part, so a form can collect this in the field.`]
       : feeders.length > 0
         ? ["MANUAL", "The activities that feed it do not record who took part, so its values are typed in."]

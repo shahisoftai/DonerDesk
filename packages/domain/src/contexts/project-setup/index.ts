@@ -2,6 +2,7 @@ export * from "./proposal.js";
 export * from "./proposal-areas.js";
 export * from "./source-document.js";
 export * from "./grounding.js";
+export * from "./template-placeholders.js";
 export * from "./proposal-edit.js";
 export * from "./proposal-checks.js";
 export * from "./apply-plan.js";

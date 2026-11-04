@@ -21,7 +21,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       req.container = createContainer({ tenantId: req.tenant.tenantId.toString() });
     });
     instance.addHook("onResponse", async (req) => {
-      await req.container?.prisma.$disconnect();
+      // The client is pooled per tenant and shared with requests in flight: never disconnected here (see createContainer).
+      await req.container?.settleBackgroundWork();
     });
 
     instance.get("/internal/evidence/:id", async (req) => {

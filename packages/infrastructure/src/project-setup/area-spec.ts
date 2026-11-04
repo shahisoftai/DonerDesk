@@ -19,6 +19,8 @@ export interface AreaExtractionSpec {
   parse: ChunkParser;
   merge: ChunkMerger;
   maxTokens?: number;
+  /** This area decides structure (results chain, indicators, work plan): it uses the heavier model when one is set (SETUP_HEAVY_MODEL). */
+  heavy?: boolean;
   /** How much of the document this area reads, in characters (default: SELECTION_BUDGET_CHARS). */
   budgetChars?: number;
   /** Blocks this area never reads (another area owns them: a Gantt chart belongs to the work plan, not the results framework). */

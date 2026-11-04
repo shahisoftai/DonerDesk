@@ -56,6 +56,12 @@ export function detectHeading(raw: string, standsAlone: boolean): Heading | null
   const trimmed = line.trim();
   if (!trimmed || trimmed.length > 140) return null;
   if (/^#\s+\S/.test(trimmed)) return { level: 1, title: trimmed.replace(/^#\s+/, "") };
+  // A Word table row ("1.1 Allocation Window | Standard"): only a numbered label in its first cell is a heading, named without its value.
+  if (trimmed.includes(" | ")) {
+    const first = trimmed.split(" | ")[0]!.trim();
+    const coded = /^([A-Z]{1,2}\d{0,2}(?:\.\d+)+|[A-Z]\.\d+|\d+(?:\.\d+){0,3})\.?\s+(\S.*)$/.exec(first);
+    return coded && shortTitle(coded[2]!, 16) ? { level: codedLevel(coded[1]!), title: `${coded[1]} ${coded[2]}` } : null;
+  }
   const cells = trimmed.split("\t").map((c) => c.trim()).filter(Boolean);
   if (cells.length > 2) return null;
   if (cells.length === 2) {

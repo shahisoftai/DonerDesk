@@ -312,3 +312,24 @@ test("the project area and boundary level are set, cleared and checked", () => {
   assert.equal(applyOperation(d, { kind: "SET_PLACES_SETUP", patch: { boundaryLevel: 7 } }).ok, false);
   assert.ok(gapInbox(evaluateRequirements(cleared, SETUP_REQUIREMENTS)).some((r) => r.key === "places.area"));
 });
+
+test("the documents fill empty Start and reporting answers once, never a person's answer or a rejected reading", async () => {
+  const { prefillFromDocuments, sectorFromText, emptyDraft } = await import("../dist/index.js");
+  const P = (value, status = "PROPOSED") => ({ value, sourceQuote: "q", sourceRef: null, confidence: "HIGH", status });
+  const d = emptyDraft(true);
+  d.proposal.facts = { ...d.proposal.facts, donor: P("CBPF"), countries: P(["Somalia"]), sectors: P(["Water, Sanitation and Hygiene"]) };
+  d.proposal.periods = [P({ type: "SEMI_ANNUAL", start: null, end: null }), P({ type: "FINAL", start: null, end: null }), P({ type: "MONTHLY", start: null, end: null }, "REJECTED")];
+  d.extras.start.country = "Kenya";
+  const { draft, filled } = prefillFromDocuments(d);
+  assert.equal(draft.extras.start.donor, "CBPF");
+  assert.equal(draft.extras.start.country, "Kenya");
+  assert.equal(draft.extras.start.sector, "WASH");
+  assert.equal(draft.extras.schedule.cadence, "SEMI_ANNUAL");
+  assert.deepEqual(draft.extras.schedule.rules.map((r) => r.reportType), ["SEMI_ANNUAL", "FINAL"]);
+  assert.deepEqual(filled, ["donor", "sector", "cadence", "reports"]);
+  assert.equal(prefillFromDocuments(draft).draft, draft, "only once");
+  assert.equal(sectorFromText(["Health", "Education"]), "MULTI_SECTOR");
+  assert.equal(sectorFromText(["Something else"]), null);
+  const blank = emptyDraft(false);
+  assert.equal(prefillFromDocuments(blank).draft, blank, "a draft without documents is untouched");
+});

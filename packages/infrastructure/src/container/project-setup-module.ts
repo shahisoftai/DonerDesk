@@ -27,7 +27,10 @@ export interface ProjectSetupModuleDeps {
   /** Where project documents live: the organisation's own Google Drive. */
   documents: ISetupDocumentStore;
   parseUploadedFile: ParseUploadedFileHandler;
-  llmFor: (tenantId: string) => Promise<ILLMProvider | null>;
+  /** `model` asks for another model than the organisation's own (the structural areas' heavier model). */
+  llmFor: (tenantId: string, model?: string) => Promise<ILLMProvider | null>;
+  /** The model for the areas that decide structure (results chain, indicators, work plan); absent = the organisation's own. */
+  heavyModel?: string | undefined;
   /** The AI service's own refusal text, for the server log only. */
   onProviderError?: (info: { tenantId: string; message: string }) => void;
   runInBackground: BackgroundRunner;
@@ -48,7 +51,7 @@ export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
   const runs: ISetupRunRepository = new PrismaSetupRunRepository(deps.prisma);
   const reader = new StoredSetupDocumentReader(deps.documents, deps.parseUploadedFile);
   const llm: ISetupLlm = new TenantSetupLlm(deps.llmFor, deps.onProviderError);
-  const extractors = deps.extractors ?? withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm));
+  const extractors = deps.extractors ?? withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm, deps.heavyModel));
   const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.concurrency);
   const rerun = new RerunSetupAreaHandler(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.runInBackground);
   const viewer = new DraftViewer(runs, deps.clock);
