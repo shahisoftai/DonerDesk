@@ -153,3 +153,23 @@ The owner's decisions replaced some recommendations: blank sections stay blank a
 | New | `AREAS_OF_SLIDE` held names the API rejects; fixed |
 
 All of it is tested with fakes or recorded replies. Its effect on real accuracy is unmeasured.
+
+## 10. Deployed and live-checked (2026-11-04)
+
+Releases `20261104222528` (all), then API fixes `20261104224942` and `20261104225444`. Commits `89d3987e`, `11c35c43`, `46f45d84`, `9be91364` on `0017-maps-v2`, not pushed. `PLACE_LOOKUP_URL=https://nominatim.openstreetmap.org` is set in `api.env` (dated backup beside it), and OpenStreetMap is listed on `/subprocessors`.
+
+The CBPF proposal was uploaded 5 times through the live wizard with nothing typed, and the results were read on screen:
+
+| Check | Result |
+|---|---|
+| Name, code, dates, currency, summary | 5/5 |
+| Funding 500,000.30 USD | 5/5 |
+| Budget adds up (467,290.00 + PSC 32,710.30) | 4/5. Run 4 showed a duplicated line, fixed in `46f45d84`, and run 5 was correct |
+| One Baidoa place, inside Bay, inside Somalia | 5/5 (once spelled "Baidoa District") |
+| People-reached indicator | 5/5 |
+| Template indicator left out | 4/5. Run 2 kept "Outcome Indicator 1.1 (Custom):.", fixed in `11c35c43` |
+| Blank logframe left empty | 5/5 |
+| Blank work plan section highlighted | 3/3 checked |
+| Place recognised on the web | Correct for Baidoa and Bay. Runs 1–3 matched "Somalia" to a theatre, fixed in `11c35c43` |
+
+Still open: the Results step does not show the blank-section notice for this document's empty results table (the survey assigned non-empty sections too); React #310 still appears on some loads (S9); 5 test drafts remain on the test tenant; donor reads as "CBPF", "CBPF - Somalia" or "SHF".
