@@ -55,3 +55,9 @@ test("too many units are refused", () => {
   const many = Array.from({ length: 25_001 }, (_, i) => ({ ref: `r${i}`, level: 2, name: `P${i}` }));
   assert.equal(planBoundarySeed({ name: "X" }, many, new PlaceRegistry([]), counter()).problems.length, 1);
 });
+
+test("units of the coarsest level asked for are not counted as unplaced: they can only sit under the country", () => {
+  const plan = planBoundarySeed({ name: "Uganda" }, [{ ref: "a", level: 2, name: "Abim", code: "UG3064" }, { ref: "b", level: 2, name: "Agago", code: "UG3066" }], new PlaceRegistry([]), counter());
+  assert.equal(plan.underCountry, 0);
+  assert.equal(plan.create.filter((p) => p.adminLevel === 2).length, 2);
+});

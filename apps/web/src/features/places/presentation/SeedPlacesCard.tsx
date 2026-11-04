@@ -75,7 +75,7 @@ export function SeedPlacesCard() {
           </label>
         ))}
       </div>
-      {country && <p className="text-xs text-slate-500">{attributionLine(country)}</p>}
+      {country && <p className="text-xs text-slate-500">{attributionLine(country, [...levels].reverse().find((l) => l > 1) as BoundaryLevel | undefined)}</p>}
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="secondary" disabled={!hydrated || busy || !country || levels.length === 0} onClick={() => run(false)}>{busy ? "Checking…" : "See what would be added"}</Button>
         {preview && !preview.applied && preview.problems.length === 0 && total > 0 && <Button type="button" disabled={!hydrated || busy} onClick={() => run(true)}>Add {total} places</Button>}

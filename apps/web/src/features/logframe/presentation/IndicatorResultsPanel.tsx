@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { buildChart } from "@donordesk/domain/contexts/reporting/chart-render.js";
+import { forScreen } from "@donordesk/domain/contexts/reporting/chart-screen.js";
 import type { PlaceItem, PlaceResults } from "@/lib/server/schemas-places";
 import { MapExplorer } from "@/features/maps/presentation/MapExplorer";
 import { StudioChart, type ChartExport } from "@/features/charts/presentation/StudioChart";
@@ -28,7 +29,9 @@ export function IndicatorResultsPanel({ projectId, indicatorId, places, initial,
   const { dataset, error } = useIndicatorDataset(projectId, indicatorId, spec);
   const built = useMemo(() => (spec && dataset ? buildChart(spec, dataset) : null), [spec, dataset]);
   const label = periods.find((p) => p.id === periodId)?.label ?? null;
-  const option = useMemo(() => (built?.ok && built.render === "ECHART" ? highlightPeriod(built.option as Record<string, unknown>, label) : null), [built, label]);
+  // On screen the chart does not repeat its long title inside the picture (the column is narrow); the indicator's name is the line under the heading.
+  const screen = useMemo(() => (built?.ok && built.render === "ECHART" ? forScreen(built.option as Record<string, unknown>) : null), [built]);
+  const option = useMemo(() => (screen ? highlightPeriod(screen.option, label) : null), [screen, label]);
 
   return (
     <section className="card mt-4 space-y-3" aria-label={t("indicatorResults.title")} data-testid="indicator-results">
@@ -39,7 +42,7 @@ export function IndicatorResultsPanel({ projectId, indicatorId, places, initial,
       <div className="grid gap-4 lg:grid-cols-2">
         <MapExplorer projectId={projectId} places={places} initial={initial} periods={periods} compact lockedIndicatorId={indicatorId} periodId={periodId} onPeriodChange={setPeriodId} />
         <figure className="space-y-2" aria-label={t("indicatorResults.chartTitle")} data-marked-period={option && label ? label : ""}>
-          <figcaption className="text-sm font-medium">{t("indicatorResults.chartTitle")}</figcaption>
+          <figcaption className="text-sm font-medium">{t("indicatorResults.chartTitle")}{screen?.subtitle && <span className="block text-xs font-normal text-slate-500">{screen.subtitle}</span>}</figcaption>
           {error ? <p role="status" className="text-sm text-slate-600 dark:text-slate-300">{error}</p>
             : !built ? <p role="status" className="text-sm text-slate-500">{t("tile.loading")}</p>
             : !built.ok ? <p role="status" className="text-sm text-slate-600 dark:text-slate-300">{built.reason}</p>

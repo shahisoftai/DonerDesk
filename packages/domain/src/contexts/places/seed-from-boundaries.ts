@@ -24,7 +24,7 @@ export interface SeedUnit {
 export interface BoundarySeedPlan {
   create: PlaceRecord[];
   skipped: number;
-  /** Units placed directly under the country because no parent could be told. */
+  /** Units finer than the coarsest level asked for that sit directly under the country because no parent could be told. */
   underCountry: number;
   problems: string[];
 }
@@ -53,11 +53,13 @@ export function planBoundarySeed(country: { name: string }, units: readonly Seed
   }
 
   const byCode = new Map(existing.filter((p) => p.code && !p.archived).map((p) => [codeKey(p.code), p] as const));
+  // The coarsest level asked for can only sit under the country, so it is never counted as "could not be placed".
+  const coarsest = units.reduce((m, u) => Math.min(m, u.level), 4);
   // Parents first: a finer level never precedes a coarser one.
   for (const unit of [...units].sort((a, b) => a.level - b.level)) {
     const hit = unit.code ? byCode.get(codeKey(unit.code)) : undefined;
     let parentId = (unit.parentRef ? idByRef.get(unit.parentRef) : undefined);
-    if (!parentId) { parentId = countryId; if (unit.level > 1) underCountry += 1; }
+    if (!parentId) { parentId = countryId; if (unit.level > coarsest) underCountry += 1; }
     const sameName = hit ?? [...existing, ...created].find((p) => !p.archived && (p.parentId ?? "") === parentId && placeKeys(p).includes(normalizeLocationKey(unit.name)));
     if (sameName) { idByRef.set(unit.ref, sameName.id); skipped += 1; continue; }
     const id = newId();
