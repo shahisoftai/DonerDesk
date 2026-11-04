@@ -32,6 +32,13 @@ export const SETUP_REPAIR_RULES: ReadonlyArray<(p: ProjectSetupProposal) => Setu
 export const setupRepairs = (p: ProjectSetupProposal): SetupRepair[] => SETUP_REPAIR_RULES.flatMap((rule) => rule(p) ?? []);
 
 const itemKey = (item: unknown): string => JSON.stringify((item as { value?: unknown }).value ?? null).toLowerCase();
+const quoteOf = (item: unknown): string => String((item as { sourceQuote?: unknown }).sourceQuote ?? "").replace(/\s+/g, " ").trim().toLowerCase();
+
+/** The same row read twice, perhaps named a little differently ("G.1 Estimate…" and "Estimate…"): one quote holds the other. */
+const sameRow = (a: unknown, b: unknown): boolean => {
+  const [x, y] = [quoteOf(a), quoteOf(b)];
+  return x.length > 0 && y.length > 0 && (x.includes(y) || y.includes(x));
+};
 
 /** The fields with the second look's new items added after the first look's; nothing already read changes. */
 export function addOnlyNew(current: Readonly<Record<string, unknown>>, again: Readonly<Record<string, unknown>>): Record<string, unknown> {
@@ -40,7 +47,7 @@ export function addOnlyNew(current: Readonly<Record<string, unknown>>, again: Re
     const had = current[field];
     if (!Array.isArray(had) || !Array.isArray(value)) continue;
     const seen = new Set(had.map(itemKey));
-    out[field] = [...had, ...value.filter((v) => !seen.has(itemKey(v)))];
+    out[field] = [...had, ...value.filter((v) => !seen.has(itemKey(v)) && !had.some((h) => sameRow(h, v)))];
   }
   return out;
 }
