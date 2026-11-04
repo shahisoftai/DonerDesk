@@ -346,3 +346,18 @@ test("resolveSitePoint reads another transliteration of the same town as that to
   assert.equal(resolveSitePoint("Bur Sudan", "Sudan")?.name, "Port Sudan");
   assert.equal(resolveSitePoint("Sinja", "Sudan"), null);
 });
+
+test("places chosen from the list plot at their own pins, each one a site, and win over the typed words", () => {
+  const data = siteMapData([
+    row({ id: "m", title: "Mobile clinic", location: "Somewhere typed", places: [{ id: "p1", name: "Gulu clinic", latitude: 2.77, longitude: 32.3 }, { id: "p2", name: "Kitgum clinic", latitude: 3.28, longitude: 32.88 }] }),
+  ]);
+  assert.deepEqual(data.points.map((p) => p.name).sort(), ["Gulu clinic", "Kitgum clinic"]);
+  assert.equal(data.unplaced.length, 0);
+  assert.ok(data.points.every((p) => p.items.some((i) => i.id === "m")));
+});
+
+test("a chosen place with no pin is not guessed at: the typed words are used as before", () => {
+  const data = siteMapData([row({ id: "n", location: "Gulu", places: [{ id: "p3", name: "Some area" }] })]);
+  assert.equal(data.points.length, 1);
+  assert.equal(data.points[0]!.name.toLowerCase().includes("gulu"), true);
+});

@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { registerParseFileRoute } from "./parse-file.js";
 import {
   AssignPlannedActivitySchema, ImportWorkPlanSchema, SetWorkPlanningVisibilitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ListWorkPlanQuerySchema,
-  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, SetAutomationRuleSettingsSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, ChangeActivityPeopleSchema, CompletePlannedActivitySchema,
+  ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, UpdatePlannedActivitySchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, SetAutomationRuleSettingsSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SetPlanPlacesSchema, SaveProgressSchema, ChangeActivityPeopleSchema, CompletePlannedActivitySchema,
 } from "@donordesk/contracts";
 
 /**
@@ -220,6 +220,19 @@ export async function registerWorkPlanRoutes(app: FastifyInstance) {
   app.put("/v1/work-plan/:itemId/indicators", async (req) => {
     const body = SetPlanIndicatorsSchema.parse(req.body);
     const r = await req.container.handlers.setPlanIndicators.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.get("/v1/work-plan/:itemId/places", async (req) => {
+    const r = await req.container.handlers.getPlanPlaces.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/work-plan/:itemId/places", async (req) => {
+    const body = SetPlanPlacesSchema.parse(req.body);
+    const r = await req.container.handlers.setPlanPlaces.handle({ tenant: req.tenant, requestId: req.id }, idOf(req, "itemId"), body);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

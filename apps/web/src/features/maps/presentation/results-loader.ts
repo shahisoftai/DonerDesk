@@ -15,4 +15,11 @@ export interface ExplorerProps {
   loadResults?: PlaceResultsLoader | undefined;
   /** The data is a fixed snapshot (a share link): no drilling and no side-by-side periods. */
   staticData?: boolean | undefined;
+  /** Planned activities naming each place directly (place id to count), for the place tree beside the map. */
+  activityCounts?: Readonly<Record<string, number>> | undefined;
+  /** Show only this indicator (the indicator's own page): the indicator list is not offered. */
+  lockedIndicatorId?: string | undefined;
+  /** The period is held by the page around the map (so a chart beside it can follow). Omit both to let the map keep its own. */
+  periodId?: string | null | undefined;
+  onPeriodChange?: ((periodId: string | null) => void) | undefined;
 }

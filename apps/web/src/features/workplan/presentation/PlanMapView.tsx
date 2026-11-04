@@ -19,7 +19,7 @@ export default function PlanMapView({ projectId, rows, risks, country, mapLayerU
   const data = useMemo(
     () =>
       siteMapData(
-        rows.map((r) => ({ id: r.id, title: r.title, location: r.location, latitude: r.latitude, longitude: r.longitude, signal: r.signal })),
+        rows.map((r) => ({ id: r.id, title: r.title, location: r.location, latitude: r.latitude, longitude: r.longitude, places: r.places, signal: r.signal })),
         { risks, country },
       ),
     [rows, risks, country],

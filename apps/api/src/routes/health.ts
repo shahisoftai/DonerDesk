@@ -61,6 +61,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Place", field: "adminLevel" },
   { model: "Place", field: "geometryKind" },
   { model: "TenantBoundaryLayer", field: "adminLevel" },
+  { model: "PlannedActivityPlace", field: "placeId" },
   { model: "Indicator", field: "formulaJson" },
   { model: "ReportingPeriod", field: "entryClosesOn" },
   { model: "ApiKey", field: "tokenHash" },

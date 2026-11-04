@@ -1,13 +1,13 @@
 "use server";
 
-import { CreatePlaceSchema, ImportPlacesSchema, UpdatePlaceSchema } from "@donordesk/contracts";
+import { CreatePlaceSchema, ImportPlacesSchema, SeedPlacesFromBoundariesSchema, UpdatePlaceSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
-import { PlaceGeometrySchema, PlaceImportPreviewSchema, PlaceResultsSchema, SetGeometryResultSchema, type PlaceGeometryDto, type PlaceImportPreview, type PlaceResults } from "@/lib/server/schemas-places";
+import { PlaceGeometrySchema, PlaceImportPreviewSchema, SeedPlacesPreviewSchema, type SeedPlacesPreview, PlaceResultsSchema, SetGeometryResultSchema, type PlaceGeometryDto, type PlaceImportPreview, type PlaceResults } from "@/lib/server/schemas-places";
 
 const invalid = (error: { issues: unknown[] } & Parameters<typeof flattenZodFields>[0]) => ({
   ok: false as const,
@@ -65,4 +65,12 @@ export async function clearPlaceGeometryAction(placeId: string): Promise<Result<
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/places/${encodeURIComponent(placeId)}/geometry`, OkResponseSchema, context.token, { method: "DELETE" });
   return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** A country's places from its built-in boundaries. `apply: false` only counts; nothing is saved until the person confirms. */
+export async function seedPlacesFromBoundariesAction(input: unknown): Promise<Result<SeedPlacesPreview, AppError>> {
+  const context = await requireSession();
+  const parsed = SeedPlacesFromBoundariesSchema.safeParse(input);
+  if (!parsed.success) return invalid(parsed.error);
+  return gatewayRequest("/v1/places/seed-boundaries", SeedPlacesPreviewSchema, context.token, { method: "POST", body: parsed.data });
 }

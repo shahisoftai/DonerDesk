@@ -14,6 +14,8 @@ import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { RequiredFilesEditor } from "@/features/workplan/presentation/RequiredFilesEditor";
 import { DependencyEditor } from "@/features/workplan/presentation/DependencyEditor";
 import { LogframeLinkEditor } from "@/features/workplan/presentation/LogframeLinkEditor";
+import { ActivityPlaces } from "@/features/workplan/presentation/ActivityPlaces";
+import { PlanPlacesSchema, PlaceListSchema } from "@/lib/server/schemas-places";
 import { LocationEditor } from "@/features/workplan/presentation/LocationEditor";
 import { EffortEditor } from "@/features/workplan/presentation/EffortEditor";
 import { PlanItemFields } from "@/features/workplan/presentation/PlanItemFields";
@@ -44,6 +46,8 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
   const progress = await gatewayRequest(`/v1/work-plan/${itemId}/progress`, ProgressResponseSchema, data.ctx.token);
   const logframe = await gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, data.ctx.token);
   const activityPeople = await gatewayRequest(`/v1/work-plan/${itemId}/people`, ActivityPeopleSchema, data.ctx.token);
+  const planPlaces = await gatewayRequest(`/v1/work-plan/${itemId}/places`, PlanPlacesSchema, data.ctx.token);
+  const placeList = await gatewayRequest("/v1/places", PlaceListSchema, data.ctx.token);
   const row = plan.value.items.find((r) => r.id === itemId);
   if (!row) notFound();
 
@@ -96,6 +100,7 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
       <RequiredFilesEditor itemId={row.id} title={row.title} required={row.requiredFiles} stillNeeded={row.stillNeeded} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
       {logframe.ok && <LogframeLinkEditor itemId={row.id} current={row.logframeActivityId} options={logframe.value.items.filter((i) => i.level === "ACTIVITY").map((i) => ({ id: i.id, label: `${i.code ?? ""} ${i.title}`.trim() }))} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />}
       <LocationEditor itemId={row.id} location={row.location} latitude={row.latitude} longitude={row.longitude} country={data.country} customLayerUrl="/api/organization/map-layer/data" canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
+      {planPlaces.ok && <ActivityPlaces itemId={row.id} linked={planPlaces.value.places} choices={placeList.ok ? placeList.value.places.filter((p) => !p.archived).map((p) => ({ id: p.id, name: p.name, path: p.path })) : []} canEdit={canActOnPlanItem(actor, people, "EDIT_NOTES") && row.status !== "CANCELLED"} />}
       <EffortEditor itemId={row.id} current={row.effort} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />
 
       <DependencyEditor itemId={row.id} after={row.comesAfter} before={row.comesBefore} options={dependencyOptions(row.id, plan.value.items)} canEdit={canActOnPlanItem(actor, people, "EDIT") && row.status !== "CANCELLED"} />

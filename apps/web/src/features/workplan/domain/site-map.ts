@@ -153,6 +153,8 @@ export interface SitePointInput {
   /** A hand-placed place (both together): plotted directly, no name matching (Phase 30.1). */
   latitude?: number | undefined;
   longitude?: number | undefined;
+  /** Places from the places list the activity names (phase 42.1); those with a pin are plotted where the pin is. */
+  places?: ReadonlyArray<{ id: string; name: string; latitude?: number | undefined; longitude?: number | undefined }> | undefined;
   signal: DeliverySignal;
 }
 
@@ -209,6 +211,22 @@ export function siteMapData(
   const pointOf = new Map<string, SiteMapPoint>();
 
   for (const row of rows) {
+    // Places chosen from the list win over the typed words: each one with a pin is a site of its own (an area without a pin is not guessed at).
+    const pinnedPlaces = (row.places ?? []).filter((p) => isValidCoordinate(p.latitude, p.longitude));
+    if (pinnedPlaces.length > 0) {
+      for (const place of pinnedPlaces) {
+        const key = `pin:${place.latitude!.toFixed(3)}|${place.longitude!.toFixed(3)}`;
+        let point = byPlace.get(key);
+        if (!point) {
+          point = { name: place.name, lat: place.latitude!, lng: place.longitude!, worst: row.signal, items: [], risks: [] };
+          byPlace.set(key, point);
+        }
+        point.items.push({ id: row.id, title: row.title, signal: row.signal });
+        point.worst = worstOf(point.items.map((i) => i.signal));
+        pointOf.set(row.id, point);
+      }
+      continue;
+    }
     if (isValidCoordinate(row.latitude, row.longitude)) {
       // Hand-placed: plotted exactly where the officer put it, under the words they typed.
       const key = `pin:${row.latitude!.toFixed(3)}|${row.longitude!.toFixed(3)}`;

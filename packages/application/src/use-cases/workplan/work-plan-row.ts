@@ -25,6 +25,8 @@ export interface WorkPlanRowDto {
   /// A hand-placed place when no gazetteer name matches (both together, Phase 30.1).
   latitude?: number;
   longitude?: number;
+  /** Places from the places list this activity names (phase 42.1); `latitude`/`longitude` are the place's own pin when it has one. */
+  places?: Array<{ id: string; name: string; latitude?: number; longitude?: number }>;
   targetCount?: number;
   /** How heavy it is for its lead, 1 to 5 (1 when not set). */
   effort: number;

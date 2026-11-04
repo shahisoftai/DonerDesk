@@ -10,6 +10,7 @@ import { BoundaryLayersCard } from "@/features/settings/presentation/BoundaryLay
 import { MapWidget } from "@/features/dashboards/presentation/MapWidget";
 import { ShareLinkProvider } from "@/features/dashboards/presentation/ShareLinkContext";
 import { SiteMap } from "@/features/maps/presentation/SiteMap";
+import { IndicatorResultsPanel } from "@/features/logframe/presentation/IndicatorResultsPanel";
 import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
 import { isLocale } from "@/features/i18n/domain/locales";
 import { fixturePlaces, fixtureResults } from "./fixture";
@@ -61,6 +62,9 @@ function SharedMap() {
   return link ? <ShareLinkProvider value={{ token: TOKEN }}>{body}</ShareLinkProvider> : body;
 }
 const SITE = { name: "Gulu", province: "Northern", country: "Uganda", lat: 2.77, lng: 32.3, worst: "LATE" as const, risks: ["Road washed out"], items: [{ id: "a", title: "Train staff", signal: "LATE" as const }, { id: "b", title: "Survey", signal: "DONE" as const }] };
+function IndicatorResults() {
+  return <div style={{ padding: 16, maxWidth: 1200 }}><IndicatorResultsPanel projectId="p1" indicatorId="i1" places={fixturePlaces} initial={fixtureResults} periods={[{ id: "p1", label: "January" }, { id: "p2", label: "February" }, { id: "p3", label: "March" }]} /></div>;
+}
 function Sites() {
   return <div style={{ padding: 16, maxWidth: 800 }}><SiteMap points={[SITE]} country="Uganda" caption="Where we work" /></div>;
 }
@@ -69,9 +73,9 @@ const page = new URLSearchParams(window.location.search).get("page");
 const asked = new URLSearchParams(window.location.search).get("locale");
 createRoot(document.getElementById("root")!).render(
   <I18nProvider initialLocale={isLocale(asked) ? asked : "en"}>
-  {page === "marker" ? <Marker /> : page === "shared-map" ? <SharedMap /> : page === "sites" ? <Sites /> : page === "drawer" ? <Drawer /> : page === "boundary-card" ? <BoundaryCard /> : page === "editor" ? <Editor /> : (
+  {page === "marker" ? <Marker /> : page === "shared-map" ? <SharedMap /> : page === "sites" ? <Sites /> : page === "indicator-results" ? <IndicatorResults /> : page === "drawer" ? <Drawer /> : page === "boundary-card" ? <BoundaryCard /> : page === "editor" ? <Editor /> : (
     <div style={{ padding: 16, maxWidth: 1100 }}>
-      <MapExplorer projectId="p1" places={fixturePlaces} initial={fixtureResults} periods={new URLSearchParams(window.location.search).get("periods") ? [{ id: "p1", label: "January" }, { id: "p2", label: "February" }] : []} />
+      <MapExplorer projectId="p1" places={fixturePlaces} initial={fixtureResults} activityCounts={{ clinic: 3, gulu: 1 }} periods={new URLSearchParams(window.location.search).get("periods") ? [{ id: "p1", label: "January" }, { id: "p2", label: "February" }] : []} />
     </div>
   )}
   </I18nProvider>

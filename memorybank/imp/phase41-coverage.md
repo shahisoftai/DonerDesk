@@ -6,11 +6,11 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 
 | Level | Countries | Made by |
 |---|---|---|
-| districts (admin 2) | 130 | OCHA COD-AB: 92; geoBoundaries (credit not yet recorded per file): 38 |
-| sub-districts (admin 3) | 63 | OCHA COD-AB: 48; geoBoundaries (credit not yet recorded per file): 15 |
-| wards, parishes, communes (admin 4) | 25 | geoBoundaries (credit not yet recorded per file): 16; OCHA COD-AB: 9 |
+| districts (admin 2) | 130 | OCHA COD-AB: 92; geoBoundaries: 38 |
+| sub-districts (admin 3) | 63 | OCHA COD-AB: 48; geoBoundaries: 15 |
+| wards, parishes, communes (admin 4) | 25 | geoBoundaries: 16; OCHA COD-AB: 9 |
 
-139 countries in the catalogue. 29 files are share-alike (ODbL or CC BY-SA): they ship with their credit and an offered derived copy (see `/maps/sources`).
+139 countries in the catalogue. 23 files are share-alike (ODbL or CC BY-SA): they ship with their credit and an offered derived copy (see `/maps/sources`).
 
 ## wards, parishes, communes (admin 4)
 
@@ -20,11 +20,11 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 | Bangladesh (BGD) | 5160 | Bangladesh Bureau of Statistics, OCHA ROAP | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2020 |  |
 | Belgium (BEL) | 589 | Namur Capitale, Statistics Belgium | Creative Commons Attribution 4.0 International (CC BY 4.0) | 2018 |  |
 | Czechia (CZE) | 13090 | OpenStreetMap, Wambacher | Creative Commons Attribution-ShareAlike 2.0 | 2017 | yes |
-| Fiji (FJI) | 1597 | SOPAC, Fiji Islands Bureau of Statistics, PacGeo | Open Data Commons Open Database License 1.0 | 2017 | yes |
+| Fiji (FJI) | 1597 | Pacific Data Hub | Creative Commons Attribution 4.0 (CC BY 4.0) | 2007 |  |
 | France (FRA) | 2054 | OpenStreetMap, Data.gouv.fr (http//data.gouv.fr) | Open Data Commons Open Database License 1.0 | 2015 | yes |
 | Guadeloupe (GLP) | 32 | Institut national de l'information géographique et forestière (IGN-F) | Etalab Open License 2.0 | 2022 |  |
-| India (IND) | 7143 | Pathways Data Pvt. Ltd., lgdirectory.gov.in | Open Data Commons Open Database License 1.0 | 2018 | yes |
-| Iran (Islamic Republic of) (IRN) | 2772 | OpenStreetMap, Wambacher | Open Data Commons Open Database License 1.0 | 2017 | yes |
+| India (IND) | 7143 | Pathways Data Pvt. Ltd., lgdirectory.gov.in | Open Data Commons Open Database License 1.0 | 2019 | yes |
+| Iran (Islamic Republic of) (IRN) | 2772 | Open Street Map | Creative Commons Attribution-ShareAlike 2.0 | 2021 | yes |
 | Italy (ITA) | 7901 | ISTAT, National Institute of Statistics | Creative Commons Attribution 3.0 License | 2023 |  |
 | Madagascar (MDG) | 17332 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2018 |  |
 | Martinique (MTQ) | 34 | Institut national de l'information géographique et forestière (IGN-F) | Etalab Open License 2.0 | 2022 |  |
@@ -60,7 +60,7 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 | Central African Republic (CAF) | 175 | Agency for Technical Cooperation and Development (ACTED), OCHA Central African Republic | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2018 |  |
 | Chile (CHL) | 345 | La Biblioteca del Congreso Nacional de Chile (BCN), OCHA ROLAC | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2020 |  |
 | Comoros (COM) | 55 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2019 |  |
-| Costa Rica (CRI) | 459 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2024 |  |
+| Costa Rica (CRI) | 490 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2024 |  |
 | Côte d'Ivoire (CIV) | 510 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2018 |  |
 | Democratic Republic of the Congo (COD) | 513 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2019 |  |
 | Dominican Republic (DOM) | 155 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2021 |  |
@@ -82,7 +82,7 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 | Malawi (MWI) | 405 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2023 |  |
 | Malaysia (MYS) | 1859 | Wikimedia Commons, geoBoundaries | Creative Commons Attribution 4.0 (CC BY 4.0) | 2021 |  |
 | Mali (MLI) | 701 | DNCT - Direction Nationale des Colelctivités Territorielles, DNP - Direction Nationale de la Population, United Nations Office for the Coordination of Humanitarian Affairs, Mali | Creative Commons Attribution 4.0 International (CC BY 4.0) | 2017 |  |
-| Mozambique (MOZ) | 455 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2025 |  |
+| Mozambique (MOZ) | 457 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2025 |  |
 | Myanmar (MMR) | 326 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2024 |  |
 | Nepal (NPL) | 775 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2024 |  |
 | Niger (NER) | 266 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2023 |  |
@@ -115,15 +115,15 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 | Country | Units | Made by | Licence | Year | Share-alike |
 |---|---:|---|---|---|---|
 | Afghanistan (AFG) | 457 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2026 |  |
-| Albania (ALB) | 37 | OpenStreetMap, Wambacher | Open Data Commons Open Database License 1.0 | 2013 | yes |
-| Algeria (DZA) | 48 | Open Street Map | Creative Commons Attribution-ShareAlike 2.0 | 2021 | yes |
+| Albania (ALB) | 37 | geoBoundaries, Albania districts blank 2.svg | Creative Commons Attribution 2.5 Generic | 2021 |  |
+| Algeria (DZA) | 48 | geoBoundaries, Wikimedia Commons | Public Domain | 2012 |  |
 | Angola (AGO) | 161 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2018 |  |
 | Argentina (ARG) | 525 | Instituto Geografico Nacional and UNHCR, OCHA ROLAC | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2020 |  |
 | Armenia (ARM) | 39 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2023 |  |
 | Azerbaijan (AZE) | 79 | Wikipedia | Creative Commons Attribution-ShareAlike 3.0 Unported | 2020 | yes |
 | Bangladesh (BGD) | 64 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2023 |  |
 | Belarus (BLR) | 119 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2022 |  |
-| Benin (BEN) | 77 | uMap, Open Street Map | Open Data Commons Open Database License 1.0 | 2021 | yes |
+| Benin (BEN) | 77 | Map Maker Ltd., Stanford earthworks | Public Domain | 2007 |  |
 | Bhutan (BTN) | 205 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2020 |  |
 | Bolivia (Plurinational State of) (BOL) | 112 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2024 |  |
 | Bosnia and Herzegovina (BIH) | 12 | Wikimedia Commons | Public Domain | 2013 |  |
@@ -137,7 +137,7 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 | Cameroon (CMR) | 58 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2019 |  |
 | Central African Republic (CAF) | 85 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2024 |  |
 | Chad (TCD) | 70 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2025 |  |
-| Chile (CHL) | 56 | La Biblioteca del Congreso Nacional de Chile (BCN), OCHA ROLAC | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2020 | yes |
+| Chile (CHL) | 56 | OpenStreetMap, Wambacher | Open Data Commons Open Database License 1.0 | 2017 | yes |
 | Colombia (COL) | 1122 | Departamento Administrativo Nacional de Estadistica | Creative Commons Attribution 4.0 International (CC BY 4.0) | 2020 |  |
 | Comoros (COM) | 17 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2019 |  |
 | Congo (COG) | 89 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2019 |  |
@@ -155,7 +155,7 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 | Eritrea (ERI) | 58 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2020 |  |
 | Eswatini (SWZ) | 55 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2021 |  |
 | Ethiopia (ETH) | 107 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2025 |  |
-| Fiji (FJI) | 15 | SOPAC, Fiji Islands Bureau of Statistics, PacGeo | Open Data Commons Open Database License 1.0 | 2017 | yes |
+| Fiji (FJI) | 15 | pacificdata.org | Creative Commons Attribution 4.0 (CC BY 4.0) | 2020 |  |
 | Gabon (GAB) | 48 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2026 |  |
 | Gambia (GMB) | 47 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2022 |  |
 | Georgia (GEO) | 70 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2019 |  |
@@ -166,7 +166,7 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 | Haiti (HTI) | 140 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2018 |  |
 | Honduras (HND) | 298 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2016 |  |
 | Hungary (HUN) | 195 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2022 |  |
-| India (IND) | 735 | Pathways Data Pvt. Ltd., lgdirectory.gov.in | Open Data Commons Open Database License 1.0 | 2018 | yes |
+| India (IND) | 735 | Pathways Data Pvt. Ltd., lgdirectory.gov.in | Open Data Commons Open Database License 1.0 | 2021 | yes |
 | Indonesia (IDN) | 519 | Badan Pusat Statistik (BPS - Statistics Indonesia), World Food Programme, OCHA ROAP | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2020 |  |
 | Iran (Islamic Republic of) (IRN) | 429 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2019 |  |
 | Iraq (IRQ) | 101 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2019 |  |
@@ -236,7 +236,7 @@ Generated 2026-11-03 from `apps/web/public/geo/manifest.json` by `apps/web/scrip
 | Tuvalu (TUV) | 34 | Pacific Data Hub | Creative Commons Attribution 4.0 International (CC BY 4.0) | 2017 |  |
 | Uganda (UGA) | 135 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2020 |  |
 | Ukraine (UKR) | 139 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2025 |  |
-| United Republic of Tanzania (TZA) | 170 | OpenStreetMap | Open Data Commons Open Database License 1.0 | 2015 | yes |
+| United Republic of Tanzania (TZA) | 170 | Tanzania National Bureau of Statistics / UN OCHA ROSA, OCHA ROSA | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2021 |  |
 | Uzbekistan (UZB) | 199 | OCHA ROCCA | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2020 |  |
 | Vanuatu (VUT) | 65 | Secretarial of the Pacific Community (SPC), Statistics for Development Division, OCHA ROP | Creative Commons Attribution 3.0 Intergovernmental Organisations (CC BY 3.0 IGO) | 2019 |  |
 | Venezuela (Bolivarian Republic of) (VEN) | 336 | OCHA COD-AB | Creative Commons Attribution for Intergovernmental Organisations (CC BY-IGO) | 2021 |  |

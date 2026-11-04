@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { buildChart, datasetQueryFor } from "@donordesk/domain/contexts/reporting/chart-render.js";
+import { buildChart } from "@donordesk/domain/contexts/reporting/chart-render.js";
 import { breakdownPie } from "@donordesk/domain/contexts/reporting/breakdown-chart.js";
-import type { DatasetResult } from "@donordesk/domain/contexts/reporting/dataset-query.js";
-import { resolveChartDatasetAction } from "@/lib/actions/charts";
+import { useIndicatorDataset } from "./useIndicatorDataset";
 import { StudioChart, type ChartExport } from "@/features/charts/presentation/StudioChart";
 import { INDICATOR_VIEWS, indicatorViewSpec, type IndicatorView } from "../domain/indicator-views";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
@@ -14,24 +13,11 @@ import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 export function IndicatorViews({ projectId, indicatorId }: { projectId: string; indicatorId: string }) {
   const { t } = useI18n();
   const [view, setView] = useState<IndicatorView>("TARGET");
-  const [dataset, setDataset] = useState<DatasetResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const exportRef = useRef<ChartExport | null>(null);
   // The group view is a pie of the recorded split, drawn by `breakdownPie` from the same dataset as the over-time view.
   const spec = useMemo(() => indicatorViewSpec(view === "BY_GROUP" ? "OVER_TIME" : view, indicatorId), [view, indicatorId]);
 
-  useEffect(() => {
-    if (!spec) return;
-    let live = true;
-    setDataset(null); setError(null);
-    void resolveChartDatasetAction(projectId, datasetQueryFor(spec, [indicatorId])).then((r) => {
-      if (!live) return;
-      if (!r.ok) setError(r.error.message);
-      else if ("unavailable" in r.value) setError(r.value.unavailable);
-      else setDataset(r.value.dataset as unknown as DatasetResult);
-    });
-    return () => { live = false; };
-  }, [spec, projectId, indicatorId]);
+  const { dataset, error } = useIndicatorDataset(projectId, indicatorId, spec);
 
   const built = useMemo(() => {
     if (!spec || !dataset) return null;

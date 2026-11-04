@@ -17,7 +17,7 @@ export async function loadPortfolioMap(token: string, projects: ReadonlyArray<{ 
   const failed: PortfolioMapData["notOnMap"] = [];
   for (const { p, plan } of loaded) {
     if (!plan.ok) { failed.push({ projectId: p.projectId, title: p.title, reason: "Its plan could not be read just now" }); continue; }
-    ready.push({ ...p, rows: plan.value.items.map((r) => ({ id: r.id, title: r.title, location: r.location, latitude: r.latitude, longitude: r.longitude, signal: r.signal })) });
+    ready.push({ ...p, rows: plan.value.items.map((r) => ({ id: r.id, title: r.title, location: r.location, latitude: r.latitude, longitude: r.longitude, places: r.places, signal: r.signal })) });
   }
   const data = portfolioMapData(ready);
   const beyondCap = projects.slice(cap).map((p) => ({ projectId: p.projectId, title: p.title, reason: "Not read (only the first projects are drawn on Home)" }));

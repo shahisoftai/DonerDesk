@@ -1704,6 +1704,21 @@ model Beneficiary {
 }
 
 /// An indicator a planned activity reports on. Its breakdown fields are shown in the progress log.
+/// A place (from the organisation's places list) a planned activity takes place in. An activity may have several; the text `location` on the activity stays as typed.
+model PlannedActivityPlace {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  placeId           String
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  @@unique([plannedActivityId, placeId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, placeId])
+}
+
 model PlannedActivityIndicator {
   id                String   @id
   tenantId          String

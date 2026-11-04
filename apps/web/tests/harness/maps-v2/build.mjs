@@ -13,6 +13,7 @@ export function harnessAlias() {
     "@/lib/actions/map-widgets": join(here, "stubs/actions-map-widgets.ts"),
     "@/lib/actions/org": join(here, "stubs/actions-org.ts"),
     "@/lib/actions/map-overlays": join(here, "../maps-extras/stubs/actions-map-overlays.ts"),
+    "@/lib/actions/charts": join(here, "stubs/actions-charts.ts"),
     "next/navigation": join(here, "stubs/navigation.ts"),
     "next/link": join(here, "../maps-extras/stubs/link.tsx"),
     "@": join(web, "src"),

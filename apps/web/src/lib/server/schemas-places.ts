@@ -95,3 +95,17 @@ export const PlaceGeometrySchema = z.object({
 });
 export type PlaceGeometryDto = z.infer<typeof PlaceGeometrySchema>;
 export const SetGeometryResultSchema = z.object({ kind: z.enum(["POLYGON", "LINE"]), vertices: z.number().int() });
+
+/** The places an activity names (phase 42.1), in the order chosen, with where each sits. */
+export const PlanPlacesSchema = z.object({ places: z.array(z.object({ id: z.string(), name: z.string(), path: z.string(), archived: z.boolean() })) });
+export type PlanPlaces = z.infer<typeof PlanPlacesSchema>;
+
+/** What a boundary seed would create (or created): by level, with what was skipped or sits directly under the country. */
+export const SeedPlacesPreviewSchema = z.object({
+  createdByLevel: z.record(z.string(), z.number().int()),
+  skipped: z.number().int(),
+  underCountry: z.number().int(),
+  problems: z.array(z.string()),
+  applied: z.boolean(),
+});
+export type SeedPlacesPreview = z.infer<typeof SeedPlacesPreviewSchema>;

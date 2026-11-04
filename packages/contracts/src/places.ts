@@ -76,3 +76,17 @@ export const UploadBoundaryLayerFieldsSchema = z.object({
   parentPcodeField: z.string().trim().max(120).optional(),
 });
 export type UploadBoundaryLayerFields = z.infer<typeof UploadBoundaryLayerFieldsSchema>;
+
+/** A country's built-in boundary units, sent by the browser that holds the boundary files (phase 42.2). */
+export const SeedPlacesFromBoundariesSchema = z.object({
+  country: z.object({ name: z.string().trim().min(1).max(120) }).strict(),
+  units: z.array(z.object({
+    ref: z.string().min(1).max(80),
+    parentRef: z.string().min(1).max(80).optional(),
+    level: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+    name: z.string().trim().min(1).max(120),
+    code: z.string().trim().min(1).max(40).optional(),
+  }).strict()).max(25_000),
+  apply: z.boolean().default(false),
+}).strict();
+export type SeedPlacesFromBoundariesInput = z.infer<typeof SeedPlacesFromBoundariesSchema>;

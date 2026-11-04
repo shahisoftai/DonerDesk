@@ -25,6 +25,8 @@ import { useMapServices } from "./MapServices";
 import { OverlayPanel } from "./OverlayPanel";
 import { PeriodSlider } from "./PeriodSlider";
 import { PlacePanel } from "./PlacePanel";
+import { PlaceTree } from "./PlaceTree";
+import { pathForPlace } from "../domain/drill/place-path";
 import { useBoundaryView } from "./useBoundaryView";
 import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
@@ -38,7 +40,7 @@ interface Selection { ref: string | null; placeId: string | null; name: string }
  * The interactive results map on the new engine: a real basemap, smooth zoom, clustering, and drilling from the world down to
  * admin 4 wherever boundary files exist. It composes the pieces; the rules are in `domain/` and the drawing is behind a port.
  */
-export function ResultsMap({ projectId, places, initial, periods, compact = false, loadResults, staticData = false, onUnavailable }: ExplorerProps & { onUnavailable: () => void }) {
+export function ResultsMap({ projectId, places, initial, periods, compact = false, loadResults, staticData = false, activityCounts, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable }: ExplorerProps & { onUnavailable: () => void }) {
   const services = useMapServices();
   const { t, lang, levelPlural } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
@@ -47,12 +49,15 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
 
   const [path, setPath] = useState<DrillPath>(WORLD_PATH);
   const [results, setResults] = useState<PlaceResults | null>(initial);
-  const [indicatorId, setIndicatorId] = useState(initial?.indicators[0]?.id ?? "");
+  const [chosenIndicator, setIndicatorId] = useState(initial?.indicators[0]?.id ?? "");
+  const indicatorId = lockedIndicatorId ?? chosenIndicator;
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
   const [selected, setSelected] = useState<Selection | null>(null);
   /** What opening the chosen boundary would show ("districts"), or null when it cannot be opened. */
   const [openLevel, setOpenLevel] = useState<number | null>(null);
-  const [periodId, setPeriodId] = useState<string | null>(null);
+  const [ownPeriod, setOwnPeriod] = useState<string | null>(null);
+  const periodId = heldPeriod !== undefined ? heldPeriod : ownPeriod;
+  const setPeriodId = onPeriodChange ?? setOwnPeriod;
   const [overlay, setOverlay] = useState<Overlay | null>(null);
   const [ground, setGround] = useState<"auto" | "plain">("auto");
   const [note, setNote] = useState<BasemapNote | null>(null);
@@ -164,6 +169,16 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
     setSelected(hit ? { ref: hit.unit.ref, placeId: hit.placeId, name: hit.unit.name } : null);
   }, [places, joined]);
 
+  /** From the place tree: take the map to the place (its ancestors opened, its own boundary chosen). */
+  const focusPlace = useCallback((placeId: string) => {
+    const hit = pathForPlace(places, placeId);
+    const place = places.find((p) => p.id === placeId);
+    if (!hit || !place) return;
+    setPath(hit.path);
+    setSelected({ ref: hit.ref, placeId, name: place.name });
+  }, [places]);
+  const figureIds = useMemo(() => (model ? [...model.regions, ...model.pins].filter((r) => r.value !== null).map((r) => r.placeId) : []), [model]);
+
   async function openSelected() {
     if (!selected?.ref) return;
     const levels = path.length === 0 ? await services.boundaries.levelsFor({ name: selected.name }) : view.levels;
@@ -190,11 +205,11 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <MapBreadcrumbs path={path} onBack={(i) => { setPath(toCrumb(path, i)); setSelected(null); }} />
-        <label className="flex items-center gap-1">{t("maps.indicator")}
+        {!lockedIndicatorId && <label className="flex items-center gap-1">{t("maps.indicator")}
           <select className="input" value={indicatorId} onChange={(e) => setIndicatorId(e.target.value)}>
             {(results?.indicators ?? []).map((i) => <option key={i.id} value={i.id}>{i.code} {i.name}</option>)}
           </select>
-        </label>
+        </label>}
         {!compact && (
           <label className="flex items-center gap-1">{t("maps.ground")}
             <select className="input" value={ground} onChange={(e) => setGround(e.target.value as "auto" | "plain")}>
@@ -247,6 +262,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
           </div>
         </div>
         <div className="space-y-3" data-no-print>
+          {!compact && <PlaceTree places={places} activityCounts={activityCounts ?? {}} figurePlaceIds={figureIds} selectedId={selected?.placeId ?? null} onSelect={focusPlace} />}
           {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
           {!compact && <OverlayPanel onOverlay={showOverlay} />}
           {selected && <PlacePanel panel={panel} name={selected.name} canDrill={openLevel !== null} drillLabel={openLevel !== null ? t("maps.open", { level: levelPlural(openLevel) }) : undefined} onDrill={() => void openSelected()} onSelect={(id) => { const p = places.find((x) => x.id === id); if (p) setSelected({ ref: null, placeId: p.id, name: p.name }); }} onClose={() => setSelected(null)} />}

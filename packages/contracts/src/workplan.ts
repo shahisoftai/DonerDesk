@@ -198,6 +198,7 @@ export type ImportSubmissionsInput = z.infer<typeof ImportSubmissionsSchema>;
 
 /** Which indicators a planned activity reports on. Their breakdowns become the fields of its progress log. */
 export const SetPlanIndicatorsSchema = z.object({ indicatorIds: z.array(z.string().min(1).max(64)).max(30) }).strict();
+export const SetPlanPlacesSchema = z.object({ placeIds: z.array(z.string().min(1).max(64)).max(25) }).strict();
 
 /** One progress entry: a day or week (key = date), a month (key = YYYY-MM) or the activity end (key empty). Figures as typed; blank stays blank. */
 export const SaveProgressSchema = z.object({

@@ -1,6 +1,6 @@
 import {
-  DomainError, Permissions, PlaceRegistry, err, ok, parsePlaceSheet, planPlaceImport, resolvePlace, validatePlace,
-  type PlaceRecord, type PlaceResolution, type Result, type Role,
+  DomainError, Permissions, PlaceRegistry, err, ok, parsePlaceSheet, planBoundarySeed, planPlaceImport, resolvePlace, validatePlace,
+  type PlaceRecord, type PlaceResolution, type Result, type Role, type SeedUnit,
 } from "@donordesk/domain";
 import type { CreatePlaceInput, ImportPlacesInput, ResolvePlacesInput, UpdatePlaceInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
@@ -171,6 +171,41 @@ export class ImportPlacesHandler {
     const saved = await this.repo.createMany(plan.create.map((p) => ({ ...p, tenantId: ctx.tenant.tenantId, createdById: ctx.tenant.userId })));
     if (!saved.ok) return saved;
     await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "place.imported", entityType: "place", entityId: "import", newValue: JSON.stringify({ created: plan.create.length, skipped: plan.skipped.length }) });
+    return ok({ ...preview, applied: true });
+  }
+}
+
+export interface SeedPlacesInput {
+  country: { name: string };
+  units: SeedUnit[];
+  apply: boolean;
+}
+
+export interface SeedPlacesPreview {
+  /** How many places would be (or were) created, by level (0 = the country itself). */
+  createdByLevel: Record<number, number>;
+  skipped: number;
+  underCountry: number;
+  problems: string[];
+  applied: boolean;
+}
+
+/** A country's places from its built-in boundaries. `apply: false` only counts; a repeat creates nothing; a bad unit blocks the lot. */
+export class SeedPlacesFromBoundariesHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly repo: IPlaceRepository, private readonly audit: IAuditLogger) {}
+
+  async handle(ctx: AuthenticatedContext, input: SeedPlacesInput): Promise<Result<SeedPlacesPreview, DomainError>> {
+    if (!canEdit(ctx)) return forbidden();
+    const all = await loadAll(this.repo, ctx);
+    if (!all.ok) return all;
+    const plan = planBoundarySeed(input.country, input.units, all.value.registry, () => this.ids.generate());
+    const createdByLevel: Record<number, number> = {};
+    for (const p of plan.create) createdByLevel[p.adminLevel] = (createdByLevel[p.adminLevel] ?? 0) + 1;
+    const preview: SeedPlacesPreview = { createdByLevel, skipped: plan.skipped, underCountry: plan.underCountry, problems: plan.problems, applied: false };
+    if (!input.apply || plan.problems.length || plan.create.length === 0) return ok(preview);
+    const saved = await this.repo.createMany(plan.create.map((p) => ({ ...p, tenantId: ctx.tenant.tenantId, createdById: ctx.tenant.userId })));
+    if (!saved.ok) return saved;
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "place.seeded", entityType: "place", entityId: "seed", newValue: JSON.stringify({ country: input.country.name, created: plan.create.length, skipped: plan.skipped }) });
     return ok({ ...preview, applied: true });
   }
 }

@@ -71,6 +71,41 @@ await check("the map opens on the project's country, with a canvas, controls and
   await shot("01-uganda-provinces");
 });
 
+await check("place tree: lists the places the project touches, with counts rolled up to the country", async () => {
+  const tree = page.getByTestId("place-tree");
+  await tree.waitFor({ timeout: 5000 });
+  const uganda = tree.getByRole("treeitem", { name: /^Uganda/ });
+  assert.match(await text(uganda), /Uganda\s*4/);          // 3 at the clinic + 1 at Gulu, rolled up
+  assert.match(await text(tree.getByRole("treeitem", { name: /^Gulu/ })), /Gulu\s*4/);
+  assert.equal(await tree.getByRole("treeitem", { name: /^Arua/ }).count(), 1);   // Arua has a figure, so it is listed
+});
+
+await check("place tree: choosing a place takes the map to it and opens its details", async () => {
+  const tree = page.getByTestId("place-tree");
+  await tree.getByRole("treeitem", { name: /^Arua/ }).click();
+  const details = page.getByRole("complementary", { name: "Place details" });
+  await details.waitFor({ timeout: 5000 });
+  assert.match(await text(details), /Arua/);
+  assert.equal(await tree.getByRole("treeitem", { name: /^Arua/ }).getAttribute("aria-selected"), "true");
+});
+
+await check("place tree: arrow keys move, Right opens a place, Enter chooses it", async () => {
+  const tree = page.getByTestId("place-tree");
+  await tree.getByRole("treeitem", { name: /^Gulu/ }).focus();
+  await page.keyboard.press("ArrowRight");               // opens Gulu (the clinic below it)
+  await tree.getByRole("treeitem", { name: /^Lacor Clinic/ }).waitFor({ timeout: 3000 });
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  assert.equal(await tree.getByRole("treeitem", { name: /^Lacor Clinic/ }).getAttribute("aria-selected"), "true");
+  await page.keyboard.press("ArrowLeft");                // from a leaf: back to the parent
+  assert.equal(await page.evaluate(() => document.activeElement?.getAttribute("data-node")), "gulu");
+});
+
+// The tree checks leave the map selected and drilled; the checks after them start from a fresh page.
+await page.goto(base);
+await page.waitForSelector(".maplibregl-canvas", { timeout: 30000 });
+await settle(2500);
+
 await check("the ground is our own: street tiles are read from /tiles with byte ranges, and nothing is fetched from another host", async () => {
   assert.ok(requests.some((r) => r.path === "/tiles/basemap-africa.pmtiles" && r.range), "no ranged read of the basemap");
   assert.ok(requests.some((r) => r.path.startsWith("/tiles/fonts/")), "no label font was read");
@@ -675,6 +710,22 @@ await check("pins and drawing speak the person's language too (French)", async (
   await p.getByRole("button", { name: "Dessiner un contour" }).click();
   assert.match(await p.getByTestId("draw-help").innerText(), /Cliquez sur chaque angle/);
   await c.close();
+});
+
+await check("indicator page: the map and the target chart sit side by side, the indicator is fixed, and moving the map's period marks it on the chart", async () => {
+  await page.goto(`${base}?page=indicator-results`);
+  const panel = page.getByTestId("indicator-results");
+  await panel.waitFor({ timeout: 30000 });
+  await panel.locator(".maplibregl-canvas").first().waitFor({ timeout: 30000 });
+  assert.equal(await panel.getByLabel("Indicator", { exact: true }).count(), 0);       // locked: no indicator list
+  const chart = panel.locator("figure");
+  await chart.locator("canvas").first().waitFor({ timeout: 15000 });
+  assert.equal(await chart.getAttribute("data-marked-period"), "");                      // all periods: nothing marked
+  const slider = panel.getByRole("slider", { name: "Reporting period" });
+  await slider.fill("2");
+  await page.waitForFunction(() => document.querySelector('[data-testid="indicator-results"] figure')?.getAttribute("data-marked-period") === "February", null, { timeout: 8000 });
+  await slider.fill("3");
+  await page.waitForFunction(() => document.querySelector('[data-testid="indicator-results"] figure')?.getAttribute("data-marked-period") === "March", null, { timeout: 8000 });
 });
 
 await check("no script or console errors", async () => { assert.deepEqual(errors, []); });

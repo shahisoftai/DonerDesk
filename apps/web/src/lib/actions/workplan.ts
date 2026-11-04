@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SaveProgressSchema, CompletePlannedActivitySchema, ChangeActivityPeopleSchema } from "@donordesk/contracts";
+import { UpdatePlannedActivitySchema, ImportWorkPlanSchema, AssignPlannedActivitySchema, ChangePlanStatusSchema, CreatePlannedActivitySchema, ReschedulePlannedActivitySchema, StartPlanFromLogframeSchema, AddPlanDependencySchema, DefineProjectFieldSchema, SetPlanItemFieldsSchema, AddBudgetLineSchema, AddBudgetExpenseSchema, BulkPlanActionSchema, UndoBulkPlanActionSchema, SetCapacitySchema, SetAutomationRuleSchema, RegisterBeneficiarySchema, ImportSubmissionsSchema, ImportSubmissionsWithMappingSchema, SubmissionMappingSchema, SetPlanIndicatorsSchema, SetPlanPlacesSchema, SaveProgressSchema, CompletePlannedActivitySchema, ChangeActivityPeopleSchema } from "@donordesk/contracts";
 import type { ZodType } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -226,6 +226,15 @@ export async function setPlanIndicatorsAction(itemId: string, indicatorIds: stri
   const p = await parsed(SetPlanIndicatorsSchema, { indicatorIds });
   if (!p.ok) return p.result;
   const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/indicators`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
+  return r.ok ? { ok: true, value: true } : r;
+}
+
+/** Which places from the places list the activity takes place in. The typed location is left as it is. */
+export async function setPlanPlacesAction(itemId: string, placeIds: string[]): Promise<Result<true, AppError>> {
+  const context = await requireSession();
+  const p = await parsed(SetPlanPlacesSchema, { placeIds });
+  if (!p.ok) return p.result;
+  const r = await gatewayRequest(`/v1/work-plan/${encodeURIComponent(itemId)}/places`, OkResponseSchema, context.token, { method: "PUT", body: p.data });
   return r.ok ? { ok: true, value: true } : r;
 }
 

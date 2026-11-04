@@ -13,4 +13,5 @@ export * from "./work-plan/plan-dependency.js";
 export * from "./work-plan/plan-revision.js";
 export * from "./work-plan/planned-activity.js";
 export * from "./work-plan/progress.js";
+export * from "./work-plan/plan-places.js";
 export * from "./work-plan/submission-mapping.js";

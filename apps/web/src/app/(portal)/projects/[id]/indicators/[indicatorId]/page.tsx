@@ -3,7 +3,9 @@ import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDis
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { EvidenceSupportResponseSchema, IndicatorUpdateHistoryResponseSchema, LogframeResponseSchema } from "@/lib/server/schemas";
+import { DataSheetResponseSchema, EvidenceSupportResponseSchema, IndicatorUpdateHistoryResponseSchema, LogframeResponseSchema } from "@/lib/server/schemas";
+import { PlaceListSchema, PlaceResultsSchema } from "@/lib/server/schemas-places";
+import { IndicatorResultsPanel } from "@/features/logframe/presentation/IndicatorResultsPanel";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { IndicatorSemanticsCard } from "@/features/logframe/presentation/IndicatorSemanticsCard";
@@ -28,10 +30,13 @@ export const dynamic = "force-dynamic";
 export default async function IndicatorDetailPage({ params }: { params: Promise<{ id: string; indicatorId: string }> }) {
   const { id, indicatorId } = await params;
   const ctx = await requireSession();
-  const [result, history, support] = await Promise.all([
+  const [result, history, support, placeList, placeResults, sheet] = await Promise.all([
     gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, ctx.token),
     gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/updates`, IndicatorUpdateHistoryResponseSchema, ctx.token),
     gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/evidence-support`, EvidenceSupportResponseSchema, ctx.token),
+    gatewayRequest("/v1/places", PlaceListSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/place-results?level=1`, PlaceResultsSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/data-sheet`, DataSheetResponseSchema, ctx.token),
   ]);
   if (!result.ok) return <InlineError title={result.error.message} referenceId={result.error.referenceId} />;
   const indicator = result.value.indicators.find((item) => item.id === indicatorId);
@@ -51,6 +56,7 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
     {ctx.capabilities.has("project.edit") && !indicator.formula && <div className="mt-3"><CreateFormFromIndicatorButton projectId={id} indicatorId={indicator.id} /></div>}
     <div className="mt-6 grid gap-4 lg:grid-cols-2"><section className="card"><h3 className="font-medium">Measurement</h3><dl className="mt-4 grid grid-cols-2 gap-4 text-sm"><Metric label="Baseline" value={indicator.baseline || "Not set"} /><Metric label="Target" value={`${indicator.target || "Not set"}${indicator.unit ? ` ${indicator.unit}` : ""}`} /><Metric label="Type" value={indicator.type?.replace(/_/g, " ") ?? "Not set"} /><Metric label="Frequency" value={indicator.frequency?.replace(/_/g, " ") ?? "Not set"} /></dl>{indicator.targetSchedule.length > 0 && <div className="mt-4 text-sm"><p className="text-slate-500">Target schedule (cumulative, by date)</p><ul className="mt-1 space-y-1">{indicator.targetSchedule.map((s) => <li key={s.asOf} className="flex justify-between gap-3"><span>{s.asOf}</span><span className="font-mono">{s.target}</span></li>)}</ul></div>}{indicator.targetBreakdowns.length > 0 && <ul className="mt-4 space-y-1 text-sm">{indicator.targetBreakdowns.map((b) => <li key={`${b.dimension}-${b.category}`} className="flex justify-between gap-3"><span>{b.category}</span><span className="font-mono">{b.value}</span></li>)}</ul>}</section>
     <section className="card"><h3 className="font-medium">Source of verification</h3><p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{indicator.meansOfVerification || "No means of verification has been recorded."}</p><div className="mt-4"><Badge tone={indicator.meansOfVerification ? "success" : "warning"}>{indicator.meansOfVerification ? "Source defined" : "Source needed"}</Badge></div>{indicator.dataSource && <p className="mt-3 text-xs text-slate-500">Data source: {indicator.dataSource}</p>}</section></div>
+    {placeList.ok && placeList.value.places.length > 0 && sheet.ok && <IndicatorResultsPanel projectId={id} indicatorId={indicator.id} places={placeList.value.places} initial={placeResults.ok ? placeResults.value : null} periods={sheet.value.periods.map((p) => ({ id: p.id, label: p.label }))} />}
     <IndicatorViews projectId={id} indicatorId={indicator.id} />
     {groupProgress?.ok && <BreakdownProgressTable items={groupProgress.value.items} only={indicator.id} />}
     <IndicatorSemanticsCard

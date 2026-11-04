@@ -210,6 +210,15 @@ export interface IPlannedActivityIndicatorRepository {
   replace(input: { tenantId: string; projectId: string; plannedActivityId: string; indicatorIds: string[]; userId: string; now: Date }): Promise<Result<void>>;
 }
 
+/** Places a planned activity takes place in (phase 42.1). */
+export interface IPlannedActivityPlaceRepository {
+  findPlaceIds(plannedActivityId: string, tenantId: TenantId): Promise<Result<string[]>>;
+  /** Place ids for many activities at once (one query for a list page): activity id to its place ids. */
+  findPlaceIdsFor(plannedActivityIds: string[], tenantId: TenantId): Promise<Result<Map<string, string[]>>>;
+  /** Replaces the set in one transaction. */
+  replace(input: { tenantId: string; projectId: string; plannedActivityId: string; placeIds: string[]; userId: string; now: Date }): Promise<Result<void>>;
+}
+
 /** One progress record for a planned activity. Values are null when not recorded. */
 export interface ProgressEntryRecord {
   id: string;

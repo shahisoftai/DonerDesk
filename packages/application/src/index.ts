@@ -303,6 +303,7 @@ export * from "./use-cases/workplan/beneficiary-handlers.js";
 export * from "./use-cases/workplan/submission-mapping-handlers.js";
 export * from "./use-cases/workplan/submission-review-handler.js";
 export * from "./use-cases/workplan/progress-handlers.js";
+export * from "./use-cases/workplan/plan-places-handlers.js";
 export * from "./use-cases/workplan/activity-people-handlers.js";
 export * from "./use-cases/workplan/complete-planned-activity.js";
 export * from "./services/plan-link-resolver.js";

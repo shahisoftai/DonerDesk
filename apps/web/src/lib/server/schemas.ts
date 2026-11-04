@@ -1378,6 +1378,8 @@ export const WorkPlanRowSchema = z.object({
   /** A hand-placed place when no gazetteer name matches (Phase 30.1). */
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  /** Places from the places list this activity names (phase 42.1). */
+  places: z.array(z.object({ id: z.string(), name: z.string(), latitude: z.number().optional(), longitude: z.number().optional() })).optional(),
   targetCount: z.number().optional(),
   /** How heavy it is for its lead, 1 to 5. */
   effort: z.number().default(1),

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { CreatePlaceSchema, ImportPlacesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, SetPlaceGeometrySchema, UpdatePlaceSchema } from "@donordesk/contracts";
+import { CreatePlaceSchema, ImportPlacesSchema, SeedPlacesFromBoundariesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, SetPlaceGeometrySchema, UpdatePlaceSchema } from "@donordesk/contracts";
 
 /** The organisation's list of places (Phase 33.1). Thin: validate, call one handler, throw its error; permissions are in the handlers and the authorization table. */
 export async function registerPlaceRoutes(app: FastifyInstance) {
@@ -60,6 +60,13 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
   // `apply: false` previews and saves nothing.
   app.post("/v1/places/import", async (req) => {
     const r = await req.container.handlers.importPlaces.handle(ctx(req), ImportPlacesSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // A country's places from its built-in boundaries (the browser sends the units); `apply: false` only counts.
+  app.post("/v1/places/seed-boundaries", async (req) => {
+    const r = await req.container.handlers.seedPlacesFromBoundaries.handle(ctx(req), SeedPlacesFromBoundariesSchema.parse(req.body));
     if (!r.ok) throw r.error;
     return r.value;
   });

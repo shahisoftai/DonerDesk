@@ -47,6 +47,8 @@ import {
   SetAutomationRuleHandler,
   SetCapacityHandler,
   SetPlanIndicatorsHandler,
+  SetPlanPlacesHandler,
+  GetPlanPlacesHandler,
   SetPlanItemFieldsHandler,
   StartPlanFromLogframeHandler,
   UndoBulkPlanActionHandler,
@@ -78,11 +80,13 @@ import {
   PrismaPlanDependencyRepository,
   PrismaPlanRevisionRepository,
   PrismaPlannedActivityIndicatorRepository,
+  PrismaPlannedActivityPlaceRepository,
   PrismaPlannedActivityRepository,
   PrismaProgressRepository,
   PrismaProjectFieldRepository,
   PrismaProjectSubmissionMappingRepository,
 } from "../repositories/workplan.js";
+import { PrismaPlaceRepository } from "../repositories/places.js";
 
 /** What the work plan needs from the rest of the container. Everything else it builds itself. */
 export interface WorkplanModuleDeps {
@@ -117,6 +121,8 @@ export function createWorkplanModule(deps: WorkplanModuleDeps) {
   const beneficiaries = new PrismaBeneficiaryRepository(prisma);
   const submissionMappings = new PrismaProjectSubmissionMappingRepository(prisma);
   const activityIndicators = new PrismaPlannedActivityIndicatorRepository(prisma);
+  const activityPlaces = new PrismaPlannedActivityPlaceRepository(prisma);
+  const placeList = new PrismaPlaceRepository(prisma);
   const progressLog = new PrismaProgressRepository(prisma);
   const beneficiaryLinks = new PrismaBeneficiaryLinkRepository(prisma);
   const planContext = new PrismaPlanContextReader(prisma);
@@ -151,6 +157,8 @@ export function createWorkplanModule(deps: WorkplanModuleDeps) {
     getSubmissionMapping: new GetSubmissionMappingHandler(submissionMappings),
     saveSubmissionMapping: new SaveSubmissionMappingHandler(submissionMappings, audits, clock),
     setPlanIndicators: new SetPlanIndicatorsHandler(planAccess, activityIndicators, indicators, audits, clock),
+    setPlanPlaces: new SetPlanPlacesHandler(planAccess, activityPlaces, placeList, audits, clock),
+    getPlanPlaces: new GetPlanPlacesHandler(planAccess, activityPlaces, placeList),
     getProgress: new GetProgressHandler(planAccess, progressLog, activityIndicators, indicators),
     prepareProgress: new PrepareProgressHandler(planAccess, progressLog, activityIndicators, indicators),
     saveProgress: new SaveProgressHandler(planAccess, progressLog, activityIndicators, indicators, ids, audits, clock),
@@ -174,7 +182,7 @@ export function createWorkplanModule(deps: WorkplanModuleDeps) {
     assignPlannedActivity: new AssignPlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder),
     updatePlannedActivity: new UpdatePlannedActivityHandler(planAccess, plannedActivities, planContext, planRecorder, clock, logframe, new PrismaDeliveryFactsReader(prisma)),
     startPlanFromLogframe: new StartPlanFromLogframeHandler(ids, plannedActivities, planContext, logframe, audits),
-    listWorkPlan: new ListWorkPlanHandler(plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock, planDependencies),
+    listWorkPlan: new ListWorkPlanHandler(plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock, planDependencies, activityPlaces, placeList),
     listPlanRevisions: new ListPlanRevisionsHandler(plannedActivities, planRevisions),
     getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
     copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),

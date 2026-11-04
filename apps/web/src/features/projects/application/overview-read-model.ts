@@ -158,7 +158,7 @@ export const loadProjectOverviewV2 = cache(
     // Where the work happens (Phase 30): the plan's locations resolved against the project's own country.
     const siteData = planRows.length
       ? siteMapData(
-          planRows.map((r) => ({ id: r.id, title: r.title, location: r.location, signal: r.signal })),
+          planRows.map((r) => ({ id: r.id, title: r.title, location: r.location, latitude: r.latitude, longitude: r.longitude, places: r.places, signal: r.signal })),
           { risks: riskItems.map((r) => ({ title: r.title, plannedActivityId: r.plannedActivityId, status: r.status })), country: project.country },
         )
       : null;
