@@ -14,7 +14,7 @@ export const TEMPLATE_PLACEHOLDER_PATTERNS: readonly RegExp[] = [
 ];
 
 /** A bare label with only a number ("Activity 1.1.1", "Output 2", "Indicator 1.1.1(Standard)") names a slot, not an item. */
-const BARE_LABEL = /^((outcome|output|activity)\s+)?(goal|impact|outcome|output|activity|indicator|objective|result|risk)\s*[\d.]+\s*(\((standard|custom)\))?\s*[-:.]?\s*$/i;
+const BARE_LABEL = /^((outcome|output|activity)\s+)?(goal|impact|outcome|output|activity|indicator|objective|result|risk)\s*[\d.]+\s*(\((standard|custom)\))?\s*[-:.]*\s*$/i;
 
 /** Placeholder fragments in a text (empty when there are none). */
 export const placeholdersIn = (text: string): string[] =>

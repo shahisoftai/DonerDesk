@@ -32,8 +32,10 @@ export class NominatimPlaceLookup implements ISetupPlaceLookup {
       const [hit] = (await response.json()) as Array<{ name?: string; display_name?: string; address?: { country?: string } }>;
       const parts = (hit?.display_name ?? "").split(",").map((p) => p.trim()).filter(Boolean);
       const found = hit && parts.length > 0 ? hit.address?.country ?? null : null;
-      // A name found in another country is not this place.
-      const result: RecognisedPlace | null = parts.length > 0 && (!country || !found || found.toLowerCase() === country.toLowerCase())
+      // A name found in another country is not this place, and a hit that does not carry the name asked for is another thing.
+      const asked = query.split(",")[0]!.toLowerCase().split(/\s+/).filter((w) => w.length > 2);
+      const named = asked.some((w) => (hit?.display_name ?? "").toLowerCase().split(",")[0]!.includes(w));
+      const result: RecognisedPlace | null = parts.length > 0 && named && (!country || !found || found.toLowerCase() === country.toLowerCase())
         ? { name: hit!.name || parts[0]!, within: parts.slice(1).join(", "), country: found, source: "OpenStreetMap" }
         : null;
       this.known.set(query, result);

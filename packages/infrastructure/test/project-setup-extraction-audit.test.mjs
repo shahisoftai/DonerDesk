@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { groundProposed, groundAreaPatch, figuresSupported, sectionIsEmpty, findingFor, setupRepairs, addOnlyNew, markDoubted, verifiableFields, applyStructure } from "@donordesk/domain";
+import { templatePlaceholder, groundProposed, groundAreaPatch, figuresSupported, sectionIsEmpty, findingFor, setupRepairs, addOnlyNew, markDoubted, verifiableFields, applyStructure } from "@donordesk/domain";
 import { createLLMProvider } from "../dist/llm/factory.js";
 import { runAreaExtraction, chunkBlocksText } from "../dist/project-setup/extractor-shared.js";
 import { toBlocks } from "../dist/project-setup/source-reader.js";
@@ -143,6 +143,7 @@ test("Rule 2: emptiness is read from the text: blank tables are empty, any state
   const b = (text, section = "4 Logframe") => [{ documentId: "s", index: 0, text, section }];
   assert.ok(sectionIsEmpty(b("4 Logframe\nCode | Result | Target\n1.1 | To be completed after identification | 0\n1.2 | |")));
   assert.ok(sectionIsEmpty(b("Activity 1.1.1 | [insert description]")));
+  assert.equal(templatePlaceholder("Outcome Indicator 1.1 (Custom):."), "WHOLE");
   assert.ok(!sectionIsEmpty(b("Code | Place\n1 | Baidoa town")), "short text in a cell is a statement");
   assert.ok(!sectionIsEmpty(b("Goal | Reduce mortality")), "a lone row with a value is a statement");
   assert.ok(!sectionIsEmpty(b("The project works in two districts.")));
@@ -169,6 +170,8 @@ test("Rule 5: a place is recognised from the web, only name and country are sent
   assert.deepEqual(await lookup.lookup("Baidoa", "Somalia"), { name: "Baidoa", within: "Bay, Somalia", country: "Somalia", source: "OpenStreetMap" });
   assert.match(urls[0], /q=Baidoa%2C%20Somalia$/);
   assert.equal(await lookup.lookup("Baidoa", "Kenya"), null);
+  const theatre = new NominatimPlaceLookup("https://geo.example", async () => ({ ok: true, json: async () => [{ name: "The National Theatre", display_name: "The National Theatre, Mogadishu, Somalia", address: { country: "Somalia" } }] }), 0);
+  assert.equal(await theatre.lookup("Somalia", null), null, "a landmark is not the place asked for");
   const broken = new NominatimPlaceLookup("https://geo.example", async () => { throw new Error("down"); }, 0);
   assert.equal(await broken.lookup("X", null), null);
 });

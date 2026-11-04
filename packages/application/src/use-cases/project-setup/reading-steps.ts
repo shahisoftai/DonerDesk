@@ -82,7 +82,8 @@ export async function afterAllAreas(steps: ReadingSteps, input: AfterAreasInput,
   if (steps.placeLookup) {
     const country = Array.isArray(data.facts.countries.value) && data.facts.countries.value.length === 1 ? data.facts.countries.value[0]! : null;
     const places = await Promise.all(data.places.map(async (place, i) => {
-      if (i >= MAX_PLACE_LOOKUPS || !place.value?.name) return place;
+      // A country needs no recognising, and asking for it returns some landmark inside it.
+      if (i >= MAX_PLACE_LOOKUPS || !place.value?.name || place.value.adminLevel === 0 || (country && place.value.name.toLowerCase() === country.toLowerCase())) return place;
       const recognised = await steps.placeLookup!.lookup(place.value.name, country).catch(() => null);
       return recognised ? { ...place, value: { ...place.value, recognised } } : place;
     }));
