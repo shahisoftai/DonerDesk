@@ -478,7 +478,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
         summary:
           "Draw the chart a donor or board asks for from your own recorded results, with every editing tool.",
         inPractice: [
-          "More than 40 chart types: bars, lines, areas, pies, funnels, gauges, heatmaps, tables, Gantt, Sankey, maps and more.",
+          "39 chart types: bars, lines, areas, pies, funnels, gauges, heatmaps, tables, Gantt, Sankey, maps and more.",
           "Change colours, labels, axes, annotations, legends and number formats; undo and redo every step.",
           "Save a chart for yourself or share it with the project; the last ten versions are kept and can be restored.",
           "A chart that would mislead is refused with the reason, for example two units on one axis or a rate stacked like a count.",

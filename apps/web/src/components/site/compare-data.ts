@@ -199,7 +199,7 @@ export const SECTIONS: MatrixSection[] = [
       sheet: p("Charts by hand."),
     } },
     { label: "Chart choice and editing", cells: {
-      dd: y("More than 40 kinds in a Chart Studio with full editing; a chart that would mislead is refused with the reason."),
+      dd: y("39 chart types in a Chart Studio with full editing; a chart that would mislead is refused with the reason."),
       ai: y("Bar and line charts, pivot tables and notebooks."),
       dr: y("Graphical charts of progress for projects or the whole programme."),
       tola: y("Charts, graphs, narratives and images on dashboards."),
@@ -223,7 +223,7 @@ export const SECTIONS: MatrixSection[] = [
       sheet: y("Pivot tables."),
     } },
     { label: "Ask your records a question", cells: {
-      dd: y("Ask in plain language; the answer is built only from your records and names the source behind each statement, and it says so when the records do not answer."),
+      dd: p("Ask in plain language; the answer is built only from your records and names the source behind each statement, and it says so when the records do not answer. Off until an administrator turns it on, and new."),
       ai: u(),
       dr: u(),
       tola: p("AI features (a knowledge database, a data analytics assistant) are described as in pilot."),

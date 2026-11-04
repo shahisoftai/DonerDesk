@@ -12,7 +12,7 @@ const JOBS = [
   { key: "Plan", title: "Plan what matters", points: ["Logframe, indicators and targets, set once", "Work plan with timeline, calendar and map", "Risks and changes of plan on record"], wide: false },
   { key: "Collect", title: "Collect it in the field", points: ["Forms and activity records, typed or dictated", "Offline app that sends when signal returns", "KoboToolbox, SurveyCTO and Excel brought in"], wide: false },
   { key: "Track", title: "Track against targets", points: ["A spreadsheet-style sheet for entering results", "Every indicator against its own target", "Gaps shown as gaps, never as zero"], wide: false },
-  { key: "See", title: "See it your way", points: ["Chart Studio with more than 40 chart types and full editing", "Dashboards from sector templates, then make them yours", "Maps by place, wall-screen mode and print"], wide: true },
+  { key: "See", title: "See it your way", points: ["Chart Studio with 39 chart types and full editing", "Dashboards from sector templates, then make them yours", "Maps by place, wall-screen mode and print"], wide: true },
   { key: "Prove", title: "Prove it when it counts", points: ["Evidence stays linked to what it proves", "Every change is in a tamper-evident log", "Confidential files stay confidential"], wide: true },
   { key: "Report", title: "Report from the record", points: ["Upload a donor template once and reuse it across grants", "Drafts cite their sources; numbers come from verified data", "Checks before submission; a person approves and exports"], wide: false, full: true },
 ] as const;

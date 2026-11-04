@@ -133,7 +133,7 @@ export function StudioDemo() {
           <div className="sx-kinds">
             {KINDS.map(([k, label]) => <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}>{label}</button>)}
           </div>
-          <p className="sx-fine" style={{ marginTop: 6 }}>The real Chart Studio has more than 40 kinds and full editing.</p>
+          <p className="sx-fine" style={{ marginTop: 6 }}>The real Chart Studio has 39 chart types and full editing.</p>
         </aside>
         <div className="sx-stage">
           <b className="sx-stage-title">{sector.placeLabel}, by place</b>
