@@ -31,3 +31,17 @@ test("an axis with object entries and a list of axes are read too", () => {
   const out = highlightPeriod({ xAxis: [{ data: [{ value: "Jan" }, { value: "Feb" }] }], series: [{ type: "bar" }] }, "Feb") as { series: Array<{ markLine?: unknown }> };
   assert.ok(out.series[0]!.markLine);
 });
+
+import { narrowAxis } from "../../src/features/logframe/domain/period-highlight.ts";
+
+test("narrowAxis lets overlapping period labels be hidden, drops the forced interval, and never changes its input", () => {
+  const o = { xAxis: { type: "category", data: ["a"], axisLabel: { interval: 0, hideOverlap: false, width: 90, overflow: "break", color: "#333" } }, series: [] };
+  const before = JSON.stringify(o);
+  const out = narrowAxis(o) as { xAxis: { axisLabel: Record<string, unknown> } };
+  assert.equal(out.xAxis.axisLabel.interval, "auto");
+  assert.equal(out.xAxis.axisLabel.hideOverlap, true);
+  assert.equal("width" in out.xAxis.axisLabel, false);
+  assert.equal(out.xAxis.axisLabel.color, "#333");
+  assert.equal(JSON.stringify(o), before);
+  assert.equal(narrowAxis({ series: [] }).xAxis, undefined);
+});

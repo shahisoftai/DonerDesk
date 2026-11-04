@@ -8,7 +8,7 @@ import { MapExplorer } from "@/features/maps/presentation/MapExplorer";
 import { StudioChart, type ChartExport } from "@/features/charts/presentation/StudioChart";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { indicatorViewSpec } from "../domain/indicator-views";
-import { highlightPeriod } from "../domain/period-highlight";
+import { highlightPeriod, narrowAxis } from "../domain/period-highlight";
 import { useIndicatorDataset } from "./useIndicatorDataset";
 
 /**
@@ -31,7 +31,7 @@ export function IndicatorResultsPanel({ projectId, indicatorId, places, initial,
   const label = periods.find((p) => p.id === periodId)?.label ?? null;
   // On screen the chart does not repeat its long title inside the picture (the column is narrow); the indicator's name is the line under the heading.
   const screen = useMemo(() => (built?.ok && built.render === "ECHART" ? forScreen(built.option as Record<string, unknown>) : null), [built]);
-  const option = useMemo(() => (screen ? highlightPeriod(screen.option, label) : null), [screen, label]);
+  const option = useMemo(() => (screen ? highlightPeriod(narrowAxis(screen.option), label) : null), [screen, label]);
 
   return (
     <section className="card mt-4 space-y-3" aria-label={t("indicatorResults.title")} data-testid="indicator-results">

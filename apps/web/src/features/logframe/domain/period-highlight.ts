@@ -21,3 +21,16 @@ export function highlightPeriod(option: Option, label: string | null): Option {
   };
   return { ...option, series: [{ ...first, markLine: line }, ...rest] };
 }
+
+/** For a narrow chart: period labels that would overlap are hidden (the axis keeps the ends), instead of every label being forced onto the axis. Never changes its input. */
+export function narrowAxis(option: Option): Option {
+  const one = (axis: unknown): unknown => {
+    if (typeof axis !== "object" || axis === null) return axis;
+    const a = axis as Option;
+    const label = (typeof a.axisLabel === "object" && a.axisLabel !== null ? a.axisLabel : {}) as Option;
+    const { interval: _interval, width: _width, overflow: _overflow, ...rest } = label;
+    return { ...a, axisLabel: { ...rest, interval: "auto", hideOverlap: true } };
+  };
+  if (!("xAxis" in option)) return option;
+  return { ...option, xAxis: Array.isArray(option.xAxis) ? option.xAxis.map(one) : one(option.xAxis) };
+}
