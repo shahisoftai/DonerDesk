@@ -1,3 +1,4 @@
+import type { ProjectSetupProposal } from "@donordesk/domain";
 import type { SetupAreaKey, Result, SetupDraft } from "@donordesk/domain";
 import { DomainError, LAUNCH_STEPS, SETUP_AREA_KEYS, SETUP_REQUIREMENTS, canLaunch, evaluateRequirements, notWrittenAtLaunch, projectInputFromDraft, proposalForLaunch } from "@donordesk/domain";
 import { CreateProjectSchema } from "@donordesk/contracts";
@@ -41,6 +42,17 @@ const ALL_AREAS = Object.fromEntries(SETUP_AREA_KEYS.map((a) => [a, true])) as R
  * through the existing apply, and runs the wizard's own steps in order. Each step is recorded; launching again after a failure
  * skips what finished and carries on from the step that failed, so nothing is created twice. Only existing handlers write.
  */
+/** How much a person changed of what was read (counts only): the measure of whether the reading saves work. */
+function reviewCounts(proposal: ProjectSetupProposal): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const list of [Object.values(proposal.facts), proposal.logframe, proposal.indicators, proposal.periods, proposal.plan, proposal.places, proposal.funding, proposal.budget, proposal.risks]) {
+    for (const item of list as ReadonlyArray<{ value: unknown; status: string; sourceQuote: string | null }>) {
+      if (item.value !== null && item.sourceQuote) counts[item.status] = (counts[item.status] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
 export class LaunchProjectHandler {
   constructor(
     private readonly proposals: ISetupProposalRepository,
@@ -129,7 +141,7 @@ export class LaunchProjectHandler {
     }
     await this.audit.record({
       tenantId, actorId: ctx.tenant.userId, eventType: failed ? "setup.launch.partial" : "setup.launch.finished", entityType: "project_setup_proposal", entityId: id,
-      newValue: JSON.stringify({ projectId, steps: reports.map((r) => `${r.key}:${r.status}`) }),
+      newValue: JSON.stringify({ projectId, steps: reports.map((r) => `${r.key}:${r.status}`), review: reviewCounts(draft.proposal) }),
     });
     return { ok: true, value: this.report(projectId, failed ? "PARTIAL" : "LAUNCHED", applied.value.areas, reports, draft) };
   }

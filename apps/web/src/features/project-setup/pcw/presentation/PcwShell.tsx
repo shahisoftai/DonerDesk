@@ -12,6 +12,7 @@ import { firstOpenSlide, neighbourSlide, railEntries, slideGaps } from "../domai
 import { anyAreaRunning } from "../domain/parity-view";
 import { DocumentsList } from "./DocumentsList";
 import { LeftOutNote } from "./LeftOutNote";
+import { SectionNotice } from "./SectionNotice";
 import { RereadPart } from "./RereadPart";
 import { DataEntrySlide } from "./DataEntrySlide";
 import { FinanceSlide } from "./FinanceSlide";
@@ -56,6 +57,7 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-4 px-4 py-6">
+      <p role="note" data-testid="pcw-limitations" className="rounded-xl border-2 border-amber-500 bg-amber-100 p-3 text-sm font-semibold text-amber-950">{PCW_COPY.limitations}</p>
       <nav aria-label={PCW_COPY.title}>
         <ol className="grid grid-cols-2 gap-2 sm:grid-cols-5 xl:grid-cols-10">
           {rail.map((r, i) => (
@@ -113,6 +115,8 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
           <p role="status" className="text-sm text-slate-600 dark:text-slate-300">{PCW_COPY.inboxEmpty}</p>
         )}
         <div className="mt-6 space-y-3">
+          <SectionNotice view={view} slide={current} />
+          {current === "PROJECT_TEAM" && view.sources.length > 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{PCW_COPY.teamNotRead}</p> : null}
           {current === "START" ? <DocumentsList id={id} view={view} onView={setView} /> : null}
           <LeftOutNote view={view} slide={current} />
           <RereadPart id={id} slide={current} view={view} onView={setView} />

@@ -5,14 +5,15 @@
  * ISO "2026-03-01". An item that fails is dropped and counted, never shown. A value a person edited is their own and skips
  * the check. Pure; the same figure normaliser as Ask (`askFigures`) is reused so the one-spelling rule cannot drift.
  */
-import { askFigures } from "../ask/ask.js";
+import { figuresSupported } from "./setup-figures.js";
+import { contentWords, wordOverlap } from "./setup-links.js";
 import { isPlainDate, type PlainDate } from "../workplan/plain-date.js";
-import { normaliseForMatch } from "./source-document.js";
+import { normaliseForMatch, type SourceBlock } from "./source-document.js";
 import { SETUP_AREAS, type SetupAreaKey } from "./proposal-areas.js";
 import type { Proposed, SetupConfidence } from "./proposal.js";
 import { templatePlaceholder, withoutPlaceholders } from "./template-placeholders.js";
 
-export type GroundingFailure = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE" | "TEMPLATE_PLACEHOLDER";
+export type GroundingFailure = "QUOTE_NOT_FOUND" | "FIGURE_NOT_IN_QUOTE" | "DATE_NOT_IN_QUOTE" | "TEMPLATE_PLACEHOLDER" | "VALUE_NOT_IN_QUOTE" | "UNREADABLE";
 
 export type GroundingOutcome = { grounded: true; confidence: "HIGH" } | { grounded: false; reason: GroundingFailure };
 
@@ -65,7 +66,7 @@ export function datesInText(text: string): PlainDate[] {
 }
 
 /** The figures of a value text, with full ISO dates removed first (their parts are not figures of their own). */
-function valueFigures(raw: string): { figures: string[]; dates: PlainDate[] } {
+function valueFigures(raw: string): { text: string; dates: PlainDate[] } {
   const dates: PlainDate[] = [];
   const stripped = raw.replace(/(\d{4})-(\d{2})-(\d{2})/g, (match, y: string, m: string, d: string) => {
     const date = iso(Number(y), Number(m), Number(d));
@@ -73,8 +74,7 @@ function valueFigures(raw: string): { figures: string[]; dates: PlainDate[] } {
     dates.push(date);
     return " ";
   });
-  const figures = askFigures(stripped.replace(/-/g, " "));
-  return { figures, dates: [...new Set(dates)] };
+  return { text: stripped.replace(/-/g, " "), dates: [...new Set(dates)] };
 }
 
 /**
@@ -91,6 +91,58 @@ function withoutLinks(value: unknown): unknown {
   return Object.fromEntries(Object.entries(value as Record<string, unknown>).filter(([k]) => !NON_FIGURE_FIELDS.includes(k) && !(generated && k === "code")));
 }
 
+/** A quote shorter than this says nothing a value could be checked against. */
+export const MIN_QUOTE_CHARS = 3;
+
+const CURRENCY_MARKS: Readonly<Record<string, string>> = { $: "USD", "€": "EUR", "£": "GBP" };
+
+/** A currency the quote contradicts: it names other money and not this one. A quote naming no money says nothing against it. */
+function currencySupported(value: unknown, quote: string): boolean {
+  const currency = value && typeof value === "object" ? (value as { currency?: unknown }).currency : null;
+  if (typeof currency !== "string") return true;
+  const named = new Set(quote.match(/\b[A-Z]{3}\b/g)?.filter((c) => ["USD", "EUR", "GBP", "CHF", "CAD", "AUD", "JPY", "SEK", "NOK", "DKK", "KES", "UGX", "ETB", "NGN", "PKR", "SOS", "SDG", "XOF", "XAF", "AED"].includes(c)) ?? []);
+  for (const [mark, code] of Object.entries(CURRENCY_MARKS)) if (quote.includes(mark)) named.add(code);
+  return named.size === 0 || named.has(currency.toUpperCase());
+}
+
+/** A list item's title must share a word with its quote; a fact may be an abbreviation, so it is only marked for checking. */
+const mainTextSupported = (item: Proposed<unknown>, quote: string, sourceText: string): boolean => {
+  if (typeof item.value === "string") return true;
+  const words = contentWords(mainText(item));
+  if (words.size === 0 || wordOverlap(words, contentWords(quote)) > 0) return true;
+  // "European Union" read from "EU contribution": a name and its initials are the same words.
+  const text = mainText(item) ?? "";
+  // A title the document does state, quoted from the row beside it (a sheet row split over two lines): kept, and marked LOW by its rating.
+  if (normaliseForMatch(sourceText).toLowerCase().includes(normaliseForMatch(text).toLowerCase())) return true;
+  const initials = text.split(/\s+/).filter((w) => /^\p{Lu}/u.test(w)).map((w) => w[0]).join("");
+  return initials.length >= 2 && new RegExp(`\\b${initials}\\b`).test(quote);
+};
+
+/**
+ * What the checks can say about a kept item, combined with the model's own rating (the lower wins): a title that shares under
+ * half its words with the quote, or a named fact that shares none, is at most MEDIUM or LOW. A rating is advice for the person.
+ */
+export function computedConfidence(item: Proposed<unknown>): SetupConfidence {
+  const text = mainText(item);
+  if (!text || !item.sourceQuote) return item.confidence;
+  const words = contentWords(text);
+  if (words.size === 0) return item.confidence;
+  const quoted = contentWords(item.sourceQuote);
+  const shared = [...words].filter((w) => quoted.has(w)).length / words.size;
+  return lowerConfidence(item.confidence, shared === 0 ? "LOW" : shared < 0.5 ? "MEDIUM" : "HIGH");
+}
+
+/** The block that really holds the quote: the cited one when it does, else the first that does; a quote across blocks keeps its reference. */
+export function correctedRef(item: Proposed<unknown>, blocks: ReadonlyArray<SourceBlock>): Proposed<unknown>["sourceRef"] {
+  const quote = item.sourceQuote ? normaliseForMatch(item.sourceQuote) : null;
+  if (!quote) return item.sourceRef;
+  const holds = (b: SourceBlock): boolean => normaliseForMatch(b.text).includes(quote);
+  const cited = item.sourceRef ? blocks.find((b) => b.index === item.sourceRef!.block && b.documentId === item.sourceRef!.documentId) : undefined;
+  if (cited && holds(cited)) return item.sourceRef;
+  const found = blocks.find(holds);
+  return found ? { documentId: found.documentId, block: found.index, ...(found.page !== undefined ? { page: found.page } : {}) } : item.sourceRef;
+}
+
 /**
  * Checks one proposed item against the document text. The quote must be verbatim, and every figure and date the value states
  * must be in the quote. Grounding alone certifies HIGH; a model's own lower self-rating is combined afterwards with
@@ -99,13 +151,13 @@ function withoutLinks(value: unknown): unknown {
 export function groundProposed<T>(item: Proposed<T>, sourceText: string): GroundingOutcome {
   if (item.status === "EDITED") return { grounded: true, confidence: "HIGH" };
   const quote = item.sourceQuote;
-  if (!quote || !normaliseForMatch(sourceText).includes(normaliseForMatch(quote))) {
+  if (!quote || normaliseForMatch(quote).length < MIN_QUOTE_CHARS || !normaliseForMatch(sourceText).includes(normaliseForMatch(quote))) {
     return { grounded: false, reason: "QUOTE_NOT_FOUND" };
   }
   const raw = typeof item.value === "string" ? item.value : JSON.stringify(withoutLinks(item.value));
-  const { figures, dates } = valueFigures(raw);
-  const quoteFigures = new Set(askFigures(quote));
-  if (figures.some((f) => !quoteFigures.has(f))) return { grounded: false, reason: "FIGURE_NOT_IN_QUOTE" };
+  const { text, dates } = valueFigures(raw);
+  if (!figuresSupported(text, quote)) return { grounded: false, reason: "FIGURE_NOT_IN_QUOTE" };
+  if (!currencySupported(item.value, quote) || !mainTextSupported(item, quote, sourceText)) return { grounded: false, reason: "VALUE_NOT_IN_QUOTE" };
   if (dates.length > 0) {
     const quoteDates = new Set(datesInText(quote));
     if (dates.some((d) => !quoteDates.has(d))) return { grounded: false, reason: "DATE_NOT_IN_QUOTE" };
@@ -183,6 +235,8 @@ export function groundAreaPatch(
   area: SetupAreaKey,
   fields: Readonly<Record<string, unknown>>,
   sourceText: string,
+  /** The blocks the text was joined from: a citation is checked and corrected against them. */
+  blocks: ReadonlyArray<SourceBlock> = [],
 ): GroundedAreaPatch | { error: string } {
   const def = SETUP_AREAS[area];
   const outside = Object.keys(fields).filter((k) => !def.fields.includes(k));
@@ -212,6 +266,7 @@ export function groundAreaPatch(
         if (leftOut.length < LEFT_OUT_LIMIT) leftOut.push({ field, text: describeItem(node), reason: outcome.reason });
         return DROPPED;
       }
+      if (node.status !== "EDITED") node = { ...node, sourceRef: correctedRef(node, blocks), confidence: computedConfidence(node) };
       // A second reading is held to the same rule as the first: one that is not in the documents is simply not offered.
       if (node.alternatives) {
         const alternatives = node.alternatives.filter((a) => groundProposed({ ...a, confidence: "HIGH", status: "PROPOSED" }, sourceText).grounded);

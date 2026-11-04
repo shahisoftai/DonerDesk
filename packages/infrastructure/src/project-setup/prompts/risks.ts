@@ -2,6 +2,7 @@ import { text } from "../proposed-item.js";
 import { parseLists, valueKey } from "../list-area.js";
 import { mergeLists } from "../extractor-shared.js";
 import type { AreaExtractionSpec } from "../area-spec.js";
+import { RISKS_SCHEMA } from "../output-schemas.js";
 import type { RiskDef } from "@donordesk/domain";
 
 const read = (raw: Record<string, unknown>): RiskDef | null => {
@@ -21,6 +22,7 @@ export const RISKS_SPEC: AreaExtractionSpec = {
     '{"risks": [{"kind": "RISK|ASSUMPTION|ISSUE", "title": "...", "seriousness": "...", "mitigation": "...", "quote": "...", "block": N, "confidence": "..."}]}',
     "seriousness only as the document rates it (\"high\", \"medium likelihood\"); mitigation as the document states it.",
   ].join("\n"),
+  schema: RISKS_SCHEMA,
   parse: parseLists({ risks: read }),
   merge: mergeLists(valueKey("title"), "risks"),
 };

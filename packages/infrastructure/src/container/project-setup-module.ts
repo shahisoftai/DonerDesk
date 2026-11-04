@@ -11,7 +11,11 @@ import { PrismaSetupProposalRepository, PrismaSetupRunRepository } from "../repo
 import { OrganisationPackSource } from "../project-setup/organisation-pack-source.js";
 import { PrismaSetupPackRepository } from "../repositories/setup-packs.js";
 import { StoredSetupDocumentReader } from "../project-setup/source-reader.js";
-import { TenantSetupLlm } from "../project-setup/setup-llm.js";
+import { workerScannedPageReader } from "../project-setup/pdf-layout.js";
+import { TenantSetupLlm, withReplyMemory } from "../project-setup/setup-llm.js";
+import { LlmSectionSurveyor } from "../project-setup/section-surveyor.js";
+import { LlmFieldVerifier } from "../project-setup/field-verifier.js";
+import { NominatimPlaceLookup } from "../project-setup/place-lookup.js";
 import { createSetupExtractors } from "../project-setup/prompted-area-extractor.js";
 import { withSheetShortcuts } from "../project-setup/sheet-first-extractor.js";
 import { SETUP_EXTRACTION_SPECS } from "../project-setup/prompts/index.js";
@@ -43,16 +47,22 @@ export interface ProjectSetupModuleDeps {
   concurrency?: number;
   /** The longest one AI call may take, in milliseconds (default 90 000). A call that is slower is retried once, then the part fails. */
   callTimeoutMs?: number;
+  /** A Nominatim endpoint for recognising place names on the public web; absent = no lookup, nothing is sent. */
+  placeLookupUrl?: string | undefined;
 }
 
 /** The project setup wizard (Phase 36) as one module: its repositories, reader, LLM facade, orchestrator and handlers. */
 export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
   const proposals: ISetupProposalRepository = new PrismaSetupProposalRepository(deps.prisma);
   const runs: ISetupRunRepository = new PrismaSetupRunRepository(deps.prisma);
-  const reader = new StoredSetupDocumentReader(deps.documents, deps.parseUploadedFile);
-  const llm: ISetupLlm = new TenantSetupLlm(deps.llmFor, deps.onProviderError);
+  const reader = new StoredSetupDocumentReader(deps.documents, deps.parseUploadedFile, workerScannedPageReader(process.env.AI_REPORTER_URL, process.env.INTERNAL_TOKEN ?? ""));
+  const llm: ISetupLlm = withReplyMemory(new TenantSetupLlm(deps.llmFor, deps.onProviderError));
   const extractors = deps.extractors ?? withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm, deps.heavyModel));
-  const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.concurrency);
+  const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.concurrency, deps.extractors ? {} : {
+    surveyor: new LlmSectionSurveyor(llm, SETUP_EXTRACTION_SPECS),
+    verifier: new LlmFieldVerifier(llm),
+    placeLookup: deps.placeLookupUrl ? new NominatimPlaceLookup(deps.placeLookupUrl) : undefined,
+  });
   const rerun = new RerunSetupAreaHandler(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.runInBackground);
   const viewer = new DraftViewer(runs, deps.clock);
   const packRepo = new PrismaSetupPackRepository(deps.prisma);

@@ -101,8 +101,10 @@ def default_engine() -> OcrEngine:
     return _engine
 
 
-def render_pdf_pages(data: bytes, max_pages: int = MAX_PAGES, dpi: int = RENDER_DPI) -> tuple[list[Any], int]:
-    """Renders up to `max_pages` pages to images (numpy arrays). Returns the images and the document's page count."""
+def render_pdf_pages(
+    data: bytes, max_pages: int = MAX_PAGES, dpi: int = RENDER_DPI, pages: Sequence[int] | None = None
+) -> tuple[list[Any], int]:
+    """Renders up to `max_pages` pages (or the named 1-based `pages`). Returns the images and the page count."""
     try:
         import numpy as np
         import pypdfium2 as pdfium
@@ -111,7 +113,8 @@ def render_pdf_pages(data: bytes, max_pages: int = MAX_PAGES, dpi: int = RENDER_
     pdf = pdfium.PdfDocument(data)
     total = len(pdf)
     images = []
-    for index in range(min(total, max_pages)):
+    indices = [p - 1 for p in pages if 1 <= p <= total][:max_pages] if pages else range(min(total, max_pages))
+    for index in indices:
         bitmap = pdf[index].render(scale=dpi / 72)
         images.append(np.array(bitmap.to_pil().convert("RGB")))
     return images, total
@@ -165,6 +168,13 @@ def ocr_image(
     load: Callable[[bytes], Any] = load_image,
 ) -> OcrResult:
     return ocr_pages([load(data)], 1, engine or default_engine())
+
+
+def ocr_pdf_pages(data: bytes, pages: Sequence[int], engine: OcrEngine | None = None) -> OcrResult:
+    """OCR for named pages of a PDF whose other pages have words (a scanned annex)."""
+    with _SLOTS:
+        images, total = render_pdf_pages(data, pages=pages)
+        return ocr_pages(images, total, engine or default_engine())
 
 
 def ocr_file(filename: str, data: bytes, engine: OcrEngine | None = None) -> OcrResult | None:

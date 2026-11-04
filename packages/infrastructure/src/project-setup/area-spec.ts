@@ -38,11 +38,14 @@ export interface AreaExtractionSpec {
   recallPass?: boolean;
   /** A second, small call that decides structure over the items found (the results chain's levels and parents). */
   refine?: AreaRefinement;
+  /** The JSON Schema of a reply, for a provider that can enforce it. */
+  schema?: Record<string, unknown>;
 }
 
 /** A follow-up call over the first answer's items only: small, fixed input, so its answer is stable. */
 export interface AreaRefinement {
   promptVersion: string;
+  schema?: Record<string, unknown>;
   /** How many independent answers to take; the majority wins (1 = no vote). */
   votes: number;
   /** The prompt for these fields, or null when there is nothing to refine. */

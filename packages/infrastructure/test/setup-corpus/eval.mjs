@@ -6,6 +6,7 @@ import { SETUP_EXTRACTION_SPECS, PromptedAreaExtractor, createLLMProvider, Tenan
 import * as blueWater from "./blue-water.mjs";
 import * as cbpfSomalia from "./cbpf-somalia.mjs";
 import { readFileSync, existsSync } from "node:fs";
+import { scoreReading } from "./score.mjs";
 import { join } from "node:path";
 import { TolerantDocumentParser } from "../../dist/parsers/document-parser.js";
 import { toSectionBlocks } from "../../dist/project-setup/source-reader.js";
@@ -37,7 +38,7 @@ for (const c of CASES) {
     const started = Date.now();
     const r = await new PromptedAreaExtractor(spec, llm).extract({ tenantId: T, proposalId: "eval", blocks: c.BLOCKS, sourceText, prior, maxTokens: 8192, timeoutMs: 120_000 });
     if (!r.ok) { failures += 1; console.log(`  ${area.padEnd(15)} FAILED: ${r.error.message}`); continue; }
-    const g = groundAreaPatch(area, r.value.fields, sourceText);
+    const g = groundAreaPatch(area, r.value.fields, sourceText, c.BLOCKS ?? blocks);
     if ("error" in g) { failures += 1; console.log(`  ${area.padEnd(15)} FAILED: ${g.error}`); continue; }
     Object.assign(prior, g.fields);
     for (const field of SETUP_AREAS[area].fields) {
@@ -72,9 +73,10 @@ if (live && docsDir) {
         const ask = model ? { available: llm.available.bind(llm), completeJson: (i) => llm.completeJson({ ...i, model }) } : llm;
         const r = await new PromptedAreaExtractor(spec, ask).extract({ tenantId: T, proposalId: "eval", blocks, sourceText, prior, maxTokens: 8192, timeoutMs: 120_000 });
         if (!r.ok) { console.log(`  run ${run} ${area} FAILED: ${r.error.message}`); continue; }
-        const g = groundAreaPatch(area, r.value.fields, sourceText);
+        const g = groundAreaPatch(area, r.value.fields, sourceText, c.BLOCKS ?? blocks);
         if (!("error" in g)) Object.assign(prior, g.fields);
       }
+      if (c.GOLDEN) { const score = scoreReading(c.GOLDEN, prior); console.log(`  run ${run}: wrong shown ${score.wrongShown}, missed ${score.missed}, invented ${score.invented}, correct ${score.correct}`); }
       for (const [name, check] of c.CHECKS) { let ok = false; try { ok = !!check(prior); } catch { ok = false; } if (ok) passes.set(name, passes.get(name) + 1); }
     }
     console.log(`\n${c.name} — ${runs} run(s), ${process.env.LLM_PROVIDER}${process.env.SETUP_HEAVY_MODEL ? `, heavy areas on ${process.env.SETUP_HEAVY_MODEL}` : ""}`);

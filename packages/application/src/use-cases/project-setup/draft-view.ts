@@ -1,4 +1,4 @@
-import type { ReadingAreaRunState, ReadingLeftOutArea, SetupSourceInfo, LaunchSummary, LaunchVerdict, BudgetLineDef, BudgetSuggestion, FinanceSummary, FundingDef, IndicatorDef, LogframeNodeDef, RiskDef, PlaceDef, PlanCoverage, MethodSuggestion, PlannedActivityDef, ScheduleTimeline, SetupLinkSuggestion, Proposed, ProposedStatus, RequirementResult, SetupDraft, SetupExtras, SlideProgress } from "@donordesk/domain";
+import type { SectionFinding, ReadingAreaRunState, ReadingLeftOutArea, SetupSourceInfo, LaunchSummary, LaunchVerdict, BudgetLineDef, BudgetSuggestion, FinanceSummary, FundingDef, IndicatorDef, LogframeNodeDef, RiskDef, PlaceDef, PlanCoverage, MethodSuggestion, PlannedActivityDef, ScheduleTimeline, SetupLinkSuggestion, Proposed, ProposedStatus, RequirementResult, SetupDraft, SetupExtras, SlideProgress } from "@donordesk/domain";
 import { areaRunStates, leftOutFromRuns, SETUP_REQUIREMENTS, SLIDE_KEYS, emptyExtras, evaluateRequirements, gapInbox, planCoverage, SECTOR_TEMPLATES, budgetKeyOf, canLaunch, financeSummary, launchSummary, planKeyOf, scheduleTimeline, suggestBudgetLinks, slideProgress, suggestMethods, suggestSetupLinks } from "@donordesk/domain";
 import type { StoredSetupProposal, StoredSetupRun } from "../../ports/project-setup.js";
 import { STALE_AREA_RUN_MS } from "./proposal-state.js";
@@ -80,6 +80,8 @@ export interface SetupDraftView {
   dashboardOptions: Array<{ id: string; title: string; sector: string }>;
   /** The files the draft was read from and what each was read as; empty for a draft started with no documents. */
   sources: SetupSourceInfo[];
+  /** Which parts the documents hold, and which headings are blank. */
+  sectionFindings: SectionFinding[];
   /** What the reading could not find word for word in the documents, by part: shown, never silently dropped. */
   leftOut: ReadingLeftOutArea[];
   /** The state of each part's latest reading, so a part being read again can be shown and waited for. */
@@ -126,6 +128,7 @@ export function describeDraft(stored: StoredSetupProposal, reading?: ReadingRuns
     launch: launchVerdict(canLaunch(results, draft), Boolean(stored.appliedProjectId) || Boolean(reading?.runs.some((r) => r.kind === "LAUNCH"))),
     dashboardOptions: SECTOR_TEMPLATES.map((t) => ({ id: t.id, title: t.title, sector: t.sector })),
     sources: stored.proposal.sources ?? [],
+    sectionFindings: stored.proposal.sectionFindings ?? [],
     leftOut: reading ? leftOutFromRuns(reading.runs) : [],
     areaRuns: reading ? areaRunStates(reading.runs, reading.now, STALE_AREA_RUN_MS) : {},
     extras: draft.extras,

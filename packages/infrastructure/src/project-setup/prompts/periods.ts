@@ -3,6 +3,7 @@ import { parseLists, valueKey } from "../list-area.js";
 import { mergeLists } from "../extractor-shared.js";
 import { datesLine } from "./prior.js";
 import type { AreaExtractionSpec } from "../area-spec.js";
+import { PERIODS_SCHEMA } from "../output-schemas.js";
 import type { PeriodDef } from "@donordesk/domain";
 
 const CADENCES = ["MONTHLY", "QUARTERLY", "SEMI_ANNUAL", "ANNUAL", "FINAL"] as const;
@@ -26,6 +27,7 @@ export const PERIODS_SPEC: AreaExtractionSpec = {
     "Give each reporting obligation once: a cadence or a final report stated in several sentences is still one item (use the clearest quote).",
   ].join("\n"),
   context: (prior) => datesLine(prior.facts),
+  schema: PERIODS_SCHEMA,
   parse: (raw, ctx) => {
     const parsed = parseLists({ periods: read })(raw, ctx);
     if (typeof parsed === "string" || !Array.isArray(parsed.periods)) return parsed;

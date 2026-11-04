@@ -132,9 +132,13 @@ export interface LLMCompletionInput {
    * extraction) that reasoning models answer slowly.
    */
   timeoutMs?: number;
+  /** The JSON Schema the reply must follow, where the provider can enforce it; others ignore it (the prompt still states the shape). */
+  jsonSchema?: Record<string, unknown>;
 }
 
 export interface LLMCompletionResult {
+  /** True when the reply was cut off at the token limit: it is incomplete even if it parses. */
+  truncated?: boolean;
   text: string;
   parsed?: unknown;
   model: string;

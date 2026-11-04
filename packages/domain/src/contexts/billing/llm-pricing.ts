@@ -19,6 +19,8 @@ const FREE_MODEL_PREFIXES = ["ollama:", "ollama/", "llama", "stub", "determinist
 /** List-price estimate, checked 2026-10-20 against third-party summaries of the provider's pricing page (rates differ between sources). */
 export const DEFAULT_LLM_PRICES: LlmPriceTable = {
   "glm-5.3-flash": { inputPerMTok: 0.15, outputPerMTok: 0.5 },
+  "claude-sonnet-5-5": { inputPerMTok: 2, outputPerMTok: 10 },
+  "claude-haiku-5-5": { inputPerMTok: 0.1, outputPerMTok: 0.5 },
 };
 
 let overrides: LlmPriceTable = {};

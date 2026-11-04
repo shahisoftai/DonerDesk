@@ -137,6 +137,31 @@ export interface SetupExtractInput {
   prior: Readonly<Record<string, unknown>>;
   maxTokens: number;
   timeoutMs: number;
+  /** Sections the document survey assigned to this area: read first and whole. */
+  preferSections?: ReadonlyArray<string> | undefined;
+  /** Sections assigned to this area that hold nothing: never read, and named to the model so it does not fill them. */
+  emptySections?: ReadonlyArray<string> | undefined;
+  /** A focused second look: what to look for. It runs only the main read and can only add items. */
+  hint?: string | undefined;
+  /** Ask the model again, even if the same question was answered recently ("Read this part again"). */
+  fresh?: boolean | undefined;
+}
+
+import type { RecognisedPlace, VerifiableField } from "@donordesk/domain";
+
+/** Which sections of the documents hold which part, decided from their headings; the emptiness of a section is checked by code. */
+export interface ISetupSectionSurveyor {
+  survey(input: { tenantId: TenantId; blocks: ReadonlyArray<SourceBlock> }): Promise<{ sections: Partial<Record<SetupAreaKey, string[]>>; usage?: SetupUsage | undefined }>;
+}
+
+/** What a public gazetteer says a place name is. Only the name and country are sent. Null = unknown or unavailable. */
+export interface ISetupPlaceLookup {
+  lookup(name: string, country: string | null): Promise<RecognisedPlace | null>;
+}
+
+/** The second question about key values: returns the paths whose quote does not state the value. A failed check doubts nothing. */
+export interface ISetupFieldVerifier {
+  doubted(input: { tenantId: TenantId; fields: ReadonlyArray<VerifiableField> }): Promise<{ paths: string[]; usage?: SetupUsage | undefined }>;
 }
 
 /** What the AI service was asked for while reading: calls and tokens, so a document's cost can be shown. */
@@ -152,6 +177,8 @@ export interface ExtractedArea {
   fields: Readonly<Record<string, unknown>>;
   /** True when the document was too large to read in full: the area reports it instead of silently truncating. */
   partlyRead?: boolean | undefined;
+  /** Items in the model's reply that could not be understood (an unknown level, a heading): shown as left out, never dropped silently. */
+  unreadable?: ReadonlyArray<{ field: string; text: string }> | undefined;
   model?: string | undefined;
   promptVersion?: string | undefined;
 }
@@ -202,12 +229,14 @@ export interface SetupLlmCompletion {
   text: string;
   model: string;
   promptVersion: string;
+  /** The reply was cut at the token limit. */
+  truncated?: boolean | undefined;
 }
 
 /** The narrow LLM facade extraction needs: one JSON completion, tenant-resolved; null provider = the feature is unavailable. */
 export interface ISetupLlm {
   available(tenantId: TenantId): Promise<boolean>;
-  completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number; /** A model other than the organisation's own, for the areas that decide structure (env SETUP_HEAVY_MODEL). */ model?: string | undefined }): Promise<Result<SetupLlmCompletion | null, DomainError>>;
+  completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number; schema?: Record<string, unknown> | undefined; fresh?: boolean | undefined; variant?: number | undefined; /** A model other than the organisation's own, for the areas that decide structure (env SETUP_HEAVY_MODEL). */ model?: string | undefined }): Promise<Result<SetupLlmCompletion | null, DomainError>>;
 }
 
 /** Where the default packs come from: the ones that ship with DonorDesk, and (later) the organisation's own copies. */

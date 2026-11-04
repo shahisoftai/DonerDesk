@@ -33,8 +33,8 @@ export async function startSetupAction(_form: FormData) {
       },
     };
     store.reading = {
-      sources: [{ documentId: "d1", name: "water.txt", sheets: [{ title: null, kind: "PROPOSAL" }], feeds: ["RESULTS"] }],
-      leftOut: [{ area: "RESULTS", total: 2, items: [{ field: "title", text: "Clean taps everywhere", reason: "QUOTE_NOT_FOUND" }] }],
+      sources: [{ documentId: "d1", name: "water.txt", sheets: [{ title: null, kind: "PROPOSAL" }], feeds: ["LOGFRAME"] }],
+      leftOut: [{ area: "LOGFRAME", total: 2, items: [{ field: "title", text: "Clean taps everywhere", reason: "QUOTE_NOT_FOUND" }] }],
       areaRuns: {},
     };
     store.status = "READY";

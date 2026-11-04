@@ -303,7 +303,7 @@ await check("from documents: a result's passage opens with its words marked, the
   await p.locator("#pcw-file").setInputFiles([{ name: "water.txt", mimeType: "text/plain", buffer: Buffer.from("x") }]);
   await p.getByRole("button", { name: "Read my documents" }).click();
   await p.getByText(/Reading your documents/).waitFor({ state: "hidden", timeout: 9000 });
-  await p.getByText("Your documents").first().click();
+  await p.locator("summary", { hasText: "Your documents" }).first().click();
   await p.getByText("Read as: Proposal or narrative").waitFor();
   await go(p, "Results framework");
   await p.getByRole("button", { name: "Show in the document" }).first().click();

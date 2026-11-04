@@ -12,6 +12,9 @@ import { sectionLabel } from "./section-router.js";
 export const SELECTION_BUDGET_CHARS = 30_000;
 export const CHUNK_CHARS = 12_000;
 export const MAX_CHUNKS = 3;
+/** Sections the survey assigned to an area are read whole, up to this much: long documents are not cut to the ordinary budget. */
+export const DEEP_READ_CHARS = 120_000;
+const TRUNCATED_REPLY = "The answer was cut off at the token limit.";
 
 export interface ChunkContext {
   blocks: ReadonlyArray<SourceBlock>;
@@ -42,6 +45,9 @@ export interface RunAreaExtractionInput {
   buildPrompt: (blocksText: string, prior: Readonly<Record<string, unknown>>) => { system: string; user: string };
   parseChunk: ChunkParser;
   merge: ChunkMerger;
+  /** The JSON Schema of a reply, for a provider that can enforce it. */
+  schema?: Record<string, unknown> | undefined;
+  fresh?: boolean | undefined;
 }
 
 export interface ExtractorRun {
@@ -98,13 +104,14 @@ export function selectBlocks(blocks: ReadonlyArray<SourceBlock>, keywords: Reado
   for (const b of chosen) {
     if (b.section && b.section !== current) lines.push(sectionLabel(b.section));
     current = b.section;
+    if (b.columns) lines.push(sectionLabel(`columns: ${b.columns}`));
     lines.push(`[${b.index}] ${b.text}`);
   }
   return { text: lines.join("\n"), truncated };
 }
 
 /** Whole blocks per call, at most MAX_CHUNKS calls; anything beyond is reported, never read silently. */
-export function chunkBlocksText(text: string): { chunks: string[]; partlyRead: boolean } {
+export function chunkBlocksText(text: string, maxChunks = MAX_CHUNKS): { chunks: string[]; partlyRead: boolean } {
   if (text.length <= CHUNK_CHARS) return { chunks: text ? [text] : [], partlyRead: false };
   const lines = text.split("\n");
   const chunks: string[] = [];
@@ -115,12 +122,12 @@ export function chunkBlocksText(text: string): { chunks: string[]; partlyRead: b
       chunks.push(carry.join("\n"));
       carry = [];
       length = 0;
-      if (chunks.length === MAX_CHUNKS) return { chunks, partlyRead: true };
+      if (chunks.length === maxChunks) return { chunks, partlyRead: true };
     }
     carry.push(line);
     length += line.length + 1;
   }
-  if (carry.length > 0 && chunks.length < MAX_CHUNKS) chunks.push(carry.join("\n"));
+  if (carry.length > 0 && chunks.length < maxChunks) chunks.push(carry.join("\n"));
   else if (carry.length > 0) return { chunks, partlyRead: true };
   return { chunks, partlyRead: false };
 }
@@ -138,11 +145,45 @@ export async function withTransientRetry<T>(work: () => Promise<Result<T, Domain
 }
 
 /** One chunk: ask, read the reply, parse it. An unreadable or empty reply is retried once like any other transient failure. */
-async function readChunk(input: RunAreaExtractionInput, chunk: string): Promise<Result<{ fields: Record<string, unknown>; model: string; promptVersion: string; usage?: { inputTokens: number; outputTokens: number } | undefined }, DomainError>> {
+type ChunkReply = { fields: Record<string, unknown>; model: string; promptVersion: string; usage?: { inputTokens: number; outputTokens: number } | undefined; unreadable: { field: string; text: string }[] };
+
+/** List items in the reply that the area's reader did not keep. */
+function unreadItems(raw: unknown, fields: Record<string, unknown>): { field: string; text: string }[] {
+  if (!raw || typeof raw !== "object") return [];
+  return Object.entries(fields).flatMap(([field, kept]) => {
+    const asked = (raw as Record<string, unknown>)[field];
+    if (!Array.isArray(asked) || !Array.isArray(kept) || asked.length <= kept.length) return [];
+    const keptQuotes = new Set((kept as { sourceQuote?: unknown }[]).map((k) => k.sourceQuote));
+    return asked.filter((a) => a && typeof a === "object" && !keptQuotes.has(String((a as { quote?: unknown }).quote ?? "").slice(0, 400))).map((a) => {
+      const r = a as Record<string, unknown>;
+      return { field, text: String(r.title ?? r.name ?? r.category ?? r.quote ?? "").slice(0, 200) };
+    });
+  });
+}
+
+/** A reply cut at the token limit is a failure even when it parses. After its retry, the chunk is read in two halves, once. */
+async function readChunk(input: RunAreaExtractionInput, chunk: string, canSplit = true): Promise<Result<ChunkReply, DomainError>> {
+  const whole = await readChunkOnce(input, chunk);
+  if (whole.ok || whole.error.message !== TRUNCATED_REPLY || !canSplit) return whole;
+  const lines = chunk.split("\n");
+  if (lines.length < 2) return whole;
+  const middle = Math.ceil(lines.length / 2);
+  const [a, b] = await Promise.all([readChunk(input, lines.slice(0, middle).join("\n"), false), readChunk(input, lines.slice(middle).join("\n"), false)]);
+  if (!a.ok) return a;
+  if (!b.ok) return b;
+  return ok({
+    fields: input.merge(a.value.fields, b.value.fields), model: a.value.model, promptVersion: a.value.promptVersion,
+    usage: { inputTokens: (a.value.usage?.inputTokens ?? 0) + (b.value.usage?.inputTokens ?? 0), outputTokens: (a.value.usage?.outputTokens ?? 0) + (b.value.usage?.outputTokens ?? 0) },
+    unreadable: [...a.value.unreadable, ...b.value.unreadable],
+  });
+}
+
+async function readChunkOnce(input: RunAreaExtractionInput, chunk: string): Promise<Result<ChunkReply, DomainError>> {
   return withTransientRetry(async () => {
-    const reply = await input.llm.completeJson({ tenantId: input.tenantId, ...input.buildPrompt(chunk, input.prior), maxTokens: input.maxTokens, timeoutMs: input.timeoutMs });
+    const reply = await input.llm.completeJson({ tenantId: input.tenantId, ...input.buildPrompt(chunk, input.prior), maxTokens: input.maxTokens, timeoutMs: input.timeoutMs, schema: input.schema, fresh: input.fresh });
     if (!reply.ok) return reply;
     if (reply.value === null) return err(new DomainError("POLICY_DENIED", "The AI service is not available for this organisation right now."));
+    if (reply.value.truncated) return err(new DomainError("VALIDATION_FAILED", TRUNCATED_REPLY));
     if (reply.value.text.trim() === "") {
       // A reasoning model that spent its budget thinking answers nothing: say so, never read it as "nothing found".
       return err(new DomainError("VALIDATION_FAILED", "The model returned an empty answer for this area (its token budget may be too small)."));
@@ -151,19 +192,24 @@ async function readChunk(input: RunAreaExtractionInput, chunk: string): Promise<
     if (parsed === undefined) return err(new DomainError("VALIDATION_FAILED", "The model did not answer with readable JSON for this area."));
     const fields = input.parseChunk(parsed, { blocks: input.blocks, sourceText: input.sourceText });
     if (typeof fields === "string") return err(new DomainError("VALIDATION_FAILED", fields));
-    return ok({ fields, model: reply.value.model, promptVersion: reply.value.promptVersion, usage: reply.value.usage });
+    return ok({ fields, model: reply.value.model, promptVersion: reply.value.promptVersion, usage: reply.value.usage, unreadable: unreadItems(parsed, fields) });
   });
 }
 
 /** The whole per-area run: select, chunk, call (the chunks at the same time), parse, merge in reading order. */
 export async function runAreaExtraction(input: RunAreaExtractionInput): Promise<Result<ExtractedArea, DomainError>> {
-  const selected = selectBlocks(input.blocks, input.keywords, input.budgetChars ?? SELECTION_BUDGET_CHARS, input.headBlocks ?? 0, input.skipBlock, input.preferBlock);
-  const { chunks, partlyRead: chunked } = chunkBlocksText(selected.text);
+  const base = input.budgetChars ?? SELECTION_BUDGET_CHARS;
+  const routedChars = input.preferBlock ? input.blocks.filter((b) => !input.skipBlock?.(b) && input.preferBlock!(b)).reduce((n, b) => n + b.text.length + 16, 0) : 0;
+  const budget = Math.max(base, Math.min(routedChars, DEEP_READ_CHARS));
+  const selected = selectBlocks(input.blocks, input.keywords, budget, input.headBlocks ?? 0, input.skipBlock, input.preferBlock);
+  const { chunks, partlyRead: chunked } = chunkBlocksText(selected.text, Math.max(MAX_CHUNKS, Math.ceil(budget / CHUNK_CHARS) + 1));
   const partlyRead = selected.truncated || chunked;
   if (chunks.length === 0) {
     return err(new DomainError("VALIDATION_FAILED", "The document has no readable text for this area."));
   }
   const replies = await Promise.all(chunks.map((chunk) => readChunk(input, chunk)));
+  const firstFailure = replies.find((r) => !r.ok);
+  const anyRead = replies.some((r) => r.ok);
   let merged: Record<string, unknown> = {};
   let model: string | undefined;
   let promptVersion: string | undefined;
@@ -176,13 +222,17 @@ export async function runAreaExtraction(input: RunAreaExtractionInput): Promise<
       usage.outputTokens += reply.value.usage?.outputTokens ?? 0;
     }
   }
+  // What was read is kept when another chunk failed; the area says it was partly read.
+  if (firstFailure && !anyRead) return firstFailure;
+  const unreadable: { field: string; text: string }[] = [];
   for (const reply of replies) {
-    if (!reply.ok) return reply;
+    if (!reply.ok) continue;
+    unreadable.push(...reply.value.unreadable);
     merged = input.merge(merged, reply.value.fields);
     model = model ?? reply.value.model;
     promptVersion = promptVersion ?? reply.value.promptVersion;
   }
-  return ok({ fields: merged, partlyRead, model, promptVersion, usage });
+  return ok({ fields: merged, partlyRead: partlyRead || !!firstFailure, model, promptVersion, usage, ...(unreadable.length > 0 ? { unreadable } : {}) });
 }
 
 

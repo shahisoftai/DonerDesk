@@ -15,7 +15,7 @@ export const CHECKS = [
   ["facts: country Somalia", (f) => (v(f.facts?.countries) ?? []).some((c) => /somalia/i.test(c))],
   ["facts: summary has no template placeholder", (f) => !/\[insert/i.test(String(v(f.facts?.summary) ?? ""))],
   ["logframe: no HRP/strategic objective as a result", (f) => !titles(f.logframe).some((t) => /prevent loss of life|sustain people/i.test(t)) && !(f.logframe ?? []).some((i) => /^SO\d/i.test(String(v(i)?.code ?? "")))],
-  ["logframe: the five activities of the narrative", (f) => (f.logframe ?? []).filter((i) => v(i)?.level === "ACTIVITY").length >= 5],
+  ["logframe: the blank results table stays blank (nothing built from narrative)", (f) => (f.logframe ?? []).filter((i) => v(i)?.level === "ACTIVITY").length === 0],
   ["logframe: no placeholder item", (f) => !titles(f.logframe).some((t) => /to be completed|^activity [\d.]+$/i.test(t))],
   ["indicators: people reached with emergency water services", (f) => titles(f.indicators).some((t) => /people reached with emergency water/i.test(t))],
   ["plan: no placeholder plan item", (f) => !titles(f.plan).some((t) => /to be completed|^activity [\d.]+/i.test(t))],

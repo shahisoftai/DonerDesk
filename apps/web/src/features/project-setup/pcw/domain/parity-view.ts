@@ -5,8 +5,8 @@ import type { SetupLogLevel } from "@donordesk/domain";
 
 /** The reading parts that feed each slide (a slide with none has nothing to read again). */
 export const AREAS_OF_SLIDE: Partial<Record<SlideKey, readonly string[]>> = {
-  PROJECT_TEAM: ["PROJECT_TEAM"], RESULTS: ["RESULTS"], INDICATORS: ["INDICATORS"], PLACES: ["PLACES"],
-  WORK_PLAN: ["WORK_PLAN"], FINANCE: ["FINANCE"], REPORTING: ["REPORTING"], LAUNCH: ["LAUNCH"],
+  START: ["FACTS"], RESULTS: ["LOGFRAME"], INDICATORS: ["INDICATORS"], PLACES: ["PLACES"],
+  WORK_PLAN: ["PLAN"], FINANCE: ["FUNDING_BUDGET"], REPORTING: ["PERIODS"], LAUNCH: ["RISKS"],
 };
 
 export const LEFT_OUT_REASON: Record<string, string> = {
@@ -23,6 +23,12 @@ export const DOCUMENT_KINDS: Record<string, string> = {
 export function leftOutFor(view: SetupDraftView, slide: SlideKey): SetupDraftView["leftOut"] {
   const areas = AREAS_OF_SLIDE[slide] ?? [];
   return view.leftOut.filter((l) => areas.includes(l.area) && l.total > 0);
+}
+
+/** What the documents said about this step's part: blank sections, or no such part at all. FOUND with nothing blank says nothing. */
+export function sectionNoticeFor(view: SetupDraftView, slide: SlideKey): SetupDraftView["sectionFindings"] {
+  const areas = AREAS_OF_SLIDE[slide] ?? [];
+  return view.sectionFindings.filter((f) => areas.includes(f.area) && f.state !== "FOUND");
 }
 
 /** True while any part is being read (again): the shell keeps asking until none is. */

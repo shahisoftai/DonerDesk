@@ -4,6 +4,7 @@ import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { ISourceDocumentReader, ISetupAreaExtractor, ISetupProposalRepository, ISetupRunRepository, SetupUsage, StoredSetupProposal } from "../../ports/project-setup.js";
 import { SETUP_PII_KEEP } from "./proposal-state.js";
 import { runPool } from "./run-pool.js";
+import { afterAllAreas, surveySections, type ReadingSteps } from "./reading-steps.js";
 
 const addUsage = (a: SetupUsage, b: SetupUsage | undefined): SetupUsage =>
   b ? { calls: a.calls + b.calls, inputTokens: a.inputTokens + b.inputTokens, outputTokens: a.outputTokens + b.outputTokens } : a;
@@ -33,6 +34,7 @@ export class SetupExtractionOrchestrator {
     private readonly timeoutMs = 120_000,
     /** How many areas are read at the same time (the AI service paces itself; this keeps one document from taking every slot). */
     private readonly concurrency = 3,
+    private readonly steps: ReadingSteps = {},
   ) {}
 
   async run(input: ExtractionRunInput): Promise<Result<void, DomainError>> {
@@ -55,6 +57,7 @@ export class SetupExtractionOrchestrator {
     const redacted = applyKindOverrides(blocks.value, proposal.proposal.sources).map((b) => ({ ...b, text: redactForLlm(b.text, undefined, SETUP_PII_KEEP) }));
     const sourceText = joinBlocks(redacted);
 
+    const survey = await surveySections(this.steps, this.extractors, input.tenantId, redacted);
     const byArea = new Map(this.extractors.map((e) => [e.area, e]));
     const ordered = SETUP_AREA_APPLY_ORDER.filter((area) => byArea.has(area));
     // Everything the areas share lives here; only `serial` touches it after an area has been read.
@@ -62,7 +65,7 @@ export class SetupExtractionOrchestrator {
       data: { ...proposal.proposal },
       checked: 0, dropped: 0, okAreas: 0, failedAreas: 0,
       model: undefined as string | undefined, promptVersion: undefined as string | undefined,
-      usage: { calls: 0, inputTokens: 0, outputTokens: 0 }, aiLimited: false,
+      usage: addUsage({ calls: 0, inputTokens: 0, outputTokens: 0 }, survey.usage), aiLimited: false,
     };
     // Areas finish in any order, but each one's merge and save happens alone, so none overwrites another's result.
     let chain: Promise<unknown> = Promise.resolve();
@@ -78,6 +81,11 @@ export class SetupExtractionOrchestrator {
       if (state.aiLimited && !extractor.canReadWithoutModel?.(redacted)) return;
       const runId = this.ids.generate();
       await this.runs.start({ id: runId, tenantId: input.tenantId, proposalId: input.proposalId, kind: "EXTRACT", area, status: "RUNNING", detail: {}, startedAt: this.clock.now() });
+      // A part whose every section is blank stays empty and is highlighted: nothing is asked, so nothing can be filled in.
+      if (survey.findings.get(area)?.state === "EMPTY" && !extractor.canReadWithoutModel?.(redacted)) {
+        await serial(async () => { state.okAreas += 1; await this.runs.finish(runId, input.tenantId, { checked: 0, dropped: 0, emptySection: true }, this.clock.now()); });
+        return;
+      }
       // Everything an area depends on was read in an earlier layer, so its results are already in `state.data`.
       const prior: Record<string, unknown> = {};
       for (const dependency of SETUP_AREAS[area].dependsOn) {
@@ -87,6 +95,7 @@ export class SetupExtractionOrchestrator {
         tenantId: input.tenantId, proposalId: input.proposalId, area,
         blocks: redacted, sourceText, prior,
         maxTokens: this.maxTokens, timeoutMs: this.timeoutMs,
+        preferSections: survey.preferred.get(area), emptySections: survey.findings.get(area)?.emptyHeadingPaths,
       });
       const used = extracted.ok ? extracted.value.usage : undefined;
       const usageDetail: Record<string, number> = used ? { calls: used.calls, inputTokens: used.inputTokens, outputTokens: used.outputTokens } : {};
@@ -97,7 +106,7 @@ export class SetupExtractionOrchestrator {
         if (extracted.error.code === "RATE_LIMITED") state.aiLimited = true;
         return;
       }
-      const grounded = groundAreaPatch(area, extracted.value.fields, sourceText);
+      const grounded = groundAreaPatch(area, extracted.value.fields, sourceText, redacted);
       if ("error" in grounded) {
         await serial(async () => { state.failedAreas += 1; state.usage = addUsage(state.usage, used); });
         await this.runs.fail(runId, input.tenantId, { reason: grounded.error, ...usageDetail }, this.clock.now());
@@ -113,7 +122,7 @@ export class SetupExtractionOrchestrator {
         state.promptVersion = state.promptVersion ?? extracted.value.promptVersion;
         await this.runs.finish(runId, input.tenantId, {
           checked: grounded.checked, dropped: grounded.dropped, ...usageDetail,
-          ...(grounded.leftOut.length > 0 ? { leftOut: JSON.stringify(grounded.leftOut) } : {}),
+          ...(grounded.leftOut.length > 0 || extracted.value.unreadable?.length ? { leftOut: JSON.stringify([...grounded.leftOut, ...(extracted.value.unreadable ?? []).map((u) => ({ ...u, reason: "UNREADABLE" }))].slice(0, 40)) } : {}),
           ...(extracted.value.partlyRead ? { partlyRead: true } : {}),
         }, this.clock.now());
         // Saved after every area, so a later failure keeps what earlier areas read and the screen can poll real progress.
@@ -125,6 +134,9 @@ export class SetupExtractionOrchestrator {
     };
 
     for (const layer of extractionLayers(ordered)) await runPool(layer, this.concurrency, readArea);
+    const finished = await afterAllAreas(this.steps, { extractors: this.extractors, tenantId: input.tenantId, proposalId: input.proposalId, blocks: redacted, sourceText, maxTokens: this.maxTokens, timeoutMs: this.timeoutMs, skipRepairs: state.aiLimited }, state.data, survey.findings);
+    state.data = finished.data;
+    state.usage = addUsage(state.usage, finished.usage);
     const { checked, dropped, okAreas, failedAreas, model, promptVersion, usage } = state;
     // Every area is read: items the documents did not tie to a result are placed by their wording where one result clearly fits.
     const data = { ...offerProjectCurrency(offerPlaceCountries(offerPlanDates(linkProposal(proposeCodes(state.data, "LIVE"))))), sources: describeSources(redacted, proposal.proposal.sources, this.feedsByDocument(redacted)) };

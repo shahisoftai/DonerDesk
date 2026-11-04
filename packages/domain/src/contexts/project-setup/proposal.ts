@@ -6,6 +6,7 @@
  */
 import type { PlainDate } from "../workplan/plain-date.js";
 import type { SetupSourceInfo } from "./document-sources.js";
+import type { SectionFinding } from "./section-findings.js";
 
 /** How surely a value was read from its quote; grounding certifies HIGH, a model's own caution can only lower it. */
 export type SetupConfidence = "HIGH" | "MEDIUM" | "LOW";
@@ -109,6 +110,16 @@ export interface PlaceDef {
   /** Only when the document states coordinates; a place the gazetteer does not know stays "To confirm". */
   latitude: number | null;
   longitude: number | null;
+  /** What an outside gazetteer says this name is: offered for a person to check, never replacing what the document says. */
+  recognised?: RecognisedPlace;
+}
+
+export interface RecognisedPlace {
+  name: string;
+  /** Larger areas it sits in, from the nearest out ("Bay, Somalia"). */
+  within: string;
+  country: string | null;
+  source: string;
 }
 
 export interface FundingDef {
@@ -157,6 +168,8 @@ export interface ProposedFacts {
 export interface ProjectSetupProposal {
   /** The files read and the kind each was read as (Phase 37.6); absent on proposals read before. */
   sources?: SetupSourceInfo[];
+  /** Which parts the documents contain, found from their headings; absent on proposals read before. */
+  sectionFindings?: SectionFinding[];
   facts: ProposedFacts;
   logframe: Proposed<LogframeNodeDef>[];
   indicators: Proposed<IndicatorDef>[];

@@ -122,6 +122,7 @@ const PlaceDefSchema = z.object({
   parentName: z.string().max(200).nullable(),
   latitude: z.number().min(-90).max(90).nullable(),
   longitude: z.number().min(-180).max(180).nullable(),
+  recognised: z.object({ name: z.string().max(300), within: z.string().max(600), country: z.string().max(200).nullable(), source: z.string().max(60) }).optional(),
 });
 
 const FundingDefSchema = z.object({
@@ -165,6 +166,7 @@ export type SetSetupDocumentKindInput = z.infer<typeof SetSetupDocumentKindSchem
 
 export const ProjectSetupProposalSchema = z.object({
   sources: z.array(SetupSourceInfoSchema).max(10).optional(),
+  sectionFindings: z.array(z.object({ area: SetupAreaKeySchema, state: z.enum(["FOUND", "PARTLY_EMPTY", "EMPTY", "NOT_IN_DOCUMENTS"]), emptyHeadings: z.array(z.string().max(300)).max(60) })).max(8).optional(),
   facts: ProposedFactsSchema,
   logframe: z.array(proposedOf(LogframeNodeDefSchema)).max(300),
   indicators: z.array(proposedOf(IndicatorDefSchema)).max(300),

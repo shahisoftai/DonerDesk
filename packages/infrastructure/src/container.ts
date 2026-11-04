@@ -1341,6 +1341,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     parseUploadedFile: new ParseUploadedFileHandler(parser),
     llmFor: resolveSetupLlm,
     heavyModel: process.env.SETUP_HEAVY_MODEL?.trim() || undefined,
+    placeLookupUrl: process.env.PLACE_LOOKUP_URL?.trim() || undefined,
     onProviderError: (info) => logger.warn("Project setup: the AI service refused a request", info),
     runInBackground,
     maxRunsPerDay: Number.parseInt(process.env.SETUP_ASSIST_RUNS_PER_DAY ?? "10", 10) || 10,

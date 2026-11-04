@@ -19,6 +19,8 @@ export interface SourceBlock {
   sheet?: string | null;
   /** The headings the block sits under ("C.3 Goals and Objectives > Objectives:"), from the document map; absent = not mapped. */
   section?: string;
+  /** The header row of the table this block continues: shown to the model as a label, because the block itself starts mid-table. */
+  columns?: string;
 }
 
 export const normaliseForMatch = (text: string): string => text.replace(/\s+/g, " ").trim();

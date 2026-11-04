@@ -19,6 +19,8 @@ export interface SetupAreaDef {
   dependsOn: readonly SetupAreaKey[];
   /** Fixed place in the apply order; 1 is applied first. */
   applyOrder: number;
+  /** Always exists in some form: its headings say where to look, never that it is empty. */
+  alwaysPresent?: boolean;
   /** Everything proposed for the area, whatever the person has decided so far. */
   items: (p: ProjectSetupProposal) => number;
   /** Items that will be applied: accepted, or written by the person (EDITED is a decision). */
@@ -30,7 +32,7 @@ const countAccepted = (items: ReadonlyArray<Proposed<unknown>>): number => items
 
 export const SETUP_AREAS: Record<SetupAreaKey, SetupAreaDef> = {
   FACTS: {
-    key: "FACTS", labelKey: "setup.area.facts", fields: ["facts"], dependsOn: [], applyOrder: 1,
+    key: "FACTS", labelKey: "setup.area.facts", fields: ["facts"], dependsOn: [], applyOrder: 1, alwaysPresent: true,
     items: (p) => Object.keys(p.facts).length, accepted: (p) => countAccepted(Object.values(p.facts)),
   },
   LOGFRAME: {
@@ -42,7 +44,7 @@ export const SETUP_AREAS: Record<SetupAreaKey, SetupAreaDef> = {
     items: (p) => p.indicators.length, accepted: (p) => countAccepted(p.indicators),
   },
   PERIODS: {
-    key: "PERIODS", labelKey: "setup.area.periods", fields: ["periods"], dependsOn: ["FACTS"], applyOrder: 4,
+    key: "PERIODS", labelKey: "setup.area.periods", fields: ["periods"], dependsOn: ["FACTS"], applyOrder: 4, alwaysPresent: true,
     items: (p) => p.periods.length, accepted: (p) => countAccepted(p.periods),
   },
   PLAN: {

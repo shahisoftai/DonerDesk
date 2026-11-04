@@ -298,7 +298,7 @@ test("groundAreaPatch drops every ungrounded item of an area patch, counts them,
   assert.ok(!("error" in arrays));
   assert.equal(arrays.fields.logframe.length, 1);
   assert.equal(arrays.dropped, 1);
-  const nulls = groundAreaPatch("FUNDING_BUDGET", { funding: [P(null, null)], budget: [P({ category: "kits", amount: null, currency: "EUR", logframeCode: null }, "Budget is EUR 1,000.")] }, "Budget is EUR 1,000.");
+  const nulls = groundAreaPatch("FUNDING_BUDGET", { funding: [P(null, null)], budget: [P({ category: "Budget", amount: null, currency: "EUR", logframeCode: null }, "Budget is EUR 1,000.")] }, "Budget is EUR 1,000.");
   assert.ok(!("error" in nulls));
   assert.equal(nulls.fields.funding.length, 1, "a not-stated item needs no quote and is kept");
   assert.equal(nulls.fields.budget.length, 1);

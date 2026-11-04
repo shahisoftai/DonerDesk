@@ -21,3 +21,7 @@ export * from "./facts-checks.js";
 export * from "./review-operations.js";
 export * from "./document-sources.js";
 export * from "./pcw/index.js";
+export * from "./section-findings.js";
+export * from "./setup-figures.js";
+export * from "./setup-repairs.js";
+export * from "./field-verification.js";

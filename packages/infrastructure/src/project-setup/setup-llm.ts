@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { DomainError, err, ok, type TenantId, type Result } from "@donordesk/domain";
 import type { ILLMProvider } from "@donordesk/application";
 import type { ISetupLlm, SetupLlmCompletion } from "@donordesk/application";
@@ -18,7 +19,7 @@ export class TenantSetupLlm implements ISetupLlm {
     return (await this.llmFor(tenantId.toString())) !== null;
   }
 
-  async completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number; model?: string | undefined }): Promise<Result<SetupLlmCompletion | null, DomainError>> {
+  async completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number; model?: string | undefined; schema?: Record<string, unknown> | undefined }): Promise<Result<SetupLlmCompletion | null, DomainError>> {
     let provider: ILLMProvider | null;
     try {
       provider = await this.llmFor(input.tenantId.toString(), input.model);
@@ -34,8 +35,9 @@ export class TenantSetupLlm implements ISetupLlm {
         maxTokens: input.maxTokens,
         temperature: 0,
         timeoutMs: input.timeoutMs,
+        ...(input.schema ? { jsonSchema: input.schema } : {}),
       });
-      return ok({ text: reply.text, model: provider.model, promptVersion: provider.promptVersion, ...(reply.usage ? { usage: { inputTokens: reply.usage.inputTokens, outputTokens: reply.usage.outputTokens } } : {}) });
+      return ok({ text: reply.text, ...(reply.truncated ? { truncated: true } : {}), model: provider.model, promptVersion: provider.promptVersion, ...(reply.usage ? { usage: { inputTokens: reply.usage.inputTokens, outputTokens: reply.usage.outputTokens } } : {}) });
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
       this.onProviderError?.({ tenantId: input.tenantId.toString(), message: raw });
@@ -66,4 +68,30 @@ export function plainProviderError(raw: string): DomainError {
 export function withModel(llm: ISetupLlm, model: string | undefined): ISetupLlm {
   if (!model) return llm;
   return { available: (t) => llm.available(t), completeJson: (input) => llm.completeJson({ ...input, model }) };
+}
+
+const REPLY_TTL_MS = 24 * 60 * 60 * 1000;
+const REPLY_LIMIT = 500;
+
+/**
+ * The same question about the same words gets the same answer (extraction audit C4): current Claude models accept no
+ * temperature, so reading a file twice could differ and pay twice. Replies are kept in this process for a day, per organisation
+ * and exact prompt; a restart forgets them. `fresh` asks again, and an incomplete or failed reply is never kept.
+ */
+export function withReplyMemory(llm: ISetupLlm, now: () => number = Date.now): ISetupLlm {
+  const replies = new Map<string, { at: number; reply: SetupLlmCompletion }>();
+  return {
+    available: (t) => llm.available(t),
+    completeJson: async (input) => {
+      const key = createHash("sha256").update(JSON.stringify([input.tenantId.toString(), input.model ?? "", input.variant ?? 0, input.system, input.user])).digest("hex");
+      const known = input.fresh ? undefined : replies.get(key);
+      if (known && now() - known.at < REPLY_TTL_MS) return ok({ ...known.reply, usage: { inputTokens: 0, outputTokens: 0 } });
+      const reply = await llm.completeJson(input);
+      if (reply.ok && reply.value && !reply.value.truncated && reply.value.text.trim()) {
+        if (replies.size >= REPLY_LIMIT) replies.delete(replies.keys().next().value!);
+        replies.set(key, { at: now(), reply: reply.value });
+      }
+      return reply;
+    },
+  };
 }

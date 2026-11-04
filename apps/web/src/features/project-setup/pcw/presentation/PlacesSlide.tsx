@@ -74,6 +74,7 @@ export function PlacesSlide({ id, view, onView }: { id: string; view: SetupDraft
               </Select>
               <span className="text-xs text-slate-600 dark:text-slate-300">{levelLabel(place.adminLevel)}{inside ? ` · ${inside}` : ""}</span>
               <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
+              {place.recognised ? <span className="w-full text-xs text-amber-900 dark:text-amber-300">{pcw.c.recognisedAs} {place.recognised.name}{place.recognised.within ? `, ${place.recognised.within}` : ""} ({place.recognised.source}). {pcw.c.recognisedCheck}</span> : null}
               {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{c.accept}</button> : null}
               <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${c.remove} ${place.name ?? ""}`}>{c.remove}</button>
             </li>

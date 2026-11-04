@@ -40,9 +40,12 @@ export class PromptedAreaExtractor implements ISetupAreaExtractor {
 
   async extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>> {
     const spec = this.spec;
-    const blocks = blocksInScope(input.blocks, spec.readsFrom);
+    const empty = new Set(input.emptySections ?? []);
+    const blocks = blocksInScope(input.blocks, spec.readsFrom).filter((b) => !b.section || !empty.has(b.section));
     const first = await this.read(input, blocks);
     if (!first.ok) return first;
+    // A focused second look answers its one question: no recall, no structure pass.
+    if (input.hint) return first;
     let { fields, usage } = first.value;
     let partlyRead = first.value.partlyRead;
 
@@ -63,7 +66,7 @@ export class PromptedAreaExtractor implements ISetupAreaExtractor {
 
     let promptVersion = spec.promptVersion;
     if (spec.refine) {
-      const refined = await runRefinement(spec.refine, { ...fields }, { llm: this.llm, tenantId: input.tenantId, maxTokens: input.maxTokens, timeoutMs: input.timeoutMs });
+      const refined = await runRefinement(spec.refine, { ...fields }, { llm: this.llm, tenantId: input.tenantId, maxTokens: input.maxTokens, timeoutMs: input.timeoutMs, fresh: input.fresh });
       fields = refined.fields;
       usage = addUsage(usage, refined.usage);
       if (refined.refined) promptVersion = `${spec.promptVersion}+${spec.refine.promptVersion}`;
@@ -74,6 +77,9 @@ export class PromptedAreaExtractor implements ISetupAreaExtractor {
 
   private read(input: SetupExtractInput, blocks: ReadonlyArray<SourceBlock>) {
     const spec = this.spec;
+    const preferred = new Set(input.preferSections ?? []);
+    const preferBlock = preferred.size > 0 || this.preferBlock ? (b: SourceBlock) => (!!b.section && preferred.has(b.section)) || !!this.preferBlock?.(b) : undefined;
+    const emptyNote = input.emptySections?.length ? `These parts of the document are blank: ${input.emptySections.join("; ")}. Leave them blank: do not fill them from other text.` : "";
     return runAreaExtraction({
       llm: this.llm,
       tenantId: input.tenantId,
@@ -87,10 +93,12 @@ export class PromptedAreaExtractor implements ISetupAreaExtractor {
       budgetChars: spec.budgetChars,
       headBlocks: spec.headBlocks,
       skipBlock: spec.skipBlock,
-      preferBlock: this.preferBlock,
+      preferBlock,
+      schema: spec.schema,
+      fresh: input.fresh,
       buildPrompt: (blocksText, prior) => ({
         system: SETUP_SYSTEM_RULES,
-        user: [spec.instructions, spec.context ? spec.context(prior) : "", BLOCKS_HEADER, blocksText].filter(Boolean).join("\n\n"),
+        user: [spec.instructions, spec.context ? spec.context(prior) : "", emptyNote, input.hint ?? "", BLOCKS_HEADER, blocksText].filter(Boolean).join("\n\n"),
       }),
       parseChunk: spec.parse,
       merge: spec.merge,

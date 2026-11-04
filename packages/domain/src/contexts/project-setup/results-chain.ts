@@ -77,11 +77,13 @@ export function tidyResultsChain(items: ReadonlyArray<Node>): Node[] {
  * Applies a structure decision (level and parent index per item, from the structure pass) and returns the chain in tree
  * order with each parentCode set to its parent's code when the parent has one (otherwise the order carries the link).
  */
-export function applyStructure(items: ReadonlyArray<Node>, decisions: ReadonlyArray<{ level: SetupLogLevel | null; parent: number | null } | undefined>): Node[] {
+export function applyStructure(items: ReadonlyArray<Node>, decisions: ReadonlyArray<{ level: SetupLogLevel | null; parent: number | null; agreed?: boolean } | undefined>): Node[] {
   if (decisions.every((d) => d === undefined)) return [...items];
   const leveled = items.map((item, i) => {
     const level = decisions[i]?.level;
-    return level && item.value && item.status !== "EDITED" ? { ...item, value: { ...item.value, level } } : item;
+    // The readings disagreed about this item: it is the person's to check, so it says so.
+    const rated = decisions[i]?.agreed === false && item.status !== "EDITED" ? { ...item, confidence: "LOW" as const } : item;
+    return level && rated.value && rated.status !== "EDITED" ? { ...rated, value: { ...rated.value, level } } : rated;
   });
   const byCode = new Map<string, number>();
   leveled.forEach((item, i) => {
@@ -95,7 +97,7 @@ export function applyStructure(items: ReadonlyArray<Node>, decisions: ReadonlyAr
     const code = leveled[i]!.value?.parentCode;
     return code ? byCode.get(code) ?? null : null;
   };
-  const decided = new Set(leveled.flatMap((item, i) => (decisions[i] && item.status !== "EDITED" ? [item] : [])));
+  const decided = new Set<Node>(leveled.flatMap((item, i) => (decisions[i] && item.status !== "EDITED" ? [item] : [])));
   const { items: ordered, parents } = orderAsTree(leveled, parentOf);
   return ordered.map((item, i) => {
     if (!item.value || !decided.has(item)) return item;

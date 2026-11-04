@@ -56,7 +56,7 @@ export function prefillFromDocuments(draft: SetupDraft): PrefillResult {
 
   const schedule = { ...draft.extras.schedule, rules: [...draft.extras.schedule.rules] };
   const types = draft.proposal.periods.flatMap((p) => { const v = kept(p); return v?.type ? [v.type.toUpperCase()] : []; });
-  // The most frequent cadence the documents name (a FINAL report is not a cadence).
+  // The shortest cadence the documents name (a FINAL report is not a cadence).
   const cadence = REPORT_CADENCES.find((c) => types.includes(c));
   if (!schedule.cadence && cadence) { schedule.cadence = cadence; filled.push("cadence"); }
   if (schedule.rules.length === 0) {

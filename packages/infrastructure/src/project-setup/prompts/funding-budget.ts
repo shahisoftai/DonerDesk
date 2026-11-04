@@ -3,6 +3,7 @@ import { parseLists, valueKey } from "../list-area.js";
 import { mergeLists } from "../extractor-shared.js";
 import { factValue } from "./prior.js";
 import type { AreaExtractionSpec } from "../area-spec.js";
+import { FUNDING_BUDGET_SCHEMA } from "../output-schemas.js";
 import { splitAmountCurrency, type BudgetLineDef, type FundingDef } from "@donordesk/domain";
 
 const currency = (x: unknown): string | null => {
@@ -40,6 +41,7 @@ export const FUNDING_BUDGET_SPEC: AreaExtractionSpec = {
     "List one funding source once, under its fullest name, with its amount; do not add a second item for another name of the same fund.",
   ].join("\n"),
   context: (prior) => `Project currency already read: ${factValue(prior.facts, "currency") ?? "not stated"}. Use it only where the document applies it to the amount.`,
+  schema: FUNDING_BUDGET_SCHEMA,
   parse: parseLists({ funding: readFunding, budget: readBudget }),
   merge: mergeLists(valueKey("sourceName", "category", "amount"), "funding", "budget"),
 };

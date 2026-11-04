@@ -86,10 +86,10 @@ export class RerunSetupAreaHandler {
     const extracted = await extractor.extract({
       tenantId: ctx.tenant.tenantId, proposalId: id, area,
       blocks: redacted, sourceText, prior,
-      maxTokens: this.maxTokens, timeoutMs: this.timeoutMs,
+      maxTokens: this.maxTokens, timeoutMs: this.timeoutMs, fresh: true,
     });
     if (!extracted.ok) return failRun(extracted.error);
-    const grounded = groundAreaPatch(area, extracted.value.fields, sourceText);
+    const grounded = groundAreaPatch(area, extracted.value.fields, sourceText, redacted);
     if ("error" in grounded) return failRun(DomainError.validation(grounded.error), grounded.error);
     // The proposal is read again just before saving: another part may have been saved while this one was being read. The
     // save names the version it built on, so two parts finishing together never overwrite each other (the later one retries).

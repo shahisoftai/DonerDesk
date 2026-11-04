@@ -1,5 +1,6 @@
 import { proposedFrom, notStated, asObject, text, strings, plainDate, type RawItem } from "../proposed-item.js";
 import type { AreaExtractionSpec } from "../area-spec.js";
+import { FACTS_SCHEMA } from "../output-schemas.js";
 import type { ChunkContext } from "../extractor-shared.js";
 import { countryNames, withAlternative, type Proposed, type ProposedFacts } from "@donordesk/domain";
 
@@ -48,6 +49,7 @@ export const FACTS_SPEC: AreaExtractionSpec = {
     "currency: from the line that states the money (\"Budgets developed in ...\", a currency column, a code beside an amount).",
     "A \"$\" with no other currency named is USD; \"€\" is EUR; \"£\" is GBP: give the code in currency.",
   ].join("\n"),
+  schema: FACTS_SCHEMA,
   parse,
   merge,
 };

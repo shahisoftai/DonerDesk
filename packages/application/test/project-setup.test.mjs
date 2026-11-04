@@ -216,7 +216,7 @@ test("a rerun keeps edits of other areas and replaces the rerun area's decisions
   const rerunExtractors = [{
     area: "LOGFRAME",
     async extract() {
-      return ok({ fields: { logframe: [P({ level: "GOAL", code: "GOAL-1", title: "New reading", description: null, parentCode: null }, "GOAL-1: Clean water for all.")] } });
+      return ok({ fields: { logframe: [P({ level: "GOAL", code: "GOAL-1", title: "New reading of clean water", description: null, parentCode: null }, "GOAL-1: Clean water for all.")] } });
     },
   }];
   const w = world({ rerunExtractors });
@@ -228,7 +228,7 @@ test("a rerun keeps edits of other areas and replaces the rerun area's decisions
   const rerun = await w.reruns.handle(creator, id, "LOGFRAME");
   assert.ok(rerun.ok);
   const stored = w.proposalsById.get(id);
-  assert.equal(stored.proposal.logframe[0].value.title, "New reading", "the rerun area shows the new reading");
+  assert.equal(stored.proposal.logframe[0].value.title, "New reading of clean water", "the rerun area shows the new reading");
   assert.equal(stored.proposal.logframe[0].status, "PROPOSED", "the rerun area's earlier decisions are gone");
   assert.equal(stored.proposal.facts.name.value, "Blue Water (revised)", "the person's edit of another area survives");
   assert.equal(stored.proposal.facts.name.status, "EDITED");
@@ -454,7 +454,7 @@ test("a document's usage adds up every area and re-read, ignores the whole-docum
   const priced = usageOf(runs, "glm-5.3-flash");
   assert.deepEqual([priced.calls, priced.inputTokens, priced.outputTokens], [4, 1_000_000, 2_000_000]);
   assert.equal(priced.costUsd, 0.15 + 1.0, "1M in at 0.15 and 2M out at 0.5 per million");
-  const unpriced = usageOf(runs, "claude-haiku-5-5");
+  const unpriced = usageOf(runs, "some-unknown-model");
   assert.equal(unpriced.costUsd, null, "a model with no price on file is never given a made-up cost");
   assert.equal(usageOf([], "glm-5.3-flash").costUsd, null, "nothing used, nothing to price");
   assert.equal(usageOf(runs, undefined).costUsd, null);

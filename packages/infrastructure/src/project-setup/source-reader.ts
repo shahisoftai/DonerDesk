@@ -3,6 +3,8 @@ import { buildDocumentMap } from "./document-map.js";
 import { compactSheetText, dropNearDuplicates } from "./document-prep.js";
 import { driveFileIdsOf, type ISetupDocumentStore, type ISourceDocumentReader, type ParseUploadedFileHandler, type SetupSourceRef } from "@donordesk/application";
 
+import { readPdfLayout, type ScannedPageReader } from "./pdf-layout.js";
+
 const BLOCK_CHARS = 1600;
 
 /**
@@ -12,7 +14,7 @@ const BLOCK_CHARS = 1600;
  * its place.
  */
 export class StoredSetupDocumentReader implements ISourceDocumentReader {
-  constructor(private readonly documents: ISetupDocumentStore, private readonly parse: ParseUploadedFileHandler) {}
+  constructor(private readonly documents: ISetupDocumentStore, private readonly parse: ParseUploadedFileHandler, private readonly scannedPageReader?: ScannedPageReader) {}
 
   async read(source: SetupSourceRef): Promise<Result<SourceBlock[], DomainError>> {
     const fileIds = driveFileIdsOf(source.storageKey);
@@ -26,7 +28,11 @@ export class StoredSetupDocumentReader implements ISourceDocumentReader {
         return { ok: false, error: DomainError.validation("A document could not be read from your Google Drive. Check that Drive is still connected and the file is still in its folder, then add it again.") };
       }
       const name = file.value.name || source.fileName;
-      const parsed = await this.parse.handle({ buffer: file.value.bytes, fileName: name, fileType: file.value.mimeType || guessContentType(name) });
+      const fileType = file.value.mimeType || guessContentType(name);
+      // A PDF keeps its headings and table rows when its text layer has them; a scan goes on to the ordinary parser and its OCR.
+      const pdf = fileType === "application/pdf" || name.toLowerCase().endsWith(".pdf") ? await readPdfLayout(file.value.bytes, name, this.scannedPageReader) : null;
+      if (pdf) { parsedDocuments.push({ n, name, text: pdf }); continue; }
+      const parsed = await this.parse.handle({ buffer: file.value.bytes, fileName: name, fileType });
       if (!parsed.ok) return { ok: false, error: DomainError.validation(fileIds.length > 1 ? `${name}: ${parsed.error.message}` : parsed.error.message) };
       parsedDocuments.push({ n, name, text: compactSheetText(parsed.value.text) });
     }
@@ -74,23 +80,30 @@ const PREAMBLE_SHEET = "Document";
  * Cuts the document's text into blocks of whole lines, numbered in reading order. Lines are kept verbatim — tabs and
  * commas included — so a spreadsheet sheet still parses as rows; only trailing whitespace is trimmed.
  */
+const isTableRow = (line: string): boolean => line.includes(" | ") || line.split("\t").filter((c) => c.trim()).length >= 2;
+
 export function toBlocks(text: string, blockChars = BLOCK_CHARS): SourceBlock[] {
   const blocks: SourceBlock[] = [];
   const lines = text.split(/\r?\n/);
   let carry: string[] = [];
   let length = 0;
+  let columns: string | undefined;
+  let header: string | undefined;
   for (const line of lines) {
     const trimmed = line.replace(/\s+$/g, "");
     if (length > 0 && length + trimmed.length + 1 > blockChars) {
-      blocks.push({ documentId: "source", index: blocks.length, text: trimBlock(carry.join("\n")) });
+      blocks.push({ documentId: "source", index: blocks.length, text: trimBlock(carry.join("\n")), ...(columns ? { columns } : {}) });
       carry = [];
       length = 0;
+      columns = isTableRow(trimmed) ? header : undefined;
     }
+    // A table's first row names its columns; a line that is not a row ends the table.
+    if (!isTableRow(trimmed)) { if (trimmed.trim()) header = undefined; } else if (!header) header = trimmed.slice(0, 300);
     carry.push(trimmed);
     length += trimmed.length + 1;
   }
   const rest = trimBlock(carry.join("\n"));
-  if (rest) blocks.push({ documentId: "source", index: blocks.length, text: rest });
+  if (rest) blocks.push({ documentId: "source", index: blocks.length, text: rest, ...(columns ? { columns } : {}) });
   return blocks;
 }
 

@@ -53,6 +53,7 @@ export interface RefinementInput {
   tenantId: TenantId;
   maxTokens: number;
   timeoutMs: number;
+  fresh?: boolean | undefined;
 }
 
 /** The refined fields and what the calls cost; the fields come back unchanged when there is nothing to refine or no answer. */
@@ -60,13 +61,13 @@ export async function runRefinement(refine: AreaRefinement, fields: Record<strin
   const prompt = refine.prompt(fields);
   const none: SetupUsage = { calls: 0, inputTokens: 0, outputTokens: 0 };
   if (!prompt) return { fields, usage: none, refined: false };
-  const ask = (): Promise<Result<{ text: string; usage?: { inputTokens: number; outputTokens: number } | undefined } | null, DomainError>> =>
-    withTransientRetry(() => input.llm.completeJson({ tenantId: input.tenantId, system: REFINE_SYSTEM, user: prompt, maxTokens: input.maxTokens, timeoutMs: input.timeoutMs }));
-  const replies = await Promise.all(Array.from({ length: Math.max(1, refine.votes) }, ask));
+  const ask = (variant: number): Promise<Result<{ text: string; truncated?: boolean | undefined; usage?: { inputTokens: number; outputTokens: number } | undefined } | null, DomainError>> =>
+    withTransientRetry(() => input.llm.completeJson({ tenantId: input.tenantId, system: REFINE_SYSTEM, user: prompt, maxTokens: input.maxTokens, timeoutMs: input.timeoutMs, schema: refine.schema, variant, fresh: input.fresh }));
+  const replies = await Promise.all(Array.from({ length: Math.max(1, refine.votes) }, (_, variant) => ask(variant)));
   let usage = none;
   const answers: unknown[] = [];
   for (const reply of replies) {
-    if (!reply.ok || !reply.value) continue;
+    if (!reply.ok || !reply.value || reply.value.truncated) continue;
     usage = addUsage(usage, { calls: 1, inputTokens: reply.value.usage?.inputTokens ?? 0, outputTokens: reply.value.usage?.outputTokens ?? 0 });
     const parsed = tryParseJson(reply.value.text);
     if (parsed !== undefined) answers.push(parsed);
