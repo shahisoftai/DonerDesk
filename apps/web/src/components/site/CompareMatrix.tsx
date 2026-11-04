@@ -7,7 +7,7 @@ const MARK: Record<Level, { symbol: string; label: string; className: string }> 
   yes: { symbol: "✓", label: "Stated", className: "sx-lv-yes" },
   partial: { symbol: "~", label: "Partly", className: "sx-lv-partial" },
   no: { symbol: "✕", label: "Not offered", className: "sx-lv-no" },
-  unknown: { symbol: "✕", label: "Not stated", className: "sx-lv-unknown" },
+  unknown: { symbol: "—", label: "Not found", className: "sx-lv-unknown" },
 };
 
 function CellView({ cell }: { cell: Cell }) {

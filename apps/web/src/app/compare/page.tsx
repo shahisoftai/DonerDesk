@@ -27,17 +27,18 @@ export default function ComparePage() {
       <section style={{ paddingTop: 16 }}>
         <div className="sx-wrap sx-wrap-wide">
           <CompareMatrix />
-          <p className="sx-fine" style={{ maxWidth: "120ch" }}>A grey cross means we did not find the feature on the pages we read, not that the tool lacks it. Prices and features change; check the vendor before you decide. Product names belong to their owners.</p>
+          <p className="sx-fine" style={{ maxWidth: "120ch" }}>A grey dash means we did not find the feature on the pages we read, not that the tool lacks it. A red cross is used only where a vendor says it does not offer something. Prices and features change; check the vendor before you decide. Product names belong to their owners.</p>
         </div>
       </section>
 
       <section>
         <div className="sx-wrap">
-          <div className="sx-sec-head"><p className="sx-eyebrow">What DonorDesk adds</p><h2>One record from the first target to the donor&apos;s question.</h2></div>
-          <div className="sx-grid sx-g3">
-            <div className="sx-card"><h3>Planning and results together</h3><p>The logframe, work plan, indicators, evidence and compliance sit in one record, with a role for each person who touches it.</p></div>
-            <div className="sx-card"><h3>Reports drafted from the record</h3><p>Upload a donor template once. Drafts cite the activity or value behind each statement, checks run before submission, and a person approves.</p></div>
-            <div className="sx-card"><h3>Charts, maps and shareable pages</h3><p>More than 40 chart types, sector dashboard templates, maps by place, and infographics and dashboards you can share by link.</p></div>
+          <div className="sx-sec-head"><p className="sx-eyebrow">What DonorDesk adds</p><h2>One record from the first target to the donor&apos;s question.</h2><p className="sx-lede">Other tools are strong at parts of this. DonorDesk is built around keeping the whole chain in one place.</p></div>
+          <div className="sx-grid sx-g2">
+            <div className="sx-card"><h3>Run the programme</h3><p>Logframe, work plan, risks, budgets and teams in one record, with a role for each person who touches it.</p></div>
+            <div className="sx-card"><h3>Measure against targets</h3><p>Indicators against their own targets, by place and group, in charts, dashboards and maps. Gaps show as gaps, never as zero.</p></div>
+            <div className="sx-card"><h3>Prove it</h3><p>Evidence stays linked to the value or activity it supports, every change is in a tamper-evident log, and approved figures cannot change under a report.</p></div>
+            <div className="sx-card"><h3>Report from the record</h3><p>Upload a donor template once. Drafts cite the activity or value behind each statement, checks run before submission, and a person approves.</p></div>
           </div>
         </div>
       </section>
