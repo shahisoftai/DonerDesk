@@ -29,7 +29,7 @@ const ROLES = [
 const FAQ = [
   { q: "Is DonorDesk a fundraising tool?", a: "It helps you show results to supporters and funders: infographics, shareable dashboards and reports drawn from verified results. It does not hold donor records or take payments. If you need a donor database, keep yours and use DonorDesk for the programme side." },
   { q: "Does the AI write our reports?", a: "It drafts sections from your own record and cites the source of each statement. Numbers come from verified data, claims are checked, and a person approves before anything is exported." },
-  { q: "Can we use it where there is no internet?", a: "Yes. The field app keeps forms and activity records on the phone and sends them when a connection returns." },
+  { q: "Can we use it where there is no internet?", a: "Mostly. Open the field app once while online and it keeps forms and activity records on the phone, then sends them when a connection returns. Opening the full app still needs a connection." },
   { q: "Can we bring our KoboToolbox or SurveyCTO data?", a: "Yes. Submissions come in as records you review before they count, and Excel imports work throughout." },
   { q: "What happens to our data if we stop?", a: "You keep it. Export everything, including files, whenever you like." },
 ];
@@ -42,7 +42,7 @@ export default function HomePage() {
 
         <div className="sx-strip">
           <div className="sx-wrap sx-strip-grid">
-            <div className="sx-facts"><span>Free plan, no card</span><span>Works offline in the field</span><span>Export everything, any time</span><span>A person approves every report</span></div>
+            <div className="sx-facts"><span>Free plan, no card</span><span>Field forms save offline, send later</span><span>Export everything, any time</span><span>A person approves every report</span></div>
           </div>
         </div>
 

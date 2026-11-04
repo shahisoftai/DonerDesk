@@ -288,3 +288,68 @@
 /* burger last, so it wins over the generic round button */
 .sx .sx-burger{display:none}
 @media (max-width:980px){.sx .sx-burger{display:inline-grid}}
+
+/* Hero: three slides in a humanitarian palette (deep blue ground, sky and amber). Only the copy column takes the dark ground's colours; the panel keeps the site's own surface. */
+.sx .sx-hero-h{background:radial-gradient(120% 90% at 85% 0%,#1b5a99 0%,transparent 55%),linear-gradient(160deg,#0a2540 0%,#0d3358 60%,#0b2a4a 100%);color:#fff;border-bottom:4px solid #ffb81c}
+.sx .sx-hero-copy{--ink:#fff;--muted:#cfe0f1;--line:rgba(255,255,255,.22);--surface:rgba(255,255,255,.08);--wash:rgba(255,255,255,.12);--brand:#8ccfff;--accent:#ffb81c;color:#fff;min-width:0}
+.sx .sx-hero-h .sx-eyebrow{color:#8ccfff}
+.sx .sx-hero-h h1,.sx .sx-hero-h .sx-h1{font-family:var(--display);font-size:clamp(38px,5.2vw,64px);font-weight:800;line-height:1.08;letter-spacing:-.02em;margin:0;text-wrap:balance}
+.sx .sx-hero-h h1 em,.sx .sx-hero-h .sx-h1 em{font-style:normal;color:#ffb81c;background:none}
+.sx .sx-hero-copy .sx-btn.sx-primary{background:#ffb81c;color:#2b1d00}
+.sx .sx-hero-copy .sx-btn.sx-ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
+.sx .sx-hero-copy .sx-btn.sx-ghost:hover{border-color:#fff;background:rgba(255,255,255,.1)}
+.sx .sx-hero-copy .sx-chip{color:#fff}
+.sx .sx-hero-copy .sx-chip[aria-pressed="true"]{background:#fff;color:#0a2540;border-color:#fff}
+.sx .sx-hero-copy .sx-link{color:#8ccfff}
+.sx .sx-hero-h :focus-visible{outline-color:#ffb81c}
+.sx .sx-slides{display:grid}
+.sx .sx-slide{grid-area:1/1;opacity:0;visibility:hidden;transform:translateY(8px);transition:opacity .4s ease,transform .4s ease,visibility 0s .4s}
+.sx .sx-slide.sx-on{opacity:1;visibility:visible;transform:none;transition:opacity .4s ease,transform .4s ease}
+.sx .sx-hero-panel{display:grid;background:#fff;border-color:rgba(255,255,255,.3);box-shadow:0 20px 60px rgba(0,0,0,.35);--surface:#fff;--ink:#0d2829;--muted:#4a6264;--line:#d5e3e1;--wash:#e5f2ef;--brand:#0a6b6b;color:#0d2829}
+.sx .sx-pslide{grid-area:1/1;opacity:0;visibility:hidden;transition:opacity .4s ease,visibility 0s .4s}
+.sx .sx-pslide.sx-on{opacity:1;visibility:visible;transition:opacity .4s ease}
+.sx .sx-tabs{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap}
+.sx .sx-tabs button{position:relative;display:inline-flex;align-items:center;gap:8px;background:transparent;border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:9px 16px 11px;color:#cfe0f1;font-weight:600;font-size:14px;overflow:hidden}
+.sx .sx-tabs button:hover{border-color:#fff;color:#fff}
+.sx .sx-tabs button[aria-selected="true"]{background:rgba(255,255,255,.12);color:#fff;border-color:#fff}
+.sx .sx-tab-n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.18);font:600 11px var(--mono)}
+.sx .sx-tabs button[aria-selected="true"] .sx-tab-n{background:#ffb81c;color:#2b1d00}
+.sx .sx-tab-bar{position:absolute;inset-inline:0;bottom:0;height:3px;background:transparent}
+.sx .sx-tab-bar b{display:block;height:100%;width:100%;background:#ffb81c}
+.sx .sx-tab-bar b.sx-run{width:0;animation-name:sx-fill;animation-timing-function:linear;animation-fill-mode:forwards}
+@keyframes sx-fill{to{width:100%}}
+.sx .sx-hero-copy .sx-fine{color:#cfe0f1}
+.sx .sx-trail{list-style:none;margin:0;padding:6px 16px 16px;display:grid;gap:0}
+.sx .sx-trail li{display:grid;grid-template-columns:28px 1fr;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.sx .sx-trail li:last-child{border-bottom:0}
+.sx .sx-trail-n{width:26px;height:26px;border-radius:50%;background:#0d3358;color:#fff;display:grid;place-items:center;font:600 12px var(--mono)}
+.sx .sx-trail h4{font:700 14px var(--display);letter-spacing:0;margin-bottom:4px}
+.sx .sx-trail p{font-size:14px;color:var(--muted)}
+.sx .sx-trail p b{color:var(--ink);font-variant-numeric:tabular-nums}
+.sx .sx-state{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px}
+.sx .sx-state-wait{background:#fff3d1;color:#6b4400}
+.sx .sx-state-ok{background:#d9f2e2;color:#14552d}
+.sx .sx-bar-wide{height:10px;border-radius:99px;background:var(--wash);overflow:hidden;margin:6px 0}
+.sx .sx-bar-wide span{display:block;height:100%;background:#0d3358;border-radius:99px}
+.sx .sx-gap{margin-top:4px}
+.sx .sx-draft{padding:18px 20px 16px}
+.sx .sx-draft>p{font-size:15px;line-height:1.7;color:var(--ink)}
+.sx .sx-cite{display:inline-block;margin-inline-start:6px;font:500 11px var(--mono);background:#e3f0fb;color:#0d3358;border-radius:6px;padding:2px 7px;vertical-align:1px}
+.sx .sx-checks{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px;font-size:14px;font-weight:500}
+.sx .sx-checks li::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-inline-end:10px}
+.sx .sx-check-ok::before{background:#17803d}
+.sx .sx-check-wait::before{background:#ffb81c}
+.sx .sx-draft-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:18px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){.sx .sx-slide,.sx .sx-pslide{transform:none;transition:none!important}.sx .sx-tab-bar b.sx-run{animation:none!important;width:100%}}
+.sx .sx-hero-side{min-width:0;display:grid;gap:22px}
+.sx .sx-hero-side .sx-picker{margin-top:0;--ink:#fff;--muted:#cfe0f1;--line:rgba(255,255,255,.22);--surface:rgba(255,255,255,.08);--brand:#8ccfff;--accent:#ffb81c;color:#fff;transition:opacity .4s ease}
+.sx .sx-hero-side .sx-picker.sx-away{opacity:0;visibility:hidden;transition:opacity .4s ease,visibility 0s .4s}
+.sx .sx-hero-side .sx-chip{color:#fff}
+.sx .sx-hero-side .sx-chip[aria-pressed="true"]{background:#fff;color:#0a2540;border-color:#fff}
+.sx .sx-hero-side .sx-link{color:#8ccfff}
+.sx .sx-hero-side .sx-sector-line{min-height:0}
+.sx .sx-pslide{display:flex;flex-direction:column}
+.sx .sx-pslide>.sx-trail,.sx .sx-pslide>.sx-draft{flex:1}
+.sx .sx-draft{display:flex;flex-direction:column}
+.sx .sx-draft-foot{margin-top:auto}
+.sx .sx-trail{align-content:space-between}
