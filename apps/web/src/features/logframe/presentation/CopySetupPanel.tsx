@@ -54,7 +54,7 @@ export function CopySetupPanel({
       {canCopyPlan && (
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" className="h-4 w-4" checked={copyPlan} onChange={(e) => setCopyPlan(e.target.checked)} />
-          Also copy the planned activities (dates move with this project&apos;s start; leads and progress are not copied)
+          Also copy the planned activities (dates move with this project&apos;s start, and the places they name are kept; leads and progress are not copied)
         </label>
       )}
       {note && <InlineAlert tone="warning" title={note} />}

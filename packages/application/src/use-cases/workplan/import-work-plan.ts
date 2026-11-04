@@ -1,15 +1,19 @@
-import { DomainError, PlannedActivity, expandRecurrence, parseWorkPlanText, err, ok, type PlainDate, type Result } from "@donordesk/domain";
+import { DomainError, PlaceRegistry, PlannedActivity, expandRecurrence, parseWorkPlanText, placesFromLocationText, resolvePlace, err, ok, type PlainDate, type Result } from "@donordesk/domain";
 import type { ImportWorkPlanInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IIdGenerator } from "../../ports/core.js";
 import type { ILogframeRepository } from "../../ports/logframe.js";
-import type { IMemberDirectory, IPlanContextReader, IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { IMemberDirectory, IPlanContextReader, IPlannedActivityPlaceRepository, IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { IPlaceRepository } from "../../ports/places.js";
+import { toRecord } from "../places/place-support.js";
 import { PlanAccess } from "../../services/plan-access.js";
 
 export interface ImportWorkPlanResult {
   applied: boolean;
   created: number;
   skipped: number;
+  /** Activities linked to places from the list (a typed location is read as ;-separated place names). */
+  withPlaces?: number;
   warnings: string[];
   /** Rows that need fixing. Any problem stops the whole import. */
   problems: string[];
@@ -21,6 +25,7 @@ export class ImportWorkPlanHandler {
   constructor(
     private readonly ids: IIdGenerator, private readonly repo: IPlannedActivityRepository, private readonly context: IPlanContextReader,
     private readonly directory: IMemberDirectory, private readonly logframe: ILogframeRepository, private readonly audit: IAuditLogger,
+    private readonly placeLinks?: IPlannedActivityPlaceRepository, private readonly placeList?: IPlaceRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string, input: ImportWorkPlanInput): Promise<Result<ImportWorkPlanResult, DomainError>> {
@@ -41,6 +46,13 @@ export class ImportWorkPlanHandler {
 
     const byCode = new Map(nodes.value.filter((n) => n.code).map((n) => [n.code!.toLowerCase(), n]));
     const known = new Set(existing.value.map((e) => `${e.title.toLowerCase()}|${e.plannedStart}|${e.plannedEnd}`));
+    // Places from the list, so a typed location can also be linked (only when the places are wired).
+    let registry: PlaceRegistry | null = null;
+    if (this.placeLinks && this.placeList) {
+      const listed = await this.placeList.list(tenantId, { includeArchived: false });
+      if (listed.ok && listed.value.length > 0) registry = new PlaceRegistry(listed.value.map(toRecord));
+    }
+    const placesOf = new Map<string, string[]>(); // new activity id to the places its location names
     const warnings: string[] = [];
     const planned: PlannedActivity[] = [];
     const items: ImportWorkPlanResult["items"] = [];
@@ -69,6 +81,11 @@ export class ImportWorkPlanHandler {
         });
         if (!created.ok) { problems.push(`Row ${row.row}: ${created.error.message}.`); break; }
         planned.push(created.value);
+        if (registry && row.location) {
+          const named = placesFromLocationText(row.location, (part) => resolvePlace(part, registry!));
+          if (named.placeIds.length > 0) placesOf.set(created.value.id, named.placeIds);
+          if (o === occurrences[0]) for (const note of named.notes) warnings.push(`Row ${row.row}: ${note}.`);
+        }
         items.push({ id: created.value.id, title: row.title, plannedStart: o.start, plannedEnd: o.end });
       }
     }
@@ -79,14 +96,21 @@ export class ImportWorkPlanHandler {
     }
     if (!input.apply || problems.length > 0) return ok({ applied: false, created: 0, skipped, warnings, problems, items: items.map(({ id: _id, ...rest }) => rest) });
 
+    let withPlaces = 0;
     if (planned.length > 0) {
       const saved = await this.repo.createMany(planned);
       if (!saved.ok) return saved;
+      if (this.placeLinks) {
+        for (const [id, placeIds] of placesOf) {
+          const linked = await this.placeLinks.replace({ tenantId: tenantId.toString(), projectId, plannedActivityId: id, placeIds, userId: ctx.tenant.userId, now: new Date() });
+          if (linked.ok) withPlaces += 1;
+        }
+      }
       await this.audit.record({
         tenantId, actorId: ctx.tenant.userId, eventType: "workplan.imported", entityType: "project", entityId: projectId, projectId,
         systemNote: `${planned.length} planned activities imported${input.sourceName ? ` from ${input.sourceName}` : ""}`,
       });
     }
-    return ok({ applied: true, created: planned.length, skipped, warnings, problems: [], items });
+    return ok({ applied: true, created: planned.length, withPlaces, skipped, warnings, problems: [], items });
   }
 }

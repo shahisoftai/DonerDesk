@@ -5,6 +5,8 @@
 import { addDays, compareDates, daysBetween, type PlainDate } from "./plain-date.js";
 
 export interface CopySourceItem {
+  /** The source activity's id, handed back on its copy so the caller can carry what hangs from it (its places). */
+  id?: string;
   title: string;
   description: string;
   location?: string;
@@ -18,6 +20,7 @@ export interface CopySourceItem {
 }
 
 export interface CopiedPlanItem {
+  sourceId?: string;
   title: string;
   description: string;
   location?: string;
@@ -49,6 +52,7 @@ export function planWorkPlanCopy(
     if (compareDates(start, to.end) > 0) { skipped.push({ title: s.title, reason: "it falls after the new project ends" }); continue; }
     const node = s.logframeActivityId ? nodeMap.get(s.logframeActivityId) : undefined;
     items.push({
+      ...(s.id ? { sourceId: s.id } : {}),
       title: s.title, description: s.description,
       ...(s.location ? { location: s.location } : {}),
       ...(node ? { logframeActivityId: node } : {}),

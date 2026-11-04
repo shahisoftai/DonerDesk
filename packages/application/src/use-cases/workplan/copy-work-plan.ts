@@ -3,11 +3,14 @@ import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IIdGenerator } from "../../ports/core.js";
 import type { ILogframeRepository } from "../../ports/logframe.js";
 import type { IProjectRepository } from "../../ports/projects.js";
-import type { IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { IPlannedActivityPlaceRepository, IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { IPlaceRepository } from "../../ports/places.js";
 import { PlanAccess } from "../../services/plan-access.js";
 
 export interface CopyWorkPlanResult {
   plannedActivities: number;
+  /** Copies that kept the places of the activity they came from. */
+  withPlaces?: number;
   skipped: Array<{ title: string; reason: string }>;
 }
 
@@ -20,6 +23,7 @@ export class CopyWorkPlanHandler {
   constructor(
     private readonly projects: IProjectRepository, private readonly logframe: ILogframeRepository, private readonly plans: IPlannedActivityRepository,
     private readonly ids: IIdGenerator, private readonly audit: IAuditLogger,
+    private readonly placeLinks?: IPlannedActivityPlaceRepository, private readonly placeList?: IPlaceRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: { sourceProjectId: string; targetProjectId: string }): Promise<Result<CopyWorkPlanResult, DomainError>> {
@@ -53,7 +57,7 @@ export class CopyWorkPlanHandler {
     const plan = planWorkPlanCopy(
       sourcePlan.value.map((p) => {
         const s = p.snapshot();
-        return { title: s.title, description: s.description, ...(s.location ? { location: s.location } : {}), ...(s.logframeActivityId ? { logframeActivityId: s.logframeActivityId } : {}), plannedStart: s.originalStart, plannedEnd: s.originalEnd, ...(s.targetParticipants !== undefined ? { targetParticipants: s.targetParticipants } : {}), ...(s.targetCount !== undefined ? { targetCount: s.targetCount } : {}), status: s.status };
+        return { id: p.id, title: s.title, description: s.description, ...(s.location ? { location: s.location } : {}), ...(s.logframeActivityId ? { logframeActivityId: s.logframeActivityId } : {}), plannedStart: s.originalStart, plannedEnd: s.originalEnd, ...(s.targetParticipants !== undefined ? { targetParticipants: s.targetParticipants } : {}), ...(s.targetCount !== undefined ? { targetCount: s.targetCount } : {}), status: s.status };
       }),
       { start: toPlainDate(source.value.duration.start)! },
       { start: toPlainDate(target.value.duration.start)!, end: toPlainDate(target.value.duration.end)! },
@@ -62,6 +66,7 @@ export class CopyWorkPlanHandler {
     if (plan.items.length === 0) return err(DomainError.validation("None of the planned activities fit the new project's dates."));
 
     const created: PlannedActivity[] = [];
+    const sourceOf = new Map<string, string>(); // new activity id to the source activity it was copied from
     for (const item of plan.items) {
       const node = item.logframeActivityId ? nodeById.get(item.logframeActivityId) : undefined;
       const made = PlannedActivity.create({
@@ -73,13 +78,28 @@ export class CopyWorkPlanHandler {
       });
       if (!made.ok) return made;
       created.push(made.value);
+      if (item.sourceId) sourceOf.set(made.value.id, item.sourceId);
     }
     const saved = await this.plans.createMany(created);
     if (!saved.ok) return saved;
+    // The places an activity names are the organisation's own list, so the copy points at the same places (a retired one is left out).
+    let withPlaces = 0;
+    if (this.placeLinks && this.placeList && sourceOf.size > 0) {
+      const [links, all] = await Promise.all([this.placeLinks.findPlaceIdsFor([...sourceOf.values()], tenantId), this.placeList.list(tenantId, { includeArchived: false })]);
+      if (links.ok && all.ok) {
+        const live = new Set(all.value.map((x) => x.id));
+        for (const [newId, srcId] of sourceOf) {
+          const placeIds = (links.value.get(srcId) ?? []).filter((id) => live.has(id));
+          if (placeIds.length === 0) continue;
+          const linked = await this.placeLinks.replace({ tenantId: tenantId.toString(), projectId: input.targetProjectId, plannedActivityId: newId, placeIds, userId: ctx.tenant.userId, now: new Date() });
+          if (linked.ok) withPlaces += 1;
+        }
+      }
+    }
     await this.audit.record({
       tenantId, actorId: ctx.tenant.userId, eventType: "workplan.copied", entityType: "project", entityId: input.targetProjectId, projectId: input.targetProjectId,
-      newValue: JSON.stringify({ sourceProjectId: input.sourceProjectId, plannedActivities: created.length, skipped: plan.skipped.length }),
+      newValue: JSON.stringify({ sourceProjectId: input.sourceProjectId, plannedActivities: created.length, withPlaces, skipped: plan.skipped.length }),
     });
-    return ok({ plannedActivities: created.length, skipped: plan.skipped });
+    return ok({ plannedActivities: created.length, withPlaces, skipped: plan.skipped });
   }
 }

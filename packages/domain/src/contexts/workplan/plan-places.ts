@@ -31,3 +31,23 @@ export function planPlaceSummary(names: readonly string[]): string {
   const rest = names.length - 2;
   return `${names[0]}, ${names[1]} and ${rest} more`;
 }
+
+/** What a place lookup answered; the shape of `resolvePlace`'s answer without importing it (the places context is separate). */
+export type PlaceLookup = { status: "RESOLVED"; place: { id: string } } | { status: "AMBIGUOUS" } | { status: "UNRESOLVED" };
+
+/**
+ * The places named in a typed location, for the work-plan import: the text is split at ";" and each part is looked up. Only a part that
+ * names exactly one place is linked; a part that names none or several is left as typed and reported, never guessed. At most `PLAN_PLACES_MAX`.
+ */
+export function placesFromLocationText(text: string, lookup: (part: string) => PlaceLookup): { placeIds: string[]; notes: string[] } {
+  const placeIds: string[] = [];
+  const notes: string[] = [];
+  for (const part of text.split(";").map((p) => p.trim()).filter(Boolean)) {
+    const found = lookup(part);
+    if (found.status === "RESOLVED") { if (!placeIds.includes(found.place.id)) placeIds.push(found.place.id); }
+    else if (found.status === "AMBIGUOUS") notes.push(`"${part}" could be more than one place in your list, so it was not linked`);
+    else notes.push(`"${part}" is not in your places list, so it was not linked`);
+  }
+  if (placeIds.length > PLAN_PLACES_MAX) { notes.push(`Only the first ${PLAN_PLACES_MAX} places were linked`); placeIds.length = PLAN_PLACES_MAX; }
+  return { placeIds, notes };
+}

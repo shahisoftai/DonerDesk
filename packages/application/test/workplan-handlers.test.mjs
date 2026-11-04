@@ -226,7 +226,7 @@ import { Project, DateRange } from "@donordesk/domain";
 
 const node = (id, level, code, parentId, projectId = "p") => LogframeItem.create({ id, tenantId: "tenant-a", projectId, level, parentId, code, title: `${code} title` });
 
-function importWorld() {
+function importWorld(placeDeps = []) {
   const w = world();
   const nodes = [node("out", "OUTPUT", "O1"), node("act", "ACTIVITY", "A1.1", "out")];
   const handler = new ImportWorkPlanHandler(
@@ -236,6 +236,7 @@ function importWorld() {
     { activeUserIdsByEmail: async () => ok(new Map([["amina@org.org", "fo"]])) },
     { findByProject: async () => ok(nodes) },
     { record: async (e) => void w.audit.push(e) },
+    ...placeDeps,
   );
   return { w, handler };
 }
@@ -279,7 +280,7 @@ test("a repeating row expands to the project end", async () => {
   assert.equal(out.value.created, 6);
 });
 
-function copyWorld({ targetPlan = [] } = {}) {
+function copyWorld({ targetPlan = [], placeDeps = [] } = {}) {
   const w = world();
   const proj = (id, start, end) => Project.rehydrate({ id, tenantId: tenantId, createdAt: new Date(), props: { title: id, projectCode: id, donorName: "d", implementingOrganization: "o", country: "c", sector: "HEALTH", duration: DateRange.create(new Date(start), new Date(end)), reportingFrequency: "QUARTERLY", status: "ACTIVE", isDemo: false } });
   const projects = { findById: async (id) => ok(id === "src" ? proj("src", "2026-01-01", "2026-12-31") : id === "dst" ? proj("dst", "2027-01-01", "2027-12-31") : null) };
@@ -287,7 +288,7 @@ function copyWorld({ targetPlan = [] } = {}) {
   const logframe = { findByProject: async (p) => ok([node(`${p}-act`, "ACTIVITY", "A1", undefined, p)]) };
   const created = [];
   const plans = { findByProject: async (p) => ok(p === "src" ? [mk("src", { id: "s1", title: "Visits", plannedStart: "2026-01-10", plannedEnd: "2026-01-12", logframeActivityId: "src-act", people: { ownerUserId: "fo", supportUserIds: [] } })] : targetPlan), createMany: async (l) => (created.push(...l), ok(l)) };
-  return { created, w, handler: new CopyWorkPlanHandler(projects, logframe, plans, { generate: (() => { let n = 700; return () => `c${++n}`; })() }, { record: async (e) => void w.audit.push(e) }) };
+  return { created, w, handler: new CopyWorkPlanHandler(projects, logframe, plans, { generate: (() => { let n = 700; return () => `c${++n}`; })() }, { record: async (e) => void w.audit.push(e) }, ...placeDeps) };
 }
 import { PlannedActivity as PA } from "@donordesk/domain";
 function PlannedActivity_create(projectId, o) { return PA.create({ tenantId: "tenant-a", projectId, createdById: "u", ...o }).value; }
@@ -492,4 +493,57 @@ test("a project's own time zone is optional, validated, and cleared by an empty 
   assert.equal((await handler.handle(PM, "p", { timeZone: null })).ok, true);
   assert.equal(project.timeZone, undefined, "null clears it: the organisation's zone applies again");
   assert.equal((await handler.handle(PM, "p", {})).ok, true);
+});
+
+
+// ---- places on imported and copied activities (phase 42.1 follow-up) --------------------------------------------------------------
+const stored = (id, name, extra = {}) => ({ id, name, kind: "AREA", adminLevel: 2, aliases: [], archived: false, tenantId, createdById: "u", ...extra });
+function placeDeps(list, linked = new Map()) {
+  const saved = [];
+  return {
+    saved,
+    deps: [
+      { findPlaceIds: async (id) => ok(linked.get(id) ?? []), findPlaceIdsFor: async (ids) => ok(new Map(ids.filter((i) => linked.has(i)).map((i) => [i, linked.get(i)]))), replace: async (input) => (saved.push(input), ok(undefined)) },
+      { list: async (t, o = {}) => ok(list.filter((p) => o.includeArchived || !p.archived)), findById: async () => ok(null), createMany: async () => ok(undefined), update: async () => ok(undefined) },
+    ],
+  };
+}
+
+test("import links the places a typed location names (;-separated), keeps the text, and reports what it could not link", async () => {
+  const pd = placeDeps([stored("g", "Gulu"), stored("k", "Kitgum"), stored("d1", "Dikwa", { parentId: undefined }), stored("d2", "Dikwa")]);
+  const { w, handler } = importWorld(pd.deps);
+  const text = `${HEAD}A1.1,Outreach,2026-03-10,2026-03-12,,Gulu; Kitgum; Nowhere; Dikwa,,\nO1,Training,2026-04-01,,,,,\n`;
+  const preview = await handler.handle(PM, "p", { apply: false, text });
+  assert.equal(pd.saved.length, 0, "a preview links nothing");
+  assert.ok(preview.value.warnings.some((x) => /Nowhere.*not in your places list/.test(x)));
+  assert.ok(preview.value.warnings.some((x) => /Dikwa.*more than one place/.test(x)));
+  const done = await handler.handle(PM, "p", { apply: true, text });
+  assert.equal(done.value.withPlaces, 1);
+  assert.deepEqual(pd.saved.map((s) => s.placeIds), [["g", "k"]]);
+  const outreach = [...w.store.values()].find((i) => i.title === "Outreach");
+  assert.equal(pd.saved[0].plannedActivityId, outreach.id);
+  assert.equal(outreach.snapshot().location, "Gulu; Kitgum; Nowhere; Dikwa", "the typed text is kept as it was");
+});
+
+test("import without the places wired behaves as before", async () => {
+  const { handler } = importWorld();
+  const done = await handler.handle(PM, "p", { apply: true, text: `${HEAD}A1.1,Outreach,2026-03-10,2026-03-12,,Gulu,,\n` });
+  assert.equal(done.value.created, 1);
+  assert.equal(done.value.withPlaces, 0);
+});
+
+test("copying a plan points the copy at the same places, leaving out a retired one", async () => {
+  const pd = placeDeps([stored("g", "Gulu"), stored("old", "Old camp", { archived: true })], new Map([["s1", ["g", "old"]]]));
+  const { handler, created } = copyWorld({ placeDeps: pd.deps });
+  const out = await handler.handle(PM, { sourceProjectId: "src", targetProjectId: "dst" });
+  assert.equal(out.value.withPlaces, 1);
+  assert.deepEqual(pd.saved.map((s) => [s.projectId, s.plannedActivityId === created[0].id, s.placeIds]), [["dst", true, ["g"]]]);
+});
+
+test("copying a plan with no places on the source links nothing", async () => {
+  const pd = placeDeps([stored("g", "Gulu")]);
+  const { handler } = copyWorld({ placeDeps: pd.deps });
+  const out = await handler.handle(PM, { sourceProjectId: "src", targetProjectId: "dst" });
+  assert.equal(out.value.withPlaces, 0);
+  assert.equal(pd.saved.length, 0);
 });

@@ -91,7 +91,7 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     if (!body.copyWorkPlan) return r.value;
     // The logframe is copied first (the plan is matched to it by code); a plan that cannot be copied is reported, not hidden.
     const plan = await req.container.handlers.copyWorkPlan.handle(ctx, { targetProjectId, sourceProjectId: body.sourceProjectId });
-    return plan.ok ? { ...r.value, plannedActivities: plan.value.plannedActivities, planSkipped: plan.value.skipped } : { ...r.value, plannedActivities: 0, planSkipped: [], planMessage: plan.error.message };
+    return plan.ok ? { ...r.value, plannedActivities: plan.value.plannedActivities, planPlaces: plan.value.withPlaces ?? 0, planSkipped: plan.value.skipped } : { ...r.value, plannedActivities: 0, planSkipped: [], planMessage: plan.error.message };
   });
 
   app.post("/v1/logframe/import", async (req) => {

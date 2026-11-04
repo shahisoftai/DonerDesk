@@ -12,7 +12,7 @@ export function ImportWorkPlanForm({ projectId }: { projectId: string }) {
       title="Import planned activities"
       intro="Upload a file, or paste your plan. If any row cannot be read, nothing is imported, and the message says which rows to fix."
       noun={["planned activity", "planned activities"]}
-      fileHelp="XLSX, CSV or TXT. Logframe codes and lead emails are matched against this project."
+      fileHelp="XLSX, CSV or TXT. Logframe codes and lead emails are matched against this project. In the Location column, separate several places with a semicolon: each one that is in your places list is linked, and any that is not is listed back."
       pastePlaceholder={"Logframe Code,Title,Start,End,Lead email,Location,Sessions,Repeats\nA1.1,Outreach visits,2026-03-10,2026-03-12,amina@example.org,Ward 4,4,Monthly"}
       noneCreatedMessage="No new planned activities were created. Rows that are already planned for the same dates are skipped."
       createLabel="Create planned activities"

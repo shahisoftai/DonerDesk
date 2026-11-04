@@ -185,8 +185,8 @@ export function createWorkplanModule(deps: WorkplanModuleDeps) {
     listWorkPlan: new ListWorkPlanHandler(plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock, planDependencies, activityPlaces, placeList),
     listPlanRevisions: new ListPlanRevisionsHandler(plannedActivities, planRevisions),
     getMyWeek: new GetMyWeekHandler(new PrismaMyWeekReader(prisma), new PrismaDeliveryFactsReader(prisma), clock),
-    copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits),
-    importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits),
+    copyWorkPlan: new CopyWorkPlanHandler(projects, logframe, plannedActivities, ids, audits, activityPlaces, placeList),
+    importWorkPlan: new ImportWorkPlanHandler(ids, plannedActivities, planContext, new PrismaMemberDirectory(prisma), logframe, audits, activityPlaces, placeList),
   };
 
   return { plannedActivities, planRevisions, planContext, planLinks, automationSettings, beneficiaries, beneficiaryLinks, handlers };

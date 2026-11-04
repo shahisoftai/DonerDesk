@@ -42,3 +42,20 @@ test("summary reads as one line", () => {
   assert.equal(planPlaceSummary(["Gulu", "Kitgum"]), "Gulu and Kitgum");
   assert.equal(planPlaceSummary(["Gulu", "Kitgum", "Lira", "Arua"]), "Gulu, Kitgum and 2 more");
 });
+
+import { placesFromLocationText } from "../dist/contexts/workplan/plan-places.js";
+
+const lookup = (part) => ({ Gulu: { status: "RESOLVED", place: { id: "g" } }, Kitgum: { status: "RESOLVED", place: { id: "k" } }, Pece: { status: "AMBIGUOUS" } }[part] ?? { status: "UNRESOLVED" });
+
+test("each ;-separated name that is exactly one place is linked; the rest are reported, not guessed", () => {
+  const r = placesFromLocationText("Gulu; Kitgum ;Pece; Nowhere; Gulu", lookup);
+  assert.deepEqual(r.placeIds, ["g", "k"]);
+  assert.equal(r.notes.length, 2);
+  assert.match(r.notes[0], /Pece.*more than one/);
+  assert.match(r.notes[1], /Nowhere.*not in your places list/);
+});
+
+test("a single name with no ; is looked up whole, and empty text links nothing", () => {
+  assert.deepEqual(placesFromLocationText("Gulu", lookup).placeIds, ["g"]);
+  assert.deepEqual(placesFromLocationText("  ", lookup), { placeIds: [], notes: [] });
+});
