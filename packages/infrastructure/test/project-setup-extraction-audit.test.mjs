@@ -85,7 +85,7 @@ test("C2: a budget short of its funding asks one second look, which only adds", 
   const p = { funding: [item({ sourceName: "F", amount: "100", currency: "USD" }, "q")], budget: [item({ category: "A", amount: "90", currency: "USD" }, "q")] };
   assert.equal(setupRepairs(p)[0].area, "FUNDING_BUDGET");
   assert.equal(setupRepairs({ ...p, funding: [item({ sourceName: "F", amount: "90", currency: "USD" }, "q")] }).length, 0);
-  const again = addOnlyNew(p, { budget: [item({ category: "A", amount: "90", currency: "USD" }, "q"), item({ category: "PSC", amount: "10", currency: "USD" }, "q")], funding: [] });
+  const again = addOnlyNew(p, { budget: [item({ category: "A", amount: "90", currency: "USD" }, "q"), item({ category: "PSC", amount: "10", currency: "USD" }, "PSC Cost 10")], funding: [] });
   assert.equal(again.budget.length, 2);
   const row = (category) => item({ category, amount: "467,290.00", currency: "USD" }, "G.1 | Estimate budget based on instructions | 467,290.00");
   assert.equal(addOnlyNew({ budget: [row("G.1 Estimate budget")] }, { budget: [row("Estimate budget")] }).budget.length, 1, "the same row under another name is not added twice");
