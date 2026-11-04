@@ -15,7 +15,7 @@ The audit also found a production-wide reliability bug unrelated to the wizard (
 - A clean, unattended run from upload through launch. No launch has been run on the final release.
 - Anything beyond this one proposal. It is a single document with a blank logframe.
 
-**Nothing is committed to git.** All changes are in the working tree and deployed.
+All changes are deployed and committed (`41819f11`, branch `0017-maps-v2`, not pushed).
 
 ## 2. Method
 
@@ -110,11 +110,11 @@ Three reads of one document are a small sample. They show direction, not a measu
 - **Config:** `SETUP_HEAVY_MODEL=claude-sonnet-5-5` added to `/opt/donordesk/shared/api.env`; a dated backup sits beside it.
 - **Deleted, by direct database purge, as requested:** the launched project `52a4e905-8fa1-4303-b4dd-5921c0e3dcda` with draft `13d23122` (its status was ARCHIVED at deletion; I did not archive it), and two earlier partial projects with their drafts. Audit rows are kept, by design (6 remain for this project). There is no product feature for deleting a real project.
 - **Possible Drive leftovers:** those projects' Drive folders and uploaded proposal copies were not removed and may remain in the tenant's Drive.
-- **Left on the test tenant:** open setup drafts: 32 created in the last day, nearly all from these runs, not deleted. The proposal holds a real person's name and email; the two team entries were set to "invite later", so no invitation was sent. The proposal was also sent repeatedly to the AI provider, with personal details redacted by the existing filter.
+- **Left on the test tenant:** nothing in the database: the 32 setup drafts from these runs were deleted. Their 12 uploaded proposal copies may remain in the tenant's Drive staging folder. The proposal holds a real person's name and email; the two team entries were set to "invite later", so no invitation was sent. The proposal was also sent repeatedly to the AI provider, with personal details redacted by the existing filter.
 
 ## 8. Recommended next steps
 
-1. Review and commit the working tree.
+1. Review the commit and push it.
 2. Update the script for the new reads and run one full unattended launch (S2).
 3. Decide how to handle a blank logframe (S1): for example, always propose the one chain shape, clearly marked as inferred.
 4. Fix place de-duplication and write places before the plan (S4, S5).
