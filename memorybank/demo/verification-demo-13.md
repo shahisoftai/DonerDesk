@@ -28,3 +28,9 @@ Month-1 figures: households registered 2,200; receiving transfer 1,640; cash USD
 
 ## 3. Findings and support-document updates
 See `verification-demo-13-findings.md` (F1–F27 and the D list). Not done in this run: month 2+, mid-project and final reports, report generation/approval for Nov, infographics, exports.
+
+## 4. Months 2-6 entered (2026-11-05, after the fixes were deployed, release 20261105161824)
+Dec 2026 - Apr 2027 entered through the same UI path as month 1: 8-9 activity records per month with evidence linked to indicators (accepted in one action), values in the Form view (Save all, Submit for review, Verify all). Verified values: Nov 13, Dec 14, Jan 16 (quarterly rates entered), Feb 13, Mar 14, Apr 17 (quarterly rates and the annual income rate). No reports were generated. Scripts: `scripts/demo-food-ng/months.py`, `runmonth.sh`, `finishmonth.sh`, `vals.mjs`, `act2.mjs`.
+- April had no period (finding F22): created by hand as a Monthly period (1-30 Apr, deadline 5 May); it can be made the final report later.
+- Totals reached: households registered 6,000 and paid 6,000; cash USD 419,800 of 420,000; screened 9,000; referred 700; caregivers 4,800; seed kits 3,000; farmers trained 2,400; VSLA groups 120; grants 900; person-days 36,000; assets 24; market forums 4 of 6 (honestly short).
+- Entry was done up to six months ahead of the dates (an Admin/verifier is not held to the entry window; future-dated activity records were accepted).
