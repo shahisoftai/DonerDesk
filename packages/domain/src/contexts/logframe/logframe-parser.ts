@@ -1,3 +1,4 @@
+import { findHeaderRow, normalizeHeader, splitDelimited } from "../../core/delimited.js";
 import type { LogframeLevel } from "./logframe-item.js";
 import { INDICATOR_SHEET_HEADERS } from "./header-vocab.js";
 
@@ -41,45 +42,6 @@ function looksLikeHeaderRow(cells: string[]): boolean {
   return normalized.filter((h) => h && known.has(h)).length >= 2;
 }
 
-function normalizeHeader(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
-/**
- * Splits a delimited line into cells. When `delimiter` is provided (the
- * delimiter detected from the header row) only that character splits cells,
- * so text fields may safely contain the other punctuation characters. Without
- * a delimiter (legacy line-based mode) tab, comma, and semicolon all split.
- */
-function splitDelimited(line: string, delimiter?: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  const splitsOn = delimiter ? (ch: string) => ch === delimiter : (ch: string) => ch === "\t" || ch === "," || ch === ";";
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i] ?? "";
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (splitsOn(ch)) {
-      if (inQuotes) {
-        current += ch;
-      } else {
-        cells.push(current.trim());
-        current = "";
-      }
-    } else {
-      current += ch;
-    }
-  }
-  cells.push(current.trim());
-  return cells;
-}
-
 function inferLevelFromCode(code: string): LogframeLevel | null {
   const trimmed = code.trim();
   if (!trimmed) return null;
@@ -120,27 +82,12 @@ function parseLevelValue(value: string): LogframeLevel | null {
 }
 
 function detectHeaderRow(lines: string[]): { index: number; delimiter: string } | null {
-  for (let i = 0; i < Math.min(lines.length, 10); i++) {
-    const line = lines[i] ?? "";
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const delimiter = trimmed.includes("\t")
-      ? "\t"
-      : trimmed.includes(",")
-        ? ","
-        : trimmed.includes(";")
-          ? ";"
-          : "";
-    if (!delimiter) continue;
-    const headers = splitDelimited(trimmed, delimiter).map(normalizeHeader);
+  return findHeaderRow(lines, (headers) => {
     const hasLevel = headers.some((h) => LEVEL_HEADERS.includes(h));
     const hasCode = headers.some((h) => CODE_HEADERS.includes(h));
     const hasTitle = headers.some((h) => TITLE_HEADERS.includes(h));
-    if (hasTitle || (hasLevel && hasCode)) {
-      return { index: i, delimiter };
-    }
-  }
-  return null;
+    return hasTitle || (hasLevel && hasCode);
+  });
 }
 
 function parseTabular(text: string): { rows: ParsedLogframeRow[]; warnings: string[]; structured: boolean } {

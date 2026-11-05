@@ -1,4 +1,4 @@
-import { normalizeHeader, splitDelimited } from "../../core/delimited.js";
+import { findHeaderRow, normalizeHeader, splitDelimited } from "../../core/delimited.js";
 export interface ParsedActivityRow {
   activityTitle: string;
   activityDate: string;
@@ -69,27 +69,12 @@ function looksLikeHeaderRow(cells: string[]): boolean {
 }
 
 function detectHeaderRow(lines: string[]): { index: number; delimiter: string } | null {
-  for (let i = 0; i < Math.min(lines.length, 10); i++) {
-    const line = lines[i] ?? "";
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const delimiter = trimmed.includes("\t")
-      ? "\t"
-      : trimmed.includes(",")
-        ? ","
-        : trimmed.includes(";")
-          ? ";"
-          : "";
-    if (!delimiter) continue;
-    const headers = splitDelimited(trimmed, delimiter).map(normalizeHeader);
+  return findHeaderRow(lines, (headers) => {
     const hasTitle = headers.some((h) => TITLE_HEADERS.includes(h));
     const hasDate = headers.some((h) => DATE_HEADERS.includes(h));
     const hasSummary = headers.some((h) => SUMMARY_HEADERS.includes(h));
-    if (hasTitle && (hasDate || hasSummary)) {
-      return { index: i, delimiter };
-    }
-  }
-  return null;
+    return hasTitle && (hasDate || hasSummary);
+  });
 }
 
 function parsePositiveInt(value: string | undefined): number | undefined {
