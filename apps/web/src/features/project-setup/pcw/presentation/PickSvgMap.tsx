@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { geometryBounds, unionBounds } from "../../../maps/domain/model/bounds";
 import type { BoundaryUnit } from "../../../maps/domain/boundaries/join";
 import { TICK_COLOR } from "../domain/place-picker-scene";
-import type { TickState } from "../domain/place-picker";
+import type { Mark, TickState } from "../domain/place-picker";
 
 type Ring = ReadonlyArray<readonly [number, number]>;
 const ringsOf = (g: unknown): Ring[] => {
@@ -18,8 +18,8 @@ const ringsOf = (g: unknown): Ring[] => {
  * The same areas drawn as plain shapes, for a device that cannot start the map (no WebGL). Equirectangular, corrected for latitude; no streets.
  * Each area is a button, so it works with a keyboard and a screen reader exactly as a click does on the real map.
  */
-export function PickSvgMap({ units, stateOf, activeRef, label, onChoose }: {
-  units: readonly BoundaryUnit[]; stateOf: (u: BoundaryUnit) => TickState; activeRef: string | null; label: string; onChoose: (ref: string) => void;
+export function PickSvgMap({ units, stateOf, activeRef, label, marks = [], onChoose }: {
+  marks?: readonly Mark[]; units: readonly BoundaryUnit[]; stateOf: (u: BoundaryUnit) => TickState; activeRef: string | null; label: string; onChoose: (ref: string) => void;
 }) {
   const drawn = useMemo(() => {
     const box = unionBounds(units.map((u) => geometryBounds(u.geometry)));
@@ -27,7 +27,7 @@ export function PickSvgMap({ units, stateOf, activeRef, label, onChoose }: {
     const k = Math.cos((((box[1] + box[3]) / 2) * Math.PI) / 180) || 1;
     const w = (box[2] - box[0]) * k || 1, h = box[3] - box[1] || 1, scale = 600 / Math.max(w, h);
     const pt = ([x, y]: readonly [number, number]) => `${((x - box[0]) * k * scale).toFixed(1)},${((box[3] - y) * scale).toFixed(1)}`;
-    return { width: w * scale, height: h * scale, paths: units.map((u) => ({ u, d: ringsOf(u.geometry).map((r) => `M${r.map(pt).join("L")}Z`).join("") })) };
+    return { width: w * scale, height: h * scale, at: (lng: number, lat: number) => pt([lng, lat]).split(",").map(Number) as [number, number], paths: units.map((u) => ({ u, d: ringsOf(u.geometry).map((r) => `M${r.map(pt).join("L")}Z`).join("") })) };
   }, [units]);
   if (!drawn) return null;
   return (
@@ -37,6 +37,7 @@ export function PickSvgMap({ units, stateOf, activeRef, label, onChoose }: {
           role="button" tabIndex={0} aria-label={u.name} className="cursor-pointer" onClick={() => onChoose(u.ref)}
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onChoose(u.ref); } }}><title>{u.name}</title></path>
       ))}
+      {marks.map((m) => { const [x, y] = drawn.at(m.lng, m.lat); return <circle key={m.ref} cx={x} cy={y} r={5} fill="#0f766e" stroke="#fff" strokeWidth={1.5} pointerEvents="none"><title>{m.name}</title></circle>; })}
     </svg>
   );
 }

@@ -10,7 +10,7 @@ import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import type { PlaceDef } from "@donordesk/domain";
 import type { BoundaryUnit } from "../../../maps/domain/boundaries/join";
 import {
-  EMPTY_SELECTION, entryFor, focusUnits, matchDocumentPlaces, refOf, searchAreas, visibleRows, selectionFromPlaces, someRefs, tickState, toPicks, toggle,
+  EMPTY_SELECTION, entryFor, focusUnits, marksFor, matchDocumentPlaces, refOf, searchAreas, visibleRows, selectionFromPlaces, someRefs, tickState, toPicks, toggle,
   type LevelUnits, type PickRef, type Row, type Selection,
 } from "../domain/place-picker";
 import { usePcwCopy } from "./usePcwCopy";
@@ -67,6 +67,10 @@ export function PlacePicker({ id, view, onView, onError, find }: { id: string; v
   const rows = useMemo(() => (lv.status === "ready" ? visibleRows(lv.levels, lv.units, open, insideCache) : []), [lv.status, lv.levels, lv.units, open, insideCache]);
   const shown = useMemo(() => focusUnits(lv.levels, lv.units, focus, insideCache), [lv.levels, lv.units, focus, insideCache]);
   const some = useMemo(() => someRefs(selection), [selection]);
+  // A ticked area finer than the level on screen is shown as a point; its level loads when something is ticked in it.
+  const tickedLevels = useMemo(() => [...new Set([...selection.values()].map((e) => e.node.level))].join(","), [selection]);
+  useEffect(() => { for (const l of tickedLevels.split(",").filter(Boolean)) void lv.ensure(Number(l)); }, [tickedLevels, lv.status]);
+  const marks = useMemo(() => marksFor(selection, lv.units, shown?.level ?? 0, focus?.node.ref ?? null), [selection, lv.units, shown, focus]);
   const crumbs: PickRef[] = focus ? [...focus.ancestors, focus.node] : [];
   const stateOfUnit = (u: BoundaryUnit) => tickState(selection, some, refOf(u, shown?.level ?? 0, crumbs[crumbs.length - 1] ?? null), crumbs);
 
@@ -127,7 +131,7 @@ export function PlacePicker({ id, view, onView, onError, find }: { id: string; v
           <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-300" onClick={() => refocus(-1)}>{c.wholeCountry}</button>
           {crumbs.map((cr, i) => <span key={cr.ref} className="flex items-center gap-1"><span aria-hidden="true">›</span><button type="button" className="hover:underline" onClick={() => refocus(i)}>{cr.name}</button></span>)}
         </nav>
-        <PlacePickMap units={shown?.list ?? []} stateOf={stateOfUnit} activeRef={active?.node.ref ?? null} label={`${c.pickTitle}: ${country}`} copy={c} onChoose={chooseOnMap} />
+        <PlacePickMap marks={marks} units={shown?.list ?? []} stateOf={stateOfUnit} activeRef={active?.node.ref ?? null} label={`${c.pickTitle}: ${country}`} copy={c} onChoose={chooseOnMap} />
         {active ? <ActiveCard row={active} selection={selection} some={some} copy={c} onTick={() => tick(active.node, active.ancestors)} onOpen={() => void openRow(active)} /> : null}
       </div>
     </div>

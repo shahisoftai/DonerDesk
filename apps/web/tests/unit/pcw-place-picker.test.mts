@@ -114,3 +114,26 @@ test("a name that exists at two levels is matched by the place the document says
   const elsewhere = matchDocumentPlaces([{ index: 0, place: place("Gulu", "South") }], lv);
   assert.deepEqual(elsewhere.unmatched, [0], "neither Gulu is inside South");
 });
+
+import { marksFor } from "../../src/features/project-setup/pcw/domain/place-picker.ts";
+
+test("a ticked area finer than the level on screen is a point, so a ticked district shows when the map shows provinces", () => {
+  const g = entryFor(gulu, 2, levels);
+  const sel = toggle(EMPTY_SELECTION, g.node, g.chain);
+  const atProvinces = marksFor(sel, levels, 1, null);
+  assert.deepEqual(atProvinces.map((m) => m.name), ["Gulu"]);
+  assert.ok(Math.abs(atProvinces[0]!.lng - 1.5) < 1e-9 && Math.abs(atProvinces[0]!.lat - 1.5) < 1e-9, "the centre of its box");
+  assert.deepEqual(marksFor(sel, levels, 2, null), [], "an area drawn as a shape at this level needs no point");
+  assert.deepEqual(marksFor(sel, levels, 1, "name:south"), [], "only areas inside the open one");
+  assert.equal(marksFor(sel, new Map([[1, levels.get(1)!]]), 1, null).length, 0, "left out until its level has loaded");
+});
+
+test("the map's scene puts a point on each mark and tints 'some inside' apart from ticked", () => {
+  const words = { ON: "Ticked", INSIDE: "Inside", SOME: "Some inside", OFF: "" };
+  const scene = pickerScene({ label: "x", units: [north], stateOf: () => "SOME", stateWords: words, activeRef: null, dark: false, marks: [{ ref: "UG1", name: "Gulu", lng: 1.5, lat: 1.5 }] });
+  assert.equal(scene.layers.length, 2);
+  assert.equal((scene.layers[1] as { kind: string }).kind, "PINS");
+  const fill = scene.layers[0] as { features: Array<{ color: string }> };
+  assert.notEqual(fill.features[0]!.color, "#0f766e", "a province with something ticked inside is not painted as ticked");
+  assert.deepEqual(scene.tips["pin:UG1"], { title: "Gulu", lines: [] });
+});

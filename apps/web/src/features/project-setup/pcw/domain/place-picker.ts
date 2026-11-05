@@ -216,3 +216,24 @@ export function focusUnits(levels: readonly number[], units: LevelUnits, focus: 
   if (!kids) { kids = childrenOf(below, focus.unit); cache.set(focus.node.ref, kids); }
   return { level: next, list: kids };
 }
+
+// ---- ticked areas too fine to see at the level on screen ---------------------------------------------------------------------------------
+
+export interface Mark { ref: string; name: string; lng: number; lat: number }
+
+/**
+ * A point for each ticked area that is finer than the level the map draws (inside the open area, when one is open), so a ticked district is
+ * visible when the map shows provinces. The area's own shape is not drawn here: the point is where it is, not how big. Areas whose level
+ * has not loaded yet are left out until it has.
+ */
+export function marksFor(sel: Selection, units: LevelUnits, shownLevel: number, focusRef: string | null): Mark[] {
+  const out: Mark[] = [];
+  for (const e of sel.values()) {
+    if (e.node.level <= shownLevel) continue;
+    if (focusRef !== null && !e.chain.some((c) => c.ref === focusRef)) continue;
+    const unit = units.get(e.node.level)?.find((u) => u.ref === e.node.ref);
+    const box = unit ? geometryBounds(unit.geometry) : null;
+    if (unit && box) { const [lng, lat] = centreOf(box); out.push({ ref: unit.ref, name: unit.name, lng, lat }); }
+  }
+  return out;
+}
