@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import { LegalLayout } from "@/components/legal/LegalLayout";
-import { Section, A, Table } from "@/components/legal/LegalBits";
+import { Section, A, Table, P, B, Ul, Li } from "@/components/legal/LegalBits";
 import { LEGAL } from "@/lib/legal-entity";
 
 export const metadata: Metadata = {
@@ -320,20 +319,4 @@ export default function RefundsPage() {
       </Section>
     </LegalLayout>
   );
-}
-
-function P({ children }: { children: ReactNode }) {
-  return <p>{children}</p>;
-}
-
-function B({ children }: { children: ReactNode }) {
-  return <strong className="font-semibold text-slate-100">{children}</strong>;
-}
-
-function Ul({ children }: { children: ReactNode }) {
-  return <ul className="space-y-2.5 pl-5 marker:text-brand-400 marker:font-bold">{children}</ul>;
-}
-
-function Li({ children }: { children: ReactNode }) {
-  return <li className="list-disc">{children}</li>;
 }

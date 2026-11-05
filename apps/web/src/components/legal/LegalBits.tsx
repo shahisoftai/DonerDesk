@@ -33,3 +33,41 @@ export function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
     </div>
   );
 }
+
+/** The policy pages' section: tighter spacing than `Section`, with the anchor offset the table of contents expects. */
+export function PolicySection({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  return (
+    <section id={id} className="scroll-mt-28">
+      <h2 className="text-2xl font-bold tracking-tight text-white">{title}</h2>
+      <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-slate-300">{children}</div>
+    </section>
+  );
+}
+
+/** A link in a policy page: the same as `A`, with the hover transition. */
+export function PolicyLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a
+      href={href}
+      className="font-medium text-brand-300 underline decoration-brand-400/40 underline-offset-2 transition hover:text-brand-200"
+    >
+      {children}
+    </a>
+  );
+}
+
+export function P({ children }: { children: ReactNode }) {
+  return <p>{children}</p>;
+}
+
+export function B({ children }: { children: ReactNode }) {
+  return <strong className="font-semibold text-slate-100">{children}</strong>;
+}
+
+export function Ul({ children }: { children: ReactNode }) {
+  return <ul className="space-y-2.5 pl-5 marker:text-brand-400 marker:font-bold">{children}</ul>;
+}
+
+export function Li({ children }: { children: ReactNode }) {
+  return <li className="list-disc">{children}</li>;
+}
