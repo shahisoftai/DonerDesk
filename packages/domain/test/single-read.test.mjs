@@ -67,3 +67,25 @@ test("the reply's fields pass the existing grounding: a quote not in the documen
   assert.equal(dropped.fields.logframe.length, 0);
   assert.ok(dropped.leftOut.length >= 1);
 });
+
+test("a grand total or subtotal row is a TOTAL whatever the model called it; a category named 'Total ...' stays a line", () => {
+  const { budget } = singleReadFields({
+    budget: [
+      { category: "Total Cost", amount: "500000.30", kind: "LINE", quote: "Total Cost 500,000.30" },
+      { category: "Total Direct Costs", amount: 56611643.5, kind: "LINE", quote: "Total Direct Costs" },
+      { category: "Subtotal, Local Staff", amount: "1", kind: "LINE", quote: "Subtotal" },
+      { category: "TOTAL PROJECT BUDGET", amount: "2", quote: "TOTAL PROJECT BUDGET" },
+      { category: "Total Personnel", amount: "19015000", kind: "LINE", quote: "Total Personnel" },
+      { category: "Fringe Benefits", amount: "3", quote: "Fringe Benefits" },
+      { category: "PSC", amount: "32710.30", kind: "DETAIL", quote: "PSC" },
+    ],
+  }).FUNDING_BUDGET;
+  const kinds = Object.fromEntries(budget.map((b) => [b.value.category, b.value.kind]));
+  assert.equal(kinds["Total Cost"], "TOTAL");
+  assert.equal(kinds["Total Direct Costs"], "TOTAL");
+  assert.equal(kinds["Subtotal, Local Staff"], "TOTAL");
+  assert.equal(kinds["TOTAL PROJECT BUDGET"], "TOTAL");
+  assert.equal(kinds["Total Personnel"], "LINE");
+  assert.equal(kinds["Fringe Benefits"], "LINE");
+  assert.equal(kinds["PSC"], "DETAIL");
+});

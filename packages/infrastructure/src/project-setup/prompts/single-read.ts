@@ -32,11 +32,27 @@ const SHAPE = `{
   "risks":      [ {"kind": "RISK|ASSUMPTION", "title": "", "seriousness": null, "mitigation": null, "quote": ""} ]
 }`;
 
-/** The user message: the reply shape, then the whole document, then the one instruction. */
+/**
+ * Where each thing usually sits in a proposal, so a part is not skipped because it is in a table or a header block. These are
+ * hints about where to look; every value still needs its own quote, and nothing is filled that the document does not state.
+ */
+const HOW_TO_READ = [
+  "How to read:",
+  "- donor: the organisation that funds the project (a cooperative agreement, fund or allocation named as funder). countries: the countries where the project works. sectors: the sector or cluster names.",
+  "- facts come from the cover page, the project information table and the first paragraphs; they are often in a table as a label followed by a value.",
+  "- indicators: every measured result, including rows of an indicator table with a code (for example \"Indicator 1.1.1\") and a wording. A target of 0 or empty in a template row is null, not a target. Do not leave an indicator out because its numbers are blank.",
+  "- funding: the total amount requested, awarded or funded, with the funder as sourceName (once, not once per table). budget: the cost lines; mark every row that states a total or subtotal as kind TOTAL, a row that is part of another line as DETAIL, and the others as LINE.",
+  "- places: districts, towns, tehsils, camps or facilities where activities happen, once each. If a place has two spellings, give it once.",
+  "- plan: dated activities or milestones; give a date only when the day, month and year are written.",
+  "- risks: each named risk or assumption, as its own item.",
+].join("\n");
+
+/** The user message: the reply shape, how to read, then the whole document, then the one instruction. */
 export function singleReadUser(documentText: string): string {
   return [
     "Reply with one JSON object in exactly this shape. Use empty lists or null for anything the document does not state.",
     SHAPE,
+    HOW_TO_READ,
     "DOCUMENT:",
     documentText,
     "Fill the form for the document above. Follow the rules. Return JSON only.",

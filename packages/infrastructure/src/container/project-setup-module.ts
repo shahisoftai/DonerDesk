@@ -12,7 +12,7 @@ import { OrganisationPackSource } from "../project-setup/organisation-pack-sourc
 import { PrismaSetupPackRepository } from "../repositories/setup-packs.js";
 import { StoredSetupDocumentReader } from "../project-setup/source-reader.js";
 import { workerScannedPageReader } from "../project-setup/pdf-layout.js";
-import { TenantSetupLlm, withReplyMemory } from "../project-setup/setup-llm.js";
+import { TenantSetupLlm, withModel, withReplyMemory } from "../project-setup/setup-llm.js";
 import { LlmSectionSurveyor } from "../project-setup/section-surveyor.js";
 import { LlmFieldVerifier } from "../project-setup/field-verifier.js";
 import { NominatimPlaceLookup } from "../project-setup/place-lookup.js";
@@ -60,10 +60,13 @@ export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
   const llm: ISetupLlm = withReplyMemory(new TenantSetupLlm(deps.llmFor, deps.onProviderError));
   // `single` (SETUP_READ_MODE): one whole-document reading replaces the survey, the sheet shortcuts and the per-area prompts.
   const singleRead = process.env.SETUP_READ_MODE === "single";
-  const singleReader = new SingleReadReader(llm);
-  const extractors = deps.extractors ?? (singleRead
+  // The one call holds the whole structure, so it uses the heavier model when one is set (SETUP_HEAVY_MODEL), as the structure areas did.
+  const singleReader = new SingleReadReader(withModel(llm, deps.heavyModel));
+  // A sheet answers its part without the model (work plan, budget, logframe, indicators) and the facts get their country list from the text;
+  // the whole-document reading covers everything else, exactly as it fell back for the per-area prompts.
+  const extractors = deps.extractors ?? withSheetShortcuts(singleRead
     ? SETUP_AREA_KEYS.map((area) => new SingleReadAreaExtractor(area, singleReader))
-    : withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm, deps.heavyModel)));
+    : createSetupExtractors(SETUP_EXTRACTION_SPECS, llm, deps.heavyModel));
   const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.concurrency, deps.extractors ? {} : {
     surveyor: singleRead ? undefined : new LlmSectionSurveyor(llm, SETUP_EXTRACTION_SPECS),
     verifier: singleRead ? undefined : new LlmFieldVerifier(llm),

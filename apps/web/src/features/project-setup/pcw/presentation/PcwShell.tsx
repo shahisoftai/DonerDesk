@@ -12,6 +12,7 @@ import { firstOpenSlide, neighbourSlide, railEntries, slideGaps } from "../domai
 import { anyAreaRunning } from "../domain/parity-view";
 import { DocumentsList } from "./DocumentsList";
 import { LeftOutNote } from "./LeftOutNote";
+import { ReadingPopup } from "./ReadingPopup";
 import { SectionNotice } from "./SectionNotice";
 import { RereadPart } from "./RereadPart";
 import { DataEntrySlide } from "./DataEntrySlide";
@@ -78,6 +79,7 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
         <p className="mt-2 text-xs"><a className="underline" href="/projects/new/wizard?new=1">{PCW_COPY.startNewDraft}</a></p>
       </nav>
       <div className="space-y-4">
+      <ReadingPopup view={view} />
       {reading === "READING" ? <p role="status" className="rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm dark:border-brand-500/30 dark:bg-brand-900/20">{PCW_COPY.documents.reading}</p> : null}
       {reading === "FAILED" ? <p role="alert" className="rounded-xl border border-danger-300 p-3 text-sm">{PCW_COPY.documents.failed} <a className="underline" href="/projects/new/wizard">{PCW_COPY.documents.startOver}</a></p> : null}
       <SlideFrame

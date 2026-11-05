@@ -93,9 +93,17 @@ const funding = (raw: unknown) => items(raw, (r) => {
   return sourceName ? item(r, { sourceName, amount: amount(r.amount), currency: text(r.currency) }) : null;
 });
 
+/**
+ * A row that states a grand total or a subtotal is a TOTAL whatever the model called it: a total is never a line to pay for, and
+ * counted as one it would be added to the lines it sums. "Total Personnel" is not matched: in a summary budget it is a category.
+ */
+const TOTAL_ROW = /^\s*(grand total|sub-?total|total (estimated |project |direct |indirect )?costs?|total (project )?budget)\b/i;
+
 const budget = (raw: unknown) => items(raw, (r) => {
   const category = text(r.category);
-  return category ? item(r, { category, amount: amount(r.amount), currency: text(r.currency), logframeCode: text(r.logframeCode), kind: oneOf(r.kind, BUDGET_KINDS) ?? "LINE" }) : null;
+  if (!category) return null;
+  const kind = TOTAL_ROW.test(category) ? "TOTAL" : (oneOf(r.kind, BUDGET_KINDS) ?? "LINE");
+  return item(r, { category, amount: amount(r.amount), currency: text(r.currency), logframeCode: text(r.logframeCode), kind });
 });
 
 const risks = (raw: unknown) => items(raw, (r) => {
