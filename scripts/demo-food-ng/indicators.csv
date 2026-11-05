@@ -1,0 +1,19 @@
+Code,Name,Type,Baseline,Target,Unit,Frequency,Disaggregated,Logframe Code,Data source
+GI-1,Households reporting acceptable food consumption (Food Consumption Score),PERCENTAGE,38,65,%,Quarterly,,G,Household survey (FCS)
+OC1a,Households with acceptable Food Consumption Score,PERCENTAGE,38,60,%,Quarterly,,OC1,Household survey (FCS)
+OC1b,Households with a reduced Coping Strategies Index,PERCENTAGE,0,50,%,Quarterly,,OC1,Household survey (rCSI)
+OP1-1a,Households registered and verified,NUMBER,0,6000,households,Monthly,Location,1.1,Registration database
+OP1-1b,Households receiving at least one transfer,NUMBER,0,6000,households,Monthly,"Location, Sex of head of household",1.1,Distribution lists
+OP1-1c,Value of cash transferred,CURRENCY,0,420000,USD,Monthly,Location,1.1,Payment reports
+OP1-1d,Beneficiaries satisfied with assistance,PERCENTAGE,0,85,%,Monthly,,1.1,Post-distribution monitoring
+OP1-2a,Children 6-59 months screened for malnutrition,NUMBER,0,9000,children,Monthly,"Location, Sex",1.2,MUAC screening registers
+OP1-2b,Malnourished children referred to treatment,NUMBER,0,700,children,Monthly,Location,1.2,Referral slips
+OP1-2c,Caregivers attending nutrition education sessions,NUMBER,0,4800,people,Monthly,"Location, Sex",1.2,Session attendance sheets
+OC2a,Households reporting increased income,PERCENTAGE,0,55,%,Final,,OC2,Endline survey
+OP2-1a,Farmers receiving seed and tool kits,NUMBER,0,3000,farmers,Monthly,"Location, Sex",2.1,Distribution lists
+OP2-1b,Farmers trained in climate-smart agriculture,NUMBER,0,2400,farmers,Monthly,"Location, Sex",2.1,Farmer field school registers
+OP2-2a,VSLA groups formed and trained,NUMBER,0,120,groups,Monthly,Location,2.2,VSLA records
+OP2-2b,Households receiving livelihood start-up grants,NUMBER,0,900,households,Monthly,Location,2.2,Grant payment lists
+OP3-1a,Person-days of cash-for-work created,NUMBER,0,36000,person-days,Monthly,Location,3.1,Cash-for-work attendance sheets
+OP3-1b,Community assets rehabilitated,NUMBER,0,24,assets,Monthly,Location,3.1,Completion certificates
+OP3-2a,Market linkage forums held,NUMBER,0,6,forums,Quarterly,,3.2,Forum minutes

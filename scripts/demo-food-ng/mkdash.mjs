@@ -1,0 +1,12 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("mkdash");
+const sel = page.locator("main select"); const n = await sel.count(); const f = (i) => sel.nth(n - 7 + i);
+const pick = async (i, starts) => { const o = (await f(i).locator("option").allInnerTexts()).find((t) => t.includes(starts)); if (!o) throw new Error("no " + starts); await f(i).selectOption({ label: o }); await page.waitForTimeout(600); };
+await pick(0, "Strengthening Food Security");
+const name = page.locator("main input:not([type=checkbox]):not([type=file])").last(); await name.fill("Humanitarian dashboard - Nigeria food security (FSL-NE)");
+await f(1).selectOption({ label: "Everyone on the project" });
+await pick(2, "OP1-1b"); await pick(3, "OP1-1c"); await pick(4, "OP2-1b"); await pick(6, "OP3-1b");
+console.log((await page.locator("main").innerText()).split("Left out until")[0].slice(-200), "|", (await page.locator("main").innerText()).match(/\d charts can be drawn now[^\n]*/)?.[0]);
+await page.getByRole("button", { name: "Create the dashboard" }).click(); await page.waitForTimeout(8000);
+console.log(page.url()); console.log((await page.locator("main").innerText()).slice(-700)); await page.screenshot({ path: process.argv[2], fullPage: true });
+await browser.close(); process.exit(0);

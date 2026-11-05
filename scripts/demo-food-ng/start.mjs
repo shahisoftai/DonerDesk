@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const IN = process.env.IN;
+const { page, browser } = await attach("start");
+if (!/projects\/new\/wizard/.test(page.url())) await page.goto(BASE + "/projects/new/wizard", { waitUntil: "domcontentloaded" });
+await page.waitForTimeout(2500);
+await page.locator('input[type=file]').setInputFiles(["NG-FSL-Proposal.docx","NG-FSL-Logframe.xlsx","NG-FSL-Indicators.xlsx","NG-FSL-Budget.xlsx","NG-FSL-WorkPlan.xlsx"].map((f) => `${IN}/${f}`));
+await page.waitForTimeout(1500);
+await page.screenshot({ path: process.env.SHOT });
+console.log((await page.locator("main").innerText()).slice(0, 1500));
+await browser.close(); process.exit(0);

@@ -1,0 +1,22 @@
+Level,Code,Title
+GOAL,G,"Food insecurity and vulnerability are reduced among conflict-affected households in Borno, Adamawa and Yobe States, north-east Nigeria"
+OUTCOME,OC1,Targeted households meet their immediate food needs and improve their food consumption
+OUTPUT,1.1,Vulnerable households receive timely multi-purpose cash and food assistance
+ACTIVITY,A1.1.1,"Community-based targeting, registration and verification of vulnerable households"
+ACTIVITY,A1.1.2,Monthly cash and food distributions to registered households
+ACTIVITY,A1.1.3,Post-distribution monitoring and complaints handling
+OUTPUT,1.2,"Children under five and pregnant and breastfeeding women are screened for malnutrition and referred, and caregivers learn nutrition-sensitive feeding practices"
+ACTIVITY,A1.2.1,Community MUAC screening and referral of malnourished children
+ACTIVITY,A1.2.2,Nutrition education and cooking demonstration sessions for caregivers
+OUTCOME,OC2,Farming and small-business households restore their livelihoods and income
+OUTPUT,2.1,"Farming households receive seeds, tools and climate-smart farming training"
+ACTIVITY,A2.1.1,Procure and distribute dry-season seed and tool kits
+ACTIVITY,A2.1.2,Farmer field schools on climate-smart and low-input agriculture
+OUTPUT,2.2,"Households save, borrow and start small businesses through village savings and loan associations and grants"
+ACTIVITY,A2.2.1,Form and train village savings and loan associations (VSLAs)
+ACTIVITY,A2.2.2,Business skills training and livelihood start-up grants
+OUTCOME,OC3,Communities rebuild shared assets and strengthen local markets
+OUTPUT,3.1,Community assets are rehabilitated through cash-for-work
+ACTIVITY,A3.1.1,"Cash-for-work rehabilitation of farm roads, irrigation channels and market sheds"
+OUTPUT,3.2,"Farmers, traders and local authorities are linked through market forums"
+ACTIVITY,A3.2.1,Quarterly market linkage forums and price monitoring
