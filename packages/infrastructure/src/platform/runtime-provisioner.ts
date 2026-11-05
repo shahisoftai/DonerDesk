@@ -128,7 +128,7 @@ export function parseEnvValues(content: string, keys: readonly string[]): Record
  * per-call `AI_REPORTER_TIMEOUT` (workers.env), or every real generation
  * aborts client-side before the worker can even respond.
  */
-const API_PRESERVED_KEYS = ["AI_REPORTER_DRAFT_TIMEOUT_MS", "AI_REPORTER_HTTP_TIMEOUT_MS"] as const;
+const API_PRESERVED_KEYS = ["AI_REPORTER_DRAFT_TIMEOUT_MS", "AI_REPORTER_HTTP_TIMEOUT_MS", "SETUP_READ_MODE"] as const;
 
 /**
  * Render the api.env managed block. The api needs the feature flag and the

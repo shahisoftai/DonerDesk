@@ -51,6 +51,7 @@ export * from "./exports/templates/index.js";
 export { buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME } from "./exports/data-sheet-workbook.js";
 export { buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME } from "./exports/indicator-entry-workbook.js";
 export * from "./project-setup/prompted-area-extractor.js";
+export * from "./project-setup/single-read-extractor.js";
 export * from "./project-setup/prompts/index.js";
 export type { AreaExtractionSpec } from "./project-setup/area-spec.js";
 export { TenantSetupLlm } from "./project-setup/setup-llm.js";

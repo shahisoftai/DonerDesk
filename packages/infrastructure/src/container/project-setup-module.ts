@@ -1,4 +1,4 @@
-import { applyFinanceOperation, applyPlaceOperation, applyPlanOperation, applyResultOperation, applyRiskOperation, type FinanceOperation, type PlaceOperation, type PlanOperation, type ResultOperation, type RiskOperation, type TenantId } from "@donordesk/domain";
+import { SETUP_AREA_KEYS, applyFinanceOperation, applyPlaceOperation, applyPlanOperation, applyResultOperation, applyRiskOperation, type FinanceOperation, type PlaceOperation, type PlanOperation, type ResultOperation, type RiskOperation, type TenantId } from "@donordesk/domain";
 import type { PrismaClient } from "@prisma/client";
 import {
   ApplyDefaultPackHandler, ChangeSetupProposalHandler, DraftViewer, SignOffSetupHandler, DiscardSetupProposalHandler, EditSetupDraftHandler, EditSetupProposalHandler, GetSetupDraftHandler, StartBlankSetupHandler, GetSetupProposalHandler, ListSetupProposalsHandler,
@@ -16,6 +16,7 @@ import { TenantSetupLlm, withReplyMemory } from "../project-setup/setup-llm.js";
 import { LlmSectionSurveyor } from "../project-setup/section-surveyor.js";
 import { LlmFieldVerifier } from "../project-setup/field-verifier.js";
 import { NominatimPlaceLookup } from "../project-setup/place-lookup.js";
+import { SingleReadAreaExtractor, SingleReadReader } from "../project-setup/single-read-extractor.js";
 import { createSetupExtractors } from "../project-setup/prompted-area-extractor.js";
 import { withSheetShortcuts } from "../project-setup/sheet-first-extractor.js";
 import { SETUP_EXTRACTION_SPECS } from "../project-setup/prompts/index.js";
@@ -57,10 +58,15 @@ export function createProjectSetupModule(deps: ProjectSetupModuleDeps) {
   const runs: ISetupRunRepository = new PrismaSetupRunRepository(deps.prisma);
   const reader = new StoredSetupDocumentReader(deps.documents, deps.parseUploadedFile, workerScannedPageReader(process.env.AI_REPORTER_URL, process.env.INTERNAL_TOKEN ?? ""));
   const llm: ISetupLlm = withReplyMemory(new TenantSetupLlm(deps.llmFor, deps.onProviderError));
-  const extractors = deps.extractors ?? withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm, deps.heavyModel));
+  // `single` (SETUP_READ_MODE): one whole-document reading replaces the survey, the sheet shortcuts and the per-area prompts.
+  const singleRead = process.env.SETUP_READ_MODE === "single";
+  const singleReader = new SingleReadReader(llm);
+  const extractors = deps.extractors ?? (singleRead
+    ? SETUP_AREA_KEYS.map((area) => new SingleReadAreaExtractor(area, singleReader))
+    : withSheetShortcuts(createSetupExtractors(SETUP_EXTRACTION_SPECS, llm, deps.heavyModel)));
   const orchestrator = new SetupExtractionOrchestrator(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.concurrency, deps.extractors ? {} : {
-    surveyor: new LlmSectionSurveyor(llm, SETUP_EXTRACTION_SPECS),
-    verifier: new LlmFieldVerifier(llm),
+    surveyor: singleRead ? undefined : new LlmSectionSurveyor(llm, SETUP_EXTRACTION_SPECS),
+    verifier: singleRead ? undefined : new LlmFieldVerifier(llm),
     placeLookup: deps.placeLookupUrl ? new NominatimPlaceLookup(deps.placeLookupUrl) : undefined,
   });
   const rerun = new RerunSetupAreaHandler(proposals, runs, reader, extractors, deps.audits, deps.clock, deps.ids, undefined, deps.callTimeoutMs, deps.runInBackground);
