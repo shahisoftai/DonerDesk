@@ -8,7 +8,7 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { OkResponseSchema } from "./_schemas";
 import {
-  SetupApplyResultSchema, SetupEditedSchema, SetupPassageSchema, SetupRereadSchema, type SetupPassage, SetupPreviewSchema, SetupProposalListSchema, SetupProposalViewSchema, SetupStartedSchema,
+  SetupApplyResultSchema, SetupEditedSchema, SetupPassageSchema, SetupRereadSchema, SetupRerunSchema, type SetupPassage, SetupPreviewSchema, SetupProposalListSchema, SetupProposalViewSchema, SetupStartedSchema,
   type SetupApplyResult, type SetupPreview, type SetupProposalView,
 } from "@/lib/server/schemas-project-setup";
 
@@ -53,7 +53,7 @@ export async function editSetupItemAction(id: string, input: unknown): Promise<R
 
 export async function rerunSetupAreaAction(id: string, area: string): Promise<Result<undefined, AppError>> {
   const context = await requireSession();
-  const result = await gatewayRequest(`/v1/project-setup/proposals/${encodeURIComponent(id)}/areas/${encodeURIComponent(area)}/rerun`, OkResponseSchema, context.token, { method: "POST", body: {} });
+  const result = await gatewayRequest(`/v1/project-setup/proposals/${encodeURIComponent(id)}/areas/${encodeURIComponent(area)}/rerun`, SetupRerunSchema, context.token, { method: "POST", body: {} });
   return result.ok ? { ok: true, value: undefined } : result;
 }
 

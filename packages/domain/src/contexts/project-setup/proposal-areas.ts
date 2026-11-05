@@ -48,11 +48,13 @@ export const SETUP_AREAS: Record<SetupAreaKey, SetupAreaDef> = {
     items: (p) => p.periods.length, accepted: (p) => countAccepted(p.periods),
   },
   PLAN: {
-    key: "PLAN", labelKey: "setup.area.plan", fields: ["plan"], dependsOn: ["LOGFRAME", "PERIODS"], applyOrder: 5,
+    key: "PLAN", labelKey: "setup.area.plan", fields: ["plan"], dependsOn: ["LOGFRAME", "PERIODS"], applyOrder: 6,
     items: (p) => p.plan.length, accepted: (p) => countAccepted(p.plan),
   },
+  // Places are APPLIED before the plan (the work-plan import links each row's location to a place in the list, so the places must
+  // exist first) but EXTRACTED after it (they are recognised from the plan's locations): `dependsOn` governs reading and skipping, not apply order.
   PLACES: {
-    key: "PLACES", labelKey: "setup.area.places", fields: ["places"], dependsOn: ["PLAN", "FACTS"], applyOrder: 6,
+    key: "PLACES", labelKey: "setup.area.places", fields: ["places"], dependsOn: ["PLAN", "FACTS"], applyOrder: 5,
     items: (p) => p.places.length, accepted: (p) => countAccepted(p.places),
   },
   FUNDING_BUDGET: {

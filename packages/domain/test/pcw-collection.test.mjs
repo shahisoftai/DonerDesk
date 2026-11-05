@@ -82,3 +82,13 @@ test("a rate is never offered a form, even when an activity records who took par
   assert.equal(s[0].method, "MANUAL");
   assert.match(s[0].reason, /rate/);
 });
+
+test("a rate cannot be given the 'form' method (the form cannot add it up); a count can", () => {
+  const d = draft();
+  d.proposal.indicators.push(item({ code: "R1", title: "Share satisfied", logframeCode: null, type: "PERCENTAGE", unit: "%", baseline: null, target: "85", targetSchedule: null, frequency: null, direction: null, disaggregation: null, meansOfVerification: null }));
+  const refused = applyOperation(d, { kind: "SET_INDICATOR_SETUP", code: "R1", patch: { method: "FORM" } });
+  assert.equal(refused.ok, false);
+  assert.match(refused.reason ?? refused.error ?? JSON.stringify(refused), /rate/);
+  assert.equal(applyOperation(d, { kind: "SET_INDICATOR_SETUP", code: "R1", patch: { method: "MANUAL" } }).ok, true);
+  assert.equal(applyOperation(d, { kind: "SET_INDICATOR_SETUP", code: "I1", patch: { method: "FORM" } }).ok, true);
+});

@@ -19,6 +19,6 @@ export class DashboardStep implements ISetupLaunchStep {
     const mapping = suggestRoleMapping(template.roles, indicators.value);
     const made = await this.writer.apply(ctx, templateId, { projectId, name: template.title, mapping });
     if (!made.ok) return ok({ done: 0, notes: [`The starting dashboard was not made: ${made.error.message}`] });
-    return ok({ done: 1, notes: made.value.chartsLeftOut.map((c) => `“${c.title}” was left out: no indicator clearly answers ${c.missingRoles.join(", ")}. Choose one on the dashboard.`) });
+    return ok({ done: 1, notes: made.value.chartsLeftOut.map((c) => `“${c.title}” was left out because no indicator clearly matches ${c.missingRoles.map((k) => template.roles.find((r) => r.key === k)?.label ?? k).join(", ")}. Add it later from the dashboard or the Chart Studio, choosing the indicator you want.`) });
   }
 }

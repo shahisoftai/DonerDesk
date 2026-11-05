@@ -93,7 +93,8 @@ test("dashboard: the chosen template is made for the project with indicators sug
   const w = dashWorld([{ id: "ind-1", code: "I1", name: "People with access to safe drinking water", type: "NUMBER", isRate: false }], async () => ok({ dashboardId: "dash-1", chartsLeftOut: [{ title: "Latrine coverage", missingRoles: ["latrines"] }] }));
   const out = await new DashboardStep(w.writer).run(as("u1"), "p1", d);
   assert.equal(out.value.done, 1);
-  assert.deepEqual(out.value.notes, ["“Latrine coverage” was left out: no indicator clearly answers latrines. Choose one on the dashboard."]);
+  const label = wash.roles.find((r) => r.key === "latrines")?.label ?? "latrines";
+  assert.deepEqual(out.value.notes, [`“Latrine coverage” was left out because no indicator clearly matches ${label}. Add it later from the dashboard or the Chart Studio, choosing the indicator you want.`]);
   const [templateId, input] = w.calls[0];
   assert.equal(templateId, "tpl-wash-access-hygiene");
   assert.deepEqual([input.projectId, input.name], ["p1", wash.title]);

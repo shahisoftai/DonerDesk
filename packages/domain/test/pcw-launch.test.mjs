@@ -86,3 +86,12 @@ test("an entry with no rating holds the risks requirement open instead of being 
   d.proposal.risks[1].value.seriousness = "LOW";
   assert.deepEqual(open(d), []);
 });
+
+test("the plain apply's 'budget lines not created' note is recognised so the wizard can drop it (its own step creates them)", async () => {
+  const { budgetNotApplied, isBudgetNotAppliedNote } = await import("../dist/index.js");
+  const p = { budget: [{ value: { kind: "LINE" }, status: "ACCEPTED" }] };
+  const notes = budgetNotApplied(p);
+  assert.equal(notes.length, 1);
+  assert.equal(isBudgetNotAppliedNote(notes[0]), true);
+  assert.equal(isBudgetNotAppliedNote("Something else"), false);
+});

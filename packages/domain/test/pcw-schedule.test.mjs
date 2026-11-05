@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { scheduleTimeline, cadenceOf, applyOperation, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox } from "../dist/index.js";
+import { launchDeadlineOffset, scheduleTimeline, cadenceOf, applyOperation, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox } from "../dist/index.js";
 
 const item = (value) => ({ value, sourceQuote: null, sourceRef: null, confidence: "HIGH", status: "EDITED" });
 const person = (key, role = "FIELD_OFFICER") => ({ key, name: key, email: null, role, external: false, invite: "LATER" });
@@ -81,4 +81,13 @@ test("the timeline is pure: the draft it reads is not changed", () => {
   const before = JSON.stringify(d);
   scheduleTimeline(d);
   assert.equal(JSON.stringify(d), before);
+});
+
+test("Launch writes the cadence report type's due days, and nothing when no rule or cadence says", () => {
+  const d = draft("MONTHLY");
+  assert.equal(launchDeadlineOffset(d), null, "no rule: the organisation's default stays");
+  d.extras.schedule.rules = [{ reportType: "MONTHLY", template: "BUILT_IN", dueDaysAfterEnd: 15 }, { reportType: "FINAL", template: "BUILT_IN", dueDaysAfterEnd: 60 }];
+  assert.equal(launchDeadlineOffset(d), 15, "the monthly rule, not the final report's");
+  d.extras.schedule.cadence = "SEMI_ANNUAL";
+  assert.equal(launchDeadlineOffset(d), null, "a cadence without a fixed calendar has no offset");
 });

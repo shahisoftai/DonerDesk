@@ -12,7 +12,7 @@ import { SETUP_REQUIREMENTS } from "./requirements/index.js";
 import { SECTOR_TEMPLATES } from "../../dashboards/sector-templates.js";
 import { ALL_REPORT_TYPES } from "../../reporting/default-template.js";
 import { suggestBudgetLinks } from "./suggesters/budget-links.js";
-import { suggestMethods } from "./suggesters/collection-method.js";
+import { isRateForForm, suggestMethods } from "./suggesters/collection-method.js";
 import { suggestSetupLinks, type SetupLinkSuggestion } from "./suggesters/plan-links.js";
 
 export type SetupOperation =
@@ -86,6 +86,8 @@ export const DRAFT_OPERATIONS: { [K in SetupOperation["kind"]]: Handler<K> } = {
   },
   SET_INDICATOR_SETUP: (d, { code, patch }) => {
     if (patch.ownerKey !== undefined && !d.extras.team.some((p) => p.key === patch.ownerKey)) return refuse("The owner has to be someone on the team.");
+    const indicator = live(d.proposal.indicators).find((i) => i.code === code);
+    if (patch.method === "FORM" && indicator && isRateForForm(indicator)) return refuse(`${code} is a rate, which a form cannot add up. Choose typed in, another tool or worked out from other indicators.`);
     return withExtras(d, { indicatorSetup: { ...d.extras.indicatorSetup, [code]: { ...d.extras.indicatorSetup[code], ...patch } } });
   },
   SET_PLAN_SETUP: (d, { planKey, patch }) => {
@@ -124,7 +126,9 @@ export const DRAFT_OPERATIONS: { [K in SetupOperation["kind"]]: Handler<K> } = {
       const targets = new Set([SUPPORT_LINE, ...live(d.proposal.plan).map((def) => planKeyOf(def))]);
       if (Object.values(patch.budgetPlan).some((t) => !targets.has(t))) return refuse("A budget line goes with one of the planned activities, or is a support cost.");
     }
-    return withExtras(d, { finance: { ...d.extras.finance, ...patch } });
+    // Budget placements are merged, not replaced: a page sends only the line it changed, so two quick changes cannot undo each other.
+    const budgetPlan = patch.budgetPlan !== undefined ? { ...d.extras.finance.budgetPlan, ...patch.budgetPlan } : d.extras.finance.budgetPlan;
+    return withExtras(d, { finance: { ...d.extras.finance, ...patch, budgetPlan } });
   },
   CONFIRM_CODES: (d, { codes }) => withExtras(d, { confirmedGeneratedCodes: [...new Set([...d.extras.confirmedGeneratedCodes, ...codes])] }),
   ANSWER_NOT_USED: (d, { requirement, reason }) => {

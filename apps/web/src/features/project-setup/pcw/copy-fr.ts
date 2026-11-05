@@ -133,7 +133,7 @@ export const PCW_FR: PcwBundle = {
       calendarTitle: "Le calendrier des rapports", closing: "Rapport final", noRules: "Aucun rapport pour l'instant. Ajoutez les types de rapport du projet.",
       more: (n) => `et ${n} de plus`,
       templateNote: "Le modèle de rapport d'un bailleur pourra être téléversé une fois le projet démarré.",
-      rollUpNote: "Les rapports semestriels et annuels sont ouverts à leur échéance : ils ne sont donc pas listés ici.",
+      rollUpNote: "Les rapports semestriels et annuels sont ouverts à leur échéance : ils ne sont donc pas listés ici. Le rapport final (le dernier bloc ci-dessus) n'est pas créé au démarrage du projet : ouvrez-le depuis Rapports à la clôture du projet.",
       dueLine: (date) => `dû le ${date}`,
     },
     finance: {

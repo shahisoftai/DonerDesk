@@ -30,6 +30,7 @@ import type { Capability } from "@/lib/shared/capabilities";
 import { hasShareOfTarget } from "@donordesk/domain/contexts/reporting/data-sheet.js";
 import { sectionsFor, type OverviewFacts, type OverviewSection } from "@/features/projects/domain/overview-sections";
 import {
+  chooseActivePeriodId,
   budgetPace,
   calendarItems,
   closeOut,
@@ -107,7 +108,7 @@ export const loadProjectOverviewV2 = cache(
     // The calls that need the active period start the moment the periods list is back, not after the other fourteen finish.
     const periodsCall = gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, token);
     const periodDependentCalls = periodsCall.then((result) => {
-      const activeId = result.ok ? (result.value.items.filter((p) => !p.cancelled)[0]?.id ?? null) : null;
+      const activeId = result.ok ? chooseActivePeriodId(result.value.items.filter((p) => !p.cancelled), today) : null;
       return activeId
         ? Promise.all([
             gatewayRequest(`/v1/reporting-periods/${activeId}/readiness`, ReadinessSchema, token),
@@ -141,7 +142,7 @@ export const loadProjectOverviewV2 = cache(
       ]);
 
     const periods = periodsResult.ok ? periodsResult.value.items.filter((p) => !p.cancelled) : [];
-    const activePeriodId = periods[0]?.id ?? null;
+    const activePeriodId = chooseActivePeriodId(periods, today);
 
     const [readinessResult, checklistResult, evidenceResult, activitiesResult] = (await periodDependentCalls) ?? [null, null, null, null];
 

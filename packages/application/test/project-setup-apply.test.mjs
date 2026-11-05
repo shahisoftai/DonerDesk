@@ -117,7 +117,7 @@ test("preview saves nothing and returns the draft, what is missing and each area
   assert.deepEqual(f.calls, {});
   assert.equal(view.value.draft.title, "Blue Water");
   assert.ok(view.value.missing.includes("implementingOrganization"));
-  assert.deepEqual(view.value.areas.map((a) => a.area), ["FACTS", "LOGFRAME", "INDICATORS", "PERIODS", "PLAN", "PLACES", "FUNDING_BUDGET", "RISKS"]);
+  assert.deepEqual(view.value.areas.map((a) => a.area), ["FACTS", "LOGFRAME", "INDICATORS", "PERIODS", "PLACES", "PLAN", "FUNDING_BUDGET", "RISKS"]);
 });
 
 test("apply creates the project once and runs every area through its own handler", async () => {
@@ -144,8 +144,8 @@ test("a failed area stops the run, keeps earlier areas, and applying again resum
   const creator = { handle: async () => { created += 1; return ok({ id: "proj-1" }); } };
   let res = await new ApplySetupProposalHandler(r.proposals, r.runs, f.appliers, creator, r.documents, audit, clock, r.ids).handle(ctx, "p1", { project: projectForm, areas: everyArea });
   assert.equal(res.value.status, "PARTIAL");
-  assert.deepEqual(res.value.areas.map((a) => a.status), ["APPLIED", "APPLIED", "APPLIED", "APPLIED", "FAILED", "NOT_RUN", "NOT_RUN", "NOT_RUN"]);
-  assert.match(res.value.areas[4].error, /row 1/);
+  assert.deepEqual(res.value.areas.map((a) => a.status), ["APPLIED", "APPLIED", "APPLIED", "APPLIED", "APPLIED", "FAILED", "NOT_RUN", "NOT_RUN"]);
+  assert.match(res.value.areas[5].error, /row 1/);
   assert.equal(r.stored.status, "PARTIAL");
   f = fakes();
   res = await new ApplySetupProposalHandler(r.proposals, r.runs, f.appliers, creator, r.documents, audit, clock, r.ids).handle(ctx, "p1", { project: projectForm, areas: everyArea });
@@ -233,4 +233,23 @@ test("every document of a set moves into the project's folder, each reported on 
   assert.equal(res.ok, true, "one file that will not move does not fail the project");
   assert.deepEqual(r.documents.moves.map((m) => m.fileId), ["file-1", "file-2", "file-3"]);
   assert.deepEqual(res.value.documents.map((d) => [d.name === "file-1.docx" || d.name === "file-3.docx" || d.error !== undefined, d.folder ?? null]), [[true, "00-Project-Documents"], [true, null], [true, "00-Project-Documents"]]);
+});
+
+test("the wizard's due days are written to the project before any area (periods) is applied, and a failure leaves the setup resumable", async () => {
+  const order = [];
+  const r = repos(readyProposal());
+  const f = fakes();
+  const wrapped = f.appliers.map((a) => ({ ...a, apply: async (...args) => { order.push(a.area); return a.apply(...args); } }));
+  const writer = { handle: async (_c, projectId, days) => { order.push(`offset:${projectId}:${days}`); return ok({ days }); } };
+  const creator = { handle: async () => ok({ id: "proj-1" }) };
+  const res = await new ApplySetupProposalHandler(r.proposals, r.runs, wrapped, creator, r.documents, audit, clock, r.ids, writer).handle(ctx, "p1", { project: projectForm, areas: everyArea, deadlineOffsetDays: 15 });
+  assert.equal(res.ok, true, res.error?.message);
+  assert.equal(order[0], "offset:proj-1:15");
+
+  const r2 = repos(readyProposal());
+  const failing = { handle: async () => ({ ok: false, error: { code: "VALIDATION_ERROR", message: "no" } }) };
+  const bad = await new ApplySetupProposalHandler(r2.proposals, r2.runs, fakes().appliers, creator, r2.documents, audit, clock, r2.ids, failing).handle(ctx, "p1", { project: projectForm, areas: everyArea, deadlineOffsetDays: 15 });
+  assert.equal(bad.ok, false);
+  assert.equal(r2.stored.status, "PARTIAL");
+  assert.equal(r2.stored.appliedProjectId, "proj-1", "resuming does not create the project twice");
 });

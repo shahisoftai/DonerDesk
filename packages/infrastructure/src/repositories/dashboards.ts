@@ -33,7 +33,8 @@ export class PrismaDashboardRepository implements IDashboardRepository {
   async update(d: StoredDashboard, expectedUpdatedAt?: Date): Promise<Result<boolean>> {
     const r = await this.prisma.dashboard.updateMany({
       where: { id: d.id, tenantId: d.tenantId.toString(), ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) },
-      data: { name: d.name, widgetsJson: JSON.stringify(d.widgets), projectId: d.projectId ?? null },
+      // updatedAt is written explicitly: the handler hands out this value as the version, so it must be the stored one (`@updatedAt` alone stamps its own clock).
+      data: { name: d.name, widgetsJson: JSON.stringify(d.widgets), projectId: d.projectId ?? null, updatedAt: d.updatedAt },
     });
     return ok(r.count > 0);
   }
@@ -122,7 +123,7 @@ export class PrismaSavedChartRepository implements ISavedChartRepository {
   async update(c: StoredChart, expectedUpdatedAt?: Date): Promise<Result<boolean>> {
     const r = await this.prisma.savedChart.updateMany({
       where: { id: c.id, tenantId: c.tenantId.toString(), ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) },
-      data: { name: c.name, specJson: JSON.stringify(c.spec), versionsJson: JSON.stringify(c.versions) },
+      data: { name: c.name, specJson: JSON.stringify(c.spec), versionsJson: JSON.stringify(c.versions), updatedAt: c.updatedAt },
     });
     return ok(r.count > 0);
   }
@@ -163,7 +164,7 @@ export class PrismaDashboardTemplateRepository implements IDashboardTemplateRepo
   async update(t: StoredDashboardTemplate, expectedUpdatedAt?: Date): Promise<Result<boolean>> {
     const r = await this.prisma.dashboardTemplate.updateMany({
       where: { id: t.id, tenantId: t.tenantId.toString(), ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) },
-      data: { sector: t.template.sector, title: t.template.title, json: JSON.stringify(t.template), revision: t.template.revision },
+      data: { sector: t.template.sector, title: t.template.title, json: JSON.stringify(t.template), revision: t.template.revision, updatedAt: t.updatedAt },
     });
     return ok(r.count > 0);
   }
@@ -215,7 +216,7 @@ export class PrismaSavedReportRepository implements ISavedReportRepository {
   }
 
   async update(r: StoredReport, expectedUpdatedAt?: Date): Promise<Result<boolean>> {
-    const done = await this.prisma.savedReport.updateMany({ where: { id: r.id, tenantId: r.tenantId.toString(), ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) }, data: { name: r.name, queryJson: JSON.stringify(r.query) } });
+    const done = await this.prisma.savedReport.updateMany({ where: { id: r.id, tenantId: r.tenantId.toString(), ...(expectedUpdatedAt ? { updatedAt: expectedUpdatedAt } : {}) }, data: { name: r.name, queryJson: JSON.stringify(r.query), updatedAt: r.updatedAt } });
     return ok(done.count > 0);
   }
 

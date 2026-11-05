@@ -145,7 +145,7 @@ export const PCW_COPY = {
     calendarTitle: "The reporting calendar", closing: "Final report", noRules: "No reports yet. Add the kinds of report the project will make.",
     more: (n: number): string => `and ${n} more`,
     templateNote: "A donor's own report layout can be uploaded once the project has started.",
-    rollUpNote: "Semi-annual and annual reports are opened when they are due, so they are not listed here.",
+    rollUpNote: "Semi-annual and annual reports are opened when they are due, so they are not listed here. The final report (the last block above) is not created when the project starts: open it from Reports when the project is closing.",
     dueLine: (date: string): string => `due ${date}`,
   },
   finance: {

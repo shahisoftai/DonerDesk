@@ -3,7 +3,7 @@
  * key values and the recognition of places. Each is optional and none can lose what was read: a step that fails leaves the
  * proposal as it was.
  */
-import { SETUP_AREAS, addOnlyNew, findingFor, groundAreaPatch, markDoubted, setupRepairs, verifiableFields, type ProjectSetupProposal, type SectionFinding, type SetupAreaKey, type SourceBlock, type TenantId } from "@donordesk/domain";
+import { SETUP_AREAS, addOnlyNew, dropExactDuplicates, findingFor, groundAreaPatch, markDoubted, setupRepairs, verifiableFields, type ProjectSetupProposal, type SectionFinding, type SetupAreaKey, type SourceBlock, type TenantId } from "@donordesk/domain";
 import type { ISetupAreaExtractor, ISetupFieldVerifier, ISetupPlaceLookup, ISetupSectionSurveyor, SetupUsage } from "../../ports/project-setup.js";
 
 export interface ReadingSteps {
@@ -62,7 +62,8 @@ function storedFindings(findings: ReadonlyMap<SetupAreaKey, AreaFinding>, data: 
 }
 
 export async function afterAllAreas(steps: ReadingSteps, input: AfterAreasInput, start: ProjectSetupProposal, findings: ReadonlyMap<SetupAreaKey, AreaFinding>): Promise<{ data: ProjectSetupProposal; usage: SetupUsage }> {
-  let data = start;
+  // The same row read from two documents is listed once; only exact repeats go, anything that differs stays for a person to decide.
+  let data = dropExactDuplicates(start).proposal;
   let usage: SetupUsage = { calls: 0, inputTokens: 0, outputTokens: 0 };
   if (!input.skipRepairs) {
     for (const repair of setupRepairs(data)) {

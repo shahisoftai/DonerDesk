@@ -11,6 +11,10 @@ type R<T> = Promise<Result<T, DomainError>>;
 export interface SetupProjectCreator {
   handle(ctx: AuthenticatedContext, input: CreateProjectInput): R<{ id: string }>;
 }
+/** Sets how many days after a period ends its report is due, before the periods are made. */
+export interface SetupDeadlineOffsetWriter {
+  handle(ctx: AuthenticatedContext, projectId: string, days: number): R<{ days: number }>;
+}
 export interface SetupLogframeImporter {
   handle(ctx: AuthenticatedContext, input: { projectId: string; text: string; sourceName?: string }): R<{ created: number; skipped: number; warnings: string[] }>;
 }

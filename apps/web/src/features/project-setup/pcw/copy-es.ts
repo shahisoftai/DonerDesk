@@ -133,7 +133,7 @@ export const PCW_ES: PcwBundle = {
       calendarTitle: "El calendario de informes", closing: "Informe final", noRules: "Aún no hay informes. Añada los tipos de informe que hará el proyecto.",
       more: (n) => `y ${n} más`,
       templateNote: "El formato de informe propio de un donante se puede subir una vez iniciado el proyecto.",
-      rollUpNote: "Los informes semestrales y anuales se abren cuando vencen, por eso no aparecen aquí.",
+      rollUpNote: "Los informes semestrales y anuales se abren cuando vencen, por eso no aparecen aquí. El informe final (el último bloque de arriba) no se crea al iniciar el proyecto: ábralo desde Informes cuando el proyecto esté por cerrar.",
       dueLine: (date) => `vence el ${date}`,
     },
     finance: {

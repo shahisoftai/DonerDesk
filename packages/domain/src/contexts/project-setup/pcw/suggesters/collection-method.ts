@@ -16,6 +16,10 @@ export interface MethodSuggestion {
   reason: string;
 }
 
+/** A percentage or ratio is worked out from totals, so a form (which adds records up) cannot collect it. */
+export const isRateForForm = (indicator: { type: string | null; unit: string | null }): boolean =>
+  indicator.type === "PERCENTAGE" || indicator.type === "RATIO" || (indicator.unit ?? "").trim() === "%";
+
 export function suggestMethods(draft: SetupDraft): MethodSuggestion[] {
   const rejected = new Set(draft.extras.rejectedSuggestions);
   const plans = live(draft.proposal.plan).map((def) => ({ title: def.title, setup: draft.extras.planSetup[planKeyOf(def)] }));
@@ -25,7 +29,7 @@ export function suggestMethods(draft: SetupDraft): MethodSuggestion[] {
     const feeders = plans.filter((p) => p.setup?.indicatorCodes.includes(code));
     const recording = feeders.find((p) => p.setup?.recordsParticipants);
     // A percentage or ratio is worked out from totals: a form cannot add it up, so it is never offered one.
-    const isRate = indicator.type === "PERCENTAGE" || indicator.type === "RATIO" || (indicator.unit ?? "").trim() === "%";
+    const isRate = isRateForForm(indicator);
     const [method, reason]: [CollectionMethod, string] = recording && isRate
       ? ["MANUAL", "It is a rate, which a form cannot add up, so its values are typed in."]
       : recording

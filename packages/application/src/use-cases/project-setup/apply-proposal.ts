@@ -4,7 +4,7 @@ import { DomainError, blockingProblems, checkProposal, linkProposal, planApply, 
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import { driveFileIdsOf, type ISetupAreaApplier, type ISetupDocumentStore, type ISetupProposalRepository, type ISetupRunRepository } from "../../ports/project-setup.js";
-import type { SetupProjectCreator } from "../../ports/project-setup-apply.js";
+import type { SetupDeadlineOffsetWriter, SetupProjectCreator } from "../../ports/project-setup-apply.js";
 import { appliersByArea } from "./apply-registry.js";
 import { assertProposalAccess } from "./proposal-state.js";
 
@@ -14,6 +14,8 @@ export interface ApplySetupInput {
   areas: Readonly<Partial<Record<SetupAreaKey, boolean>>>;
   /** A proposal to apply in place of the stored one (the wizard folds its own decisions into the fields the appliers write). */
   proposal?: ProjectSetupProposal;
+  /** Days after a period ends that its report is due (the wizard's own rule); written to the project before its periods are made. */
+  deadlineOffsetDays?: number;
 }
 
 export interface AppliedArea {
@@ -61,6 +63,7 @@ export class ApplySetupProposalHandler {
     private readonly audit: IAuditLogger,
     private readonly clock: IClock,
     private readonly ids: IIdGenerator,
+    private readonly deadlineOffsets?: SetupDeadlineOffsetWriter,
   ) {}
 
   async handle(ctx: AuthenticatedContext, id: string, input: ApplySetupInput): Promise<Result<ApplySetupResult, DomainError>> {
@@ -100,6 +103,16 @@ export class ApplySetupProposalHandler {
       }
       projectId = created.value.id;
       await this.proposals.update({ ...claim, appliedProjectId: projectId });
+    }
+
+    // The project's own due days must be in place before any period is made (periods take their deadline from it). Done on every
+    // run, so a resumed apply sets it again; a failure leaves the setup resumable rather than making periods with the wrong date.
+    if (input.deadlineOffsetDays !== undefined && this.deadlineOffsets) {
+      const set = await this.deadlineOffsets.handle(ctx, projectId, input.deadlineOffsetDays);
+      if (!set.ok) {
+        await this.proposals.update({ ...claim, appliedProjectId: projectId, status: "PARTIAL" });
+        return set;
+      }
     }
 
     // The source documents go into the new project's own folder in the organisation's Drive. They never fail the apply: each

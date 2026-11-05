@@ -364,3 +364,25 @@ test("a period is named by its type and its month, so two periods never share a 
     periodTitle("Monthly report", "2026-12-01", "2026-12-31"),
   );
 });
+
+test("the Overview opens on the period that contains today, else the next, else the last that ended (never the latest by default)", async () => {
+  const { chooseActivePeriodId } = await import("../../src/features/projects/domain/overview-derive.ts");
+  const list = [
+    { id: "mar", startDate: "2027-03-01", endDate: "2027-03-31" },
+    { id: "feb", startDate: "2027-02-01", endDate: "2027-02-28" },
+    { id: "nov", startDate: "2026-11-01", endDate: "2026-11-30" },
+  ];
+  assert.equal(chooseActivePeriodId(list, "2026-11-05"), "nov");
+  assert.equal(chooseActivePeriodId(list, "2027-02-15"), "feb");
+  assert.equal(chooseActivePeriodId(list, "2026-10-01"), "nov", "before the project: the first to start");
+  assert.equal(chooseActivePeriodId(list, "2027-01-10"), "feb", "between periods: the next to start");
+  assert.equal(chooseActivePeriodId(list, "2027-09-01"), "mar", "after the project: the last that ended");
+  assert.equal(chooseActivePeriodId([], "2026-11-05"), null);
+});
+
+test("a project that ends on the last day of a month counts that month: 1 Nov to 30 Apr is six monthly periods", async () => {
+  const { lifecycle } = await import("../../src/features/projects/domain/overview-derive.ts");
+  const life = lifecycle({ startDate: "2026-11-01", endDate: "2027-04-30", today: "2026-11-05", reportingFrequency: "MONTHLY", periods: [] });
+  assert.equal(life.totalPeriods, 6);
+  assert.equal(life.currentPeriod, 1);
+});

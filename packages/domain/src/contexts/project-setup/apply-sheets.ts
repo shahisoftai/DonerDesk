@@ -168,6 +168,9 @@ export function fundingInputs(p: ProjectSetupProposal): { inputs: FundingInputDr
   return { inputs, notes };
 }
 
+/** True for the note `budgetNotApplied` writes: the wizard's own launch step does create those lines, so it drops the note. */
+export const isBudgetNotAppliedNote = (note: string): boolean => /budget line\(s\) were read but are not created automatically/.test(note);
+
 /** Budget lines need a planned activity to hang from in DonorDesk today; they are kept in the review, not applied. */
 export const budgetNotApplied = (p: ProjectSetupProposal): string[] => {
   // Detail rows and stated totals are there to check the budget, not to be created.

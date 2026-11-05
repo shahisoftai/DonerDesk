@@ -49,6 +49,8 @@ test("SETUP_AREAS covers exactly the eight areas, in a consistent dependency-res
     assert.match(row.labelKey, /^setup\.area\.[a-z]/);
     assert.ok(row.fields.length > 0);
     for (const dependency of row.dependsOn) {
+      // The one reverse pair: places are read after the plan (from its locations) but applied before it (the plan links to them).
+      if (key === "PLACES" && dependency === "PLAN") continue;
       assert.ok(SETUP_AREAS[dependency].applyOrder < row.applyOrder, `${dependency} must precede ${key}`);
     }
   }
@@ -243,8 +245,8 @@ test("planApply lists the selected areas with accepted items in apply order", ()
   assert.equal(plan.steps.find((s) => s.area === "INDICATORS").items, 1);
   assert.equal(plan.steps.find((s) => s.area === "FACTS").items, 1);
   assert.deepEqual(plan.skipped, [
-    { area: "PLAN", reason: "NOTHING_ACCEPTED" },
     { area: "PLACES", reason: "DEPENDENCY_SKIPPED", missingDependency: "PLAN" },
+    { area: "PLAN", reason: "NOTHING_ACCEPTED" },
   ]);
 });
 
@@ -452,4 +454,9 @@ test("with no stated project currency, budget lines are offered the one currency
   const p = { facts: { currency: { value: null, status: "PROPOSED" } }, funding: [P({ sourceName: "CBPF", amount: "$1", currency: "USD" })], budget: [line] };
   assert.equal(offerProjectCurrency(p).budget[0].value.currency, "USD");
   assert.equal(offerProjectCurrency({ ...p, funding: [] }).budget[0].value.currency, null);
+});
+
+test("places are applied before the plan, so the work-plan import can link each row's location to a place", () => {
+  assert.ok(SETUP_AREAS.PLACES.applyOrder < SETUP_AREAS.PLAN.applyOrder);
+  assert.ok(SETUP_AREA_APPLY_ORDER.indexOf("PLACES") < SETUP_AREA_APPLY_ORDER.indexOf("PLAN"));
 });

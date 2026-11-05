@@ -81,6 +81,8 @@ export const SetupApplyResultSchema = z.object({
 });
 export type SetupApplyResult = z.infer<typeof SetupApplyResultSchema>;
 
+/** What re-reading one part answers: how many items were checked and how many the checks dropped. */
+export const SetupRerunSchema = z.object({ checked: z.number(), dropped: z.number() });
 export const SetupEditedSchema = z.object({ ok: z.literal(true), updatedAt: z.string() });
 
 /** The passage a proposed item was read from, as the model saw it. */

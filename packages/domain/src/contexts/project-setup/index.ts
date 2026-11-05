@@ -26,3 +26,4 @@ export * from "./setup-figures.js";
 export * from "./setup-repairs.js";
 export * from "./field-verification.js";
 export * from "./single-read.js";
+export * from "./duplicate-items.js";

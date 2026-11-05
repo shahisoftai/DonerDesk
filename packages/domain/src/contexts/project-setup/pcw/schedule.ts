@@ -34,6 +34,18 @@ export function cadenceOf(draft: SetupDraft): string | undefined {
   return draft.proposal.periods.find((p) => isLive(p) && p.value?.type)?.value?.type ?? undefined;
 }
 
+/**
+ * The due days Launch writes to the project: the rule of the report type the cadence makes (monthly reports take the monthly
+ * rule). A project has one offset for every period it creates, so the cadence's own rule is the one that applies; null when
+ * no cadence or no rule says, which leaves the organisation's default.
+ */
+export function launchDeadlineOffset(draft: SetupDraft): number | null {
+  const cadence = cadenceOf(draft);
+  const type = cadence ? FIXED_CADENCES[cadence] : undefined;
+  if (!type) return null;
+  return draft.extras.schedule.rules.find((r) => r.reportType === type)?.dueDaysAfterEnd ?? null;
+}
+
 export function scheduleTimeline(draft: SetupDraft): ScheduleTimeline {
   const f = draft.proposal.facts;
   const start = isLive(f.startDate) ? f.startDate.value : null;

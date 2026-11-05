@@ -155,3 +155,11 @@ test("the finance requirements close when funding, lines and currency are settle
   const off = applyOperation(d, { kind: "ANSWER_NOT_USED", requirement: "finance.funding" }).draft;
   assert.deepEqual(open(off), [], "finance not used switches the whole slide off");
 });
+
+test("a budget placement patch is merged into the existing placements, so two quick changes both stay", () => {
+  const d = planDraft();
+  const one = applyOperation(d, { kind: "SET_FINANCE", patch: { budgetPlan: { b1: "code:1.1" } } }).draft;
+  const two = applyOperation(one, { kind: "SET_FINANCE", patch: { budgetPlan: { b2: SUPPORT_LINE } } }).draft;
+  assert.equal(two.extras.finance.budgetPlan.b1, "code:1.1");
+  assert.equal(two.extras.finance.budgetPlan.b2, SUPPORT_LINE);
+});

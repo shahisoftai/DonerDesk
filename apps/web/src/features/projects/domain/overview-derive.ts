@@ -69,7 +69,8 @@ export function lifecycle(input: {
   const daysRemaining = Math.max(0, daysBetween(today, end));
   const reportType = input.periods[0]?.reportType ?? input.reportingFrequency ?? "";
   const cadenceMonths = CADENCE_MONTHS[reportType] ?? 0;
-  const totalMonths = monthsBetween(start, end);
+  // The end date is the last day of the project, so a project ending on 30 April counts April: 1 Nov to 30 Apr is six months, not five.
+  const totalMonths = monthsBetween(start, dayAfter(end));
   const elapsedMonths = monthsBetween(start, today);
   // The programme's periods are counted from its cadence and its life, not only from the periods
   // that exist so far: a project eight quarters long says "of 8" from its first day.
@@ -93,6 +94,12 @@ export function lifecycle(input: {
 }
 
 /** Whole months between two plain dates (the day of the month is not counted). */
+function dayAfter(date: PlainDate): PlainDate {
+  const d = new Date(`${date}T00:00:00.000Z`);
+  d.setUTCDate(d.getUTCDate() + 1);
+  return d.toISOString().slice(0, 10) as PlainDate;
+}
+
 function monthsBetween(from: PlainDate, to: PlainDate): number {
   const years = Number(to.slice(0, 4)) - Number(from.slice(0, 4));
   const months = Number(to.slice(5, 7)) - Number(from.slice(5, 7));
@@ -618,4 +625,19 @@ export function closeOut(startDate: string, endDate: string, today: string): Clo
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * The period the Overview opens on: the one that contains today; else the next one to start; else the last one that ended.
+ * The list is newest first (as the API returns it), so "the first" was the latest period, months away, on day five of a project.
+ */
+export function chooseActivePeriodId(periods: ReadonlyArray<{ id: string; startDate: string; endDate: string }>, today: string): string | null {
+  if (periods.length === 0) return null;
+  const day = today.slice(0, 10);
+  const range = (p: { startDate: string; endDate: string }) => [p.startDate.slice(0, 10), p.endDate.slice(0, 10)] as const;
+  const containing = periods.find((p) => { const [s, e] = range(p); return s <= day && day <= e; });
+  if (containing) return containing.id;
+  const upcoming = periods.filter((p) => range(p)[0] > day).sort((a, b) => range(a)[0].localeCompare(range(b)[0]))[0];
+  if (upcoming) return upcoming.id;
+  return [...periods].sort((a, b) => range(b)[1].localeCompare(range(a)[1]))[0]!.id;
 }

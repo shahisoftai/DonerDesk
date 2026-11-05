@@ -1,6 +1,6 @@
 import type { ProjectSetupProposal } from "@donordesk/domain";
 import type { SetupAreaKey, Result, SetupDraft } from "@donordesk/domain";
-import { DomainError, LAUNCH_STEPS, SETUP_AREA_KEYS, SETUP_REQUIREMENTS, canLaunch, evaluateRequirements, notWrittenAtLaunch, projectInputFromDraft, proposalForLaunch } from "@donordesk/domain";
+import { DomainError, LAUNCH_STEPS, SETUP_AREA_KEYS, SETUP_REQUIREMENTS, canLaunch, evaluateRequirements, isBudgetNotAppliedNote, launchDeadlineOffset, notWrittenAtLaunch, projectInputFromDraft, proposalForLaunch } from "@donordesk/domain";
 import { CreateProjectSchema } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
@@ -99,15 +99,18 @@ export class LaunchProjectHandler {
 
     const beginId = this.ids.generate();
     await this.runs.start({ id: beginId, tenantId, proposalId: id, kind: "LAUNCH", status: "RUNNING", detail: { step: "BEGIN" }, startedAt: this.clock.now() });
-    const applied = await this.applier.handle(ctx, id, { project: parsed.data, areas: ALL_AREAS, proposal: proposalForLaunch(draft) });
+    const dueDays = launchDeadlineOffset(draft);
+    const applied = await this.applier.handle(ctx, id, { project: parsed.data, areas: ALL_AREAS, proposal: proposalForLaunch(draft), ...(dueDays !== null ? { deadlineOffsetDays: dueDays } : {}) });
     if (!applied.ok) {
       await this.runs.fail(beginId, tenantId, { step: "BEGIN", reason: applied.error.message }, this.clock.now());
       return applied;
     }
     await this.runs.finish(beginId, tenantId, { step: "BEGIN" }, this.clock.now());
+    // The wizard creates budget lines itself (the BUDGET_LINES step), so the plain apply's "not created automatically" note would contradict it.
+    const appliedAreas = applied.value.areas.map((a) => (a.area === "FUNDING_BUDGET" ? { ...a, notes: a.notes.filter((n) => !isBudgetNotAppliedNote(n)) } : a));
     const projectId = applied.value.projectId;
     const reports: LaunchStepReport[] = LAUNCH_STEPS.map((s) => ({ key: s.key, label: s.label, status: "NOT_RUN", done: 0, notes: [] }));
-    if (applied.value.status !== "APPLIED") return { ok: true, value: this.report(projectId, "PARTIAL", applied.value.areas, reports, draft) };
+    if (applied.value.status !== "APPLIED") return { ok: true, value: this.report(projectId, "PARTIAL", appliedAreas, reports, draft) };
 
     const previous = await this.runs.listByProposal(id, tenantId);
     if (!previous.ok) return previous;
@@ -143,7 +146,7 @@ export class LaunchProjectHandler {
       tenantId, actorId: ctx.tenant.userId, eventType: failed ? "setup.launch.partial" : "setup.launch.finished", entityType: "project_setup_proposal", entityId: id,
       newValue: JSON.stringify({ projectId, steps: reports.map((r) => `${r.key}:${r.status}`), review: reviewCounts(draft.proposal) }),
     });
-    return { ok: true, value: this.report(projectId, failed ? "PARTIAL" : "LAUNCHED", applied.value.areas, reports, draft) };
+    return { ok: true, value: this.report(projectId, failed ? "PARTIAL" : "LAUNCHED", appliedAreas, reports, draft) };
   }
 
   private report(projectId: string, status: LaunchReport["status"], areas: AppliedArea[], steps: LaunchStepReport[], draft: SetupDraft): LaunchReport {
