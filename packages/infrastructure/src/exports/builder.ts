@@ -6,7 +6,7 @@ import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import { renderChartPngCached, chartHasData, type ChartSource } from "./chart-png-renderer.js";
 import { parseMarkdownBlocks, renderDocxBlocks, renderPdfBlocks } from "./markdown-renderer.js";
-import { indicatorExportColumns, indicatorExportCell, isRollUpIndicatorTable, NOT_MEASURED_LABEL } from "@donordesk/domain";
+import { slugify, indicatorExportColumns, indicatorExportCell, isRollUpIndicatorTable, NOT_MEASURED_LABEL } from "@donordesk/domain";
 
 /** Report section depth (1 = section, 2-4 = sub-sections); absent on legacy data. */
 function sectionLevel(level: number | undefined): number {
@@ -455,9 +455,5 @@ export function packReadme(input: Pick<Parameters<IExportBuilder["build"]>[0], "
 }
 
 function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+  return slugify(s).slice(0, 80);
 }

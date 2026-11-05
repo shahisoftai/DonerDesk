@@ -1,8 +1,5 @@
+import { slugify } from "../../core/slugify.js";
 import type { ReportingRequirement } from "./reporting-requirement.js";
-
-function slug(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "annex";
-}
 
 /**
  * The requirements a donor's own template places on a report, as a layer for the requirement resolver. Before this the
@@ -26,7 +23,7 @@ export function requirementsFromTemplate(template: {
   for (const annex of template.requirements.annexes) {
     const name = annex.name.trim();
     if (!annex.required || !name) continue;
-    const key = `ANNEX:${slug(name)}`;
+    const key = `ANNEX:${slugify(name) || "annex"}`;
     if (seen.has(key)) continue;
     seen.add(key);
     out.push({

@@ -1,8 +1,5 @@
+import { slugify } from "../../core/slugify.js";
 import { REQUIREMENT_KINDS, type ReportingRequirement, type RequirementKind } from "./reporting-requirement.js";
-
-function slug(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-}
 
 export interface ParsedPackLines {
   requirements: ReportingRequirement[];
@@ -33,8 +30,8 @@ export function parseRequirementLines(text: string, packName: string): ParsedPac
     let title = line.slice(colon + 1).trim();
     const advisory = title.endsWith("?");
     if (advisory) title = title.slice(0, -1).trim();
-    const key = `${kind}:${slug(title)}`;
-    if (!slug(title)) {
+    const key = `${kind}:${slugify(title)}`;
+    if (!slugify(title)) {
       errors.push(`Line ${index + 1}: add a title after the colon.`);
       return;
     }

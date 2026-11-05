@@ -1,5 +1,6 @@
 export * from "./core/entity.js";
 export * from "./core/result.js";
+export * from "./core/slugify.js";
 export * from "./core/domain-event.js";
 export * from "./core/domain-error.js";
 export * from "./core/value-object.js";

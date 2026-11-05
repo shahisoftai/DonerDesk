@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { slugify } from "@donordesk/domain/core/slugify.js";
 import { parseRequirementLines } from "@donordesk/domain/contexts/reporting/pack-authoring.js";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -8,16 +9,14 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 
-const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-
 const fail = (message: string, fields: Record<string, string[]> = {}): Result<never, AppError> => ({ ok: false, error: { kind: "validation", message, fields } });
 
 /** Saves a requirement pack as a draft from the lines the person typed (see `parseRequirementLines`). */
 export async function saveRequirementPackAction(input: { name: string; donor: string; mechanism: string; reportType: string; lines: string }): Promise<Result<{ id: string }, AppError>> {
   const context = await requireSession();
   const name = input.name.trim();
-  const donorKey = slug(input.donor);
-  const mechanismKey = slug(input.mechanism);
+  const donorKey = slugify(input.donor);
+  const mechanismKey = slugify(input.mechanism);
   if (!name) return fail("Give the pack a name.", { name: ["Required"] });
   if (donorKey.length < 4) return fail("Name the donor (at least four letters).", { donor: ["Required"] });
   if (!mechanismKey) return fail("Name the funding mechanism or template this applies to.", { mechanism: ["Required"] });
