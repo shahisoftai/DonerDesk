@@ -109,7 +109,7 @@ export const PCW_COPY = {
     tickThis: "Tick this area", untickThis: "Untick this area", openThis: "Show the areas inside", wholeCountry: "Whole country",
     loading: "Loading areas…", noBoundaries: "We have no boundary map for this country yet. Add the places by name below.",
     mapUnavailable: "The map could not start on this device. You can still tick areas in the list.", mapHint: "Click an area to see it here; use the buttons to tick it or look inside.",
-    matchDocs: (n: number): string => `Your documents name ${n === 1 ? "1 place" : `${n} places`}.`, matchButton: "Match to the map",
+    matchDocs: (n: number): string => `Your documents name ${n === 1 ? "1 place" : `${n} places`}.`, findOnMap: "Find on the map", matchButton: "Match to the map",
     matchedLine: (m: number, u: number): string => `${m} matched and ticked. ${u === 0 ? "" : `${u} could not be matched exactly and stay below for you to check.`}`,
     otherTitle: "Other places", otherHelp: "Places that are not areas on the map, such as a camp, a clinic or a village.", otherAdd: "Add a place", otherName: "Name", otherInside: "Inside",
     add: "Add a place", name: "Place name", level: "Kind of place", parent: "Inside", unknownLevel: "— not sure —", none: "— none —",

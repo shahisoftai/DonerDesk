@@ -16,7 +16,7 @@ import { usePcwCopy } from "./usePcwCopy";
  * Places that are not areas on the map: a camp, a clinic, a village, or a name a document gave that the map did not match. They keep the
  * old controls (confirm, remove, say what kind), and a new one is just a name and, if known, what it is inside; its kind follows from that.
  */
-export function OtherPlaces({ id, view, onView, onError }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void; onError: (m: string | null) => void }) {
+export function OtherPlaces({ id, view, onView, onError, onFind }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void; onError: (m: string | null) => void; onFind: (name: string) => void }) {
   const pcw = usePcwCopy();
   const c = pcw.c.places;
   const [name, setName] = useState("");
@@ -60,6 +60,7 @@ export function OtherPlaces({ id, view, onView, onError }: { id: string; view: S
                     </Select>
                   : <span className="text-xs text-slate-600 dark:text-slate-300">{levelLabel(place.adminLevel)}</span>}
                 <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
+                <button type="button" className="btn-secondary" onClick={() => onFind(place.name ?? "")}>{c.findOnMap}</button>
                 {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{c.accept}</button> : null}
                 <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${c.remove} ${place.name ?? ""}`}>{c.remove}</button>
               </li>

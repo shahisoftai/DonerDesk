@@ -97,7 +97,7 @@ export const PCW_ES: PcwBundle = {
     tickThis: "Marcar esta zona", untickThis: "Desmarcar esta zona", openThis: "Ver las zonas de su interior", wholeCountry: "Todo el país",
     loading: "Cargando zonas…", noBoundaries: "Todavía no tenemos un mapa de límites de este país. Añada los lugares por su nombre más abajo.",
     mapUnavailable: "El mapa no pudo iniciarse en este dispositivo. Aún puede marcar zonas en la lista.", mapHint: "Haga clic en una zona para verla aquí; use los botones para marcarla o mirar dentro.",
-    matchDocs: (n: number): string => `Sus documentos nombran ${n === 1 ? "1 lugar" : `${n} lugares`}.`, matchButton: "Relacionar con el mapa",
+    matchDocs: (n: number): string => `Sus documentos nombran ${n === 1 ? "1 lugar" : `${n} lugares`}.`, findOnMap: "Buscar en el mapa", matchButton: "Relacionar con el mapa",
     matchedLine: (m: number, u: number): string => `${m} encontrado${m > 1 ? "s" : ""} y marcado${m > 1 ? "s" : ""}. ${u === 0 ? "" : `${u} no se pudieron encontrar con exactitud y quedan abajo para que los revise.`}`,
     otherTitle: "Otros lugares", otherHelp: "Lugares que no son zonas del mapa, como un campamento, una clínica o una aldea.", otherAdd: "Añadir un lugar", otherName: "Nombre", otherInside: "Dentro de",
       add: "Añadir un lugar", name: "Nombre del lugar", level: "Tipo de lugar", parent: "Dentro de", unknownLevel: "— no estoy seguro —", none: "— ninguno —",

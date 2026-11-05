@@ -165,7 +165,16 @@ export function matchDocumentPlaces(defs: ReadonlyArray<{ index: number; place: 
   const matched: DocumentMatch[] = [];
   const unmatched: number[] = [];
   for (const { index, place } of defs) {
-    const hits = (byName.get(normalizeLocationKey(place.name ?? "")) ?? []).filter((h) => place.adminLevel === null || place.adminLevel === h.level || place.adminLevel === 0);
+    let hits = (byName.get(normalizeLocationKey(place.name ?? "")) ?? []).filter((h) => place.adminLevel === null || place.adminLevel === h.level || place.adminLevel === 0);
+    // The same name can exist at two levels (a sub-district and its union council) or in two districts: the place the document says it is inside decides, when it can.
+    if (hits.length > 1 && place.parentName) {
+      const parent = normalizeLocationKey(place.parentName);
+      const inside = hits.filter((h) => entryFor(h.unit, h.level, levels).chain.some((c) => normalizeLocationKey(c.name) === parent));
+      if (inside.length === 0) { unmatched.push(index); continue; }
+      hits = inside;
+      // Still two inside it: a sub-district and a smaller area of the same name. The wider one holds the smaller, so it is the one that is never wrong to tick.
+      if (hits.length > 1 && new Set(hits.map((h) => h.level)).size === hits.length) hits = [[...hits].sort((a, b) => a.level - b.level)[0]!];
+    }
     if (hits.length === 1) matched.push({ index, found: hits[0]! }); else unmatched.push(index);
   }
   return { matched, unmatched };

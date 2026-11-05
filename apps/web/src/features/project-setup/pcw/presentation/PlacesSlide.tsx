@@ -14,11 +14,12 @@ import { PlacePicker } from "./PlacePicker";
  */
 export function PlacesSlide({ id, view, onView }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void }) {
   const [error, setError] = useState<string | null>(null);
+  const [find, setFind] = useState<{ text: string; nonce: number } | null>(null);
   return (
     <div className="space-y-8">
       <AcceptAllWaiting id={id} area="PLACES" items={view.places} onView={onView} onError={setError} />
-      <PlacePicker id={id} view={view} onView={onView} onError={setError} />
-      <OtherPlaces id={id} view={view} onView={onView} onError={setError} />
+      <PlacePicker id={id} view={view} onView={onView} onError={setError} find={find} />
+      <OtherPlaces id={id} view={view} onView={onView} onError={setError} onFind={(text) => setFind({ text, nonce: Date.now() })} />
       <NotUsedToggle id={id} view={view} requirement="places.decided" onView={onView} />
       <NotUsedToggle id={id} view={view} requirement="places.area" onView={onView} />
       {error ? <p role="alert" className="text-sm text-danger-600">{error}</p> : null}

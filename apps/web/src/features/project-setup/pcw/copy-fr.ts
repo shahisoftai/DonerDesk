@@ -97,7 +97,7 @@ export const PCW_FR: PcwBundle = {
     tickThis: "Cocher cette zone", untickThis: "Décocher cette zone", openThis: "Voir les zones à l'intérieur", wholeCountry: "Tout le pays",
     loading: "Chargement des zones…", noBoundaries: "Nous n'avons pas encore de carte des limites pour ce pays. Ajoutez les lieux par leur nom ci-dessous.",
     mapUnavailable: "La carte n'a pas pu démarrer sur cet appareil. Vous pouvez quand même cocher des zones dans la liste.", mapHint: "Cliquez sur une zone pour la voir ici ; utilisez les boutons pour la cocher ou regarder à l'intérieur.",
-    matchDocs: (n: number): string => `Vos documents citent ${n === 1 ? "1 lieu" : `${n} lieux`}.`, matchButton: "Faire correspondre à la carte",
+    matchDocs: (n: number): string => `Vos documents citent ${n === 1 ? "1 lieu" : `${n} lieux`}.`, findOnMap: "Trouver sur la carte", matchButton: "Faire correspondre à la carte",
     matchedLine: (m: number, u: number): string => `${m} trouvé${m > 1 ? "s" : ""} et coché${m > 1 ? "s" : ""}. ${u === 0 ? "" : `${u} n'ont pas pu être trouvés exactement et restent ci-dessous à vérifier.`}`,
     otherTitle: "Autres lieux", otherHelp: "Des lieux qui ne sont pas des zones de la carte, comme un camp, une clinique ou un village.", otherAdd: "Ajouter un lieu", otherName: "Nom", otherInside: "Dans",
       add: "Ajouter un lieu", name: "Nom du lieu", level: "Type de lieu", parent: "Dans", unknownLevel: "— pas sûr —", none: "— aucun —",

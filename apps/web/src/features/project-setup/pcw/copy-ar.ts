@@ -99,7 +99,7 @@ export const PCW_AR: PcwBundle = {
     tickThis: "حدّد هذه المنطقة", untickThis: "ألغِ تحديد هذه المنطقة", openThis: "اعرض المناطق بداخلها", wholeCountry: "البلد كله",
     loading: "جارٍ تحميل المناطق…", noBoundaries: "لا تتوفر لدينا خريطة حدود لهذا البلد بعد. أضف الأماكن بأسمائها أدناه.",
     mapUnavailable: "تعذّر تشغيل الخريطة على هذا الجهاز. ما زال بإمكانك تحديد المناطق من القائمة.", mapHint: "انقر على منطقة لعرضها هنا؛ استخدم الأزرار لتحديدها أو لعرض ما بداخلها.",
-    matchDocs: (n: number): string => `مستنداتك تذكر أماكن: ${n}.`, matchButton: "طابق مع الخريطة",
+    matchDocs: (n: number): string => `مستنداتك تذكر أماكن: ${n}.`, findOnMap: "ابحث عنه على الخريطة", matchButton: "طابق مع الخريطة",
     matchedLine: (m: number, u: number): string => `تمت مطابقة وتحديد: ${m}. ${u === 0 ? "" : `تعذّرت المطابقة التامة لـ ${u} وتبقى أدناه لتراجعها.`}`,
     otherTitle: "أماكن أخرى", otherHelp: "أماكن ليست مناطق على الخريطة، مثل مخيم أو عيادة أو قرية.", otherAdd: "إضافة مكان", otherName: "الاسم", otherInside: "داخل",
       add: "إضافة مكان", name: "اسم المكان", level: "نوع المكان", parent: "داخل", unknownLevel: "— لست متأكداً —", none: "— لا شيء —",

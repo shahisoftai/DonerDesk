@@ -102,3 +102,15 @@ test("the map's scene shades ticked areas and names the state in words", () => {
   assert.equal(fill.selectedRef, "UG2");
   assert.ok(scene.bounds);
 });
+
+test("a name that exists at two levels is matched by the place the document says it is inside", () => {
+  const twin = unit("p9", "Gulu", 1.2, 1.2, 0.2); // a smaller area of the same name, inside the district Gulu, itself inside North
+  const lv = new Map<number, readonly BoundaryUnit[]>([[1, [north, south]], [2, [gulu, abim, kampala]], [3, [twin]]]);
+  const place = (name: string, parentName: string | null) => ({ name, adminLevel: null, parentName, latitude: null, longitude: null }) as never;
+  const none = matchDocumentPlaces([{ index: 0, place: place("Gulu", null) }], lv);
+  assert.deepEqual(none.unmatched, [0], "without a parent two areas share the name, so it is not guessed");
+  const inNorth = matchDocumentPlaces([{ index: 0, place: place("Gulu", "North") }], lv);
+  assert.deepEqual(inNorth.matched.map((m) => [m.found.level, m.found.unit.ref]), [[2, "UG1"]], "the wider one is chosen: it holds the smaller, so it is never wrong");
+  const elsewhere = matchDocumentPlaces([{ index: 0, place: place("Gulu", "South") }], lv);
+  assert.deepEqual(elsewhere.unmatched, [0], "neither Gulu is inside South");
+});

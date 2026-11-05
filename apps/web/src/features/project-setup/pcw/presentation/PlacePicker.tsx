@@ -26,7 +26,7 @@ const defOf = (item: SetupDraftView["places"][number]): PlaceDef => item.value a
  * Slide 5, the picker: the country's areas as a ticked list on one side and the map on the other. Ticking is the whole job: every change is
  * saved to the draft at once (the draft's places, with their parents), so the Work plan slide can offer them with no further step.
  */
-export function PlacePicker({ id, view, onView, onError }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void; onError: (m: string | null) => void }) {
+export function PlacePicker({ id, view, onView, onError, find }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void; onError: (m: string | null) => void; find?: { text: string; nonce: number } | null }) {
   const c = usePcwCopy().c.places;
   const defs = useMemo(() => view.places.map(defOf), [view.places]);
   const [country, setCountry] = useState<string>(() => defs.find((p) => p.mapRef && p.adminLevel === 0)?.name ?? view.extras.start.country ?? "");
@@ -42,6 +42,9 @@ export function PlacePicker({ id, view, onView, onError }: { id: string; view: S
   const lv = usePlaceLevels(country || null);
   const insideCache = useMemo(() => new Map<string, BoundaryUnit[]>(), [lv.units]);
 
+  // "Find on the map" from the other places: the name goes into the search box and the box is brought into view.
+  const searchBox = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (find) { setQuery(find.text); searchBox.current?.scrollIntoView({ block: "center", behavior: "smooth" }); } }, [find]);
   useEffect(() => { void loadBoundaryManifest().then((m) => setCountries((m?.countries ?? []).map((x) => x.name).sort((a, b) => a.localeCompare(b)))); }, []);
 
   // One save at a time; a tick made while saving is sent next, so the last tick always wins and none is lost.
@@ -105,14 +108,15 @@ export function PlacePicker({ id, view, onView, onError }: { id: string; view: S
     const all: LevelUnits = await lv.ensureAll();
     const { matched, unmatched } = matchDocumentPlaces(waiting.map((w) => ({ index: w.index, place: defOf(w.item) })), all);
     let next = selection;
-    for (const m of matched) { const e = entryFor(m.found.unit, m.found.level, all); next = toggle(next, e.node, e.chain); }
+    // An area already ticked stays ticked: toggling it again would untick it.
+    for (const m of matched) { const e = entryFor(m.found.unit, m.found.level, all); if (!next.has(e.node.ref)) next = toggle(next, e.node, e.chain); }
     commit(next);
     setNote(c.matchedLine(matched.length, unmatched.length));
   }
 
   const body = lv.status === "none" ? <p className="text-sm text-slate-700 dark:text-slate-200">{country ? c.noBoundaries : c.chooseCountry}</p> : lv.status === "loading" || lv.status === "idle" ? <p className="text-sm text-slate-600 dark:text-slate-300">{country ? c.loading : ""}</p> : (
     <div className="grid gap-4 lg:grid-cols-2">
-      <div className="space-y-3">
+      <div className="space-y-3" ref={searchBox}>
         <Field label={c.search}><Input value={query} onChange={(e) => setQuery(e.target.value)} type="search" /></Field>
         {query.trim().length >= 2
           ? (found.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.searchNone}</p> : <PlacePickTree showPath rows={found} selection={selection} activeRef={active?.node.ref ?? null} open={open} copy={c} onTick={tick} onOpen={() => {}} onActive={setActive} />)
