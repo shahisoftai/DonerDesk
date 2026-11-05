@@ -66,19 +66,27 @@ export class PrismaPlaceUsageReader implements IPlaceUsageReader {
   async distinctLocations(tenantId: TenantId): Promise<Result<LocationUsage[]>> {
     const t = tenantId.toString();
     const tally = new Map<string, { text: string; sources: Set<LocationUsage["sources"][number]>; count: number }>();
-    const add = (raw: string | null | undefined, source: LocationUsage["sources"][number]) => {
+    const add = (raw: string | null | undefined, source: LocationUsage["sources"][number], times = 1) => {
       const text = raw?.trim();
       if (!text) return;
       const key = text.toLowerCase();
       const at = tally.get(key) ?? { text, sources: new Set(), count: 0 };
       at.sources.add(source);
-      at.count += 1;
+      at.count += times;
       tally.set(key, at);
     };
-    for (const r of await this.prisma.plannedActivity.findMany({ where: { tenantId: t, location: { not: null } }, select: { location: true } })) add(r.location, "PLAN");
-    for (const r of await this.prisma.activityUpdate.findMany({ where: { tenantId: t, location: { not: null } }, select: { location: true } })) add(r.location, "ACTIVITY");
-    for (const r of await this.prisma.beneficiary.findMany({ where: { tenantId: t, location: { not: "" } }, select: { location: true } })) add(r.location, "BENEFICIARY");
-    for (const r of await this.prisma.indicatorUpdate.findMany({ where: { tenantId: t, NOT: { disaggregationJson: "[]" } }, select: { disaggregationJson: true } })) {
+    // The database counts each distinct typed word once instead of sending every record; the four reads run together.
+    const [plan, activity, beneficiary, values] = await Promise.all([
+      this.prisma.plannedActivity.groupBy({ by: ["location"], where: { tenantId: t, location: { not: null } }, _count: { _all: true }, orderBy: { location: "asc" } }),
+      this.prisma.activityUpdate.groupBy({ by: ["location"], where: { tenantId: t, location: { not: null } }, _count: { _all: true }, orderBy: { location: "asc" } }),
+      this.prisma.beneficiary.groupBy({ by: ["location"], where: { tenantId: t, location: { not: "" } }, _count: { _all: true }, orderBy: { location: "asc" } }),
+      // The breakdown is stored as JSON text, so only the rows that name the dimension are read and parsed.
+      this.prisma.indicatorUpdate.findMany({ where: { tenantId: t, disaggregationJson: { contains: "LOCATION" } }, select: { disaggregationJson: true } }),
+    ]);
+    for (const r of plan) add(r.location, "PLAN", r._count._all);
+    for (const r of activity) add(r.location, "ACTIVITY", r._count._all);
+    for (const r of beneficiary) add(r.location, "BENEFICIARY", r._count._all);
+    for (const r of values) {
       let entries: unknown;
       try { entries = JSON.parse(r.disaggregationJson); } catch { continue; }
       if (!Array.isArray(entries)) continue;
