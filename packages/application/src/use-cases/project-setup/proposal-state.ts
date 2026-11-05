@@ -1,5 +1,5 @@
-import type { ProjectSetupProposal, Proposed, Result, Role } from "@donordesk/domain";
-import { DomainError, Permissions } from "@donordesk/domain";
+import type { Result, Role } from "@donordesk/domain";
+import { DomainError, Permissions, emptyProposal } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { StoredSetupProposal } from "../../ports/project-setup.js";
 
@@ -9,38 +9,8 @@ export const SETUP_PII_KEEP = ["DATE_OF_BIRTH"] as const;
 /** A part still "reading" after this long has stopped (a restart, a lost request); it is shown as failed so it can be read again. */
 export const STALE_AREA_RUN_MS = 6 * 60_000;
 
-const notStated = <T>(value: T | null = null): Proposed<T> => ({
-  value,
-  sourceQuote: null,
-  sourceRef: null,
-  confidence: "HIGH",
-  status: "PROPOSED",
-});
-
-/** A proposal with nothing proposed yet: every fact "Not stated", every area empty. */
-export function emptySetupProposal(): ProjectSetupProposal {
-  return {
-    facts: {
-      name: notStated(),
-      code: notStated(),
-      donor: notStated(),
-      countries: notStated<string[]>([]),
-      sectors: notStated<string[]>([]),
-      startDate: notStated(),
-      endDate: notStated(),
-      currency: notStated(),
-      summary: notStated(),
-    },
-    logframe: [],
-    indicators: [],
-    periods: [],
-    plan: [],
-    places: [],
-    funding: [],
-    budget: [],
-    risks: [],
-  };
-}
+/** A proposal with nothing proposed yet: every fact "Not stated", every area empty. The domain owns the shape. */
+export const emptySetupProposal = emptyProposal;
 
 /**
  * A proposal is private to its creator and to organisation managers: anyone else is told "not found", never "someone
