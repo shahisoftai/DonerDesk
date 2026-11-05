@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { applyPackAction, editDraftAction } from "@/lib/actions/project-setup-draft";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
@@ -21,6 +21,9 @@ export function StartSlide({ id, view, onView }: { id: string; view: SetupDraftV
   const start = view.extras.start;
   const [donor, setDonor] = useState(start.donor ?? "");
   const [country, setCountry] = useState(start.country ?? "");
+  // A reading fills donor and country after this page opened: show what the draft now holds (the reading only fills empty answers).
+  useEffect(() => { setDonor(start.donor ?? ""); }, [start.donor]);
+  useEffect(() => { setCountry(start.country ?? ""); }, [start.country]);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();

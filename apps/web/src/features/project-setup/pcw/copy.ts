@@ -141,6 +141,7 @@ export const PCW_COPY = {
   finance: {
     fundingTitle: "Funding", source: "From", amount: "Amount", currency: "Currency (three letters)", addFunding: "Add funding", noFunding: "No funding yet.",
     budgetTitle: "Budget", category: "Budget line", goesWith: "Pays for", supportCost: "A cost of the whole project", choose: "— choose —", addBudget: "Add a budget line", noBudget: "No budget lines yet.",
+    statedTotal: "A total stated in the document: it checks the lines and is not a cost to pay for.",
     suggested: "Where we think each line belongs", useAll: (n: number): string => `Use all ${n}`, useOne: "Use this", notThis: "Not this one",
     summaryTitle: "Does it add up?", fundingTotal: "Funding", budgetTotal: "Budget", agree: "Funding and budget agree.", unreadable: (n: number): string => `${n} amount${n > 1 ? "s" : ""} could not be counted (no readable amount, or no currency), so ${n > 1 ? "they are" : "it is"} not in these totals.`,
     differs: (currency: string, funding: string, budget: string): string => `In ${currency}, funding is ${funding} and the budget is ${budget}.`,

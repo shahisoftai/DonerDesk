@@ -129,6 +129,7 @@ export const PCW_ES: PcwBundle = {
     finance: {
       fundingTitle: "Financiación", source: "De", amount: "Importe", currency: "Moneda (tres letras)", addFunding: "Añadir financiación", noFunding: "Aún no hay financiación.",
       budgetTitle: "Presupuesto", category: "Partida", goesWith: "Paga", supportCost: "Un coste de todo el proyecto", choose: "— elegir —", addBudget: "Añadir una partida", noBudget: "Aún no hay partidas.",
+      statedTotal: "Un total indicado en el documento: sirve para comprobar las líneas, no es un coste que imputar.",
       suggested: "Dónde creemos que va cada partida", useAll: (n) => `Usar todas (${n})`, useOne: "Usar esta", notThis: "Esta no",
       summaryTitle: "¿Cuadra?", fundingTotal: "Financiación", budgetTotal: "Presupuesto", agree: "La financiación y el presupuesto coinciden.", unreadable: (n) => `${n} ${s(n, "importe no se pudo contar (ilegible o sin moneda), así que no está", "importes no se pudieron contar (ilegibles o sin moneda), así que no están")} en estos totales.`,
       differs: (currency, funding, budget) => `En ${currency}, la financiación es ${funding} y el presupuesto es ${budget}.`,

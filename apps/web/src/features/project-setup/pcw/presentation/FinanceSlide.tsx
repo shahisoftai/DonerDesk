@@ -97,11 +97,13 @@ export function FinanceSlide({ id, view, onView }: { id: string; view: SetupDraf
                     <input key={`k-${b.value.category}`} aria-label={c.category} defaultValue={b.value.category ?? ""} className="min-w-[10rem] flex-1 bg-transparent font-medium outline-none focus:underline" onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== b.value.category && change({ kind: "EDIT_BUDGET", path: b.path, patch: { category: e.target.value } })} />
                     <input key={`m-${b.value.amount}`} aria-label={c.amount} inputMode="decimal" defaultValue={b.value.amount ?? ""} className="w-28 bg-transparent text-end outline-none focus:underline" onBlur={(e) => e.target.value.trim() !== (b.value.amount ?? "") && change({ kind: "EDIT_BUDGET", path: b.path, patch: { amount: e.target.value } })} />
                     <input key={`u-${b.value.currency}`} aria-label={c.currency} maxLength={3} defaultValue={b.value.currency ?? ""} className="w-14 bg-transparent uppercase outline-none focus:underline" onBlur={(e) => e.target.value.trim().toUpperCase() !== (b.value.currency ?? "") && change({ kind: "EDIT_BUDGET", path: b.path, patch: { currency: e.target.value } })} />
+                    {b.value.kind === "TOTAL" ? <span className="text-xs text-slate-500">{c.statedTotal}</span> : (
                     <Select aria-label={c.goesWith} className="!w-auto max-w-[16rem]" value={target} onChange={(e) => place(b.budgetKey, e.target.value)}>
                       <option value="">{c.choose}</option>
                       <option value={SUPPORT}>{c.supportCost}</option>
                       {activities.map((a) => <option key={a.key} value={a.key}>{a.label}</option>)}
                     </Select>
+                    )}
                     <OriginBadge origin={b.origin} />
                     {b.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide("FUNDING_BUDGET", b.path, "ACCEPT")}>{PCW_COPY.places.accept}</button> : null}
                     <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide("FUNDING_BUDGET", b.path, "REJECT")} aria-label={`${PCW_COPY.results.remove} ${b.value.category ?? ""}`}>{PCW_COPY.results.remove}</button>

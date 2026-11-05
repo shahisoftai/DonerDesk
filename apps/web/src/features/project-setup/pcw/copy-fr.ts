@@ -129,6 +129,7 @@ export const PCW_FR: PcwBundle = {
     finance: {
       fundingTitle: "Financement", source: "De la part de", amount: "Montant", currency: "Devise (trois lettres)", addFunding: "Ajouter un financement", noFunding: "Aucun financement pour l'instant.",
       budgetTitle: "Budget", category: "Ligne budgétaire", goesWith: "Finance", supportCost: "Un coût de l'ensemble du projet", choose: "— choisir —", addBudget: "Ajouter une ligne budgétaire", noBudget: "Aucune ligne budgétaire pour l'instant.",
+      statedTotal: "Un total indiqué dans le document : il sert à vérifier les lignes, ce n'est pas un coût à imputer.",
       suggested: "Où nous pensons que chaque ligne va", useAll: (n) => `Tout utiliser (${n})`, useOne: "Utiliser celle-ci", notThis: "Pas celle-ci",
       summaryTitle: "Est-ce que ça tombe juste ?", fundingTotal: "Financement", budgetTotal: "Budget", agree: "Le financement et le budget concordent.", unreadable: (n) => `${n} ${s(n, "montant n'a pas pu être compté (montant illisible ou sans devise) : il n'est", "montants n'ont pas pu être comptés (illisibles ou sans devise) : ils ne sont")} pas dans ces totaux.`,
       differs: (currency, funding, budget) => `En ${currency}, le financement est de ${funding} et le budget de ${budget}.`,

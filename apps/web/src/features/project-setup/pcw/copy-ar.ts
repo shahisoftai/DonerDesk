@@ -131,6 +131,7 @@ export const PCW_AR: PcwBundle = {
     finance: {
       fundingTitle: "التمويل", source: "من", amount: "المبلغ", currency: "العملة (ثلاثة أحرف)", addFunding: "إضافة تمويل", noFunding: "لا يوجد تمويل بعد.",
       budgetTitle: "الميزانية", category: "بند الميزانية", goesWith: "يموّل", supportCost: "تكلفة تخص المشروع كله", choose: "— اختر —", addBudget: "إضافة بند ميزانية", noBudget: "لا توجد بنود ميزانية بعد.",
+      statedTotal: "إجمالي مذكور في المستند: يُستخدم للتحقق من البنود وليس تكلفة تُحمَّل.",
       suggested: "أين نعتقد أن ينتمي كل بند", useAll: (n) => `استخدم الكل (${n})`, useOne: "استخدم هذا", notThis: "ليس هذا",
       summaryTitle: "هل الأرقام متطابقة؟", fundingTotal: "التمويل", budgetTotal: "الميزانية", agree: "التمويل والميزانية متطابقان.", unreadable: (n) => `مبالغ تعذّر احتسابها (غير مقروءة أو بلا عملة): ${n}، لذلك ليست ضمن هذه الإجماليات.`,
       differs: (currency, funding, budget) => `بعملة ${currency}: التمويل ${funding} والميزانية ${budget}.`,
