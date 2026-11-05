@@ -1,11 +1,7 @@
 import { PrismaClient, type Prisma } from "@prisma/client";
 import type { IAuditRepository, IAuditLogger, ICommentRepository, ICommentCounter, INotificationRepository, CommentRecord } from "@donordesk/application";
-import { DomainError, type Result, type TenantId } from "@donordesk/domain";
+import { ok, DomainError, type Result, type TenantId } from "@donordesk/domain";
 import { computeAuditHash, resolveAuditChainKey } from "../audit/chain.js";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function err<T = never>(e: DomainError): Result<T, DomainError> {
   return { ok: false, error: e };

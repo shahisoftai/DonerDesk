@@ -13,6 +13,7 @@ import {
   type PlanCode,
   PurchasedCreditPack,
   NonprofitVerification,
+  ok,
 } from "@donordesk/domain";
 import type {
   IEntitlementGrantRepository,
@@ -28,10 +29,6 @@ import type {
 } from "@donordesk/application";
 
 type DbClient = PrismaClient | Parameters<Parameters<PrismaClient["$transaction"]>[0]>[0];
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function err<T = never>(e: DomainError): Result<T, DomainError> {
   return { ok: false, error: e };

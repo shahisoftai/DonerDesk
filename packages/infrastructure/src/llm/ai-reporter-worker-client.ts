@@ -1,4 +1,4 @@
-import { DomainError, type Result } from "@donordesk/domain";
+import { ok, DomainError, type Result } from "@donordesk/domain";
 import type {
   AiReporterRewriteRequest,
   AiReporterRewriteResponse,
@@ -6,10 +6,6 @@ import type {
   AiReporterSectionResponse,
   IWorkerClient,
 } from "./ai-reporter-worker.js";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 /**
  * HTTP transport for the AI Reporter worker. Points at the Python FastAPI

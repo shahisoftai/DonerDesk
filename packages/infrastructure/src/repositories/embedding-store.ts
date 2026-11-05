@@ -1,11 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
-import { DomainError, type Result } from "@donordesk/domain";
+import { ok, DomainError, type Result } from "@donordesk/domain";
 import type { EmbeddingMatch, IEmbeddingStore } from "../llm/embedding.js";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 /**
  * Persists chunk embeddings in PostgreSQL via the pgvector extension and runs

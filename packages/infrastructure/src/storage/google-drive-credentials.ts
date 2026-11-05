@@ -1,10 +1,6 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
-import { DomainError, type Result } from "@donordesk/domain";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
+import { ok, DomainError, type Result } from "@donordesk/domain";
 
 function err(e: Error): Result<never, DomainError> {
   return { ok: false, error: new DomainError("CONFLICT", e.message) };

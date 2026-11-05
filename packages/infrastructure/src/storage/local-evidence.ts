@@ -1,9 +1,5 @@
 import type { IStorage, IEvidenceStorage, SaveEvidenceInput, EvidenceLocation } from "@donordesk/application";
-import { DomainError, type Result } from "@donordesk/domain";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
+import { ok, DomainError, type Result } from "@donordesk/domain";
 
 function fail(message: string): Result<never, DomainError> {
   return { ok: false, error: new DomainError("INVARIANT_VIOLATION", message) };

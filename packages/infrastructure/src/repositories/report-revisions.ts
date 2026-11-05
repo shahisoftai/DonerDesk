@@ -16,6 +16,7 @@ import {
   type AnnexManifestEntry,
   type AuthorizedOverride,
   type ArtifactHashEntry,
+  ok,
 } from "@donordesk/domain";
 import type {
   IReportRevisionRepository,
@@ -25,10 +26,6 @@ import type {
   IResolvedRequirementsRepository,
 } from "@donordesk/application";
 import type { TenantId } from "@donordesk/domain";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 export class PrismaReportRevisionRepository implements IReportRevisionRepository {
   constructor(private readonly prisma: PrismaClient) {}

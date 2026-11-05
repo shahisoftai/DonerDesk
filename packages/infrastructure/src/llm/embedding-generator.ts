@@ -1,9 +1,5 @@
-import { DomainError, type Result } from "@donordesk/domain";
+import { ok, DomainError, type Result } from "@donordesk/domain";
 import type { EmbeddingVector, IEmbeddingGenerator } from "./embedding.js";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 /**
  * OpenAI embeddings adapter. Uses the standard /v1/embeddings endpoint. The

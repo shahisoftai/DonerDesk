@@ -12,16 +12,13 @@ import {
   type Result,
   type IndicatorType,
   type VerificationStatus,
+  ok,
 } from "@donordesk/domain";
 import type {
   ILogframeRepository,
   IIndicatorRepository,
   IIndicatorUpdateRepository,
 } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 /** Stored per-breakdown targets; a damaged value reads as none rather than failing the whole indicator list. */
 function parseTargetBreakdowns(json: string | null): DisaggregationEntry[] {

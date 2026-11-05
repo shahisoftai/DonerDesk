@@ -9,16 +9,13 @@ import {
   TenantId,
   DomainError,
   type Result,
+  ok,
 } from "@donordesk/domain";
 import type {
   IProjectSetupRepository,
   IReportingProfileRepository,
   UpsertReportingProfileResult,
 } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function err<T = never>(e: unknown): Result<T, DomainError> {
   return { ok: false, error: new DomainError("CONFLICT", e instanceof Error ? e.message : String(e)) };

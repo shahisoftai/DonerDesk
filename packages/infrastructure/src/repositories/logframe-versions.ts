@@ -1,15 +1,12 @@
 import type { PrismaClient } from "@prisma/client";
 import type { DomainError, Result, TenantId } from "@donordesk/domain";
+import { ok } from "@donordesk/domain";
 import type { ILogframeVersionRepository, LogframeVersionRecord } from "@donordesk/application";
 
 type Row = {
   id: string; tenantId: string; projectId: string; version: number; snapshotJson: string; contentHash: string; summary: string;
   createdById: string; createdAt: Date; approvedById: string | null; approvedAt: Date | null;
 };
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 const toRecord = (r: Row): LogframeVersionRecord => ({ ...r });
 

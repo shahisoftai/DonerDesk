@@ -1,10 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 import type { CleanGrant, DomainError, FundingStatus, GrantRecord, ProgrammeRecord, Result, TenantId } from "@donordesk/domain";
+import { ok } from "@donordesk/domain";
 import type { IFundingRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 const programme = (r: { id: string; tenantId: string; name: string; code: string | null; description: string | null; status: string; createdById: string; createdAt: Date }): ProgrammeRecord => ({
   id: r.id, tenantId: r.tenantId, name: r.name, code: r.code ?? undefined, description: r.description ?? undefined, status: r.status as FundingStatus, createdById: r.createdById, createdAt: r.createdAt,

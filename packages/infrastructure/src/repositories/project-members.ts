@@ -6,12 +6,9 @@ import {
   type Result,
   type Role,
   type ProjectMemberStatus,
+  ok,
 } from "@donordesk/domain";
 import type { IProjectMemberRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 type ProjectMemberRow = {
   id: string;

@@ -10,12 +10,9 @@ import {
   type EvidenceVerificationStatus,
   type SuggestedTag,
   type StorageProvider,
+  ok,
 } from "@donordesk/domain";
 import type { IEvidenceRepository, IEvidenceUseGuard, EvidenceFilter, EvidenceListResult } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 export class PrismaEvidenceRepository implements IEvidenceRepository {
   constructor(private readonly prisma: PrismaClient) {}

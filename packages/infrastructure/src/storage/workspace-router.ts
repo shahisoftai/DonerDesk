@@ -1,4 +1,5 @@
 import type { Result, TenantId, StorageProvider, DomainError } from "@donordesk/domain";
+import { ok } from "@donordesk/domain";
 import type {
   IProjectWorkspaceService,
   IProjectWorkspaceProviderResolver,
@@ -7,10 +8,6 @@ import type {
 import { LocalProjectWorkspaceService, GoogleDriveProjectWorkspaceService, type ProjectWorkspaceNameProvider } from "./project-workspace.js";
 import { GoogleDriveWorkspaceDrive } from "./google-drive-workspace.js";
 import type { GoogleDriveAccessTokenStore } from "./google-drive.js";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 /**
  * Resolves the per-tenant project workspace strategy from the tenant's

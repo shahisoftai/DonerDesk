@@ -1,10 +1,6 @@
 import { PrismaClient } from "@prisma/client";
-import { PeriodFinancialSummary, DomainError, type FinanceLine, type FinanceSource, type FinanceVerification, type Result, type TenantId } from "@donordesk/domain";
+import { ok, PeriodFinancialSummary, DomainError, type FinanceLine, type FinanceSource, type FinanceVerification, type Result, type TenantId } from "@donordesk/domain";
 import type { IPeriodFinancialRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function err<T = never>(e: unknown): Result<T, DomainError> {
   return { ok: false, error: new DomainError("CONFLICT", e instanceof Error ? e.message : String(e)) };

@@ -1,13 +1,9 @@
 import { mkdir, readdir, stat } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import type { IProjectWorkspaceService, WorkspaceReference, DriveFileEntry, OrganisationFoldersResult } from "@donordesk/application";
-import { DomainError } from "@donordesk/domain";
+import { ok, DomainError } from "@donordesk/domain";
 import { ORGANISATION_FOLDERS, PROJECTS_FOLDER_ROLE } from "./organisation-folders.js";
 import type { TenantId, StorageProvider, Result } from "@donordesk/domain";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function fail(message: string): Result<never, DomainError> {
   return { ok: false, error: new DomainError("INVARIANT_VIOLATION", message) };

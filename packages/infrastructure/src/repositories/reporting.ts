@@ -15,6 +15,7 @@ import {
   type SectionStatus,
   type SourceReference,
   isGenerationFallbackReason,
+  ok,
 } from "@donordesk/domain";
 import type {
   IReportingPeriodRepository,
@@ -22,10 +23,6 @@ import type {
   IReportDraftRepository,
   IReportSectionRepository,
 } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 export class PrismaReportingPeriodRepository implements IReportingPeriodRepository {
   constructor(private readonly prisma: PrismaClient) {}

@@ -9,12 +9,9 @@ import {
   TenantId,
   DomainError,
   type Result,
+  ok,
 } from "@donordesk/domain";
 import type { IProjectRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function err<T = never>(e: DomainError): Result<T, DomainError> {
   return { ok: false, error: e };

@@ -1,14 +1,10 @@
-import { DomainError } from "@donordesk/domain";
+import { ok, DomainError } from "@donordesk/domain";
 import type { TenantId, Result } from "@donordesk/domain";
 import type { DriveFileEntry } from "@donordesk/application";
 import type { GoogleDriveStorageConfig, GoogleDriveAccessTokenStore } from "./google-drive.js";
 
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const FOLDER_MIME = "application/vnd.google-apps.folder";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function fail(message: string): Result<never, DomainError> {
   return { ok: false, error: new DomainError("INVARIANT_VIOLATION", message) };

@@ -5,12 +5,9 @@ import {
   DomainError,
   type Result,
   type ActivityStatus,
+  ok,
 } from "@donordesk/domain";
 import type { IActivityUpdateRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 export class PrismaActivityUpdateRepository implements IActivityUpdateRepository {
   constructor(private readonly prisma: PrismaClient) {}
