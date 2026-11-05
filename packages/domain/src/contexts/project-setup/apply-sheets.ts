@@ -69,11 +69,11 @@ export function placesSheet(p: ProjectSetupProposal): SheetForImport {
       notes.push(`"${pl.name}": the document does not say what kind of place it is, so it was left out. Add it on the Places page.`);
       return [];
     }
-    return [[pl.name, LEVEL_NAME[pl.adminLevel], pl.parentName, pl.latitude, pl.longitude]];
+    return [[pl.name, LEVEL_NAME[pl.adminLevel], pl.parentName, pl.latitude, pl.longitude, pl.code]];
   });
   // Larger areas first, so a parent named in the same sheet is created before what sits inside it.
   rows.sort((a, b) => LEVEL_NAME.indexOf(a[1] as never) - LEVEL_NAME.indexOf(b[1] as never));
-  return sheet(["Name", "Level", "Parent", "Latitude", "Longitude"], rows, notes);
+  return sheet(["Name", "Level", "Parent", "Latitude", "Longitude", "Code"], rows, notes);
 }
 
 export interface RiskInputDraft {

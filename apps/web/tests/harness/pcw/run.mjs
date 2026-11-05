@@ -19,6 +19,11 @@ await build(join(out, "bundle.js"));
 execFileSync("npx", ["tailwindcss", "-c", "tailwind.config.ts", "-i", "src/app/globals.css", "-o", join(out, "styles.css")], { cwd: web, stdio: "ignore" });
 writeFileSync(join(out, "index.html"), '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="styles.css"></head><body><div id="root"></div><script src="bundle.js"></script></body></html>');
 const server = createServer((req, res) => {
+  // The boundary files the Places slide reads are the real ones the app ships under /geo.
+  if (req.url?.startsWith("/geo/")) {
+    try { res.setHeader("content-type", "application/json"); res.end(readFileSync(join(web, "public", decodeURIComponent(req.url.split("?")[0])))); } catch { res.statusCode = 404; res.end(); }
+    return;
+  }
   const path = req.url?.startsWith("/styles.css") ? "styles.css" : req.url?.startsWith("/bundle.js") ? "bundle.js" : "index.html";
   res.setHeader("content-type", path.endsWith(".css") ? "text/css" : path.endsWith(".js") ? "text/javascript" : "text/html");
   res.end(readFileSync(join(out, path)));
@@ -36,7 +41,7 @@ async function open(viewport = { width: 1400, height: 1100 }, lang = "") {
   page.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
   page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 200)); });
   page.setDefaultTimeout(4000);
-  await page.goto(lang ? `${base}?lang=${lang}` : base);
+  await page.goto(lang ? `${base}?lang=${lang}` : base, { timeout: 30000 });
   await page.waitForSelector("h1");
   return page;
 }
@@ -150,20 +155,23 @@ await check("Indicators: one is added under the output, completed, owned by a te
   assert.match(await railText(page, "Indicators"), /Complete/);
 });
 
-await check("Places: a country and a district inside it, a parent that is not listed is refused, and the project area is named", async () => {
+await check("Places: search finds a district, ticking it saves it with its parent, the map is there, and the project area is met without typing it", async () => {
   await go(page, "Places");
-  const f = box(page, "Add a place");
-  await f.getByLabel("Place name").fill("Uganda");
-  await f.getByLabel("Kind of place").selectOption("0");
-  await press(page, "Add a place", f);
-  await f.getByLabel("Place name").fill("Gulu District");
-  await f.getByLabel("Kind of place").selectOption("2");
-  await f.getByLabel("Inside").selectOption("Uganda");
-  await press(page, "Add a place", f);
-  await page.locator("input[value='Gulu District']").first().waitFor();
-  assert.equal(await page.locator("input[aria-label='Place name']").count(), 2, "both places are listed");
-  await type(page, "Project area", "Gulu District");
+  await page.getByRole("tree", { name: "Areas" }).waitFor({ timeout: 15000 });
+  assert.ok(await page.getByRole("group", { name: /Where the project works/ }).first().isVisible(), "the map (or its plain-shapes twin) is on the slide");
+  await page.getByLabel("Search areas").fill("Gulu");
+  const gulu = page.getByRole("tree", { name: "Areas" }).getByRole("checkbox", { name: "Gulu" }).first();
+  await gulu.waitFor({ timeout: 15000 });
+  await gulu.check();
+  await page.getByText("1 area ticked").waitFor();
+  const names = await page.evaluate(() => window.__h.view().places.map((p) => p.value.name));
+  assert.ok(names.includes("Uganda") && names.includes("Gulu"), `the country and the area are in the draft: ${names}`);
   assert.match(await railText(page, "Places"), /Complete/);
+  await page.getByRole("button", { name: /Untick this area: Gulu/ }).click();
+  await page.getByText("Nothing ticked yet.").waitFor();
+  await page.getByLabel("Search areas").fill("Gulu");
+  await gulu.check();
+  await page.getByText("1 area ticked").waitFor();
 });
 
 await check("Work plan: an activity is added under the project's activity, links are suggested with reasons and accepted, dates and a place are set, and the coverage reads in words", async () => {
@@ -180,7 +188,7 @@ await check("Work plan: an activity is added under the project's activity, links
   await type(page, "Starts", "2027-04-01", card);
   await type(page, "Ends", "2027-09-30", card);
   await pickLike(page, card.getByLabel("Led by"), /Fay Field/);
-  await card.getByRole("checkbox", { name: "Gulu District" }).check();
+  await card.getByRole("checkbox", { name: "Gulu" }).first().check();
   await page.waitForTimeout(100);
   assert.match(await text(page.locator("section[aria-label='How complete the plan is']")), /Activities with planned work: 1 of 1/);
   assert.match(await railText(page, "Work plan"), /Complete/);
@@ -285,8 +293,8 @@ await check("documents: they are chosen (five at most), sent, a reading notice s
   await p.getByRole("button", { name: "Remove doc-4.txt" }).click();
   await p.getByText("4 of 5 files").waitFor();
   await p.getByRole("button", { name: "Read my documents" }).click();
-  await p.getByText(/Reading your documents/).waitFor();
-  await p.getByText(/Reading your documents/).waitFor({ state: "hidden", timeout: 9000 });
+  await p.getByRole("heading", { name: /Reading your documents/ }).waitFor();
+  await p.getByRole("heading", { name: /Reading your documents/ }).waitFor({ state: "hidden", timeout: 9000 });
   await go(p, "Results framework");
   assert.equal(await p.locator("span", { hasText: "From your document" }).count(), 3, "three results were found, each marked as read from the document");
   await p.getByRole("button", { name: "Confirm all 3 that are waiting" }).click();
@@ -302,7 +310,7 @@ await check("from documents: a result's passage opens with its words marked, the
   open_.page = p;
   await p.locator("#pcw-file").setInputFiles([{ name: "water.txt", mimeType: "text/plain", buffer: Buffer.from("x") }]);
   await p.getByRole("button", { name: "Read my documents" }).click();
-  await p.getByText(/Reading your documents/).waitFor({ state: "hidden", timeout: 9000 });
+  await p.getByRole("heading", { name: /Reading your documents/ }).waitFor({ state: "hidden", timeout: 9000 });
   await p.locator("summary", { hasText: "Your documents" }).first().click();
   await p.getByText("Read as: Proposal or narrative").waitFor();
   await go(p, "Results framework");

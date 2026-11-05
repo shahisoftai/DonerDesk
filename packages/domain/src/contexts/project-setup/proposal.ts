@@ -112,6 +112,12 @@ export interface PlaceDef {
   longitude: number | null;
   /** What an outside gazetteer says this name is: offered for a person to check, never replacing what the document says. */
   recognised?: RecognisedPlace;
+  /** The boundary unit's own P-code, when the file has one; it becomes the place's code. */
+  code?: string | null;
+  /** The boundary unit's stable key: set only for a place ticked on the map, so a later tick change can replace exactly those. */
+  mapRef?: string | null;
+  /** Listed only because something inside it was ticked (so the tree has its parent); not itself a place the project works across. */
+  viaChildren?: boolean;
 }
 
 export interface RecognisedPlace {

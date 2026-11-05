@@ -112,9 +112,14 @@ export const SetupPlaceOperationSchema = z.discriminatedUnion("kind", [
     kind: z.literal("EDIT_PLACE"), path: text(40).regex(/^places\.\d+$/),
     patch: z.object({ name: text(200).min(1), adminLevel: z.number().int().min(0).max(4).nullable(), parentName: text(200).nullable() }).partial().strict(),
   }),
+  z.object({
+    kind: z.literal("SET_BOUNDARY_PLACES"),
+    country: z.object({ name: text(200), code: text(40).nullable().optional() }),
+    units: z.array(z.object({ ref: text(200).min(1), code: text(40).nullable().optional(), name: text(200).min(1), adminLevel: z.number().int().min(1).max(4), parentRef: text(200).nullable(), viaChildren: z.boolean().optional() })).max(1500),
+  }),
 ]);
 export type SetupPlaceOperationInput = z.infer<typeof SetupPlaceOperationSchema>;
-export const SETUP_PLACE_OPERATION_KINDS = ["ADD_PLACE", "EDIT_PLACE"] as const;
+export const SETUP_PLACE_OPERATION_KINDS = ["ADD_PLACE", "EDIT_PLACE", "SET_BOUNDARY_PLACES"] as const;
 
 /** Edits to the planned activities (they change the proposal). */
 const Day = text(10).nullable();

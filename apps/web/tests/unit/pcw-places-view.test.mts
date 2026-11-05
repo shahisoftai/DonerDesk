@@ -45,5 +45,6 @@ test("'not used' and its optional reason are read from the answers", () => {
 });
 
 test("the words on this slide are plain language", () => {
-  for (const t of Object.values(PCW_COPY.places)) assert.deepEqual(findRawTokens(t), [], t);
+  const words = Object.values(PCW_COPY.places).map((t) => (typeof t === "function" ? (t as (...a: number[]) => string)(1, 2) : t));
+  for (const t of words) assert.deepEqual(findRawTokens(t), [], t);
 });

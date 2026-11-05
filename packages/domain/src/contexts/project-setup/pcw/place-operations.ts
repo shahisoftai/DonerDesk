@@ -10,7 +10,14 @@ import type { PlaceDef, ProjectSetupProposal, Proposed } from "../proposal.js";
 
 export type PlaceOperation =
   | { kind: "ADD_PLACE"; name: string; adminLevel?: number | null; parentName?: string | null }
-  | { kind: "EDIT_PLACE"; path: string; patch: Partial<Pick<PlaceDef, "name" | "adminLevel" | "parentName">> };
+  | { kind: "EDIT_PLACE"; path: string; patch: Partial<Pick<PlaceDef, "name" | "adminLevel" | "parentName">> }
+  | { kind: "SET_BOUNDARY_PLACES"; country: { name: string; code?: string | null }; units: BoundaryPick[] };
+
+/** One area ticked on the map: a boundary unit by its stable key (`ref`) with its P-code when the file has one, and its parent's key (null = the country). `viaChildren` = listed only as the parent of ticked areas. */
+export interface BoundaryPick { ref: string; code?: string | null; name: string; adminLevel: number; parentRef: string | null; viaChildren?: boolean }
+
+/** The most areas one project can tick (a country's admin 3 is a few hundred; the importer allows more, but a list this long is a mistake). */
+export const MAX_BOUNDARY_PICKS = 1500;
 
 export type PlaceOperationResult = { ok: true; proposal: ProjectSetupProposal } | { ok: false; reason: string };
 
@@ -41,6 +48,48 @@ function duplicate(p: ProjectSetupProposal, name: string, parentName: string | n
 
 const person = (value: PlaceDef): Proposed<PlaceDef> => ({ value, sourceQuote: null, sourceRef: null, confidence: "HIGH", status: "EDITED" });
 
+/** Places that came from the map: they carry a boundary key, or are the country listed above them. A tick change replaces exactly these. */
+const fromMap = (x: Proposed<PlaceDef>): boolean => x.value !== null && (Boolean(x.value.mapRef) || x.value.viaChildren === true);
+
+/** The map's picks as places: the country, then each ticked area under the one it sits in. Everything the person typed or a document proposed stays, except a place the map now names itself. */
+function setBoundaryPlaces(p: ProjectSetupProposal, country: { name: string; code?: string | null }, picks: readonly BoundaryPick[]): PlaceOperationResult {
+  const countryName = clean(country.name, 200);
+  if (picks.length > MAX_BOUNDARY_PICKS) return refuse(`That is more than ${MAX_BOUNDARY_PICKS} areas. Tick larger areas instead.`);
+  if (picks.length > 0 && !countryName) return refuse("Choose the country first.");
+  const byRef = new Map<string, BoundaryPick>();
+  for (const u of picks) {
+    if (!clean(u.ref, 200) || !clean(u.name, 200)) return refuse("An area needs a name.");
+    if (!levelOk(u.adminLevel) || u.adminLevel < 1) return refuse("An area is a state, district or smaller.");
+    if (byRef.has(u.ref)) return refuse(`${u.name} is ticked twice.`);
+    byRef.set(u.ref, u);
+  }
+  const level = (u: BoundaryPick) => u.adminLevel;
+  const ordered = [...picks].sort((a, b) => level(a) - level(b) || a.name.localeCompare(b.name));
+  const keyOf = (name: string, lvl: number) => `${lvl}|${normalizeLocationKey(name)}`;
+  const mapKeys = new Set([...(countryName && picks.length > 0 ? [keyOf(countryName, 0)] : []), ...ordered.map((u) => keyOf(u.name, u.adminLevel))]);
+  // What the person typed or a document proposed stays, unless the map now names the same place (then the map's is the one with a code).
+  const mapNames = new Set(ordered.map((u) => normalizeLocationKey(u.name)));
+  const sameAsMap = (x: Proposed<PlaceDef>): boolean => {
+    const v = x.value;
+    if (v === null || x.status === "REJECTED") return false;
+    // A kind the document did not state matches by name alone: it was never going to be applied without one.
+    return v.adminLevel === null ? mapNames.has(normalizeLocationKey(v.name ?? "")) : mapKeys.has(keyOf(v.name ?? "", v.adminLevel));
+  };
+  const kept = p.places.filter((x) => !fromMap(x) && !sameAsMap(x));
+  if (picks.length === 0) return { ok: true, proposal: { ...p, places: kept } };
+  const added: Array<Proposed<PlaceDef>> = [person({ name: countryName!, adminLevel: 0, parentName: null, latitude: null, longitude: null, code: clean(country.code, 40), mapRef: `country:${normalizeLocationKey(countryName!)}`, viaChildren: true })];
+  const seen = new Set<string>();
+  for (const u of ordered) {
+    const parent = u.parentRef ? byRef.get(u.parentRef) : undefined;
+    const parentName = parent && parent.adminLevel < u.adminLevel ? clean(parent.name, 200)! : countryName!;
+    const dupKey = `${keyOf(u.name, u.adminLevel)}|${normalizeLocationKey(parentName)}`;
+    if (seen.has(dupKey)) continue;
+    seen.add(dupKey);
+    added.push(person({ name: clean(u.name, 200)!, adminLevel: u.adminLevel, parentName, latitude: null, longitude: null, code: clean(u.code, 40), mapRef: clean(u.ref, 200), viaChildren: u.viaChildren === true }));
+  }
+  return { ok: true, proposal: { ...p, places: [...kept, ...added] } };
+}
+
 export const PLACE_OPERATIONS: { [K in PlaceOperation["kind"]]: Handler<K> } = {
   ADD_PLACE: (p, { name, adminLevel, parentName }) => {
     const n = clean(name, 200);
@@ -53,6 +102,7 @@ export const PLACE_OPERATIONS: { [K in PlaceOperation["kind"]]: Handler<K> } = {
     if (duplicate(p, n, parent)) return refuse(`${n} is already on the list${parent ? ` under ${parent}` : ""}.`);
     return { ok: true, proposal: { ...p, places: [...p.places, person({ name: n, adminLevel: level, parentName: parent, latitude: null, longitude: null })] } };
   },
+  SET_BOUNDARY_PLACES: (p, { country, units }) => setBoundaryPlaces(p, country, units),
   EDIT_PLACE: (p, { path, patch }) => {
     const [head, raw] = path.split(".");
     const index = Number(raw);

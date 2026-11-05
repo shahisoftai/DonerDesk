@@ -44,7 +44,8 @@ export const PLACES_REQUIREMENTS: readonly RequirementDef[] = [
   },
   {
     key: "places.area", slide: "PLACES", coversSteps: [17, 18], allowsNotUsed: true,
-    check: (d) => (present(d.extras.projectArea) ? MET : open("projectAreaMissing")),
+    // Areas ticked on the map are the project area; the typed area is for a project that names its area in words.
+    check: (d) => (present(d.extras.projectArea) || live(d.proposal.places).some((x) => Boolean(x.mapRef)) ? MET : open("projectAreaMissing")),
   },
 ];
 

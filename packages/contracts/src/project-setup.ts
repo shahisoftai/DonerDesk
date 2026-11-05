@@ -123,6 +123,9 @@ const PlaceDefSchema = z.object({
   latitude: z.number().min(-90).max(90).nullable(),
   longitude: z.number().min(-180).max(180).nullable(),
   recognised: z.object({ name: z.string().max(300), within: z.string().max(600), country: z.string().max(200).nullable(), source: z.string().max(60) }).optional(),
+  code: z.string().max(40).nullable().optional(),
+  mapRef: z.string().max(200).nullable().optional(),
+  viaChildren: z.boolean().optional(),
 });
 
 const FundingDefSchema = z.object({
