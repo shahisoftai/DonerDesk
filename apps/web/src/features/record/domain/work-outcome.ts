@@ -26,6 +26,7 @@ export type WorkStep =
   | { action: "CHANGE_STATUS"; planAction: PlanAction; reason?: string };
 
 export type WorkProblem =
+  | "NOT_ALLOWED"
   | "NEEDS_PLAN_ITEM"
   | "NEEDS_REASON"
   | "PLAN_ITEM_NOT_OPEN";
@@ -40,6 +41,8 @@ export interface WorkOutcomeInput {
   online: boolean;
   /** Why it did not happen. Required for NOT_HELD. */
   reason?: string | undefined;
+  /** May the person cancel a planned item? The plan's own rule (`workplan.manage`) decides; a lead may start and finish their item but not cancel it. Default: yes. */
+  mayCancel?: boolean | undefined;
 }
 
 export type WorkOutcome =
@@ -71,6 +74,7 @@ export function chooseWorkOutcome(input: WorkOutcomeInput): WorkOutcome {
   }
 
   // NOT_HELD
+  if (input.mayCancel === false) return { ok: false, problem: "NOT_ALLOWED" };
   if (!can("CANCEL")) return { ok: false, problem: "PLAN_ITEM_NOT_OPEN" };
   const reason = input.reason?.trim() ?? "";
   if (reason === "") return { ok: false, problem: "NEEDS_REASON" };

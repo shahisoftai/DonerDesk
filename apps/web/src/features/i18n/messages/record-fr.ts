@@ -161,4 +161,5 @@ export const recordFr: Record<keyof typeof recordEn, string> = {
   "record.ready.counts": "{indicators} chiffres · {forms} formulaires · {places} lieux · {plan} prévus",
   "record.ready.updateForNumbers": "Téléchargez à nouveau quand vous avez du signal pour enregistrer des chiffres sans signal.",
   "record.period.open": "L'ouvrir",
+  "record.file.sending": "Envoi…",
 };

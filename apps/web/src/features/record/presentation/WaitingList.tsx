@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useHydrated } from "@/lib/client/use-hydrated";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import type { OutboxEntry } from "@/features/offline/domain/outbox";
 import { useOutbox } from "@/features/offline/presentation/OutboxProvider";
@@ -29,11 +30,13 @@ function photoCount(entry: OutboxEntry): number {
  */
 export function WaitingList() {
   const { t } = useI18n();
+  const hydrated = useHydrated();
   const { supported, entries, sending, retry, discard, sendNow, online } = useOutbox();
   // The outbox sends one at a time, oldest first, so while it is sending the oldest waiting record is the one in flight.
   const sendingId = useMemo(() => (sending ? [...entries].filter((e) => e.state === "waiting").sort((a, b) => a.createdAt - b.createdAt)[0]?.id ?? null : null), [entries, sending]);
   const ordered = waitingOrder(entries, sendingId);
 
+  if (!hydrated) return null;
   if (!supported) return <p className="text-sm text-slate-700 dark:text-slate-200">{t("record.waiting.unsupported")}</p>;
   return (
     <div className="space-y-3">

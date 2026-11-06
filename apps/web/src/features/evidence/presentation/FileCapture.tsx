@@ -66,7 +66,7 @@ export function FileCapture({
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 flex-1 truncate font-medium">{f.name}</span>
                   <span className="shrink-0 text-xs">
-                    {done ? t("record.file.uploaded") : failure ? <span className="text-danger-700 dark:text-danger-400">{t("record.file.failed", { reason: failure.error ?? "" })}</span> : t("record.file.waiting")}
+                    {done ? t("record.file.uploaded") : failure ? <span className="text-danger-700 dark:text-danger-400">{t("record.file.failed", { reason: failure.error ?? "" })}</span> : uploading ? t("record.file.sending") : t("record.file.waiting")}
                   </span>
                   {!done && !uploading && !locked && (
                     <button type="button" className="min-h-11 px-2 text-xs underline" onClick={() => onRemove(f.name)}>{t("record.file.remove")}</button>

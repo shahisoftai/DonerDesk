@@ -12,7 +12,7 @@ export function LocaleSwitcher({ className }: { className?: string }) {
     <label className={className ?? "inline-flex items-center gap-2 text-sm"}>
       <span className="sr-only sm:not-sr-only">{t("language.label")}</span>
       <select
-        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm dark:border-white/15 dark:bg-slate-900"
+        className="rounded-md border border-slate-300 bg-white px-2 py-1 text-sm [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-3 dark:border-white/15 dark:bg-slate-900"
         value={locale}
         onChange={(e) => { if (isLocale(e.target.value)) { setLocale(e.target.value); router.refresh(); } }}
       >

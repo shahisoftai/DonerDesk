@@ -230,3 +230,9 @@ test("the project to open is the remembered one only while it still exists, else
   assert.equal(startingProject([{ id: "a" }], "gone"), "a");
   assert.equal(startingProject([], undefined), undefined);
 });
+
+test("a person who may not cancel a plan item is not offered 'it did not happen'", () => {
+  assert.deepEqual(chooseWorkOutcome({ choice: "NOT_HELD", planStatus: "PLANNED", hasDetail: false, online: true, reason: "rain", mayCancel: false }), { ok: false, problem: "NOT_ALLOWED" });
+  assert.equal(chooseWorkOutcome({ choice: "NOT_HELD", planStatus: "PLANNED", hasDetail: false, online: true, reason: "rain", mayCancel: true }).ok, true);
+  assert.equal(chooseWorkOutcome({ choice: "FINISHED", planStatus: "PLANNED", hasDetail: false, online: true, mayCancel: false }).ok, true, "finishing is still allowed");
+});

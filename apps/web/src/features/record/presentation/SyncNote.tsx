@@ -2,6 +2,7 @@
 
 import { summarise } from "@/features/offline/domain/outbox";
 import { useOutbox } from "@/features/offline/presentation/OutboxProvider";
+import { useHydrated } from "@/lib/client/use-hydrated";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 
 /**
@@ -10,9 +11,11 @@ import { useI18n } from "@/features/i18n/presentation/I18nProvider";
  */
 export function SyncNote() {
   const { t } = useI18n();
+  const hydrated = useHydrated();
   const { supported, entries, online } = useOutbox();
   const { waiting } = summarise(entries);
-  if (online && waiting === 0) return null;
+  // The server cannot know what this phone holds or whether it has signal: say nothing until the browser has taken over.
+  if (!hydrated || (online && waiting === 0)) return null;
   return (
     <div role="status" aria-live="polite" className="rounded-2xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-800 dark:border-white/15 dark:bg-white/5 dark:text-slate-100">
       <p className="font-bold">{online ? t("record.waiting.backOnline") : t("record.sync.OFFLINE_NOTE")}</p>

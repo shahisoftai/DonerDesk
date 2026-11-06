@@ -179,7 +179,7 @@ await check("something we did: five things on the first screen, the rest under A
 });
 
 await check("from a planned item: what happened? offers three answers; 'did not happen' needs a reason and cancels with it", async () => {
-  const page = await open("kind=ACTIVITY&plan=pa1");
+  const page = await open("kind=ACTIVITY&plan=pa1&caps=indicator.update,activity.create,evidence.upload,workplan.update-own,workplan.manage");
   await page.getByRole("heading", { name: "What happened?" }).waitFor();
   assert.ok(await page.getByText("Hygiene session").first().isVisible());
   await page.getByRole("button", { name: /It did not happen/ }).click();
@@ -262,8 +262,15 @@ await check("with Add detail open the number form (split included) and the activ
   expectClean(await audit(activity));
 });
 
+await check("a field officer (no workplan.manage) is not offered 'It did not happen'", async () => {
+  const page = await open("kind=ACTIVITY&plan=pa1");
+  await page.getByRole("heading", { name: "What happened?" }).waitFor();
+  assert.equal(await page.getByRole("button", { name: /It did not happen/ }).count(), 0);
+  assert.ok(await page.getByRole("button", { name: /It is finished/ }).first().isVisible());
+});
+
 await check("the 'not held' form and the quick 'mark done' form meet the same rules", async () => {
-  const held = await open("kind=ACTIVITY&plan=pa1");
+  const held = await open("kind=ACTIVITY&plan=pa1&caps=indicator.update,activity.create,evidence.upload,workplan.update-own,workplan.manage");
   await held.getByRole("button", { name: /It did not happen/ }).click();
   expectClean(await audit(held));
   const quick = await open("kind=ACTIVITY&plan=pa1");

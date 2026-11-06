@@ -6,6 +6,7 @@ import type { PackPlanItem } from "@/features/offline/domain/offline-pack";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { Textarea } from "@/components/ui/Textarea";
 import { Input } from "@/components/ui/Input";
+import { formatDate } from "@/lib/shared/dates";
 import { chooseWorkOutcome, type WorkChoice } from "../domain/work-outcome";
 import { ActivityView } from "./ActivityView";
 import { ConfirmationScreen } from "./ConfirmationScreen";
@@ -23,7 +24,8 @@ const OPTION = "flex min-h-[88px] w-full items-center gap-4 rounded-2xl border b
  * answer; this screen only asks and shows. A refusal is shown as it is.
  */
 export function WorkOutcomeView(props: KindViewProps & { plannedActivityId: string }) {
-  const { deps, projectId, today, onClose, plannedActivityId } = props;
+  const { deps, projectId, today, onClose, plannedActivityId, can } = props;
+  const mayCancel = can("workplan.manage");
   const { t } = useI18n();
   const [plan, setPlan] = useState<PackPlanItem | null | undefined>(undefined);
   const [step, setStep] = useState<Step>({ kind: "choose" });
@@ -49,7 +51,7 @@ export function WorkOutcomeView(props: KindViewProps & { plannedActivityId: stri
   const status = plan.status as "PLANNED" | "IN_PROGRESS" | "DONE" | "CANCELLED";
   const planPage = `/projects/${projectId}/activities/plan/${plan.id}`;
   const outcome = (choice: WorkChoice, extra: { hasDetail?: boolean; reason?: string } = {}) =>
-    chooseWorkOutcome({ choice, planStatus: status, hasDetail: extra.hasDetail ?? false, online, ...(extra.reason !== undefined ? { reason: extra.reason } : {}) });
+    chooseWorkOutcome({ choice, planStatus: status, hasDetail: extra.hasDetail ?? false, online, mayCancel, ...(extra.reason !== undefined ? { reason: extra.reason } : {}) });
 
   async function quickFinish() {
     setBusy(true); setError(null);
@@ -79,12 +81,12 @@ export function WorkOutcomeView(props: KindViewProps & { plannedActivityId: stri
     return <ConfirmationScreen queued={done.queued} headline={done.headline} detail={done.detail} anotherLabel={t("record.work.another")} onAnother={() => { setDone(null); setStep({ kind: "choose" }); setNote(""); setPeople(""); setReason(""); }} onDone={onClose} />;
   }
 
-  const open = outcome("FINISHED").ok || outcome("NOT_HELD", { reason: "x" }).ok;
+  const open = outcome("FINISHED").ok || (mayCancel && outcome("NOT_HELD", { reason: "x" }).ok);
   const header = (
     <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-900/40">
       <p className="text-xs font-bold uppercase tracking-wide text-brand-700 dark:text-brand-300">{t("record.work.plannedLabel")}</p>
       <p className="mt-1 text-xl font-bold">{plan.title}</p>
-      <p className="text-sm text-slate-600 dark:text-slate-300">{plan.plannedStart}{plan.location ? ` · ${plan.location}` : ""}</p>
+      <p className="text-sm text-slate-600 dark:text-slate-300">{formatDate(plan.plannedStart)}{plan.location ? ` · ${plan.location}` : ""}</p>
     </div>
   );
 
@@ -141,10 +143,10 @@ export function WorkOutcomeView(props: KindViewProps & { plannedActivityId: stri
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-200" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 18h4V12H4zM10 18h4V8h-4zM16 18h4V4h-4z" /></svg></span>
           <span><span className="block text-lg font-bold">{t("record.work.progress")}</span><span className="block text-sm text-slate-600 dark:text-slate-300">{t("record.work.progressHint")}</span></span>
         </Link>
-        <button type="button" className={OPTION} onClick={() => setStep({ kind: "notHeld" })}>
+        {mayCancel && <button type="button" className={OPTION} onClick={() => setStep({ kind: "notHeld" })}>
           <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-warning-50 text-warning-700 dark:bg-warning-500/15 dark:text-warning-300" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg></span>
           <span><span className="block text-lg font-bold">{t("record.work.notHeld")}</span><span className="block text-sm text-slate-600 dark:text-slate-300">{t("record.work.notHeldHint")}</span></span>
-        </button>
+        </button>}
       </div>
     </>
   );

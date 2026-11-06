@@ -163,4 +163,5 @@ export const recordEn = {
   "record.ready.counts": "{indicators} numbers · {forms} forms · {places} places · {plan} planned",
   "record.ready.updateForNumbers": "Download again while you have signal to record numbers with no signal.",
   "record.period.open": "Open it",
+  "record.file.sending": "Sending…",
 } as const;
