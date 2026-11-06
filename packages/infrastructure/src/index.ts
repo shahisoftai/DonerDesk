@@ -58,3 +58,4 @@ export { TenantSetupLlm } from "./project-setup/setup-llm.js";
 export { GoogleDriveSetupDocuments, SETUP_STAGING_NAME, SETUP_STAGING_ROLE, PROJECT_DOCUMENTS_ROLE } from "./storage/google-drive-setup-documents.js";
 export { GoogleDriveWorkspaceDrive } from "./storage/google-drive-workspace.js";
 export { PRINT_PAINTERS, PRINT_PENDING, printPainterFor, unpaintable, paintSection, type PrintPainter } from "./canvas/print-registry.js";
+export { PrismaCanvasRepository } from "./repositories/canvas.js";

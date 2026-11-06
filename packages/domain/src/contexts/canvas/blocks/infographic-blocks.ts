@@ -50,6 +50,7 @@ function makeBlock(kind: InfographicBlockKind): BlockDefinition<InfographicBlock
     kind,
     family: spec.family,
     labelKey: `canvas.block.${kind}`,
+    reads: "FACTS",
     ...(spec.needsAlt ? { needsAlt: true } : {}),
     ...(spec.headline ? { headline: true } : {}),
     defaults: () => ({ ...(spec.seed ?? {}) }),

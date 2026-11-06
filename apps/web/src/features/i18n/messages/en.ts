@@ -17,6 +17,7 @@ export const en = {
   "nav.myWork": "My Work",
   "nav.portfolio": "Portfolio",
   "nav.dashboards": "Dashboards",
+  "nav.visuals": "Visuals",
   "nav.projects": "Projects",
   "nav.reports": "Reports",
   "nav.evidence": "Evidence",

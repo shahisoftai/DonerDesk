@@ -2471,6 +2471,29 @@ model HomeLayout {
   @@index([tenantId, userId])
 }
 
+/// A canvas (Phase 45): one saved page set of blocks that is a dashboard when viewed live and an infographic when published. The
+/// document holds composition and words, never data. A dashboard or infographic converts to at most one canvas (the source pair is unique).
+model Canvas {
+  id         String   @id
+  tenantId   String
+  scope      String
+  mode       String
+  projectId  String?
+  ownerId    String
+  title      String
+  docJson    String
+  revision   Int      @default(1)
+  sourceKind String?
+  sourceId   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tenantId, sourceKind, sourceId])
+  @@index([tenantId, scope])
+  @@index([tenantId, ownerId])
+  @@index([tenantId, projectId])
+}
+
 /// A dashboard template the organisation keeps (Phase 34.3): the whole template (roles and charts by role) as JSON. Always a draft,
 /// always editable. Built-in templates live in code and are never stored; copying one makes a row here.
 model DashboardTemplate {

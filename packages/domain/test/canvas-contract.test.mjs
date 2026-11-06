@@ -151,3 +151,11 @@ test("there are two paint surfaces, and AI needs both the platform flag and the 
   assert.equal(canvasAiEnabledFor({ aiEnabled: true, canvasAiEnabled: true }), true);
   assert.deepEqual(aiGate({ organisationEnabled: false, providerConfigured: true, external: false, overCap: false }), { allowed: false, reason: "OFF" });
 });
+
+test("a block says what data it reads, so a resolver never has to name a block", () => {
+  const reads = (k) => definitionFor(k).reads;
+  assert.deepEqual(KINDS.filter((k) => reads(k) === "VIEWER_PROJECTS"), ["PROJECT_LIST"]);
+  const withFacts = KINDS.filter((k) => reads(k) === "FACTS");
+  for (const k of ["REACH", "BIG_NUMBERS", "FUNDING", "DEMOGRAPHICS", "LOCATION_RESULTS", "SECTOR_GRID", "THREE_W", "HERO"]) assert.ok(withFacts.includes(k), k);
+  for (const k of ["TEXT", "DIVIDER", "CALLOUT", "KPI", "CHART"]) assert.equal(reads(k), undefined, `${k} reads nothing the resolver supplies`);
+});

@@ -20,3 +20,8 @@ export * from "./model-safety.js";
 export * from "./fixtures.js";
 export * from "./facts.js";
 export * from "./models/index.js";
+export * from "./document.js";
+export * from "./access.js";
+export * from "./to-widgets.js";
+export * from "./templates-builtin.js";
+export * from "./edit/layout.js";

@@ -151,3 +151,66 @@ test("AI: off means hidden, partners never, grounded text keeps only supported f
   assert.equal(ai.resolve({}, {}).state, "empty");
   assert.deepEqual(ai.resolve({}, { text: "t", accepted: false }).notes, ["AI-drafted. Not accepted yet."]);
 });
+
+import { BUILT_IN_CANVAS_TEMPLATES, builtInCanvasTemplate, applyCanvasTemplate as applyT, canvasTemplateProblems as templateProblems, canvasStructureProblems, canvasContentProblems, checkCanvas as check, canPublish as publishable, validateChartSpec } from "../dist/index.js";
+
+test("the built-in humanitarian templates: sound, distinct, and every one applies with its roles chosen", () => {
+  assert.ok(BUILT_IN_CANVAS_TEMPLATES.length >= 8);
+  assert.equal(new Set(BUILT_IN_CANVAS_TEMPLATES.map((t) => t.id)).size, BUILT_IN_CANVAS_TEMPLATES.length);
+  for (const t of BUILT_IN_CANVAS_TEMPLATES) {
+    assert.deepEqual(templateProblems(t), [], t.id);
+    const mapping = Object.fromEntries(t.roles.map((r, i) => [r.key, `ind-${i}`]));
+    const r = applyT(t, mapping, { id: "n", title: t.title, scope: "PROJECT", projectId: "p1" });
+    assert.equal(r.ok, true, t.id); assert.deepEqual(r.leftOut, [], `${t.id} leaves nothing out when every role is chosen`);
+    assert.deepEqual(canvasStructureProblems(r.canvas), [], `${t.id} shape`);
+    assert.deepEqual(canvasContentProblems(r.canvas), [], `${t.id} is ready to use, nothing left to set up`);
+    for (const b of r.canvas.pages[0].blocks) if (b.kind === "CHART") assert.deepEqual(validateChartSpec(b.props.spec), [], `${t.id} chart`);
+  }
+});
+
+test("a template with an optional role unchosen leaves out only the blocks that use it; a required one refuses", () => {
+  const t = builtInCanvasTemplate("builtin-flash-update");
+  assert.equal(applyT(t, {}, { id: "n", title: "x", scope: "MINE" }).ok, false);
+  const r = applyT(t, { MAIN: "i1" }, { id: "n", title: "x", scope: "PROJECT", projectId: "p1" });
+  assert.deepEqual(r.leftOut.sort(), ["k2", "k3"]);
+  assert.deepEqual(canvasStructureProblems(r.canvas), []);
+});
+
+test("no template writes the author's words or invents a figure: authored blocks start empty", () => {
+  for (const t of BUILT_IN_CANVAS_TEMPLATES) for (const b of t.canvas.pages.flatMap((p) => p.blocks)) {
+    if (b.kind === "KEY_MESSAGES") assert.equal(b.props.messages, undefined, t.id);
+    if (b.kind === "QUOTE") assert.equal(b.props.text, undefined, t.id);
+    if (b.kind === "BANNER") assert.equal(b.props.text, undefined, t.id);
+    for (const n of b.props.numbers ?? []) assert.notEqual(n.source, "MANUAL", `${t.id} types no figure`);
+  }
+});
+
+test("the donor template fails the Design check until a person describes the chart and names the figures' source", () => {
+  const t = builtInCanvasTemplate("builtin-donor-one-pager");
+  const r = applyT(t, { MAIN: "i1", SECOND: "i2" }, { id: "n", title: "x", scope: "PROJECT", projectId: "p1" });
+  const found = check(r.canvas);
+  assert.ok(found.some((f) => f.ruleId === "ALT_MISSING" && f.blockId === "trend"));
+  assert.equal(publishable(found), false);
+});
+
+import { settleBoxes, addBlock as addB, blankCanvas as blank, moveBlock as moveB, canvasStructureProblems as structureProblems } from "../dist/index.js";
+
+test("a one-row block stays one row: the canvas lays out by each block's own limits, not the dashboard's two-cell minimum", () => {
+  let c = blank({ id: "c", title: "T", scope: "MINE" });
+  for (const [id, kind] of [["d", "DIVIDER"], ["b", "BANNER"], ["f", "FILTER_BAR"], ["t", "TEXT"]]) { const r = addB(c, "page-1", { id, kind }); assert.ok(r.ok, kind); c = r.canvas; }
+  assert.deepEqual(c.pages[0].blocks.map((b) => [b.id, b.bounds.h]), [["d", 1], ["b", 1], ["f", 1], ["t", 2]]);
+  assert.deepEqual(structureProblems(c), []);
+  const moved = moveB(c, "t", 0, 0);
+  assert.ok(moved.ok); assert.deepEqual(structureProblems(moved.canvas), [], "moving keeps every block within its limits");
+  const rows = moved.canvas.pages[0].blocks.map((b) => [b.bounds.y, b.bounds.y + b.bounds.h]);
+  for (const [i, a] of rows.entries()) for (const [j, b] of rows.entries()) if (i < j) assert.ok(a[1] <= b[0] || b[1] <= a[0] || moved.canvas.pages[0].blocks[i].bounds.x + moved.canvas.pages[0].blocks[i].bounds.w <= moved.canvas.pages[0].blocks[j].bounds.x, "no two blocks overlap");
+});
+
+test("settling keeps a dropped block where it was put and lets the others fall; nothing leaves the grid", () => {
+  const out = settleBoxes([{ id: "a", x: 0, y: 0, w: 6, h: 2 }, { id: "b", x: 3, y: 0, w: 6, h: 2 }, { id: "c", x: 20, y: -4, w: 40, h: 0 }], "b");
+  assert.deepEqual(out.find((x) => x.id === "b"), { id: "b", x: 3, y: 0, w: 6, h: 2 });
+  assert.equal(out.find((x) => x.id === "a").y, 2, "the other block falls below the pinned one");
+  const c = out.find((x) => x.id === "c");
+  assert.ok(c.x >= 0 && c.x + c.w <= 12 && c.y >= 0 && c.h >= 1);
+  assert.deepEqual(out.map((x) => x.id), ["a", "b", "c"], "the caller's order is kept");
+});

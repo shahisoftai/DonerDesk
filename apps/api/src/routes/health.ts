@@ -21,6 +21,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Bookmark", field: "href" },
   { model: "HomePin", field: "ref" },
   { model: "HomeLayout", field: "layoutJson" },
+  { model: "Canvas", field: "docJson" },
   { model: "SetupDefaultPack", field: "packJson" },
   { model: "MapOverlay", field: "storageKey" },
   { model: "FeaturedDashboard", field: "dashboardId" },

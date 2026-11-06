@@ -112,6 +112,8 @@ import { randomBytes as nodeRandomBytes } from "node:crypto";
 import { PrismaInfographicRepository, PrismaInfographicAssetRepository, PrismaBrandKitRepository, PrismaInfographicUserTemplateRepository, PrismaInfographicShareRepository } from "./repositories/infographics.js";
 import { SharpImageNormalizer } from "./infographics/image-normalizer.js";
 import { InfographicComposerRenderer, PrismaOrganizationBrandReader } from "./infographics/renderer.js";
+import { ListCanvasesHandler, GetCanvasHandler, CreateCanvasHandler, SaveCanvasHandler, DeleteCanvasHandler, DuplicateCanvasHandler, ConvertDashboardHandler, ConvertInfographicHandler, ResolveCanvasHandler } from "@donordesk/application";
+import { PrismaCanvasRepository } from "./repositories/canvas.js";
 import { CreateInfographicHandler, UpdateInfographicHandler, ListProjectInfographicsHandler, GetInfographicHandler, DeleteInfographicHandler, ExportInfographicHandler, ListInfographicExportsHandler, GetInfographicExportFileHandler, InfographicRenderService, PreviewInfographicHandler, GetInfographicSuggestionsHandler, GetInfographicAiTextHandler, SuggestPresenceRowsHandler, ListInfographicTemplatesHandler, SaveInfographicTemplateHandler, DeleteInfographicTemplateHandler, UploadInfographicAssetHandler, ListInfographicAssetsHandler, GetInfographicAssetFileHandler, RemoveInfographicAssetHandler, GetBrandKitHandler, SaveBrandKitHandler, InfographicNotifier, InfographicReviewHandler, CreateInfographicShareLinkHandler, ListInfographicShareLinksHandler, RevokeInfographicShareLinkHandler, ResolveInfographicShareHandler, GenerateInfographicVariantsHandler, SectionInfographicsHandler, GetPortfolioInfographicDataHandler, AutoRefreshInfographicsHandler } from "@donordesk/application";
 import { EvidenceStorageResolver } from "./storage/router.js";
 import { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
@@ -435,6 +437,15 @@ export interface Container {
     getHomeLayout: GetHomeLayoutHandler;
     saveHomeLayout: SaveHomeLayoutHandler;
     resetHomeLayout: ResetHomeLayoutHandler;
+    listCanvases: ListCanvasesHandler;
+    getCanvas: GetCanvasHandler;
+    createCanvas: CreateCanvasHandler;
+    saveCanvas: SaveCanvasHandler;
+    deleteCanvas: DeleteCanvasHandler;
+    duplicateCanvas: DuplicateCanvasHandler;
+    convertDashboard: ConvertDashboardHandler;
+    convertInfographic: ConvertInfographicHandler;
+    resolveCanvas: ResolveCanvasHandler;
     listSavedReports: ListSavedReportsHandler;
     saveSavedReport: SaveSavedReportHandler;
     deleteSavedReport: DeleteSavedReportHandler;
@@ -898,6 +909,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const bookmarks = new PrismaBookmarkRepository(prisma);
   const homePins = new PrismaHomePinRepository(prisma);
   const homeLayouts = new PrismaHomeLayoutRepository(prisma);
+  const canvases = new PrismaCanvasRepository(prisma);
   const mapOverlays = new PrismaMapOverlayRepository(prisma);
   const featuredDashboards = new PrismaFeaturedDashboardRepository(prisma);
   const savedReports = new PrismaSavedReportRepository(prisma);
@@ -1672,6 +1684,15 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     getHomeLayout: new GetHomeLayoutHandler(homeLayouts),
     saveHomeLayout: new SaveHomeLayoutHandler(ids, homeLayouts, audits, clock),
     resetHomeLayout: new ResetHomeLayoutHandler(homeLayouts, audits),
+    listCanvases: new ListCanvasesHandler(canvases),
+    getCanvas: new GetCanvasHandler(canvases),
+    createCanvas: new CreateCanvasHandler(ids, canvases, visibleProjects, audits, clock),
+    saveCanvas: new SaveCanvasHandler(canvases, audits, clock),
+    deleteCanvas: new DeleteCanvasHandler(canvases, audits),
+    duplicateCanvas: new DuplicateCanvasHandler(ids, canvases, audits, clock),
+    convertDashboard: new ConvertDashboardHandler(dashboards, canvases, ids, audits, clock),
+    convertInfographic: new ConvertInfographicHandler(infographicRepository, canvases, visibleProjects, ids, audits, clock),
+    resolveCanvas: new ResolveCanvasHandler(canvases, new PreviewDashboardChartsHandler(getProjectDataSheet, visibleProjects, datasetExtras), getProjectDataSheet, getProjectInfographicData, visibleProjects, datasetExtras),
     listSavedReports: new ListSavedReportsHandler(savedReports, visibleProjects),
     saveSavedReport: new SaveSavedReportHandler(ids, savedReports, visibleProjects, audits, clock),
     deleteSavedReport: new DeleteSavedReportHandler(savedReports, visibleProjects, audits),

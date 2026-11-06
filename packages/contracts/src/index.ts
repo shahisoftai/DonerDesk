@@ -25,6 +25,7 @@ export * from "./infographics.js";
 export * from "./places.js";
 export * from "./collection.js";
 export * from "./dashboards.js";
+export * from "./canvas.js";
 export * from "./finance-register.js";
 export * from "./project-setup.js";
 export * from "./project-setup-draft.js";

@@ -42,6 +42,8 @@ export interface BlockDefinition<P, M = unknown, D = unknown> {
   needsAlt?: boolean;
   /** True for a headline block (hero, banner): a snapshot tells one story, so it counts how many there are. */
   headline?: boolean;
+  /** What `resolve` is given as data: the project's facts (infographic-style blocks), the viewer's own list of projects, or nothing. The resolver asks the block; it never names one. */
+  reads?: "FACTS" | "VIEWER_PROJECTS";
   defaults(): P;
   validate(props: P): BlockProblem[];
   slots: ReadonlyArray<SlotDef>;

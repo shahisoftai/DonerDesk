@@ -11,7 +11,8 @@ export interface CanvasProblem { pageId: string; blockId: string; message: strin
 const whole = (n: unknown): n is number => typeof n === "number" && Number.isInteger(n);
 const boundsOk = (b: CanvasBounds): boolean => [b.x, b.y, b.w, b.h].every(whole) && b.x >= 0 && b.y >= 0 && b.w > 0 && b.h > 0 && b.x + b.w <= CANVAS_GRID_COLUMNS;
 
-function blockProblems(block: BlockInstance, pageId: string): CanvasProblem[] {
+/** What would break the page if it were stored or drawn: an unknown kind, a position outside the grid. */
+function blockStructure(block: BlockInstance, pageId: string): CanvasProblem[] {
   const out: CanvasProblem[] = [];
   const add = (message: string) => out.push({ pageId, blockId: block.id, message });
   const def = definitionFor(block.kind);
@@ -23,12 +24,22 @@ function blockProblems(block: BlockInstance, pageId: string): CanvasProblem[] {
     if (block.bounds.w > max.w || block.bounds.h > max.h) add(`This block is at most ${max.w} wide and ${max.h} high.`);
   }
   for (const alt of [block.tablet, block.phone]) if (alt && !boundsOk(alt)) add("A tablet or phone position must stay inside the page.");
+  return out;
+}
+
+/** What is not set up yet: a block that needs its indicator, a figure with no source. Informs the editor; does not stop a save. */
+function blockContent(block: BlockInstance, pageId: string): CanvasProblem[] {
+  const out: CanvasProblem[] = [];
+  const add = (message: string) => out.push({ pageId, blockId: block.id, message });
+  const def = definitionFor(block.kind);
+  if (!def) return out;
   for (const p of (def as { validate(p: unknown): Array<{ message: string }> }).validate(block.props)) add(p.message);
   for (const p of bindingProblems(def.slots, block.bindings)) add(p.message);
   return out;
 }
 
-export function canvasProblems(canvas: Canvas): CanvasProblem[] {
+/** Everything wrong with the canvas's shape: the title, pages, ids, limits, and each block's kind and position. A canvas with any of these is refused when saved. */
+export function canvasStructureProblems(canvas: Canvas): CanvasProblem[] {
   const out: CanvasProblem[] = [];
   const top = (message: string) => out.push({ pageId: "", blockId: "", message });
   if (!canvas.title.trim() || canvas.title.length > CANVAS_MAX_TITLE) top(`A title is 1 to ${CANVAS_MAX_TITLE} characters.`);
@@ -46,8 +57,16 @@ export function canvasProblems(canvas: Canvas): CanvasProblem[] {
     for (const block of page.blocks) {
       if (blockIds.has(block.id)) out.push({ pageId: page.id, blockId: block.id, message: "Two blocks share an id." });
       blockIds.add(block.id);
-      out.push(...blockProblems(block, page.id));
+      out.push(...blockStructure(block, page.id));
     }
   }
   return out;
 }
+
+/** What is not set up yet, block by block. */
+export function canvasContentProblems(canvas: Canvas): CanvasProblem[] {
+  return canvas.pages.flatMap((page) => page.blocks.flatMap((block) => blockContent(block, page.id)));
+}
+
+/** Everything wrong with a canvas, as sentences: its shape, then what is not set up. A canvas must have none to be shared or published. */
+export const canvasProblems = (canvas: Canvas): CanvasProblem[] => [...canvasStructureProblems(canvas), ...canvasContentProblems(canvas)];

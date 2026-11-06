@@ -19,6 +19,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "nav.myWork": "عملي",
   "nav.portfolio": "المحفظة",
   "nav.dashboards": "لوحات المتابعة",
+  "nav.visuals": "المرئيات",
   "nav.projects": "المشاريع",
   "nav.reports": "التقارير",
   "nav.evidence": "الأدلة",

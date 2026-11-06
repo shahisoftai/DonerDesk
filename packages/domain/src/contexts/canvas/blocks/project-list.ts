@@ -6,6 +6,7 @@ import { projectListModel, type ProjectListData } from "../models/places.js";
 export const projectListBlock = defineBlock<ProjectListQuery, unknown, ProjectListData | undefined>({
   kind: "PROJECT_LIST",
   family: "TABLES",
+  reads: "VIEWER_PROJECTS",
   labelKey: "canvas.block.PROJECT_LIST",
   defaults: () => ({ affiliation: "ALL" } as ProjectListQuery),
   validate: (q) => { const m = validateProjectList(q); return m ? [{ message: m }] : []; },

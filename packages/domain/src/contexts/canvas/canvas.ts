@@ -50,6 +50,15 @@ export interface CanvasPage {
   blocks: BlockInstance[];
 }
 
+/** Design-level settings a converted infographic keeps: the period range, default places and the acknowledgement line. */
+export interface CanvasOptions {
+  periodFromId?: string | undefined;
+  periodToId?: string | undefined;
+  locationKeys?: string[] | undefined;
+  acknowledgement?: string | undefined;
+  subtitle?: string | undefined;
+}
+
 export interface Canvas {
   id: string;
   scope: CanvasScope;
@@ -59,6 +68,7 @@ export interface Canvas {
   language: string;
   themeId: string;
   pages: CanvasPage[];
+  options?: CanvasOptions | undefined;
   /** Bumped by every save; a save quotes the one it started from. */
   revision: number;
 }

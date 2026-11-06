@@ -2,7 +2,7 @@
  * Editing a canvas (Phase 45.3): pure functions from a canvas to a new canvas or a reason. The editor, keyboard handlers and
  * the API's patch endpoint all call these, so a gesture means the same everywhere. Nothing mutates its input.
  */
-import { settleLayout } from "../../dashboards/dashboard.js";
+import { settleBoxes } from "./layout.js";
 import { CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, type BlockInstance, type Canvas, type CanvasBounds, type CanvasPage } from "../canvas.js";
 import { definitionFor } from "../blocks/registry.js";
 
@@ -21,7 +21,7 @@ const mapPage = (c: Canvas, pageId: string, f: (p: CanvasPage) => CanvasPage | s
 /** Blocks laid out by their grid cells with the shared rule (a dropped block keeps its place, the rest fall to the highest free row). */
 function settle(blocks: BlockInstance[], pinnedId?: string): BlockInstance[] {
   const boxes = blocks.map((b) => ({ id: b.id, ...b.bounds, block: b }));
-  return settleLayout(boxes, pinnedId).map(({ block, x, y, w, h }) => ({ ...block, bounds: { x, y, w, h } }));
+  return settleBoxes(boxes, pinnedId).map(({ block, x, y, w, h }) => ({ ...block, bounds: { x, y, w, h } }));
 }
 
 export function addBlock(c: Canvas, pageId: string, input: { id: string; kind: string; props?: unknown }): EditResult {

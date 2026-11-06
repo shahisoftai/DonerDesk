@@ -15,6 +15,7 @@ export const fr: Record<MessageKey, string> = {
   "nav.myWork": "Mon travail",
   "nav.portfolio": "Portefeuille",
   "nav.dashboards": "Tableaux de bord",
+  "nav.visuals": "Visuels",
   "nav.projects": "Projets",
   "nav.reports": "Rapports",
   "nav.evidence": "Preuves",

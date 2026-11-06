@@ -5,6 +5,9 @@ import type {
 import type { AuthenticatedContext } from "../context.js";
 import type { IDatasetExtras } from "../services/dataset-extras.js";
 
+/** Where a canvas was converted from. A source converts once: the pair is unique, so converting again returns the same canvas. */
+export type CanvasSourceKind = "DASHBOARD" | "INFOGRAPHIC";
+
 /** A canvas as stored: the document plus who owns it and when it changed. The document holds composition and words, never data. */
 export interface StoredCanvas {
   id: string;
@@ -13,18 +16,23 @@ export interface StoredCanvas {
   mode: CanvasMode;
   projectId?: string;
   ownerId: string;
+  title: string;
   canvas: Canvas;
+  sourceKind?: CanvasSourceKind;
+  sourceId?: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface ICanvasRepository {
-  create(c: StoredCanvas): Promise<Result<void>>;
-  /** Replaces the document only if the stored revision is still `expectedRevision`; false = someone saved since (a second tab). Writes every mutable field (`?? null`). */
+  /** False = the source was converted at the same moment by someone else (the caller reads that one). */
+  create(c: StoredCanvas): Promise<Result<boolean>>;
+  /** Replaces the document only if the stored revision is still `expectedRevision` (and bumps it); false = someone saved since (a second tab). Writes every mutable field (`?? null`). */
   update(c: StoredCanvas, expectedRevision: number): Promise<Result<boolean>>;
   delete(id: string, tenantId: TenantId): Promise<Result<void>>;
   findById(id: string, tenantId: TenantId): Promise<Result<StoredCanvas | null>>;
-  /** Shared canvases (organisation, and the project's when given) plus the person's own. */
+  findBySource(tenantId: TenantId, kind: CanvasSourceKind, sourceId: string): Promise<Result<StoredCanvas | null>>;
+  /** Shared canvases (organisation and portfolio, and the project's when given) plus the person's own. */
   listVisible(tenantId: TenantId, ownerId: string, projectId?: string): Promise<Result<StoredCanvas[]>>;
 }
 

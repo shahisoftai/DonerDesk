@@ -66,6 +66,11 @@ export function legacyInfographicToCanvas(input: { id: string; title: string; co
   const canvas: Canvas = {
     id: input.id, scope: input.config.scope === "PORTFOLIO" ? "PORTFOLIO" : "PROJECT", mode: "PUBLISHED_ONLY", profile: input.config.profile ?? "INTERNAL",
     title: input.title, language: input.config.language ?? "en", themeId: input.config.themeId ?? "DEFAULT", pages, revision: input.revision,
+    options: {
+      ...(input.config.periodFromId ? { periodFromId: input.config.periodFromId } : {}), ...(input.config.periodToId ? { periodToId: input.config.periodToId } : {}),
+      ...(input.config.locationKeys?.length ? { locationKeys: input.config.locationKeys } : {}), ...(input.config.acknowledgement ? { acknowledgement: input.config.acknowledgement } : {}),
+      ...(input.config.subtitle ? { subtitle: input.config.subtitle } : {}),
+    },
   };
   return { canvas, unreadable, losses };
 }

@@ -1,0 +1,54 @@
+import type { FastifyInstance } from "fastify";
+import { CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
+
+/** Canvases (Phase 45): the merged dashboards and infographics. Thin: validate, call one handler, throw its error. The handlers apply who may see and change which canvas. */
+export async function registerCanvasRoutes(app: FastifyInstance) {
+  const ctx = (req: { tenant: unknown; id: string }) => ({ tenant: req.tenant as never, requestId: req.id });
+  const idOf = (req: { params: unknown }) => (req.params as { id: string }).id;
+
+  app.get("/v1/canvases", async (req) => {
+    const r = await req.container.handlers.listCanvases.handle(ctx(req), CanvasListQuerySchema.parse(req.query).projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/canvases", async (req, reply) => {
+    const r = await req.container.handlers.createCanvas.handle(ctx(req), CreateCanvasSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.code(201).send(r.value);
+  });
+  app.get("/v1/canvases/:id", async (req) => {
+    const r = await req.container.handlers.getCanvas.handle(ctx(req), idOf(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.put("/v1/canvases/:id", async (req) => {
+    const r = await req.container.handlers.saveCanvas.handle(ctx(req), { id: idOf(req), ...SaveCanvasSchema.parse(req.body) });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.delete("/v1/canvases/:id", async (req) => {
+    const r = await req.container.handlers.deleteCanvas.handle(ctx(req), idOf(req));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+  app.post("/v1/canvases/:id/duplicate", async (req, reply) => {
+    const r = await req.container.handlers.duplicateCanvas.handle(ctx(req), idOf(req));
+    if (!r.ok) throw r.error;
+    return reply.code(201).send(r.value);
+  });
+  app.get("/v1/canvases/:id/resolve", async (req) => {
+    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), CanvasResolveQuerySchema.parse(req.query));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/canvases/from-dashboard/:id", async (req) => {
+    const r = await req.container.handlers.convertDashboard.handle(ctx(req), idOf(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/canvases/from-infographic/:id", async (req) => {
+    const r = await req.container.handlers.convertInfographic.handle(ctx(req), idOf(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+}
