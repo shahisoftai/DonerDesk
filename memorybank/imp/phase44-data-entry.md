@@ -407,3 +407,9 @@ Presentation (`features/record/presentation`): `WorkOutcomeChooser`, `PeriodOpen
 
 **Usability test tasks tied to screens** (section 10): *record how many people have safe water today* (1b–1d); *a session you planned has finished* (2b–2c); *add a photo of the register* (4c); *you have no signal; record and check it will be sent* (3a–3c); *find out why something was sent back* (1a, 3c); manager: *verify the values that have a file and send one back* (5b); *open the missing month and save a number* (7c).
 
+
+
+## 13. Status (2026-11-06) — BUILT AND DEPLOYED
+Built through all batches except the gaps in Feature 60 "Not built". Commits `912212fb`, `3a72c663`, `a38ee780`; deployed `20261106091554` and web-only `20261106145458` (host declined the build for memory; built locally; `/ready` ok). Tests: web unit 907, application 1007, domain 1390, infrastructure 593, record harness 24/24.
+Live fixes found by browser testing: typed value lost when a period opened; Back re-selected the kind; field officers could not load the project pack (pack needed `indicator.update`); duplicate Record button on phones; sub-44 px controls; Waiting hydration mismatch; "It did not happen" offered to people the server refuses; raw ISO date; Drawer close and language select 44 px; per-file "Sending…".
+Still to verify live: offline `/field` flow, number on phone as admin, manager "Done" from the plan page, My Work "To review", period Files tab, Arabic on phone. Clean up ZZ TEST rows via the app.
