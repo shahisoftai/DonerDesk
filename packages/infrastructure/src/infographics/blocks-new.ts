@@ -6,16 +6,9 @@
  * preview shows a hint). Percent of target is drawn only where the domain allows one.
  */
 import { buildDataChart, type InfographicSectionConfig, type BigNumberItem } from "@donordesk/domain";
-import { arcPath, flipBack, fmt, icon, framed, headingHeight, heading, notReported, panelRect, paragraph, parseFigure, previewHint, r, text, textWidth, wrapText, mixHex, esc, type RenderCtx, type Slot } from "./kit.js";
+import { arcPath, flipBack, fmt, icon, framed, headingHeight, heading, notReported, panelRect, paragraph, parseFigure, previewHint, r, text, textWidth, wrapText, mixHex, esc, onColor, type RenderCtx, type Slot } from "./kit.js";
 import { chartSvg, titleFor } from "./blocks-core.js";
 import { ageLabel, chosenIndicators, latestById, latestFinance, periodsInRange, sexLabel, sortedAgeGroups, type LatestValue } from "./facts.js";
-
-/** Text colour that reads on a given fill: white on dark, ink on light. */
-function onColor(c: RenderCtx, fill: string): string {
-  const n = parseInt(fill.slice(1), 16);
-  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
-  return lum > 0.6 ? c.t.ink : "#ffffff";
-}
 
 // ---------- HERO ----------
 export function heroBlock(c: RenderCtx, section: InfographicSectionConfig, width: number): Slot {

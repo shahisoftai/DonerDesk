@@ -1,5 +1,6 @@
 import type { MessageKey } from "./en.ts";
 import { recordAr } from "./record-ar.ts";
+import { canvasAr } from "./canvas-ar.ts";
 
 /**
  * Arabic (read right to left). Drafted for review by a native speaker of the sector before it is relied on.
@@ -714,4 +715,5 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.boundary.uploading": "جارٍ الرفع…",
   "maps.sources.link": "مصادر الخرائط وتراخيصها",
   ...recordAr,
+  ...canvasAr,
 };

@@ -241,6 +241,10 @@
     "./contexts/identity/boundary-layer.js": {
       "types": "./dist/contexts/identity/boundary-layer.d.ts",
       "import": "./dist/contexts/identity/boundary-layer.js"
+    },
+    "./contexts/canvas/index.js": {
+      "types": "./dist/contexts/canvas/index.d.ts",
+      "import": "./dist/contexts/canvas/index.js"
     }
   },
   "scripts": {

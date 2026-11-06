@@ -256,3 +256,10 @@ export function mixHex(a: string, b: string, w: number): string {
   const ch = (x: number, y: number): string => Math.round(x + (y - x) * w).toString(16).padStart(2, "0");
   return `#${ch(ar, br)}${ch(ag, bg)}${ch(ab, bb)}`;
 }
+
+/** Text colour that reads on a given fill: white on dark, ink on light. */
+export function onColor(c: RenderCtx, fill: string): string {
+  const n = parseInt(fill.slice(1), 16);
+  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
+  return lum > 0.6 ? c.t.ink : "#ffffff";
+}

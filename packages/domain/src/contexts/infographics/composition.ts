@@ -518,3 +518,9 @@ export function validateConfig(
     },
   };
 }
+
+/** The first problem with one section on its own (null = fine). The canvas blocks that carry infographic settings validate through this, so the rules stay in one place. */
+export function sectionProblem(section: InfographicSectionConfig): string | null {
+  const cleaned = cleanSection(section);
+  return cleaned.ok ? null : cleaned.error.message;
+}

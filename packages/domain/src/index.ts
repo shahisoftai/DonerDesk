@@ -33,6 +33,7 @@ export * from "./contexts/bookmarks/index.js";
 export * from "./contexts/ask/index.js";
 export * from "./contexts/project-setup/index.js";
 export * from "./contexts/infographics/index.js";
+export * from "./contexts/canvas/index.js";
 export * from "./contexts/tasks/index.js";
 export * from "./contexts/risks/index.js";
 export * from "./policies/index.js";

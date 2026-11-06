@@ -264,3 +264,61 @@ test("domain files the browser imports by subpath use nothing that exists only i
   }
   assert.deepEqual(found, []);
 });
+
+// Phase 45: the canvas is built on a block registry, in every layer. Files stay small, a handler or class stands alone, only a
+// registry may name a block kind, and presentation reaches adapters only through the composition root.
+const CANVAS_DIRS = [
+  "packages/domain/src/contexts/canvas",
+  "packages/application/src/use-cases/canvas",
+  "packages/infrastructure/src/canvas",
+  "apps/web/src/features/canvas",
+];
+const CANVAS_REGISTRIES = new Set([
+  "packages/domain/src/contexts/canvas/blocks/registry.ts",
+  "packages/infrastructure/src/canvas/print-registry.ts",
+  "apps/web/src/features/canvas/presentation/screen-registry.ts",
+]);
+const canvasFiles = () => CANVAS_DIRS.flatMap((d) => { try { return sourceFiles(join(ROOT, d)); } catch { return []; } });
+const rel = (f) => relative(ROOT, f);
+
+test("canvas: files are at most 300 lines in every layer", () => {
+  const long = canvasFiles().filter((f) => readFileSync(f, "utf8").split("\n").length > 300);
+  assert.deepEqual(long.map(rel), []);
+});
+
+test("canvas: nothing but a registry branches on a block kind (comparisons, switches, kind lists)", () => {
+  // The kinds are read from the registry itself, so a union tag such as `view.kind === "WITH_TARGETS"` is not mistaken for one.
+  const registry = readFileSync(join(ROOT, "packages/domain/src/contexts/canvas/blocks/registry.ts"), "utf8");
+  const list = registry.slice(registry.indexOf("BLOCK_KINDS = ["), registry.indexOf("] as const"));
+  const kinds = [...list.matchAll(/"([A-Z_]+)"/g)].map((m) => m[1]);
+  assert.ok(kinds.length >= 40, "found the block kinds");
+  const names = kinds.join("|");
+  const branch = new RegExp(`\\bkind\\s*(?:===|!==)\\s*["'](?:${names})["']|case\\s+["'](?:${names})["']\\s*:|\\.includes\\(\\s*[\\w.]*\\bkind\\s*\\)|\\.kind\\s+in\\s`);
+  const found = canvasFiles().filter((f) => !CANVAS_REGISTRIES.has(rel(f)) && branch.test(readFileSync(f, "utf8"))).map(rel);
+  assert.deepEqual(found, []);
+});
+
+test("canvas: a block file exports one definition", () => {
+  const dir = join(ROOT, "packages/domain/src/contexts/canvas/blocks");
+  const bad = sourceFiles(dir).filter((f) => !f.endsWith("registry.ts") && (readFileSync(f, "utf8").match(/defineBlock</g) ?? []).length !== 1);
+  assert.deepEqual(bad.map(rel), []);
+});
+
+test("canvas: a use case, export adapter or print painter file holds at most one exported class", () => {
+  const bad = canvasFiles().filter((f) => !f.includes("/contexts/canvas/") && (readFileSync(f, "utf8").match(/^export (?:default )?(?:abstract )?class /gm) ?? []).length > 1);
+  assert.deepEqual(bad.map(rel), []);
+});
+
+test("canvas: the server layers never import React, Next or each other's adapters, and the web presentation never imports an adapter", () => {
+  const server = /^(react(\/|-dom|$)|next(\/|$)|@\/)/;
+  assert.deepEqual(violations("packages/domain/src/contexts/canvas", (s) => s.startsWith(".") || s === "node:crypto"), []);
+  assert.deepEqual(violations("packages/infrastructure/src/canvas", (s) => !server.test(s)), []);
+  try { statSync(join(ROOT, "packages/application/src/use-cases/canvas")); assert.deepEqual(violations("packages/application/src/use-cases/canvas", (s) => !/^(@donordesk\/infrastructure|@prisma\/|next(\/|$)|react(\/|$))/.test(s)), []); } catch (e) { if (e.code !== "ENOENT") throw e; }
+  const adapter = /(^|\/)adapters(\/|$)/;
+  assert.deepEqual(violations("apps/web/src/features/canvas/presentation", (s) => !adapter.test(s) || s.endsWith("composition") || s.endsWith("composition.ts")), []);
+});
+
+test("canvas: every print painter and screen renderer is keyed by a real block kind", () => {
+  const kinds = /\bBLOCK_KINDS\b/;
+  for (const f of ["packages/infrastructure/src/canvas/print-registry.ts", "apps/web/src/features/canvas/presentation/screen-registry.ts"]) assert.match(readFileSync(join(ROOT, f), "utf8"), kinds, f);
+});

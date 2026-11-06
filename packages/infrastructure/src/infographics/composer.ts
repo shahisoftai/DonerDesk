@@ -31,6 +31,7 @@ import { svgToPng } from "./raster.js";
 import { esc, flipBack, headingHeight, paragraph, r, safeImageUri, text, textWidth, wrapText, type MapPointInput, type MapShapeInput, type RenderAsset, type RenderCtx, type Slot } from "./kit.js";
 import { activitiesBlock, chartBlock, kpiBlock, locationComparisonBlock, locationResultsBlock, reachBlock, textBlock } from "./blocks-core.js";
 import { mapBlock } from "./blocks-map.js";
+import { paintSection } from "../canvas/print-registry.js";
 import { portfolioCountriesBlock, portfolioHealthBlock, portfolioSummaryBlock, portfolioTableBlock, threeWBlock } from "./blocks-portfolio.js";
 import {
   bannerBlock,
@@ -91,6 +92,9 @@ export interface ComposedPage {
 }
 
 async function blockFor(c: RenderCtx, section: InfographicSectionConfig, width: number): Promise<Slot | undefined> {
+  // A kind with a registered painter is drawn from its model (the one the screen paints); the rest are still the Studio's own blocks, below, until they are ported.
+  const painted = paintSection(c, section, width);
+  if (painted !== null) return painted;
   switch (section.kind) {
     case "KPIS": return kpiBlock(c, section, width);
     case "CHART": return chartBlock(c, section, width);
