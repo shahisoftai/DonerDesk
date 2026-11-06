@@ -90,7 +90,7 @@ export function renderWorkersManagedBlock(config: GlobalLlmConfig, scopeId: stri
   // sections), 200s per section (draft + one validator-feedback retry).
   lines.push(`AI_REPORTER_DRAFT_TIMEOUT_MS=90000`);
   lines.push(`AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS=200000`);
-  lines.push(`AI_REPORTER_CONTRACT_VERSION=5`);
+  lines.push(`AI_REPORTER_CONTRACT_VERSION=6`);
   lines.push(MANAGED_BLOCK_END_MARKER);
   return lines;
 }
@@ -128,7 +128,7 @@ export function parseEnvValues(content: string, keys: readonly string[]): Record
  * per-call `AI_REPORTER_TIMEOUT` (workers.env), or every real generation
  * aborts client-side before the worker can even respond.
  */
-const API_PRESERVED_KEYS = ["AI_REPORTER_DRAFT_TIMEOUT_MS", "AI_REPORTER_HTTP_TIMEOUT_MS"] as const;
+const API_PRESERVED_KEYS = ["AI_REPORTER_DRAFT_TIMEOUT_MS", "AI_REPORTER_HTTP_TIMEOUT_MS", "SETUP_READ_MODE"] as const;
 
 /**
  * Render the api.env managed block. The api needs the feature flag and the
@@ -155,7 +155,7 @@ export function renderApiManagedBlock(config: { provider: string; model: string 
   // prefers AI_REPORTER_HTTP_TIMEOUT_MS. Must exceed the worker's
   // AI_REPORTER_TOTAL_DRAFT_TIMEOUT_MS (200000).
   lines.push(`AI_REPORTER_HTTP_TIMEOUT_MS=240000`);
-  lines.push(`AI_REPORTER_CONTRACT_VERSION=5`);
+  lines.push(`AI_REPORTER_CONTRACT_VERSION=6`);
   lines.push(MANAGED_BLOCK_END_MARKER);
   return lines;
 }

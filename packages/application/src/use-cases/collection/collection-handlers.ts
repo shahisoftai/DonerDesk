@@ -1,0 +1,704 @@
+import { createHash, randomBytes } from "node:crypto";
+import {
+  DomainError, PlaceRegistry, Permissions, formFromIndicator, effectiveIndicatorSemantics, resolvePlace, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, addDays, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
+  type FormDefinition, type FormField, type RecordAggregation, type RecordMapping, type Result, type Role, type TenantId,
+} from "@donordesk/domain";
+import type { ApplyRecordsInput, CreateCollectionLinkInput, PublicSubmitInput, ReviewRecordInput, SaveCollectionFormInput, SubmitRecordInput } from "@donordesk/contracts";
+import type { AuthenticatedContext } from "../../context.js";
+import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
+import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
+import type { IReportingPeriodRepository } from "../../ports/reporting.js";
+import type { IStorage } from "../../ports/infrastructure.js";
+import type { IPlaceRepository } from "../../ports/places.js";
+import type { IMyWeekReader } from "../../ports/workplan.js";
+import type {
+  CollectionFormStatus, ICollectionFileRepository, StoredCollectionFile, ICollectionFormRepository, ICollectionLinkRepository, ICollectionRecordRepository, StoredCollectionForm, StoredCollectionLink, StoredCollectionRecord,
+} from "../../ports/collection.js";
+import type { BulkUpsertIndicatorUpdatesHandler } from "../logframe/bulk-upsert-indicator-updates.js";
+
+/**
+ * Collection forms that feed indicators (Phase 33.5). A form is designed as a draft (`project.edit`), published (its fields are then
+ * frozen), filled by members (`indicator.update`) or by anyone holding a collection link, and every submission waits for a person
+ * with `indicator.verify` to accept or reject it. Only accepted records are counted into indicator values, and they arrive as
+ * drafts through the same bulk save as typed values, so every window, lock and review rule still applies.
+ */
+
+const sha256 = (value: string): string => createHash("sha256").update(value).digest("hex");
+const can = (ctx: AuthenticatedContext, permission: Parameters<typeof Permissions.can>[1]) => Permissions.can(ctx.tenant.role as Role, permission);
+const fail = <T>(error: DomainError): Result<T, DomainError> => ({ ok: false, error });
+const ok = <T>(value: T): Result<T, DomainError> => ({ ok: true, value });
+
+export interface CollectionFormDto {
+  id: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  status: CollectionFormStatus;
+  fields: FormField[];
+  mappings: RecordMapping[];
+  counts: { PENDING: number; ACCEPTED: number; REJECTED: number };
+  updatedAt: string;
+}
+
+export interface CollectionRecordDto {
+  id: string;
+  formId: string;
+  answers: Record<string, unknown>;
+  submittedOn: string;
+  source: "USER" | "LINK" | "CONNECTOR";
+  submitter: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
+  reviewNote?: string;
+  /** What each place answer means in the organisation's list of places: a path, or why it does not resolve. */
+  places?: Record<string, { status: "RESOLVED" | "AMBIGUOUS" | "UNRESOLVED"; label: string }>;
+  /** Attached photos and documents by question: the id to download and the name it was sent with. */
+  files?: Record<string, { id: string; name: string }>;
+}
+
+function toDto(form: StoredCollectionForm, counts: CollectionFormDto["counts"]): CollectionFormDto {
+  return {
+    id: form.id, projectId: form.projectId, name: form.name, ...(form.description ? { description: form.description } : {}), status: form.status,
+    fields: [...form.definition.fields], mappings: form.mappings, counts, updatedAt: form.updatedAt.toISOString(),
+  };
+}
+
+function toRecordDto(r: StoredCollectionRecord, names: Map<string, string>): CollectionRecordDto {
+  return {
+    id: r.id, formId: r.formId, answers: r.answers, submittedOn: r.submittedOn, source: r.source,
+    submitter: r.submitterName ?? (r.submittedById ? names.get(r.submittedById) ?? "A team member" : "Someone with the link"),
+    status: r.status, ...(r.reviewNote ? { reviewNote: r.reviewNote } : {}),
+  };
+}
+
+function definitionFrom(input: SaveCollectionFormInput): FormDefinition {
+  return { fields: input.fields as unknown as FormField[] };
+}
+
+/** Everything wrong with a form being saved, in one list of sentences. */
+function formProblems(input: SaveCollectionFormInput): string[] {
+  const definition = definitionFrom(input);
+  const problems = validateFormDefinition(definition).map((p) => (p.field ? `${p.field}: ${p.message}` : p.message));
+  for (const m of input.mappings) problems.push(...recordMappingProblems(m as RecordMapping, definition.fields));
+  return problems;
+}
+
+async function loadForm(repo: ICollectionFormRepository, id: string, tenantId: TenantId): Promise<Result<StoredCollectionForm, DomainError>> {
+  const found = await repo.findById(id, tenantId);
+  if (!found.ok) return found;
+  if (!found.value) return fail(DomainError.notFound("Form", id));
+  return ok(found.value);
+}
+
+export class ListCollectionFormsHandler {
+  constructor(private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository) {}
+
+  async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<CollectionFormDto[], DomainError>> {
+    if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see forms"));
+    const listed = await this.forms.listByProject(projectId, ctx.tenant.tenantId);
+    if (!listed.ok) return listed;
+    const out: CollectionFormDto[] = [];
+    for (const f of listed.value) {
+      const counts = await this.records.countByStatus(f.id, ctx.tenant.tenantId);
+      if (!counts.ok) return counts;
+      out.push(toDto(f, counts.value));
+    }
+    return ok(out);
+  }
+}
+
+export class GetCollectionFormHandler {
+  constructor(private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string): Promise<Result<CollectionFormDto, DomainError>> {
+    if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see forms"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    const counts = await this.records.countByStatus(formId, ctx.tenant.tenantId);
+    if (!counts.ok) return counts;
+    return ok(toDto(form.value, counts.value));
+  }
+}
+
+export class SaveCollectionFormHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly indicators: IIndicatorRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+
+  /** Creates a draft (no `formId`) or replaces a draft's design. A published form is not edited: close it and make a new one. */
+  async handle(ctx: AuthenticatedContext, input: SaveCollectionFormInput, formId?: string): Promise<Result<{ id: string }, DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot design forms"));
+    const problems = formProblems(input);
+    if (problems.length > 0) return fail(DomainError.validation(problems[0]!, { problems }));
+    const indicators = await this.indicators.findByProject(input.projectId, ctx.tenant.tenantId);
+    if (!indicators.ok) return indicators;
+    const known = new Set(indicators.value.map((i) => i.id));
+    for (const m of input.mappings) if (!known.has(m.indicatorId)) return fail(DomainError.validation("A mapping names an indicator that is not in this project."));
+
+    const now = this.clock.now();
+    const base = { name: input.name.trim(), ...(input.description?.trim() ? { description: input.description.trim() } : {}), definition: definitionFrom(input), mappings: input.mappings as RecordMapping[] };
+    if (!formId) {
+      const id = this.ids.generate();
+      const created = await this.forms.create({ id, tenantId: ctx.tenant.tenantId, projectId: input.projectId, ...base, status: "DRAFT", createdById: ctx.tenant.userId, createdAt: now, updatedAt: now });
+      if (!created.ok) return created;
+      await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.form.created", entityType: "collection_form", entityId: id, projectId: input.projectId });
+      return ok({ id });
+    }
+    const existing = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!existing.ok) return existing;
+    if (existing.value.projectId !== input.projectId) return fail(DomainError.validation("A form cannot move to another project."));
+    if (existing.value.status !== "DRAFT") return fail(DomainError.conflict("A published form cannot be edited. Close it and make a new one so earlier records keep the questions they were answered with."));
+    const { description: _drop, ...without } = existing.value;
+    const saved = await this.forms.update({ ...without, ...base, updatedAt: now });
+    if (!saved.ok) return saved;
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.form.updated", entityType: "collection_form", entityId: formId, projectId: input.projectId });
+    return ok({ id: formId });
+  }
+}
+
+export class SetCollectionFormStatusHandler {
+  constructor(private readonly forms: ICollectionFormRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string, to: "PUBLISHED" | "CLOSED"): Promise<Result<void, DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot publish or close forms"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    if (to === "PUBLISHED") {
+      if (form.value.status !== "DRAFT") return fail(DomainError.conflict("Only a draft can be published."));
+      const problems = validateFormDefinition(form.value.definition);
+      if (problems.length > 0) return fail(DomainError.validation(problems[0]!.message));
+      if (form.value.mappings.length === 0) return fail(DomainError.validation("Say which indicator this form feeds before publishing it."));
+    } else if (form.value.status !== "PUBLISHED") return fail(DomainError.conflict("Only a published form can be closed."));
+    const saved = await this.forms.update({ ...form.value, status: to, updatedAt: this.clock.now() });
+    if (!saved.ok) return saved;
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: `collection.form.${to === "PUBLISHED" ? "published" : "closed"}`, entityType: "collection_form", entityId: formId, projectId: form.value.projectId });
+    return ok(undefined);
+  }
+}
+
+/** Shared by the member and public paths: validate against the form, then store once under the client's own id. */
+async function storeSubmission(
+  repo: ICollectionRecordRepository, ids: IIdGenerator, clock: IClock, form: StoredCollectionForm,
+  who: { source: "USER" | "LINK"; userId?: string; name?: string },
+  input: SubmitRecordInput,
+  files?: ICollectionFileRepository,
+): Promise<Result<{ id: string; duplicate: boolean; ignored: string[] }, DomainError>> {
+  if (form.status !== "PUBLISHED") return fail(DomainError.conflict("This form is not open for answers."));
+  const checked = validateSubmission(form.definition, input.answers);
+  if (checked.problems.length > 0) return fail(DomainError.validation(checked.problems[0]!.message, { problems: checked.problems }));
+  // An attached file must be one that was uploaded to this very form: an id from anywhere else is refused.
+  for (const f of form.definition.fields) {
+    const id = checked.values[f.key];
+    if (f.type !== "FILE" || typeof id !== "string") continue;
+    const stored = files ? await files.findById(id, form.tenantId) : null;
+    if (stored && !stored.ok) return stored;
+    if (!files || !stored?.value || stored.value.formId !== form.id) return fail(DomainError.validation(`${f.label}: that file was not found. Attach it again.`));
+  }
+  const now = clock.now();
+  const stored = await repo.createOnce({
+    id: input.id ?? ids.generate(), tenantId: form.tenantId, formId: form.id, projectId: form.projectId, answers: checked.values,
+    submittedOn: toPlainDate(now)!, source: who.source, ...(who.userId ? { submittedById: who.userId } : {}), ...(who.name ? { submitterName: who.name } : {}),
+    status: "PENDING", createdAt: now,
+  });
+  if (!stored.ok) return stored;
+  return ok({ id: stored.value.record.id, duplicate: !stored.value.created, ignored: checked.ignored });
+}
+
+export class SubmitCollectionRecordHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock, private readonly files?: ICollectionFileRepository) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string, input: SubmitRecordInput): Promise<Result<{ id: string; duplicate: boolean; ignored: string[] }, DomainError>> {
+    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "USER", userId: ctx.tenant.userId }, input, this.files);
+    if (stored.ok && !stored.value.duplicate) {
+      await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.record.submitted", entityType: "collection_record", entityId: stored.value.id, projectId: form.value.projectId });
+    }
+    return stored;
+  }
+}
+
+export class ListCollectionRecordsHandler {
+  constructor(
+    private readonly forms: ICollectionFormRepository,
+    private readonly records: ICollectionRecordRepository,
+    private readonly names: (tenantId: TenantId) => Promise<Map<string, string>>,
+    private readonly places?: IPlaceRepository,
+    private readonly files?: ICollectionFileRepository,
+  ) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string, status?: "PENDING" | "ACCEPTED" | "REJECTED"): Promise<Result<CollectionRecordDto[], DomainError>> {
+    if (!can(ctx, "indicator.update") && !can(ctx, "indicator.verify")) return fail(DomainError.forbidden("You cannot see collected records"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    const listed = await this.records.listByForm(formId, ctx.tenant.tenantId, status);
+    if (!listed.ok) return listed;
+    const names = await this.names(ctx.tenant.tenantId);
+    const dtos = listed.value.map((r) => toRecordDto(r, names));
+
+    // A place answer is read against the organisation's list of places, never guessed: a word it cannot tell apart stays "to confirm".
+    const placeFields = form.value.definition.fields.filter((f) => f.type === "PLACE");
+    if (placeFields.length > 0 && this.places) {
+      const all = await this.places.list(ctx.tenant.tenantId);
+      if (all.ok) {
+        const registry = new PlaceRegistry(all.value.map(({ tenantId: _t, createdById: _c, archivedAt: _a, ...record }) => record));
+        for (const dto of dtos) {
+          for (const f of placeFields) {
+            const text = dto.answers[f.key];
+            if (typeof text !== "string" || !text.trim()) continue;
+            const hit = resolvePlace(text, registry);
+            (dto.places ??= {})[f.key] = hit.status === "RESOLVED"
+              ? { status: "RESOLVED", label: registry.pathLabel(hit.place.id) }
+              : { status: hit.status, label: hit.status === "AMBIGUOUS" ? "More than one place has this name" : "Not in the list of places" };
+          }
+        }
+      }
+    }
+    const fileFields = form.value.definition.fields.filter((f) => f.type === "FILE");
+    if (fileFields.length > 0 && this.files) {
+      for (const dto of dtos) {
+        for (const f of fileFields) {
+          const id = dto.answers[f.key];
+          if (typeof id !== "string") continue;
+          const stored = await this.files.findById(id, ctx.tenant.tenantId);
+          if (stored.ok && stored.value) (dto.files ??= {})[f.key] = { id, name: stored.value.fileName };
+        }
+      }
+    }
+    return ok(dtos);
+  }
+}
+
+export class ReviewCollectionRecordHandler {
+  constructor(private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, recordId: string, input: ReviewRecordInput): Promise<Result<void, DomainError>> {
+    if (!can(ctx, "indicator.verify")) return fail(DomainError.forbidden("You cannot review collected records"));
+    const found = await this.records.findById(recordId, ctx.tenant.tenantId);
+    if (!found.ok) return found;
+    if (!found.value) return fail(DomainError.notFound("Record", recordId));
+    if (input.decision === "REJECT" && !input.note?.trim()) return fail(DomainError.validation("Say why this record is rejected."));
+    const record = found.value;
+    if (input.decision === "REOPEN") {
+      // A reviewed record goes back to waiting; totals read only accepted records, so they follow at once.
+      if (record.status === "PENDING") return fail(DomainError.conflict("This record is already waiting for review."));
+      const { reviewNote: _n, reviewedById: _r, reviewedAt: _a, ...rest } = record;
+      const reopened = await this.records.update({ ...rest, status: "PENDING" });
+      if (!reopened.ok) return reopened;
+      await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.record.reopened", entityType: "collection_record", entityId: recordId, projectId: record.projectId });
+      return ok(undefined);
+    }
+    const next = input.decision === "ACCEPT" ? "ACCEPTED" : "REJECTED";
+    const saved = await this.records.update({ ...record, status: next, reviewedById: ctx.tenant.userId, reviewedAt: this.clock.now(), ...(input.note?.trim() ? { reviewNote: input.note.trim() } : {}) });
+    if (!saved.ok) return saved;
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: `collection.record.${next.toLowerCase()}`, entityType: "collection_record", entityId: recordId, projectId: record.projectId });
+    return ok(undefined);
+  }
+}
+
+export interface CollectionLinkDto { id: string; label: string; expiresAt: string; live: boolean; revoked: boolean }
+
+export class CreateCollectionLinkHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly links: ICollectionLinkRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+
+  /** The token is shown once; only its hash is stored. */
+  async handle(ctx: AuthenticatedContext, formId: string, input: CreateCollectionLinkInput): Promise<Result<{ id: string; token: string; expiresAt: string }, DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot create collection links"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    if (form.value.status !== "PUBLISHED") return fail(DomainError.conflict("Publish the form before sharing it."));
+    const now = this.clock.now();
+    const token = randomBytes(24).toString("base64url");
+    const link: StoredCollectionLink = {
+      id: this.ids.generate(), tenantId: ctx.tenant.tenantId, formId, label: input.label, tokenHash: sha256(token),
+      expiresAt: new Date(now.getTime() + input.expiresInDays * 86_400_000), createdById: ctx.tenant.userId, createdAt: now,
+    };
+    const saved = await this.links.create(link);
+    if (!saved.ok) return saved;
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.link.created", entityType: "collection_link", entityId: link.id, projectId: form.value.projectId });
+    return ok({ id: link.id, token, expiresAt: link.expiresAt.toISOString() });
+  }
+}
+
+export class ListCollectionLinksHandler {
+  constructor(private readonly links: ICollectionLinkRepository, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string): Promise<Result<CollectionLinkDto[], DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot see collection links"));
+    const listed = await this.links.listByForm(formId, ctx.tenant.tenantId);
+    if (!listed.ok) return listed;
+    const now = this.clock.now();
+    return ok(listed.value.map((l) => ({ id: l.id, label: l.label, expiresAt: l.expiresAt.toISOString(), revoked: l.revokedAt !== undefined, live: l.revokedAt === undefined && l.expiresAt > now })));
+  }
+}
+
+export class RevokeCollectionLinkHandler {
+  constructor(private readonly links: ICollectionLinkRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, linkId: string): Promise<Result<void, DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot revoke collection links"));
+    const found = await this.links.findById(linkId, ctx.tenant.tenantId);
+    if (!found.ok) return found;
+    if (!found.value) return fail(DomainError.notFound("Link", linkId));
+    const saved = await this.links.revoke(linkId, ctx.tenant.tenantId, this.clock.now());
+    if (!saved.ok) return saved;
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.link.revoked", entityType: "collection_link", entityId: linkId });
+    return ok(undefined);
+  }
+}
+
+/**
+ * The public side of a collection link. The visitor has no session: the token names the form. Unknown, expired, revoked and
+ * closed-form tokens are all "not available", so a link cannot be probed. Runs on the organisation's own container once the
+ * admin one has found which organisation the token belongs to.
+ */
+export class ResolveCollectionLinkHandler {
+  constructor(private readonly links: ICollectionLinkRepository, private readonly clock: IClock) {}
+
+  async handle(token: string): Promise<Result<{ tenantId: TenantId; formId: string; linkId: string }, DomainError>> {
+    const found = await this.links.findByTokenHash(sha256(token));
+    if (!found.ok) return found;
+    const link = found.value;
+    if (!link || link.revokedAt || link.expiresAt <= this.clock.now()) return fail(DomainError.notFound("Link", "unavailable"));
+    return ok({ tenantId: link.tenantId, formId: link.formId, linkId: link.id });
+  }
+}
+
+export class PublicCollectionFormHandler {
+  constructor(private readonly forms: ICollectionFormRepository) {}
+
+  /** The questions only: no mappings, no project, no counts. */
+  async handle(tenantId: TenantId, formId: string): Promise<Result<{ name: string; description?: string; fields: FormField[] }, DomainError>> {
+    const form = await loadForm(this.forms, formId, tenantId);
+    if (!form.ok || form.value.status !== "PUBLISHED") return fail(DomainError.notFound("Form", "unavailable"));
+    return ok({ name: form.value.name, ...(form.value.description ? { description: form.value.description } : {}), fields: [...form.value.definition.fields] });
+  }
+}
+
+export class PublicSubmitCollectionRecordHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock, private readonly files?: ICollectionFileRepository) {}
+
+  async handle(tenantId: TenantId, formId: string, linkId: string, input: PublicSubmitInput): Promise<Result<{ id: string; duplicate: boolean }, DomainError>> {
+    const form = await loadForm(this.forms, formId, tenantId);
+    if (!form.ok) return fail(DomainError.notFound("Form", "unavailable"));
+    const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "LINK", ...(input.submitterName ? { name: input.submitterName } : {}) }, input, this.files);
+    if (!stored.ok) return stored;
+    if (!stored.value.duplicate) {
+      await this.audit.record({ tenantId, actorId: `link:${linkId}`, eventType: "collection.record.submitted", entityType: "collection_record", entityId: stored.value.id, projectId: form.value.projectId });
+    }
+    return ok({ id: stored.value.id, duplicate: stored.value.duplicate });
+  }
+}
+
+export interface RecordTotalsDto {
+  indicatorId: string;
+  indicatorCode: string;
+  method: "COUNT" | "SUM";
+  periods: Array<{ periodId: string; label: string; value: string; recordCount: number }>;
+  outsidePeriods: number;
+  missingFigure: number;
+  duplicates: number;
+}
+
+/** What the accepted records add up to, per mapped indicator and period (read-only; nothing is written). */
+export class PreviewCollectionTotalsHandler {
+  constructor(private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly indicators: IIndicatorRepository, private readonly periods: IReportingPeriodRepository) {}
+
+  async compute(ctx: AuthenticatedContext, formId: string): Promise<Result<{ form: StoredCollectionForm; totals: Array<{ mapping: RecordMapping; code: string; aggregation: RecordAggregation; periods: Array<{ id: string; label: string }> }> }, DomainError>> {
+    if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see collected totals"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    const [accepted, indicators, periods] = await Promise.all([
+      this.records.listByForm(formId, ctx.tenant.tenantId, "ACCEPTED"),
+      this.indicators.findByProject(form.value.projectId, ctx.tenant.tenantId),
+      this.periods.findByProject(form.value.projectId, ctx.tenant.tenantId),
+    ]);
+    if (!accepted.ok) return accepted;
+    if (!indicators.ok) return indicators;
+    if (!periods.ok) return periods;
+    const codes = new Map(indicators.value.map((i) => [i.id, i.code]));
+    const spans = periods.value.map((p) => ({ id: p.id, start: toPlainDate(p.duration.start)!, end: toPlainDate(p.duration.end)!, label: p.duration.start.toISOString().slice(0, 10) + " – " + p.duration.end.toISOString().slice(0, 10) }));
+    const collected = accepted.value.map((r) => ({ id: r.id, submittedOn: r.submittedOn, answers: r.answers }));
+    return ok({
+      form: form.value,
+      periods: spans,
+      totals: form.value.mappings.map((mapping) => ({ mapping, code: codes.get(mapping.indicatorId) ?? mapping.indicatorId, aggregation: aggregateRecords(collected, mapping, spans), periods: spans })),
+    } as never);
+  }
+
+  async handle(ctx: AuthenticatedContext, formId: string): Promise<Result<RecordTotalsDto[], DomainError>> {
+    const computed = await this.compute(ctx, formId);
+    if (!computed.ok) return computed;
+    return ok(computed.value.totals.map((t) => ({
+      indicatorId: t.mapping.indicatorId, indicatorCode: t.code, method: t.mapping.method,
+      periods: t.aggregation.periods.map((p) => ({ periodId: p.periodId, label: t.periods.find((x) => x.id === p.periodId)?.label ?? p.periodId, value: p.value, recordCount: p.recordCount })),
+      outsidePeriods: t.aggregation.outsidePeriods.length, missingFigure: t.aggregation.missingFigure.length, duplicates: t.aggregation.duplicates.length,
+    })));
+  }
+}
+
+/** Writes the accepted records' totals for one period into the indicator grid as drafts (verified values are left as they are). */
+export class ApplyCollectionTotalsHandler {
+  constructor(
+    private readonly totals: PreviewCollectionTotalsHandler,
+    private readonly updates: IIndicatorUpdateRepository,
+    private readonly bulk: BulkUpsertIndicatorUpdatesHandler,
+  ) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string, input: ApplyRecordsInput): Promise<Result<{ saved: number; skipped: number; indicators: string[] }, DomainError>> {
+    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot enter indicator values"));
+    const computed = await this.totals.compute(ctx, formId);
+    if (!computed.ok) return computed;
+    const rows = [];
+    const codes: string[] = [];
+    for (const t of computed.value.totals) {
+      const forPeriod = t.aggregation.periods.find((p) => p.periodId === input.reportingPeriodId);
+      if (!forPeriod || forPeriod.value === "") continue;
+      const existing = await this.updates.findByIndicatorAndPeriod(t.mapping.indicatorId, input.reportingPeriodId, ctx.tenant.tenantId);
+      if (!existing.ok) return existing;
+      rows.push({
+        indicatorId: t.mapping.indicatorId, periodAchievement: forPeriod.value, cumulativeAchievement: existing.value?.cumulativeAchievement ?? "",
+        dataSource: `Collected through "${computed.value.form.name}" (${forPeriod.recordCount} record${forPeriod.recordCount === 1 ? "" : "s"})`,
+      });
+      codes.push(t.code);
+    }
+    if (rows.length === 0) return fail(DomainError.validation("No accepted records fall in this period, so there is nothing to enter."));
+    const saved = await this.bulk.handle(ctx, { reportingPeriodId: input.reportingPeriodId, updates: rows });
+    if (!saved.ok) return saved;
+    return ok({ saved: saved.value.saved, skipped: saved.value.skipped, indicators: codes });
+  }
+}
+
+// Re-exported so the web form can ask the same rule the server enforces.
+export { conditionHolds, visibleFields };
+
+export interface RecordImportPreview {
+  total: number;
+  valid: number;
+  invalid: number;
+  unknownColumns: string[];
+  missingColumns: string[];
+  rows: Array<{ rowNumber: number; problems: string[]; ignored: string[] }>;
+  /** The person's own sheet with a Problems column, only the rows to fix; absent when every row is fine. */
+  errorFile?: string;
+  /** How many records were stored (0 for a preview, or when nothing was imported). */
+  saved: number;
+}
+
+/** The form's own blank sheet: one column per question, named by its label. */
+export class GetCollectionSheetTemplateHandler {
+  constructor(private readonly forms: ICollectionFormRepository) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string): Promise<Result<{ fileName: string; text: string }, DomainError>> {
+    if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see forms"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    return ok({ fileName: `${form.value.name.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "form"}-template.csv`, text: recordSheetTemplate(form.value.definition) });
+  }
+}
+
+/**
+ * Records from a spreadsheet. A preview (`apply: false`) saves nothing; applying needs every row to be right, so one bad row
+ * blocks the sheet and the error file says which. Each row is stored under an id made from the sheet and its row number, so
+ * applying the same sheet twice stores it once.
+ */
+export class ImportCollectionRecordsHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string, input: { text: string; apply: boolean }): Promise<Result<RecordImportPreview, DomainError>> {
+    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    const sheet = parseRecordSheet(form.value.definition, input.text);
+    const preview: RecordImportPreview = {
+      total: sheet.rows.length, valid: sheet.valid, invalid: sheet.invalid, unknownColumns: sheet.unknownColumns, missingColumns: sheet.missingColumns,
+      rows: sheet.rows.filter((r) => r.problems.length > 0 || r.ignored.length > 0).map((r) => ({ rowNumber: r.rowNumber, problems: r.problems, ignored: r.ignored })),
+      ...(sheet.invalid > 0 ? { errorFile: recordSheetErrorFile(sheet) } : {}), saved: 0,
+    };
+    if (!input.apply) return ok(preview);
+    if (form.value.status !== "PUBLISHED") return fail(DomainError.conflict("This form is not open for answers."));
+    if (sheet.invalid > 0) return fail(DomainError.validation(`${sheet.invalid} row${sheet.invalid === 1 ? " has" : "s have"} a problem, so nothing was imported. Fix them in the error file and import again.`, { preview }));
+    if (sheet.rows.length === 0) return fail(DomainError.validation("The sheet has no rows."));
+
+    const sheetKey = createHash("sha256").update(formId + "\n" + input.text).digest("hex").slice(0, 24);
+    const now = this.clock.now();
+    let saved = 0;
+    for (const row of sheet.rows) {
+      const stored = await this.records.createOnce({
+        id: `imp-${sheetKey}-${row.rowNumber}`, tenantId: form.value.tenantId, formId, projectId: form.value.projectId, answers: row.answers,
+        submittedOn: toPlainDate(now)!, source: "USER", submittedById: ctx.tenant.userId, status: "PENDING", createdAt: now,
+      });
+      if (!stored.ok) return stored;
+      if (stored.value.created) saved += 1;
+    }
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.records.imported", entityType: "collection_form", entityId: formId, projectId: form.value.projectId, newValue: String(saved) });
+    return ok({ ...preview, saved });
+  }
+}
+
+/** What may be attached: photos and documents, small. The type is checked by what it says it is and by its first bytes. */
+export const COLLECTION_FILE_LIMIT_BYTES = 5 * 1024 * 1024;
+const FILE_SIGNATURES: Array<{ type: string; starts: number[] }> = [
+  { type: "image/jpeg", starts: [0xff, 0xd8, 0xff] },
+  { type: "image/png", starts: [0x89, 0x50, 0x4e, 0x47] },
+  { type: "application/pdf", starts: [0x25, 0x50, 0x44, 0x46] },
+];
+
+/** The type of an upload, from its bytes (never from what the sender claimed), or null when it is not an allowed kind. */
+export function collectionFileType(bytes: Buffer): string | null {
+  if (bytes.length > 12 && bytes.subarray(0, 4).toString() === "RIFF" && bytes.subarray(8, 12).toString() === "WEBP") return "image/webp";
+  return FILE_SIGNATURES.find((s) => s.starts.every((b, i) => bytes[i] === b))?.type ?? null;
+}
+
+async function storeCollectionFile(
+  files: ICollectionFileRepository, storage: IStorage, ids: IIdGenerator, clock: IClock, form: StoredCollectionForm,
+  who: { source: "USER" | "LINK"; userId?: string }, file: { name: string; bytes: Buffer },
+): Promise<Result<{ id: string; name: string }, DomainError>> {
+  if (form.status !== "PUBLISHED") return fail(DomainError.conflict("This form is not open for answers."));
+  if (!form.definition.fields.some((f) => f.type === "FILE")) return fail(DomainError.validation("This form does not ask for a file."));
+  if (file.bytes.length === 0) return fail(DomainError.validation("That file is empty."));
+  if (file.bytes.length > COLLECTION_FILE_LIMIT_BYTES) return fail(DomainError.validation("That file is larger than 5 MB."));
+  const contentType = collectionFileType(file.bytes);
+  if (!contentType) return fail(DomainError.validation("Attach a photo (JPEG, PNG or WebP) or a PDF."));
+  const id = ids.generate().replace(/[^A-Za-z0-9_-]/g, "");
+  const storageKey = `collection/${form.tenantId.toString()}/${form.id}/${id}`;
+  await storage.put({ key: storageKey, body: file.bytes, contentType });
+  const name = (file.name.split(/[\\/]/).pop() ?? "").replace(/[^\w.\- ]+/g, "_").slice(0, 120) || "file";
+  const saved = await files.create({ id, tenantId: form.tenantId, formId: form.id, fileName: name, contentType, size: file.bytes.length, storageKey, source: who.source, ...(who.userId ? { uploadedById: who.userId } : {}), createdAt: clock.now() });
+  if (!saved.ok) return saved;
+  return ok({ id, name });
+}
+
+export class UploadCollectionFileHandler {
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly files: ICollectionFileRepository, private readonly storage: IStorage, private readonly clock: IClock) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string, file: { name: string; bytes: Buffer }): Promise<Result<{ id: string; name: string }, DomainError>> {
+    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    return storeCollectionFile(this.files, this.storage, this.ids, this.clock, form.value, { source: "USER", userId: ctx.tenant.userId }, file);
+  }
+
+  /** From a collection link: the token already named the form. */
+  async handlePublic(tenantId: TenantId, formId: string, file: { name: string; bytes: Buffer }): Promise<Result<{ id: string; name: string }, DomainError>> {
+    const form = await loadForm(this.forms, formId, tenantId);
+    if (!form.ok) return fail(DomainError.notFound("Form", "unavailable"));
+    return storeCollectionFile(this.files, this.storage, this.ids, this.clock, form.value, { source: "LINK" }, file);
+  }
+}
+
+/** The bytes of an attached file, for the people who review records (never for the public). */
+export class GetCollectionFileHandler {
+  constructor(private readonly files: ICollectionFileRepository, private readonly storage: IStorage) {}
+
+  async handle(ctx: AuthenticatedContext, fileId: string): Promise<Result<{ fileName: string; contentType: string; bytes: Buffer }, DomainError>> {
+    if (!can(ctx, "indicator.update") && !can(ctx, "indicator.verify")) return fail(DomainError.forbidden("You cannot see collected files"));
+    const found: StoredCollectionFile | null | undefined = await this.files.findById(fileId, ctx.tenant.tenantId).then((r) => (r.ok ? r.value : null));
+    if (!found) return fail(DomainError.notFound("File", fileId));
+    return ok({ fileName: found.fileName, contentType: found.contentType, bytes: await this.storage.read(found.storageKey) });
+  }
+}
+
+export interface OfflinePackDto {
+  projectId: string;
+  generatedAt: string;
+  /** The forms that are open for answers, with their questions; nothing else about the project. */
+  forms: Array<{ id: string; name: string; description?: string; fields: FormField[] }>;
+  /** The live places, for place questions: an id, a name and the path that tells two of the same name apart. */
+  places: Array<{ id: string; name: string; path: string }>;
+  /**
+   * Pack v2 (Phase 44), present only when the handler was given the readers. The numbers the person may type (calculated ones left
+   * out), the project's reporting periods (so a day can be matched to one with no connection) and the person's OWN open planned
+   * items for the next 14 days. Still no recorded values, no people and no files.
+   */
+  indicators?: Array<{ id: string; code: string; name: string; type: string; disaggregationRequired: boolean; unit?: string; frequency?: string }>;
+  periods?: Array<{ id: string; reportType: string; startDate: string; endDate: string; status: string }>;
+  plan?: Array<{ id: string; title: string; plannedStart: string; plannedEnd: string; status: string; location?: string }>;
+}
+
+/** The readers pack v2 needs. All optional: a handler built without them answers exactly as pack v1 did. */
+export interface OfflinePackReaders {
+  indicators?: Pick<IIndicatorRepository, "findByProject">;
+  periods?: Pick<IReportingPeriodRepository, "findByProject">;
+  myWeek?: Pick<IMyWeekReader, "openPlannedFor">;
+}
+
+/** What lets someone take a project pack: any way of recording. The parts they get follow the permission for each. */
+const PACK_PERMISSIONS = ["indicator.update", "activity.create", "evidence.upload", "workplan.update-own"] as const;
+
+/** How far ahead the pack carries the person's own planned items. */
+export const PACK_PLAN_DAYS_AHEAD = 14;
+
+/**
+ * What a phone needs to fill a project's forms with no connection: the open forms and the places list. Only people who may submit
+ * records get it; it holds no records, no figures and no people, so a lost phone gives away the questions and place names only.
+ */
+export class GetOfflinePackHandler {
+  constructor(private readonly forms: ICollectionFormRepository, private readonly places: IPlaceRepository, private readonly clock: IClock, private readonly readers: OfflinePackReaders = {}) {}
+
+  async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<OfflinePackDto, DomainError>> {
+    // Anyone who can record something may take the pack; what is in it follows what they may record (below).
+    if (!PACK_PERMISSIONS.some((p) => can(ctx, p))) return fail(DomainError.forbidden("You cannot record on this project"));
+    const mayEnterNumbers = can(ctx, "indicator.update");
+    const [listed, all] = await Promise.all([this.forms.listByProject(projectId, ctx.tenant.tenantId), this.places.list(ctx.tenant.tenantId)]);
+    if (!listed.ok) return listed;
+    if (!all.ok) return all;
+    const registry = new PlaceRegistry(all.value.map(({ tenantId: _t, createdById: _c, archivedAt: _a, ...record }) => record));
+    const dto: OfflinePackDto = {
+      projectId,
+      generatedAt: this.clock.now().toISOString(),
+      // Forms and numbers are answered with the permission to enter numbers; without it they are simply not carried.
+      forms: !mayEnterNumbers ? [] : listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({ id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields] })),
+      places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id) })),
+    };
+
+    if (this.readers.indicators && mayEnterNumbers) {
+      const found = await this.readers.indicators.findByProject(projectId, ctx.tenant.tenantId);
+      if (!found.ok) return found;
+      dto.indicators = found.value
+        .filter((i) => !i.formula)
+        .map((i) => ({ id: i.id, code: i.code, name: i.name, type: String(i.type), disaggregationRequired: i.disaggregationRequired, ...(i.unit ? { unit: i.unit } : {}), ...(i.frequency ? { frequency: i.frequency } : {}) }));
+    }
+    if (this.readers.periods) {
+      const found = await this.readers.periods.findByProject(projectId, ctx.tenant.tenantId);
+      if (!found.ok) return found;
+      dto.periods = found.value.map((p) => ({ id: p.id, reportType: String(p.reportType), startDate: p.duration.start.toISOString().slice(0, 10), endDate: p.duration.end.toISOString().slice(0, 10), status: p.status.toString() }));
+    }
+    if (this.readers.myWeek && (can(ctx, "activity.create") || can(ctx, "workplan.update-own"))) {
+      const today = toPlainDate(this.clock.now())!;
+      const open = await this.readers.myWeek.openPlannedFor(ctx.tenant.userId, ctx.tenant.tenantId, addDays(today, PACK_PLAN_DAYS_AHEAD));
+      if (!open.ok) return open;
+      dto.plan = open.value
+        .filter(({ item }) => item.projectId === projectId)
+        .map(({ item }) => {
+          const location = item.snapshot().location;
+          return { id: item.id, title: item.title, plannedStart: item.plannedStart, plannedEnd: item.plannedEnd, status: item.status, ...(location ? { location } : {}) };
+        })
+        .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title));
+    }
+    return ok(dto);
+  }
+}
+
+/**
+ * "Create a form from this indicator" (Phase 36): drafts the usual questions for an indicator that is a total of records and
+ * saves them as a DRAFT through the ordinary save, so every form rule still applies. Nothing is published; a person reviews it.
+ */
+export class CreateFormFromIndicatorHandler {
+  constructor(private readonly indicators: IIndicatorRepository, private readonly save: Pick<SaveCollectionFormHandler, "handle">) {}
+
+  async handle(ctx: AuthenticatedContext, indicatorId: string): Promise<Result<{ id: string; notes: string[] }, DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot design forms"));
+    const found = await this.indicators.findById(indicatorId, ctx.tenant.tenantId);
+    if (!found.ok) return found;
+    if (!found.value) return fail(DomainError.notFound("Indicator", indicatorId));
+    const ind = found.value;
+    const draft = formFromIndicator({
+      id: ind.id, code: ind.code, name: ind.name, unit: ind.unit,
+      aggregation: effectiveIndicatorSemantics({ type: ind.type, name: ind.name, unit: ind.unit, semantics: ind.semantics }).aggregation,
+      isCalculated: Boolean(ind.formula),
+    });
+    if (!draft.ok) return fail(DomainError.validation(draft.reason));
+    const saved = await this.save.handle(ctx, { projectId: ind.projectId, name: draft.name, fields: draft.fields, mappings: draft.mappings } as SaveCollectionFormInput);
+    if (!saved.ok) return saved;
+    return ok({ id: saved.value.id, notes: draft.notes });
+  }
+}

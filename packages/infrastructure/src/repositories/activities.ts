@@ -5,12 +5,9 @@ import {
   DomainError,
   type Result,
   type ActivityStatus,
+  ok,
 } from "@donordesk/domain";
 import type { IActivityUpdateRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 export class PrismaActivityUpdateRepository implements IActivityUpdateRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -28,6 +25,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         location: a.location,
         outputId: a.outputId,
         logframeActivityId: a.logframeActivityId,
+        plannedActivityId: a.plannedActivityId ?? null,
         indicatorId: a.indicatorId,
         participantsTotal: a.participantsTotal,
         participantsMale: a.participantsMale,
@@ -60,6 +58,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         location: a.location,
         outputId: a.outputId,
         logframeActivityId: a.logframeActivityId,
+        plannedActivityId: a.plannedActivityId ?? null,
         indicatorId: a.indicatorId,
         participantsTotal: a.participantsTotal,
         participantsMale: a.participantsMale,
@@ -109,6 +108,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
     location: string | null;
     outputId: string | null;
     logframeActivityId: string | null;
+    plannedActivityId: string | null;
     indicatorId: string | null;
     participantsTotal: number | null;
     participantsMale: number | null;
@@ -141,6 +141,7 @@ export class PrismaActivityUpdateRepository implements IActivityUpdateRepository
         location: row.location ?? undefined,
         outputId: row.outputId ?? undefined,
         logframeActivityId: row.logframeActivityId ?? undefined,
+        plannedActivityId: row.plannedActivityId ?? undefined,
         indicatorId: row.indicatorId ?? undefined,
         participantsTotal: row.participantsTotal ?? undefined,
         participantsMale: row.participantsMale ?? undefined,

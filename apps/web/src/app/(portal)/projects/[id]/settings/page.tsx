@@ -1,6 +1,7 @@
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { getProject } from "@/lib/server/project-queries";
 import { InlineError } from "@/components/feedback/PageState";
+import { WorkPlanningToggle } from "@/features/workplan/presentation/WorkPlanningToggle";
 import { ProjectSettingsForm } from "@/features/projects/presentation/ProjectSettingsForm";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,9 @@ export default async function ProjectSettingsPage({ params }: { params: Promise<
         <div className="mt-4">
           <ProjectSettingsForm project={projectResult.value} />
         </div>
+      )}
+      {projectResult.ok && hasCapability(ctx, "org.manage") && (
+        <WorkPlanningToggle projectId={resolvedParams.id} initial={projectResult.value.showWorkPlanning !== false} />
       )}
     </div>
   );

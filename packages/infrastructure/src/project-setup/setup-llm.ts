@@ -1,0 +1,97 @@
+import { createHash } from "node:crypto";
+import { DomainError, err, ok, type TenantId, type Result } from "@donordesk/domain";
+import type { ILLMProvider } from "@donordesk/application";
+import type { ISetupLlm, SetupLlmCompletion } from "@donordesk/application";
+
+/**
+ * The narrow LLM facade the setup extractors see (Phase 36): tenant resolution, JSON mode and the timeout live here, so no
+ * extractor touches a provider. A stub provider or an unavailable one answers `null` — the feature is unavailable, never
+ * faked.
+ */
+export class TenantSetupLlm implements ISetupLlm {
+  /** `onProviderError` receives the provider's own words (server logs only); the person is shown a plain sentence. */
+  constructor(
+    private readonly llmFor: (tenantId: string, model?: string) => Promise<ILLMProvider | null>,
+    private readonly onProviderError?: (info: { tenantId: string; message: string }) => void,
+  ) {}
+
+  async available(tenantId: TenantId): Promise<boolean> {
+    return (await this.llmFor(tenantId.toString())) !== null;
+  }
+
+  async completeJson(input: { tenantId: TenantId; system: string; user: string; maxTokens: number; timeoutMs: number; model?: string | undefined; schema?: Record<string, unknown> | undefined }): Promise<Result<SetupLlmCompletion | null, DomainError>> {
+    let provider: ILLMProvider | null;
+    try {
+      provider = await this.llmFor(input.tenantId.toString(), input.model);
+    } catch (e) {
+      return err(new DomainError("POLICY_DENIED", e instanceof Error ? e.message : String(e)));
+    }
+    if (!provider) return ok(null);
+    try {
+      const reply = await provider.complete({
+        systemPrompt: input.system,
+        userPrompt: input.user,
+        jsonMode: true,
+        maxTokens: input.maxTokens,
+        temperature: 0,
+        timeoutMs: input.timeoutMs,
+        ...(input.schema ? { jsonSchema: input.schema } : {}),
+      });
+      return ok({ text: reply.text, ...(reply.truncated ? { truncated: true } : {}), model: provider.model, promptVersion: provider.promptVersion, ...(reply.usage ? { usage: { inputTokens: reply.usage.inputTokens, outputTokens: reply.usage.outputTokens } } : {}) });
+    } catch (e) {
+      const raw = e instanceof Error ? e.message : String(e);
+      this.onProviderError?.({ tenantId: input.tenantId.toString(), message: raw });
+      return err(plainProviderError(raw));
+    }
+  }
+}
+
+/**
+ * What a person is told when the AI service refuses: one plain sentence and the status code for support, never the provider's
+ * own text. A rate limit has its own code so the run stops asking instead of repeating the request for every area.
+ */
+export function plainProviderError(raw: string): DomainError {
+  const status = /\b(4\d\d|5\d\d)\b/.exec(raw)?.[1];
+  const code = status ? ` (error ${status})` : "";
+  // A rate limit and a used-up quota or credit balance are the same to the person: the service will not answer until
+  // something changes, so the run stops asking.
+  if (status === "429" || /credit balance is too low|insufficient (balance|credit|funds)|limit exhausted|quota/i.test(raw)) {
+    return new DomainError("RATE_LIMITED", `The AI service cannot be used right now: it is busy, or its usage limit or credit has run out${code}. Wait a few minutes and try again. If it keeps happening, an administrator should check the AI provider's billing or quota.`);
+  }
+  if (status === "401" || status === "403") {
+    return new DomainError("POLICY_DENIED", `The AI service did not accept this organisation's key${code}. An administrator should check the AI settings.`);
+  }
+  return new DomainError("BILLING_PROVIDER_UNAVAILABLE", `The AI service did not answer${code}. Try again in a few minutes.`);
+}
+
+/** The same LLM, asked to use another model for every call (the heavier model of the structural areas). */
+export function withModel(llm: ISetupLlm, model: string | undefined): ISetupLlm {
+  if (!model) return llm;
+  return { available: (t) => llm.available(t), completeJson: (input) => llm.completeJson({ ...input, model }) };
+}
+
+const REPLY_TTL_MS = 24 * 60 * 60 * 1000;
+const REPLY_LIMIT = 500;
+
+/**
+ * The same question about the same words gets the same answer (extraction audit C4): current Claude models accept no
+ * temperature, so reading a file twice could differ and pay twice. Replies are kept in this process for a day, per organisation
+ * and exact prompt; a restart forgets them. `fresh` asks again, and an incomplete or failed reply is never kept.
+ */
+export function withReplyMemory(llm: ISetupLlm, now: () => number = Date.now): ISetupLlm {
+  const replies = new Map<string, { at: number; reply: SetupLlmCompletion }>();
+  return {
+    available: (t) => llm.available(t),
+    completeJson: async (input) => {
+      const key = createHash("sha256").update(JSON.stringify([input.tenantId.toString(), input.model ?? "", input.variant ?? 0, input.system, input.user])).digest("hex");
+      const known = input.fresh ? undefined : replies.get(key);
+      if (known && now() - known.at < REPLY_TTL_MS) return ok({ ...known.reply, usage: { inputTokens: 0, outputTokens: 0 } });
+      const reply = await llm.completeJson(input);
+      if (reply.ok && reply.value && !reply.value.truncated && reply.value.text.trim()) {
+        if (replies.size >= REPLY_LIMIT) replies.delete(replies.keys().next().value!);
+        replies.set(key, { at: now(), reply: reply.value });
+      }
+      return reply;
+    },
+  };
+}

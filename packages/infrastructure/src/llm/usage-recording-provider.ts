@@ -1,3 +1,4 @@
+import { estimateCostUsd } from "@donordesk/domain";
 import type { IIdGenerator, ILLMProvider, ILlmUsageRepository, LLMCompletionInput, LLMCompletionResult } from "@donordesk/application";
 
 export interface UsageRecordingContext {
@@ -52,7 +53,7 @@ export class UsageRecordingLlmProvider implements ILLMProvider {
         inputTokens,
         outputTokens,
         totalTokens: inputTokens + outputTokens,
-        costUsd: 0,
+        costUsd: estimateCostUsd(this.model, inputTokens, outputTokens),
         latencyMs: Date.now() - startedAt,
         status,
         promptVersion: Number.parseInt(this.promptVersion, 10) || 1,

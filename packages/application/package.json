@@ -18,9 +18,8 @@
     "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
-    "@donordesk/domain": "workspace:*",
     "@donordesk/contracts": "workspace:*",
-    "zod": "3.23.8"
+    "@donordesk/domain": "workspace:*"
   },
   "devDependencies": {
     "typescript": "5.6.3"

@@ -12,12 +12,14 @@ Two budgets:
     Default 200s (2 x 90s + backoff). The API's HTTP timeout is derived from
     these (`HttpWorkerClient`), so the worker always answers first.
 """
+
 from __future__ import annotations
 
 import os
 import threading
 import time
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -56,9 +58,7 @@ class TotalBudgetTracker:
 
     def check(self) -> None:
         if self.elapsed_ms() >= self._total_ms:
-            raise TotalBudgetExceededError(
-                f"section pipeline exceeded total budget of {self._total_ms}ms"
-            )
+            raise TotalBudgetExceededError(f"section pipeline exceeded total budget of {self._total_ms}ms")
 
 
 def run_with_section_timeout(
@@ -109,9 +109,7 @@ def run_with_section_timeout(
     thread.join(deadline_s)
     elapsed_ms = int((time.time() - start) * 1000)
     if thread.is_alive():
-        raise SectionTimeoutError(
-            f"section call exceeded {DRAFT_TIMEOUT_MS}ms (abandoned in-flight)"
-        )
+        raise SectionTimeoutError(f"section call exceeded {DRAFT_TIMEOUT_MS}ms (abandoned in-flight)")
     if "value" in error:
         raise error["value"]
     content, telemetry = result["value"]

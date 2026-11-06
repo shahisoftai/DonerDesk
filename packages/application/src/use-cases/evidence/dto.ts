@@ -24,8 +24,14 @@ export interface EvidenceDto {
   verificationStatus: string;
   confidentialityLevel: string;
   notes?: string;
+  /** Why a reviewer asked for a correction or rejected the file. */
+  reviewNote?: string;
   aiSummary?: string;
   extractedText?: string;
+  /** Whether the file's words were read: EXTRACTED, EMPTY, FAILED, UNSUPPORTED; absent while not attempted. */
+  textExtractionStatus?: string;
+  /** What to do about it, when the words could not be read. */
+  textExtractionNote?: string;
   aiSuggestedTags: unknown[];
   sensitivityWarning?: string;
 }
@@ -54,8 +60,11 @@ export function toEvidenceDto(e: EvidenceFile): EvidenceDto {
     verificationStatus: e.verificationStatus,
     confidentialityLevel: e.confidentialityLevel,
     notes: e.notes,
+    reviewNote: e.reviewNote,
     aiSummary: e.aiSummary,
     extractedText: e.extractedText,
+    textExtractionStatus: e.textExtractionStatus,
+    textExtractionNote: e.textExtractionNote,
     aiSuggestedTags: e.aiSuggestedTags,
     sensitivityWarning: e.sensitivityWarning,
   };

@@ -9,12 +9,9 @@ import {
   TenantId,
   DomainError,
   type Result,
+  ok,
 } from "@donordesk/domain";
 import type { IProjectRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function err<T = never>(e: DomainError): Result<T, DomainError> {
   return { ok: false, error: e };
@@ -51,6 +48,8 @@ export class PrismaProjectRepository implements IProjectRepository {
           status: p.status,
           archivedAt: p.archivedAt,
           isDemo: p.isDemo,
+          showWorkPlanning: p.showWorkPlanning,
+          timeZone: p.timeZone ?? null,
         },
       });
       return ok(p);
@@ -85,6 +84,8 @@ export class PrismaProjectRepository implements IProjectRepository {
           reportingOfficerId: p.reportingOfficerId,
           status: p.status,
           archivedAt: p.archivedAt,
+          showWorkPlanning: p.showWorkPlanning,
+          timeZone: p.timeZone ?? null,
         },
       });
       return ok(p);
@@ -129,6 +130,8 @@ export class PrismaProjectRepository implements IProjectRepository {
     status: string;
     archivedAt: Date | null;
     isDemo: boolean;
+    showWorkPlanning: boolean;
+    timeZone?: string | null;
     createdAt: Date;
   }): Project {
     const props: ProjectProps = {
@@ -155,6 +158,8 @@ export class PrismaProjectRepository implements IProjectRepository {
       status: row.status as ProjectProps["status"],
       archivedAt: row.archivedAt ?? undefined,
       isDemo: row.isDemo,
+      showWorkPlanning: row.showWorkPlanning,
+      ...(row.timeZone ? { timeZone: row.timeZone } : {}),
     };
     return Project.rehydrate({
       id: row.id,

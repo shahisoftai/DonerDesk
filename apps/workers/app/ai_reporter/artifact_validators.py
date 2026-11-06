@@ -16,6 +16,7 @@ Results separate three severities:
 Parity with the TS mirror is verified by `test_ai_reporter.py` and
 `packages/infrastructure/test/artifact-validators.test.mjs`.
 """
+
 from __future__ import annotations
 
 import re
@@ -23,8 +24,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from . import donor_voice
-from .grounding import allowed_numbers, normalise_number, ungrounded_numbers
 from .artifact_builder import DELTA_KINDS
+from .grounding import allowed_numbers, normalise_number, ungrounded_numbers
 from .models import GeneratedSection, SectionDraftRequest
 from .outline import section_kind
 from .writer_contract import BANNED_PHRASES, WORKFLOW_VOCABULARY
@@ -111,7 +112,8 @@ def assert_numbers_grounded(section: GeneratedSection, allowed: set[str]) -> Val
             issues=(
                 "UNGROUNDED_NUMBER: "
                 + ", ".join(bad[:8])
-                + " do not appear in the verified inputs; quote only recorded figures (percent of target is the only derived figure allowed)",
+                + " do not appear in the verified inputs; quote only recorded figures (percent of target is the only "
+                "derived figure allowed)",
             ),
         )
     return _ok()
@@ -150,7 +152,10 @@ def assert_chart_data_grounding(section: GeneratedSection, verified_numbers: set
                 if normalise_number(token) not in allowed:
                     return ValidationResult(
                         ok=False,
-                        issues=(f"CHART_UNGROUNDED: series '{series.get('name')}' data[{j}]={point} not in verified numbers",),
+                        issues=(
+                            f"CHART_UNGROUNDED: series '{series.get('name')}' data[{j}]={point} not in verified "
+                            f"numbers",
+                        ),
                     )
     return _ok()
 
@@ -206,7 +211,9 @@ def assert_delta_from_prior(
     if not (prior_narrative_present and comparable_finding_present):
         return _ok()
     if section.deltaFromPrior is None:
-        return ValidationResult(ok=False, issues=("MISSING_DELTA: deltaFromPrior is required when prior narrative exists",))
+        return ValidationResult(
+            ok=False, issues=("MISSING_DELTA: deltaFromPrior is required when prior narrative exists",)
+        )
     return _ok()
 
 
@@ -217,7 +224,9 @@ def assert_word_count(section: GeneratedSection, req: SectionDraftRequest) -> Va
     issues: list[str] = []
     warnings: list[str] = []
     if req.section.minWords is not None and count < req.section.minWords:
-        warnings.append(f"WORD_LIMIT: {count} words < minWords={req.section.minWords} (add only grounded detail; never pad)")
+        warnings.append(
+            f"WORD_LIMIT: {count} words < minWords={req.section.minWords} (add only grounded detail; never pad)"
+        )
     if req.section.maxWords is not None and count > req.section.maxWords:
         issues.append(f"WORD_LIMIT: {count} words > maxWords={req.section.maxWords}")
     return ValidationResult(ok=not issues, issues=tuple(issues), warnings=tuple(warnings))
@@ -260,7 +269,9 @@ def assert_repetition(section: GeneratedSection, prior_summary: list[str] | None
             jaccard = len(ns_tokens & ps_tokens) / max(1, len(ns_tokens | ps_tokens))
             contained = len(ns_tri & _trigrams(ps_list)) / max(1, len(ns_tri)) if ns_tri else 0.0
             if jaccard >= 0.7 or contained >= 0.6:
-                return ValidationResult(ok=False, issues=(f"DUPLICATE: sentence restates a sibling section: \"{ns[:90]}\"",))
+                return ValidationResult(
+                    ok=False, issues=(f'DUPLICATE: sentence restates a sibling section: "{ns[:90]}"',)
+                )
     return _ok()
 
 
@@ -288,8 +299,64 @@ def assert_required_table_present(section: GeneratedSection, req: SectionDraftRe
         return _ok()
     rows = _MARKDOWN_TABLE_ROW_RE.findall(section.content or "")
     if len(rows) < 2:
-        return ValidationResult(ok=False, issues=("MISSING_TABLE: annex section requires a markdown table (header + rows) but content contains prose only",))
+        return ValidationResult(
+            ok=False,
+            issues=(
+                "MISSING_TABLE: annex section requires a markdown table (header + rows) but content contains prose "
+                "only",
+            ),
+        )
     return _ok()
+
+
+_MD_SEPARATOR_RE = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
+
+
+def _markdown_table_headers(content: str) -> list[set[str]]:
+    """The header cells (lower-cased) of every markdown table in `content`: a pipe row followed by a separator row."""
+    lines = (content or "").splitlines()
+    headers: list[set[str]] = []
+    for i in range(len(lines) - 1):
+        if _MARKDOWN_TABLE_ROW_RE.match(lines[i]) and _MD_SEPARATOR_RE.match(lines[i + 1]):
+            cells = [c.strip().lower() for c in lines[i].strip().strip("|").split("|")]
+            headers.append({c for c in cells if c})
+    return headers
+
+
+def missing_required_tables(section: GeneratedSection, req: SectionDraftRequest) -> list[str]:
+    """Titles of the donor-required tables (`requiredTables`) that no markdown table in the section satisfies.
+
+    A table satisfies a requirement when its header row holds every required column (case-insensitive, any order,
+    extra columns allowed). A requirement with no columns is satisfied by any table.
+    """
+    required = req.section.requiredTables or []
+    if not required:
+        return []
+    found = _markdown_table_headers(section.content or "")
+    missing: list[str] = []
+    for table in required:
+        wanted = {c.strip().lower() for c in table.columns if c.strip()}
+        if not any(wanted <= header for header in found):
+            missing.append(table.title)
+    return missing
+
+
+def assert_required_tables_present(section: GeneratedSection, req: SectionDraftRequest) -> ValidationResult:
+    """Every donor-required table is in the section. Reported as a warning, not an issue: the tables of a report are
+    built deterministically from verified findings, so the writer cannot add a table of its own and a retry would not
+    help; the warning lets the reviewer see which donor table is still missing."""
+    missing = missing_required_tables(section, req)
+    if not missing:
+        return _ok()
+    return ValidationResult(
+        ok=True,
+        issues=(),
+        warnings=tuple(
+            f'MISSING_REQUIRED_TABLE: the donor asks for the table "{title}" '
+            "and no table in this section has its columns"
+            for title in missing
+        ),
+    )
 
 
 def find_banned_phrases(text: str) -> list[str]:
@@ -312,11 +379,15 @@ _INTERNAL_ID_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{16,}\b", re.I),
     re.compile(r"\b[\w-]+\.(?:pdf|docx?|xlsx?|csv|pptx?|jpe?g|png)\b", re.I),
     re.compile(r"\bevidence ids?\b", re.I),
-    # File names quoted without their extension: numbered stems with an activity code ("01-A1.3-attendance") and snake_case stems.
+    # File names quoted without their extension: numbered stems with an activity code
+    # ("01-A1.3-attendance") and snake_case stems.
     re.compile(r"\b\d{1,3}-[A-Z]\d+(?:\.\d+)*-[a-z][\w-]*\b"),
     re.compile(r"\b[A-Za-z0-9]+(?:_[A-Za-z0-9]+)+\b"),
-    # Hyphenated document stems without a number ("sit-flood-photo", "water-quality-log"): at least three words ending in a document noun.
-    re.compile(r"\b[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*){1,}-(?:photo|attendance|register|certificate|log|list|assessment|minutes|checklist|extract|audit|summary|file|scan)\b"),
+    # Hyphenated document stems without a number ("sit-flood-photo", "water-quality-log"):
+    # at least three words ending in a document noun.
+    re.compile(
+        r"\b[a-z][a-z0-9]*(?:-[a-z][a-z0-9]*){1,}-(?:photo|attendance|register|certificate|log|list|assessment|minutes|checklist|extract|audit|summary|file|scan)\b"
+    ),
 )
 
 
@@ -337,7 +408,10 @@ def assert_no_internal_ids(section: GeneratedSection) -> ValidationResult:
     if hits:
         return ValidationResult(
             ok=False,
-            issues=(f"INTERNAL_ID: {', '.join(hits[:3])} must not appear in the report; describe the source in words instead",),
+            issues=(
+                f"INTERNAL_ID: {', '.join(hits[:3])} must not appear in the report; describe the source in words "
+                f"instead",
+            ),
         )
     return _ok()
 
@@ -360,9 +434,11 @@ def assert_banned_phrases(section: GeneratedSection) -> ValidationResult:
 def assert_artifact_ordering(section: GeneratedSection) -> ValidationResult:
     """Ordinals strictly increasing, no gaps > 1."""
     ordinals = [int(art.get("ordinal", 0)) for art in _artifacts_as_dicts(section)]
-    for prev, curr in zip(ordinals, ordinals[1:]):
+    for prev, curr in zip(ordinals, ordinals[1:], strict=False):
         if curr <= prev:
-            return ValidationResult(ok=False, issues=(f"ARTIFACT_ORDER: ordinal not strictly increasing ({prev}->{curr})",))
+            return ValidationResult(
+                ok=False, issues=(f"ARTIFACT_ORDER: ordinal not strictly increasing ({prev}->{curr})",)
+            )
         if curr - prev > 1:
             return ValidationResult(ok=False, issues=(f"ARTIFACT_ORDER: ordinal gap > 1 ({prev}->{curr})",))
     return _ok()
@@ -408,6 +484,7 @@ def run_all(
         assert_no_internal_ids(section),
         assert_artifact_ordering(section),
         assert_required_table_present(section, req),
+        assert_required_tables_present(section, req),
         assert_donor_voice(section),
     ]
     issues: list[str] = []

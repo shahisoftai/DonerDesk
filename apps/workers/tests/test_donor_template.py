@@ -1,5 +1,6 @@
 """Tests for donor-template rendering (docxtpl) — placeholder insertion,
 rendering, and the FastAPI routes. Runs without an LLM."""
+
 from __future__ import annotations
 
 import base64
@@ -82,7 +83,9 @@ def test_insert_placeholders_uses_title_style_as_heading_index_zero() -> None:
 
 def test_render_substitutes_placeholder_with_content() -> None:
     original = _fixture_docx()
-    templated = insert_placeholders(original, [RegionRef(id="h-0001", kind="HEADING", order=1, placeholderKey="region_h_0001")])
+    templated = insert_placeholders(
+        original, [RegionRef(id="h-0001", kind="HEADING", order=1, placeholderKey="region_h_0001")]
+    )
     rendered = render(templated, {"region_h_0001": "Real generated content for this section."})
     doc = Document(BytesIO(rendered))
     texts = [p.text for p in doc.paragraphs]
@@ -118,7 +121,9 @@ def test_insert_placeholders_route_end_to_end(client) -> None:
 
 def test_render_route_end_to_end(client) -> None:
     original = _fixture_docx()
-    templated = insert_placeholders(original, [RegionRef(id="h-0001", kind="HEADING", order=1, placeholderKey="region_h_0001")])
+    templated = insert_placeholders(
+        original, [RegionRef(id="h-0001", kind="HEADING", order=1, placeholderKey="region_h_0001")]
+    )
     res = client.post(
         "/v1/donor-template/render",
         headers=AUTH,
@@ -197,7 +202,9 @@ def test_parse_is_total_on_odd_input() -> None:
 
 
 def _render_rich(content: str) -> Document:
-    templated = insert_placeholders(_fixture_docx(), [RegionRef(id="h-0001", kind="HEADING", order=1, placeholderKey="region_h_0001")])
+    templated = insert_placeholders(
+        _fixture_docx(), [RegionRef(id="h-0001", kind="HEADING", order=1, placeholderKey="region_h_0001")]
+    )
     return Document(BytesIO(render(templated, {"region_h_0001": content})))
 
 
@@ -234,7 +241,9 @@ def test_render_places_blocks_where_the_placeholder_was() -> None:
 
 
 def test_render_falls_back_when_template_lacks_list_styles() -> None:
-    templated = insert_placeholders(_fixture_docx(), [RegionRef(id="h-0001", kind="HEADING", order=1, placeholderKey="region_h_0001")])
+    templated = insert_placeholders(
+        _fixture_docx(), [RegionRef(id="h-0001", kind="HEADING", order=1, placeholderKey="region_h_0001")]
+    )
     tpl_doc = Document(BytesIO(templated))
     # Simulate a donor template without list styles by renaming them.
     for name in ("List Bullet", "List Number", "List Bullet 2"):

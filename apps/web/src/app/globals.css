@@ -3,35 +3,76 @@
 @tailwind utilities;
 
 :root {
-  --background: #eef2f8;
+  --background: #f1f4f1;
   --surface: rgba(255, 255, 255, 0.8);
   --surface-strong: #ffffff;
   --surface-muted: rgba(15, 23, 42, 0.04);
   --border: rgba(15, 23, 42, 0.1);
   --border-strong: rgba(15, 23, 42, 0.18);
-  --text: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --brand-glow: rgba(12, 141, 230, 0.16);
-  --cyan-glow: rgba(34, 211, 238, 0.12);
+  --text: #0e1a16;
+  --text-secondary: #3d4f48;
+  --text-muted: #586a62;
+  --brand-glow: rgba(242, 181, 68, 0.16);
+  --cyan-glow: rgba(63, 193, 166, 0.12);
   --grid-line: rgba(15, 23, 42, 0.05);
-  --ring: rgba(12, 141, 230, 0.35);
+  --ring: rgba(242, 181, 68, 0.35);
+
+  /* Data-surface tokens: the table is features/design/domain/tokens.ts (a test keeps them equal). */
+  --tile-bg: #ffffff;
+  --tile-border: #d8e0db;
+  --tile-header-bg: #f4f7f5;
+  --tile-title: #0e1a16;
+  --tile-meta: #4f5f58;
+  --badge-bg: #8a5610;
+  --badge-text: #ffffff;
+  --signal-good: #15803d;
+  --signal-warn: #b45309;
+  --signal-bad: #b91c1c;
+  --signal-none: #5b6c64;
+  --viz-1: #0072B2;
+  --viz-2: #C25400;
+  --viz-3: #00855F;
+  --viz-4: #A8467F;
+  --viz-5: #9A6A00;
+  --viz-6: #2B7FB8;
+  --viz-7: #6A4C93;
+  --viz-8: #4D4D4D;
 }
 
 .dark {
-  --background: #020617;
+  --background: #0b1614;
   --surface: rgba(255, 255, 255, 0.04);
   --surface-strong: rgba(255, 255, 255, 0.07);
   --surface-muted: rgba(255, 255, 255, 0.05);
   --border: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.16);
   --text: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --brand-glow: rgba(12, 141, 230, 0.32);
-  --cyan-glow: rgba(34, 211, 238, 0.2);
+  --text-secondary: #a3b5ad;
+  --text-muted: #7d918a;
+  --brand-glow: rgba(242, 181, 68, 0.32);
+  --cyan-glow: rgba(63, 193, 166, 0.2);
   --grid-line: rgba(255, 255, 255, 0.04);
-  --ring: rgba(34, 211, 238, 0.4);
+  --ring: rgba(63, 193, 166, 0.4);
+
+  --tile-bg: #12231f;
+  --tile-border: #2a3a35;
+  --tile-header-bg: #0f1d1a;
+  --tile-title: #f1f5f9;
+  --tile-meta: #a3b5ad;
+  --badge-bg: #f2b544;
+  --badge-text: #0b1614;
+  --signal-good: #4ade80;
+  --signal-warn: #fbbf24;
+  --signal-bad: #f87171;
+  --signal-none: #9fb1a9;
+  --viz-1: #56B4E9;
+  --viz-2: #F28E2B;
+  --viz-3: #3DCCA0;
+  --viz-4: #E58FC0;
+  --viz-5: #F2C94C;
+  --viz-6: #8FC1EA;
+  --viz-7: #B39DDB;
+  --viz-8: #C9D1CE;
 }
 
 @layer base {
@@ -141,8 +182,8 @@
 
 .landing-tech {
   background-image:
-    radial-gradient(circle at 50% 12%, rgba(14, 165, 233, 0.08), transparent 30%),
-    linear-gradient(180deg, #020617 0%, #050b1b 48%, #020617 100%);
+    radial-gradient(circle at 50% 12%, rgba(242, 181, 68, 0.08), transparent 30%),
+    linear-gradient(180deg, #0b1614 0%, #10221e 48%, #0b1614 100%);
 }
 
 .tech-orb {
@@ -165,13 +206,13 @@
 .tech-orb-left {
   left: -12rem;
   top: 18rem;
-  color: #0c8de6;
+  color: #f2b544;
 }
 
 .tech-orb-right {
   right: -11rem;
   top: 6rem;
-  color: #22d3ee;
+  color: #3fc1a6;
   animation-delay: -4s;
 }
 
@@ -191,8 +232,8 @@
   top: 0;
   height: 1px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(34,211,238,0.8), transparent);
-  box-shadow: 0 0 18px rgba(34,211,238,0.5);
+  background: linear-gradient(90deg, transparent, rgba(63, 193, 166,0.8), transparent);
+  box-shadow: 0 0 18px rgba(63, 193, 166,0.5);
   animation: tech-scan 8s linear infinite;
 }
 
@@ -202,7 +243,7 @@
   inset: 0;
   pointer-events: none;
   opacity: 0;
-  background: linear-gradient(120deg, transparent 20%, rgba(34,211,238,0.08), transparent 80%);
+  background: linear-gradient(120deg, transparent 20%, rgba(63, 193, 166,0.08), transparent 80%);
   transition: opacity 300ms ease;
 }
 
@@ -279,7 +320,9 @@
 }
 
 @layer components {
-  .btn {
+  /* `btn-primary` is the name call sites use for the primary action; it was never defined, so those buttons rendered as plain text. */
+  .btn,
+  .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60;
   }
   .btn-secondary {
@@ -425,4 +468,74 @@
   .claim-mark[data-claim-focused="true"] {
     @apply ring-2 ring-warning-500/60;
   }
+}
+
+/* Printing a dashboard (Phase 34.7): only the page content, charts never split across pages. */
+@media print {
+  header[role="banner"], nav, aside, [data-no-print], #main-content ~ * { display: none !important; }
+  #main-content { padding: 0 !important; }
+  [data-dashboard-canvas] { break-inside: avoid; }
+  body { background: #fff !important; }
+}
+
+/* Project setup wizard slides (Phase 36.6). The global reduced-motion rule above switches all of these off. */
+@keyframes setup-slide-in {
+  from { opacity: 0; transform: translate3d(32px, 0, 0) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes setup-slide-in-back {
+  from { opacity: 0; transform: translate3d(-32px, 0, 0) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+.setup-slide { animation: setup-slide-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.setup-slide-back { animation-name: setup-slide-in-back; }
+@keyframes setup-orb {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(14px, -18px, 0) scale(1.1); }
+}
+.setup-orb { animation: setup-orb 9s ease-in-out infinite; }
+@keyframes setup-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  70% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.setup-pop { animation: setup-pop 0.5s ease-out both; }
+@keyframes setup-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.setup-shimmer {
+  background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  background-size: 200% 100%;
+  animation: setup-shimmer 1.6s linear infinite;
+}
+@keyframes setup-confetti {
+  0% { transform: translate3d(0, -24px, 0) rotate(0deg); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: translate3d(var(--dx, 0px), 300px, 0) rotate(540deg); opacity: 0; }
+}
+.setup-confetti { animation: setup-confetti 2.8s ease-in both; }
+
+/* Reading popup (project setup wizard): entrance, a scan line over the document, a pop on each finished part, a shimmer on the bar. */
+@keyframes pcw-pop-in { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+@keyframes pcw-scan { from { top: 6%; } to { top: 92%; } }
+@keyframes pcw-check-pop { 0% { transform: scale(0); } 70% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes pcw-shimmer { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+.pcw-pop-in { animation: pcw-pop-in 0.35s ease-out both; }
+.pcw-scan { animation: pcw-scan 1.5s ease-in-out infinite alternate; }
+.pcw-check-pop { animation: pcw-check-pop 0.35s ease-out both; }
+.pcw-bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent); animation: pcw-shimmer 1.4s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .pcw-pop-in, .pcw-scan, .pcw-check-pop, .pcw-bar::after { animation: none; }
+}
+
+/* The floating "saved on this device" banner sits above the phone's bottom bar when that bar is shown (Phase 44). */
+@media (max-width: 1023px) {
+  html[data-phone-bar="1"] .outbox-banner { bottom: 72px; }
+}
+
+/* A finger needs 44 px (Phase 44): on a touch screen every button style and the header's controls are at least that big. A mouse keeps the compact sizes. */
+@media (pointer: coarse) {
+  .btn, .btn-primary, .btn-secondary, .btn-danger { min-height: 44px; }
+  header button, header summary, header select, header > div a { min-height: 44px; min-width: 44px; }
 }

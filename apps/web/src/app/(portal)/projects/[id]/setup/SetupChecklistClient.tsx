@@ -65,7 +65,7 @@ export function SetupChecklistClient({
           ? "Not required for your storage provider."
           : snapshot.workspace.provisionStatus === "READY"
             ? "Folder tree ready."
-            : "Being provisioned in the background.",
+            : "Being set up in the background. If this has not finished after a few minutes, press “Retry workspace” below.",
     },
     {
       key: "template",
@@ -153,7 +153,6 @@ export function SetupChecklistClient({
             {blockerItems.map((b) => (
               <li key={b.code} className="flex items-start justify-between gap-3 text-sm">
                 <div>
-                  <span className="font-mono text-xs text-slate-500">{b.code}</span>
                   <p className="text-slate-700 dark:text-slate-200">{b.label}</p>
                 </div>
                 {b.href && canManage && <Link className="btn-secondary text-sm shrink-0" href={blockerHref(projectId, b.href)}>Fix</Link>}

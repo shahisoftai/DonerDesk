@@ -30,6 +30,8 @@ export const CHECKLIST_KIND: Readonly<Record<ChecklistItemType, ChecklistKind>> 
   PRIOR_REPORT_LINKED: "STATE",
   FINANCE_FIGURES_PROVIDED: "STATE",
   INDICATOR_SEMANTICS_UNREVIEWED: "STATE",
+  // Closes when the story records an explanation for the variance (or the indicator is no longer off target).
+  VARIANCE_UNEXPLAINED: "STATE",
 };
 
 export function isAttestation(type: ChecklistItemType): boolean {
@@ -56,6 +58,10 @@ export interface ChecklistFacts {
   cumulativeGapIds?: ReadonlySet<string>;
   /** Whether the comparable earlier report is finished or absent; undefined when not evaluated. */
   priorReportLinked?: boolean;
+  /** Indicators of a closing report that finished unfavourably far from target; undefined when not evaluated. */
+  offTargetIndicatorIds?: ReadonlySet<string>;
+  /** Whether the report's story records an explanation for variances; undefined when not evaluated. */
+  varianceExplained?: boolean;
 }
 
 export interface ChecklistStateRule {
@@ -126,6 +132,14 @@ export const CHECKLIST_STATE_RULES: ReadonlyArray<ChecklistStateRule> = [
     type: "PRIOR_REPORT_LINKED",
     isSatisfied: (f) => f.priorReportLinked,
     reason: "the earlier report is finished",
+  },
+  {
+    type: "VARIANCE_UNEXPLAINED",
+    isSatisfied: (f, entityId) => {
+      if (f.offTargetIndicatorIds === undefined || f.varianceExplained === undefined) return undefined;
+      return f.varianceExplained || !entityId || !f.offTargetIndicatorIds.has(entityId);
+    },
+    reason: "the shortfall is explained in the report's story",
   },
 ];
 

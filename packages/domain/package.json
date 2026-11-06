@@ -10,6 +10,38 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./contexts/finance/register-sheet.js": {
+      "types": "./dist/contexts/finance/register-sheet.d.ts",
+      "import": "./dist/contexts/finance/register-sheet.js"
+    },
+    "./core/slugify.js": {
+      "types": "./dist/core/slugify.d.ts",
+      "import": "./dist/core/slugify.js"
+    },
+    "./contexts/reporting/pack-authoring.js": {
+      "types": "./dist/contexts/reporting/pack-authoring.d.ts",
+      "import": "./dist/contexts/reporting/pack-authoring.js"
+    },
+    "./contexts/tasks/comment-thread.js": {
+      "types": "./dist/contexts/tasks/comment-thread.d.ts",
+      "import": "./dist/contexts/tasks/comment-thread.js"
+    },
+    "./contexts/logframe/target-schedule.js": {
+      "types": "./dist/contexts/logframe/target-schedule.d.ts",
+      "import": "./dist/contexts/logframe/target-schedule.js"
+    },
+    "./contexts/reporting/data-sheet.js": {
+      "types": "./dist/contexts/reporting/data-sheet.d.ts",
+      "import": "./dist/contexts/reporting/data-sheet.js"
+    },
+    "./contexts/reporting/data-tables.js": {
+      "types": "./dist/contexts/reporting/data-tables.d.ts",
+      "import": "./dist/contexts/reporting/data-tables.js"
+    },
+    "./contexts/reporting/data-charts.js": {
+      "types": "./dist/contexts/reporting/data-charts.d.ts",
+      "import": "./dist/contexts/reporting/data-charts.js"
+    },
     "./contexts/reporting/chart-config.js": {
       "types": "./dist/contexts/reporting/chart-config.d.ts",
       "import": "./dist/contexts/reporting/chart-config.js"
@@ -66,9 +98,21 @@
       "types": "./dist/contexts/reporting/period-for-date.d.ts",
       "import": "./dist/contexts/reporting/period-for-date.js"
     },
+    "./contexts/workplan/plan-status-transitions.js": {
+      "types": "./dist/contexts/workplan/plan-status-transitions.d.ts",
+      "import": "./dist/contexts/workplan/plan-status-transitions.js"
+    },
+    "./contexts/reporting/period-for-date-proposal.js": {
+      "types": "./dist/contexts/reporting/period-for-date-proposal.d.ts",
+      "import": "./dist/contexts/reporting/period-for-date-proposal.js"
+    },
     "./contexts/activities/activity-narrative.js": {
       "types": "./dist/contexts/activities/activity-narrative.d.ts",
       "import": "./dist/contexts/activities/activity-narrative.js"
+    },
+    "./contexts/logframe/quick-entry.js": {
+      "types": "./dist/contexts/logframe/quick-entry.d.ts",
+      "import": "./dist/contexts/logframe/quick-entry.js"
     },
     "./contexts/logframe/indicator-entry-suggestions.js": {
       "types": "./dist/contexts/logframe/indicator-entry-suggestions.d.ts",
@@ -85,6 +129,118 @@
     "./contexts/templates/template-diff.js": {
       "types": "./dist/contexts/templates/template-diff.d.ts",
       "import": "./dist/contexts/templates/template-diff.js"
+    },
+    "./contexts/workplan/index.js": {
+      "types": "./dist/contexts/workplan/index.d.ts",
+      "import": "./dist/contexts/workplan/index.js"
+    },
+    "./contexts/places/index.js": {
+      "types": "./dist/contexts/places/index.d.ts",
+      "import": "./dist/contexts/places/index.js"
+    },
+    "./contexts/integrations/index.js": {
+      "types": "./dist/contexts/integrations/index.d.ts",
+      "import": "./dist/contexts/integrations/index.js"
+    },
+    "./contexts/infographics/index.js": {
+      "types": "./dist/contexts/infographics/index.d.ts",
+      "import": "./dist/contexts/infographics/index.js"
+    },
+    "./core/exhaustive.js": {
+      "types": "./dist/core/exhaustive.d.ts",
+      "import": "./dist/core/exhaustive.js"
+    },
+    "./contexts/tasks/index.js": {
+      "types": "./dist/contexts/tasks/index.d.ts",
+      "import": "./dist/contexts/tasks/index.js"
+    },
+    "./policies/permissions.js": {
+      "types": "./dist/policies/permissions.d.ts",
+      "import": "./dist/policies/permissions.js"
+    },
+    "./contexts/risks/index.js": {
+      "types": "./dist/contexts/risks/index.d.ts",
+      "import": "./dist/contexts/risks/index.js"
+    },
+    "./contexts/collection/index.js": {
+      "types": "./dist/contexts/collection/index.d.ts",
+      "import": "./dist/contexts/collection/index.js"
+    },
+    "./contexts/dashboards/index.js": {
+      "types": "./dist/contexts/dashboards/index.d.ts",
+      "import": "./dist/contexts/dashboards/index.js"
+    },
+    "./contexts/ask/index.js": {
+      "types": "./dist/contexts/ask/index.d.ts",
+      "import": "./dist/contexts/ask/index.js"
+    },
+    "./contexts/project-setup/index.js": {
+      "types": "./dist/contexts/project-setup/index.d.ts",
+      "import": "./dist/contexts/project-setup/index.js"
+    },
+    "./contexts/reporting/chart-spec-v2.js": {
+      "types": "./dist/contexts/reporting/chart-spec-v2.d.ts",
+      "import": "./dist/contexts/reporting/chart-spec-v2.js"
+    },
+    "./contexts/dashboards/dashboard.js": {
+      "types": "./dist/contexts/dashboards/dashboard.d.ts",
+      "import": "./dist/contexts/dashboards/dashboard.js"
+    },
+    "./contexts/dashboards/dashboard-templates.js": {
+      "types": "./dist/contexts/dashboards/dashboard-templates.d.ts",
+      "import": "./dist/contexts/dashboards/dashboard-templates.js"
+    },
+    "./contexts/dashboards/sector-templates.js": {
+      "types": "./dist/contexts/dashboards/sector-templates.d.ts",
+      "import": "./dist/contexts/dashboards/sector-templates.js"
+    },
+    "./contexts/reporting/dataset-query.js": {
+      "types": "./dist/contexts/reporting/dataset-query.d.ts",
+      "import": "./dist/contexts/reporting/dataset-query.js"
+    },
+    "./contexts/logframe/indicator-value-rules.js": {
+      "types": "./dist/contexts/logframe/indicator-value-rules.d.ts",
+      "import": "./dist/contexts/logframe/indicator-value-rules.js"
+    },
+    "./contexts/reporting/export-indicator-columns.js": {
+      "types": "./dist/contexts/reporting/export-indicator-columns.d.ts",
+      "import": "./dist/contexts/reporting/export-indicator-columns.js"
+    },
+    "./contexts/reporting/chart-screen.js": {
+      "types": "./dist/contexts/reporting/chart-screen.d.ts",
+      "import": "./dist/contexts/reporting/chart-screen.js"
+    },
+    "./contexts/reporting/chart-theme-roles.js": {
+      "types": "./dist/contexts/reporting/chart-theme-roles.d.ts",
+      "import": "./dist/contexts/reporting/chart-theme-roles.js"
+    },
+    "./contexts/reporting/chart-render.js": {
+      "types": "./dist/contexts/reporting/chart-render.d.ts",
+      "import": "./dist/contexts/reporting/chart-render.js"
+    },
+    "./contexts/reporting/places-export.js": {
+      "types": "./dist/contexts/reporting/places-export.d.ts",
+      "import": "./dist/contexts/reporting/places-export.js"
+    },
+    "./contexts/reporting/report-query.js": {
+      "types": "./dist/contexts/reporting/report-query.d.ts",
+      "import": "./dist/contexts/reporting/report-query.js"
+    },
+    "./contexts/reporting/breakdown-chart.js": {
+      "types": "./dist/contexts/reporting/breakdown-chart.d.ts",
+      "import": "./dist/contexts/reporting/breakdown-chart.js"
+    },
+    "./contexts/dashboards/project-list.js": {
+      "types": "./dist/contexts/dashboards/project-list.d.ts",
+      "import": "./dist/contexts/dashboards/project-list.js"
+    },
+    "./contexts/places/geometry.js": {
+      "types": "./dist/contexts/places/geometry.d.ts",
+      "import": "./dist/contexts/places/geometry.js"
+    },
+    "./contexts/identity/boundary-layer.js": {
+      "types": "./dist/contexts/identity/boundary-layer.d.ts",
+      "import": "./dist/contexts/identity/boundary-layer.js"
     }
   },
   "scripts": {

@@ -1,3 +1,4 @@
+import { findHeaderRow, normalizeHeader, splitDelimited } from "../../core/delimited.js";
 export interface ParsedActivityRow {
   activityTitle: string;
   activityDate: string;
@@ -61,42 +62,6 @@ const ALL_HEADERS: ReadonlyArray<string> = [
   ...NEXT_STEPS_HEADERS,
 ];
 
-function normalizeHeader(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
-}
-
-/**
- * Splits a delimited line into cells using only the detected delimiter, so
- * text fields may safely contain the other punctuation characters.
- */
-function splitDelimited(line: string, delimiter?: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  const splitsOn = delimiter ? (ch: string) => ch === delimiter : (ch: string) => ch === "\t" || ch === "," || ch === ";";
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i] ?? "";
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (splitsOn(ch)) {
-      if (inQuotes) {
-        current += ch;
-      } else {
-        cells.push(current.trim());
-        current = "";
-      }
-    } else {
-      current += ch;
-    }
-  }
-  cells.push(current.trim());
-  return cells;
-}
 
 function looksLikeHeaderRow(cells: string[]): boolean {
   const normalized = cells.map(normalizeHeader);
@@ -104,27 +69,12 @@ function looksLikeHeaderRow(cells: string[]): boolean {
 }
 
 function detectHeaderRow(lines: string[]): { index: number; delimiter: string } | null {
-  for (let i = 0; i < Math.min(lines.length, 10); i++) {
-    const line = lines[i] ?? "";
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const delimiter = trimmed.includes("\t")
-      ? "\t"
-      : trimmed.includes(",")
-        ? ","
-        : trimmed.includes(";")
-          ? ";"
-          : "";
-    if (!delimiter) continue;
-    const headers = splitDelimited(trimmed, delimiter).map(normalizeHeader);
+  return findHeaderRow(lines, (headers) => {
     const hasTitle = headers.some((h) => TITLE_HEADERS.includes(h));
     const hasDate = headers.some((h) => DATE_HEADERS.includes(h));
     const hasSummary = headers.some((h) => SUMMARY_HEADERS.includes(h));
-    if (hasTitle && (hasDate || hasSummary)) {
-      return { index: i, delimiter };
-    }
-  }
-  return null;
+    return hasTitle && (hasDate || hasSummary);
+  });
 }
 
 function parsePositiveInt(value: string | undefined): number | undefined {

@@ -24,6 +24,7 @@ import { periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
 import { EvidencePeriodPicker } from "@/features/evidence/presentation/EvidencePeriodPicker";
 import { EvidenceLinkSuggestions } from "@/features/evidence/presentation/EvidenceLinkSuggestions";
 import { EvidenceBulkBar, EvidenceSelectBox, EvidenceSelectionProvider } from "@/features/evidence/presentation/EvidenceBulkVerify";
+import { isAwaitingVerification } from "@/features/evidence/domain/awaiting-verification";
 import { EvidenceLinkManager, type LinkTarget } from "@/features/evidence/presentation/EvidenceLinkManager";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +56,8 @@ export default async function EvidencePage({
         verificationStatus: filters.verificationStatus,
         confidentialityLevel: filters.confidentialityLevel,
         evidenceType: filters.evidenceType,
+        reportingPeriodId: filters.reportingPeriodId,
+        location: filters.location,
         page: filters.page ?? 1,
         pageSize: PAGE_SIZE,
       },
@@ -128,7 +131,7 @@ export default async function EvidencePage({
       </header>
 
       <div className="mt-4">
-        <EvidenceFilterBar baseUrl={baseUrl} current={queryString} />
+        <EvidenceFilterBar baseUrl={baseUrl} current={queryString} options={{ periods: periodOptions, location: true }} />
       </div>
 
       <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">{total} file(s).</p>
@@ -144,7 +147,7 @@ export default async function EvidencePage({
         </div>
       ) : (
         <EvidenceSelectionProvider>
-          <EvidenceBulkBar pendingIds={items.filter((e) => e.verificationStatus !== "VERIFIED").map((e) => e.id)} canVerify={ctx.capabilities.has("evidence.verify")} />
+          <EvidenceBulkBar pendingIds={items.filter((e) => isAwaitingVerification(e.verificationStatus)).map((e) => e.id)} canVerify={ctx.capabilities.has("evidence.verify")} />
           <div className="table-shell mt-4 overflow-x-auto">
             <table className="w-full text-sm">
               <caption className="sr-only">Evidence files in this project</caption>

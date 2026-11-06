@@ -1,14 +1,10 @@
-import { DomainError } from "@donordesk/domain";
+import { ok, DomainError } from "@donordesk/domain";
 import type { TenantId, Result } from "@donordesk/domain";
 import type { DriveFileEntry } from "@donordesk/application";
 import type { GoogleDriveStorageConfig, GoogleDriveAccessTokenStore } from "./google-drive.js";
 
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const FOLDER_MIME = "application/vnd.google-apps.folder";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function fail(message: string): Result<never, DomainError> {
   return { ok: false, error: new DomainError("INVARIANT_VIOLATION", message) };
@@ -68,6 +64,94 @@ export class GoogleDriveWorkspaceDrive {
     return created;
   }
 
+  /** A folder under the tenant's root that belongs to no project (found by its stable identity, else created). */
+  async ensureTenantFolder(input: { tenantId: string; parentId: string; name: string; role: string }): Promise<Result<{ id: string }, DomainError>> {
+    const config = await this.tokens.getAccessToken(input.tenantId);
+    if (!config) return fail("Google Drive is not connected for this tenant");
+    const found = await this.findByAppProperty(config, input.tenantId, undefined, input.role);
+    if (found) return ok({ id: found.id });
+    return this.createFolder(config, { name: input.name, parentId: input.parentId, tenantId: input.tenantId, projectId: undefined, role: input.role });
+  }
+
+  /** Saves bytes as a new file in a folder of the tenant's own Drive. Nothing is kept anywhere else. */
+  async uploadFile(input: { tenantId: string; parentId: string; name: string; mimeType: string; bytes: Buffer; role: string }): Promise<Result<{ id: string; webViewLink?: string }, DomainError>> {
+    const config = await this.tokens.getAccessToken(input.tenantId);
+    if (!config) return fail("Google Drive is not connected for this tenant");
+    try {
+      const accessToken = await this.refreshAccessToken(config);
+      const boundary = `dd${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+      const metadata = JSON.stringify({ name: input.name, parents: [input.parentId], appProperties: { tenantId: input.tenantId, role: input.role } });
+      const head = Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metadata}\r\n--${boundary}\r\nContent-Type: ${input.mimeType}\r\n\r\n`);
+      const body = Buffer.concat([head, input.bytes, Buffer.from(`\r\n--${boundary}--`)]);
+      const response = await fetch("https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true&fields=id,webViewLink", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": `multipart/related; boundary=${boundary}` },
+        body,
+      });
+      if (!response.ok) throw new Error(`Google Drive file upload failed (${response.status})`);
+      return ok((await response.json()) as { id: string; webViewLink?: string });
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "Google Drive file upload failed");
+    }
+  }
+
+  /** The folders a file sits in, and its link. */
+  async fileInfo(tenantId: string, fileId: string): Promise<Result<{ name?: string; parents: string[]; webViewLink?: string; trashed: boolean }, DomainError>> {
+    const config = await this.tokens.getAccessToken(tenantId);
+    if (!config) return fail("Google Drive is not connected for this tenant");
+    try {
+      const accessToken = await this.refreshAccessToken(config);
+      const response = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?fields=name,parents,webViewLink,trashed&supportsAllDrives=true`, { headers: { Authorization: `Bearer ${accessToken}` } });
+      if (!response.ok) throw new Error(`Google Drive file lookup failed (${response.status})`);
+      const data = (await response.json()) as { name?: string; parents?: string[]; webViewLink?: string; trashed?: boolean };
+      return ok({ ...(data.name ? { name: data.name } : {}), parents: data.parents ?? [], ...(data.webViewLink ? { webViewLink: data.webViewLink } : {}), trashed: data.trashed === true });
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "Google Drive file lookup failed");
+    }
+  }
+
+  /** Moves a file to another folder (its current folders are replaced). A file already only there stays there. */
+  async moveFile(tenantId: string, fileId: string, toFolderId: string): Promise<Result<void, DomainError>> {
+    const info = await this.fileInfo(tenantId, fileId);
+    if (!info.ok) return info;
+    if (info.value.parents.length === 1 && info.value.parents[0] === toFolderId) return ok(undefined);
+    const config = await this.tokens.getAccessToken(tenantId);
+    if (!config) return fail("Google Drive is not connected for this tenant");
+    try {
+      const accessToken = await this.refreshAccessToken(config);
+      const remove = info.value.parents.filter((p) => p !== toFolderId);
+      const params = new URLSearchParams({ addParents: toFolderId, supportsAllDrives: "true", fields: "id" });
+      if (remove.length > 0) params.set("removeParents", remove.join(","));
+      const response = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?${params.toString()}`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: "{}",
+      });
+      if (!response.ok) throw new Error(`Google Drive move failed (${response.status})`);
+      return ok(undefined);
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "Google Drive move failed");
+    }
+  }
+
+  /** Puts a file in the Drive trash (recoverable by the owner for 30 days). */
+  async trashFile(tenantId: string, fileId: string): Promise<Result<void, DomainError>> {
+    const config = await this.tokens.getAccessToken(tenantId);
+    if (!config) return fail("Google Drive is not connected for this tenant");
+    try {
+      const accessToken = await this.refreshAccessToken(config);
+      const response = await fetch(`${DRIVE_API}/files/${encodeURIComponent(fileId)}?supportsAllDrives=true&fields=id`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ trashed: true }),
+      });
+      if (!response.ok && response.status !== 404) throw new Error(`Google Drive trash failed (${response.status})`);
+      return ok(undefined);
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "Google Drive trash failed");
+    }
+  }
+
   async verifyAccess(rootId: string): Promise<Result<void, DomainError>> {
     const config = await this.tokens.getAccessToken("");
     if (!config) return ok(undefined); // no tokens -> cannot verify, treat as ok (best-effort)
@@ -115,6 +199,42 @@ export class GoogleDriveWorkspaceDrive {
     } catch (error) {
       return fail(error instanceof Error ? error.message : "Google Drive file list failed");
     }
+  }
+
+  /**
+   * Like `findByAppProperty`, but a failed lookup is an error, not "not found": setting folders up must never create a second
+   * copy of a folder just because Drive could not be asked.
+   */
+  private async findStrict(config: GoogleDriveStorageConfig, tenantId: string, role: string): Promise<Result<DriveFolder | null, DomainError>> {
+    try {
+      const accessToken = await this.refreshAccessToken(config);
+      const q = [
+        `mimeType='${FOLDER_MIME}'`,
+        `trashed=false`,
+        `appProperties has { key='tenantId' and value='${this.escape(tenantId)}' }`,
+        `appProperties has { key='role' and value='${this.escape(role)}' }`,
+      ];
+      const response = await fetch(
+        `${DRIVE_API}/files?q=${encodeURIComponent(q.join(" and "))}&fields=files(id,webViewLink)&pageSize=10&includeItemsFromAllDrives=true&supportsAllDrives=true`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      );
+      if (!response.ok) throw new Error(`Google Drive folder lookup failed (${response.status})`);
+      const data = (await response.json()) as { files?: DriveFolder[] };
+      return ok(data.files?.[0] ?? null);
+    } catch (error) {
+      return fail(error instanceof Error ? error.message : "Google Drive folder lookup failed");
+    }
+  }
+
+  /** Finds a tenant folder by its role, or creates it. Unlike `ensureTenantFolder`, an unanswered lookup stops instead of creating. */
+  async ensureTenantFolderStrict(input: { tenantId: string; parentId: string; name: string; role: string }): Promise<Result<{ id: string; created: boolean }, DomainError>> {
+    const config = await this.tokens.getAccessToken(input.tenantId);
+    if (!config) return fail("Google Drive is not connected for this tenant");
+    const found = await this.findStrict(config, input.tenantId, input.role);
+    if (!found.ok) return found;
+    if (found.value) return ok({ id: found.value.id, created: false });
+    const created = await this.createFolder(config, { name: input.name, parentId: input.parentId, tenantId: input.tenantId, projectId: undefined, role: input.role });
+    return created.ok ? ok({ id: created.value.id, created: true }) : created;
   }
 
   private async findByAppProperty(

@@ -1,4 +1,5 @@
 """Life-of-project (cumulative) figures for semi-annual, annual and final reports."""
+
 from __future__ import annotations
 
 from app.ai_reporter import artifact_builder, grounding
@@ -115,12 +116,15 @@ def test_canonical_title_drives_detection_in_translated_reports() -> None:
 
 
 def test_percent_of_target_of_a_recorded_cumulative_value_is_grounded() -> None:
-    """D5-2: 'cumulative 7,000, 87.5% of the 8,000 target' came from the indicator update, not the finding, and was rejected."""
+    """D5-2: 'cumulative 7,000, 87.5% of the 8,000 target' came from the indicator update,
+    not the finding, and was rejected."""
     from app.ai_reporter.models import IndicatorUpdate
 
     req = _req(with_life=False)
     req.indicatorUpdates = [
-        IndicatorUpdate(indicatorCode="OUT-1", indicatorId="ind-1", periodAchievement="2,500", cumulativeAchievement="7,000"),
+        IndicatorUpdate(
+            indicatorCode="OUT-1", indicatorId="ind-1", periodAchievement="2,500", cumulativeAchievement="7,000"
+        ),
         IndicatorUpdate(indicatorCode="UNKNOWN", indicatorId="x", cumulativeAchievement="9,999"),
     ]
     allowed = grounding.allowed_numbers(req)

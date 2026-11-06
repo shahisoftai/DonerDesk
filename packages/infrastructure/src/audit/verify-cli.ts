@@ -1,19 +1,42 @@
 import { PrismaClient } from "@prisma/client";
-import { TenantId } from "@donordesk/domain";
 import { PrismaAuditRepository } from "../repositories/support.js";
+import { auditTenantId } from "./verify-tenants.js";
 
-const tenantId = process.argv[2];
-if (!tenantId) {
-  console.error("Usage: pnpm --filter @donordesk/infrastructure audit:verify <tenant-id>");
+/**
+ * Verifies the audit hash chain.
+ *   audit:verify <tenant-id>   one organisation
+ *   audit:verify --all         every organisation that has audit events (needs DATABASE_ADMIN_URL: it reads across tenants)
+ * One JSON line per organisation; the exit code is 1 when any chain is broken, so a scheduled run fails visibly
+ * (`systemctl --failed`, the journal) instead of nobody looking. See infra/systemd/donordesk-audit-verify.timer.
+ */
+const arg = process.argv[2];
+const all = arg === "--all";
+if (!arg) {
+  console.error("Usage: pnpm --filter @donordesk/infrastructure audit:verify <tenant-id> | --all");
   process.exitCode = 2;
 } else {
-  const databaseUrl = process.env.DATABASE_ADMIN_URL ?? process.env.DATABASE_URL;
-  if (!databaseUrl) throw new Error("DATABASE_ADMIN_URL or DATABASE_URL is required");
+  const databaseUrl = all ? process.env.DATABASE_ADMIN_URL : (process.env.DATABASE_ADMIN_URL ?? process.env.DATABASE_URL);
+  if (!databaseUrl) throw new Error(all ? "DATABASE_ADMIN_URL is required for --all" : "DATABASE_ADMIN_URL or DATABASE_URL is required");
   const prisma = new PrismaClient({ datasources: { db: { url: databaseUrl } } });
   try {
-    const result = await new PrismaAuditRepository(prisma).verifyChain(TenantId.create(tenantId));
-    console.log(JSON.stringify({ tenantId, ...result }));
-    if (!result.valid) process.exitCode = 1;
+    const audits = new PrismaAuditRepository(prisma);
+    const tenants = all
+      ? (await prisma.auditEvent.groupBy({ by: ["tenantId"], orderBy: { tenantId: "asc" } })).map((row) => row.tenantId)
+      : [arg];
+    let broken = 0;
+    for (const tenantId of tenants) {
+      // One unreadable tenant id is reported and counted; it must not stop the other chains from being checked.
+      try {
+        const result = await audits.verifyChain(auditTenantId(tenantId));
+        console.log(JSON.stringify({ tenantId, ...result }));
+        if (!result.valid) broken += 1;
+      } catch (error) {
+        console.log(JSON.stringify({ tenantId, valid: false, error: error instanceof Error ? error.message : String(error) }));
+        broken += 1;
+      }
+    }
+    if (all) console.log(JSON.stringify({ checked: tenants.length, broken }));
+    if (broken > 0) process.exitCode = 1;
   } finally {
     await prisma.$disconnect();
   }

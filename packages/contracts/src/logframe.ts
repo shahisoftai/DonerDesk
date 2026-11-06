@@ -32,6 +32,8 @@ export type ImportLogframeTextInput = z.infer<typeof ImportLogframeTextSchema>;
 /** Start a project's logframe and indicators from another project of the same workspace. */
 export const CopyProjectSetupSchema = z.object({
   sourceProjectId: z.string().min(1),
+  /** Also copy the planned activities (needs the work plan permission). */
+  copyWorkPlan: z.boolean().default(false),
 });
 export type CopyProjectSetupInput = z.infer<typeof CopyProjectSetupSchema>;
 
@@ -42,6 +44,28 @@ export const ImportIndicatorsTextSchema = z.object({
   sourceName: z.string().max(300).optional(),
 });
 export type ImportIndicatorsTextInput = z.infer<typeof ImportIndicatorsTextSchema>;
+
+/** A target for one breakdown category (phase 28.1-B). The value is a number as typed; validated against the total target. */
+export const TargetBreakdownSchema = z.object({
+  dimension: z.enum(["SEX", "AGE_GROUP", "DISABILITY", "LOCATION", "OTHER"]),
+  category: z.string().trim().min(1, "Name the group, e.g. Women").max(100),
+  value: z.string().trim().max(40),
+});
+export type TargetBreakdownInput = z.infer<typeof TargetBreakdownSchema>;
+
+/** One step of a target schedule: the cumulative target due by a date. Whether the dates are real days is checked by the use case. */
+export const TargetScheduleEntrySchema = z.object({
+  asOf: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Write the date as YYYY-MM-DD"),
+  target: z.string().trim().min(1, "Give the target").max(40),
+});
+
+/** The value is calculated from other indicators of the project: a ratio (optionally as a percentage), a total, or a difference. */
+export const IndicatorFormulaSchema = z.object({
+  op: z.enum(["RATIO", "SUM", "DIFFERENCE"]),
+  terms: z.array(z.string().min(1)).min(2).max(12),
+  percent: z.boolean().optional(),
+});
+export type IndicatorFormulaInput = z.infer<typeof IndicatorFormulaSchema>;
 
 export const CreateIndicatorSchema = z.object({
   projectId: z.string().min(1),
@@ -57,6 +81,10 @@ export const CreateIndicatorSchema = z.object({
   frequency: z.string().max(50).optional(),
   responsibleUserId: z.string().optional(),
   disaggregationRequired: z.boolean().default(false),
+  targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
+  targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
+  countedElsewhere: z.boolean().optional(),
+  formula: IndicatorFormulaSchema.optional(),
 });
 export type CreateIndicatorInput = z.infer<typeof CreateIndicatorSchema>;
 
@@ -73,6 +101,11 @@ export const UpdateIndicatorSchema = z.object({
   dataSource: z.string().max(500).optional(),
   frequency: z.string().max(50).optional(),
   disaggregationRequired: z.boolean().optional(),
+  targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
+  targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
+  countedElsewhere: z.boolean().optional(),
+  /** `null` removes the formula (the indicator is typed again). */
+  formula: IndicatorFormulaSchema.nullable().optional(),
 });
 export type UpdateIndicatorInput = z.infer<typeof UpdateIndicatorSchema>;
 
@@ -105,17 +138,6 @@ export const VerifyPeriodIndicatorUpdatesSchema = z.object({
 });
 export type VerifyPeriodIndicatorUpdatesInput = z.infer<typeof VerifyPeriodIndicatorUpdatesSchema>;
 
-export const CreateIndicatorUpdateSchema = z.object({
-  indicatorId: z.string().min(1),
-  reportingPeriodId: z.string().min(1),
-  periodAchievement: z.string(),
-  cumulativeAchievement: z.string(),
-  comments: z.string().optional(),
-  dataSource: z.string().optional(),
-  attachedEvidenceIds: z.array(z.string()).default([]),
-});
-export type CreateIndicatorUpdateInput = z.infer<typeof CreateIndicatorUpdateSchema>;
-
 export const DisaggregationDimensionSchema = z.enum(["SEX", "AGE_GROUP", "DISABILITY", "LOCATION", "OTHER"]);
 
 /** One category's value in an indicator breakdown (e.g. SEX / Female / 120). */
@@ -126,6 +148,42 @@ export const DisaggregationEntrySchema = z.object({
 });
 export type DisaggregationEntryInput = z.infer<typeof DisaggregationEntrySchema>;
 
+export const CreateIndicatorUpdateSchema = z.object({
+  indicatorId: z.string().min(1),
+  reportingPeriodId: z.string().min(1),
+  periodAchievement: z.string(),
+  cumulativeAchievement: z.string(),
+  comments: z.string().optional(),
+  dataSource: z.string().optional(),
+  /** A reason = "not applicable this period" (the figures are then ignored). */
+  notApplicableReason: z.string().max(500).optional(),
+  /** A breakdown of the value. It is validated against the indicator exactly as on the grid; it is never silently dropped. */
+  disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
+  attachedEvidenceIds: z.array(z.string()).default([]),
+});
+export type CreateIndicatorUpdateInput = z.infer<typeof CreateIndicatorUpdateSchema>;
+
+/**
+ * Quick entry: one value for one indicator from a date. The reporting period is worked out from the date (or named
+ * explicitly), the running total is suggested for an indicator that adds up, and the project's review setting decides
+ * whether the value is handed in at once.
+ */
+export const QuickEnterIndicatorValueSchema = z.object({
+  indicatorId: z.string().min(1),
+  /** The day the value is for, YYYY-MM-DD. */
+  date: z.string().min(8).max(10),
+  /** Use this period instead of the one the date falls in. */
+  reportingPeriodId: z.string().min(1).optional(),
+  periodAchievement: z.string().max(200).default(""),
+  /** Omitted or empty = suggested for an indicator that adds up. */
+  cumulativeAchievement: z.string().max(200).optional(),
+  comments: z.string().max(2000).optional(),
+  dataSource: z.string().max(500).optional(),
+  notApplicableReason: z.string().max(500).optional(),
+  disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
+});
+export type QuickEnterIndicatorValueInput = z.infer<typeof QuickEnterIndicatorValueSchema>;
+
 /** One row of the spreadsheet-style indicator data entry grid. */
 export const UpsertIndicatorUpdateSchema = z.object({
   indicatorId: z.string().min(1),
@@ -133,6 +191,10 @@ export const UpsertIndicatorUpdateSchema = z.object({
   cumulativeAchievement: z.string().default(""),
   comments: z.string().max(2000).optional(),
   dataSource: z.string().max(500).optional(),
+  /** Omitted = keep the stored answer; a reason = "not applicable this period" (the figures are then ignored); "" = clear it. */
+  notApplicableReason: z.string().max(500).optional(),
+  /** The version of the stored value the person was looking at (its `updatedAt`). When someone else has saved it since, the save is refused so their figure is not overwritten unseen. */
+  expectedUpdatedAt: z.string().max(40).optional(),
   /** Omitted = keep the stored breakdown; [] = clear it. */
   disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
 });
@@ -142,6 +204,8 @@ export type UpsertIndicatorUpdateInput = z.infer<typeof UpsertIndicatorUpdateSch
 export const BulkUpsertIndicatorUpdatesSchema = z.object({
   reportingPeriodId: z.string().min(1),
   updates: z.array(UpsertIndicatorUpdateSchema).max(500).default([]),
+  /** An explicit save (not autosave): with the project's simple review on, the saved values are handed in. Ignored otherwise. */
+  handIn: z.boolean().optional(),
 });
 export type BulkUpsertIndicatorUpdatesInput = z.infer<typeof BulkUpsertIndicatorUpdatesSchema>;
 

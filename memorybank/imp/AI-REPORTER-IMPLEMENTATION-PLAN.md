@@ -1,6 +1,6 @@
 # AI Reporter — Implementation Plan
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Status:** IMPLEMENTED (2026-08-28) — see §11 below
 **Owner:** DonorDesk engineering

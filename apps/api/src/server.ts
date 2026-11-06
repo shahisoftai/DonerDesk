@@ -2,26 +2,44 @@ import Fastify, { type FastifyInstance, type FastifyRequest, type FastifyReply }
 import cors from "@fastify/cors";
 import multipart from "@fastify/multipart";
 import { randomUUID } from "node:crypto";
-import { createContainer, RuntimeProvisioner, provisionExistingGlobalLlmConfigs } from "@donordesk/infrastructure";
+import { createContainer, disconnectAllPooledClients, RuntimeProvisioner, provisionExistingGlobalLlmConfigs } from "@donordesk/infrastructure";
 import { ZodError } from "zod";
 import { validationTitle } from "./validation-problem.js";
 import { TenantId, DomainError, type Role } from "@donordesk/domain";
 
 import { authMiddleware } from "./middleware/auth.js";
 import { authorizationMiddleware } from "./middleware/authorization.js";
+import { checkAiSpend } from "@donordesk/infrastructure";
+import { projectBoundaryMiddleware } from "./middleware/project-boundary.js";
+import { externalAccessMiddleware } from "./middleware/external-access.js";
 import { dataResidencyMiddleware } from "./middleware/data-residency.js";
 import { idempotencyBegin, idempotencyFinish } from "./middleware/idempotency.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerOrgRoutes } from "./routes/org.js";
 import { registerUserRoutes } from "./routes/users.js";
+import { registerScimAdminRoutes } from "./routes/scim-admin.js";
+import { registerScimRoutes } from "./scim/routes.js";
+import { registerPublicInfographicRoutes } from "./routes/infographics.js";
+import { scimRouteOptions } from "./scim/service.js";
 import { registerProjectRoutes } from "./routes/projects.js";
 import { registerProjectSetupRoutes } from "./routes/project-setup.js";
+import { registerProjectSetupWizardRoutes } from "./routes/project-setup-wizard.js";
 import { registerTemplateRoutes } from "./routes/templates.js";
 import { registerDonorTemplateMappingRoutes } from "./routes/donor-template-mapping.js";
 import { registerLogframeRoutes } from "./routes/logframe.js";
 import { registerEvidenceRoutes } from "./routes/evidence.js";
 import { registerStorageRoutes } from "./routes/storage.js";
 import { registerActivityRoutes } from "./routes/activities.js";
+import { registerWorkPlanRoutes } from "./routes/workplan.js";
+import { registerInfographicsRoutes } from "./routes/infographics.js";
+import { registerTaskRoutes } from "./routes/tasks.js";
+import { registerPlaceRoutes } from "./routes/places.js";
+import { registerFinanceRegisterRoutes } from "./routes/finance-register.js";
+import { registerCollectionRoutes, registerPublicCollectionRoutes } from "./routes/collection.js";
+import { registerChartDashboardRoutes, registerPublicDashboardRoutes } from "./routes/chart-dashboards.js";
+import { registerHomeLayoutRoutes } from "./routes/home-layout.js";
+import { registerIntegrationRoutes } from "./routes/integrations.js";
+import { registerPublicApiRoutes } from "./routes/public-api.js";
 import { registerReportingRoutes } from "./routes/reporting.js";
 import { registerAgentMemoryRoutes } from "./routes/agent-memory.js";
 import { registerComplianceRoutes } from "./routes/compliance.js";
@@ -43,7 +61,7 @@ import { registerCollaborationWebSocket } from "./websocket/register.js";
 
 declare module "fastify" {
   interface FastifyRequest {
-    tenant: { tenantId: TenantId; userId: string; role: Role; email: string; name: string };
+    tenant: { tenantId: TenantId; userId: string; role: Role; email: string; name: string; external?: boolean };
     requestId: string;
     container: ReturnType<typeof createContainer>;
   }
@@ -140,32 +158,67 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerHealthRoutes(app);
   await registerAuthRoutes(app);
   await registerSalesRoutes(app);
+  // SCIM has its own authentication (a per-organisation bearer token), so it sits
+  // outside the authenticated scope.
+  await registerScimRoutes(app, scimRouteOptions(container));
+  // The public read-only API has its own authentication too (an API key), in its own scope.
+  await registerPublicApiRoutes(app, container);
+  // A public share link has no session either: its token says which export it opens.
+  await registerPublicInfographicRoutes(app);
+  // A collection link has no session either: its token names the form it opens.
+  await registerPublicCollectionRoutes(app, container);
+  // A dashboard share link has no session either: its token names the dashboard.
+  await registerPublicDashboardRoutes(app, container);
+  // The routes registered inside the scope below are the ones that go through
+  // authMiddleware + authorizationMiddleware. They are collected here so
+  // test/authorization-coverage.test.mjs can assert the authorisation table
+  // covers every one of them (the table is exhaustive by construction).
+  const scopedRoutes: Array<{ method: string; url: string }> = [];
   await app.register(async (instance) => {
+    instance.addHook("onRoute", (route) => {
+      const methods = Array.isArray(route.method) ? route.method : [route.method];
+      for (const method of methods) {
+        scopedRoutes.push({ method: String(method), url: route.url });
+      }
+    });
     instance.addHook("preHandler", authMiddleware);
     instance.addHook("preHandler", async (req) => {
       req.container = createContainer({ tenantId: req.tenant.tenantId.toString() });
     });
     instance.addHook("preHandler", authorizationMiddleware);
+    instance.addHook("preHandler", externalAccessMiddleware);
+    instance.addHook("preHandler", projectBoundaryMiddleware);
     instance.addHook("preHandler", dataResidencyMiddleware);
     instance.addHook("preHandler", idempotencyBegin);
     instance.addHook("onSend", idempotencyFinish);
     instance.addHook("onResponse", async (req) => {
       // Background work started by the request (report generation) must
-      // finish before its database client is closed. The response is
-      // already sent, so this never delays the caller.
+      // finish before the response hook returns. The PrismaClient itself is
+      // pooled per tenant (see createContainer) and outlives the request —
+      // never disconnected here.
       await req.container?.settleBackgroundWork();
-      await req.container?.prisma.$disconnect();
     });
     await registerOrgRoutes(instance);
     await registerUserRoutes(instance);
+    await registerScimAdminRoutes(instance);
     await registerProjectRoutes(instance);
     await registerProjectSetupRoutes(instance);
+    await registerProjectSetupWizardRoutes(instance);
     await registerTemplateRoutes(instance);
     await registerDonorTemplateMappingRoutes(instance);
     await registerLogframeRoutes(instance);
     await registerEvidenceRoutes(instance);
     await registerStorageRoutes(instance);
     await registerActivityRoutes(instance);
+    await registerWorkPlanRoutes(instance);
+    await registerInfographicsRoutes(instance);
+    await registerTaskRoutes(instance);
+    await registerPlaceRoutes(instance);
+    await registerFinanceRegisterRoutes(instance);
+    await registerCollectionRoutes(instance);
+    await registerChartDashboardRoutes(instance);
+    await registerHomeLayoutRoutes(instance);
+    await registerIntegrationRoutes(instance);
     await registerReportingRoutes(instance);
     await registerAgentMemoryRoutes(instance);
     await registerComplianceRoutes(instance);
@@ -178,6 +231,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerFileRoutes(instance);
     await registerBillingRoutes(instance);
   });
+  app.decorate("scopedRoutes", scopedRoutes);
 
   return app;
 }
@@ -215,6 +269,8 @@ function errorToHttpStatus(code: string): number {
 declare module "fastify" {
   interface FastifyInstance {
     container: ReturnType<typeof createContainer>;
+    /** The routes registered inside the authenticated scope (see buildServer). */
+    scopedRoutes: Array<{ method: string; url: string }>;
   }
 }
 
@@ -223,6 +279,36 @@ export async function start() {
   const port = Number(process.env.PORT ?? 4000);
   // Bind loopback by default (contabo-ops §4/§10); override with HOST if needed.
   await app.listen({ port, host: process.env.HOST ?? "127.0.0.1" });
+
+  // Jobs the api could not hand to the queue (Kestra restarting, a network blip) are kept in JobOutbox; hand them over
+  // again with backoff until they are accepted or dead-lettered. 0 turns the loop off.
+  const retryEvery = Number(process.env.JOB_RETRY_INTERVAL_MS ?? 60_000);
+  if (retryEvery > 0) {
+    const timer = setInterval(() => {
+      app.container.jobRetry.runOnce().catch((error: unknown) => app.log.error({ err: error }, "job retry run failed"));
+    }, retryEvery);
+    timer.unref();
+    // Fastify refuses hooks once it is listening, so stop the timers on the server's own close event.
+    app.server.once("close", () => clearInterval(timer));
+  }
+
+  // Webhook deliveries queued by events are sent (and retried with backoff) from here. 0 turns the loop off.
+  const webhookEvery = Number(process.env.WEBHOOK_RUN_INTERVAL_MS ?? 15_000);
+  if (webhookEvery > 0) {
+    const webhookTimer = setInterval(() => {
+      app.container.webhookRunner.runOnce().catch((error: unknown) => app.log.error({ err: error }, "webhook run failed"));
+    }, webhookEvery);
+    webhookTimer.unref();
+    app.server.once("close", () => clearInterval(webhookTimer));
+  }
+
+  // Plan limits bound how much people draft, not what the provider charges: tell the operator when an organisation's
+  // estimated AI spend this month passes AI_MONTHLY_COST_ALERT_USD (default 25; 0 turns it off). Hourly.
+  const spendTimer = setInterval(() => {
+    checkAiSpend(app.container.llmUsage, app.container.logger).catch((error: unknown) => app.log.error({ err: error }, "ai spend check failed"));
+  }, 60 * 60_000);
+  spendTimer.unref();
+  app.server.once("close", () => clearInterval(spendTimer));
 
   // Runtime-provisioning backfill: on api boot, make sure any GLOBAL LLM
   // configuration saved in the SuperAdmin control plane is reflected in the
@@ -256,6 +342,7 @@ export async function start() {
 
   const shutdown = async () => {
     await app.close();
+    await disconnectAllPooledClients();
     await shutdownObservability();
   };
   process.once("SIGTERM", shutdown);

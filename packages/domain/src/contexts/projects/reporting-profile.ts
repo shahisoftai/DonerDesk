@@ -29,6 +29,10 @@ export interface ReportingProfileProps {
   defaultTemplateByType?: Record<string, string>;
   /** When on, the author of a report cannot approve it (a second person must). Off for a team of one. */
   requireSecondApprover?: boolean;
+  /** When on, an indicator value needs an attached file before it can be verified. */
+  requireEvidenceForVerification?: boolean;
+  /** When on, saving an indicator value hands it in at once (and verifies it when the saver may and a file is attached). Off = the full draft, submit, verify steps. */
+  simpleReview?: boolean;
   /** Statements that hold for every period (branding policy, waste procedure), by compliance section key. */
   standingStatements?: Record<string, string>;
   version: number;
@@ -221,6 +225,8 @@ export class ReportingProfile extends Entity<string> {
    */
   get defaultTemplateByType(): Record<string, string> { return { ...(this.props.defaultTemplateByType ?? {}) }; }
   get requireSecondApprover(): boolean { return this.props.requireSecondApprover ?? false; }
+  get requireEvidenceForVerification(): boolean { return this.props.requireEvidenceForVerification ?? false; }
+  get simpleReview(): boolean { return this.props.simpleReview ?? false; }
   get standingStatements(): Record<string, string> { return { ...(this.props.standingStatements ?? {}) }; }
 
   /** Makes a template the default for one report type (or, with undefined, removes that type's default). */
@@ -229,6 +235,16 @@ export class ReportingProfile extends Entity<string> {
     if (templateId) next[reportType] = templateId;
     else delete next[reportType];
     this.props.defaultTemplateByType = next;
+    this.bump(updatedById);
+  }
+
+  setRequireEvidenceForVerification(value: boolean, updatedById: string): void {
+    this.props.requireEvidenceForVerification = value;
+    this.bump(updatedById);
+  }
+
+  setSimpleReview(value: boolean, updatedById: string): void {
+    this.props.simpleReview = value;
     this.bump(updatedById);
   }
 

@@ -24,6 +24,12 @@ export function AuditPanel({ records }: { records: AuditRecord[] }) {
 
   const eventTypes = useMemo(() => Array.from(new Set(records.map((r) => r.eventType))).sort(), [records]);
   const actorIds = useMemo(() => Array.from(new Set(records.map((r) => r.actorId))).sort(), [records]);
+  // A person is shown by name; an id is only a fallback, and is never shown to the reader.
+  const actorName = useMemo(() => {
+    const names = new Map<string, string>();
+    for (const r of records) if (r.actorName) names.set(r.actorId, r.actorName);
+    return (id: string): string => names.get(id) ?? "System or a former member";
+  }, [records]);
 
   const filtered = useMemo(
     () =>
@@ -59,7 +65,7 @@ export function AuditPanel({ records }: { records: AuditRecord[] }) {
           <label className="label" htmlFor="audit-actor">Actor</label>
           <Select id="audit-actor" value={actorId} onChange={(e) => { setActorId(e.target.value); resetPage(); }}>
             <option value="">All actors</option>
-            {actorIds.map((a) => <option key={a} value={a}>User {a.slice(0, 8)}</option>)}
+            {actorIds.map((a) => <option key={a} value={a}>{actorName(a)}</option>)}
           </Select>
         </div>
         <div>
@@ -94,12 +100,12 @@ export function AuditPanel({ records }: { records: AuditRecord[] }) {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.id} className="trow">
-                  <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">{formatDateTime(r.createdAt)}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400" suppressHydrationWarning>{formatDateTime(r.createdAt)}</td>
                   <td className="px-3 py-2">
                     <Badge tone="neutral">{r.eventType.replace(/\./g, " · ")}</Badge>
                     <div className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{r.entityType} {r.entityId.slice(0, 8)}</div>
                   </td>
-                  <td className="px-3 py-2 text-xs">User {r.actorId.slice(0, 8)}</td>
+                  <td className="px-3 py-2 text-xs">{actorName(r.actorId)}</td>
                   <td className="px-3 py-2 text-xs text-slate-600 dark:text-slate-300">{readableChange(r)}</td>
                 </tr>
               ))}

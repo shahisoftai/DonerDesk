@@ -1,13 +1,6 @@
 import type { Metadata } from "next";
 import { supportArticleMetadata } from "@/lib/seo";
-import { SupportJsonLd } from "@/components/support/SupportJsonLd";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
-import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
-import { loadArticle } from "@/components/support/wikiUtils";
+import { CategoryArticle } from "@/components/support/CategoryArticle";
 
 const FILE_MAP: Record<string, string> = {
   "log-in": "how-to/how-to-log-in.md",
@@ -39,6 +32,15 @@ const FILE_MAP: Record<string, string> = {
   "import-from-google-sheets": "how-to/how-to-import-from-google-sheets.md",
   "change-organisation-profile": "how-to/how-to-change-organisation-profile.md",
   "archive-a-project": "how-to/how-to-archive-a-project.md",
+  "turn-on-two-step-sign-in": "how-to/how-to-turn-on-two-step-sign-in.md",
+  "set-a-target-schedule": "how-to/how-to-set-a-target-schedule.md",
+  "check-your-portfolio": "how-to/how-to-check-your-portfolio.md",
+  "match-donor-indicators": "how-to/how-to-match-donor-indicators.md",
+  "review-evidence": "how-to/how-to-review-evidence.md",
+  "use-comment-threads": "how-to/how-to-use-comment-threads.md",
+  "get-a-management-report": "how-to/how-to-get-a-management-report.md",
+  "record-a-change-of-plan": "how-to/how-to-record-a-change-of-plan.md",
+  "read-a-scanned-document": "how-to/how-to-read-a-scanned-document.md",
   "create-a-reporting-period": "how-to/how-to-create-a-reporting-period.md",
   "create-the-closing-report": "how-to/how-to-create-the-closing-report.md",
   "run-a-reporting-month": "how-to/how-to-run-a-reporting-month.md",
@@ -48,7 +50,42 @@ const FILE_MAP: Record<string, string> = {
   "change-a-reports-template": "how-to/how-to-change-a-reports-template.md",
   "tell-the-story-and-add-inputs": "how-to/how-to-tell-the-story-and-add-inputs.md",
   "use-the-report-editor": "how-to/how-to-use-the-report-editor.md",
+  "use-the-data-center": "how-to/how-to-use-the-data-center.md",
+  "add-a-chart-to-a-report": "how-to/how-to-add-a-chart-to-a-report.md",
+  "reopen-an-approved-report": "how-to/how-to-reopen-an-approved-report.md",
   "use-the-academy-tour": "how-to/how-to-use-the-academy-tour.md",
+  "plan-your-activities": "how-to/how-to-plan-your-activities.md",
+  "use-the-timeline": "how-to/how-to-use-the-timeline.md",
+  "use-my-week": "how-to/how-to-use-my-week.md",
+  "import-your-plan": "how-to/how-to-import-your-plan.md",
+  "ask-for-work-and-use-my-work": "how-to/how-to-ask-for-work-and-use-my-work.md",
+  "record-problems-and-risks": "how-to/how-to-record-problems-and-risks.md",
+  "add-comments-and-ask-for-files": "how-to/how-to-add-comments-and-ask-for-files.md",
+  "log-progress-and-finish-an-activity": "how-to/how-to-log-progress-and-finish-an-activity.md",
+  "track-dependencies-budget-and-people-reached": "how-to/how-to-track-dependencies-budget-and-people-reached.md",
+  "add-fields-and-automatic-reminders": "how-to/how-to-add-fields-and-automatic-reminders.md",
+  "see-your-work-on-a-map": "how-to/how-to-see-your-work-on-a-map.md",
+  "pin-a-place-on-the-map": "how-to/how-to-pin-a-place-on-the-map.md",
+  "upload-your-own-map-boundaries": "how-to/how-to-upload-your-own-map-boundaries.md",
+  "make-an-infographic": "how-to/how-to-make-an-infographic.md",
+  "check-an-infographic": "how-to/how-to-check-an-infographic.md",
+  "approve-and-publish-an-infographic": "how-to/how-to-approve-and-publish-an-infographic.md",
+  "share-an-infographic": "how-to/how-to-share-an-infographic.md",
+  "get-wording-suggestions": "how-to/how-to-get-wording-suggestions.md",
+  "collect-answers-with-a-form": "how-to/how-to-collect-answers-with-a-form.md",
+  "use-the-field-app-offline": "how-to/how-to-use-the-field-app-offline.md",
+  "bring-in-kobotoolbox-or-surveycto-submissions": "how-to/how-to-bring-in-kobotoolbox-or-surveycto-submissions.md",
+  "make-a-dashboard": "how-to/how-to-make-a-dashboard.md",
+  "ask-a-question-about-a-project": "how-to/how-to-ask-a-question-about-a-project.md",
+  "connect-api-keys-webhooks-and-ai-assistants": "how-to/how-to-connect-api-keys-webhooks-and-ai-assistants.md",
+  "require-two-step-sign-in": "how-to/how-to-require-two-step-sign-in.md",
+  "change-the-interface-language": "how-to/how-to-change-the-interface-language.md",
+  "set-up-programmes-and-grants": "how-to/how-to-set-up-programmes-and-grants.md",
+  "see-framework-history": "how-to/how-to-see-framework-history.md",
+  "invite-an-outside-partner": "how-to/how-to-invite-an-outside-partner.md",
+  "take-your-data-with-you": "how-to/how-to-take-your-data-with-you.md",
+  "meet-donor-requirements": "how-to/how-to-meet-donor-requirements.md",
+  "fix-a-file-that-could-not-be-read": "how-to/how-to-fix-a-file-that-could-not-be-read.md",
   "onboard-team-member": "how-to-onboard-team-member.md",
   "prepare-for-donor-visit": "how-to-prepare-for-donor-visit.md",
 };
@@ -72,84 +109,13 @@ export default async function HowToArticlePage({
   params: Promise<{ article: string }>;
 }) {
   const { article } = await params;
-  const relPath = FILE_MAP[article];
-  if (!relPath) notFound();
-
-  const article_ = loadArticle(relPath);
-  if (!article_) notFound();
-
-  const cat = WIKI_CATEGORIES[1]!;
-  const artEntry = cat.articles.find((a) => a.href === `/support/how-to/${article}`);
-  const title = artEntry?.title ?? article_.title;
-
   return (
-    <div className="landing-tech min-h-screen overflow-x-hidden bg-slate-950 text-slate-100">
-      <SupportJsonLd categorySlug="how-to" article={article} title={title} />
-      <WikiTopNav />
-      <div className="border-b border-white/5 bg-slate-950/50 px-6 py-3">
-        <div className="mx-auto flex max-w-7xl items-center gap-1.5 text-xs text-slate-400">
-          <Link href="/support">Support Center</Link>
-          <span>›</span>
-          <Link href="/support/how-to">How-To Guides</Link>
-          <span>›</span>
-          <span className="text-slate-200">{title}</span>
-        </div>
-      </div>
-      <div className="mx-auto flex max-w-7xl gap-0 px-6 py-8">
-        <aside className="hidden w-64 flex-shrink-0 lg:block">
-          <CategoryNav categories={WIKI_CATEGORIES} />
-        </aside>
-        <main className="min-w-0 flex-1 lg:px-8">
-          <article className="prose prose-invert prose-slate max-w-none">
-            <h1 className="text-3xl font-extrabold text-white mb-2">{title}</h1>
-            {artEntry?.description && (
-              <p className="text-slate-400 text-sm mb-6 border-l-2 border-cyan-500/40 pl-3">
-                {artEntry.description}
-              </p>
-            )}
-            <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                  h2: ({ children }) => <h2 className="text-xl font-bold text-white mt-8 mb-3 border-b border-white/10 pb-2">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-lg font-semibold text-slate-200 mt-6 mb-2">{children}</h3>,
-                  p: ({ children }) => <p className="text-slate-300 leading-relaxed mb-4">{children}</p>,
-                  ul: ({ children }) => <ul className="list-disc list-inside text-slate-300 space-y-1 mb-4">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-inside text-slate-300 space-y-1 mb-4">{children}</ol>,
-                  li: ({ children }) => <li className="text-slate-300">{children}</li>,
-                  a: ({ href, children }) => <a href={href} className="text-cyan-400 hover:text-cyan-300 underline" target="_blank" rel="noopener">{children}</a>,
-                  strong: ({ children }) => <strong className="text-white font-semibold">{children}</strong>,
-                  code: ({ children }) => <code className="bg-white/5 text-cyan-300 px-1.5 py-0.5 rounded text-sm">{children}</code>,
-                  blockquote: ({ children }) => <blockquote className="border-l-4 border-cyan-500/40 pl-4 italic text-slate-400 my-4">{children}</blockquote>,
-                  hr: () => <hr className="border-white/10 my-6" />,
-                  table: ({ children }) => <table className="w-full border-collapse border border-white/10 text-sm my-4">{children}</table>,
-                  th: ({ children }) => <th className="border border-white/10 bg-white/5 px-3 py-2 text-left text-slate-200 font-semibold">{children}</th>,
-                  td: ({ children }) => <td className="border border-white/10 px-3 py-2 text-slate-300">{children}</td>,
-                }}
-              >
-                {article_.content}
-              </ReactMarkdown>
-            </div>
-            <div className="mt-8 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-4">
-              <div />
-              <Link href="/support/how-to" className="text-sm text-cyan-400 hover:text-cyan-300 transition">
-                ← Back to How-To Guides
-              </Link>
-              <div />
-            </div>
-          </article>
-        </main>
-      </div>
-      <footer className="border-t border-white/10 px-6 py-8">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <p className="text-sm text-slate-500">© {new Date().getFullYear()} DonorDesk. All rights reserved.</p>
-          <div className="flex gap-6 text-sm text-slate-500">
-            <Link href="/support" className="transition hover:text-slate-300">Support</Link>
-            <Link href="/privacy" className="transition hover:text-slate-300">Privacy</Link>
-            <Link href="/terms" className="transition hover:text-slate-300">Terms</Link>
-          </div>
-        </div>
-      </footer>
-    </div>
+    <CategoryArticle
+      categorySlug="how-to"
+      categoryLabel="How-To Guides"
+      accent="skyline"
+      article={article}
+      relPath={FILE_MAP[article]}
+    />
   );
 }

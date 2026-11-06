@@ -168,3 +168,22 @@ export class UpsertAwardOverrideHandler {
     return { ok: true, value: override };
   }
 }
+
+/** The organisation's requirement packs with what each one requires, for the authoring screen. */
+export class ListRequirementPacksHandler {
+  constructor(private readonly packs: IRequirementPackRepository) {}
+
+  async handle(ctx: AuthenticatedContext): Promise<Result<{ items: Array<{ id: string; name: string; donorKey: string; mechanismKey: string; reportType: string; status: string; version: number; requirements: Array<{ key: string; kind: string; required: boolean }> }> }, DomainError>> {
+    const found = await this.packs.listByTenant(ctx.tenant.tenantId.toString());
+    if (!found.ok) return found;
+    return {
+      ok: true,
+      value: {
+        items: found.value.map((p) => ({
+          id: p.id, name: p.name, donorKey: p.donorKey, mechanismKey: p.mechanismKey, reportType: p.reportType, status: p.status, version: p.version,
+          requirements: p.requirements.map((r) => ({ key: r.key, kind: r.kind, required: r.required })),
+        })),
+      },
+    };
+  }
+}

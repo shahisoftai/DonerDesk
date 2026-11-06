@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import { LegalLayout } from "@/components/legal/LegalLayout";
+import { PolicySection as Section, PolicyLink as A, P, B, Ul, Li } from "@/components/legal/LegalBits";
+import { LEGAL } from "@/lib/legal-entity";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/terms" },
@@ -41,7 +42,7 @@ export default function TermsPage() {
     <LegalLayout
       title="Terms of Service"
       subtitle="Legal"
-      updated="7 October 2026 (Version 1.1)"
+      updated={LEGAL.updated}
       toc={TOC}
     >
       <Section id="agreement" title="1. Agreement and scope">
@@ -260,7 +261,8 @@ export default function TermsPage() {
           The Service may be offered free of charge during an initial or demo
           period. Where we offer paid plans, fees will be described on our
           pricing materials or in a separate order form, and payment terms will
-          be as stated there. Fees are non-refundable except as required by law
+          be as stated there. Fees are non-refundable except as required by law,
+          as set out in our <A href="/refunds">Refund &amp; Cancellation Policy</A>,
           or as expressly stated in an order form.
         </P>
         <P>
@@ -268,7 +270,8 @@ export default function TermsPage() {
           of record and whose terms apply to the transaction. Paid
           subscriptions renew automatically for the same period until you
           cancel before the renewal date; cancellation takes effect at the end
-          of the paid period and no partial-period refunds are given. Fees are
+          of the paid period, and refunds are governed by our{" "}
+          <A href="/refunds">Refund &amp; Cancellation Policy</A>. Fees are
           exclusive of taxes, duties, and bank charges, which you are
           responsible for. We may suspend paid features for non-payment.
         </P>
@@ -364,8 +367,8 @@ export default function TermsPage() {
           the Service's export features.
         </P>
         <P>
-          No guarantee of donor acceptance. DonorDesk is a reporting,
-          evidence-management, and compliance tool. We do not guarantee that any
+          No guarantee of donor acceptance. DonorDesk is a programme
+          management tool, covering the logframe, indicators, evidence and compliance, from which donor reports are drafted. We do not guarantee that any
           report generated with the Service will be accepted, approved, funded,
           or renewed by any donor, funder, or other third party. You are solely
           responsible for the content, quality, and accuracy of the reports you
@@ -606,54 +609,4 @@ export default function TermsPage() {
       </Section>
     </LegalLayout>
   );
-}
-
-function Section({
-  id,
-  title,
-  children,
-}: {
-  id: string;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section id={id} className="scroll-mt-28">
-      <h2 className="text-2xl font-bold tracking-tight text-white">{title}</h2>
-      <div className="mt-4 space-y-4 text-[15px] leading-relaxed text-slate-300">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function P({ children }: { children: ReactNode }) {
-  return <p>{children}</p>;
-}
-
-function B({ children }: { children: ReactNode }) {
-  return <strong className="font-semibold text-slate-100">{children}</strong>;
-}
-
-function A({ href, children }: { href: string; children: ReactNode }) {
-  return (
-    <a
-      href={href}
-      className="font-medium text-brand-300 underline decoration-brand-400/40 underline-offset-2 transition hover:text-brand-200"
-    >
-      {children}
-    </a>
-  );
-}
-
-function Ul({ children }: { children: ReactNode }) {
-  return (
-    <ul className="space-y-2.5 pl-5 marker:text-brand-400 marker:font-bold">
-      {children}
-    </ul>
-  );
-}
-
-function Li({ children }: { children: ReactNode }) {
-  return <li className="list-disc">{children}</li>;
 }

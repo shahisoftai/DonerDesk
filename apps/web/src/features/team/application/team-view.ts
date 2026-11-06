@@ -4,6 +4,8 @@ export interface TeamMember {
   email: string;
   role: string;
   status: string;
+  external?: boolean;
+  mfaEnabled?: boolean;
 }
 
 export type TeamFilter = {

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { DeterministicAssertionExtractor } from "../dist/llm/assertion-extractor.js";
 import { DeterministicClaimVerifier } from "../dist/llm/claim-verifier.js";
-import { createPiiFirewall } from "../dist/ai/pii-firewall.js";
+import { createPiiFirewall } from "@donordesk/domain";
 
 const extractor = new DeterministicAssertionExtractor();
 const verifier = new DeterministicClaimVerifier();

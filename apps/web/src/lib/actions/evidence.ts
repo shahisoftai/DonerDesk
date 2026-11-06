@@ -82,6 +82,16 @@ export async function acceptEvidenceTagsAction(
   return { ok: true, value: undefined };
 }
 
+export type EvidenceReviewDecision = { action: "VERIFY" | "ARCHIVE" | "RESTORE" } | { action: "REQUEST_CORRECTION" | "REJECT"; note: string };
+
+/** A reviewer's decision about a file: verify, ask for a correction, reject, archive or bring back. */
+export async function reviewEvidenceAction(evidenceId: string, decision: EvidenceReviewDecision): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/evidence/${evidenceId}/review`, OkResponseSchema, context.token, { method: "POST", body: decision });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
 export type VerifyEvidenceResult = Result<undefined, AppError>;
 
 export async function verifyEvidenceAction(evidenceId: string): Promise<VerifyEvidenceResult> {

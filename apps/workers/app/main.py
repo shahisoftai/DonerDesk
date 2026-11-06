@@ -11,17 +11,20 @@ Routes:
 Every `/v1/*` route requires `X-Internal-Token` (see app.security). All routes
 are intended to be invoked through Kestra flows on a loopback-bound process.
 """
+
 from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, FastAPI, File, UploadFile
+from fastapi import APIRouter, Depends, FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.concurrency import run_in_threadpool
 
 from .ai_reporter.router import router as ai_reporter_router
-from .donor_template.router import router as donor_template_router
 from .compliance import DetectChecklistRequest, RewriteSectionRequest, detect_checklist, rewrite_section
+from .donor_template.router import router as donor_template_router
 from .drafting import DraftSectionRequest, draft_section
-from .parsers import parse
+from .ocr import OcrUnavailableError, ocr_pdf_pages
+from .parsers import MAX_PARSE_BYTES, parse
 from .polishing import PolishRequest, polish
 from .security import require_internal_token
 from .tagging import SuggestTagsRequest, suggest_tags
@@ -43,8 +46,29 @@ def ready() -> dict[str, Any]:
 
 @v1.post("/parse")
 async def parse_document(file: UploadFile = File(...)) -> dict[str, Any]:
+    # Read one byte past the limit so an oversized upload is refused without holding all of it in memory.
+    data = await file.read(MAX_PARSE_BYTES + 1)
+    if len(data) > MAX_PARSE_BYTES:
+        raise HTTPException(status_code=413, detail=f"file is larger than {MAX_PARSE_BYTES // (1024 * 1024)} MB")
+    # Parsing (and OCR for scans) is CPU work: run it off the event loop so drafting requests are not held up.
+    return await run_in_threadpool(parse, data, file.filename or "upload.bin", file.content_type)
+
+
+@v1.post("/ocr-pages")
+async def ocr_pages_route(file: UploadFile = File(...), pages: str = Form(...)) -> dict[str, Any]:  # noqa: B008
+    """Text recognition for named pages of a PDF. Answers empty text when OCR is not available here."""
     data = await file.read()
-    return parse(data, file.filename or "upload.bin", file.content_type)
+    if len(data) > MAX_PARSE_BYTES:
+        raise HTTPException(status_code=413, detail="file is too large")
+    numbers = [int(p) for p in pages.split(",") if p.strip().isdigit()]
+
+    def read() -> str:
+        try:
+            return ocr_pdf_pages(data, numbers).text
+        except OcrUnavailableError:
+            return ""
+
+    return {"text": await run_in_threadpool(read)}
 
 
 @v1.post("/suggest-tags")

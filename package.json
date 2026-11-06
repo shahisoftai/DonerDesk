@@ -12,11 +12,13 @@
     "dev": "pnpm -r --parallel --filter=./apps/* dev",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && pnpm test:architecture",
     "db:migrate": "pnpm --filter @donordesk/infrastructure db:migrate",
     "db:seed": "pnpm --filter @donordesk/infrastructure db:seed",
     "db:studio": "pnpm --filter @donordesk/infrastructure db:studio",
-    "journey": "pnpm --filter @donordesk/infrastructure test:journey"
+    "journey": "pnpm --filter @donordesk/infrastructure test:journey",
+    "test:architecture": "node --test test/architecture-boundaries.test.mjs",
+    "db:migrate:deploy": "pnpm --filter @donordesk/infrastructure db:migrate:deploy"
   },
   "devDependencies": {
     "typescript": "5.6.3",

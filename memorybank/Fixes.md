@@ -1,8 +1,27 @@
 # Fixes
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
-Record of fixes applied to DonorDesk. Last updated: 2026-10-05 (Education demo: disaggregation and attendance findings).
+Record of fixes applied to DonorDesk. Last updated: 2026-11-03 (dashboards: Phase 39 and live checks, see the section of that date); previously 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
+
+## Demo 9 (Nepal CMAM, Phase 28 on production) — defects found and fixed (2026-10-18)
+
+Found by driving the deployed Phase 28 build in a visible browser with the user's own account and four invited demo users. Each has a regression test.
+- **Invited users were stuck on onboarding (blocking).** Accepting an invitation posted legal consent with `source: "invitation"`; `POST /v1/legal/consent` only accepted `onboarding | portal | api`, so the request failed with 400, the failure was swallowed ("best effort") and the invitee was never recorded as having accepted the Terms. Every page then redirected to `/onboarding` ("Accept Terms of Service: Not accepted"). Phase 27 had added the Terms tick to the invite page without a test through the real route. Fixed: `RecordConsentSchema` and `CONSENT_SOURCES` in `packages/contracts/src/legal.ts` (the route and the contract test share it; the test names every source the web sends). Workaround before the fix: accept at `/onboarding`.
+- **The planned activity the person means was often not offered.** "Which planned activity is this?" listed three suggestions ranked by owner, same logframe activity, then date. With six planned activities in the same week and no logframe activity chosen yet, the one whose title the person had just typed was not among the three, and three January records ended up unlinked. `suggestPlanLinks` now ranks a planned activity whose title the typed title repeats before date distance; the form passes the title typed so far.
+- **History of a "files we will need" change read "details: changed to changed".** `describeChanges` now has a label and wording for `requiredFiles`, and an acronym kind keeps its capitals ("Kobo/ODK export", not "kobo/odk export").
+
+**Open from demo 9 (not fixed):** see `demo/verification-demo-9.md` "Open findings" and `pending.md`.
+
+## Work plan (Phase 28, Batches 28.0–28.2) — bugs found while building (2026-10-19)
+
+Found by the new tests before anything shipped; each has a regression test. Not deployed.
+- **Project setting did not persist.** `PrismaProjectRepository.update` never wrote `showWorkPlanning`, so hiding work planning silently reverted. Fixed; pinned by a repository test (create, hide, show).
+- **Import shifted every column when the first cell was empty.** `parseWorkPlanText` trimmed each line, dropping a leading tab. Lines are no longer trimmed before splitting; the delimiter helpers moved to `core/delimited.ts` and the activity parser uses the same ones.
+- **Server pages passed functions to client components** (`canChangeStatus`, `canMove`). That fails when the page renders, and neither `tsc` nor `next build` reports it. Replaced by id lists (`changeableIds`, `movableIds`); `tests/unit/server-client-boundary.test.mts` now fails any non-client page that does it.
+- **A status change refreshed the page only on a result it could not tell from failure.** The plan actions now return `true` on success.
+- **A monthly row in the wizard kept the long spread-out dates** it had before "Monthly" was ticked, making the first occurrence huge. Ticking Monthly now clears the row's dates so the server's monthly proposal applies.
+- Pre-existing, unchanged: three `apps/api` tests need database credentials for a `test` user and fail without them.
 
 ## Report charts did not match their section or data (2026-10-05, audit + rebuild)
 
@@ -1485,3 +1504,66 @@ Full detail: [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-P
 | Blueprint headings English in fr/ar/ur/ps reports | No catalog | `report-type-blueprint-i18n.ts` + `canonicalTitle` so role detection (exec summary last, worker kinds) keeps working |
 | French report carried the attribution twice (English + French) in its first section | Safety net prepended the English sentence when it didn't find it, but the writer had written it in French | "Add if missing" only for English reports (`placeAttribution` `ensure` flag); duplicate removal unchanged |
 
+## Infographic Studio deploy (2026-10-25)
+
+| Symptom | Root cause | Fix |
+|---|---|---|
+| Every infographic render fails on the host with a missing font file (first deploy of Phase 32) | `deploy-fast.sh` packed `packages/infrastructure/dist`, `prisma` and `scripts` but not `assets/`, which holds the bundled fonts the renderer reads | Added `packages/infrastructure/assets` to the packages tar; fonts copied to the host by hand the same day |
+| `rls.sql` aborts with "must be owner of table ConnectorRun" | The single `DO` block loops over every table and stops at a table the migrator does not own | Apply the new tables' grants and policies with the same statements, one batch; check `relrowsecurity` and `relforcerowsecurity` on each table afterwards |
+| An effect that ran on every keystroke in the Entry Sheet's autosave looped forever (twice) | The effect set a fresh state object each pass even when nothing had changed | Functional `setState` that returns the previous object when nothing changed; pinned by the sheet harness (Phase 34.2) |
+| Escape in a sheet cell cancelled the edit but the blur then committed it | The blur handler read the closure, not the current edit state | Handlers read `editingRef` (Phase 34.2) |
+| A chart's text description was replaced by a generic one | ECharts writes its own aria label over the container's | The description is passed as `option.aria.label.description` (Phase 34.1) |
+| Web build failed after adding a connector hash (earlier, Phase 33) and again risked with new domain modules | A `"use client"` file imported the domain root, which pulls `node:crypto` into the browser bundle | Import a subpath export (`@donordesk/domain/contexts/...`) and add it to `packages/domain/package.json` `exports` (done for `report-query`, `breakdown-chart`, `places-export`) |
+| Application data-sheet tests failed after the sheet began to carry breakdowns | The test fakes had no `disaggregation` on their updates | The handler reads `u.disaggregation?.length` defensively |
+| Harness check "Not available yet" for Sankey failed | Sankey became a built kind | The check names the population pyramid, the only kind still unavailable |
+
+## 2026-11-03: dashboards (Phase 39 and the live checks that followed)
+
+Found by looking at the baseline pictures, by the browser harnesses, and by driving production in a visible browser (`demo/verification-2026-11-03-dashboards.md`). Deployed in `20261103044136` and `20261103054323`.
+
+| Problem | Cause | Fix |
+|---|---|---|
+| Charts unreadable in dark mode: chart titles and notes dark on dark, white gridlines, a white halo on donut labels | The builder wrote fixed hex colours; ECharts was created with no theme; its label defaults are outlined white | Colour roles (`chart-theme-roles.ts`) swapped by `retheme`; one registered theme per mode from the tokens; label defaults set to plain text in the role colour |
+| Every tile showed its title twice | The builder drew a title inside the picture and the tile header showed it again | `forScreen` drops the embedded title on live tiles (reports and exports keep it) |
+| KPI tile in the harness had no sentence and its sparkline was cut off | The view treated a missing `status` as "not judged"; the headline tiles were two rows tall | Status is worked out from the figure when absent; headline row is three rows tall; the sparkline shrinks instead of overflowing |
+| Dashboard crashed when a drawing had no `change` (harness data skipped the schema default) | `kpi.change.good` read on `undefined` | The view treats a missing change as none |
+| `test:templates` did not build (since Phase 35) | `MapWidget` imports server actions that the templates harness never stubbed | The harness shares the tiles harness's map, places and pin stubs |
+| Tiles harness lost the heading after adding a tile | The new preview stand-in answered text widgets with "not drawn" | The stand-in returns the text, as the real server does |
+| The dashboard page scrolled sideways at about 1080 px | Long project names in the toolbar's project and period selects set their width | Selects are capped (`max-w-[16rem]`, truncate) |
+| A "Target" bar lost its name on a narrow caregivers chart | ECharts skipped overlapping category labels | `forScreen` shows every label of a category axis with 12 or fewer entries |
+| A tile that could not be drawn was titled "Chart" (and "Edit widget" for screen readers) | The title came from the drawing, and there is none | `ownTitle` falls back to the chart, map, number tile, KPI or list title |
+| A new tile showed "Save the dashboard to draw this." until the dashboard was saved | Drawings came only from the saved dashboard | `POST /v1/dashboard-preview` draws unsaved widgets (read-only, same visibility rules); the edit screen asks for any tile without a drawing and redraws one whose settings changed |
+| A share link showed no maps and no activity number tiles ("Maps are not shown through a share link", "Not available here") | The public handler gave the drawing code no extras, and map cards read their data in the browser with a session a link holder does not have | `ShareLinkExtras` (plan, activity days, results by place; never money, budget, project lists) and `ShareMapReader` (map data read on the server and sent as `map.preloaded`); the page text says what is shown |
+| A queued test job waited forever | Its own `sh -c` command line matched the `pgrep -f` pattern it was watching | Killed by pid; harnesses are started directly (see the `phase39-dashboard-visuals` memory) |
+
+## 2026-11-01: AI setup wizard v2 (Phase 37)
+
+| Problem | Cause | Fix |
+|---|---|---|
+| A Gantt activity read with a deliverable ("Project Organogram") as its title | `toBlocks` trimmed a block's leading tab, so a row whose first cell was empty shifted every cell one column left | `trimBlock` keeps a leading tab; the Gantt is read by its header row, not by position |
+| The review page said "Received an unexpected response shape" | Two Gantt titles were longer than the contract's 300 characters | Readers cut values to the contract's limits (`fit-text.ts`); a test pins it |
+| Amounts such as 567282.9617 became `[REDACTED]`, so budget rows were lost and the budget did not add up | The phone pattern `\d{3}[-.]?\d{3}[-.]?\d{4}` matched three digits, a dot, three digits and four digits | The same separator twice (`\1`); a test pins an amount and real phone numbers |
+| Two budget rows (and any Gantt row with a long note) lost their code or amount | A description cell with line breaks split its row across lines, and the continuation could run into the next block | `joinedRows` puts the pieces back together and finds the block by the row's first line |
+| Results titled only "Goal" or "Outputs" were proposed as results | The model listed headings as items | `isHeadingOnly` drops them before grounding |
+| Goals/outcomes varied from run to run | One call decided content and structure; passages were picked by keywords across block boundaries | Voted structure pass; document map and section router (plan §9); goal 1 and outcomes 2 in every run afterwards |
+| Parts finishing together could overwrite each other's results | Re-read saves did not check the proposal's version | Version-checked save with retry |
+| Dates and amounts in table cells became headings in the document map | Standalone short lines were accepted as titles | A title must be mostly letters; "C. 4" is read as "C.4" |
+| Reporting periods failed while a new project's Drive folders were still being made | `CreateReportingPeriodHandler` refuses until the workspace is ready | `PeriodsApplier` waits (30 × 3 s) and otherwise says "press Finish creating" |
+| The architecture guard failed on the edit handler | It tested for the indicators step by name | `addIndicator` asks the area registry (`SETUP_AREAS[area].fields`) |
+
+## 2026-10-31: AI project setup wizard (Phase 36, AI setup)
+
+| Problem | Cause | Fix |
+|---|---|---|
+| The second edit of a proposal from the page was refused as "someone else changed it" | `create` ignored the proposal's own timestamps, and the edit handler handed out the clock's time instead of the stored version | `create` stores the timestamps; the handler reads the stored `updatedAt` back (found by the real-database repository test) |
+| Extractors were given the unredacted document | The orchestrator and the re-read passed the raw blocks | Each block is redacted first and the grounding text is joined from the same blocks |
+| An ungrounded fact removed its key, leaving the facts incomplete; linked items were dropped | The patch deleted the field; `parentCode`, `logframeCode` and `adminLevel` were treated as figures that must appear in the item's own quote | A dropped fact becomes "Not stated"; those three fields are `NON_FIGURE_FIELDS`, checked by `checkProposal` instead |
+| Raw provider text ("GLM API error: 429") reached people, and a rate limit made the run ask the model for every area | The adapter threw the status only, the run kept going | `plainProviderError` (one sentence + status code, `RATE_LIMITED` also for an empty credit balance), the provider's own words go to the server log, the run stops asking the model but still reads areas a sheet can answer |
+| Superadmin portal returned 502 | `donordesk-superadmin` was stopped on 2026-10-27 (the rolled-back deploy) and never restarted | Started it; follow-up: deploy check (pending.md) |
+| Anthropic Test passed but real calls failed | Test only lists models (free); the account had no credit; and a key without a workspace is refused with HTTP 400 | Create the key inside a workspace and add credit; the Test button should show the provider's reason (not done) |
+| Welcome page claimed documents are "never used to train anything" and "stored for 30 days" | Wording the code could not back | Now says what is true: saved in the organisation's own Drive, not kept by the servers, text sent to the AI service with personal details removed |
+| Project documents were stored on the server | First design used server storage | `ISetupDocumentStore` over Google Drive; no fallback (see `gdrive.md` §10) |
+| Rail ticked every step merely clicked past; empty fact slots counted as "to decide"; two main landmarks on the page | Position-only ticks; counts included "Not stated" slots; the wizard rendered its own `<main>` inside the portal's | Ticks only where something was accepted; counts only stated items; the wizard is a `<div>` |
+| Choosing several files again after removing one added nothing | The file input was cleared before React read its live `FileList` | Copy the files first (found by the new browser harness) |
+| The database stored a proposal's version differently from the one handed out | see first row | see first row |
+| Project folders sat loose beside any other folders in the tenant's DonorDesk Drive folder; no organisation-level folders | Only per-project trees were provisioned | `ORGANISATION_FOLDERS` tree + "Set up folders" button; project trees now under `03-Projects` (see `gdrive.md` §11). Known limit: folders a person makes by hand in Drive are invisible to the app (`drive.file` scope), so it creates its own |

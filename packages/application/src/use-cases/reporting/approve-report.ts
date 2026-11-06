@@ -16,6 +16,8 @@ import type { IReportingProfileRepository } from "../../ports/setup.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IProjectMemberRepository } from "../../ports/project-members.js";
 import type { IAuditLogger } from "../../ports/core.js";
+import type { IReportNotifier } from "../../services/report-notifier.js";
+import type { ILogframeVersionRepository } from "../../ports/logframe.js";
 
 /**
  * Approves a report when the aggregate gate passes. The gate consumes
@@ -44,6 +46,12 @@ export class ApproveReportHandler {
     private readonly lintGrounding?: ILintGrounding,
     /** With these, the project's second-approver rule is enforced and a self sign-off is recorded. */
     private readonly signOff?: { profiles: IReportingProfileRepository; projects: IProjectRepository; members: IProjectMemberRepository },
+    /** Tells the author their report was approved. */
+    private readonly notifier?: IReportNotifier,
+    /** With this, the audit record says which version of the results framework the report was approved against. */
+    private readonly logframeVersions?: ILogframeVersionRepository,
+    /** After a report is approved: things that follow from it (a fresh infographic draft for the period). Never fails the approval. */
+    private readonly afterApproval?: { afterApproval(ctx: AuthenticatedContext, report: { projectId: string; reportingPeriodId: string }): Promise<unknown> },
   ) {}
 
   async handle(ctx: AuthenticatedContext, draftId: string): Promise<Result<void, DomainError>> {
@@ -86,6 +94,7 @@ export class ApproveReportHandler {
       entityType: "report_draft",
       entityId: draftId,
       projectId: draft.projectId,
+      ...(await this.frameworkNote(ctx, draft.projectId)),
     });
     // Working alone is allowed, but openly: the author approved their own report.
     if (approver.value.selfApproval) {
@@ -98,7 +107,21 @@ export class ApproveReportHandler {
         projectId: draft.projectId,
       });
     }
+    await this.notifier?.approved(ctx.tenant.tenantId, ctx.tenant.userId, draft);
+    try {
+      await this.afterApproval?.afterApproval(ctx, { projectId: draft.projectId, reportingPeriodId: draft.reportingPeriodId });
+    } catch {
+      // What follows an approval never undoes it.
+    }
     return { ok: true, value: undefined };
+  }
+
+  /** The framework version in force at approval (and whether it was signed off), so "what did the framework say then?" has an answer. */
+  private async frameworkNote(ctx: AuthenticatedContext, projectId: string): Promise<{ newValue?: string }> {
+    if (!this.logframeVersions) return {};
+    const latest = await this.logframeVersions.latest(projectId, ctx.tenant.tenantId);
+    if (!latest.ok || !latest.value) return {};
+    return { newValue: JSON.stringify({ logframeVersion: latest.value.version, logframeApproved: Boolean(latest.value.approvedAt) }) };
   }
 
   /**
@@ -138,6 +161,45 @@ export class ApproveReportHandler {
     });
     if (!check.ok) return { ok: false, error: DomainError.forbidden(check.reason) };
     return { ok: true, value: { selfApproval: check.selfApproval } };
+  }
+
+  /**
+   * The same rule, applied to a draft that has already been approved: was the
+   * person who approved it entitled to? A second-approver rule turned on
+   * after the approval still applies, so the donor copy cannot be sealed by a
+   * report the author approved themselves.
+   */
+  async checkApprovedDraftApprover(
+    ctx: AuthenticatedContext,
+    draft: { projectId: string; createdById: string; approvedById?: string },
+  ): Promise<Result<void, DomainError>> {
+    if (!this.signOff) return { ok: true, value: undefined };
+    if (!draft.approvedById) {
+      return { ok: false, error: DomainError.forbidden("This report has not been approved yet.") };
+    }
+    const tenantId = ctx.tenant.tenantId;
+    const [profile, project, members] = await Promise.all([
+      this.signOff.profiles.findByProject(draft.projectId, tenantId),
+      this.signOff.projects.findById(draft.projectId, tenantId),
+      this.signOff.members.findByProject(draft.projectId, tenantId),
+    ]);
+    if (!profile.ok) return profile;
+    if (!project.ok) return project;
+    if (!members.ok) return members;
+    const roles = signOffRoles({
+      projectManagerId: project.value?.projectManagerId,
+      meOfficerId: project.value?.meOfficerId,
+      reportingOfficerId: project.value?.reportingOfficerId,
+      members: members.value.map((m) => ({ userId: m.userId, role: m.role, status: m.status })),
+    });
+    const check = checkApprover({
+      requireSecondApprover: profile.value?.requireSecondApprover ?? false,
+      authorId: draft.createdById,
+      approverId: draft.approvedById,
+      otherApproverCount: roles.approverIds.filter((id) => id !== draft.approvedById).length,
+    });
+    if (!check.ok) return { ok: false, error: DomainError.forbidden(check.reason) };
+    return { ok: true, value: undefined };
   }
 
   async evaluateGate(ctx: AuthenticatedContext, reportingPeriodId: string, draftId: string): Promise<Result<{

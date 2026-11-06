@@ -1,4 +1,4 @@
-import { DomainError } from "@donordesk/domain";
+import { DomainError, isValidTimeZone } from "@donordesk/domain";
 import type { Result } from "@donordesk/domain";
 import { Money, DateRange } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
@@ -106,6 +106,13 @@ export class UpdateProjectHandler {
       meOfficerId: input.meOfficerId,
       reportingOfficerId: input.reportingOfficerId,
     });
+
+    // Optional project time zone: empty or null clears it; anything else must be a real IANA name.
+    if (input.timeZone !== undefined) {
+      const zone = input.timeZone?.trim() ?? "";
+      if (zone && !isValidTimeZone(zone)) return { ok: false, error: DomainError.validation("Use a time zone such as Africa/Addis_Ababa, or leave it empty to use the organisation's", { field: "timeZone" }) };
+      project.setTimeZone(zone || undefined);
+    }
 
     if (input.projectManagerId || input.meOfficerId || input.reportingOfficerId) {
       project.assignStaff({

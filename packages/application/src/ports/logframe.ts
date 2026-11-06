@@ -31,3 +31,27 @@ export interface IIndicatorUpdateRepository {
   findByReportingPeriods(reportingPeriodIds: readonly string[], tenantId: TenantId): Promise<Result<IndicatorUpdate[]>>;
   findByIndicatorAndPeriod(indicatorId: string, reportingPeriodId: string, tenantId: TenantId): Promise<Result<IndicatorUpdate | null>>;
 }
+
+/** One saved version of a project's results framework (see `LogframeVersioner`). */
+export interface LogframeVersionRecord {
+  id: string;
+  tenantId: string;
+  projectId: string;
+  version: number;
+  snapshotJson: string;
+  contentHash: string;
+  summary: string;
+  createdById: string;
+  createdAt: Date;
+  approvedById?: string | null;
+  approvedAt?: Date | null;
+}
+
+export interface ILogframeVersionRepository {
+  create(record: LogframeVersionRecord): Promise<Result<LogframeVersionRecord>>;
+  latest(projectId: string, tenantId: TenantId): Promise<Result<LogframeVersionRecord | null>>;
+  /** Newest first. */
+  list(projectId: string, tenantId: TenantId): Promise<Result<LogframeVersionRecord[]>>;
+  findByNumber(projectId: string, version: number, tenantId: TenantId): Promise<Result<LogframeVersionRecord | null>>;
+  approve(id: string, userId: string, at: Date): Promise<Result<void>>;
+}

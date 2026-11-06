@@ -1,5 +1,7 @@
 import type { FastifyInstance } from "fastify";
-import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema, BulkVerifyEvidenceSchema } from "@donordesk/contracts";
+import { assertProjectAccess } from "../middleware/project-boundary.js";
+import { registerParseFileRoute } from "./parse-file.js";
+import { EvidenceSearchSchema, AcceptEvidenceTagsSchema, ImportEvidenceTextSchema, SetEvidencePeriodSchema, BulkVerifyEvidenceSchema, ReviewEvidenceSchema } from "@donordesk/contracts";
 import { buildEvidenceTemplate, EVIDENCE_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
 
 export async function registerEvidenceRoutes(app: FastifyInstance) {
@@ -18,22 +20,14 @@ export async function registerEvidenceRoutes(app: FastifyInstance) {
     return r.value;
   });
 
-  app.post("/v1/evidence/parse-file", async (req) => {
-    const data = await req.file();
-    if (!data) throw new Error("file required");
-    const buffer = await data.toBuffer();
-    const result = await req.container.parser.parse({
-      buffer,
-      fileName: data.filename ?? "upload",
-      fileType: data.mimetype ?? "application/octet-stream",
-    });
-    return { text: result.text, metadata: result.metadata };
-  });
+  registerParseFileRoute(app, "/v1/evidence/parse-file");
   app.post("/v1/evidence/upload", async (req) => {
     const data = await req.file();
     if (!data) throw new Error("file required");
     const buffer = await data.toBuffer();
     const fields = data.fields as Record<string, { value?: string } | undefined>;
+    // The project is in the multipart body, so the membership check the middleware does for paths and JSON is done here.
+    await assertProjectAccess(req, fields.projectId?.value);
     const payload = {
       projectId: fields.projectId?.value,
       title: fields.title?.value,
@@ -127,6 +121,15 @@ export async function registerEvidenceRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.verifyEvidence.handle(ctx, id);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  // A reviewer's decision: verify, ask for a correction, reject, archive or bring back (reason required where the rules say so).
+  app.post("/v1/evidence/:id/review", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = ReviewEvidenceSchema.parse(req.body);
+    const r = await req.container.handlers.reviewEvidence.handle({ tenant: req.tenant, requestId: req.id }, id, body);
+    if (!r.ok) throw r.error;
+    return { ok: true, status: r.value.status };
   });
 
   app.post("/v1/evidence/:id/period", async (req) => {

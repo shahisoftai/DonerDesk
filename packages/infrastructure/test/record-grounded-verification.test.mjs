@@ -157,6 +157,16 @@ test("the life-of-project breakdown is stated beside the life-of-project total a
   assert.equal(numeric.verify({ atoms: [atom("1260"), atom("655"), atom("605")], findings: [f] }).result, "PASSED");
 });
 
+test("a target set by group is stated as a record and verified as a figure", async () => {
+  const f = finding({ targetBreakdowns: [{ dimension: "SEX", category: "Female", value: "700" }, { dimension: "SEX", category: "Male", value: "500" }] });
+  const text = recordChunksFromFindings([f]).map((c) => c.text).join(" ");
+  assert.ok(text.includes("targets set by group: Female 700, Male 500"));
+  const numeric = new NumericAssertionVerifier();
+  const atom = (value) => ({ charStart: 0, charEnd: value.length, value, role: "TARGET", bound: false });
+  assert.equal(numeric.verify({ atoms: [atom("700"), atom("500")], findings: [f] }).result, "PASSED");
+  assert.equal(recordChunksFromFindings([finding()]).map((c) => c.text).join(" ").includes("targets set by group"), false);
+});
+
 import { stripCrossReferences } from "../dist/llm/verifier-strategies.js";
 
 test("a recommendation is a proposal: only the figures in it are verified", async () => {

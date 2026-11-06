@@ -8,3 +8,4 @@ export * from "./template-region.js";
 export * from "./auto-map-regions.js";
 export * from "./events.js";
 export * from "./template-diff.js";
+export * from "./donor-indicator-mapping.js";

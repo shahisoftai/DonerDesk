@@ -25,12 +25,16 @@
     "db:seed:dummy": "tsx src/db/seed-dummy-projects.ts",
     "db:studio": "prisma studio",
     "audit:verify": "node dist/audit/verify-cli.js",
+    "storage:encrypt": "node dist/storage/encrypt-cli.js",
     "ai:eval": "node dist/ai/eval-cli.js",
     "reporting:eval": "node dist/ai/reporting-eval-cli.js",
     "superadmin:bootstrap": "node dist/platform/bootstrap-cli.js",
     "embedding:backfill": "node dist/llm/embedding-backfill-cli.js",
     "postinstall": "prisma generate",
-    "test:journey": "node --test test/journey/*.test.mjs"
+    "test:journey-db": "node --test test/journey/real-stack.test.mjs",
+    "test:journey": "node --test test/journey/*.test.mjs",
+    "db:migrate:deploy": "tsx src/db/migrate-deploy.ts",
+    "setup:eval": "node test/setup-corpus/eval.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
@@ -38,6 +42,7 @@
     "@donordesk/contracts": "workspace:*",
     "@donordesk/domain": "workspace:*",
     "@prisma/client": "5.22.0",
+    "@resvg/resvg-js": "2.6.2",
     "archiver": "8.0.0",
     "bcryptjs": "2.4.3",
     "bullmq": "5.34.8",
@@ -52,7 +57,10 @@
     "pdf-parse": "1.1.1",
     "pdfkit": "0.15.0",
     "pino": "9.5.0",
-    "sharp": "^0.35.3"
+    "pptxgenjs": "4.0.1",
+    "sharp": "^0.35.3",
+    "svg-to-pdfkit": "0.1.8",
+    "word-extractor": "1.0.4"
   },
   "devDependencies": {
     "@types/archiver": "6.0.3",
@@ -60,6 +68,7 @@
     "@types/jsonwebtoken": "9.0.7",
     "@types/pdf-parse": "1.1.4",
     "@types/pdfkit": "0.13.5",
+    "@types/svg-to-pdfkit": "^0.1.4",
     "prisma": "5.22.0",
     "tsx": "4.19.2",
     "typescript": "5.6.3"

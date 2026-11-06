@@ -1,6 +1,6 @@
 # Verification demo 1 — Donor Template Manager v2, end to end (2026-09-27/28)
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 Live verification of the Donor Template Manager v2 rebuild (`Features/05-Donor-Template-Manager-Plan.md`)
 against the real production tenant `GEC` (`mnpiracha@gmail.com`), on

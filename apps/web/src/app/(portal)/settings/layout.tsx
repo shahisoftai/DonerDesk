@@ -14,11 +14,15 @@ export default async function SettingsLayout({ children }: { children: ReactNode
     tabs.push({ label: "Setup", href: "/settings/setup" });
   }
   tabs.push({ label: "Settings", href: "/settings" });
+  tabs.push({ label: "Places", href: "/settings/places" });
   tabs.push({ label: "Security", href: "/settings/security" });
   if (hasCapability(ctx, "audit.view")) {
     tabs.push({ label: "Audit log", href: "/settings/audit" });
   }
   if (hasCapability(ctx, "org.manage")) {
+    tabs.push({ label: "Finance", href: "/settings/finance" });
+    tabs.push({ label: "Starting answers", href: "/settings/setup-packs" });
+    tabs.push({ label: "Integrations", href: "/settings/integrations" });
     tabs.push({ label: "AI usage", href: "/settings/ai-usage" });
   }
   // Agent Memory (Phase 21) — hidden unless the viewer can manage it AND the

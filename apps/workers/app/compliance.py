@@ -5,6 +5,7 @@ StubReportDraftGenerator.rewriteSection) so Kestra flows can call the same
 logic over HTTP. Rules here are heuristic; a real LLM provider replaces them
 later without changing the request/response contract.
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -71,9 +72,8 @@ def detect_checklist(req: DetectChecklistRequest) -> dict[str, Any]:
             {
                 "type": "MISSING_EVIDENCE",
                 "title": f"Only {req.evidence_count} evidence file(s) uploaded",
-                "description": "Donor template and logframe require approximately {0} evidence files.".format(
-                    req.required_evidence_count
-                ),
+                "description": f"Donor template and logframe require approximately {req.required_evidence_count} "
+                f"evidence files.",
                 "severity": "HIGH",
             }
         )
@@ -140,9 +140,7 @@ def rewrite_section(req: RewriteSectionRequest) -> dict[str, Any]:
     if not source:
         return {"content": "", "unsupportedClaims": ["Section is empty; nothing to rewrite"]}
 
-    unsupported = (
-        ["Review claims flagged for source verification"] if _needs_verification(source) else []
-    )
+    unsupported = ["Review claims flagged for source verification"] if _needs_verification(source) else []
 
     if req.mode == "SHORTEN":
         return {"content": _shorten(source, req.audience), "unsupportedClaims": unsupported}

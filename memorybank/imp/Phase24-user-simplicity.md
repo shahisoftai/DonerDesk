@@ -1,6 +1,6 @@
 # Phase 24 — User simplicity: implementation plan
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Status (2026-10-07): built (24.1–24.5), deployed and re-verified in a browser; see §9 for what was built, what differs from this plan and what is deferred.**
 Revised 2026-10-06 after a code review of the first draft (scope cut, causes verified, SOLID design rules added).

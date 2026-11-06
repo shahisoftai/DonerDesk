@@ -204,3 +204,11 @@ export const LockTemplateMappingSchema = z.object({
   mappingId: z.string().min(1),
 });
 export type LockTemplateMappingInput = z.infer<typeof LockTemplateMappingSchema>;
+
+/** What a person decides about one indicator the donor asks for: confirm a project indicator, say it will not be reported, or go back to the automatic match. */
+export const SetDonorIndicatorMappingSchema = z.discriminatedUnion("action", [
+  z.object({ action: z.literal("MAP"), indicatorId: z.string().min(1) }),
+  z.object({ action: z.literal("NOT_TRACKED") }),
+  z.object({ action: z.literal("CLEAR") }),
+]);
+export type SetDonorIndicatorMappingInput = z.infer<typeof SetDonorIndicatorMappingSchema>;

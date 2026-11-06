@@ -40,6 +40,7 @@ export async function registerExportRoutes(app: FastifyInstance) {
     return {
       items: r.value.map((e) => ({
         id: e.id,
+        reportingPeriodId: e.reportingPeriodId,
         exportType: e.exportType,
         fileUrl: e.fileUrl,
         fileName: nameOf(e),

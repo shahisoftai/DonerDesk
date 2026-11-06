@@ -36,7 +36,7 @@ const STATUS_TEXT: Record<SaveState, string> = {
  * can't explain, which the AI writer uses. Saves a second after typing stops
  * and when a field loses focus; one save at a time, always the latest text.
  */
-export function StoryInputs({ periodId, initialStory, canEdit }: { periodId: string; initialStory: StoryContextShape; canEdit: boolean }) {
+export function StoryInputs({ periodId, initialStory, canEdit, planSuggestion = {} }: { periodId: string; initialStory: StoryContextShape; canEdit: boolean; planSuggestion?: Partial<Record<keyof StoryContextShape, string>> }) {
   const router = useRouter();
   const [story, setStory] = useState<StoryContextShape>(initialStory);
   const [state, setState] = useState<SaveState>("idle");
@@ -94,6 +94,12 @@ export function StoryInputs({ periodId, initialStory, canEdit }: { periodId: str
         <label key={field.key} className="block">
           <span className="block text-sm font-medium text-slate-800 dark:text-slate-100">{field.label}</span>
           <span className="mb-1 block text-xs text-slate-500 dark:text-slate-400">{field.hint}</span>
+          {canEdit && planSuggestion[field.key] && !(story[field.key] ?? "").trim() && (
+            <span className="mb-1 flex flex-wrap items-start gap-2 rounded-md bg-slate-50 p-2 text-xs text-slate-600 dark:bg-white/5 dark:text-slate-300">
+              <span className="min-w-0 flex-1"><span className="font-medium">From your plan:</span> {planSuggestion[field.key]}</span>
+              <button type="button" className="text-brand-700 underline dark:text-brand-300" onClick={() => change(field.key, planSuggestion[field.key] ?? "")}>Use this</button>
+            </span>
+          )}
           <Textarea dictate
             rows={3}
             value={story[field.key] ?? ""}

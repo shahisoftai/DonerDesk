@@ -23,6 +23,8 @@ export type ExportChartInput = {
   caption?: string;
 } & (
   | { resolved: ResolvedChartData }
+  /** A published infographic (a PNG) placed in the section: printed as a figure, never redrawn. */
+  | { image: { png: Buffer } }
   | {
       config: ChartConfig;
       indicators: Array<{

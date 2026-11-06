@@ -1,0 +1,220 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { getPlaceResultsAction } from "@/lib/actions/places";
+import type { PlaceItem, PlaceResults } from "@/lib/server/schemas-places";
+import { loadMapAssets } from "@/lib/client/map-assets";
+import { provincesOf } from "../../workplan/domain/site-map";
+import type { NamedGeoCollection } from "../../workplan/domain/geo/geo-types";
+import {
+  DEFAULT_LAYERS, OVERLAY_LAYER, buildExplorerModel, type ExplorerModel, defaultView, drillInto, drillUp, levelForView, mapSummary, moveLayer, withDepth, placeForRegion, placePanel,
+  setLayerOpacity, toggleLayer, sharedBands, withBands, panelPeriods, type DrillState,
+} from "../domain/map-explorer";
+import { DRILL_MAP_NAME, WORLD_MAP_NAME, explorerOption } from "../domain/map-option";
+import { MapCanvas, type MapRegistration } from "./MapCanvas";
+import { LayerPanel } from "./LayerPanel";
+import { PlacePanel } from "./PlacePanel";
+import { PeriodSlider } from "./PeriodSlider";
+import { type Overlay } from "../domain/overlay-layer";
+import { OverlayPanel } from "./OverlayPanel";
+import { loadBoundaryFile, loadBoundaryManifest } from "@/lib/client/boundary-loader";
+import { attributionLine, fileFor, findCountry, levelsFor, type BoundaryManifest } from "../domain/boundary-sources";
+import { periodSteps } from "../domain/period-steps";
+import { ResultsMap } from "./ResultsMap";
+import { useMapEngine } from "./useMapEngine";
+import { useMapText } from "./useMapText";
+import { LowDataResults } from "./LowDataResults";
+import { useLowData } from "../../design/presentation/use-low-data";
+import type { ExplorerProps, PlaceResultsLoader } from "./results-loader";
+
+/** The ECharts explorer draws down to level 3; deeper levels are for the new map. */
+const legacyLevels = (c: ReturnType<typeof findCountry>) => levelsFor(c).filter((l): l is 1 | 2 | 3 => l <= 3);
+
+const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], regions: [], unmapped: [], bands: [], isRate: false };
+
+/**
+ * The interactive map (Phase 35.0): hover for the figure, click for the place panel, open a country's provinces,
+ * switch the indicator, and show, hide, fade or reorder layers. It composes the pieces; the rules are in `domain/`.
+ */
+/** `compact` is the dashboard card: one column, no layer panel, no file layer and no side-by-side periods; everything else (hover, click, drill, detail, indicator, time slider) is the same. */
+export type { PlaceResultsLoader } from "./results-loader";
+
+export function MapExplorer(props: ExplorerProps) {
+  const { engine, markFailed } = useMapEngine();
+  const { lowData } = useLowData();
+  const [showAnyway, setShowAnyway] = useState(false);
+  const { t } = useMapText();
+  // Low-data mode comes first, whichever engine would draw: the table needs no map library, no tiles and no boundary files.
+  if (lowData && !showAnyway) return <LowDataResults {...props} onShowMap={() => setShowAnyway(true)} />;
+  if (engine === "echarts") return <EChartsMapExplorer {...props} />;
+  if (engine === "pending") return <p className="text-sm text-slate-500">{t("maps.loading")}</p>;
+  return <ResultsMap {...props} onUnavailable={markFailed} />;
+}
+
+function EChartsMapExplorer({ projectId, places, initial, periods, compact = false, loadResults, staticData = false }: {
+  /** Read results some other way than the signed-in action. */
+  loadResults?: PlaceResultsLoader | undefined;
+  /** The data is a fixed snapshot (a share link): no drilling into finer levels and no side-by-side periods. */
+  staticData?: boolean | undefined; projectId: string; places: readonly PlaceItem[]; initial: PlaceResults | null; periods: ReadonlyArray<{ id: string; label: string }>; compact?: boolean }) {
+  const read: PlaceResultsLoader = loadResults ?? ((id, level, period) => getPlaceResultsAction(id, level, period));
+  const [view, setView] = useState<DrillState>(() => defaultView(places));
+  const [results, setResults] = useState<PlaceResults | null>(initial);
+  const [indicatorId, setIndicatorId] = useState(initial?.indicators[0]?.id ?? "");
+  const [layers, setLayers] = useState(DEFAULT_LAYERS);
+  const [selected, setSelected] = useState<{ name: string; placeId: string | null } | null>(null);
+  const [geo, setGeo] = useState<{ world: NamedGeoCollection; admin1: NamedGeoCollection } | null>(null);
+  const [periodId, setPeriodId] = useState<string | null>(null);
+  const steps = useMemo(() => periodSteps(periods), [periods]);
+  const [boundaries, setBoundaries] = useState<BoundaryManifest | null>(null);
+  const [fine, setFine] = useState<NamedGeoCollection | null>(null);
+  const [overlay, setOverlay] = useState<Overlay | null>(null);
+  const [compare, setCompare] = useState(false);
+  const [panels, setPanels] = useState<Array<{ label: string; results: PlaceResults }>>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => { void loadBoundaryManifest().then(setBoundaries); }, []);
+  useEffect(() => { void loadMapAssets().then((a) => setGeo({ world: a.world, admin1: a.admin1 })).catch(() => setError("The map data could not be loaded.")); }, []);
+
+  useEffect(() => {
+    const level = levelForView(view, results?.levelsAvailable ?? []);
+    let live = true;
+    void read(projectId, level, periodId ?? undefined).then((out) => {
+      if (!live) return;
+      if (!out.ok) { setError(out.error.message); return; }
+      setError(null);
+      setResults(out.value);
+      setIndicatorId((current) => (out.value.indicators.some((i) => i.id === current) ? current : (out.value.indicators[0]?.id ?? "")));
+    });
+    return () => { live = false; };
+    // The level is decided by the view; the available levels do not change what is asked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, projectId, periodId]);
+
+  const panelPeriodsList = useMemo(() => panelPeriods(periods), [periods]);
+  useEffect(() => {
+    if (!compare) return;
+    let live = true;
+    const lvl = levelForView(view, results?.levelsAvailable ?? []);
+    void Promise.all(panelPeriodsList.map((p) => read(projectId, lvl, p.id).then((o) => (o.ok ? { label: p.label, results: o.value } : null)))).then((all) => {
+      if (live) setPanels(all.filter((x): x is { label: string; results: PlaceResults } => x !== null));
+    });
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [compare, view, projectId, panelPeriodsList]);
+  const panelModels = useMemo(() => {
+    const models = panels.map((p) => ({ label: p.label, model: buildExplorerModel(p.results, places, indicatorId) })).filter((x): x is { label: string; model: NonNullable<ReturnType<typeof buildExplorerModel>> } => x.model !== null);
+    const bands = sharedBands(models.map((m) => m.model));
+    return models.map((m) => ({ label: m.label, model: withBands(m.model, bands) }));
+  }, [panels, places, indicatorId]);
+
+
+  const model = useMemo(() => (results ? buildExplorerModel(results, places, indicatorId) : null), [results, places, indicatorId]);
+  const countryFiles = useMemo(() => (view.kind === "COUNTRY" && boundaries ? findCountry(boundaries, view.country) : null), [boundaries, view]);
+  const finerEntry = view.kind === "COUNTRY" && view.depth > 1 ? fileFor(countryFiles, view.depth as 2 | 3) : null;
+  useEffect(() => {
+    setFine(null);
+    if (finerEntry) void loadBoundaryFile(finerEntry).then((c) => { setFine(c); if (!c) setError("The district boundaries could not be loaded."); });
+  }, [finerEntry]);
+  const drillCollection = useMemo(() => {
+    if (!geo || view.kind !== "COUNTRY") return null;
+    return view.depth > 1 ? fine : provincesOf(geo.admin1, view.country);
+  }, [geo, view, fine]);
+  const baseCollection = view.kind === "WORLD" ? geo?.world ?? null : drillCollection;
+  const registrations = useMemo<MapRegistration[]>(() => {
+    if (!baseCollection) return [];
+    return [{ name: view.kind === "WORLD" ? WORLD_MAP_NAME : DRILL_MAP_NAME, collection: baseCollection }];
+  }, [baseCollection, view.kind]);
+  const indicator = results?.indicators.find((i) => i.id === indicatorId);
+  const option = useMemo(() => {
+    if (!baseCollection) return null;
+    // With no figure to draw, a ticked overlay still shows on the plain base map (an overlay is context, not data).
+    const shown = model ?? (overlay ? EMPTY_MODEL : null);
+    if (!shown) return null;
+    return explorerOption({ model: shown, layers, view, featureNames: baseCollection.features.map((f) => f.properties.name), unit: indicator?.unit ?? null, selectedPlaceId: selected?.placeId ?? null, overlay });
+  }, [model, baseCollection, layers, view, indicator, selected, overlay]);
+
+  const level = levelForView(view, results?.levelsAvailable ?? []);
+  const panel = selected?.placeId ? placePanel(selected.placeId, places, results, indicatorId) : null;
+  const canDrill = !staticData && view.kind === "WORLD" && !!geo && !!selected && provincesOf(geo.admin1, selected.name) !== null;
+
+  const showOverlay = useCallback((o: Overlay | null) => {
+    setOverlay(o);
+    setLayers((l) => (o ? (l.some((x) => x.id === "OVERLAY") ? l : [...l, OVERLAY_LAYER]) : l.filter((x) => x.id !== "OVERLAY")));
+  }, []);
+
+  function selectRegion(name: string) {
+    setSelected({ name, placeId: placeForRegion(name, places, level)?.id ?? null });
+  }
+
+  if (places.length === 0) {
+    return <div className="card text-sm"><p>No places are listed yet.</p><Link className="mt-2 inline-block font-medium underline" href="/settings/places">Add places</Link></div>;
+  }
+  if (results?.noPlaces) return <p className="card text-sm">The places list has no entries for this project.</p>;
+  const bands = model?.bands ?? [];
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <nav aria-label="Map location" className="flex items-center gap-1">
+          <button type="button" className="underline" onClick={() => { setView(drillUp(view)); setSelected(null); }} disabled={view.kind === "WORLD"}>World</button>
+          {view.kind === "COUNTRY" && <><span aria-hidden>›</span><strong>{view.country}</strong></>}
+          {view.kind === "COUNTRY" && !staticData && legacyLevels(countryFiles).length > 0 && (
+            <span role="group" aria-label="Detail" className="ms-2 flex gap-1">
+              {([1, ...legacyLevels(countryFiles)] as const).map((d) => (
+                <button key={d} type="button" aria-pressed={view.depth === d} className={`rounded-full border px-2 ${view.depth === d ? "border-brand-600 bg-brand-50" : ""}`} onClick={() => setView(withDepth(view, d))}>{d === 1 ? "Provinces" : d === 2 ? "Districts" : "Sub-districts"}</button>
+              ))}
+            </span>
+          )}
+        </nav>
+        <label className="flex items-center gap-1">Indicator
+          <select className="input" value={indicatorId} onChange={(e) => setIndicatorId(e.target.value)}>
+            {(results?.indicators ?? []).map((i) => <option key={i.id} value={i.id}>{i.code} {i.name}</option>)}
+          </select>
+        </label>
+      </div>
+      {!compact && (
+        <div className="flex flex-wrap items-center gap-4" data-no-print>
+          <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> Compare the latest periods side by side</label>
+          <button type="button" className="text-sm font-medium underline" onClick={() => window.print()}>Print this map</button>
+        </div>
+      )}
+      <p className="hidden text-sm print:block">{indicator ? `${indicator.code} ${indicator.name}` : "Results by place"} · {view.kind === "COUNTRY" ? view.country : "World"} · printed {new Date().toISOString().slice(0, 10)}. Drawn from the figures recorded in DonorDesk; a place with no figure is grey, not zero.</p>
+      <PeriodSlider steps={steps} periodId={periodId} onChange={setPeriodId} />
+      {!compact && compare && baseCollection && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Periods side by side">
+          {panelModels.map((m) => (
+            <figure key={m.label} className="rounded-lg border p-2">
+              <figcaption className="text-sm font-medium">{m.label}</figcaption>
+              <MapCanvas height="h-56" option={explorerOption({ model: m.model, layers, view, featureNames: baseCollection.features.map((f) => f.properties.name), unit: indicator?.unit ?? null, selectedPlaceId: null })} registrations={registrations} label={`${m.label}: ${mapSummary(m.model)}`} onRegion={() => {}} onPin={() => {}} />
+            </figure>
+          ))}
+          {panelModels.length === 0 && <p className="text-sm text-slate-500">Loading the periods…</p>}
+        </div>
+      )}
+      {error && <p role="alert" className="text-sm text-danger-600">{error}</p>}
+      <div className={compact ? "grid gap-3" : "grid gap-3 lg:grid-cols-[1fr_18rem]"}>
+        <div className="space-y-2">
+          {option ? (
+            <MapCanvas option={option} registrations={registrations} height={compact ? "h-[26rem]" : "h-[28rem]"} label={model ? mapSummary(model) : "Map"} onRegion={selectRegion}
+              onPin={(id) => { const p = places.find((x) => x.id === id); if (p) setSelected({ name: p.name, placeId: p.id }); }} />
+          ) : <p className="text-sm text-slate-500">{results ? "Nothing to draw yet for this indicator." : "Loading…"}</p>}
+          {model && (
+            <div className="flex flex-wrap items-center gap-2 text-xs" aria-label="Legend">
+              {bands.map((b, i) => <span key={i} className="inline-flex items-center gap-1"><span className="inline-block h-3 w-5" style={{ background: b.color }} />{Math.round(b.from) === Math.round(b.to) ? Math.round(b.from).toLocaleString() : `${Math.round(b.from).toLocaleString()}–${Math.round(b.to).toLocaleString()}`}</span>)}
+              <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-5" style={{ background: "#e5e7eb" }} />Not measured</span>
+            </div>
+          )}
+          {model && <p className="text-sm text-slate-600">{mapSummary(model)}</p>}
+          {view.kind === "COUNTRY" && view.depth > 1 && countryFiles && <p className="text-xs text-slate-500">{attributionLine(countryFiles, view.depth as 2 | 3)}</p>}
+          {model && model.unmapped.length > 0 && <p className="text-xs text-slate-500">Not on the map (no pin): {model.unmapped.map((u) => u.name).join(", ")}</p>}
+        </div>
+        <div className="space-y-3" data-no-print>
+          {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
+          {!compact && <OverlayPanel onOverlay={showOverlay} />}
+          {selected && <PlacePanel panel={panel} name={selected.name} canDrill={canDrill} onDrill={() => { setView(drillInto(selected.name)); setSelected(null); }} onSelect={(id) => { const p = places.find((x) => x.id === id); if (p) setSelected({ name: p.name, placeId: p.id }); }} onClose={() => setSelected(null)} />}
+        </div>
+      </div>
+    </div>
+  );
+}

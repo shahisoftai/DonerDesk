@@ -244,6 +244,11 @@ function normalizeNumberToken(token: string): string | null {
  */
 const COUNT_NOUN_RE = /(participant|file|record|finding|result|evidence|item|session|batch|checklist item|performed|could)s?\b/i;
 
+/** "106 percent of target", "40 per cent of the baseline": a share of a reference figure, wherever it sits in the sentence. */
+const PERCENT_OF_REFERENCE_RE = /^\s*(?:percent|per cent)\s+of\s+(?:the\s+|its\s+|their\s+)?(?:\w+\s+)?(?:target|baseline|goal|plan)/i;
+
+const PERCENT_WORD_RE = /^\s*(?:percent|per cent)\b/i;
+
 const MONTH_NAMES = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?";
 /** "10 May", "10th of May" — the day number of a calendar date. */
 const DAY_BEFORE_MONTH_RE = new RegExp(`^(?:st|nd|rd|th)?\\s+(?:of\\s+)?(?:${MONTH_NAMES})\\b`, "i");
@@ -305,6 +310,9 @@ export function classifyNumericAtomRoles(
       copy.role = "COUNT";
     } else if (hasCurrency) {
       copy.role = "CURRENCY";
+    } else if (PERCENT_OF_REFERENCE_RE.test(text.slice(atom.charEnd, atom.charEnd + 40))) {
+      copy.role = "PERCENT";
+      copy.isPercent = true;
     } else if (hasPercent && index === atoms.length - 1 && /percent|rate/i.test(lower.slice(atom.charEnd - 8, atom.charEnd + 12))) {
       copy.role = "PERCENT";
       copy.isPercent = true;
@@ -315,6 +323,8 @@ export function classifyNumericAtomRoles(
     } else if (hasPrevious) {
       copy.role = "COMPARISON";
     }
+    // Written with the word ("85 percent, up from 70 percent"): still a percentage, whatever role it took.
+    if (!copy.isPercent && PERCENT_WORD_RE.test(text.slice(atom.charEnd, atom.charEnd + 12))) copy.isPercent = true;
     return copy;
   });
 }

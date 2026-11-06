@@ -8,14 +8,14 @@ const tenantId = { toString: () => "t1" };
 const ctx = { tenant: { tenantId, userId: "u1" }, requestId: "r" };
 const ok = (value) => ({ ok: true, value });
 
-function build({ stored, resolverResult, gate = { submitBlocked: false, submitNeedsDecision: false, approvalBlocked: false, blockReasons: [] }, resolver = true } = {}) {
+function build({ stored, resolverResult, gate = { submitBlocked: false, submitNeedsDecision: false, approvalBlocked: false, blockReasons: [] }, resolver = true, draft = {}, approverError = null } = {}) {
   const created = [];
   const audits = [];
   const published = [];
   const resolverCalls = [];
   const handler = new CreateSubmissionSnapshotHandler(
     { generate: () => "snap-1" },
-    { findById: async () => ok({ id: "d1", reportingPeriodId: "p1", projectId: "pr1" }) },
+    { findById: async () => ok({ id: "d1", reportingPeriodId: "p1", projectId: "pr1", status: "APPROVED", createdById: "u1", approvedById: "u2", ...draft }) },
     { findByReportDraft: async () => ok([{ id: "s1", sectionTitle: "Results", currentRevisionId: "rev1", status: "APPROVED" }]) },
     { findByDraft: async () => ok([]) },
     { findById: async () => ok({ id: "rev1", revisionNumber: 1, assuranceState: "CURRENT", contentHash: "h1" }) },
@@ -23,7 +23,7 @@ function build({ stored, resolverResult, gate = { submitBlocked: false, submitNe
     { create: async (s) => { created.push(s); return ok(s); } },
     { findById: async () => ok({ donorTemplateVersion: undefined }) },
     { findByDraft: async () => ok([]) },
-    { evaluateGate: async () => ok(gate) },
+    { evaluateGate: async () => ok(gate), checkApprovedDraftApprover: async () => (approverError ? { ok: false, error: approverError } : ok(undefined)) },
     { record: async (e) => { audits.push(e); } },
     { publish: async (e) => { published.push(...e); } },
     resolver ? { resolve: async (i) => { resolverCalls.push(i); return resolverResult ?? ok({ id: "req-1", snapshot: [], coverage: { satisfied: [], unmet: [] } }); } } : undefined,
@@ -32,6 +32,34 @@ function build({ stored, resolverResult, gate = { submitBlocked: false, submitNe
 }
 
 const goodRequirements = { id: "req-0", snapshot: [{ key: "exec", kind: "SECTION" }], coverage: { satisfied: ["exec"], unmet: [] } };
+
+test("a report that was never approved at draft level cannot be sealed", async () => {
+  // Approving the sections one by one is not a substitute for approving the
+  // report: that is the action the second-approver rule governs.
+  const t = build({ stored: goodRequirements, draft: { status: "DRAFT" } });
+  const r = await t.handler.handle(ctx, "d1");
+  assert.equal(r.ok, false);
+  assert.match(r.error.message, /has to be approved/);
+  assert.equal(t.created.length, 0);
+});
+
+test("a report approved by someone the second-approver rule forbids cannot be sealed", async () => {
+  const t = build({
+    stored: goodRequirements,
+    approverError: { code: "FORBIDDEN", message: "This project needs a second person to approve: you wrote this report." },
+  });
+  const r = await t.handler.handle(ctx, "d1");
+  assert.equal(r.ok, false);
+  assert.match(r.error.message, /second person to approve/);
+  assert.equal(t.created.length, 0);
+});
+
+test("a report approved by someone else seals as before", async () => {
+  const t = build({ stored: goodRequirements });
+  const r = await t.handler.handle(ctx, "d1");
+  assert.equal(r.ok, true);
+  assert.equal(t.created.length, 1);
+});
 
 test("seals with stored requirements and does not resolve again", async () => {
   const t = build({ stored: goodRequirements });

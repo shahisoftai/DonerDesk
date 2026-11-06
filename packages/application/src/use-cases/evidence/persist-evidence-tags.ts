@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, type SuggestedTag } from "@donordesk/domain";
+import { DomainError, assessTextExtraction, extractionMessage, isTextExtractionStatus, type SuggestedTag } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -11,6 +11,8 @@ export interface PersistEvidenceTagsInput {
   sensitivityWarning?: string;
   model?: string;
   extractedText?: string;
+  /** What the parser reported (EXTRACTED, EMPTY, FAILED, UNSUPPORTED). Absent = judged from `extractedText`. */
+  extractionStatus?: string;
   idempotencyKey?: string;
 }
 
@@ -57,6 +59,17 @@ export class PersistEvidenceTagsHandler {
     ev.setAiSuggestions(input.summary, input.tags, input.sensitivityWarning);
     if (input.extractedText) {
       ev.setExtractedText(input.extractedText);
+    }
+    // Say whether the file's words were read. A caller that reports nothing about extraction leaves it "not attempted".
+    if (input.extractionStatus !== undefined || input.extractedText !== undefined) {
+      const reported = isTextExtractionStatus(input.extractionStatus) ? input.extractionStatus : undefined;
+      const verdict = assessTextExtraction({
+        fileName: ev.fileName,
+        text: input.extractedText ?? ev.extractedText ?? "",
+        failed: reported === "FAILED",
+      });
+      const status = reported && reported !== "EXTRACTED" ? reported : verdict.status;
+      ev.recordTextExtraction(status, status === "EXTRACTED" ? undefined : extractionMessage(status, ev.fileName));
     }
 
     const saved = await this.repo.update(ev);

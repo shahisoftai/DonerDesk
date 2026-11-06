@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/components/ui/cn";
+import { TOUCH } from "@/components/ui/touch";
 
 export type TabItem = {
   label: string;
@@ -23,6 +24,7 @@ function matchLength(pathname: string, item: TabItem): number {
 
 const linkClass = (active: boolean) =>
   cn(
+    TOUCH.row,
     "rounded-md px-3 py-1.5",
     active
       ? "bg-brand-500/10 font-medium text-brand-700 dark:bg-brand-400/10 dark:text-brand-300"
@@ -51,8 +53,9 @@ export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
           <Link
             key={tab.href}
             href={tab.href}
+            prefetch={false}
             aria-current={active ? "page" : undefined}
-            className={cn(linkClass(active), tab.secondary && "hidden sm:inline-block")}
+            className={cn(linkClass(active), tab.secondary && "hidden sm:inline-flex")}
           >
             {tab.label}
           </Link>
@@ -68,6 +71,7 @@ export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
               <Link
                 key={tab.href}
                 href={tab.href}
+                prefetch={false}
                 aria-current={activeHref === tab.href ? "page" : undefined}
                 className={linkClass(activeHref === tab.href)}
               >

@@ -1,11 +1,7 @@
 import { randomBytes } from "node:crypto";
 import type { IEvidenceStorage, IProjectWorkspaceService, IDriveFileContentReader, SaveEvidenceInput, EvidenceLocation, DriveFileContent } from "@donordesk/application";
-import { DomainError, type Result, type TenantId } from "@donordesk/domain";
+import { ok, DomainError, type Result, type TenantId } from "@donordesk/domain";
 import { refreshGoogleAccessToken } from "./google-oauth.js";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function fail(message: string): Result<never, DomainError> {
   return { ok: false, error: new DomainError("INVARIANT_VIOLATION", message) };

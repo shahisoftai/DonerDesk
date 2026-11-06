@@ -1,4 +1,5 @@
 import { Entity } from "../../core/entity.js";
+import { isValidTimeZone, suggestTimeZone } from "../../core/time-zone.js";
 import { DomainError } from "../../core/domain-error.js";
 import { TenantId } from "../../value-objects/tenant-id.js";
 import type { StorageProvider } from "../evidence/evidence-file.js";
@@ -43,6 +44,8 @@ export interface OrganizationProps {
   dataResidency: DataResidency;
   aiEnabled: boolean;
   storageProvider: StorageProvider;
+  /** IANA zone; the daily summary goes out at 07:00 here. New organisations get one suggested from their country. */
+  timeZone?: string;
   reportingDefaults: OrganizationReportingDefaults;
   /**
    * Agent Memory (Phase 21) tenant self-service toggle. Effective state is
@@ -52,6 +55,12 @@ export interface OrganizationProps {
    * tenants must opt in.
    */
   agentMemoryEnabled: boolean;
+  /** Ask DonorDesk (Phase 33.9): off until an administrator opts in; existing organisations stay off. */
+  askEnabled: boolean;
+  /** Project setup assistance (Phase 36): the assistant may read uploaded project documents. Off until an administrator opts in. */
+  setupAssistEnabled?: boolean | undefined;
+  /** Two-step sign-in is required of everyone from this moment (undefined = optional). Off under single sign-on. */
+  mfaRequiredFrom?: Date | undefined;
   /** Set when a NonprofitVerification for this tenant is APPROVED; gates the discounted Creem checkout product (Phase 22 WS-G). */
   nonprofitVerifiedAt?: Date;
 }
@@ -64,7 +73,7 @@ export class Organization extends Entity<string> {
     createdAt?: Date,
   ) {
     super(id, createdAt);
-    this.props = { ...this.props, reportingDefaults: normalizeReportingDefaults(this.props.reportingDefaults) };
+    this.props = { ...this.props, reportingDefaults: normalizeReportingDefaults(this.props.reportingDefaults), timeZone: this.props.timeZone ?? suggestTimeZone(this.props.country) };
   }
 
   static create(input: { id: string; tenantId: TenantId; props: OrganizationProps }): Organization {
@@ -93,6 +102,7 @@ export class Organization extends Entity<string> {
       throw DomainError.validation("Valid contact email required");
     }
     if (!p.country) throw DomainError.validation("Country required");
+    if (p.timeZone !== undefined && !isValidTimeZone(p.timeZone)) throw DomainError.validation("Choose a time zone from the list", { field: "timeZone" });
     if (!Array.isArray(p.sectors) || p.sectors.length === 0) {
       throw DomainError.validation("At least one sector required");
     }
@@ -112,7 +122,11 @@ export class Organization extends Entity<string> {
   get dataResidency(): DataResidency { return this.props.dataResidency; }
   get aiEnabled(): boolean { return this.props.aiEnabled; }
   get agentMemoryEnabled(): boolean { return this.props.agentMemoryEnabled; }
+  get askEnabled(): boolean { return this.props.askEnabled === true; }
+  get setupAssistEnabled(): boolean { return this.props.setupAssistEnabled === true; }
+  get mfaRequiredFrom(): Date | undefined { return this.props.mfaRequiredFrom; }
   get storageProvider(): StorageProvider { return this.props.storageProvider; }
+  get timeZone(): string { return this.props.timeZone ?? "UTC"; }
   get nonprofitVerifiedAt(): Date | undefined { return this.props.nonprofitVerifiedAt; }
   get reportingDefaults(): OrganizationReportingDefaults {
     return {
@@ -138,6 +152,24 @@ export class Organization extends Entity<string> {
     this.touch();
   }
 
+  /** Administrator requirement for two-step sign-in from a moment (null clears it). */
+  setMfaRequiredFrom(from: Date | null): void {
+    this.props.mfaRequiredFrom = from ?? undefined;
+    this.touch();
+  }
+
+  /** Administrator opt-in for Ask DonorDesk. */
+  updateAskSettings(patch: { enabled: boolean }): void {
+    this.props.askEnabled = patch.enabled;
+    this.touch();
+  }
+
+  /** Administrator opt-in for the project setup assistant (Phase 36). */
+  updateSetupAssistSettings(patch: { enabled: boolean }): void {
+    this.props.setupAssistEnabled = patch.enabled;
+    this.touch();
+  }
+
   markNonprofitVerified(at: Date): void {
     this.props.nonprofitVerifiedAt = at;
     this.touch();
@@ -149,8 +181,10 @@ export class Organization extends Entity<string> {
   }
 
   updateProfile(patch: Partial<OrganizationProps>): void {
-    this.props = { ...this.props, ...patch };
-    Organization.validateProps(this.props);
+    // Validate the result first: a refused change must not stay on the aggregate.
+    const next = { ...this.props, ...patch };
+    Organization.validateProps(next);
+    this.props = next;
     this.touch();
   }
 }

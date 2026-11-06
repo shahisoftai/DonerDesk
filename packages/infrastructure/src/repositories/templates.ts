@@ -9,12 +9,9 @@ import {
   type Result,
   type TemplateStatus,
   type TemplateVersionSnapshot,
+  ok,
 } from "@donordesk/domain";
 import type { IDonorTemplateRepository, IDonorTemplateVersionReader, ILogger, TemplateVersionSummary } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 const TEMPLATE_STATUSES: readonly TemplateStatus[] = ["EXTRACTING", "NEEDS_REVIEW", "REVIEWED", "EXTRACTION_FAILED"];
 

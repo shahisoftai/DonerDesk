@@ -5,6 +5,7 @@ import type { IProjectWorkspaceService, DriveFileEntry } from "../../ports/infra
 import type { IProjectRepository } from "../../ports/projects.js";
 
 export const WORKSPACE_FOLDER_LABELS: Record<string, string> = {
+  "00-Project-Documents": "Project documents",
   "01-Donor-Templates": "Donor templates",
   "02-Logframe": "Logframe",
   "03-Data-Files": "Data files",
@@ -52,11 +53,13 @@ export class ListWorkspaceFilesHandler {
         ? `https://drive.google.com/drive/folders/${encodeURIComponent(workspaceResult.value.rootId)}`
         : workspaceResult.value.deepLink;
 
+    const listed = await Promise.all(
+      [...new Set(roles)].map(async (role) => ({ role, result: await this.workspace.listProjectFolderFiles(ctx.tenant.tenantId, projectId, role) })),
+    );
     const folders: WorkspaceFolderFiles[] = [];
-    for (const role of [...new Set(roles)]) {
-      const listResult = await this.workspace.listProjectFolderFiles(ctx.tenant.tenantId, projectId, role);
-      if (!listResult.ok) return listResult;
-      folders.push({ role, label: WORKSPACE_FOLDER_LABELS[role] ?? role, files: listResult.value });
+    for (const { role, result } of listed) {
+      if (!result.ok) return result;
+      folders.push({ role, label: WORKSPACE_FOLDER_LABELS[role] ?? role, files: result.value });
     }
 
     return { ok: true, value: { folders, deepLink } };

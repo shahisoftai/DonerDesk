@@ -17,6 +17,8 @@ import {
 import { formatDate } from "@/lib/shared/dates";
 import { complianceFixLink } from "@/lib/shared/compliance-links";
 import { ChecklistResolution } from "./ChecklistResolution";
+import { LeadPicker } from "@/features/tasks/presentation/LeadPicker";
+import type { ProjectPerson } from "@/features/tasks/domain/ask-people";
 import { BulkChecklistResolution } from "./BulkChecklistResolution";
 
 type Period = { id: string; label: string };
@@ -52,6 +54,7 @@ export function CompliancePanel({
   checklist,
   readiness,
   capabilities,
+  people = [],
 }: {
   projectId: string;
   periods: Period[];
@@ -59,6 +62,8 @@ export function CompliancePanel({
   checklist: ChecklistItem[];
   readiness: Readiness;
   capabilities: readonly Capability[];
+  /** Active members, for the Lead picker on each item. */
+  people?: ProjectPerson[];
 }) {
   const router = useRouter();
   const canResolve = can(capabilities, "checklist.resolve") || can(capabilities, "checklist.manage");
@@ -231,6 +236,8 @@ export function CompliancePanel({
                 periodId={periodId}
                 item={item}
                 canResolve={canResolve}
+                people={people}
+                canAssign={can(capabilities, "checklist.manage")}
                 bulkMode={bulkMode}
                 selected={selectedIds.has(item.id)}
                 onToggle={toggleSelected}
@@ -268,6 +275,8 @@ function ChecklistCard({
   periodId,
   item,
   canResolve,
+  people = [],
+  canAssign = false,
   resolved = false,
   bulkMode = false,
   selected = false,
@@ -277,6 +286,8 @@ function ChecklistCard({
   periodId: string;
   item: ChecklistItem;
   canResolve: boolean;
+  people?: ProjectPerson[];
+  canAssign?: boolean;
   resolved?: boolean;
   bulkMode?: boolean;
   selected?: boolean;
@@ -331,6 +342,9 @@ function ChecklistCard({
         )}
         {canResolve && !resolved && <ChecklistResolution itemId={item.id} severity={item.severity} />}
       </div>
+      {!resolved && people.length > 0 && (
+        <div className="mt-2"><LeadPicker current={item.assignedToId} people={people} canEdit={canAssign} target={{ type: "checklistItem", id: item.id }} /></div>
+      )}
     </div>
   );
 }

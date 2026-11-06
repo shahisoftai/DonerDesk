@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from "@prisma/client";
 import {
   EvidenceFile,
+  isTextExtractionStatus,
   TenantId,
   DomainError,
   type Result,
@@ -9,12 +10,9 @@ import {
   type EvidenceVerificationStatus,
   type SuggestedTag,
   type StorageProvider,
+  ok,
 } from "@donordesk/domain";
-import type { IEvidenceRepository, EvidenceFilter, EvidenceListResult } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
+import type { IEvidenceRepository, IEvidenceUseGuard, EvidenceFilter, EvidenceListResult } from "@donordesk/application";
 
 export class PrismaEvidenceRepository implements IEvidenceRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -45,8 +43,11 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         verificationStatus: e.verificationStatus,
         confidentialityLevel: e.confidentialityLevel,
         notes: e.notes,
+        reviewNote: e.reviewNote ?? null,
         aiSummary: e.aiSummary,
         extractedText: e.extractedText,
+        textExtractionStatus: e.textExtractionStatus ?? null,
+        textExtractionNote: e.textExtractionNote ?? null,
         aiSuggestedTagsJson: JSON.stringify(e.aiSuggestedTags),
         sensitivityWarning: e.sensitivityWarning,
       },
@@ -69,7 +70,12 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         verificationStatus: e.verificationStatus,
         confidentialityLevel: e.confidentialityLevel,
         notes: e.notes,
+        reviewNote: e.reviewNote ?? null,
         aiSummary: e.aiSummary,
+        // Persisted on update too: the text callback arrives after the row exists, and it used to be dropped here.
+        extractedText: e.extractedText ?? null,
+        textExtractionStatus: e.textExtractionStatus ?? null,
+        textExtractionNote: e.textExtractionNote ?? null,
         aiSuggestedTagsJson: JSON.stringify(e.aiSuggestedTags),
         sensitivityWarning: e.sensitivityWarning,
       },
@@ -79,6 +85,12 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
 
   async findById(id: string, tenantId: TenantId): Promise<Result<EvidenceFile | null, DomainError>> {
     const row = await this.prisma.evidenceFile.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    if (!row) return ok(null);
+    return ok(this.toDomain(row));
+  }
+
+  async findByStorageKey(storageKey: string, tenantId: TenantId): Promise<Result<EvidenceFile | null, DomainError>> {
+    const row = await this.prisma.evidenceFile.findFirst({ where: { storageKey, tenantId: tenantId.toString() } });
     if (!row) return ok(null);
     return ok(this.toDomain(row));
   }
@@ -96,7 +108,16 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     if (filter.location) where.location = { contains: filter.location };
     if (filter.uploadedById) where.uploadedById = filter.uploadedById;
     if (filter.verificationStatus) where.verificationStatus = filter.verificationStatus;
-    if (filter.confidentialityLevel) where.confidentialityLevel = filter.confidentialityLevel;
+    // A level the caller may not open is never returned, so the list cannot
+    // show a file whose download would be refused.
+    const allowed = filter.allowedConfidentialityLevels;
+    if (allowed) {
+      const wanted = filter.confidentialityLevel ? [filter.confidentialityLevel] : allowed;
+      const permitted = wanted.filter((level) => allowed.includes(level));
+      where.confidentialityLevel = permitted.length > 0 ? { in: permitted } : { in: ["__none__"] };
+    } else if (filter.confidentialityLevel) {
+      where.confidentialityLevel = filter.confidentialityLevel;
+    }
     if (filter.dateFrom || filter.dateTo) {
       where.activityDate = {};
       if (filter.dateFrom) (where.activityDate as { gte?: Date }).gte = filter.dateFrom;
@@ -167,8 +188,11 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
     verificationStatus: string;
     confidentialityLevel: string;
     notes: string | null;
+    reviewNote: string | null;
     aiSummary: string | null;
     extractedText: string | null;
+    textExtractionStatus: string | null;
+    textExtractionNote: string | null;
     aiSuggestedTagsJson: string;
     sensitivityWarning: string | null;
     createdAt: Date;
@@ -199,11 +223,31 @@ export class PrismaEvidenceRepository implements IEvidenceRepository {
         verificationStatus: row.verificationStatus as EvidenceVerificationStatus,
         confidentialityLevel: row.confidentialityLevel as ConfidentialityLevel,
         notes: row.notes ?? undefined,
+        reviewNote: row.reviewNote ?? undefined,
         aiSummary: row.aiSummary ?? undefined,
         extractedText: row.extractedText ?? undefined,
+        textExtractionStatus: isTextExtractionStatus(row.textExtractionStatus) ? row.textExtractionStatus : undefined,
+        textExtractionNote: row.textExtractionNote ?? undefined,
         aiSuggestedTags: JSON.parse(row.aiSuggestedTagsJson) as SuggestedTag[],
         sensitivityWarning: row.sensitivityWarning ?? undefined,
       },
     });
+  }
+}
+
+/** An approved, exported or sent report that cites a file in a section's sources. */
+export class PrismaEvidenceUseGuard implements IEvidenceUseGuard {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async reportUsing(evidenceId: string, tenantId: TenantId): Promise<Result<{ reportTitle: string } | null, DomainError>> {
+    const section = await this.prisma.reportSection.findFirst({
+      where: {
+        tenantId: tenantId.toString(),
+        sourceReferencesJson: { contains: evidenceId },
+        reportDraft: { status: { in: ["APPROVED", "EXPORTED", "SUBMITTED"] } },
+      },
+      select: { reportDraft: { select: { title: true } } },
+    });
+    return ok(section ? { reportTitle: section.reportDraft.title } : null);
   }
 }

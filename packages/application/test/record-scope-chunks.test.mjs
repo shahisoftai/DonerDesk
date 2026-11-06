@@ -28,3 +28,17 @@ test("no scope, no scope chunks", () => {
   assert.deepEqual(scopeStatements(undefined), []);
   assert.deepEqual(scopeStatements({}), []);
 });
+
+test("an indicator's means of verification is a record, so a report may say where its results are kept", () => {
+  const chunks = buildRecordChunks({
+    project,
+    period: { reportType: "FINAL", duration: { start: new Date("2026-02-01"), end: new Date("2026-09-30") } },
+    activities: [],
+    indicatorUpdates: [],
+    indicatorDefinitions: [{ code: "WS-OC1c", name: "Water points with chlorine residual", meansOfVerification: "Water quality test logs" }, { code: "X-1" }],
+  });
+  const mov = chunks.filter((c) => c.chunkId.startsWith("record:indicator:") && c.chunkId.endsWith("-mov:0"));
+  assert.equal(mov.length, 1);
+  assert.ok(mov[0].text.includes("verified through: Water quality test logs"));
+  assert.ok(mov[0].chunkId.startsWith("record:"));
+});

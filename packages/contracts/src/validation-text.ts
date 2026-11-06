@@ -12,6 +12,7 @@ export interface ValidationIssueLike {
 
 /** Field labels, most specific path first. A row is matched by the path with numeric segments removed. */
 const FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
+  ["timeZone", "Time zone"],
   ["scope.affectedPopulation.group", "Affected population: who"],
   ["scope.affectedPopulation.figure", "Affected population: figure"],
   ["scope.affectedPopulation.source", "Affected population: source"],
@@ -28,6 +29,30 @@ const FIELD_LABELS: ReadonlyArray<readonly [string, string]> = [
   ["endDate", "End date"],
   ["deadline", "Donor deadline"],
   ["internalReviewDeadline", "Internal review deadline"],
+  ["plannedStart", "Start date"],
+  ["plannedEnd", "End date"],
+  ["ownerUserId", "Lead"],
+  ["supportUserIds", "Other people helping"],
+  ["logframeActivityId", "Logframe activity"],
+  ["latitude", "Latitude"],
+  ["longitude", "Longitude"],
+  ["plannedActivityId", "Planned activity"],
+  ["targetParticipants", "People expected"],
+  ["targetCount", "Number of sessions"],
+  ["repeats.until", "Repeats until"],
+  ["repeats", "Repeats"],
+  ["reason", "Why?"],
+  ["rows.plannedStart", "Start date"],
+  ["rows.plannedEnd", "End date"],
+  ["rows.ownerUserId", "Lead"],
+  ["rows.logframeActivityId", "Logframe activity"],
+  ["assigneeId", "Who"],
+  ["dueDate", "By when"],
+  ["note", "Note"],
+  ["subjectId", "What it is about"],
+  ["reportingPeriodId", "Reporting period"],
+  ["userId", "Person"],
+  ["title", "What"],
 ];
 
 const humanise = (segment: string): string => {

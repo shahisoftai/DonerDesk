@@ -1,12 +1,13 @@
-import { chartArtifactsForSection } from "./section-chart-service.js";
+import { chartArtifactsForSection, dataCenterChartsToKeep } from "./section-chart-service.js";
 import type { Result, ReportPlan, ReportPlanSection, ReportSection, ChangeOrigin } from "@donordesk/domain";
-import { DomainError, attributionSectionTitle, attributionSentences, normalizeReportLanguage, placeAttribution } from "@donordesk/domain";
+import { DomainError, estimateCostUsd, pricedModelId, attributionSectionTitle, attributionSentences, normalizeReportLanguage, placeAttribution } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 import type {
   IReportDraftGenerator,
   IReportRevisionService,
   IReportAssuranceService,
   IReportArtifactRepository,
+  GeneratedArtifact,
   GeneratedSectionResult,
   ReportingProfileSnapshot,
 } from "../ports/reporting.js";
@@ -56,6 +57,7 @@ export class SectionGenerationService {
         reportContext: request.inputs.reportContext,
         draftedSections: [...request.draftedSections],
         ...(request.inputs.finance ? { finance: request.inputs.finance } : {}),
+        ...(request.inputs.deliveryPlan ? { deliveryPlan: request.inputs.deliveryPlan } : {}),
         ...((request.inputs.notMeasured?.length ?? 0) > 0 ? { notMeasured: request.inputs.notMeasured } : {}),
         ...(request.sectionInstruction ? { sectionInstruction: request.sectionInstruction } : {}),
       },
@@ -102,7 +104,7 @@ export class SectionGenerationService {
         inputTokens: t.inputTokens,
         outputTokens: t.outputTokens,
         totalTokens: t.inputTokens + t.outputTokens,
-        costUsd: 0,
+        costUsd: estimateCostUsd(pricedModelId(request.generator.model.modelId, request.generator.model.modelVersion), t.inputTokens, t.outputTokens),
         latencyMs: t.latencyMs,
         status,
         promptVersion: request.generator.model.promptVersion,
@@ -172,7 +174,10 @@ export class SectionGenerationService {
     // Charts are derived from the tables in the final text (the worker no longer draws its own), so each one sits beside the
     // table it shows, whoever wrote that table.
     const written = (generated.section.artifacts ?? []).filter((a) => a.kind !== "CHART");
-    const artifacts = [...written, ...chartArtifactsForSection({ title: section.sectionTitle, content: generated.section.content }, written.length)];
+    // Charts the person added from the Data Center are not part of the old text: they stay through a regeneration.
+    const mine = this.reportArtifacts ? await this.reportArtifacts.findBySection(section.id, ctx.tenant.tenantId) : null;
+    const derived = [...written, ...chartArtifactsForSection({ title: section.sectionTitle, content: generated.section.content }, written.length)];
+    const artifacts = [...derived, ...dataCenterChartsToKeep(mine && mine.ok ? mine.value : [])].map((a, i) => ({ ...a, ordinal: i }) as GeneratedArtifact);
     if (this.reportArtifacts && (artifacts.length > 0 || input.changeOrigin === "REGENERATION")) {
       const persisted = await this.reportArtifacts.replaceForSection({
         tenantId: ctx.tenant.tenantId,

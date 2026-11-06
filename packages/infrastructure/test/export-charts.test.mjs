@@ -41,3 +41,33 @@ test("a PDF with charts is produced", async () => {
   assert.equal(contentType, "application/pdf");
   assert.equal(fileBuffer.subarray(0, 4).toString(), "%PDF");
 });
+
+import { svgToPng } from "../dist/infographics/raster.js";
+
+const picture = (w, h) => svgToPng(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" fill="#2f7be8"/></svg>`);
+
+test("a placed infographic is exported as a numbered figure beside the charts, at its own proportions, in Word and PDF", async () => {
+  const tall = picture(400, 700);
+  const charts = [
+    { sectionTitle: "3 Results", caption: "Progress against targets", resolved: resolved() },
+    { sectionTitle: "3 Results", caption: "Results at a glance", image: { png: tall } },
+    { sectionTitle: "5 Finance", caption: "Funding snapshot", image: { png: picture(1000, 500) } },
+  ];
+  const { fileBuffer } = await new DefaultExportBuilder().build(base(charts));
+  assert.equal(await mediaCount(fileBuffer), 3, "one chart and two pictures");
+  const xml = await documentXml(fileBuffer);
+  for (const caption of ["Figure 1. Progress against targets", "Figure 2. Results at a glance", "Figure 3. Funding snapshot"]) assert.ok(xml.includes(caption), caption);
+  // The tall picture is limited in height; its width follows from its proportions (400 x 700 -> 343 x 600 px, in EMU at 9525 per px).
+  const extents = [...xml.matchAll(/<wp:extent cx="(\d+)" cy="(\d+)"/g)].map((m) => [Number(m[1]) / 9525, Number(m[2]) / 9525]);
+  const [, [w2, h2], [w3, h3]] = extents;
+  assert.ok(h2 <= 601 && Math.abs(h2 / w2 - 700 / 400) < 0.02, `tall picture ${w2}x${h2}`);
+  assert.ok(Math.abs(w3 - 540) < 1 && Math.abs(h3 / w3 - 0.5) < 0.02, `wide picture ${w3}x${h3}`);
+  const pdf = await new DefaultExportBuilder().build({ ...base(charts), exportType: "PDF" });
+  assert.equal(pdf.fileBuffer.subarray(0, 4).toString(), "%PDF");
+  assert.ok((pdf.fileBuffer.toString("latin1").match(/\/Subtype \/Image/g) ?? []).length >= 3, "the pictures are in the PDF");
+});
+
+test("a picture that is not a PNG still exports (placed at chart proportions) and never breaks the export", async () => {
+  const { fileBuffer } = await new DefaultExportBuilder().build(base([{ sectionTitle: "3 Results", caption: "Broken", image: { png: Buffer.from("not a picture") } }]));
+  assert.equal(fileBuffer.subarray(0, 2).toString(), "PK");
+});

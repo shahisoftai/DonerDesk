@@ -1,0 +1,20 @@
+# Verifies the tamper-evident audit chain of every organisation. A broken chain makes this unit fail:
+# `systemctl --failed` and `journalctl -u donordesk-audit-verify` name the organisation and the first bad event.
+# Triggered by donordesk-audit-verify.timer. See memorybank/docs/runbooks/audit-verification.md.
+[Unit]
+Description=DonorDesk audit chain verification (all organisations)
+After=network.target postgresql@16-main.service
+
+[Service]
+Type=oneshot
+User=donordesk
+Group=donordesk
+# Same tree and env file as the API (it needs DATABASE_ADMIN_URL to read across organisations, and AUDIT_CHAIN_KEY).
+WorkingDirectory=/opt/donordesk/app/packages/infrastructure
+EnvironmentFile=/opt/donordesk/shared/api.env
+ExecStart=/usr/bin/node dist/audit/verify-cli.js --all
+TimeoutStartSec=1800
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

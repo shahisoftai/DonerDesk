@@ -7,7 +7,7 @@ export const { chromium } = require("./index.js");
 
 export const BASE = process.env.DEMO_BASE ?? "https://donordesk.online";
 const CDP = process.env.DEMO_CDP ?? "http://localhost:9333";
-const LOCK = "/tmp/donordesk-demo-ui.lock";
+const LOCK = process.env.DEMO_LOCK ?? "/tmp/donordesk-demo-ui.lock";
 
 /**
  * A single-flight lock: two scripts driving the same browser page collided twice in demo 5. The lock holds the pid of

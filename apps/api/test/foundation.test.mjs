@@ -45,6 +45,10 @@ test("sensitive read routes enforce RBAC before repository access", async (t) =>
   assert.equal(users.statusCode, 403);
   const audit = await app.inject({ method: "GET", url: "/v1/audit-log", headers });
   assert.equal(audit.statusCode, 403);
+  // VIEWER holds report.export (permissions.ts, since 6eec08a): viewers may list exports read-only.
   const exports = await app.inject({ method: "GET", url: "/v1/projects/project-1/exports", headers });
-  assert.equal(exports.statusCode, 403);
+  assert.equal(exports.statusCode, 200);
+  // Still refused: adding a project member needs users.manage, which viewers do not hold.
+  const create = await app.inject({ method: "POST", url: "/v1/projects/project-1/members", headers, payload: {} });
+  assert.equal(create.statusCode, 403);
 });

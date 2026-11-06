@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema } from "@donordesk/contracts";
+import { UploadBoundaryLayerFieldsSchema, OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema, UpdateMfaRequirementSchema, SaveProgrammeSchema, SaveGrantSchema, PlaceProjectSchema } from "@donordesk/contracts";
+import { z } from "zod";
 import { isTruthyFlag } from "@donordesk/infrastructure";
 
 // Resolved once per process, mirroring container.ts's own read of the same
@@ -19,6 +20,8 @@ export async function registerOrgRoutes(app: FastifyInstance) {
         contactName: "", contactEmail: "", defaultLanguage: "en",
         reportingDefaults: { tone: "FORMAL", formattingRules: [], autoPeriodCreation: false },
         agentMemoryEnabled: false,
+        askEnabled: false,
+        setupAssistEnabled: false,
         agentMemoryPlatformEnabled,
       };
     }
@@ -33,6 +36,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       contactEmail: o.contactEmail,
       website: o.website,
       defaultLanguage: o.defaultLanguage,
+      timeZone: o.timeZone,
       logoUrl: o.logoUrl,
       mainOfficeLocation: o.mainOfficeLocation,
       donorTypesServed: o.donorTypesServed,
@@ -41,8 +45,135 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       storageProvider: o.storageProvider,
       reportingDefaults: o.reportingDefaults,
       agentMemoryEnabled: o.agentMemoryEnabled,
+      askEnabled: o.askEnabled,
+      setupAssistEnabled: o.setupAssistEnabled === true,
+      mfaRequiredFrom: o.mfaRequiredFrom ? o.mfaRequiredFrom.toISOString() : null,
       agentMemoryPlatformEnabled,
     };
+  });
+
+  // The whole organisation as one ZIP of newline-delimited JSON (and, with ?files=1, the evidence files). Administrators only.
+  app.get("/v1/organization/export", async (req, reply) => {
+    const includeFiles = (req.query as { files?: string }).files === "1";
+    const r = await req.container.handlers.exportOrganization.handle({ tenant: req.tenant, requestId: req.id }, { includeFiles });
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/zip");
+    reply.header("content-disposition", `attachment; filename="${r.value.fileName}"`);
+    reply.header("cache-control", "private, no-store");
+    return reply.send(r.value.stream);
+  });
+
+  // The workspace's own map boundaries (Phase 30.1): one GeoJSON layer the site map draws. Upload and
+  // removal are administrator-only and audited; every member may read the boundaries their maps draw.
+  app.post("/v1/organization/map-layer", async (req, reply) => {
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const buffer = await data.toBuffer();
+    const r = await req.container.handlers.uploadMapLayer.handle(
+      { tenant: req.tenant, requestId: req.id },
+      { fileName: data.filename, buffer },
+    );
+    if (!r.ok) throw r.error;
+    return reply.send(r.value);
+  });
+
+  app.get("/v1/organization/map-layer", async (req) => {
+    const r = await req.container.handlers.getMapLayer.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/organization/map-layer/data", async (req, reply) => {
+    const r = await req.container.handlers.readMapLayer.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/json; charset=utf-8");
+    reply.header("cache-control", "private, no-store");
+    return reply.send(r.value);
+  });
+
+  app.delete("/v1/organization/map-layer", async (req) => {
+    const r = await req.container.handlers.removeMapLayer.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Boundary files per country and level (Phase 41.7). Multipart: the choices come first, the file last.
+  app.put("/v1/organization/boundary-layers", async (req, reply) => {
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const buffer = await data.toBuffer();
+    const field = (name: string): string | undefined => { const f = (data.fields as Record<string, { value?: unknown } | undefined>)[name]; return typeof f?.value === "string" ? f.value : undefined; };
+    const fields = UploadBoundaryLayerFieldsSchema.parse({
+      iso: field("iso"), countryName: field("countryName"), adminLevel: field("adminLevel"), nameField: field("nameField"),
+      pcodeField: field("pcodeField"), parentPcodeField: field("parentPcodeField"),
+    });
+    const r = await req.container.handlers.uploadBoundaryLayer.handle({ tenant: req.tenant, requestId: req.id }, { ...fields, fileName: data.filename, buffer });
+    if (!r.ok) throw r.error;
+    return reply.send(r.value);
+  });
+
+  app.get("/v1/organization/boundary-layers", async (req) => {
+    const r = await req.container.handlers.listBoundaryLayers.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return { layers: r.value };
+  });
+
+  app.get("/v1/organization/boundary-layers/:iso/:level/data", async (req, reply) => {
+    const { iso, level } = z.object({ iso: z.string().regex(/^[A-Za-z]{3}$/), level: z.coerce.number().int().min(1).max(4) }).parse(req.params);
+    const r = await req.container.handlers.readBoundaryLayer.handle({ tenant: req.tenant, requestId: req.id }, iso, level);
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/json; charset=utf-8");
+    reply.header("cache-control", "private, no-store");
+    return reply.send(r.value);
+  });
+
+  app.delete("/v1/organization/boundary-layers/:iso/:level", async (req) => {
+    const { iso, level } = z.object({ iso: z.string().regex(/^[A-Za-z]{3}$/), level: z.coerce.number().int().min(1).max(4) }).parse(req.params);
+    const r = await req.container.handlers.removeBoundaryLayer.handle({ tenant: req.tenant, requestId: req.id }, iso, level);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Programmes > grants > projects: the funding hierarchy and what each level adds up to.
+  app.get("/v1/funding", async (req) => {
+    const r = await req.container.handlers.listFunding.handle({ tenant: req.tenant, requestId: req.id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/programmes", async (req) => {
+    const body = SaveProgrammeSchema.parse(req.body);
+    const r = await req.container.handlers.saveProgramme.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/programmes/:id", async (req) => {
+    const body = SaveProgrammeSchema.parse(req.body);
+    const r = await req.container.handlers.saveProgramme.handle({ tenant: req.tenant, requestId: req.id }, { ...body, id: (req.params as { id: string }).id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/grants", async (req) => {
+    const body = SaveGrantSchema.parse(req.body);
+    const r = await req.container.handlers.saveGrant.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/grants/:id", async (req) => {
+    const body = SaveGrantSchema.parse(req.body);
+    const r = await req.container.handlers.saveGrant.handle({ tenant: req.tenant, requestId: req.id }, { ...body, id: (req.params as { id: string }).id });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/projects/:projectId/funding", async (req) => {
+    const body = PlaceProjectSchema.parse(req.body);
+    const r = await req.container.handlers.placeProject.handle({ tenant: req.tenant, requestId: req.id }, (req.params as { projectId: string }).projectId, body);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.put("/v1/organization", async (req) => {
@@ -58,6 +189,22 @@ export async function registerOrgRoutes(app: FastifyInstance) {
     const body = UpdateOrganizationReportingDefaultsSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const result = await req.container.handlers.updateOrganizationReportingDefaults.handle(ctx, body);
+    if (!result.ok) throw result.error;
+    return { ok: true };
+  });
+
+  // Two-step sign-in required of everyone, from a chosen day (Phase 33.12).
+  app.put("/v1/organization/mfa-requirement", async (req) => {
+    const body = UpdateMfaRequirementSchema.parse(req.body);
+    const result = await req.container.handlers.updateMfaRequirement.handle({ tenant: req.tenant, requestId: req.id }, body);
+    if (!result.ok) throw result.error;
+    return result.value;
+  });
+
+  // Ask DonorDesk (Phase 33.9): administrator opt-in.
+  app.put("/v1/organization/ask-settings", async (req) => {
+    const body = UpdateAskSettingsSchema.parse(req.body);
+    const result = await req.container.handlers.updateAskSettings.handle({ tenant: req.tenant, requestId: req.id }, body);
     if (!result.ok) throw result.error;
     return { ok: true };
   });

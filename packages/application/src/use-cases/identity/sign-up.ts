@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, PasswordPolicy } from "@donordesk/domain";
 import type { IOrganizationRepository, IUserRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IIdGenerator } from "../../ports/core.js";
 import type { IAuditLogger } from "../../ports/core.js";
@@ -45,6 +45,8 @@ export class SignUpHandler {
       return { ok: false, error: DomainError.conflict("An account with this email already exists. Sign in instead.") };
     }
 
+    const policy = PasswordPolicy.validate(cmd.password);
+    if (!policy.ok) return { ok: false, error: DomainError.validation(policy.errors[0] ?? "Password does not meet policy", { errors: policy.errors }) };
     const passwordHash = await this.auth.hashPassword(cmd.password);
     const provisioned = await this.provisioner.handle({
       name: cmd.name,

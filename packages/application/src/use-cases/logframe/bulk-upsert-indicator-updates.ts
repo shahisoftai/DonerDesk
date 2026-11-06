@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, validateDisaggregation } from "@donordesk/domain";
+import { DomainError, indicatorValueProblem, isPeriodLocked, periodLockedMessage, validateDisaggregation } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IIndicatorUpdateRepository, IIndicatorRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -7,13 +7,21 @@ import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { BulkUpsertIndicatorUpdatesInput } from "@donordesk/contracts";
 import type { IEvidenceLinker } from "../../ports/evidence-linker.js";
 import { upsertIndicatorUpdate } from "./upsert-indicator-update.js";
+import { checkEntryWindow } from "../../services/entry-window-guard.js";
+import type { AutoReviewService } from "../../services/auto-review.js";
 
 export interface BulkUpsertOutcome {
   saved: number;
   skipped: number;
   /** One entry per accepted row, so callers can verify without a second lookup. */
   updates: Array<{ indicatorId: string; updateId: string; changed: boolean }>;
+  /** Plain sentences about what the project's simple review did with the saved values (empty when it is off or `handIn` was not asked). */
+  notices: string[];
+  /** How many saved values were handed in or verified by simple review. */
+  handedIn: number;
 }
+
+import type { ITaskReconciliation } from "../../ports/tasks.js";
 
 export class BulkUpsertIndicatorUpdatesHandler {
   constructor(
@@ -23,25 +31,56 @@ export class BulkUpsertIndicatorUpdatesHandler {
     private readonly periods: IReportingPeriodRepository,
     private readonly audit: IAuditLogger,
     private readonly linker?: IEvidenceLinker,
+    private readonly tasks?: ITaskReconciliation,
+    private readonly now: () => Date = () => new Date(),
+    /** With this, an explicit save (`handIn`) in a project with simple review on also hands the saved values in. */
+    private readonly autoReview?: AutoReviewService,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: BulkUpsertIndicatorUpdatesInput): Promise<Result<BulkUpsertOutcome, DomainError>> {
     const periodResult = await this.periods.findById(input.reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", input.reportingPeriodId) };
-    if (periodResult.value.status.value === "CLOSED") {
-      return { ok: false, error: DomainError.conflict("Indicator data cannot be edited once a reporting period is closed") };
+    if (isPeriodLocked(periodResult.value.status.value)) {
+      return { ok: false, error: DomainError.conflict(periodLockedMessage(periodResult.value.status.value)) };
     }
+
+    const window = checkEntryWindow(ctx, periodResult.value, this.now());
+    if (!window.ok) return window;
 
     const indicatorsResult = await this.indicators.findByProject(periodResult.value.projectId, ctx.tenant.tenantId);
     if (!indicatorsResult.ok) return indicatorsResult;
     const indicatorsById = new Map(indicatorsResult.value.map((i) => [i.id, i]));
+
+    // Someone else may have saved a value since this sheet was opened: refuse, naming the indicators, rather than overwrite it unseen.
+    if (input.updates.some((r) => r.expectedUpdatedAt)) {
+      const stored = await this.repo.findByReportingPeriod(input.reportingPeriodId, ctx.tenant.tenantId);
+      if (!stored.ok) return stored;
+      const byIndicator = new Map(stored.value.map((u) => [u.indicatorId, u]));
+      const changed = input.updates.filter((r) => {
+        const current = byIndicator.get(r.indicatorId);
+        return r.expectedUpdatedAt && current && current.updatedAt.getTime() !== new Date(r.expectedUpdatedAt).getTime();
+      });
+      if (changed.length > 0) {
+        const codes = changed.map((r) => indicatorsById.get(r.indicatorId)?.code ?? r.indicatorId).join(", ");
+        return { ok: false, error: DomainError.conflict(`Someone else has changed ${codes} since you opened this sheet. Nothing was saved. Reload the page to see their figures, then enter yours again.`) };
+      }
+    }
 
     // Validate every row before writing any, so one bad breakdown cannot leave a half-saved sheet.
     const rows = [];
     for (const row of input.updates) {
       const indicator = indicatorsById.get(row.indicatorId);
       if (!indicator) continue;
+      if (row.notApplicableReason?.trim()) {
+        if (indicator.formula) return { ok: false, error: DomainError.validation(`${indicator.code} is calculated from other indicators; it cannot be marked not applicable.`) };
+        rows.push(row);
+        continue;
+      }
+      // A value that cannot be right is refused here, before any row of the sheet is written.
+      const problem =
+        indicatorValueProblem(indicator, row.periodAchievement, "period") ?? indicatorValueProblem(indicator, row.cumulativeAchievement, "cumulative");
+      if (problem) return { ok: false, error: DomainError.validation(problem) };
       if (!row.disaggregation) {
         rows.push(row);
         continue;
@@ -79,10 +118,26 @@ export class BulkUpsertIndicatorUpdatesHandler {
         eventType: "logframe.indicator.updated",
         entityType: "indicator_update",
         entityId: result.value.id,
-        newValue: row.periodAchievement,
+        oldValue: result.value.previousValue,
+        newValue: row.notApplicableReason?.trim() ? `not applicable: ${row.notApplicableReason.trim()}` : row.periodAchievement,
       });
     }
 
-    return { ok: true, value: { saved, skipped, updates } };
+    if (saved > 0) await this.tasks?.reconcileForCurrentUser(ctx);
+
+    // Autosave never reaches here with handIn: only the person pressing Save hands values in, and only when the project chose to.
+    const notices: string[] = [];
+    let handedIn = 0;
+    if (input.handIn && this.autoReview) {
+      const reviews = await this.autoReview.afterSave(ctx, periodResult.value.projectId, updates.filter((u) => u.changed).map((u) => u.updateId));
+      handedIn = reviews.filter((r) => r.outcome !== "SAVED_DRAFT").length;
+      const verified = reviews.filter((r) => r.outcome === "VERIFIED").length;
+      const waiting = reviews.filter((r) => r.outcome === "HANDED_IN").length;
+      if (verified > 0) notices.push(`${verified} ${verified === 1 ? "value was" : "values were"} handed in and verified.`);
+      if (waiting > 0) notices.push(`${waiting} ${waiting === 1 ? "value was" : "values were"} handed in for review.`);
+      const stuck = reviews.filter((r) => r.outcome === "SAVED_DRAFT" && r.notice && !r.notice.startsWith("Saved as a draft: there is no figure"));
+      for (const r of stuck) if (r.notice) notices.push(r.notice);
+    }
+    return { ok: true, value: { saved, skipped, updates, notices, handedIn } };
   }
 }

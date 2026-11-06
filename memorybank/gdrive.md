@@ -1,6 +1,6 @@
 # Google Drive — Primary Evidence Storage (link-first) & R2 optional tier
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Author:** Kilo (agent) · **Date:** 2026-08-13
 **Status:** IMPLEMENTED — Phases A–E complete (compiling, tested). Live Google
@@ -450,3 +450,22 @@ in the same Google Cloud OAuth client used for Drive.
   can be swapped in via env without code changes.
 - **No offline/refresh token for sign-in** — only `openid email profile` scopes;
   Drive access continues to use the separate onboarding OAuth flow.
+
+## 10. Project setup documents (2026-10-31)
+
+- The AI project setup wizard keeps its source documents **in the organisation's own Google Drive, not on DonorDesk's servers** (`ISetupDocumentStore`, `GoogleDriveSetupDocuments`). Bytes pass through server memory while they are sent to Drive and read back; they are not stored.
+- Before the project exists the files sit in a staging folder `DonorDesk / Project setup (documents in progress)` (role `SETUP_STAGING`). When the project is created each file moves into the project's new `00-Project-Documents` folder (a new role in `PROJECT_WORKSPACE_FOLDERS`, created for every project's tree on its next ensure).
+- The proposal keeps only a reference, `sourceStorageKey = "drive:<file id>[,<file id>…]"`. A key without that prefix is a proposal made before the change (server storage; it cannot be read again and is cleaned from disk when discarded).
+- A tenant without Drive connected is refused with a plain sentence; there is no fallback to server storage. The connection has only the `drive.file` scope, so only files and folders the app created are readable or movable: picking a file the person already has in Drive is not possible without a wider permission (an owner decision).
+- Discard removes a file only while it is still in staging (and only if its parent is the staging folder); once a project was created the document is the organisation's record and is never deleted.
+
+## 11. Organisation folder tree and "Set up folders" (2026-10-31)
+
+- When Drive is connected the tenant's `DonorDesk` folder holds one organisation tree beside the per-project trees. The list is one table, `ORGANISATION_FOLDERS` (`packages/infrastructure/src/storage/organisation-folders.ts`): `00-Organisation` (Legal-Registration, Policies, Audits-Assessments, Branding), `01-Donors-Grants` (Donor-Templates), `02-Programmes`, `03-Projects`, `04-Finance` (Budgets, Currency-Rates-Bank, Audit-Support), `05-People-Partners`, `06-Setup-Staging`, `99-Archive`. Per-donor and per-project subfolders are made on demand, not in advance.
+- **Project trees now live under `03-Projects`** (`<Project>/00-Project-Documents … 07-Submitted-Reports`). A project tree made before this sits directly under `DonorDesk`; `ensureProjectWorkspace` moves it in (a tree already there is left alone). The Local provider mirrors the same layout.
+- **A folder is found by its role, never its name.** Each Drive folder carries `appProperties { tenantId, role }` (roles such as `ORG/04-Finance/Budgets`; the staging folder keeps the wizard's existing `SETUP_STAGING` role, so it is the same folder as `06-Setup-Staging`). Renaming a folder in Drive does not make a second one.
+- **No copies:** `ensureTenantFolderStrict` treats a lookup Drive cannot answer as an error and stops the run, instead of creating a folder (the older `findByAppProperty` returns "not found" on any error and is not used for the tree). Two simultaneous runs for one tenant share one promise. Running it again, or on a DonorDesk folder that already has the folders, creates nothing.
+- **Entry points:** the **Set up folders** button on the storage page (`/onboarding/storage`, only with Drive connected; `POST /v1/drive/organisation-folders`, `org.manage`, audited `storage.organisation_folders.set_up`; `SetupOrganisationFoldersHandler`) and the Drive connect callback (`ProvisionTenantWorkspacesHandler` also ensures the tree). The button also ensures every project's tree, which is what moves older ones under `03-Projects`.
+- **Limit (known, by design): the app's Drive permission (`drive.file`) only lets it see folders it created itself. If someone made a folder by hand inside Drive, the button cannot see it and will create its own.** A tenant that already organised its Drive by hand will end up with both sets; the hand-made ones are left untouched and are not used by the app.
+- Tests: `packages/infrastructure/test/feature18-workspace.test.mjs` (second run creates nothing, subfolders sit in their parent, a failed lookup creates nothing, a double click is one run, a project tree is made under and moved into `03-Projects`).
+- Deploy: no migration, no env; ship api and web together (`SCOPE=both`).

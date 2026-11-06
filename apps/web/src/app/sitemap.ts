@@ -1,9 +1,15 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL, supportPaths } from "@/lib/seo";
+import { SECTOR_PAGES } from "@/components/site/site-data";
 
 const STATIC: Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly" }> = [
   { path: "/", priority: 1, changeFrequency: "weekly" },
+  { path: "/platform", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/features", priority: 0.9, changeFrequency: "monthly" },
   { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
+  { path: "/compare", priority: 0.8, changeFrequency: "monthly" },
+  { path: "/solutions", priority: 0.8, changeFrequency: "monthly" },
+  ...SECTOR_PAGES.map((s) => ({ path: `/solutions/${s.slug}`, priority: 0.7, changeFrequency: "monthly" as const })),
   { path: "/tour", priority: 0.8, changeFrequency: "monthly" },
   { path: "/security", priority: 0.7, changeFrequency: "monthly" },
   { path: "/signup", priority: 0.7, changeFrequency: "monthly" },
@@ -15,6 +21,7 @@ const STATIC: Array<{ path: string; priority: number; changeFrequency: "weekly" 
   { path: "/subprocessors", priority: 0.3, changeFrequency: "yearly" },
   { path: "/acceptable-use", priority: 0.3, changeFrequency: "yearly" },
   { path: "/refunds", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/maps/sources", priority: 0.2, changeFrequency: "yearly" },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

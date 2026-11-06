@@ -1,10 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { z } from "zod";
-
-const RecordConsentSchema = z.object({
-  accepted: z.literal(true, { errorMap: () => ({ message: "Consent must be explicitly accepted." }) }),
-  source: z.enum(["onboarding", "portal", "api"]).default("onboarding"),
-});
+import { RecordConsentSchema } from "@donordesk/contracts";
 
 export async function registerLegalRoutes(app: FastifyInstance) {
   app.get("/v1/legal/consent", async (req) => {

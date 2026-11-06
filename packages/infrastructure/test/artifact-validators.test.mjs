@@ -263,3 +263,32 @@ test("assertNoInternalIds flags ids, uuids and file names and nothing else (mirr
     }
   }
 });
+
+// --- H-8: the TS mirror of the worker's donor-required-table checks ---
+import { assertRequiredTablePresent, assertRequiredTablesPresent, missingRequiredTables, markdownTableHeaders } from "../dist/ai/artifact-validators.js";
+
+test("H-8: a required table is found by its columns, in any order, with extra columns", () => {
+  const section = { content: "Intro.\n\n| Indicator | Target | Actual | % |\n|---|---|---|---|\n| A | 10 | 8 | 80 |\n" };
+  assert.deepEqual(missingRequiredTables(section, [{ title: "Results", columns: ["actual", "Indicator"] }]), []);
+  assert.equal(markdownTableHeaders(section.content).length, 1);
+});
+
+test("H-8: a missing donor table is a named warning, never a blocking issue", () => {
+  const section = { content: "| Indicator | Target |\n|---|---|\n| A | 10 |\n" };
+  const r = assertRequiredTablesPresent(section, [{ title: "Beneficiaries by sex", columns: ["Female", "Male"] }, { title: "Results", columns: ["Indicator"] }]);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.issues, []);
+  assert.equal(r.warnings.length, 1);
+  assert.match(r.warnings[0], /^MISSING_REQUIRED_TABLE.*Beneficiaries by sex/);
+});
+
+test("H-8: prose, or a table with no separator row, does not satisfy a requirement", () => {
+  assert.deepEqual(missingRequiredTables({ content: "The table shows results." }, [{ title: "Results", columns: ["Indicator"] }]), ["Results"]);
+  assert.deepEqual(missingRequiredTables({ content: "| Indicator | Target |\n| A | 10 |\n" }, [{ title: "Results", columns: ["Indicator"] }]), ["Results"]);
+});
+
+test("H-8: the annex rule is mirrored: an indicator annex of prose fails, a table passes, a non-annex is left alone", () => {
+  assert.equal(assertRequiredTablePresent({ content: "prose only" }, "Annex 1: Indicator performance").ok, false);
+  assert.equal(assertRequiredTablePresent({ content: "| a | b |\n|---|---|\n| 1 | 2 |" }, "Annex 1: Indicator performance").ok, true);
+  assert.equal(assertRequiredTablePresent({ content: "prose only" }, "Executive summary").ok, true);
+});

@@ -4,16 +4,24 @@ Q = ["Which indicators were not measured this month, and why?"]
 
 
 def test_bookkeeping_sentences_are_removed_but_figures_stay() -> None:
-    text = "ANC4+ reached 57 percent. Every finding carries a neutral evaluation, so the report records no performance judgement. Penta3 fell to 70 percent."
+    text = (
+        "ANC4+ reached 57 percent. Every finding carries a neutral evaluation, so the report "
+        "records no performance judgement. Penta3 fell to 70 percent."
+    )
     out = scrub_content(text, [])
     assert "neutral" not in out and "judgement" not in out
     assert "57 percent" in out and "70 percent" in out
 
 
 def test_echoed_donor_question_is_dropped_and_answer_kept() -> None:
-    out = scrub_content("**Which indicators were not measured this month, and why?** Two survey indicators are quarterly.", Q)
+    out = scrub_content(
+        "**Which indicators were not measured this month, and why?** Two survey indicators are quarterly.", Q
+    )
     assert out == "Two survey indicators are quarterly."
-    assert scrub_content("Which indicators were not measured this month, and why?\n\nTwo are quarterly.", Q) == "Two are quarterly."
+    assert (
+        scrub_content("Which indicators were not measured this month, and why?\n\nTwo are quarterly.", Q)
+        == "Two are quarterly."
+    )
 
 
 def test_table_rows_and_normal_prose_are_untouched() -> None:
@@ -24,7 +32,10 @@ def test_table_rows_and_normal_prose_are_untouched() -> None:
 def test_trim_drops_figure_free_sentences_from_the_end_only() -> None:
     from app.ai_reporter.scrub import trim_to_word_limit
 
-    text = "The project trained 40 health workers. It was a good month for everyone involved. Priorities for the coming month are continued mentoring and follow-up."
+    text = (
+        "The project trained 40 health workers. It was a good month for everyone involved. "
+        "Priorities for the coming month are continued mentoring and follow-up."
+    )
     out = trim_to_word_limit(text, 12)
     assert "40 health workers" in out and "Priorities" not in out
     assert trim_to_word_limit(text, 100) == text
@@ -45,12 +56,21 @@ def test_a_mangled_donor_name_is_restored_exactly() -> None:
     from app.ai_reporter.scrub import restore_proper_names
 
     donor = "Lake Chad Basin Resilience Fund"
-    assert restore_proper_names("Funded by the Lake Chad Basin Resilient Fund under grant X.", [donor]) == "Funded by the Lake Chad Basin Resilience Fund under grant X."
-    assert restore_proper_names("Funded by the Lake Chad Basin Resilience Fund.", [donor]) == "Funded by the Lake Chad Basin Resilience Fund."
+    assert (
+        restore_proper_names("Funded by the Lake Chad Basin Resilient Fund under grant X.", [donor])
+        == "Funded by the Lake Chad Basin Resilience Fund under grant X."
+    )
+    assert (
+        restore_proper_names("Funded by the Lake Chad Basin Resilience Fund.", [donor])
+        == "Funded by the Lake Chad Basin Resilience Fund."
+    )
 
 
 def test_short_names_and_unrelated_phrases_are_left_alone() -> None:
     from app.ai_reporter.scrub import restore_proper_names
 
     assert restore_proper_names("The Global Fund paid.", ["Global Fund"]) == "The Global Fund paid."
-    assert restore_proper_names("Lake Chad Basin communities were reached.", ["Lake Chad Basin Resilience Fund"]) == "Lake Chad Basin communities were reached."
+    assert (
+        restore_proper_names("Lake Chad Basin communities were reached.", ["Lake Chad Basin Resilience Fund"])
+        == "Lake Chad Basin communities were reached."
+    )

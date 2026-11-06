@@ -27,7 +27,14 @@ export type Permission =
   | "checklist.manage"
   | "comment.create"
   | "audit.view"
-  | "billing.manage";
+  | "billing.manage"
+  | "workplan.manage"
+  | "workplan.update-own"
+  | "task.assign"
+  | "team.view-work"
+  | "risk.raise"
+  | "risk.manage"
+  | "finance.approve";
 
 const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -40,6 +47,10 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "activity.create", "activity.approve",
     "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.override-confidentiality", "report.manage-agent-memory",
     "checklist.manage", "comment.create", "audit.view", "billing.manage",
+    "workplan.manage", "workplan.update-own",
+    "task.assign", "team.view-work",
+    "risk.raise", "risk.manage",
+    "finance.approve",
   ]),
   PROJECT_MANAGER: new Set<Permission>([
     "project.edit", "project.view",
@@ -50,6 +61,10 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "activity.create", "activity.approve",
     "report.generate", "report.edit", "report.approve", "report.export", "report.resolve-claim", "report.manage-agent-memory",
     "checklist.manage", "comment.create", "audit.view",
+    "workplan.manage", "workplan.update-own",
+    "task.assign", "team.view-work",
+    "risk.raise", "risk.manage",
+    "finance.approve",
   ]),
   ME_OFFICER: new Set<Permission>([
     "project.view",
@@ -59,6 +74,9 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "activity.create",
     "report.generate", "report.edit",
     "checklist.manage", "comment.create",
+    "workplan.manage", "workplan.update-own",
+    "task.assign", "team.view-work",
+    "risk.raise", "risk.manage",
   ]),
   GRANTS_OFFICER: new Set<Permission>([
     "project.view",
@@ -66,18 +84,26 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "evidence.upload",
     "report.generate", "report.edit", "report.export", "report.override-confidentiality",
     "checklist.manage", "comment.create",
+    "workplan.update-own",
+    "task.assign",
+    "risk.raise", "risk.manage",
   ]),
   FIELD_OFFICER: new Set<Permission>([
     "project.view",
     "evidence.upload",
     "activity.create",
     "comment.create",
+    "workplan.update-own",
+    "risk.raise",
   ]),
   COMPLIANCE_OFFICER: new Set<Permission>([
     "project.view",
     "evidence.upload", "evidence.verify",
     "checklist.manage",
     "comment.create", "audit.view",
+    "workplan.update-own",
+    "task.assign",
+    "risk.raise", "risk.manage",
   ]),
   VIEWER: new Set<Permission>([
     "project.view", "report.export",

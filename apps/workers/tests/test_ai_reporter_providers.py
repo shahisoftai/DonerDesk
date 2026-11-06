@@ -1,6 +1,7 @@
 """Per-request provider selection (SuperAdmin default / tenant's own API) and
 the Gemini + Claude gateways. No network: HTTP and the Anthropic SDK client are
 replaced with fakes."""
+
 from __future__ import annotations
 
 import json
@@ -22,7 +23,9 @@ def worker_env(monkeypatch):
 
 
 def test_request_config_wins_over_worker_env(worker_env) -> None:
-    provider, model, base, key = _resolve_llm(ModelConfig(provider="deepseek", model="deepseek-v4-flash", apiKey="tenant-key"))
+    provider, model, base, key = _resolve_llm(
+        ModelConfig(provider="deepseek", model="deepseek-v4-flash", apiKey="tenant-key")
+    )
     assert (provider, model, base, key) == ("deepseek", "deepseek-v4-flash", "https://api.deepseek.com", "tenant-key")
 
 
@@ -46,7 +49,12 @@ def test_gemini_uses_openai_compatible_endpoint_without_json_mode(worker_env, mo
             return False
 
         def read(self):
-            return json.dumps({"choices": [{"message": {"content": '{"content":"ok"}'}}], "usage": {"prompt_tokens": 5, "completion_tokens": 2}}).encode()
+            return json.dumps(
+                {
+                    "choices": [{"message": {"content": '{"content":"ok"}'}}],
+                    "usage": {"prompt_tokens": 5, "completion_tokens": 2},
+                }
+            ).encode()
 
     def fake_urlopen(req, timeout):
         captured["url"] = req.full_url
@@ -98,7 +106,13 @@ def fake_anthropic(monkeypatch):
 
 
 def test_claude_request_shape(worker_env, fake_anthropic) -> None:
-    content, telemetry = _chat("sys", "user", model=ModelConfig(provider="anthropic", apiKey="sk-ant", effort="medium"), temperature=0.2, max_tokens=4096)
+    content, telemetry = _chat(
+        "sys",
+        "user",
+        model=ModelConfig(provider="anthropic", apiKey="sk-ant", effort="medium"),
+        temperature=0.2,
+        max_tokens=4096,
+    )
     kw = fake_anthropic.last_kwargs
     assert kw["model"] == "claude-opus-5"  # default when the configuration leaves it blank
     assert "temperature" not in kw  # rejected by current Claude models

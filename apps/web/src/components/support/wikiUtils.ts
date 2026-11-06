@@ -1,7 +1,8 @@
 import { readFileSync } from "fs";
 import { join } from "path";
 
-const MEMORYBANK_BASE = "/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/memorybank/docs/support";
+/** Articles ship inside the app (apps/web/content/support), resolved from the server's working directory. */
+const SUPPORT_CONTENT_BASE = process.env.SUPPORT_CONTENT_DIR ?? join(process.cwd(), "content", "support");
 
 export interface LoadedArticle {
   title: string;
@@ -11,7 +12,7 @@ export interface LoadedArticle {
 
 export function loadArticle(relPath: string): LoadedArticle | null {
   try {
-    const fullPath = join(MEMORYBANK_BASE, relPath);
+    const fullPath = join(SUPPORT_CONTENT_BASE, relPath);
     const raw = readFileSync(fullPath, "utf-8");
     const lines = raw.split("\n");
     const titleLine = lines.find((l) => l.startsWith("# "));

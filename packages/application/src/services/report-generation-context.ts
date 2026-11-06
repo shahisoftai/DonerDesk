@@ -1,4 +1,4 @@
-import type { FinanceSummaryView, Result, Project, ReportingPeriod, ReportScope, TemplateSection, VerifiedFinding } from "@donordesk/domain";
+import type { PlanDeliverySummary, FinanceSummaryView, Result, Project, ReportingPeriod, ReportScope, TemplateSection, VerifiedFinding } from "@donordesk/domain";
 import { DomainError, partitionFindings, isDueInPeriod, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
 import { taggedEvidenceIds } from "./period-evidence.js";
 import { resolveGenerationActivities, resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
@@ -22,6 +22,7 @@ import type { PeriodTemplateSnapshot } from "./template-snapshot.js";
 import type { PeriodTemplateResolver } from "./period-template-resolver.js";
 import type { IOrganizationRepository } from "../ports/identity.js";
 import type { IFinanceInputs } from "./finance-inputs.js";
+import type { IPlanDelivery } from "./plan-delivery-service.js";
 import type { IEvidenceRepository } from "../ports/evidence.js";
 
 /** Who/what a generation run writes with, and the donor structure it follows. */
@@ -53,6 +54,8 @@ export interface GenerationInputs {
   reportContext: ReportGenerationContext;
   /** Verified financial figures, when the project uses them and this kind of report has a financial section. */
   finance?: FinanceSummaryView;
+  /** What the work plan says about this period; absent when nothing was planned for it. */
+  deliveryPlan?: PlanDeliverySummary;
   /** Situation reports: this report's scope and the previous report on the same event, for the figures table. */
   situation?: { current: ReportScope; previous?: ReportScope };
   /** Indicators of this report with no figure: told to the writer as "not measured", never given a value. */
@@ -104,6 +107,8 @@ export class ReportGenerationContextBuilder {
     private readonly finance?: IFinanceInputs,
     /** Absent: only evidence attached to an activity or indicator update reaches the writer. */
     private readonly evidenceFiles?: IEvidenceRepository,
+    /** Absent: reports do not read the work plan. */
+    private readonly planDelivery?: IPlanDelivery,
   ) {}
 
   /**
@@ -188,6 +193,7 @@ export class ReportGenerationContextBuilder {
     if (!previousScope.ok) return previousScope;
     const finance = await this.verifiedFinance(period, ctx.tenant.tenantId);
     if (!finance.ok) return finance;
+    const plan = this.planDelivery ? await this.planDelivery.forPeriod({ tenantId: ctx.tenant.tenantId, projectId: period.projectId, start: period.duration.start, end: period.duration.end }) : undefined;
 
     const allUpdatesResult = await this.indicatorUpdates.findByReportingPeriod(reportingPeriodId, ctx.tenant.tenantId);
     if (!allUpdatesResult.ok) return allUpdatesResult;
@@ -258,6 +264,7 @@ export class ReportGenerationContextBuilder {
         indicatorUpdates,
         activities,
         ...(finance.value ? { finance: finance.value } : {}),
+        ...(plan?.ok && plan.value ? { deliveryPlan: plan.value } : {}),
         ...(period.reportType === "SITUATION" ? { situation: { current: period.scope, ...(previousScope.value ? { previous: previousScope.value } : {}) } } : {}),
         reportContext: buildReportContext(project, period, base.template, period.storyContext, describeReportScope(period.reportType, period.scope, activitiesResult.value.map((a) => a.activityTitle), previousScope.value)),
       },

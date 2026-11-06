@@ -7,6 +7,7 @@ each `required: true` slot. The same function is mirrored in TypeScript at
 single Python source via a build-time generator — for the in-repo scope we
 hand-mirror and verify parity via the test suite).
 """
+
 from __future__ import annotations
 
 import re
@@ -20,13 +21,22 @@ from .models import OutlineSlot, SectionBrief
 # Order matters: the first match wins.
 _KIND_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("EXECUTIVE_SUMMARY", re.compile(r"executive summary|summary of (results|progress)|overview|abstract", re.I)),
-    ("INDICATOR_TABLE", re.compile(r"annex.*(indicator|performance)|indicator (table|matrix)|logframe (table|matrix)", re.I)),
+    (
+        "INDICATOR_TABLE",
+        re.compile(r"annex.*(indicator|performance)|indicator (table|matrix)|logframe (table|matrix)", re.I),
+    ),
     ("ANNEX", re.compile(r"\bannex|appendix|attachment", re.I)),
     ("CHALLENGE", re.compile(r"challenge|constraint|risk|mitigation|issue|delay", re.I)),
     ("LESSON", re.compile(r"lesson|learning|recommendation|good practice|best practice", re.I)),
-    ("NEXT_PERIOD", re.compile(r"next (period|quarter|steps|phase)|work ?plan|planned activit|way forward|outlook", re.I)),
+    (
+        "NEXT_PERIOD",
+        re.compile(r"next (period|quarter|steps|phase)|work ?plan|planned activit|way forward|outlook", re.I),
+    ),
     ("COMPLIANCE", re.compile(r"complian|safeguard|psea|visibility|declaration|audit", re.I)),
-    ("ACHIEVEMENT", re.compile(r"achievement|result|progress|outcome|output|indicator|performance|impact|reach|beneficiar", re.I)),
+    (
+        "ACHIEVEMENT",
+        re.compile(r"achievement|result|progress|outcome|output|indicator|performance|impact|reach|beneficiar", re.I),
+    ),
 ]
 
 
@@ -64,16 +74,41 @@ def outline_for(input_type: str | None, brief: dict[str, Any] | None = None) -> 
 
     if normalized == "INDICATOR_TABLE":
         slots = [
-            OutlineSlot(id="table", intent="The verified indicator table is attached automatically; do not re-type it.", required=True),
-            OutlineSlot(id="narrative", intent="Summarise the table in 2-4 sentences: strongest results, results below expectation, indicators not calculable.", required=True),
-            OutlineSlot(id="caveat", intent="Surface every data-quality flag and limitation as 'Data quality notes'.", required=True),
+            OutlineSlot(
+                id="table",
+                intent="The verified indicator table is attached automatically; do not re-type it.",
+                required=True,
+            ),
+            OutlineSlot(
+                id="narrative",
+                intent="Summarise the table in 2-4 sentences: strongest results, results below expectation, "
+                "indicators not calculable.",
+                required=True,
+            ),
+            OutlineSlot(
+                id="caveat",
+                intent="Surface every data-quality flag and limitation as 'Data quality notes'.",
+                required=True,
+            ),
         ]
     elif normalized == "ACHIEVEMENT":
         slots = [
-            OutlineSlot(id="claim", intent="Lead with the most important verified result and its number.", required=True),
-            OutlineSlot(id="evidence", intent="Support each result with the activity records or evidence that ground it.", required=True),
-            OutlineSlot(id="change", intent="Compare with the previous period where a comparisonValue exists.", required=False),
-            OutlineSlot(id="disaggregation", intent="Quote recorded sex/age/disability breakdowns verbatim per activity; never total them.", required=False),
+            OutlineSlot(
+                id="claim", intent="Lead with the most important verified result and its number.", required=True
+            ),
+            OutlineSlot(
+                id="evidence",
+                intent="Support each result with the activity records or evidence that ground it.",
+                required=True,
+            ),
+            OutlineSlot(
+                id="change", intent="Compare with the previous period where a comparisonValue exists.", required=False
+            ),
+            OutlineSlot(
+                id="disaggregation",
+                intent="Quote recorded sex/age/disability breakdowns verbatim per activity; never total them.",
+                required=False,
+            ),
             OutlineSlot(id="caveat", intent="State any data-quality limitation.", required=False),
         ]
     elif normalized == "CHALLENGE":
@@ -99,17 +134,31 @@ def outline_for(input_type: str | None, brief: dict[str, Any] | None = None) -> 
         ]
     elif normalized == "COMPLIANCE":
         slots = [
-            OutlineSlot(id="status", intent="State compliance status (e.g. compliant / partial / non-compliant).", required=True),
+            OutlineSlot(
+                id="status", intent="State compliance status (e.g. compliant / partial / non-compliant).", required=True
+            ),
             OutlineSlot(id="evidence", intent="Cite the evidence recording compliance.", required=True),
             OutlineSlot(id="remediation", intent="If non-compliant, state remediation steps.", required=False),
         ]
     elif normalized == "EXECUTIVE_SUMMARY":
         slots = [
             OutlineSlot(id="headline", intent="State the single most important result of the period.", required=True),
-            OutlineSlot(id="scope", intent="State the project, donor, location, and period in one sentence.", required=True),
-            OutlineSlot(id="key-numbers", intent="Reference 2-4 verified numbers, including any result below expectation.", required=True),
-            OutlineSlot(id="challenge", intent="Name the main recorded challenge and how it was addressed, if recorded.", required=False),
-            OutlineSlot(id="outlook", intent="One sentence of outlook drawn only from recorded next steps.", required=False),
+            OutlineSlot(
+                id="scope", intent="State the project, donor, location, and period in one sentence.", required=True
+            ),
+            OutlineSlot(
+                id="key-numbers",
+                intent="Reference 2-4 verified numbers, including any result below expectation.",
+                required=True,
+            ),
+            OutlineSlot(
+                id="challenge",
+                intent="Name the main recorded challenge and how it was addressed, if recorded.",
+                required=False,
+            ),
+            OutlineSlot(
+                id="outlook", intent="One sentence of outlook drawn only from recorded next steps.", required=False
+            ),
         ]
     else:  # NARRATIVE
         slots = [

@@ -37,6 +37,8 @@ export class GetProjectHandler {
         reportingOfficerId: p.reportingOfficerId,
         workspaceRootId: p.workspaceRootId,
         isDemo: p.isDemo,
+        showWorkPlanning: p.showWorkPlanning,
+        timeZone: p.timeZone,
       },
     };
   }

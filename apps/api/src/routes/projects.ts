@@ -74,6 +74,13 @@ export async function registerProjectRoutes(app: FastifyInstance) {
     return { items: r.value.map((m) => ({ id: m.id, projectId: m.projectId, userId: m.userId, role: m.role, status: m.status, assignedById: m.assignedById, assignedAt: m.assignedAt.toISOString() })) };
   });
 
+  app.get("/v1/projects/:id/people", async (req) => {
+    const projectId = (req.params as { id: string }).id;
+    const r = await req.container.handlers.listProjectPeople.handle({ tenant: req.tenant, requestId: req.id }, projectId);
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
   app.post("/v1/projects/:id/members", async (req) => {
     const projectId = (req.params as { id: string }).id;
     const body = AssignProjectMemberSchema.parse(req.body);

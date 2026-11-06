@@ -136,6 +136,24 @@ export class ReportDraft extends Entity<string> {
     this.touch();
   }
 
+  /**
+   * Reopens an approved, exported or submitted report for changes: it becomes a DRAFT again and its approval is cleared, so
+   * it has to be approved again. Sections keep their own state (a section is reopened when it is edited). The reason and the
+   * previous approval are kept in the audit trail by the handler. A report that was replaced by a newer version stays closed.
+   */
+  reopen(): void {
+    if (this.props.supersededAt !== undefined) {
+      throw DomainError.invalidTransition("This is an older version of the report and cannot be reopened. Reopen the current version instead.");
+    }
+    if (this.props.status !== "APPROVED" && this.props.status !== "EXPORTED" && this.props.status !== "SUBMITTED") {
+      throw DomainError.invalidTransition("Only an approved, exported or submitted report can be reopened; this one is already open for changes.");
+    }
+    this.props.status = "DRAFT";
+    this.props.approvedById = undefined;
+    this.props.approvedAt = undefined;
+    this.touch();
+  }
+
   approve(by: string): void {
     if (this.props.status !== "UNDER_REVIEW") throw DomainError.invalidTransition("Only reports under review can be approved");
     this.props.status = "APPROVED";

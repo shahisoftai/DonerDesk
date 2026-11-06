@@ -11,6 +11,8 @@ export interface AiSectionRunsView {
   counts: Record<AiRunOutcome, number>;
   /** Raised when the writer is failing often (a streak or a high rate); null when healthy. */
   alert: AiStubAlert | null;
+  /** Estimated provider spend this calendar month (UTC), US dollars. */
+  monthCostUsd: number;
 }
 
 /**
@@ -23,7 +25,9 @@ export class ListAiSectionRunsHandler {
   async handle(ctx: AuthenticatedContext, limit: number = AI_SECTION_RUN_LIMIT): Promise<Result<AiSectionRunsView, DomainError>> {
     const found = await this.runs.listRecent(ctx.tenant.tenantId.toString(), "REPORT_SECTION", limit);
     if (!found.ok) return found;
+    const now = new Date();
+    const cost = await this.runs.costSince(ctx.tenant.tenantId.toString(), new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)));
     const runs = found.value.map(summarizeAiRun);
-    return { ok: true, value: { runs, counts: countAiRunOutcomes(runs), alert: aiStubAlert(runs, new Date()) } };
+    return { ok: true, value: { runs, counts: countAiRunOutcomes(runs), alert: aiStubAlert(runs, now), monthCostUsd: cost.ok ? cost.value : 0 } };
   }
 }

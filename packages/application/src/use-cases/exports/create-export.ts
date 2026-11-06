@@ -5,7 +5,7 @@ import type { IExportRepository, IExportBuilder, ExportIntent, ExportChartInput 
 import type { IStorage } from "../../ports/infrastructure.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
 import type { IReportingPeriodRepository, IReportDraftRepository, IReportSectionRepository, ISubmissionSnapshotRepository, IDonorTemplateMappingRepository, IReportClaimRepository, IReportArtifactRepository } from "../../ports/reporting.js";
-import { chartPayloadToResolved } from "../../services/section-chart-service.js";
+import { chartPayloadToResolved, isInfographicArtifact } from "../../services/section-chart-service.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
@@ -99,6 +99,18 @@ export class CreateExportHandler {
             const stored = await this.reportArtifacts.findBySection(sec.id, ctx.tenant.tenantId);
             if (!stored.ok) continue;
             for (const a of stored.value.filter((x) => x.kind === "CHART")) {
+              if (isInfographicArtifact(a.payload)) {
+                // A placed infographic is the exact picture that was published; it is read back, never redrawn.
+                const key = (a.payload as { infographic?: { storageKey?: string } }).infographic?.storageKey;
+                if (key) {
+                  try {
+                    tableCharts.push({ sectionTitle: sec.sectionTitle, caption: a.caption ?? "Infographic", image: { png: await this.storage.read(key) } });
+                  } catch {
+                    // A picture missing from storage is left out of the export rather than failing it.
+                  }
+                }
+                continue;
+              }
               const resolved = chartPayloadToResolved(a.payload);
               if (resolved) tableCharts.push({ sectionTitle: sec.sectionTitle, caption: a.caption ?? resolved.title, resolved });
             }

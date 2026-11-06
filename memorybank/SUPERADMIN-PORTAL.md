@@ -1,6 +1,6 @@
 # DonorDesk SuperAdmin Portal
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Portal:** `https://sa.donordesk.online`  
 **Classification:** privileged platform control plane  
@@ -484,3 +484,9 @@ SuperAdmin email/password now creates the secure HTTP-only session directly.
 
 No plaintext passwords, TOTP secrets, recovery codes, provider credentials,
 master keys, JWT secrets, or database passwords belong in this document.
+
+## 15. Operations note: portal left stopped (2026-10-31)
+
+- `https://sa.donordesk.online` returned 502 because `donordesk-superadmin.service` had been stopped cleanly on 2026-10-27 16:47 (during the deploy attempt that was rolled back) and nothing started it again. The files and the build were intact; `systemctl start donordesk-superadmin` fixed it (nginx forwards to `127.0.0.1:3012`).
+- `scripts/deploy-fast.sh` restarts only the API, web and workers, so it is not the cause; no script was identified. A deploy check that starts the portal when it is enabled but inactive is listed in `pending.md`.
+- The LLM configuration here takes provider, model and key; see `imp/LLM-PROVIDER-WIRING.md` §21 for what a Claude configuration needs.

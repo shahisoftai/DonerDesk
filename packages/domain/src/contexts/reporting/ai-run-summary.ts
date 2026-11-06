@@ -15,6 +15,8 @@ export interface AiRunRecord {
   latencyMs: number;
   inputTokens: number;
   outputTokens: number;
+  /** Estimated provider cost in US dollars (see llm-pricing). */
+  costUsd?: number;
   createdAt: Date;
 }
 
@@ -33,6 +35,7 @@ export interface AiRunSummary {
   attempts: number;
   latencyMs: number;
   tokens: number;
+  costUsd: number;
 }
 
 interface RunDiagnostics {
@@ -68,6 +71,7 @@ export function summarizeAiRun(run: AiRunRecord): AiRunSummary {
     attempts,
     latencyMs: run.latencyMs,
     tokens: run.inputTokens + run.outputTokens,
+    costUsd: run.costUsd ?? 0,
   };
 }
 

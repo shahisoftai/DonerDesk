@@ -1,8 +1,8 @@
 # DonorDesk MemoryBank Index
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
-**Last updated:** 2026-10-05
+**Last updated:** 2026-11-06
 
 Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to search within files.
 
@@ -24,14 +24,21 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | **EERP Q2 end-to-end report run — cumulative-aware verifier, date/count classifier, restricted evidence withheld, indicator semantics API+UI, manual evidence-link UI, DeepSeek truncation (MAX_TOKENS 16384 + JSON salvage) (2026-09-26, DEPLOYED `20260926164318`/`171958`/`174726`)** | [`Fixes.md`](Fixes.md) §"EERP-2026 Q2 end-to-end report run"; [`Features/06-Logframe-And-Indicator-Manager.md`](Features/06-Logframe-And-Indicator-Manager.md) (semantics); [`Features/07-Evidence-Library.md`](Features/07-Evidence-Library.md) (link manager); [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md); [`Features/20-report-gen.md`](Features/20-report-gen.md) §22; [`contabo-ops.md`](contabo-ops.md); [`pending.md`](pending.md) §"EERP Q2 run — follow-ups" |
 | **Project Setup & Logframe/Indicator Manager UX (2026-09-27)** | [`imp/Phase20_setup_logframe.md`](imp/Phase20_setup_logframe.md) — wizard draft persistence + resume, readiness score breakdown UX, logframe drag-and-drop reorder/re-parent (`sortOrder`, `PUT /v1/logframe-items/:id/position`), indicator baseline/target progress + per-update disaggregation, indicator update history read model (`GET /v1/indicators/:id/updates`), verification pipeline + request-correction/reject routes, and a logframe-item/parent picker for the create forms. One item (A1, project templates) is blocked — see the doc. |
 | **Report Editor v2 — document-first report workspace (P0–P6 code complete 2026-09-27, behind `REPORT_EDITOR_V2`; P7 rollout next)** | [`imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md`](imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md) — replaces the crowded `/reports/[periodId]` workspace with one continuous document, outline, per-section inspector, single workflow-driven primary action and inline flagged statements. Includes full rich-text editing (TipTap over the export-renderable markdown subset) and single-section regenerate (not previously implemented). Audit findings F1–F16, UX additions U1–U31, phases P0–P7 (~24–32 dev-days), additive backend changes B1–B10. |
+| **Phase 28 — programme management: work plan, timeline, My week, requests, My Work, reminders, delivery health, files, risks, comments, reports that read the plan (Batches 28.0–28.9 DEPLOYED 2026-10-18, release `20261018172624`; branch `0013-programme-management`)** | [`imp/phase28-new-management.md`](imp/phase28-new-management.md) (plan, decisions, §14–§15 as built), [`Features/23-Work-Plan.md`](Features/23-Work-Plan.md), [`Features/24-Programme-Management.md`](Features/24-Programme-Management.md), runbook [`docs/runbooks/reminders.md`](docs/runbooks/reminders.md) and the run on production, [`demo/verification-demo-9.md`](demo/verification-demo-9.md). Planned vs completed activities, derived delivery state, role-specific surfaces, one assignment queue, writer contract v6; website copy says "Set it up" until the support articles are published (`docs/support/_unpublished-phase28/`). AGENTS.md has the invariants. |
+| **Phase 44 — Record: one data-entry flow for phone and desktop (deployed 2026-11-06, `20261106145458`; branch `0018-optimisation`)** | [`imp/phase44-data-entry.md`](imp/phase44-data-entry.md) (plan, 25 mocks, decisions, §13 status) and [`Features/60-Record-One-Data-Entry-Flow.md`](Features/60-Record-One-Data-Entry-Flow.md). No migration. AGENTS.md has the invariants. |
+| **Phase 36 — easier data entry: Enter data, simple review, forms from indicators, inline entry, Bring in data (built and deployed 2026-10-30, `releaseId=20261030110007`; not yet tried in a signed-in browser)** | [`imp/phase36-easy-data-entry.md`](imp/phase36-easy-data-entry.md) (decisions, exact review rules, deploy steps, usability test protocol) and [`Features/59-Quick-Entry-And-Simple-Review.md`](Features/59-Quick-Entry-And-Simple-Review.md). Migration `20261101090000_simple_review` (additive, applied before the code). Prompted by comparing with DevResults and ActivityInfo. AGENTS.md has the invariants. |
+| **Phase 37 (AI setup wizard v2) — document kinds, document map and section router, exact Gantt/budget/matrix/indicator readers, voted results structure, links under results, budget reconciliation, fact readings, review tools (built, deployed and run on the real model 2026-11-01, final release `20261101195215`)** | [`imp/phase37-setup-wizard-v2.md`](imp/phase37-setup-wizard-v2.md) (status §8, evaluation §9, open items §10, invariants §11), feature spec [`Features/25-AI-Project-Setup.md`](Features/25-AI-Project-Setup.md). |
+| **Phase 36 (AI project setup wizard) — upload up to five project documents, review a proposal slide by slide, create the project (built and deployed 2026-10-31; plan §0a in the file; a native review of FR/ES/AR is owed; the real-model run is in Phase 37)** | [`imp/phase36-ai-project-setup-wizard.md`](imp/phase36-ai-project-setup-wizard.md), feature spec [`Features/25-AI-Project-Setup.md`](Features/25-AI-Project-Setup.md), runbook [`docs/runbooks/project-setup-assist.md`](docs/runbooks/project-setup-assist.md). Note: two different phases are numbered 36 (this one and "easier data entry"); each file names its own. |
+| **Phase 29 — AI enhancement programme (proposed, not started)** | [`imp/phase29-ai-enhancement.md`](imp/phase29-ai-enhancement.md) — five batches from the 2026-10-23 codebase + competitor audit: 29.1 evidence & suggestion intelligence (real LLM tagging, AI link suggestions, pgvector semantic search for humans, activity polisher, indicator-direction suggestion, lessons-learned miner), 29.2 Ask DonorDesk (cited permission-aware Q&A assistant + read-only MCP server), 29.3 field & M&E intelligence (register OCR → indicator grid, anomaly explainer, offline voice loop, duplicate/stale detection), 29.4 reporting lifecycle AI (donor Q&A auto-answer, compliance drafting, template review copilot, period diff, translation + RTL export fix), 29.5 trust surface. 70–92 dev-days; every batch independently shippable, flagged off until its eval + live check pass; SOLID enforced by structure and tests (§2). |
 | **LLM provider wiring + runtime provisioning (post-deploy)** | [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §18–19 (runtime provisioning + MiniMax fix) |
 | **Frontend portal blueprint** | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) |
 | **Frontend portal status** | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) (latest audit) and [`imp/PHASE7-FRONTEND-REPORT.md`](imp/PHASE7-FRONTEND-REPORT.md) |
 | **AI report-generation audit + fixes (provider auth, docxtpl donor-template rendering, entailment/backoff)** | [`Fixes.md`](Fixes.md) §"AI Reporter completely non-functional on production" and §"Systematic fix of the 8 AI-report-generation audit findings" (2026-09-17/18) — live outage root-caused and fixed (corrupted token, duplicate env keys, missing timeout, missing trailing newline in env files); full donor-template docxtpl rendering feature built end-to-end (previously data-model-only); shared lexical scorer + entailment bug fix; LLM 429 backoff + total-budget enforcement. |
 | **AI Reporter latency rework (single-call pipeline + parallel sections)** | [`Fixes.md`](Fixes.md) §"AI Reporter latency rework — single-call pipeline + parallel sections (2026-09-18)" and [`Features/20-report-gen.md`](Features/20-report-gen.md) §21 — closes out the sequential-generation performance rework deferred by the audit above; collapses draft→critique→refine to one LLM call/section, adds real (thread-cancelled) per-section timeouts, drafts sections with bounded concurrency (default 3) instead of one at a time, and raises the UI's poll-window safety ceiling accordingly. Not yet verified against a live provider or in the browser. |
 | **Report types & scope — Activity / Situation / Custom reports name what they cover (2026-10-03)** | [`Features/10-Reporting-Period-Manager.md`](Features/10-Reporting-Period-Manager.md) §"Report types & scope"; [`Features/12-Missing-Evidence-And-Compliance-Checklist.md`](Features/12-Missing-Evidence-And-Compliance-Checklist.md); [`Features/11-AI-Report-Draft-Generator.md`](Features/11-AI-Report-Draft-Generator.md); [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) (last deploy). `ReportingPeriod.scopeJson`, Semi-annual type, scoped writer prompts, per-type checklists; second pass: built-in per-type blueprints (donor template optional), situation series, date-aware grounding, floating AI popup — see §"Production verification & fixes" and [`Fixes.md`](Fixes.md); follow-ups: donor attribution once per report, scoped/corrected report-inputs panel, blueprint titles in fr/ar/ur/ps (§"Follow-ups done"). |
-| **Verification demos (live, end to end)** | [`demo/verification-demo-1.md`](demo/verification-demo-1.md) (template manager, WASH PDF), [`demo/verification-demo-2.md`](demo/verification-demo-2.md) (EU nutrition DOCX), [`demo/verification-demo-3.md`](demo/verification-demo-3.md) (completed 6-month Education project, one AI final report; disaggregation, attendance, record-grounded claim verification, roll-up report fixes, 2026-10-05) |
+| **Verification demos (live, end to end)** | [`demo/verification-demo-1.md`](demo/verification-demo-1.md) (template manager, WASH PDF), [`demo/verification-demo-9.md`](demo/verification-demo-9.md) (Phase 28 on production: CMAM Nepal, 8 months, four roles), [`demo/verification-demo-2.md`](demo/verification-demo-2.md) (EU nutrition DOCX), [`demo/verification-demo-3.md`](demo/verification-demo-3.md) (completed 6-month Education project, one AI final report; disaggregation, attendance, record-grounded claim verification, roll-up report fixes, 2026-10-05), [`demo/verification-demo-11.md`](demo/verification-demo-11.md) (6-month EU-funded MNCH in South Ethiopia, 2026-10-21: scenario + full UI setup run — 24 logframe items, 15 indicators, two EU ECHO DOCX templates extracted and approved, 47 planned activities, 6 reporting periods) |
 | **Production issues & fixes** | [`Fixes.md`](Fixes.md) |
+| **Comprehensive product & codebase gap audit (2026-10-20)** | [`imp/product-gap-audit-2026-10-20.md`](imp/product-gap-audit-2026-10-20.md) — the 141-item gap register audited against the code, the live public site and the production record. 141-item verification matrix with file:line evidence, 9 critical and 21 high confirmed gaps, a live-website claim-vs-code audit, and a P0–P3 remediation order. **§10 records the implementation that followed** — 8 of the 9 criticals are now closed: deny-by-default authorisation, evidence confidentiality at read time, the PII firewall on the production AI path, 8 more RLS-protected tables, the three orphaned suites in the CI gate, the worker lint, the second-approver rule on the seal path, CI building from the checked-in migrations, a scheduled and restore-tested backup, and a public site that says what the code does. **Do not treat `pending.md` as current state** — six of its claims are stale. |
 | **What still needs doing** | [`pending.md`](pending.md) |
 | **Contabo host operations** | [`contabo-ops.md`](contabo-ops.md) (live-host inventory, ports, services, db, ops rules) |
 | **Deploy to Contabo** | [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) (single fastest procedure: one-liner, preflight, gate, scope control, rollback, token sync, pitfalls) |
@@ -57,6 +64,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`imp/frontend-imp-plan.md`](imp/frontend-imp-plan.md) | **Frontend portal blueprint** — layers, SOLID, design-system workstreams, feature phases 0–7 (1399 lines) |
 | [`imp/frontend-implementation.md`](imp/frontend-implementation.md) | Frontend source product specification |
 | [`imp/FRONTEND-UX-INTEGRATION-AUDIT.md`](imp/FRONTEND-UX-INTEGRATION-AUDIT.md) | Post-Phase-7 route, shell, and UI/UX integration audit/fix report |
+| [`imp/product-gap-audit-2026-10-20.md`](imp/product-gap-audit-2026-10-20.md) | Comprehensive product & codebase gap audit (2026-10-20): 127-item verification matrix, severity-ranked gap register, live-website claim-vs-code audit, P0–P3 remediation order |
 | [`docs/architecture/decisions/0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md) | ADR: shared-schema + Postgres RLS |
 | [`docs/architecture/decisions/0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md) | ADR: LLM provider abstraction via strategy pattern |
 | [`docs/architecture/decisions/0003-fastify-over-nestjs.md`](docs/architecture/decisions/0003-fastify-over-nestjs.md) | ADR: Fastify over NestJS for Phase 1 |
@@ -74,7 +82,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 | [`docs/architecture/decisions/0008-submission-snapshots.md`](docs/architecture/decisions/0008-submission-snapshots.md) | ADR: immutable submission snapshots |
 | [`docs/architecture/decisions/0009-donor-native-rendering.md`](docs/architecture/decisions/0009-donor-native-rendering.md) | ADR: donor-native rendering behind the export builder |
 | [`imp/KESTRA-PLUGINS.md`](imp/KESTRA-PLUGINS.md) | **Free Kestra plugins** (Tika, Redis, JDBC-Postgres, GDrive, SFTP) — implementation + gating |
-| [`gdrive.md`](gdrive.md) | **Google Drive primary storage (link-first) + R2 optional tier** — status, architecture, implementation (Phases A–E), **+ login-page Google Sign-In (§9)** |
+| [`gdrive.md`](gdrive.md) | **Google Drive primary storage (link-first) + R2 optional tier** — status, architecture, implementation (Phases A–E), **+ login-page Google Sign-In (§9)**, **+ organisation folder tree / Set up folders (§11)** |
 | [`docs/security/threat-model.md`](docs/security/threat-model.md) | Security threat model |
 | [`docs/api/openapi-3.1.json`](docs/api/openapi-3.1.json) | OpenAPI spec |
 
@@ -212,6 +220,7 @@ Quick reference guide to all memorybank documents. Use `Ctrl+F` / `Cmd+F` to sea
 
 | Topic | Locations |
 |-------|-----------|
+| Dashboards (look, tiles, sharing) | [`Features/48-Dashboards.md`](Features/48-Dashboards.md), [`Features/55-Dashboard-Templates-Tabs-And-Viewing.md`](Features/55-Dashboard-Templates-Tabs-And-Viewing.md), [`imp/phase39-enh-dashboards.md`](imp/phase39-enh-dashboards.md) §12, [`demo/verification-2026-11-03-dashboards.md`](demo/verification-2026-11-03-dashboards.md), `AGENTS.md` → "Phase 39 invariants" |
 | Multi-tenancy / RLS | [`0001-multi-tenancy.md`](docs/architecture/decisions/0001-multi-tenancy.md), [`contabo-ops.md`](contabo-ops.md) §5.3, [`pending.md`](pending.md) |
 | LLM / AI | [`0002-llm-strategy.md`](docs/architecture/decisions/0002-llm-strategy.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md), [`imp/AI-REPORTER-IMPLEMENTATION-PLAN.md`](imp/AI-REPORTER-IMPLEMENTATION-PLAN.md), [`pending.md`](pending.md) (BullMQ) |
 | AI credits / quotas | [`Features/19-Tiers-And-Payments.md`](Features/19-Tiers-And-Payments.md), [`imp/LLM-PROVIDER-WIRING.md`](imp/LLM-PROVIDER-WIRING.md) §14–15 |
@@ -327,3 +336,65 @@ memorybank/
 | [`imp/DonorDesk — Phased Implementation Plan.md`](imp/DonorDesk%20—%20Phased%20Implementation%20Plan.md) | Architecture questions, adding new features |
 | [`contabo-ops.md`](contabo-ops.md) | Looking up live-host facts during deploy or troubleshooting |
 | [`CONTABO-DEPLOY.md`](CONTABO-DEPLOY.md) | Deploying to Contabo (single fastest procedure) |
+
+
+## 2026-10-21: gap-closure features (Version 2.007)
+
+- Feature docs 35–42 in `Features/` and the addendum to 31 (two-step sign-in, lockout). The index is `Features/INDEX.md`.
+- Status ledger for every audit item, with left-over tasks and open decisions: `imp/product-gap-audit-2026-10-20.md` §18.
+- Support articles for these features: `docs/support/how-to/` (source), served from `apps/web/content/support/how-to/`. See `docs/support/README.md`.
+- Operator notes: `runbooks/evidence-encryption.md`, `CONTABO-DEPLOY.md` (2026-10-21 entries), `demo/verification-demo-10.md`.
+
+## 2026-10-24: site maps (Phase 30 + batch 30.1)
+
+- Feature doc 43 in `Features/` ([Features/43-Site-Maps.md](Features/43-Site-Maps.md)): the plan's **Map** view, the Overview's **"Where we work"** section, place resolution from the officer's own location text (bundled gazetteer, offline), hand-placed pins, and one uploaded GeoJSON of workspace boundaries per organisation. Plan and invariants: `imp/phase30-maps.md`, `AGENTS.md` → "Phase 30 invariants — maps".
+- Migration `20261024090000_map_layers_and_pins` (PlannedActivity.latitude/longitude + TenantMapLayer) + `rls.sql`; `/ready` requires the new fields. Ship api + web together.
+- Support articles for the feature, unpublished until the live-site check: `docs/support/_unpublished-phase30/` (README carries the publish checklist).
+
+## 2026-10-25: Infographic Studio (Phase 31 + Phase 32)
+
+- Feature doc 44 in `Features/` ([Features/44-Infographic-Studio.md](Features/44-Infographic-Studio.md)): designs built from blocks, 22 templates, 9 formats, themes, English/French/Spanish/Arabic, the Design check, review and approval, public share links, brand kit, report insertion, opt-in AI-drafted wording and the who-does-what-where draft from the plan.
+- Plan and state: `imp/phase31-infograph.md` and `imp/phase32-infographic-studio.md` (§7 = deploy record). Invariants: `AGENTS.md` → "Phase 31 invariants" and "Phase 32 invariants".
+- Deployed: `releaseId=20261025043802` (Phase 31) and `20261025113046` (Phase 32), with migrations `20261026090000_project_infographics` and `20261027090000_infographic_studio_v2`. Operator record in `CONTABO-DEPLOY.md` §11; fixes in `Fixes.md`.
+- Not yet checked signed-in in a browser. Support articles are drafted, not published: `docs/support/_unpublished-phase32/` (publish checklist in its README).
+
+
+## 2026-10-28 to 2026-10-29: Phase 33 — competitive parity (Version 3.007)
+
+- Feature docs 45–52 in `Features/` and the index section "Phase 33"; plan and status in `imp/phase33-competitive-parity-plan.md`.
+- Deployed `releaseId` 20261027154750 (places, results by place, API keys, webhooks, formulas), 20261028030634 (period submission, public `/api/v1`), 20261028041837 and 20261028051819 (collection forms and field app, photo questions, dashboards), 20261028062717 (Ask, connectors, languages, completion of 33.7), 20261028070000 (two-step requirement, trial notices, readiness memo).
+- Operator record and open items: `docs/runbooks/phase33-operations.md` and `pending.md` ("Phase 33").
+- Readiness and self-hosting decisions: `imp/phase33-12-trust-and-commercial.md`.
+- Support articles drafted, unpublished: `docs/support/_unpublished-phase33/`.
+- Product version label moved to **3.007** in the living documents and the legal pages on 2026-10-28.
+
+
+## 2026-10-28: Phase 34 — DevResults parity (Version 3.007)
+
+- Feature docs 53–58 in `Features/` (Chart Studio, Entry Sheet, dashboards v2 and templates, Maps screen, indicator views and report builder, bookmarks); plan with an "implemented / left" table in `imp/phase34-devresults-parity-plan.md`.
+- Deployed `releaseId=20261028133938` (commits `47dcbe6f`, `d1cdf9e3`, branch `0015-compitition`); migrations `20261030090000_saved_charts`, `20261030100000_dashboard_templates`, `20261030110000_bookmarks`, `20261030120000_saved_reports`. Operator record: `docs/runbooks/phase34-operations.md`, `contabo-ops.md` ("Phase 34 host facts"), `pending.md` ("Phase 34").
+- Support articles drafted, unpublished: `docs/support/_unpublished-phase34/` (publish checklist in its README).
+- Website overhaul recommendations: `docs/marketing/07-website-overhaul-recommendations.md` (not yet decided or built).
+- Not yet checked by a person in the signed-in production app.
+
+## 2026-11-03: Phase 39 — dashboard visual quality, instant tiles and richer share links (Version 3.007)
+
+- Plan, per-batch as-built record, deviations and the open list: `imp/phase39-enh-dashboards.md` (§12). Feature specs updated: `Features/48-Dashboards.md`, `Features/55-Dashboard-Templates-Tabs-And-Viewing.md`, `Features/53-Chart-Studio.md` (appearance). Invariants: `AGENTS.md` → "Phase 39 invariants" and "Share links show maps and activity figures".
+- Deployed `releaseId=20261103044136` (Phase 39) and `20261103054323` (instant drawing through `POST /v1/dashboard-preview`, share links that show the plan, activity tiles and maps while money, budgets and project lists stay out, toolbar width, small-axis labels). Commits `d63e1c2a`, `2f3b254e`, `018152de` on `0016-pcw`. No migration, no env.
+- Browser record in the signed-in test tenant: `demo/verification-2026-11-03-dashboards.md`; before/after pictures in `imp/phase39-baseline/`. Visual regression baselines: `apps/web/tests/harness/dashboard-visuals/baseline/` (`pnpm --filter @donordesk/web test:visuals`).
+- A share link now exposes planned-activity titles, places and delivery state and results by place to anyone who holds it (a deliberate reversal of the earlier rule).
+
+## 2026-11-01: Phase 37 (AI setup wizard v2) (Version 3.007)
+
+- Plan, status, real-model evaluation, open items and the invariants to add to AGENTS.md: `imp/phase37-setup-wizard-v2.md`. Feature spec `Features/25-AI-Project-Setup.md`; runbook `docs/runbooks/project-setup-assist.md` (Phase 37 section).
+- Deployed in seven releases on 2026-11-01 (first `20261101174948`, final `20261101195215`); no migration, no env; API and web together.
+- Run on Anthropic Haiku on production against the four AMAN files: 79–88 s, 16–17 requests, 71–79 k tokens; goal 1 / outcomes 2 stable; Gantt 123 rows; budget reconciles.
+- Not done: link Gantt activities to results beyond clear wording matches, assign unmatched headings with a model call, drag-and-drop in the results tree, native review of FR/ES/AR, more donor packs (EU, UNICEF, GCF), removal of the test data left on the demo tenant.
+
+## 2026-10-31: Phase 36 (AI project setup wizard) (Version 3.007)
+
+- Plan, per-batch notes, deviations and the quality bars: `imp/phase36-ai-project-setup-wizard.md` (§0a is the implementation record). Feature spec `Features/25-AI-Project-Setup.md`; runbook `docs/runbooks/project-setup-assist.md`; support draft (unpublished) `docs/support/_unpublished-phase36/`.
+- Project documents live in the organisation's own Google Drive, never on the server (`gdrive.md` §10). The AI provider notes learned in production are in `imp/LLM-PROVIDER-WIRING.md` §21.
+- Deployed over several releases on 2026-10-31 (first `20261031102836`; final release recorded in `pending.md`). Migration `20261102100000_project_setup_proposals` (RLS applied to `ProjectSetupProposal` and `ProjectSetupRun`); no migration after it.
+- Operations note for the superadmin portal (it had been left stopped since 2026-10-27): `SUPERADMIN-PORTAL.md` §15.
+- Not yet done: a real-model quality run (the Anthropic account has no credit), a native review of the French, Spanish and Arabic wording, and the removal of the `ZZ TEST` data left on production.

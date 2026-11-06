@@ -1,4 +1,5 @@
 import { PeriodEvidenceScope } from "../../services/period-evidence-scope-service.js";
+import type { IPlanDelivery } from "../../services/plan-delivery-service.js";
 import type { Result } from "@donordesk/domain";
 import { DomainError, describeReadinessChanges, lintReportContradictions, toLintFindingData, calculateReadiness, readinessStageFor, rankReadinessBlockers, DATA_QUALITY_PENALTY, type ReadinessBlocker, type ReadinessWeights, type ReadinessBreakdown, type ContradictionLintFindingData } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
@@ -41,6 +42,8 @@ export class CalculateReadinessHandler {
     private readonly reconciler?: IChecklistReconciler,
     /** With it, a single-period read says what changed recently (from the audit trail). */
     private readonly audits?: IAuditRepository,
+    /** With it, readiness advises about planned activities with no completed activity (never part of the score). */
+    private readonly planDelivery?: IPlanDelivery,
   ) {}
 
   async handle(
@@ -195,6 +198,11 @@ export class CalculateReadinessHandler {
     const openChecklist = cl.ok
       ? cl.value.filter((i) => i.status === "OPEN" || i.status === "IN_PROGRESS")
       : [];
+    let plannedNotHeld = 0;
+    if (this.planDelivery && period && stage !== "SUBMISSION") {
+      const plan = await this.planDelivery.forPeriod({ tenantId: ctx.tenant.tenantId, projectId: period.projectId, start: period.duration.start, end: period.duration.end });
+      if (plan.ok) plannedNotHeld = plan.value?.notHeld ?? 0;
+    }
     const topBlockers = rankReadinessBlockers(breakdown, {
       totalSections,
       sectionsNeedingAttention: Math.max(0, totalSections - (stage === "DRAFTING" ? cleanSections : approvedSections)),
@@ -204,6 +212,7 @@ export class CalculateReadinessHandler {
       evidenceShortfall: Math.max(0, requiredEvidenceCount - attachedEvidenceCount),
       openContradictions: dataQualityBlockers ?? 0,
       uncappedOverall,
+      ...(stage !== "SUBMISSION" && plannedNotHeld > 0 ? { plannedNotHeld } : {}),
     });
 
     let recentChanges: string[] | undefined;

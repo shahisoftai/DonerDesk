@@ -19,10 +19,10 @@ export async function submitContactSalesAction(input: {
       cache: "no-store",
     });
     if (!response.ok) {
-      return { ok: false, error: "We could not send your message. Please email sales@donordesk.online directly." };
+      return { ok: false, error: "We could not send your message. Please email support@donordesk.online directly." };
     }
     return { ok: true };
   } catch {
-    return { ok: false, error: "We could not send your message. Please email sales@donordesk.online directly." };
+    return { ok: false, error: "We could not send your message. Please email support@donordesk.online directly." };
   }
 }

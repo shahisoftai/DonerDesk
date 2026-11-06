@@ -1,6 +1,6 @@
-import { DomainError, resolveRequirements, type ResolvedReportingRequirements, type RequirementSourceType } from "@donordesk/domain";
+import { DomainError, requirementsFromTemplate, resolveRequirements, type ResolvedReportingRequirements, type RequirementSourceType } from "@donordesk/domain";
 import type { IRequirementResolver, IRequirementPackRepository, IAwardOverrideRepository, IResolvedRequirementsRepository, IReportingPeriodRepository, IReportPlanRepository, IRequirementEvaluator } from "@donordesk/application";
-import type { IIdGenerator } from "@donordesk/application";
+import { parseTemplateSnapshot, type IIdGenerator } from "@donordesk/application";
 import type { TenantId } from "@donordesk/domain";
 import { DeterministicRequirementEvaluator } from "./requirement-evaluator.js";
 
@@ -57,6 +57,14 @@ export class DeterministicRequirementResolver implements IRequirementResolver {
       if (packResult.value) {
         layers.push({ sourceType: "DONOR_PACK", requirements: packResult.value.requirements });
       }
+    }
+
+    // The donor's own template, pinned to the period: lowest of the donor layers, so a pack or an award amendment that
+    // says otherwise wins, but a template requirement nobody overrode now reaches the gate.
+    const pinned = parseTemplateSnapshot(period.templateSnapshotJson);
+    if (pinned) {
+      const fromTemplate = requirementsFromTemplate(pinned);
+      if (fromTemplate.length > 0) layers.push({ sourceType: "TEMPLATE", requirements: fromTemplate });
     }
 
     const merged = resolveRequirements({ layers });

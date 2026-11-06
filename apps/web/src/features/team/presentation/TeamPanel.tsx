@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { changeRoleAction, inviteUserAction } from "@/lib/actions/team";
+import { resetUserMfaAction } from "@/lib/actions/mfa";
 import { useActionState } from "@/lib/client/action-state";
 import { can, capabilitiesForRole, type Capability } from "@/lib/shared/capabilities";
 import { Badge } from "@/components/data/Badge";
@@ -20,8 +21,11 @@ export function TeamPanel({
   members,
   capabilities,
   pendingInvitations = [],
+  projects = [],
 }: {
   members: TeamMember[];
+  /** Projects an outside partner can be given. */
+  projects?: Array<{ id: string; title: string }>;
   pendingInvitations?: PendingInvitation[];
   capabilities: readonly Capability[];
 }) {
@@ -33,13 +37,31 @@ export function TeamPanel({
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState("FIELD_OFFICER");
   const [inviteToken, setInviteToken] = useState<string | null>(null);
+  const [inviteExternal, setInviteExternal] = useState(false);
+  const [inviteProjects, setInviteProjects] = useState<string[]>([]);
   const [roleChange, setRoleChange] = useState<{ user: TeamMember; target: string } | null>(null);
   const [localErrors, setLocalErrors] = useState<Record<string, string[]>>({});
 
   const canInvite = can(capabilities, "team.invite");
   const canManage = can(capabilities, "team.manage");
 
-  const filtered = useMemo(() => filterTeamMembers(members, { query, role: roleFilter }), [members, query, roleFilter]);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [sortBy, setSortBy] = useState<"NAME" | "NAME_DESC" | "EMAIL" | "ROLE" | "STATUS">("NAME");
+  // An invitation to someone who already belongs to the workspace is history, not something still to do.
+  const memberEmails = useMemo(() => new Set(members.map((m) => m.email.toLowerCase())), [members]);
+  const openInvitations = useMemo(() => pendingInvitations.filter((i) => !memberEmails.has(i.email.toLowerCase())), [pendingInvitations, memberEmails]);
+  const statuses = useMemo(() => [...new Set(members.map((m) => m.status))].sort(), [members]);
+  const filtered = useMemo(() => {
+    const roleName = (r: string) => ROLE_LABEL[r as keyof typeof ROLE_LABEL] ?? r;
+    const cmp = {
+      NAME: (a: TeamMember, b: TeamMember) => a.name.localeCompare(b.name),
+      NAME_DESC: (a: TeamMember, b: TeamMember) => b.name.localeCompare(a.name),
+      EMAIL: (a: TeamMember, b: TeamMember) => a.email.localeCompare(b.email),
+      ROLE: (a: TeamMember, b: TeamMember) => roleName(a.role).localeCompare(roleName(b.role)) || a.name.localeCompare(b.name),
+      STATUS: (a: TeamMember, b: TeamMember) => a.status.localeCompare(b.status) || a.name.localeCompare(b.name),
+    }[sortBy];
+    return filterTeamMembers(members, { query, role: roleFilter }).filter((m) => !statusFilter || m.status === statusFilter).sort(cmp);
+  }, [members, query, roleFilter, statusFilter, sortBy]);
   const fields = actionState.fields ?? localErrors;
   const errorCount = Object.keys(fields).reduce((sum, k) => sum + (fields[k]?.length ?? 0), 0);
 
@@ -47,12 +69,13 @@ export function TeamPanel({
     e.preventDefault();
     const next: Record<string, string[]> = {};
     if (!inviteEmail.trim()) next.email = ["Email is required."];
+    if (inviteExternal && inviteProjects.length === 0) next.projects = ["Choose at least one project. A partner sees nothing else."];
     if (Object.keys(next).length > 0) {
       setLocalErrors(next);
       return;
     }
     setLocalErrors({});
-    const result = await actionState.run(() => inviteUserAction({ email: inviteEmail.trim(), role: inviteRole, projectIds: [] }));
+    const result = await actionState.run(() => inviteUserAction({ email: inviteEmail.trim(), role: inviteExternal && inviteRole !== "VIEWER" ? "FIELD_OFFICER" : inviteRole, projectIds: inviteExternal ? inviteProjects : [], external: inviteExternal }));
     if (result) {
       setInviteToken(result.token);
       setInviteEmail("");
@@ -90,11 +113,30 @@ export function TeamPanel({
             </Field>
             <Field label="Role" htmlFor="invite-role" error={fields.role?.[0]}>
               <Select id="invite-role" value={inviteRole} onChange={(e) => setInviteRole(e.target.value)}>
-                {ROLE_OPTIONS.map((r) => (
+                {ROLE_OPTIONS.filter((r) => !inviteExternal || r === "FIELD_OFFICER" || r === "VIEWER").map((r) => (
                   <option key={r} value={r}>{ROLE_LABEL[r as keyof typeof ROLE_LABEL] ?? r}</option>
                 ))}
               </Select>
             </Field>
+          </div>
+          <div>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-1" checked={inviteExternal} onChange={(e) => { setInviteExternal(e.target.checked); if (e.target.checked && inviteRole !== "VIEWER") setInviteRole("FIELD_OFFICER"); }} />
+              <span><strong>Outside partner.</strong> Someone from another organization who reports on, or reads, only the projects you choose. They cannot see the rest of your organization.</span>
+            </label>
+            {inviteExternal && (
+              <Field label="Projects they may see" htmlFor="invite-projects" error={fields.projects?.[0]}>
+                <div id="invite-projects" role="group" className="max-h-40 space-y-1 overflow-auto rounded border border-slate-200 p-2 dark:border-white/10">
+                  {projects.length === 0 && <p className="text-xs text-slate-500">There are no projects to choose from yet.</p>}
+                  {projects.map((p) => (
+                    <label key={p.id} className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={inviteProjects.includes(p.id)} onChange={(e) => setInviteProjects((cur) => (e.target.checked ? [...cur, p.id] : cur.filter((x) => x !== p.id)))} />
+                      {p.title}
+                    </label>
+                  ))}
+                </div>
+              </Field>
+            )}
           </div>
           <div className="flex justify-end">
             <Button type="submit" size="sm" pending={actionState.busy}>Send invite</Button>
@@ -130,6 +172,23 @@ export function TeamPanel({
             ))}
           </Select>
         </div>
+        <div>
+          <label className="label" htmlFor="team-status-filter">Status</label>
+          <Select id="team-status-filter" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="">All statuses</option>
+            {statuses.map((st) => <option key={st} value={st}>{st.charAt(0) + st.slice(1).toLowerCase().replace(/_/g, " ")}</option>)}
+          </Select>
+        </div>
+        <div>
+          <label className="label" htmlFor="team-sort">Sort by</label>
+          <Select id="team-sort" value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)}>
+            <option value="NAME">Name (A–Z)</option>
+            <option value="NAME_DESC">Name (Z–A)</option>
+            <option value="EMAIL">Email</option>
+            <option value="ROLE">Role</option>
+            <option value="STATUS">Status</option>
+          </Select>
+        </div>
       </div>
 
       <div className="table-shell">
@@ -154,6 +213,8 @@ export function TeamPanel({
                 <td className="px-3 py-2">{ROLE_LABEL[u.role as keyof typeof ROLE_LABEL] ?? u.role}</td>
                 <td className="px-3 py-2">
                   <Badge tone={u.status === "ACTIVE" ? "success" : u.status === "INVITED" ? "info" : "warning"}>{u.status.replace(/_/g, " ")}</Badge>
+                  {u.external ? <Badge tone="neutral">Outside partner</Badge> : null}
+                  {u.mfaEnabled ? <Badge tone="info">Two-step</Badge> : null}
                 </td>
                 {canManage && (
                   <td className="px-3 py-2 text-right">
@@ -164,6 +225,19 @@ export function TeamPanel({
                     >
                       Change role
                     </button>
+                    {u.mfaEnabled && (
+                      <button
+                        type="button"
+                        className="btn-secondary ml-2 py-1 text-xs"
+                        onClick={() => {
+                          if (window.confirm(`Clear two-step sign-in for ${u.name}? They will sign in with their password and can set it up again.`)) {
+                            void actionState.run(() => resetUserMfaAction(u.id)).then((done) => { if (done) router.refresh(); });
+                          }
+                        }}
+                      >
+                        Reset two-step
+                      </button>
+                    )}
                   </td>
                 )}
               </tr>
@@ -172,7 +246,7 @@ export function TeamPanel({
         </table>
       </div>
 
-      {pendingInvitations.length > 0 && <PendingInvitations invitations={pendingInvitations} />}
+      {openInvitations.length > 0 && <PendingInvitations invitations={openInvitations} />}
 
       {roleChange && canManage && (
         <RoleChangeDialog

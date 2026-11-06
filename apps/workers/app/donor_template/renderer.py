@@ -7,6 +7,7 @@ paragraph (how `insert_placeholders` writes them) is rendered as native Word
 blocks — headings, lists, tables, bold/italic — via a docxtpl Subdoc, so the
 donor's document never shows raw `**` or `|` markup. Any other placeholder
 occurrence falls back to the plain text of the section."""
+
 from __future__ import annotations
 
 import re

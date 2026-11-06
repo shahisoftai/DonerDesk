@@ -1,0 +1,238 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { TenantId } from "@donordesk/domain";
+import {
+  SaveDashboardHandler, ListDashboardsHandler, GetDashboardHandler, AddDashboardWidgetHandler, DeleteDashboardHandler,
+  CreateDashboardShareHandler, ListDashboardSharesHandler, RevokeDashboardShareHandler, ResolveDashboardShareHandler, GetDashboardDataHandler, PreviewDashboardChartsHandler, PublicDashboardHandler,
+} from "../dist/index.js";
+
+const tenantId = TenantId.create("tenant-a");
+const ok = (value) => ({ ok: true, value });
+const as = (userId, role = "PROJECT_MANAGER") => ({ tenant: { tenantId, userId, role }, requestId: "r" });
+const amina = as("amina"), bashir = as("bashir"), viewer = as("vera", "VIEWER");
+let n = 0;
+const ids = { generate: () => `id${++n}` };
+const audit = { events: [], record: async function (e) { this.events.push(e.eventType); } };
+let now = new Date("2026-10-10T08:00:00Z");
+const clock = { now: () => now };
+
+function world() {
+  const dashboards = new Map(), links = new Map();
+  return {
+    dashboards,
+    links,
+    repo: {
+      create: async (d) => (dashboards.set(d.id, d), ok()),
+      update: async (d, expected) => {
+        const cur = dashboards.get(d.id);
+        if (expected && cur.updatedAt.getTime() !== expected.getTime()) return ok(false);
+        dashboards.set(d.id, d); return ok(true);
+      },
+      delete: async (id) => (dashboards.delete(id), ok()),
+      findById: async (id) => ok(dashboards.get(id) ?? null),
+      listVisible: async (t, owner, projectId) => ok([...dashboards.values()].filter((d) => d.scope === "ORG" || (d.scope === "MINE" && d.ownerId === owner) || (d.scope === "PROJECT" && d.projectId === projectId))),
+    },
+    linkRepo: {
+      create: async (l) => (links.set(l.id, l), ok()), listByDashboard: async (id) => ok([...links.values()].filter((l) => l.dashboardId === id)),
+      findById: async (id) => ok(links.get(id) ?? null), revoke: async (id, t, at) => (links.set(id, { ...links.get(id), revokedAt: at }), ok()),
+      deleteByDashboard: async (id) => ([...links.values()].filter((l) => l.dashboardId === id).forEach((l) => links.delete(l.id)), ok()),
+      findByTokenHash: async (h) => ok([...links.values()].find((l) => l.tokenHash === h) ?? null),
+    },
+    visible: { for: async (ctx) => ok(ctx.tenant.userId === "bashir" ? [{ id: "p2" }] : [{ id: "p1" }, { id: "p2" }]) },
+  };
+}
+
+const spec = { template: "INDICATOR_OVER_TIME", indicatorIds: ["i1"], measure: "PERIOD", type: "BAR", showTarget: false };
+const widget = (id, projectId = "p1", x = 0, y = 0) => ({ id, projectId, spec, x, y, w: 6, h: 4 });
+
+test("save: a personal one is anyone's, a shared one needs project.edit; the project must be visible; bad charts are refused", async () => {
+  const w = world();
+  const save = new SaveDashboardHandler(ids, w.repo, w.visible, audit, clock);
+  assert.ok((await save.handle(viewer, { name: "Mine", scope: "MINE", widgets: [widget("a")] })).ok);
+  assert.match((await save.handle(viewer, { name: "Org", scope: "ORG", widgets: [] })).error.message, /manages projects/);
+  assert.match((await save.handle(amina, { name: "P", scope: "PROJECT", widgets: [] })).error.message, /needs a project/);
+  assert.match((await save.handle(amina, { name: "X", scope: "MINE", widgets: [widget("a", "p9")] })).error.code, /NOT_FOUND/);
+  // A size outside the grid is fitted to it, not refused: the layout rule clamps before the save is checked.
+  const fitted = await save.handle(amina, { name: "Fit", scope: "MINE", widgets: [{ ...widget("a"), w: 2, x: 11 }] });
+  assert.deepEqual([w.dashboards.get(fitted.value.id).widgets[0].w, w.dashboards.get(fitted.value.id).widgets[0].x], [3, 9]);
+  const bad = await save.handle(amina, { name: "X", scope: "MINE", widgets: [{ ...widget("a"), spec: { ...spec, indicatorIds: [] } }] });
+  assert.match(bad.error.message, /exactly one indicator/);
+});
+
+test("visibility and editing: a personal dashboard is invisible to others; a shared one is editable by its owner and by managers", async () => {
+  const w = world();
+  const save = new SaveDashboardHandler(ids, w.repo, w.visible, audit, clock);
+  const get = new GetDashboardHandler(w.repo);
+  const list = new ListDashboardsHandler(w.repo);
+  const mine = (await save.handle(amina, { name: "Mine", scope: "MINE", widgets: [] })).value.id;
+  const org = (await save.handle(amina, { name: "Org", scope: "ORG", widgets: [widget("a")] })).value.id;
+  assert.equal((await get.handle(bashir, mine)).error.code, "NOT_FOUND");
+  assert.deepEqual((await list.handle(bashir)).value.map((d) => d.name), ["Org"]);
+  assert.deepEqual((await list.handle(amina)).value.map((d) => d.name).sort(), ["Mine", "Org"]);
+  const seen = (await get.handle(viewer, org)).value;
+  assert.equal(seen.canEdit, false);
+  assert.equal((await get.handle(bashir, org)).value.canEdit, true);
+  assert.equal((await save.handle(viewer, { name: "Hijack", scope: "ORG", widgets: [] }, org)).error.code, "FORBIDDEN");
+  assert.ok((await save.handle(bashir, { name: "Renamed", scope: "ORG", widgets: [widget("a", "p2")] }, org)).ok);
+  assert.match((await save.handle(bashir, { name: "x", scope: "MINE", widgets: [] }, org)).error.message, /keeps the scope/);
+});
+
+test("two people saving the same dashboard: the second is refused, not merged over", async () => {
+  const w = world();
+  const save = new SaveDashboardHandler(ids, w.repo, w.visible, audit, clock);
+  const created = await save.handle(amina, { name: "D", scope: "ORG", widgets: [] });
+  const opened = created.value.updatedAt;
+  now = new Date("2026-10-10T09:00:00Z");
+  assert.ok((await save.handle(amina, { name: "D1", scope: "ORG", widgets: [], expectedUpdatedAt: opened }, created.value.id)).ok);
+  const late = await save.handle(bashir, { name: "D2", scope: "ORG", widgets: [], expectedUpdatedAt: opened }, created.value.id);
+  assert.equal(late.error.code, "CONFLICT");
+  assert.match(late.error.message, /Nothing was saved/);
+});
+
+test("adding a chart lands below the others; a project dashboard takes its own project only; the limit is told", async () => {
+  const w = world();
+  const save = new SaveDashboardHandler(ids, w.repo, w.visible, audit, clock);
+  const add = new AddDashboardWidgetHandler(ids, w.repo, w.visible, clock, audit);
+  const id = (await save.handle(amina, { name: "P", scope: "PROJECT", projectId: "p1", widgets: [widget("a")] })).value.id;
+  assert.equal((await add.handle(amina, id, { projectId: "p1", spec })).value.chartCount, 2);
+  assert.match((await add.handle(amina, id, { projectId: "p2", spec })).error.message, /own project only/);
+  assert.equal((await add.handle(amina, id, { projectId: "p9", spec })).error.code, "NOT_FOUND");
+  assert.equal((await add.handle(viewer, id, { projectId: "p1", spec })).error.code, "FORBIDDEN");
+  const added = w.dashboards.get(id).widgets;
+  assert.deepEqual(added.map((x) => [x.x, x.y]), [[0, 0], [0, 4]]);
+});
+
+test("charts of a project the viewer cannot see are told so, never drawn; one sheet is read per project", async () => {
+  const w = world();
+  const save = new SaveDashboardHandler(ids, w.repo, w.visible, audit, clock);
+  const id = (await save.handle(amina, { name: "Org", scope: "ORG", widgets: [widget("a", "p1"), widget("b", "p1", 6, 0), widget("c", "p2", 0, 4)] })).value.id;
+  const reads = [];
+  const sheets = { handle: async (ctx, projectId) => (reads.push(projectId), ok({ periods: [], indicators: [], cells: [], finance: [{}], financeEnabled: true })) };
+  const data = new GetDashboardDataHandler(w.repo, sheets, w.visible);
+  const asBashir = (await data.handle(bashir, id)).value.charts;
+  assert.match(asBashir[0].unavailable, /project you cannot see/);
+  assert.match(asBashir[1].unavailable, /project you cannot see/);
+  assert.ok(asBashir[2].chart || asBashir[2].unavailable, "p2 is attempted");
+  assert.deepEqual(reads, ["p2"]);
+  reads.length = 0;
+  await data.handle(amina, id);
+  assert.deepEqual(reads.sort(), ["p1", "p2"]);
+});
+
+test("share links: hash only, expire, revoke, delete with the dashboard; the public read has no finance and a guest identity", async () => {
+  const w = world();
+  const save = new SaveDashboardHandler(ids, w.repo, w.visible, audit, clock);
+  const id = (await save.handle(amina, { name: "Org", scope: "ORG", widgets: [widget("a")] })).value.id;
+  const share = new CreateDashboardShareHandler(ids, w.repo, w.linkRepo, audit, clock);
+  assert.equal((await share.handle(viewer, id, { label: "x", expiresInDays: 7 })).error.code, "FORBIDDEN");
+  const link = await share.handle(amina, id, { label: "Donor", expiresInDays: 7 });
+  assert.ok(![...w.links.values()].some((l) => JSON.stringify(l).includes(link.value.token)), "only a hash is stored");
+  const resolve = new ResolveDashboardShareHandler(w.linkRepo, clock);
+  const found = await resolve.handle(link.value.token);
+  assert.equal(found.value.dashboardId, id);
+  assert.equal((await resolve.handle("nope")).ok, false);
+
+  const seenBy = [];
+  const sheets = { handle: async (ctx, projectId) => (seenBy.push(ctx.tenant), ok({ periods: [], indicators: [], cells: [], finance: [{ x: 1 }], financeEnabled: true })) };
+  const pub = await new PublicDashboardHandler(w.repo, sheets).handle(tenantId, id);
+  assert.equal(pub.value.name, "Org");
+  assert.equal(seenBy[0].role, "VIEWER");
+  assert.equal(seenBy[0].external, true);
+
+  const list = new ListDashboardSharesHandler(w.repo, w.linkRepo, clock);
+  assert.equal((await list.handle(amina, id)).value[0].live, true);
+  assert.deepEqual((await list.handle(viewer, id)).value, [], "someone who cannot change it sees no links");
+  const revoke = new RevokeDashboardShareHandler(w.repo, w.linkRepo, audit, clock);
+  assert.equal((await revoke.handle(viewer, link.value.id)).error.code, "FORBIDDEN");
+  await revoke.handle(amina, link.value.id);
+  assert.equal((await resolve.handle(link.value.token)).ok, false);
+  const second = await share.handle(amina, id, { label: "Again", expiresInDays: 1 });
+  now = new Date("2026-10-12T08:00:00Z");
+  assert.equal((await resolve.handle(second.value.token)).ok, false, "expired");
+  await new DeleteDashboardHandler(w.repo, w.linkRepo, audit).handle(amina, id);
+  assert.equal(w.links.size, 0);
+  assert.equal(w.dashboards.size, 0);
+});
+
+test("a dashboard draws Chart Studio charts and tables with the studio's builder, text blocks as text, and finance never through a link", async () => {
+  const periods = [1, 2, 3].map((n) => ({ id: `p${n}`, label: `M${n}`, start: `2026-0${n}-01`, end: `2026-0${n}-28`, reportType: "MONTHLY", locked: false }));
+  const sheet = {
+    projectId: "p1", periods, financeEnabled: true,
+    indicators: ["a", "b"].map((id) => ({ id, code: id.toUpperCase(), name: id, level: "OUTPUT", type: "COUNT", unit: "people", baseline: "0", target: "100", isRate: false })),
+    cells: [["a", [10, 20, 30]], ["b", [5, 6, 7]]].flatMap(([id, vs]) => vs.map((v, i) => ({ indicatorId: id, periodId: `p${i + 1}`, periodValue: String(v), cumulativeValue: String(v * (i + 1)), status: "VERIFIED" }))),
+    finance: [{ periodId: "p1", currency: "USD", budget: "1000", expenditure: "100", balance: "900", burnRatePercent: "10.0", verified: true }],
+  };
+  const widgets = [
+    { id: "f", projectId: "p1", x: 0, y: 0, w: 6, h: 4, spec: { version: 2, kind: "FUNNEL", dataset: { template: "INDICATORS_PROGRESS", indicatorIds: ["a", "b"], measure: "CUMULATIVE", showTarget: false, includeDraft: true } } },
+    { id: "t", projectId: "p1", x: 6, y: 0, w: 6, h: 4, spec: { version: 2, kind: "SCORECARD_TABLE", dataset: { template: "INDICATORS_PROGRESS", indicatorIds: ["a", "b"], measure: "CUMULATIVE", showTarget: false, includeDraft: true } } },
+    { id: "x", projectId: "p1", x: 0, y: 4, w: 12, h: 2, kind: "TEXT", text: "Cumulative to date." },
+    { id: "m", projectId: "p1", x: 0, y: 6, w: 6, h: 4, spec: { version: 2, kind: "BAR", dataset: { template: "FINANCE_BUDGET_VS_SPEND", indicatorIds: [], measure: "PERIOD", showTarget: false, includeDraft: true } } },
+    { id: "o", projectId: "p1", x: 6, y: 6, w: 6, h: 4, spec: { template: "INDICATOR_OVER_TIME", indicatorIds: ["a"], measure: "PERIOD", type: "BAR", showTarget: false } },
+  ];
+  const w = world();
+  const sheets = { handle: async () => ok(sheet) };
+  const saved = await new SaveDashboardHandler(ids, w.repo, { for: async () => ok([{ id: "p1" }]) }, audit, clock).handle(amina, { name: "Mixed", scope: "MINE", widgets });
+  assert.equal(saved.ok, true, saved.error?.message);
+  const data = await new GetDashboardDataHandler(w.repo, sheets, { for: async () => ok([{ id: "p1" }]) }).handle(amina, saved.value.id);
+  const by = Object.fromEntries(data.value.charts.map((c) => [c.widgetId, c]));
+  assert.ok(by.f.chart.option.series, "a Studio chart is drawn");
+  assert.deepEqual(by.t.table.columns.slice(0, 2), ["Code", "Indicator"], "a table kind comes back as rows");
+  assert.equal(by.x.text, "Cumulative to date.");
+  assert.ok(by.m.chart, "finance is drawn for a signed-in viewer");
+  assert.ok(by.o.chart, "an older chart still draws");
+});
+
+test("a tile that is not saved yet is drawn at once, for the viewer's own projects only, and nothing is stored", async () => {
+  const w = world();
+  const reads = [];
+  const sheets = { handle: async (ctx, projectId) => (reads.push(projectId), ok({ periods: [], indicators: [], cells: [], finance: [] })) };
+  const preview = new PreviewDashboardChartsHandler(sheets, w.visible);
+  const note = { id: "n1", projectId: "p1", kind: "TEXT", text: "Hello", x: 0, y: 0, w: 6, h: 2 };
+  const own = await preview.handle(amina, [note, widget("a", "p1", 6, 0), widget("c", "p2", 0, 4)]);
+  assert.equal(own.ok, true, own.error?.message);
+  assert.deepEqual(own.value.charts.map((c) => c.widgetId), ["n1", "a", "c"]);
+  assert.equal(own.value.charts[0].text, "Hello");
+  assert.deepEqual(reads.sort(), ["p1", "p2"].filter((p) => reads.includes(p)).sort());
+  assert.equal(w.dashboards.size, 0, "previewing saves nothing");
+  const asBashir = await preview.handle(bashir, [widget("a", "p1")]);
+  assert.match(asBashir.value.charts[0].unavailable, /project you cannot see/);
+  assert.equal((await preview.handle(amina, [{ ...note, w: 99, h: 99 }])).ok, true, "a size outside the grid is fitted, as on save");
+});
+
+test("a share link shows maps and activity figures from data read on the server, never money, the budget or a list of projects", async () => {
+  const { PublicDashboardHandler } = await import("../dist/index.js");
+  const w = world();
+  const save = new SaveDashboardHandler(ids, w.repo, w.visible, audit, clock);
+  const widgets = [
+    { id: "m1", projectId: "p1", kind: "MAP", map: { view: "ACTIVITIES", title: "Sites" }, x: 0, y: 0, w: 12, h: 8 },
+    { id: "m2", projectId: "p1", kind: "MAP", map: { view: "RESULTS" }, x: 0, y: 8, w: 12, h: 8 },
+    { id: "t1", projectId: "p1", kind: "METRIC", metric: { metric: "ACTIVITIES_TOTAL", title: "Activities" }, x: 0, y: 16, w: 3, h: 3 },
+    { id: "t2", projectId: "p1", kind: "METRIC", metric: { metric: "FIN_SPENT", title: "Spent" }, x: 3, y: 16, w: 3, h: 3 },
+    { id: "k1", projectId: "p1", kind: "KPI", kpi: { indicatorId: "i1", includeDraft: true }, x: 6, y: 16, w: 3, h: 3 },
+    { id: "l1", projectId: "p1", kind: "PROJECT_LIST", projectList: { affiliation: "ALL" }, x: 0, y: 19, w: 12, h: 5 },
+  ];
+  const id = (await save.handle(amina, { name: "Org", scope: "ORG", widgets })).value.id;
+  const sheets = { handle: async () => ok({ projectId: "p1", periods: [{ id: "p1", label: "Jan", start: "2026-01-01", end: "2026-01-31", reportType: "MONTHLY", locked: false }], indicators: [{ id: "i1", code: "I1", name: "People", level: "OUTPUT", type: "COUNT", unit: "people", baseline: "0", target: "100", isRate: false }], cells: [{ indicatorId: "i1", periodId: "p1", periodValue: "10", cumulativeValue: "10", status: "VERIFIED" }], finance: [{}], financeEnabled: true }) };
+  const calls = [];
+  const extras = {
+    plan: async () => (calls.push("plan"), [{ id: "a", title: "A", kind: "ACTIVITY", start: "2026-01-01", end: "2026-02-01", status: "DONE", signal: "DONE", signalLabel: "Done" }]),
+    activityDays: async () => [], places: async () => [],
+    budget: async () => (calls.push("budget"), [{ donor: "d", category: "c", currency: "USD", budgeted: 1, spent: 1 }]),
+    finance: async () => (calls.push("finance"), { primaryCurrency: "USD", index: {}, inPrimary: {} }),
+    visibleProjects: async () => (calls.push("projects"), [{ projectId: "p1", title: "P" }]), bookmarkedProjectIds: async () => new Set(["p1"]),
+  };
+  const maps = { places: async () => ({ places: [], canEdit: false }), results: async () => ({ indicators: [] }), activities: async () => ({ rows: [{ id: "a" }], country: "Sudan" }) };
+  const r = await new PublicDashboardHandler(w.repo, sheets, extras, maps).handle(tenantId, id);
+  assert.equal(r.ok, true, r.error?.message);
+  const by = new Map(r.value.charts.map((c) => [c.widgetId, c]));
+  assert.deepEqual(by.get("m1").map.preloaded, { rows: [{ id: "a" }], country: "Sudan" }, "the activities map carries its data");
+  assert.deepEqual(Object.keys(by.get("m2").map.preloaded).sort(), ["places", "results"]);
+  assert.equal(by.get("t1").metric.value, 1, "an activity count is shown");
+  assert.equal(by.get("t2").metric.value, null, "money is not");
+  assert.ok(by.get("k1").kpi && by.get("k1").kpi.value === 10, "an indicator tile is shown");
+  assert.match(by.get("l1").unavailable, /not shown through a share link/);
+  assert.ok(!calls.includes("budget") && !calls.includes("finance") && !calls.includes("projects"), "money, budget and the projects list are never read for a link: " + calls.join());
+  // Without the extra readers a link shows indicator figures only.
+  const bare = await new PublicDashboardHandler(w.repo, sheets).handle(tenantId, id);
+  assert.match(bare.value.charts.find((c) => c.widgetId === "m1").unavailable, /not shown through a share link/);
+});

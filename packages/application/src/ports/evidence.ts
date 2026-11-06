@@ -12,6 +12,8 @@ export interface EvidenceFilter {
   uploadedById?: string;
   verificationStatus?: EvidenceVerificationStatus;
   confidentialityLevel?: ConfidentialityLevel;
+  /** The levels the caller may open; a restricted file the caller may not read is left out of the list. */
+  allowedConfidentialityLevels?: ConfidentialityLevel[];
   query?: string;
   dateFrom?: Date;
   dateTo?: Date;
@@ -30,6 +32,8 @@ export interface IEvidenceRepository {
   create(e: EvidenceFile): Promise<Result<EvidenceFile>>;
   update(e: EvidenceFile): Promise<Result<EvidenceFile>>;
   findById(id: string, tenantId: TenantId): Promise<Result<EvidenceFile | null>>;
+  /** The evidence file stored under this storage key, if any — used to gate a file download. */
+  findByStorageKey(storageKey: string, tenantId: TenantId): Promise<Result<EvidenceFile | null>>;
   search(filter: EvidenceFilter, tenantId: TenantId): Promise<Result<EvidenceListResult>>;
   countByPeriod(reportingPeriodId: string, tenantId: TenantId): Promise<Result<number>>;
   countVerifiedByPeriod(reportingPeriodId: string, tenantId: TenantId): Promise<Result<number>>;
@@ -56,4 +60,9 @@ export interface IEvidenceTagger {
 
 export interface IDocumentParser {
   parse(input: { buffer: Buffer; fileType: string; fileName: string }): Promise<{ text: string; metadata?: Record<string, unknown> }>;
+}
+
+/** Which approved or sent report relies on a piece of evidence, so taking it out of use is refused naming that report. */
+export interface IEvidenceUseGuard {
+  reportUsing(evidenceId: string, tenantId: TenantId): Promise<Result<{ reportTitle: string } | null>>;
 }

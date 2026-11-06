@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SaveSectionNoteSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema } from "@donordesk/contracts";
+import { AddSectionInfographicSchema, CaptionSectionInfographicSchema, MoveSectionInfographicSchema, CreateReportingPeriodSchema, GenerateDraftSchema, UpdateSectionSchema, CreateReportSectionSchema, UpdateSectionChartSchema, ReviewReportSchema, RewriteSectionSchema, RejectReportSchema, ResolveReportClaimSchema, BulkResolveReportClaimSchema, ResolveSectionFlagsSchema, UpsertRequirementPackSchema, UpsertAwardOverrideSchema, ReassessRevisionSchema, RegenerateSectionSchema, ApplyClaimSuggestionSchema, ReorderReportSectionsSchema, UpdateReportingPeriodStorySchema, UpdateReportingPeriodScopeSchema, CancelReportingPeriodSchema, SaveSectionNoteSchema, ChangePeriodTemplateSchema, SmartReviewSummarySchema, PreviewPeriodValuesSchema, ConfirmPeriodValuesSchema, ProposeFieldReportExtractionSchema, ApplyFieldReportExtractionSchema, SavePeriodFinanceSchema, PreviewFinanceImportSchema, AddSectionDataChartSchema, UpdateSectionDataChartSchema, MoveSectionDataChartSchema, ReopenReportSchema } from "@donordesk/contracts";
 
 export async function registerReportingRoutes(app: FastifyInstance) {
   app.get("/v1/projects/:projectId/reporting-periods", async (req) => {
@@ -17,6 +17,99 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.ensureAutoPeriod.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/report-sections/:id/infographics", async (req) => {
+    const r = await req.container.handlers.sectionInfographics.list({ tenant: req.tenant, requestId: req.id }, (req.params as { id: string }).id);
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.get("/v1/report-sections/:id/infographics/candidates", async (req) => {
+    const r = await req.container.handlers.sectionInfographics.candidates({ tenant: req.tenant, requestId: req.id }, (req.params as { id: string }).id);
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.post("/v1/report-sections/:id/infographics", async (req) => {
+    const body = AddSectionInfographicSchema.parse(req.body);
+    const r = await req.container.handlers.sectionInfographics.add({ tenant: req.tenant, requestId: req.id }, (req.params as { id: string }).id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/report-sections/:id/infographics/:pictureId", async (req) => {
+    const body = CaptionSectionInfographicSchema.parse(req.body);
+    const p = req.params as { id: string; pictureId: string };
+    const r = await req.container.handlers.sectionInfographics.caption({ tenant: req.tenant, requestId: req.id }, p.id, p.pictureId, body.caption);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/infographics/:pictureId/move", async (req) => {
+    const body = MoveSectionInfographicSchema.parse(req.body);
+    const p = req.params as { id: string; pictureId: string };
+    const r = await req.container.handlers.sectionInfographics.move({ tenant: req.tenant, requestId: req.id }, p.id, p.pictureId, body.direction);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.delete("/v1/report-sections/:id/infographics/:pictureId", async (req) => {
+    const p = req.params as { id: string; pictureId: string };
+    const r = await req.container.handlers.sectionInfographics.remove({ tenant: req.tenant, requestId: req.id }, p.id, p.pictureId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/report-sections/:id/data-charts", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.list(ctx, id);
+    if (!r.ok) throw r.error;
+    return { items: r.value };
+  });
+
+  app.post("/v1/report-sections/:id/data-charts", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = AddSectionDataChartSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.add(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/report-sections/:id/data-charts/:chartId", async (req) => {
+    const { id, chartId } = req.params as { id: string; chartId: string };
+    const body = UpdateSectionDataChartSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.update(ctx, id, chartId, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/data-charts/:chartId/refresh", async (req) => {
+    const { id, chartId } = req.params as { id: string; chartId: string };
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.refresh(ctx, id, chartId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/report-sections/:id/data-charts/:chartId/move", async (req) => {
+    const { id, chartId } = req.params as { id: string; chartId: string };
+    const body = MoveSectionDataChartSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.move(ctx, id, chartId, body.direction);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.delete("/v1/report-sections/:id/data-charts/:chartId", async (req) => {
+    const { id, chartId } = req.params as { id: string; chartId: string };
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.sectionDataCharts.remove(ctx, id, chartId);
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -154,6 +247,13 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const period = await req.container.periods.findById(id, ctx.tenant.tenantId);
     if (!period.ok || !period.value) return { storyContext: {} };
     return { storyContext: period.value.storyContext };
+  });
+
+  app.get("/v1/reporting-periods/:id/plan-suggestion", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const r = await req.container.handlers.planStorySuggestion.handle({ tenant: req.tenant, requestId: req.id }, id);
+    if (!r.ok) throw r.error;
+    return { suggestion: r.value };
   });
 
   app.post("/v1/reporting-periods/:id/generate-draft", async (req) => {
@@ -336,6 +436,15 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  app.post("/v1/report-drafts/:id/reopen", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = ReopenReportSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.reopenReport.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/report-drafts/:id/activate", async (req) => {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };
@@ -475,6 +584,12 @@ export async function registerReportingRoutes(app: FastifyInstance) {
     const id = (req.params as { id: string }).id;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.resolveEffectiveRequirements.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/reporting-requirement-packs", async (req) => {
+    const r = await req.container.handlers.listRequirementPacks.handle({ tenant: req.tenant, requestId: req.id });
     if (!r.ok) throw r.error;
     return r.value;
   });

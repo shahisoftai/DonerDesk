@@ -30,6 +30,9 @@ const RICH_CORPUS = [
   "Children <5 years & adults > 18 received support; 2 * 3 sessions ran. File a_b_c.xlsx and #hashtag stayed literal.",
   "Expenditure reached EUR 240,000 against a budget of EUR 300,000 — an underspend of EUR 60,000 (20%). \"Quoted\" and 'single' text.",
   "A paragraph\nwith a soft line break.",
+  // A table inserted from the Data Center (summary and period-by-period layouts, gaps, a rate).
+  "| Code | Indicator | Unit | Baseline | Target | Cumulative to date | % of target |\n| --- | --- | --- | --- | --- | --- | --- |\n| OUT-1 | Households with safe water | people | 0 | 2,000 | 1,680 | 84% |\n| OUT-2 | Kits / sets | kits | 0 | 100 | Not measured | — |",
+  "| Code | Indicator | Unit | Jan 2026 | 1 Feb 2026 – 15 Mar 2026 |\n| --- | --- | --- | --- | --- |\n| OUT-1 | Households | people | 10 | Not measured |",
 ];
 
 function goldenDrafts(): string[] {

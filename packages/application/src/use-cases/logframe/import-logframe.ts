@@ -20,6 +20,29 @@ export interface ImportLogframeResult {
   items: ImportedLogframeItem[];
 }
 
+/** "A1.1.1" -> ["1","1","1"], "OC2" -> ["2"]: the numbering of a code without its letters. */
+function codePath(code: string): string[] {
+  return code.trim().replace(/^[A-Za-z]+[-_ ]?/, "").split(".").filter(Boolean);
+}
+
+/**
+ * A code that carries its own numbering names its parent: activity A1.1.1 sits under output 1.1, and output 1.2 under
+ * the outcome numbered 1 (OC1). Returns that parent's id, or undefined when the numbering says nothing, in which case
+ * the caller falls back to the nearest earlier item one level up. A flat list (all outputs, then all activities) is
+ * otherwise parented to the last output.
+ */
+export function inferParentByCode(
+  code: string | undefined,
+  rank: number,
+  known: ReadonlyArray<{ id: string; rank: number; code?: string }>,
+): string | undefined {
+  if (!code || rank < 2) return undefined;
+  const path = codePath(code);
+  const wanted = rank === 3 ? path.slice(0, -1).join(".") : path[0];
+  if (!wanted || (rank === 3 && path.length < 2)) return undefined;
+  return known.find((k) => k.rank === rank - 1 && k.code && codePath(k.code).join(".") === wanted)?.id;
+}
+
 /**
  * Parses logframe content (from an upload or Google Drive import) into
  * structured items and persists them as real logframe records, resolving
@@ -57,6 +80,7 @@ export class ImportLogframeHandler {
     );
 
     const lastByRank = new Map<number, string>();
+    const known: { id: string; rank: number; code?: string }[] = existing.value.map((i) => ({ id: i.id, rank: levelRank(i.level), code: i.code }));
     const created: ImportedLogframeItem[] = [];
     let skipped = 0;
 
@@ -68,7 +92,7 @@ export class ImportLogframeHandler {
       }
 
       const rank = levelRank(row.level);
-      const parentId = rank > 0 ? lastByRank.get(rank - 1) : undefined;
+      const parentId = inferParentByCode(row.code, rank, known) ?? (rank > 0 ? lastByRank.get(rank - 1) : undefined);
       const id = this.ids.generate();
       const item = LogframeItem.create({
         id,
@@ -83,6 +107,7 @@ export class ImportLogframeHandler {
       const saved = await this.repo.create(item);
       if (!saved.ok) return saved;
 
+      known.push({ id, rank, code: row.code });
       lastByRank.set(rank, id);
       lastByRank.delete(rank + 1);
       lastByRank.delete(rank + 2);

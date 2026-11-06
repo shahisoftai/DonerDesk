@@ -22,8 +22,8 @@ export interface WorkflowRule {
   key: string;
   title: string;
   body: string;
-  /** The tour step the rule is shown with. */
-  stepId: string;
+  /** The tour step the rule is shown with. A rule about planning has none and appears on the "How it works" page only. */
+  stepId?: string;
 }
 
 export const WORKFLOW_RULES: readonly WorkflowRule[] = [
@@ -66,6 +66,27 @@ export const WORKFLOW_RULES: readonly WorkflowRule[] = [
     body:
       "Figures that disagree with your verified data are marked “Needs fixing” and block approval. Interpretive statements our checker could not tie to a source are grouped separately: " +
       "read them, then accept a section’s statements with one explained decision.",
+  },
+  {
+    key: "plan-moves",
+    title: "Moving an activity moves the ones that wait for it",
+    body:
+      "When an activity has others set to come after it, moving it later pushes them by the fewest days needed, and the ones after those in turn. " +
+      "Moving it earlier never pulls them. Finished or cancelled activities are not moved; they are listed so you can decide.",
+  },
+  {
+    key: "progress-log",
+    title: "Log progress by day, week or month: blank stays blank",
+    body:
+      "Record what was reached as it happens. A monthly report is filled from the days and weeks inside it and then replaces them, so nothing is counted twice. " +
+      "A figure nobody recorded stays blank, never zero, and a week must stay inside one month.",
+  },
+  {
+    key: "done-in-one-step",
+    title: "Done is one step",
+    body:
+      "Press Done on an activity, choose the day it finished and, if you know it, how many people were reached. That records the completed activity for your reports " +
+      "and marks the plan item done together. If no reporting period covers that day, nothing changes and you are told why.",
   },
 ];
 

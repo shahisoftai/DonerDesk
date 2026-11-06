@@ -59,6 +59,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
         <div className="flex gap-2">
           <a className="btn-secondary text-xs" href="/api/templates/logframe">Download template</a>
           <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new`}>Add logframe item</Link>
+          <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/history`}>Framework history</Link>
           <ImportLogframeButton projectId={resolvedParams.id} />
         </div>
       </header>
@@ -76,7 +77,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
               Add your first item
             </Link>.
           </div>
-            <CopySetupPanel projectId={resolvedParams.id} candidates={copyCandidates} />
+            <CopySetupPanel projectId={resolvedParams.id} candidates={copyCandidates} canCopyPlan={ctx.capabilities.has("workplan.manage")} />
           </>
         ) : (
           <LogframeTreeEditor projectId={resolvedParams.id} items={data.items} indicatorCounts={indicatorCounts} editable={canReorder} />

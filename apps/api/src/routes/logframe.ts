@@ -1,4 +1,6 @@
+import { z } from "zod";
 import type { FastifyInstance } from "fastify";
+import { registerParseFileRoute } from "./parse-file.js";
 import {
   CreateLogframeItemSchema,
   MoveLogframeItemSchema,
@@ -12,11 +14,13 @@ import {
   ConfirmIndicatorSemanticsSchema,
   VerifyPeriodIndicatorUpdatesSchema,
   CreateIndicatorUpdateSchema,
+  QuickEnterIndicatorValueSchema,
   BulkUpsertIndicatorUpdatesSchema,
   ParseIndicatorSheetSchema,
   IndicatorUpdateReviewReasonSchema,
 } from "@donordesk/contracts";
-import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME } from "@donordesk/infrastructure";
+import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME, buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME, buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME } from "@donordesk/infrastructure";
+import { DomainError, parseCsv } from "@donordesk/domain";
 
 export async function registerLogframeRoutes(app: FastifyInstance) {
   app.get("/v1/logframe/template", async (_req, reply) => {
@@ -29,6 +33,34 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.listLogframe.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // The history of the results framework: every change leaves a version; a manager can sign one off as the agreed framework.
+  app.get("/v1/projects/:projectId/logframe/versions", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const r = await req.container.handlers.listLogframeVersions.handle({ tenant: req.tenant, requestId: req.id }, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/logframe/versions/:version/changes", async (req) => {
+    const { projectId, version } = req.params as { projectId: string; version: string };
+    const from = (req.query as { from?: string }).from;
+    const r = await req.container.handlers.getLogframeChanges.handle(
+      { tenant: req.tenant, requestId: req.id },
+      projectId,
+      Number(version),
+      from === undefined ? undefined : Number(from),
+    );
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/projects/:projectId/logframe/versions/approve", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const r = await req.container.handlers.approveLogframeVersion.handle({ tenant: req.tenant, requestId: req.id }, projectId);
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -56,7 +88,10 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.copyProjectSetup.handle(ctx, { targetProjectId, sourceProjectId: body.sourceProjectId });
     if (!r.ok) throw r.error;
-    return r.value;
+    if (!body.copyWorkPlan) return r.value;
+    // The logframe is copied first (the plan is matched to it by code); a plan that cannot be copied is reported, not hidden.
+    const plan = await req.container.handlers.copyWorkPlan.handle(ctx, { targetProjectId, sourceProjectId: body.sourceProjectId });
+    return plan.ok ? { ...r.value, plannedActivities: plan.value.plannedActivities, planPlaces: plan.value.withPlaces ?? 0, planSkipped: plan.value.skipped } : { ...r.value, plannedActivities: 0, planSkipped: [], planMessage: plan.error.message };
   });
 
   app.post("/v1/logframe/import", async (req) => {
@@ -75,17 +110,7 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
-  app.post("/v1/logframe/parse-file", async (req) => {
-    const data = await req.file();
-    if (!data) throw new Error("file required");
-    const buffer = await data.toBuffer();
-    const result = await req.container.parser.parse({
-      buffer,
-      fileName: data.filename ?? "upload",
-      fileType: data.mimetype ?? "application/octet-stream",
-    });
-    return { text: result.text, metadata: result.metadata };
-  });
+  registerParseFileRoute(app, "/v1/logframe/parse-file");
 
   app.post("/v1/indicators", async (req) => {
     const body = CreateIndicatorSchema.parse(req.body);
@@ -154,6 +179,45 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // The person who entered the values hands them in for review (draft or returned values become submitted).
+  app.post("/v1/reporting-periods/:id/indicator-updates/submit-all", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.submitPeriodIndicatorUpdates.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // When the people who enter values may do so (reviewers are exempt). Empty days clear the window.
+  app.put("/v1/reporting-periods/:id/entry-window", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = z.object({ opensOn: z.string().max(10).nullish(), closesOn: z.string().max(10).nullish() }).parse(req.body ?? {});
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setPeriodEntryWindow.handle(ctx, id, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // The reviewer sends every value that is waiting back, with one reason (stored as each value's review note).
+  app.post("/v1/reporting-periods/:id/indicator-updates/return-all", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const { reason } = z.object({ reason: z.string().min(1).max(1000) }).parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.returnPeriodIndicatorUpdates.handle(ctx, id, reason);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // A reviewer reopens verified values (all, or the ones named) so they can be corrected; a locked report refuses.
+  app.post("/v1/reporting-periods/:id/indicator-updates/reopen", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const { reason, updateIds } = z.object({ reason: z.string().min(1).max(1000), updateIds: z.array(z.string().uuid()).max(500).optional() }).parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.returnPeriodIndicatorUpdates.reopen(ctx, id, reason, updateIds);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/reporting-periods/:id/indicator-updates/verify-all", async (req) => {
     const id = (req.params as { id: string }).id;
     const body = VerifyPeriodIndicatorUpdatesSchema.parse({ ...((req.body as object | undefined) ?? {}), reportingPeriodId: id });
@@ -163,22 +227,19 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     return r.value;
   });
 
-  app.post("/v1/indicators/parse-file", async (req) => {
-    const data = await req.file();
-    if (!data) throw new Error("file required");
-    const buffer = await data.toBuffer();
-    const result = await req.container.parser.parse({
-      buffer,
-      fileName: data.filename ?? "upload",
-      fileType: data.mimetype ?? "application/octet-stream",
-    });
-    return { text: result.text, metadata: result.metadata };
-  });
+  registerParseFileRoute(app, "/v1/indicators/parse-file");
 
   app.post("/v1/indicator-updates", async (req) => {
     const body = CreateIndicatorUpdateSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.createIndicatorUpdate.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.post("/v1/indicator-updates/quick", async (req) => {
+    const body = QuickEnterIndicatorValueSchema.parse(req.body);
+    const r = await req.container.handlers.quickEnterIndicatorValue.handle({ tenant: req.tenant, requestId: req.id }, body);
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -223,6 +284,73 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.rejectIndicatorUpdate.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return { ok: true };
+  });
+
+  // The period's entry sheet as an Excel workbook, and an uploaded one read back for the grid to preview (Phase 34.2).
+  app.get("/v1/reporting-periods/:id/indicator-sheet/export", async (req, reply) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getIndicatorEntryFile.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${ENTRY_FILE_NAME}"`);
+    return buildIndicatorEntryWorkbook(r.value.items);
+  });
+
+  app.post("/v1/reporting-periods/:id/indicator-sheet/parse", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const data = await req.file();
+    if (!data) throw DomainError.validation("Choose a file to import.");
+    const buffer = await data.toBuffer();
+    if (!/\.xlsx$/i.test(data.filename ?? "")) throw DomainError.validation("Import an Excel file (.xlsx).");
+    let table: string[][];
+    try { table = await readIndicatorEntryWorkbook(buffer); } catch { throw DomainError.validation("That file could not be read as an Excel workbook."); }
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.parseIndicatorWorkbook.handle(ctx, id, table);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // The history of one saved value, from the audit trail (Phase 34.2). The project boundary has already checked the value's project.
+  app.get("/v1/indicator-updates/:id/history", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getIndicatorValueHistory.handle(ctx, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/data-sheet", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getProjectDataSheet.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/data-sheet/export", async (req, reply) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.getProjectDataSheet.handle(ctx, projectId);
+    if (!r.ok) throw r.error;
+    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    reply.header("content-disposition", `attachment; filename="${DATA_SHEET_FILENAME}"`);
+    return buildDataSheetWorkbook(r.value);
+  });
+
+  // Multipart: `file` (.csv or .xlsx) and `apply` ("true" saves; anything else only previews).
+  app.post("/v1/projects/:projectId/data-sheet/import", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const data = await req.file();
+    if (!data) throw new Error("file required");
+    const apply = (data.fields.apply as { value?: string } | undefined)?.value === "true";
+    const buffer = await data.toBuffer();
+    const name = (data.filename ?? "").toLowerCase();
+    const table = name.endsWith(".xlsx") ? await readDataSheetWorkbook(buffer) : parseCsv(buffer.toString("utf8"));
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.importDataSheet.handle(ctx, projectId, table, apply);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.get("/v1/indicators/:id/updates", async (req) => {

@@ -1,11 +1,16 @@
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ActivitiesResponseSchema, TemplatesResponseSchema, ExportPreflightSchema, ProjectDetailSchema, ReportDraftResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
-import { PeriodFinanceResponseSchema, StoryContextResponseSchema } from "@/lib/actions/_schemas";
+import { ActivitiesResponseSchema, DataSheetResponseSchema, TemplatesResponseSchema, ExportPreflightSchema, ProjectDetailSchema, ReportDraftResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
+import { PlaceListSchema } from "@/lib/server/schemas-places";
+import { PeriodFinanceResponseSchema, PlanSuggestionResponseSchema, StoryContextResponseSchema } from "@/lib/actions/_schemas";
 import { loadPeriodIndicatorsAction } from "@/lib/actions/indicators";
+import { loadReportingProfileAction } from "@/lib/actions/setup";
 import { InlineError } from "@/components/feedback/PageState";
+import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { IndicatorEntryGrid } from "@/features/reporting/presentation/IndicatorEntryGrid";
 import { StoryInputs } from "@/features/report-editor/presentation/inputs/StoryInputs";
 import { getComplianceNotesAction } from "@/lib/actions/reporting";
@@ -38,7 +43,7 @@ export default async function ReportInputsPage({
   const { tab: tabParam } = await searchParams;
   const ctx = await requireSession();
 
-  const [indicatorsResult, storyResult, preflightResult, projectResult, periodsResult, financeResult, templatesResult, templateDraftResult, complianceNotesResult] = await Promise.all([
+  const [indicatorsResult, storyResult, preflightResult, projectResult, periodsResult, financeResult, templatesResult, templateDraftResult, complianceNotesResult, planSuggestionResult] = await Promise.all([
     loadPeriodIndicatorsAction(periodId),
     gatewayRequest(`/v1/reporting-periods/${periodId}/story`, StoryContextResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/export-preflight`, ExportPreflightSchema, ctx.token),
@@ -48,15 +53,40 @@ export default async function ReportInputsPage({
     gatewayRequest(`/v1/projects/${projectId}/templates`, TemplatesResponseSchema, ctx.token),
     gatewayRequest(`/v1/reporting-periods/${periodId}/draft`, ReportDraftResponseSchema, ctx.token),
     getComplianceNotesAction(periodId),
+    gatewayRequest(`/v1/reporting-periods/${periodId}/plan-suggestion`, PlanSuggestionResponseSchema, ctx.token),
   ]);
   if (!indicatorsResult.ok && indicatorsResult.error.kind === "not_found") notFound();
+  // Simple review is a project choice; if the profile cannot be read the full workflow is assumed.
+  const simpleReview = tabParam === "indicators" || tabParam === undefined ? await loadReportingProfileAction(projectId).then((r) => (r.ok ? r.value.profile?.simpleReview === true : false)) : false;
 
   const period = periodsResult.ok ? periodsResult.value.items.find((p) => p.id === periodId) : undefined;
+  // Mirrors `isPeriodLocked` (domain): an approved, submitted or closed report's figures cannot change; the server enforces it.
+  const figuresLocked = ["APPROVED", "SUBMITTED", "CLOSED"].includes(period?.status ?? "");
   // Activity, situation and custom reports name what they cover; that is edited on its own tab.
   const hasScope = period?.reportType === "ACTIVITY" || period?.reportType === "SITUATION" || period?.reportType === "CUSTOM";
   // Quarterly, half-year, annual and final reports have a financial section that can carry figures.
   const finance = financeResult.ok && financeResult.value.appliesToReportType ? financeResult.value : null;
   const tab: Tab = TABS.find((t) => t === tabParam && (t !== "scope" || hasScope) && (t !== "finance" || finance)) ?? "indicators";
+
+  // The entry sheet shows the last few periods' values beside the open one, and offers the project's places by place. Only this tab needs them.
+  const [dataSheetResult, placesResult] = tab === "indicators"
+    ? await Promise.all([
+        gatewayRequest(`/v1/projects/${projectId}/data-sheet`, DataSheetResponseSchema, ctx.token),
+        gatewayRequest("/v1/places", PlaceListSchema, ctx.token),
+      ])
+    : [null, null];
+  const sheetPeriods = dataSheetResult?.ok ? dataSheetResult.value.periods : [];
+  const thisIndex = sheetPeriods.findIndex((p) => p.id === periodId);
+  const earlierPeriods = (thisIndex >= 0 ? sheetPeriods.slice(Math.max(0, thisIndex - 4), thisIndex) : []).map((p) => ({ id: p.id, label: p.label }));
+  const earlierIds = new Set(earlierPeriods.map((p) => p.id));
+  const earlierValues: Record<string, Record<string, string>> = {};
+  if (dataSheetResult?.ok) {
+    for (const c of dataSheetResult.value.cells) {
+      if (!earlierIds.has(c.periodId) || c.periodValue.trim() === "") continue;
+      (earlierValues[c.indicatorId] ??= {})[c.periodId] = c.periodValue;
+    }
+  }
+  const placeNames = placesResult?.ok ? placesResult.value.places.filter((p) => !p.archived).map((p) => p.name).slice(0, 300) : [];
   const needsDraftStatus = (hasScope && tab === "scope") || (finance && tab === "finance");
   const [scopeActivitiesResult, scopeDraftResult] = needsDraftStatus
     ? await Promise.all([
@@ -81,7 +111,7 @@ export default async function ReportInputsPage({
   const tabs: Array<{ id: Tab; label: string; count: string }> = [
     { id: "indicators", label: "Indicators", count: indicators.length > 0 ? `${verified}/${indicators.length} verified` : "none yet" },
     { id: "story", label: "Story", count: `${countStoryAnswers(story)}/5 answered${complianceNotesResult.ok && complianceNotesResult.value.missingCount > 0 ? ` · ${complianceNotesResult.value.missingCount} to do` : ""}` },
-    { id: "import", label: "Import", count: `${evidenceCount} evidence file${evidenceCount === 1 ? "" : "s"}` },
+    { id: "import", label: "Files", count: `${evidenceCount} evidence file${evidenceCount === 1 ? "" : "s"}` },
     ...(hasScope ? [{ id: "scope" as const, label: "Covers", count: "what it is about" }] : []),
     ...(finance
       ? [{ id: "finance" as const, label: "Finance", count: finance.mode === "DISABLED" ? "off" : !finance.summary ? "none yet" : finance.summary.verified ? "verified" : "not verified" }]
@@ -130,15 +160,31 @@ export default async function ReportInputsPage({
         ))}
       </nav>
 
+      {tab === "indicators" && figuresLocked && (
+        <InlineAlert tone="info" title="This report's figures are locked">
+          The report is {period?.status === "SUBMITTED" ? "submitted" : period?.status === "CLOSED" ? "closed" : "approved"}, so the figures it was approved on cannot change. To correct one, reopen the report from its page (you will be asked why, and it is recorded).
+        </InlineAlert>
+      )}
+
       {tab === "indicators" &&
         (indicatorsResult.ok ? (
           <IndicatorEntryGrid
             projectId={projectId}
             periodId={periodId}
             rows={indicatorsResult.value.indicators}
+            dataStatus={indicatorsResult.value.dataStatus}
+            entryWindow={indicatorsResult.value.entryWindow}
+            canManageWindow={ctx.capabilities.has("project.edit") && !figuresLocked}
             reportType={period?.reportType}
-            canEdit={ctx.capabilities.has("indicator.update")}
-            canVerify={ctx.capabilities.has("indicator.verify")}
+            canEdit={ctx.capabilities.has("indicator.update") && !figuresLocked}
+            canVerify={ctx.capabilities.has("indicator.verify") && !figuresLocked}
+            today={new Date().toISOString().slice(0, 10)}
+            userId={decodeSessionPayload(ctx.token)?.sub ?? ""}
+            names={Object.fromEntries((await loadProjectPeople(ctx.token, projectId, "")).map((p) => [p.id, p.label]))}
+            canAsk={ctx.capabilities.has("task.assign")}
+            history={earlierPeriods.length > 0 ? { periods: earlierPeriods, values: earlierValues } : undefined}
+            places={placeNames}
+            simpleReview={simpleReview}
           />
         ) : (
           <InlineError title={indicatorsResult.error.message} referenceId={indicatorsResult.error.referenceId} />
@@ -147,7 +193,7 @@ export default async function ReportInputsPage({
       {tab === "story" &&
         (storyResult.ok ? (
           <div className="space-y-4">
-            <StoryInputs periodId={periodId} initialStory={story} canEdit={ctx.capabilities.has("reporting.edit")} />
+            <StoryInputs periodId={periodId} initialStory={story} planSuggestion={planSuggestionResult.ok ? planSuggestionResult.value.suggestion : {}} canEdit={ctx.capabilities.has("reporting.edit")} />
             {complianceNotesResult.ok && <ComplianceNotes periodId={periodId} projectId={projectId} initial={complianceNotesResult.value} canEdit={ctx.capabilities.has("reporting.edit")} />}
           </div>
         ) : (

@@ -1,13 +1,9 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { createActivityAction } from "@/lib/actions/activities";
-import { uploadEvidenceAction } from "@/lib/actions/evidence";
-import { guardNetwork } from "@/lib/shared/connectivity";
-import { createActivitySender } from "../domain/activity-outbox";
-import { ACTIVITY_KIND } from "../domain/activity-outbox";
 import { createMemoryOutboxStore, createSerialFlusher, retryEntry, summarise, type OutboxEntry, type OutboxSender, type OutboxStore } from "../domain/outbox";
 import { canUseDurableOutbox, createIndexedDbOutboxStore } from "../infrastructure/indexeddb-outbox-store";
+import { createOutboxSender } from "../infrastructure/outbox-senders";
 
 export interface OutboxApi {
   /** False where nothing can be kept on the device; callers then behave exactly as before (no offline saving). */
@@ -51,14 +47,7 @@ export function OutboxProvider({ scope, children }: { scope: string; children: R
     [supported, scope],
   );
   const flush = useMemo(() => {
-    const senders: Record<string, OutboxSender> = {
-      [ACTIVITY_KIND]: createActivitySender({
-        createActivity: (input, options) => guardNetwork(() => createActivityAction(input, options)),
-        uploadEvidence: (form) => guardNetwork(() => uploadEvidenceAction(form)),
-      }),
-    };
-    const send: OutboxSender = (entry, save) =>
-      senders[entry.kind]?.(entry, save) ?? Promise.resolve({ kind: "rejected" as const, message: "This kind of saved record is no longer supported." });
+    const send: OutboxSender = createOutboxSender();
     return createSerialFlusher(store, send);
   }, [store]);
 

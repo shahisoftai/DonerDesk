@@ -8,6 +8,9 @@
 # Usage:
 #   RELEASE_ID="20260901120000" SCOPE=both scripts/deploy-fast.sh
 #   SCOPE: web|api|both (default: auto-detect from git diff)
+#   BUILD_ON=host builds (and type-checks) on the Contabo host in a memory-capped, lowest-priority job (scripts/host-build.sh):
+#   ~3 min instead of ~12 on the dev machine. Default is local. If the host refuses before building (low memory or disk,
+#   unreachable, another build running) the script builds locally instead; a build that fails on the host stops the deploy.
 #
 # Exit codes: 0 on full success, non-zero on any gate failure. Every step
 # prints progress; tail the output to find the first failing gate.
@@ -22,6 +25,7 @@ SCOPE="${SCOPE:-auto}"
 NO_BACKUP="${NO_BACKUP:-0}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 SKIP_TYPECHECK="${SKIP_TYPECHECK:-0}"
+BUILD_ON="${BUILD_ON:-local}"
 RELEASE_ID="${RELEASE_ID:-$(date -u +%Y%m%d%H%M%S)}"
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
@@ -33,6 +37,13 @@ BASE="${BASE:-${REMOTE_BASE}}"
 REMOTE_APP="${REMOTE_APP:-${REMOTE_BASE}/app}"
 REMOTE_WORKERS="${REMOTE_WORKERS:-${REMOTE_BASE}/workers}"
 REMOTE_BACKUPS="${REMOTE_BACKUPS:-${REMOTE_BASE}/backups}"
+
+mkdir -p "${WORK}"
+ROLLBACK_ON_FAIL="${ROLLBACK_ON_FAIL:-1}"
+
+# Per-phase timing, so a slow deploy says where the time went.
+T_ALL=$(date +%s); T_LAST=${T_ALL}
+phase() { local now; now=$(date +%s); echo "    [time] $1: $((now-T_LAST))s (total $((now-T_ALL))s)"; T_LAST=${now}; }
 
 echo "==> Release: ${RELEASE_ID}  scope=${SCOPE}  host=contabo"
 
@@ -99,29 +110,67 @@ if [[ -d "${ROOT}/apps/api/node_modules/@sentry" ]]; then
 fi
 
 
+phase "preflight"
+
+# --------------------------------------------------------------------------- #
+# 0b. Build on the host (optional)
+# --------------------------------------------------------------------------- #
+# Done before the local type-check and build: when it works, both are skipped (the host ran the type-check too, unless SKIP_TYPECHECK=1).
+# A scope of "auto" builds api and web, exactly like the local build does.
+HOST_BUILT=0
+if [[ "${BUILD_ON}" == "host" && "${SKIP_BUILD}" != "1" ]]; then
+  echo "==> Build on the host"
+  HB_SCOPE="${SCOPE}"; [[ "${HB_SCOPE}" == "auto" ]] && HB_SCOPE="both"
+  HB_TYPECHECK=1; [[ "${SKIP_TYPECHECK}" == "1" ]] && HB_TYPECHECK=0
+  HB_RC=0
+  SCOPE="${HB_SCOPE}" TYPECHECK="${HB_TYPECHECK}" SSH="${SSH}" "${ROOT}/scripts/host-build.sh" run || HB_RC=$?
+  if [[ "${HB_RC}" == "0" ]]; then
+    HOST_BUILT=1
+  elif [[ "${HB_RC}" == "3" ]]; then
+    echo "  the host declined (see above); building locally instead." >&2
+  else
+    echo "ERROR: build on the host failed (exit ${HB_RC}); nothing was shipped." >&2
+    exit 1
+  fi
+  phase "host build"
+fi
+
 # --------------------------------------------------------------------------- #
 # 1. Typecheck
 # --------------------------------------------------------------------------- #
 
-if [[ "${SKIP_TYPECHECK}" != "1" ]]; then
+if [[ "${SKIP_TYPECHECK}" != "1" && "${HOST_BUILT}" != "1" ]]; then
   echo "==> Local typecheck"
   TC_LOG="${WORK}/typecheck.log"
   mkdir -p "${WORK}"
   pnpm -r typecheck 2>&1 | tee "${TC_LOG}" | tail -5
 fi
 
+phase "typecheck"
+
 # --------------------------------------------------------------------------- #
 # 2. Build
 # --------------------------------------------------------------------------- #
 
-if [[ "${SKIP_BUILD}" != "1" ]]; then
-  echo "==> Local build (full)"
+if [[ "${SKIP_BUILD}" != "1" && "${HOST_BUILT}" != "1" ]]; then
+  # Build only what the scope ships: the web and superadmin builds take many minutes and an api-only change needs neither.
+  # superadmin is not shipped by this script. SCOPE=auto is resolved after the build, so it builds api and web.
+  BUILD_FILTER=()
+  case "${SCOPE}" in
+    api)  BUILD_FILTER=(--filter '!@donordesk/web' --filter '!@donordesk/superadmin') ;;
+    web)  BUILD_FILTER=(--filter '!@donordesk/api' --filter '!@donordesk/superadmin') ;;
+    *)    BUILD_FILTER=(--filter '!@donordesk/superadmin') ;;
+  esac
+  echo "==> Local build (scope=${SCOPE})"
   BUILD_LOG="${WORK}/build.log"
-  pnpm -r build 2>&1 | tee "${BUILD_LOG}" | tail -3 || {
+  # pipefail so a failed build stops the deploy instead of being hidden by tee/tail.
+  # The type-check has its own step (or the caller has just run it, see SKIP_TYPECHECK): `next build` repeating it costs minutes.
+  export DD_SKIP_NEXT_TYPECHECK=1
+  if ! (set -o pipefail; pnpm -r "${BUILD_FILTER[@]}" build 2>&1 | tee "${BUILD_LOG}" | tail -3); then
     echo "ERROR: build failed — see ${BUILD_LOG}" >&2
     tail -40 "${BUILD_LOG}" >&2
     exit 1
-  }
+  fi
 fi
 
 # --------------------------------------------------------------------------- #
@@ -141,6 +190,8 @@ if [[ "${SCOPE}" == "auto" ]]; then
   echo "  auto-detected SCOPE=${SCOPE}"
 fi
 
+phase "build"
+
 # --------------------------------------------------------------------------- #
 # 3. Stage artifacts
 # --------------------------------------------------------------------------- #
@@ -158,15 +209,17 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   echo "==> Stage web artifact"
   # web tar ships from the standalone build output. The deploy script's
   # web stage is unchanged from §21.1 (apps/web deploys independently).
-  WEB_STAGE="${WORK}/web-stage"
+  WEB_STAGE="${WEB_STAGE:-/tmp/dd-web-stage}"  # persistent: local rsync is incremental
   mkdir -p "${WEB_STAGE}"
   rsync -a --delete "${ROOT}/apps/web/.next/standalone/" "${WEB_STAGE}/"
   rsync -a "${ROOT}/apps/web/.next/static/" "${WEB_STAGE}/apps/web/.next/static/" 2>/dev/null || true
-  rsync -a "${ROOT}/apps/web/public/" "${WEB_STAGE}/apps/web/public/" 2>/dev/null || true
+  # public/geo (the boundary files, ~100 MB) and public/tiles (the basemap, ~1.7 GB) are NOT part of a release: scripts/sync-geo.sh and
+  # scripts/sync-tiles.sh put them in the shared folders nginx serves at /geo/ and /tiles/. public/vendor (the right-to-left text plugin) does ship.
+  rsync -a --exclude=geo --exclude=tiles "${ROOT}/apps/web/public/" "${WEB_STAGE}/apps/web/public/" 2>/dev/null || true
+  rsync -a "${ROOT}/apps/web/content/" "${WEB_STAGE}/apps/web/content/"
   rsync -a "${ROOT}/apps/web/package.json" "${WEB_STAGE}/apps/web/package.json"
   rsync -a --delete "${ROOT}/node_modules/" "${WEB_STAGE}/node_modules/"
-  tar -C "${WEB_STAGE}" -czf "${WEB_TAR}" .
-  echo "    web tar: $(du -h "${WEB_TAR}" | cut -f1)  (standalone + .pnpm + static + public)"
+  echo "    web stage ready: $(du -sh "${WEB_STAGE}" | cut -f1) (shipped with rsync, only changes travel)"
 fi
 
 if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
@@ -201,7 +254,7 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
        packages/domain/dist packages/domain/package.json \
        packages/application/dist packages/application/package.json \
        packages/infrastructure/dist packages/infrastructure/package.json \
-       packages/infrastructure/prisma packages/infrastructure/scripts 2>/dev/null || true)
+       packages/infrastructure/prisma packages/infrastructure/scripts packages/infrastructure/assets 2>/dev/null || true)
   echo "    packages tar: $(du -h "${PACKAGES_TAR}" | cut -f1)"
 
   # Stage 3b: ship the pnpm virtual store contents. The api tar ships
@@ -209,12 +262,8 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
   # .pnpm/). Without this, fastify and friends fail to resolve. The store
   # lives at <workspace>/node_modules/.pnpm on local pnpm 10, but pnpm
   # install on the host regenerates the same layout.
-  echo "==> Stage pnpm store artifact"
-  (cd "${ROOT}" && \
-   tar --exclude='packages/*/node_modules' \
-       -czf "${PNPM_TAR}" \
-       node_modules/.pnpm)
-  echo "    pnpm tar: $(du -h "${PNPM_TAR}" | cut -f1)"
+  # (shipped with rsync in the transfer step: the store is content-addressed,
+  # so only packages that changed since the last deploy are sent)
 fi
 
 if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
@@ -236,6 +285,8 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
 fi
 echo "    stage: $(($(date +%s)-STAGE_START))s"
 
+phase "stage"
+
 # --------------------------------------------------------------------------- #
 # 4. Snapshot previous deploy (full app, includes node_modules)
 # --------------------------------------------------------------------------- #
@@ -248,12 +299,13 @@ if [[ "${NO_BACKUP}" != "1" ]]; then
     if ${SSH} "
       set -eu
       if [[ ! -d ${REMOTE_BACKUPS} ]]; then mkdir -p ${REMOTE_BACKUPS}; fi
-      ls -1t ${REMOTE_BACKUPS}/dd-app-pre-*.tgz 2>/dev/null | tail -n +4 | xargs -r rm -f
-      tar --exclude='apps/*/.next/cache' \
-          --exclude='node_modules/.cache' \
-          -czf ${REMOTE_BACKUPS}/dd-app-pre-${RELEASE_ID}.tgz \
-          -C ${BASE} app
-      ls -1t ${REMOTE_BACKUPS}/dd-app-pre-*.tgz | head -5
+      # Hardlink copy: instant and takes no extra space for unchanged files.
+      # Deploy steps unlink-and-replace files (never write in place), so the
+      # snapshot keeps the old content. Must be on the same filesystem as app/.
+      ls -1dt ${REMOTE_BACKUPS}/app-pre-* 2>/dev/null | tail -n +3 | xargs -r rm -rf
+      rm -rf ${REMOTE_BACKUPS}/app-pre-${RELEASE_ID}
+      cp -al ${BASE}/app ${REMOTE_BACKUPS}/app-pre-${RELEASE_ID}
+      ls -1dt ${REMOTE_BACKUPS}/app-pre-* | head -3
     " 2>&1; then
       SNAP_OK=1
       break
@@ -269,27 +321,41 @@ else
 fi
 echo "    snapshot: $(($(date +%s)-SNAPSHOT_START))s"
 
+phase "snapshot"
+
 # --------------------------------------------------------------------------- #
 # 5. Stream-extract into /opt/donordesk/app/
 # --------------------------------------------------------------------------- #
 
 XFER_START=$(date +%s)
 
+# What the host already has: the pnpm store, the generated Prisma client and the api's symlink farm only change when the
+# lockfile or the schema does. Markers (written after a deploy that verified) let an unchanged one be skipped.
+# FORCE_FULL=1 ignores them.
+MARKER_DIR="${REMOTE_BASE}/shared/.deploy-markers"
+LOCK_SHA="$(sha256sum "${ROOT}/pnpm-lock.yaml" 2>/dev/null | cut -c1-16)"
+SCHEMA_SHA="$(sha256sum "${ROOT}/packages/infrastructure/prisma/schema.prisma" 2>/dev/null | cut -c1-16)"
+REMOTE_LOCK=""; REMOTE_SCHEMA=""
+if [[ "${FORCE_FULL:-0}" != "1" && -n "${LOCK_SHA}" ]]; then
+  MARKERS="$(${SSH} "for f in lock schema; do printf '%s=%s\n' \$f \"\$(cat ${MARKER_DIR}/\$f 2>/dev/null)\"; done" 2>/dev/null || true)"
+  REMOTE_LOCK="$(sed -n 's/^lock=//p' <<<"${MARKERS}" | head -1)"
+  REMOTE_SCHEMA="$(sed -n 's/^schema=//p' <<<"${MARKERS}" | head -1)"
+fi
+DEPS_UNCHANGED=0
+if [[ -n "${LOCK_SHA}" && "${LOCK_SHA}" == "${REMOTE_LOCK}" ]]; then DEPS_UNCHANGED=1; fi
+SCHEMA_UNCHANGED=0
+if [[ "${DEPS_UNCHANGED}" == "1" && -n "${SCHEMA_SHA}" && "${SCHEMA_SHA}" == "${REMOTE_SCHEMA}" ]]; then SCHEMA_UNCHANGED=1; fi
+echo "  host markers: deps unchanged=${DEPS_UNCHANGED} schema unchanged=${SCHEMA_UNCHANGED}"
+
 if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   # The web tar's root IS the Next.js standalone output (it contains
   # apps/web/server.js at its top level), so it extracts into the systemd
   # unit's expected path: <app>/apps/web/.next/standalone/apps/web/server.js.
   echo "==> Ship web artifact -> ${REMOTE_APP}/apps/web/.next/standalone/"
-  scp -q "${WEB_TAR}" ${SCPTGT}/tmp/dd-web.tgz
-  ${SSH} "
-    set -eu
-    cd ${REMOTE_APP}/apps/web
-    rm -rf .next
-    mkdir -p .next/standalone
-    tar -xzf /tmp/dd-web.tgz -C ${REMOTE_APP}/apps/web/.next/standalone
-    rm -f /tmp/dd-web.tgz
-    chown -R donordesk:donordesk ${REMOTE_APP}/apps/web
-  "
+  ${SSH} "mkdir -p ${REMOTE_APP}/apps/web/.next/standalone"
+  rsync -a --delete --no-owner --no-group -e "ssh -o ConnectTimeout=15" \
+    "${WEB_STAGE}/" "contabo:${REMOTE_APP}/apps/web/.next/standalone/"
+  ${SSH} "chown -R donordesk:donordesk ${REMOTE_APP}/apps/web"
 fi
 
 if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
@@ -302,7 +368,9 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     ${SSH} "
       set -eu
       cd ${REMOTE_APP}
-      rm -rf packages
+      # Replace each package's files but keep its node_modules (the links to the pnpm store): they are not part of the tar,
+      # and deleting them made the api unable to find @donordesk/domain until a pnpm install put them back.
+      if [ -d packages ]; then find packages -mindepth 2 -maxdepth 2 ! -name node_modules -exec rm -rf {} +; fi
       tar -xzf /tmp/dd-pkgs.tgz -C ${REMOTE_APP}
       rm -f /tmp/dd-pkgs.tgz
       chown -R donordesk:donordesk ${REMOTE_APP}/packages
@@ -311,17 +379,15 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
 
   # Stage B: ship pnpm store contents. The api tar ships apps/api/node_modules
   # with only symlinks; the real package files live under node_modules/.pnpm/.
-  if [[ -f "${PNPM_TAR}" ]]; then
+  # The store is content-addressed and only changes with the lockfile: skipped when the host already has this lockfile.
+  if [[ "${DEPS_UNCHANGED}" == "1" ]]; then
+    echo "==> pnpm store unchanged (lockfile marker): not shipped"
+  else
     echo "==> Ship pnpm store -> ${REMOTE_APP}/node_modules/.pnpm/"
-    scp -q "${PNPM_TAR}" ${SCPTGT}/tmp/dd-pnpm.tgz
-    ${SSH} "
-      set -eu
-      cd ${REMOTE_APP}
-      rm -rf node_modules/.pnpm node_modules/.bin node_modules/.modules.yaml node_modules/.pnpm-workspace-state-v1.json
-      tar -xzf /tmp/dd-pnpm.tgz -C ${REMOTE_APP}
-      rm -f /tmp/dd-pnpm.tgz
-      chown -R donordesk:donordesk ${REMOTE_APP}/node_modules
-    "
+    ${SSH} "mkdir -p ${REMOTE_APP}/node_modules"
+    rsync -a --delete --no-owner --no-group -e "ssh -o ConnectTimeout=15" \
+      "${ROOT}/node_modules/.pnpm/" "contabo:${REMOTE_APP}/node_modules/.pnpm/"
+    ${SSH} "chown -R donordesk:donordesk ${REMOTE_APP}/node_modules"
   fi
 
   # Stage B2: regenerate the Prisma client on the host against the freshly
@@ -332,20 +398,25 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
   # on any model operation that uses the newer field. Re-running prisma
   # generate here, against the just-shipped schema.prisma, guarantees the
   # running client matches the schema the api code expects.
-  echo "==> Regenerate Prisma client against shipped schema"
-  ${SSH} "
-    set -eu
-    if [ ! -f ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma ]; then
-      echo 'ERROR: ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma missing on host' >&2
-      exit 1
-    fi
-    cd ${REMOTE_APP}/packages/infrastructure
-    npx -y prisma@5.22.0 generate --schema prisma/schema.prisma \
-      >/tmp/dd-prisma-generate.log 2>&1 \
-      || (echo 'prisma generate FAILED — see /tmp/dd-prisma-generate.log on host' >&2; cat /tmp/dd-prisma-generate.log >&2; exit 1)
-    chown -R donordesk:donordesk ${REMOTE_APP}/node_modules/.pnpm
-    echo '  prisma generate: ok'
-  "
+  if [[ "${SCHEMA_UNCHANGED}" == "1" ]]; then
+    echo "==> Prisma client unchanged (schema and lockfile markers): not regenerated"
+  else
+    echo "==> Regenerate Prisma client against shipped schema"
+    ${SSH} "
+      set -eu
+      if [ ! -f ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma ]; then
+        echo 'ERROR: ${REMOTE_APP}/packages/infrastructure/prisma/schema.prisma missing on host' >&2
+        exit 1
+      fi
+      cd ${REMOTE_APP}/packages/infrastructure
+      npx -y prisma@5.22.0 generate --schema prisma/schema.prisma \
+        >/tmp/dd-prisma-generate.log 2>&1 \
+        || (echo 'prisma generate FAILED — see /tmp/dd-prisma-generate.log on host' >&2; cat /tmp/dd-prisma-generate.log >&2; exit 1)
+      chown -R donordesk:donordesk ${REMOTE_APP}/node_modules/.pnpm
+      echo '  prisma generate: ok'
+    "
+
+  fi
 
   # Stage C: ship the api tree. apps/api/dist + apps/api/node_modules
   # (symlinks) + apps/api/src land at /opt/donordesk/app/apps/api/. The
@@ -369,9 +440,10 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     # drift between the local build and the host store). Non-silent so a
     # genuine failure surfaces instead of silently shipping a broken api.
     cd ${REMOTE_APP}/apps/api
-    if [ -f package.json ]; then
+    # The install is skipped only when the lockfile is unchanged AND the workspace links are in place.
+    if [ -f package.json ] && { [ '${DEPS_UNCHANGED}' != '1' ] || [ ! -e ${REMOTE_APP}/packages/infrastructure/node_modules/@donordesk/domain ]; }; then
       echo '  regenerating api symlink farm (pnpm install)'
-      CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile >/tmp/dd-api-pnpm-install.log 2>&1 \\
+      CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile --prefer-offline >/tmp/dd-api-pnpm-install.log 2>&1 \\
         || { echo '  WARNING: api pnpm install failed — deps may not resolve' >&2; cat /tmp/dd-api-pnpm-install.log >&2; }
       chown -R donordesk:donordesk node_modules
     fi
@@ -407,6 +479,8 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
 fi
 echo "    xfer+extract: $(($(date +%s)-XFER_START))s"
 
+phase "transfer"
+
 # --------------------------------------------------------------------------- #
 # 6. Write release.json, restart, verify
 # --------------------------------------------------------------------------- #
@@ -429,13 +503,43 @@ echo "==> Restart ${SERVICES}"
 ${SSH} "systemctl restart ${SERVICES}"
 echo "    restart: $(($(date +%s)-ACTIVATE_START))s"
 
+phase "restart"
+
 # --------------------------------------------------------------------------- #
 # 7. Verify
 # --------------------------------------------------------------------------- #
 
 VERIFY_START=$(date +%s)
+
+# A failed verify used to leave the broken tree running (the 2026-10-20 crash loop). The snapshot taken before the deploy
+# is the previous tree: put it back, restart, and say so. Database migrations are additive, so the old code runs on the new
+# schema. ROLLBACK_ON_FAIL=0 keeps the failed tree in place for diagnosis.
+rollback_to_snapshot() {
+  echo "==> VERIFY FAILED: restoring the previous tree from the pre-deploy snapshot" >&2
+  if [[ "${NO_BACKUP}" == "1" ]]; then
+    echo "    No snapshot was taken (NO_BACKUP=1); fix forward or restore a snapshot by hand." >&2
+    return 1
+  fi
+  ${SSH} "
+    set -eu
+    SNAP=${REMOTE_BACKUPS}/app-pre-${RELEASE_ID}
+    if [ ! -d \"\${SNAP}\" ]; then echo 'no snapshot for this release; nothing to restore'; exit 1; fi
+    systemctl stop ${SERVICES}
+    rm -rf ${REMOTE_BASE}/app.failed-${RELEASE_ID}
+    mv ${REMOTE_APP} ${REMOTE_BASE}/app.failed-${RELEASE_ID}
+    mv \"\${SNAP}\" ${REMOTE_APP}
+    systemctl start ${SERVICES}
+    OK=0
+    for i in \$(seq 1 30); do
+      if curl -fsS --max-time 5 http://127.0.0.1:4001/ready >/dev/null 2>&1; then OK=1; break; fi
+      sleep 2
+    done
+    if [ \"\${OK}\" = '1' ]; then echo 'previous tree restored; /ready is OK'; else echo 'previous tree restored but /ready is NOT OK: look at journalctl -u donordesk-api'; exit 1; fi
+  " >&2
+}
+
 echo "==> Verify"
-${SSH} "
+if ! ${SSH} "
   set -eu
   echo '--- systemd ---'
   systemctl is-active ${SERVICES}
@@ -484,8 +588,21 @@ ${SSH} "
     fi
     echo \"\${KEY}=\${HAVE}\"
   done
-"
+"; then
+  if [[ "${ROLLBACK_ON_FAIL}" == "1" ]]; then
+    rollback_to_snapshot || true
+    echo "==> Deploy ${RELEASE_ID} FAILED verification and was rolled back (failed tree kept at ${REMOTE_BASE}/app.failed-${RELEASE_ID})." >&2
+  else
+    echo "==> Deploy ${RELEASE_ID} FAILED verification; ROLLBACK_ON_FAIL=0, the failed tree is left running." >&2
+  fi
+  exit 1
+fi
 echo "    verify: $(($(date +%s)-VERIFY_START))s"
+if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]] && [[ -n "${LOCK_SHA}" ]]; then
+  ${SSH} "mkdir -p ${MARKER_DIR} && echo ${LOCK_SHA} > ${MARKER_DIR}/lock && echo ${SCHEMA_SHA} > ${MARKER_DIR}/schema" || echo "  (could not write the deploy markers; the next deploy will do the full steps)" >&2
+fi
+
+phase "verify"
 
 # --------------------------------------------------------------------------- #
 # 8. Cleanup
@@ -495,4 +612,5 @@ if [[ -z "${KEEP_WORK:-}" ]]; then
   rm -rf "${WORK}"
 fi
 
+phase "cleanup"
 echo "==> Done. releaseId=${RELEASE_ID}"

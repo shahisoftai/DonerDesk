@@ -1,0 +1,11 @@
+[Unit]
+Description=Verify the DonorDesk audit chain every night
+
+[Timer]
+# 03:41 UTC, after the 02:17 backup has finished. Stated in UTC so it does not move with the host's timezone.
+OnCalendar=*-*-* 03:41:00 UTC
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

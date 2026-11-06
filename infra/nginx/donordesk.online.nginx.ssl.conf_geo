@@ -1,0 +1,20 @@
+# Boundary files for the map (Phase 35): /geo/manifest.json and /geo/<ISO>/ADM2.json|ADM3.json.
+# Install on the host (Hestia includes nginx.ssl.conf_*), then `nginx -t && systemctl reload nginx`:
+#   cp infra/nginx/donordesk.online.nginx.ssl.conf_geo /home/shahisoft/conf/web/donordesk.online/nginx.ssl.conf_geo
+# The files live in /opt/donordesk/shared/geo (filled by scripts/sync-geo.sh), outside any release, so a deploy never carries them.
+# The manifest is short-lived so a new boundary set is seen soon; the country files are replaced only by a regenerated set.
+location = /geo/manifest.json {
+	alias /opt/donordesk/shared/geo/manifest.json;
+	add_header Cache-Control "public, max-age=300";
+	default_type application/json;
+}
+location ^~ /geo/ {
+	alias /opt/donordesk/shared/geo/;
+	gzip on;
+	gzip_comp_level 6;
+	gzip_types application/json;
+	gzip_min_length 1024;
+	add_header Cache-Control "public, max-age=604800";
+	default_type application/json;
+	try_files $uri =404;
+}

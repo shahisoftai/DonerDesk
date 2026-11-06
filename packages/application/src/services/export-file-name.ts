@@ -1,3 +1,5 @@
+import { slugify } from "@donordesk/domain";
+
 const EXTENSIONS: Record<string, string> = {
   WORD: "docx",
   PDF: "pdf",
@@ -8,7 +10,7 @@ const EXTENSIONS: Record<string, string> = {
 };
 
 function slug(s: string, max: number): string {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, max).replace(/-+$/g, "");
+  return slugify(s).slice(0, max).replace(/-+$/g, "");
 }
 
 const day = (d: Date): string => d.toISOString().slice(0, 10);

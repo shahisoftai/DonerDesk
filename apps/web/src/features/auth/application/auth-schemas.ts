@@ -16,6 +16,9 @@ export const SessionInfoSchema = z.object({
   iat: z.number().optional(),
 });
 
-export type AuthFormState = { error: string | null; fields?: Record<string, string[]> };
+/** The password step answered "now the code": the page shows a code field and sends this back with it. */
+export const MfaChallengeResponseSchema = z.object({ mfaRequired: z.literal(true), challenge: z.string().min(10) });
+
+export type AuthFormState = { error: string | null; fields?: Record<string, string[]>; mfaChallenge?: string };
 
 export type SessionInfo = z.infer<typeof SessionInfoSchema>;

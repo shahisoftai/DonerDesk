@@ -27,7 +27,7 @@ export const CHART_DATA_BINDINGS: ChartDataBinding[] = [
 ];
 
 /** Bindings a chart derived from a table of the section carries (never chosen by hand). */
-export type DerivedChartBinding = "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS";
+export type DerivedChartBinding = "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS" | "DATA_CENTER";
 
 /**
  * Which chart types a binding can honestly be drawn as. A pie of baseline/target/achievement, a line joining unrelated
@@ -41,6 +41,8 @@ export const CHART_BINDING_TYPES: Record<ChartDataBinding | DerivedChartBinding,
   TABLE_INDICATOR_PROGRESS: ["BAR", "RADAR"],
   TABLE_FINANCE_BY_LINE: ["BAR"],
   TABLE_ACTIVITY_PARTICIPANTS: ["BAR"],
+  // A Data Center chart: its template (data-charts.ts) already chose a type that suits its data.
+  DATA_CENTER: ["BAR", "LINE", "AREA", "PIE", "RADAR", "GAUGE"],
 };
 
 /** The chart types allowed for a binding; a gauge needs exactly one thing to show. */
@@ -139,6 +141,8 @@ export interface ResolvedChartData {
   referenceLine?: { name: string; value: number };
   /** Set when the chart shows only the first `shown` of `total` categories. */
   truncated?: { shown: number; total: number };
+  /** Hex colours (#rrggbb) in series (or pie slice) order; absent: the standard palette. */
+  colors?: string[];
 }
 
 export interface ChartIndicatorInput {
@@ -276,13 +280,18 @@ const numeric = (d: string | number | null | undefined): number => (typeof d ===
  * hand-picked type that cannot show this data (a pie of three series, a line over unrelated indicators) is drawn as a bar instead.
  */
 export function optionFromResolved(resolved: ResolvedChartData, requestedType: ChartType): Record<string, unknown> {
-  const type = coerceChartType(resolved.dataBinding, requestedType, resolved.categories.length);
+  return optionForType(resolved, coerceChartType(resolved.dataBinding, requestedType, resolved.categories.length));
+}
+
+/** Draws the dataset as exactly this type. For callers (Data Center templates) that have already chosen a type that suits their data. */
+export function optionForType(resolved: ResolvedChartData, type: ChartType): Record<string, unknown> {
   const unit = resolved.unit ?? "";
+  const palette = resolved.colors && resolved.colors.length > 0 ? resolved.colors : ECHARTS_PALETTE;
 
   if (type === "PIE") {
     const data = resolved.categories.map((name, i) => ({ name, value: numeric(resolved.series[i]?.data[0]) }));
     return {
-      color: ECHARTS_PALETTE,
+      color: palette,
       tooltip: { trigger: "item", formatter: "{b}: {c} ({d}%)" },
       legend: { type: "scroll", bottom: 0 },
       series: [{ type: "pie", radius: ["32%", "68%"], avoidLabelOverlap: true, itemStyle: { borderRadius: 6, borderColor: "#fff", borderWidth: 2 }, label: { formatter: "{b}" }, data }],
@@ -297,7 +306,7 @@ export function optionFromResolved(resolved: ResolvedChartData, requestedType: C
         type: "gauge",
         min: 0,
         max,
-        progress: { show: true, width: 14 },
+        progress: { show: true, width: 14, itemStyle: { color: palette[0] } },
         axisLine: { lineStyle: { width: 14 } },
         axisLabel: { fontSize: 10 },
         title: { show: true, offsetCenter: [0, "70%"], fontSize: 12 },
@@ -310,7 +319,7 @@ export function optionFromResolved(resolved: ResolvedChartData, requestedType: C
   if (type === "RADAR") {
     const peak = Math.max(100, ...resolved.series.flatMap((s) => s.data.map(numeric)));
     return {
-      color: ECHARTS_PALETTE,
+      color: palette,
       tooltip: {},
       legend: { bottom: 0 },
       radar: { indicator: resolved.categories.map((name) => ({ name, max: Math.ceil(peak / 10) * 10 })), radius: "65%" },
@@ -326,20 +335,26 @@ export function optionFromResolved(resolved: ResolvedChartData, requestedType: C
     smooth: isLine,
     stack: resolved.stacked ? "total" : undefined,
     areaStyle: type === "AREA" ? { opacity: 0.18 } : undefined,
-    itemStyle: { color: ECHARTS_PALETTE[i % ECHARTS_PALETTE.length] },
+    itemStyle: { color: palette[i % palette.length] },
     ...(i === 0 && resolved.referenceLine
       ? { markLine: { silent: true, symbol: "none", label: { formatter: resolved.referenceLine.name, position: "insideEndTop" }, lineStyle: { color: "#ef4444", type: "dashed" }, data: [{ yAxis: resolved.referenceLine.value }] } }
       : {}),
   }));
 
+  // A Data Center target line outside the data range would sit off the chart, so the axis is stretched to include it.
+  const stretch =
+    resolved.dataBinding === "DATA_CENTER" && resolved.referenceLine
+      ? { max: niceCeiling(Math.max(0, ...resolved.series.flatMap((s) => s.data.map(numeric)), resolved.referenceLine.value) * 1.05) }
+      : {};
+
   return {
-    color: ECHARTS_PALETTE,
+    color: palette,
     tooltip: { trigger: "axis" },
     legend: { bottom: 0, itemGap: 24 },
     grid: { left: 56, right: 24, top: 24, bottom: 56, containLabel: true },
     // Every category is labelled: long names (budget lines, activities) wrap instead of being skipped.
     xAxis: { type: "category", data: resolved.categories, axisLabel: { interval: 0, width: resolved.categories.length > 6 ? 70 : 110, overflow: "break", rotate: resolved.categories.length > 8 ? 30 : 0 } },
-    yAxis: { type: "value", axisLabel: { formatter: unit ? (unit === "%" ? "{value}%" : `{value} ${unit}`) : "{value}" } },
+    yAxis: { type: "value", ...stretch, axisLabel: { formatter: unit ? (unit === "%" ? "{value}%" : `{value} ${unit}`) : "{value}" } },
     series: seriesList,
   };
 }
@@ -350,4 +365,11 @@ export function optionFromResolved(resolved: ResolvedChartData, requestedType: C
  */
 export function buildChartOption(input: ChartIndicatorInput[], config: ChartConfig): Record<string, unknown> {
   return optionFromResolved(resolveChartData(input, config), config.type);
+}
+
+/** Rounds a stretched axis maximum up to a tidy number (114.55 -> 120), so the axis never ends on a long decimal. */
+export function niceCeiling(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) return value;
+  const step = 10 ** Math.floor(Math.log10(value)) / 10;
+  return Math.round(Math.ceil(value / step) * step * 1e9) / 1e9;
 }

@@ -18,3 +18,5 @@ test-results/
 storage/
 !packages/infrastructure/src/storage/
 .freebuff/
+apps/web/public/geo/
+apps/web/public/tiles/

@@ -51,11 +51,14 @@ import { moveWithSubtree } from "../application/outline-tree";
 import { ReportInputsCard } from "./outline/ReportInputsCard";
 import { DocumentSection } from "./document/DocumentSection";
 import { GenerateLaunchCard } from "./document/GenerateLaunchCard";
+import { Banner } from "@/components/feedback/Banner";
 import { InputsChangedBanner } from "./document/InputsChangedBanner";
 import { Inspector } from "./inspector/Inspector";
 import type { InspectorClaim } from "./inspector/StatementsTab";
 import type { SourceRef } from "./inspector/SourcesTab";
 import { RequestChangesDialog } from "./dialogs/RequestChangesDialog";
+import { ReopenReportDialog } from "./dialogs/ReopenReportDialog";
+import { reopenReportAction } from "@/lib/actions/report-reopen";
 import { ExportDialog } from "./dialogs/ExportDialog";
 import { ShortcutSheet } from "./dialogs/ShortcutSheet";
 
@@ -120,6 +123,8 @@ export type ReportEditorProps = {
   summaryStaleSectionIds: string[];
   commentCounts: Record<string, number>;
   inputsChangedSince: { indicators: number; evidence: number; sectionIds: string[] } | null;
+  /** Set while a report that was reopened after approval is being changed and approved again. */
+  reopened?: { at: string; byId: string; reason: string; previousStatus: string } | null;
   capabilities: readonly Capability[];
   initialUrlState: EditorUrlState;
 };
@@ -163,6 +168,7 @@ export function ReportEditor(props: ReportEditorProps) {
   const [confirm, setConfirm] = useState<Confirm>(null);
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [requestChangesOpen, setRequestChangesOpen] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
@@ -589,6 +595,9 @@ export function ReportEditor(props: ReportEditorProps) {
   if (caps.canGenerate && draft && !generation.generating && model.phase === "DRAFT") {
     menuItems.push({ label: "Regenerate whole draft", hint: "Creates a new version; this one stays in history", onSelect: () => setConfirm({ kind: "regenerate" }) });
   }
+  if (draft && caps.canApproveSection && ["APPROVED", "EXPORTED", "SUBMITTED"].includes(draft.status)) {
+    menuItems.push({ label: "Reopen for changes", hint: "Back to draft to add a chart or edit; it must be approved again", onSelect: () => setReopenOpen(true) });
+  }
   menuItems.push({ label: "Edit data & story", hint: "Indicator values, story answers, imports", href: inputsHref });
   if (caps.canGenerate) {
     menuItems.push({
@@ -732,6 +741,12 @@ export function ReportEditor(props: ReportEditorProps) {
         <p role="status" className="mt-4 rounded-lg border border-info-500/30 bg-info-50 px-3 py-2 text-sm text-info-700 dark:bg-info-500/10 dark:text-info-300">
           Waiting for another approver. {props.approverBlockedReason}
         </p>
+      )}
+
+      {props.reopened && (draft?.status === "DRAFT" || draft?.status === "UNDER_REVIEW") && (
+        <Banner tone="warning" title="Reopened for changes">
+          {`This report was ${props.reopened.previousStatus === "SUBMITTED" ? "submitted" : props.reopened.previousStatus === "EXPORTED" ? "exported" : "approved"} and reopened on ${new Date(props.reopened.at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}: “${props.reopened.reason}”. Approve the sections you changed, then send the report for review again.`}
+        </Banner>
       )}
 
       {showBanner && inputsChanged && (
@@ -947,6 +962,20 @@ export function ReportEditor(props: ReportEditorProps) {
           if (!draft) return;
           await run("primary", () => approveReportAction(draft.id), "Report approved");
           setConfirm(null);
+        }}
+      />
+
+      <ReopenReportDialog
+        open={reopenOpen}
+        status={draft?.status ?? null}
+        version={draft?.version ?? null}
+        pending={busy === "reopen"}
+        onClose={() => setReopenOpen(false)}
+        onSubmit={(reason) => {
+          if (!draft) return;
+          void run("reopen", () => reopenReportAction(draft.id, reason), "Report reopened: it is a draft again").then((done) => {
+            if (done !== undefined) setReopenOpen(false);
+          });
         }}
       />
 

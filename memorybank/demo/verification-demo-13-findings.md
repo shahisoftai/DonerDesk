@@ -1,0 +1,65 @@
+# Demo 13 (Nigeria food security) — running findings and support-doc updates
+
+Findings (F), support-doc updates needed (D). Appended as the run proceeds.
+
+- F1 (minor) Start slide: after "Read my documents" the other slides showed empty facts/results for ~1 min with no visible progress on slide 2 (name, code, dates later appeared on their own). The "Sending…" label is the only cue.
+- F2 Document path read donor, sector, country, name, code, dates, currency, summary, 5 places, 17 plan rows, 7 budget lines, 7 risks from .docx/.xlsx without errors (see logframe/indicators below).
+- F3 (HIGH) Results framework slide: the Word proposal's "3. Results framework" table (Level|Code|Result, 21 rows) and "4. Indicators" table were NOT read: "Your documents do not contain this part". "Read this part again" -> "Received an unexpected response shape." (twice). Facts, places, plan, budget, risks from the same documents were read fine. Investigate: docx table -> blocks, section survey, model reply shape (GLM). Workaround tried: upload logframe/indicator CSV as separate documents.
+- F4 (minor) "There are no outside partners" checkbox: first click reports "did not change state" to automation although it saved (state is controlled, re-rendered).
+- F5 After reading, no control to ADD a document (max 5) on the Start slide; a missed part needs "Start a different project instead". Changing "Read as" on a document re-reads EVERYTHING and wipes decisions already made on slides 2+ (project facts went back to "to answer").
+- F6 NG-FSL-WorkPlan.xlsx was classified "Other" though it has Title/Start/End columns (plan rows were still read, from the proposal's text).
+- Restart (Draft 2): logframe and indicators supplied as their own .xlsx sheets.
+- F7 (positive) Logframe sheet: 21 rows read, every parent link correct (no breadth-first mis-parenting).
+- F8 (HIGH) Indicators slide: the indicator table in the Word proposal AND the indicator .xlsx were both read, giving 36 proposed indicators (18 exact duplicates by code/title/figures). No merge across documents; had to Remove 18 by hand. (Note: this time the docx tables WERE read, unlike draft 1 -> F3 is intermittent or depends on the first run.)
+- F9 Places: 'Match to the map' matched 4 of 5 (Maiduguri, Bama, Monguno, Potiskum LGAs); 'Mubi' (a town split into Mubi North/South LGAs) stayed unmatched, 'Find on the map' only opened a search list; had to tick both LGAs and remove the leftover. Remove button on the leftover row did not respond to a plain click-by-text; the page has several 'Remove' buttons (hard to target).
+- F10 Reporting slide: the Food-security starting answers pre-set Quarterly + Annual + Final reports; a 6-month monthly-reporting project must remove two and add Monthly and Semi-annual by hand. A 6-month project should not be offered an Annual report.
+- F11 Risks: the proposal states each risk's seriousness in words ('Risk (high)', '(medium)') but the wizard left seriousness blank on all three (consistent with 'never guess', but the document did state it); assumptions have no mitigation text (expected).
+- F12 Budget: after setting each line's activity in its dropdown then 'Confirm all', the 2nd line (Nutrition screening) ended up un-tied (sign-off blocked with 'Tie budget line ... to an activity'); setting the dropdown again fixed it. Possible lost update when several dropdown changes are made in quick succession.
+- LAUNCHED 2026-11-05: project id 40d65f44-d771-4ee6-9edf-4c34a4cab5ac (wizard draft 5cd8043b-42b8-4170-bdc5-4744b8937532). Created: 21 results, 18 indicators, 17 planned activities, funding 900,000 USD, 7 budget lines read, risks, 4 pending people.
+- F13 (HIGH) Launch: 11 of 17 plan rows said '"Bama"/"Mubi"/"Monguno"/"Potiskum" is not in your places list, so it was not linked' although the same places were ticked on slide 5 and chosen under "Where" on slide 6 (Maiduguri rows linked). Plan places are created after the plan, or LGA-level ticks are not in the places list that the plan link reads.
+- F14 Launch report contradicts itself: "Budget lines on the planned activities: Done" yet "7 budget line(s) were read but are not created automatically: add them to the Finance page"; and "Still to do by hand: 2 whole-project lines". Need to check what exists on the Finance page.
+- F15 Slide 7 let me pick "A form in the field" for a percentage indicator (OP1-1d); only at launch: "OP1-1d is not a total of records ... cannot add it up". Slide 7 should refuse/flag it when chosen.
+- F16 Starting dashboard: chart "Food distributed by period" left out: no indicator clearly answers `food_distributed` (message shows a raw key name; user cannot tell which indicator to choose or where to choose it).
+- F17 The documents' reading dropped 19 items ("kept 69, left out 19"): includes the 18 duplicated indicators I removed + others; fine.
+- F18 Overview opens with the reporting-period picker on "Monthly report · Mar 2027 — NOT STARTED" (latest) instead of the current period (Nov 2026); the stage chip says "In implementation · closing ahead" and "1 of 5 months" for a 6-month project on day 5.
+- F19 Overview "Next deadline: Monthly report · Nov 2026 · Dec 5, 2026 (29 days left)" but the wizard calendar said the Nov report is due 15 Dec 2026 (15 days after period end). Check which date is right (entry window closes +20 days? deadline rule?).
+- F20 Plan map: after launch only 4 sites plot; "Monguno" is "Not placed on the map (no matching place known)" even though Monguno is a place ticked in the wizard (the bundled gazetteer lacks it). Needs a hand pin (or the wizard's ticked LGAs should become plan-place pins).
+- F21 Plan timeline: rows starting 2 Nov and ending 27 Nov are red/"late" on 5 Nov (no status yet) - 'late' appears before the planned end date because the start has passed without a start.
+- F22 Reports list shows 5 monthly periods (Nov-Mar, "Not started (5)"); the wizard's calendar promised an April "Final report" and a Semi-annual report, but neither exists after launch (Final = "Make this the final report" on a period; semi-annual "opened when due"). The wizard's report types (Semi-annual, Final) do not appear anywhere on the Reports page after launch.
+- F19b CONFIRMED: wizard "Due (days after the period ends)" 15 for monthly, but every report shows Deadline = period end + 5 days (Nov 30 -> Dec 5). The due days typed in the wizard are not applied.
+- Nov 2026 period: report id c926144f-3a03-430c-8d43-e2bacd5c0baa (Mar = 2be60f5e... is what Overview opens by default).
+- F23 Entry grid: for the quarterly/annual outcome rates the form shows a standing orange warning 'no denominator indicator configured, so its result cannot be independently verified' on every percentage indicator, with no way to dismiss or fix it on that page. (Month-1 values saved via Form view 'Save all' as 13 drafts; entry window opens 25 Nov, an Admin/verifier can enter early.)
+- F24 Activity form: the 'Which planned activity is this?' list shows only 3 suggestions and 'None of these' stays selected unless a radio is chosen; for VSLA the planned activity was not offered at all (no radio found) so that record is unlinked. Submit leaves the page on /activities/new for ~5 s with no confirmation before redirecting (10 of 12 times I was still on the form after 6 s).
+- Month 1 (Nov 2026) DONE: 12 activity records (with 12 evidence files linked to indicators) accepted; 13 indicator values saved (Form view, Save all), handed in, and verified in one click each. Quarterly/annual indicators correctly shown 'Not due this period'.
+- F25 Wizard said 'Starting dashboard: Done' but no dashboard for DEMO-13 appears on /dashboards (only 4 older ones), and the project's 'Dashboards' tab just opens the global /dashboards page (no project filter). Cannot find what was created.
+- F26 Numbering clash: the tenant already has '[DEMO-13] Resilient Water, Sanitation an...' (an older demo) so this project's [DEMO-13] label is ambiguous in pickers (the dashboard picker listed both). This run should be treated as Demo 13b / renamed.
+- Humanitarian dashboard created from the Food security template: https://donordesk.online/dashboards/77d17d77-86f1-4eb5-a515-71cd3edc9ed4 (first Create click produced a dashboard but the page stayed on templates; a second click may have created a duplicate - check /dashboards). 'Food distributed by period' left out (no indicator).
+- F27 Dashboard editor: saving after a previous save in the same session without reloading gave 'Someone else has changed this dashboard since you opened it' (my own earlier save). The page stays in edit mode with the new tiles only in memory; the user must reload and redo. After a successful Save the page should refresh its version.
+
+## D — support documents to update (apps/web/content/support and memorybank/docs/support/_unpublished-phase38)
+- D1 how-to-create-a-project-step-by-step (draft): say that after "Read my documents" the facts, plan, budget and risks arrive over about a minute; say the logframe/indicator tables in a Word proposal may not be read (F3) and a sheet works; say duplicates across documents are not merged (F8) and how to remove them; say a document cannot be added after reading (F5).
+- D2 Same article, slide 8: monthly "Due (days after period ends)" is not applied today (F19b); calendar promises Semi-annual and Final reports that are not listed after launch (F22) — explain how to open them ("Make this the final report", semi-annual opened when due).
+- D3 Same article, slide 6/10: the launch report can say places "not linked" (F13) and that budget lines "are not created automatically" while they are (F14); explain what each message means and the Finance-page step.
+- D4 Same article, slide 7: a percentage cannot use "A form in the field" (F15).
+- D5 Same article, slide 9: choose each budget line's activity one at a time and check the sign-off message (F12).
+- D6 how-to-enter-results-in-the-sheet / enter data: Form view needs "Save all", then "Submit for review", then "Verify all"; entry window opens 5 days before period end (an Admin/verifier can enter early); percentage warning about missing denominator (F23).
+- D7 Activities how-to: choosing the planned activity radio is required to link; "Submit activity" has no immediate confirmation (F24).
+- D8 Dashboards how-tos: "Start from a sector template" picker lists every project (two with the same [DEMO-13] label); roles can be left empty; edit mode must be reloaded between saves (F27); project "Dashboards" tab opens the global list (F25).
+- D9 Places: what "Match to the map" does with towns split into LGAs (Mubi) (F9); Monguno not in the bundled gazetteer — hand-pin (F20).
+
+## Fix status (2026-11-05, branch 0018-optimisation, uncommitted, not deployed)
+Root causes found and fixed, each with a test:
+- F19b: Launch never wrote the wizard's due days; periods took the profile default (5). Now `launchDeadlineOffset` -> `SetProjectDeadlineOffsetHandler` runs before periods (apply-proposal). Only the cadence type's rule applies (one offset per project).
+- F13: PLACES was applied after PLAN, so plan locations could not link; apply order swapped (`dependsOn` unchanged, extraction still reads plan first).
+- F14: the plain apply's "budget lines not created" note is dropped by Launch (its own step creates them).
+- F15: `SET_INDICATOR_SETUP` refuses "form" for a rate.
+- F16: dashboard note uses the role label and says where to add the chart.
+- F3 (the error): the web checked the re-read answer against `{ok}` but the API returns `{checked, dropped}`, so every "Read this part again" showed "unexpected response shape". Fixed in the web action. NOT explained: why the first read found no logframe in the proposal's Word table (needs the run record in prod; read access was refused, so ask first).
+- F8: exact/subset repeats across documents are dropped (`dropExactDuplicates`); differing items are kept.
+- F12: budget placements are merged on the server (the page spread a stale map).
+- F18: Overview opens on the period containing today; a project ending on a month's last day counts that month (1 Nov-30 Apr = 6).
+- F22: wizard calendar now says the final report is not created at launch (4 languages; drafts).
+- F27: root cause = repositories did not store the `updatedAt` the handler returned (Prisma @updatedAt stamped its own); fixed for dashboards, saved charts, templates, saved reports.
+- F25 RETRACTED (my driver clicked the sidebar link; the wizard dashboard exists under /dashboards?project=). The duplicate "Humanitarian dashboard" (38973559...) is mine and can be deleted; TMP-A / TMP-B headings were added to 77d17d77... by the F27 repro and should be removed.
+Deferred (need design or a feature): F24 (choose any planned activity in the activity form), F20 (plot ticked areas without a gazetteer match), F21 (late wording; delivery-state rule), F23 (standing denominator warning), F1 (progress cue), F9 (Mubi match), F26 (rename demo).
+Pre-existing, not mine: architecture-boundaries tests 4 and 5 fail on a clean tree (single-read-extractor exports 2 classes; an area-name branch).

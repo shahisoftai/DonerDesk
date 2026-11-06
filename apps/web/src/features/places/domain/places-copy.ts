@@ -1,0 +1,50 @@
+/**
+ * Everything a person reads on the Places screen (Phase 33.1), in one table so the copy lint scans it.
+ * Words: a "place" is somewhere the organisation works; "inside" is the parent; never "node", "level code", "admin level".
+ */
+export const PLACES_COPY = {
+  title: "Places",
+  intro: "The list of where your organisation works. Every project, activity and result that names a place can then be read at the places above it: a locality's figures count toward its state and its country.",
+  confirmTitle: "Places to confirm",
+  confirmIntro: "Words your team has typed that no place in your list answers to yet. Add the ones that are real places; the most used come first.",
+  confirmNone: "Every place your team has typed is in your list.",
+  confirmAmbiguous: "More than one place has this name. Add where it is (for example \"Rabak, White Nile\") wherever it is typed.",
+  addTitle: "Add a place",
+  name: "Name",
+  nameHint: "As people say it, for example Rabak or Um Gargur camp.",
+  kind: "What is it?",
+  inside: "Inside",
+  insideNone: "Nothing (top of the list)",
+  aliases: "Other spellings",
+  aliasesHint: "Separate with commas. Typed spellings that match one of these find this place.",
+  code: "Your code (optional)",
+  pin: "Pin on the map (optional)",
+  latitude: "Latitude",
+  longitude: "Longitude",
+  add: "Add place",
+  adding: "Adding…",
+  retire: "Retire",
+  restore: "Bring back",
+  retiredTag: "Retired",
+  empty: "No places yet. Add the first one, or paste a sheet below.",
+  listTitle: "Your places",
+  showRetired: "Show retired places",
+  importTitle: "Add many places from a sheet",
+  importIntro: "Paste rows or choose a file with the columns Name, Level, Inside (the place it is in), Latitude, Longitude, Code and Other spellings. Every row is checked first; nothing is added until you confirm.",
+  importPreview: "Check the sheet",
+  importApply: "Add these places",
+  importWillAdd: (n: number) => `${n} ${n === 1 ? "place" : "places"} will be added.`,
+  importAdded: (n: number) => `${n} ${n === 1 ? "place was" : "places were"} added.`,
+  importSkipped: (n: number) => `${n} already in your list and will be left as they are.`,
+  importProblem: (row: number, message: string) => `Row ${row}: ${message}`,
+  viewerNote: "You can see the list. People who edit projects can change it.",
+  sources: { PLAN: "plan", ACTIVITY: "completed activities", INDICATOR: "results", BENEFICIARY: "people reached" } as Record<string, string>,
+} as const;
+
+export const PLACE_LEVEL_LABEL: Readonly<Record<number, string>> = {
+  0: "Country",
+  1: "State or province",
+  2: "District or locality",
+  3: "Sub-district",
+  4: "Community or site",
+};

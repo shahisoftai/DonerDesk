@@ -1,0 +1,14 @@
+Code,Name,Type,Baseline,Target,Unit,Means of Verification,Data Source,Frequency,Disaggregation Required,Logframe Code
+NP-IMP1,"Prevalence of global acute malnutrition in children aged 6 to 59 months",Percentage,14.2,10,"%","SMART nutrition survey (baseline and end-line)","SMART survey",Annual,no,G1
+NP-OC1a,"Cure rate of children with severe acute malnutrition discharged from outpatient care",Percentage,60,75,"%","Outpatient register and monthly CMAM report","Health post registers",Monthly,no,O1
+NP-OC1b,"Default rate of children with severe acute malnutrition",Percentage,24,15,"%","Outpatient register and monthly CMAM report","Health post registers",Monthly,no,O1
+NP-OC1c,"Death rate of children with severe acute malnutrition",Percentage,3.5,3,"%","Outpatient register and monthly CMAM report","Health post registers",Monthly,no,O1
+NP-OC1d,"Recovery rate of children with moderate acute malnutrition",Percentage,60,75,"%","Supplementary feeding register","Health post registers",Monthly,no,O1
+NP-OC2a,"Percentage of children aged 6 to 23 months with minimum dietary diversity",Percentage,28,45,"%","Household nutrition survey","Household survey",Quarterly,no,O2
+NP-OP1.1,"Number of children aged 6 to 59 months screened",Number,0,24000,"children","Screening registers","Volunteer screening registers",Monthly,yes,1.1
+NP-OP1.2,"Number of children with severe acute malnutrition admitted to outpatient care",Number,0,1200,"children","Outpatient register","Health post registers",Monthly,yes,1.2
+NP-OP1.3,"Number of children with moderate acute malnutrition admitted to supplementary feeding",Number,0,3600,"children","Supplementary feeding register","Health post registers",Monthly,yes,1.3
+NP-OP1.4,"Number of health workers and volunteers trained in CMAM",Number,0,180,"people","Training attendance sheets","Training records",Monthly,no,1.4
+NP-OP2.1,"Number of pregnant and lactating women and caregivers counselled on infant and young child feeding",Number,0,6000,"people","Counselling registers","Counsellor registers",Monthly,no,2.1
+NP-OP2.2,"Number of mother support groups formed",Number,0,60,"groups","Group registers","Group registers",Monthly,no,2.2
+NP-OP2.3,"Number of cartons of therapeutic food distributed to sites",Number,0,4000,"cartons","Delivery notes and stock cards","Supply records",Monthly,no,2.3

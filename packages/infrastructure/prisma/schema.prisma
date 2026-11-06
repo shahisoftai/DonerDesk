@@ -18,6 +18,13 @@ model Organization {
   contactEmail  String
   website       String?
   defaultLanguage String  @default("en")
+  /// IANA zone; the daily summary goes out at 07:00 here. Default UTC.
+  timeZone      String   @default("UTC")
+  /// The currency the organisation reports in (finance register); amounts are shown in it only through a dated rate.
+  primaryCurrency String @default("USD")
+  /// When true, the person who entered a finance entry may not decide it (a second person must).
+  financeSeparateApprover Boolean @default(false)
+  localCurrency   String?
   logoUrl       String?
   mainOfficeLocation String?
   donorTypesServed String?
@@ -29,6 +36,12 @@ model Organization {
   /// Agent Memory (Phase 21) tenant self-service toggle. Effective state is
   /// this AND the platform AGENT_MEMORY_ENABLED flag.
   agentMemoryEnabled Boolean @default(false)
+  /// Ask DonorDesk (Phase 33.9): questions answered from the organisation's own records. Off until an administrator opts in.
+  askEnabled Boolean @default(false)
+  /// Project setup assistance (Phase 36): the assistant may read uploaded project documents and propose a setup. Off until an administrator opts in.
+  setupAssistEnabled Boolean @default(false)
+  /// Two-step sign-in is required of everyone in the organisation from this moment (Phase 33.12); null = optional.
+  mfaRequiredFrom DateTime?
   /// Set when a NonprofitVerification for this tenant is APPROVED (Phase 22 WS-G).
   nonprofitVerifiedAt DateTime?
   createdAt     DateTime @default(now())
@@ -162,6 +175,18 @@ model User {
   lastLoginAt   DateTime?
   assignedProjectIds String @default("[]")
   passwordChangedAt DateTime?
+  failedLoginCount Int @default(0)
+  lockedUntil   DateTime?
+  /// An outside implementing partner: reaches only the projects they are a member of, through an allow-listed set of routes.
+  external      Boolean  @default(false)
+  /// Two-step sign-in (TOTP). The secret is sealed (AES-GCM); recovery codes are stored as hashes.
+  mfaSecretEnc        String?
+  mfaPendingSecretEnc String?
+  mfaEnabledAt        DateTime?
+  mfaRecoveryHashes   String   @default("[]")
+  mfaLastStep         Int?
+  /// How the person wants to be emailed: DAILY_SUMMARY (default), URGENT_ONLY, NEVER.
+  emailSummaryMode String @default("DAILY_SUMMARY")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
@@ -196,8 +221,24 @@ model Invitation {
   token         String   @unique
   expiresAt     DateTime
   acceptedAt    DateTime?
+  external   Boolean  @default(false)
   projectIds    String   @default("[]")
   createdAt     DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+/// A credential an identity provider uses to provision this organisation's
+/// users over SCIM. Only the hash of the token is stored.
+model ScimCredential {
+  id          String   @id
+  tenantId    String
+  name        String
+  tokenHash   String   @unique
+  createdById String
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime @default(now())
 
   @@index([tenantId])
 }
@@ -245,11 +286,20 @@ model Project {
   workspaceRootId       String?
   archivedAt            DateTime?
   isDemo                Boolean  @default(false)
+  /// Admin setting: false hides the work plan screens and keeps the data.
+  showWorkPlanning      Boolean  @default(true)
+  timeZone              String?
+  /// Optional funding hierarchy (programme > grant > project); managed by the funding repository, never by Project.update.
+  programmeId           String?
+  grantId               String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
   organization    Organization  @relation(fields: [tenantId], references: [tenantId])
   setup           ProjectSetup?
+  plannedActivities PlannedActivity[]
+  projectTasks    ProjectTask[]
+  projectRisks    ProjectRisk[]
   reportingProfile ReportingProfile?
   logframeItems   LogframeItem[]
   indicators      Indicator[]
@@ -290,6 +340,8 @@ model ReportingProfile {
   id                       String   @id
   tenantId                 String
   projectId                String   @unique
+  /// Days after a period ends that its indicator values are due (default 5).
+  indicatorEntryDueDays    Int      @default(5)
   defaultTemplateId        String?
   language                 String   @default("en")
   tone                     String   @default("FORMAL")
@@ -306,6 +358,10 @@ model ReportingProfile {
   defaultTemplateByTypeJson String  @default("{}")
   /// When on, the author of a report cannot approve it.
   requireSecondApprover    Boolean  @default(false)
+  /// When on, an indicator value needs an attached file before it can be verified.
+  requireEvidenceForVerification Boolean @default(false)
+  /// When on, saving an indicator value hands it in at once (and verifies it when the saver may and a file is attached).
+  simpleReview          Boolean  @default(false)
   /// JSON {key: text}: statements that hold for every period (branding policy, waste procedure).
   standingStatementsJson   String   @default("{}")
   version                  Int      @default(1)
@@ -407,6 +463,11 @@ model Indicator {
   responsibleUserId     String?
   disaggregationRequired Boolean @default(false)
   semanticsJson         String?
+  targetBreakdownsJson  String?
+  targetScheduleJson    String? // [{asOf, target}]: the cumulative target due by each date; absent = the project target applies
+  /// {op, terms[], percent?}: the value is calculated from other indicators of the project (phase 33.3).
+  formulaJson           String?
+  countedElsewhere      Boolean  @default(false) // what it counts is also counted by another project: left out of portfolio totals
   archivedAt            DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -427,7 +488,9 @@ model IndicatorUpdate {
   periodAchievement     String
   cumulativeAchievement String
   comments              String?
+  reviewNote            String? // the reviewer's reason for a correction/rejection; never overwritten by a save
   dataSource            String?
+  notApplicableReason   String? // set = the indicator does not apply to this period (an answer, not a gap)
   attachedEvidenceIds   String   @default("[]")
   disaggregationJson    String   @default("[]") // JSON array of DisaggregationEntry
   verificationStatus    String   @default("DRAFT")
@@ -465,6 +528,9 @@ model ReportingPeriod {
   /// Set when the period was cancelled: its data stays, it leaves the calendar and the closing report.
   cancelledAt                  DateTime?
   cancelReason                 String?
+  /// Optional window (plain days) in which values may be entered by the people who enter them; reviewers are exempt (phase 33.4).
+  entryOpensOn                 String?
+  entryClosesOn                String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -509,6 +575,9 @@ model EvidenceFile {
   notes               String?
   aiSummary           String?
   extractedText       String?   @db.Text
+  textExtractionStatus String? // EXTRACTED | EMPTY | FAILED | UNSUPPORTED; null = not attempted yet
+  textExtractionNote  String?
+  reviewNote          String? // why a reviewer asked for a correction or rejected the file
   aiSuggestedTagsJson String   @default("[]")
   sensitivityWarning  String?
   createdAt           DateTime @default(now())
@@ -538,6 +607,8 @@ model ActivityUpdate {
   outputId              String?
   /// The logframe's own ACTIVITY node this record delivers (outputId is its parent output).
   logframeActivityId    String?
+  /// The planned activity (work plan) this completed activity delivers.
+  plannedActivityId     String?
   indicatorId           String?
   participantsTotal     Int?
   participantsMale      Int?
@@ -566,6 +637,7 @@ model ActivityUpdate {
   @@index([projectId])
   @@index([reportingPeriodId])
   @@index([logframeActivityId])
+  @@index([plannedActivityId])
 }
 
 model ReportDraft {
@@ -591,6 +663,7 @@ model ReportDraft {
   generationRuns  ReportGenerationRun[]
   @@index([tenantId])
   @@index([reportingPeriodId])
+  @@index([supersededAt])
 }
 
 model ReportSection {
@@ -867,11 +940,15 @@ model Comment {
   authorId        String
   mentionedUserId String?
   status          String   @default("OPEN")
+  parentId        String? // a reply: the first comment of its thread (threads are one level deep)
+  resolvedById    String?
+  resolvedAt      DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@index([tenantId])
   @@index([entityType, entityId])
+  @@index([parentId])
 }
 
 model Notification {
@@ -1438,4 +1515,1188 @@ model PeriodFinancialSummary {
 
   @@index([tenantId])
   @@index([projectId])
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// PHASE 28: Work plan (planned activities and their history)
+////////////////////////////////////////////////////////////////////////////////
+
+/// Work planned ahead. Dates are plain calendar days (@db.Date). The delivery state is derived, never stored.
+model PlannedActivity {
+  id                 String    @id
+  tenantId           String
+  projectId          String
+  title              String
+  description        String    @default("")
+  location           String?
+  /// A place the officer pinned by hand when no gazetteer name matches (WGS84).
+  latitude           Float?
+  longitude          Float?
+  logframeActivityId String?
+  outputId           String?
+  ownerUserId        String?
+  /// JSON array of user ids.
+  supportUserIds     String    @default("[]")
+  plannedStart       DateTime  @db.Date
+  plannedEnd         DateTime  @db.Date
+  /// The first dates saved; never changed afterwards.
+  originalStart      DateTime  @db.Date
+  originalEnd        DateTime  @db.Date
+  targetParticipants Int?
+  targetCount        Int?
+  /// How heavy the activity is for its lead, 1 to 5. The workload view adds these up.
+  effort             Int      @default(1)
+  status             String    @default("PLANNED")
+  statusReason       String?
+  seriesId           String?
+  recurrenceJson     String?
+  /// Files the work needs (Batch 28.6).
+  evidenceRequirementsJson String @default("[]")
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  createdById        String
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([tenantId, projectId, plannedStart])
+  @@index([tenantId, ownerUserId])
+  @@index([seriesId])
+}
+
+/// Append-only history of changes to a planned activity; the reasons are the project's decision history.
+model PlannedActivityDependency {
+  id            String   @id
+  tenantId      String
+  projectId     String
+  predecessorId String
+  successorId   String
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  @@unique([predecessorId, successorId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, successorId])
+}
+
+model ProjectField {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  key         String
+  label       String
+  type        String
+  choicesJson String   @default("[]")
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@unique([projectId, key])
+  @@index([tenantId, projectId])
+}
+
+/// A value a person typed for a custom field on a planned activity. A blank value is no row, never a zero.
+model CustomFieldValue {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  fieldId     String
+  entityId    String
+  value       String
+  updatedById String
+  updatedAt   DateTime
+
+  @@unique([fieldId, entityId])
+  @@index([tenantId, entityId])
+}
+
+/// A budget line on a planned activity. Money in minor units (cents) as a whole number.
+model BudgetLine {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  code              String
+  category          String
+  description       String   @default("")
+  donorName         String   @default("")
+  currency          String
+  amountMinor       BigInt
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId, plannedActivityId])
+  @@index([tenantId, projectId])
+  /// The funding source this line is budgeted against (finance register); none = not assigned.
+  fundingSourceId   String?
+}
+
+/// An expense booked against one budget line.
+model BudgetExpense {
+  id           String   @id
+  tenantId     String
+  projectId    String
+  budgetLineId String
+  expenseDate  DateTime @db.Date
+  amountMinor  BigInt
+  description  String   @default("")
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, budgetLineId])
+  @@index([tenantId, projectId])
+  /// Finance register: who was paid, in what currency (null = the line's), the funding source, the approval state and the file that proves it.
+  vendor          String    @default("")
+  currency        String?
+  fundingSourceId String?
+  evidenceId      String?
+  /// DRAFT | APPROVED | REJECTED. Rows that existed before the register are APPROVED.
+  status          String    @default("APPROVED")
+  decidedById     String?
+  decidedAt       DateTime?
+  decisionNote    String?
+}
+
+/// How many planned activities a person can lead in a week. Blank (null) means no limit has been set.
+model MemberCapacity {
+  id                String   @id
+  tenantId          String
+  userId            String
+  activitiesPerWeek Int?
+  updatedById       String
+  updatedAt         DateTime
+
+  @@unique([tenantId, userId])
+}
+
+/// An automation rule a project has switched on or off. No row means the rule's default (on).
+model ProjectAutomation {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  ruleKey     String
+  enabled     Boolean
+  /// The numbers the project set for this rule, as JSON (name -> whole number). Null means the rule's defaults.
+  settingsJson String?
+  updatedById String
+  updatedAt   DateTime
+
+  @@unique([projectId, ruleKey])
+  @@index([tenantId, projectId])
+}
+
+/// A person a project reaches, by case code only (no name, phone or ID number). Consent is recorded when they are added.
+model Beneficiary {
+  id                  String   @id
+  tenantId            String
+  projectId           String
+  caseCode            String
+  sex                 String
+  ageGroup            String
+  location            String   @default("")
+  enrolledOn          DateTime @db.Date
+  consentRecordedById String
+  createdById         String
+  createdAt           DateTime @default(now())
+
+  @@unique([projectId, caseCode])
+  @@index([tenantId, projectId])
+}
+
+/// An indicator a planned activity reports on. Its breakdown fields are shown in the progress log.
+/// A place (from the organisation's places list) a planned activity takes place in. An activity may have several; the text `location` on the activity stays as typed.
+model PlannedActivityPlace {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  placeId           String
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  @@unique([plannedActivityId, placeId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, placeId])
+}
+
+model PlannedActivityIndicator {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  indicatorId       String
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  @@unique([plannedActivityId, indicatorId])
+  @@index([tenantId, projectId])
+}
+
+/// One progress record for a planned activity: a day, a week, a month, or the activity end.
+/// valuesJson: {total, breakdowns:{key:n}, sessions, unique}. narrativeJson: free text. Blank figures are null.
+model ProgressEntry {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  kind              String
+  fromDate          DateTime @db.Date
+  toDate            DateTime @db.Date
+  valuesJson        String
+  narrativeJson     String   @default("{}")
+  absorbedById      String?
+  createdById       String
+  updatedById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+
+  @@unique([plannedActivityId, kind, fromDate])
+  @@index([tenantId, plannedActivityId])
+}
+
+/// The column mapping a project saves for KoboToolbox/ODK imports (field name -> the file's column header).
+model ProjectSubmissionMapping {
+  id          String   @id
+  tenantId    String
+  projectId   String   @unique
+  mappingJson String
+  updatedById String
+  updatedAt   DateTime
+
+  @@index([tenantId])
+}
+
+/// A person (by case code) an activity reached. Counted once per activity.
+model BeneficiaryActivityLink {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  beneficiaryId     String
+  createdById       String
+  createdAt         DateTime @default(now())
+
+  @@unique([plannedActivityId, beneficiaryId])
+  @@index([tenantId, beneficiaryId])
+}
+
+model PlanRevision {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  plannedActivityId String
+  changeJson        String   @db.Text
+  reason            String?
+  changedById       String
+  changedAt         DateTime @default(now())
+
+  @@index([tenantId, plannedActivityId])
+  @@index([tenantId, projectId, changedAt])
+}
+
+/// A request: one person asking another for something in a project. STATE kinds close themselves from the records.
+model ProjectTask {
+  id                String    @id
+  tenantId          String
+  projectId         String
+  kind              String
+  subjectType       String?
+  subjectId         String?
+  reportingPeriodId String?
+  title             String
+  details           String?
+  assigneeId        String
+  assignedById      String
+  dueDate           DateTime  @db.Date
+  urgent            Boolean   @default(false)
+  status            String    @default("OPEN")
+  completedById     String?
+  completedAt       DateTime?
+  completionNote    String?
+  closedByData      Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([tenantId, assigneeId, status])
+  @@index([tenantId, projectId, status])
+  @@index([subjectType, subjectId])
+}
+
+/// What the reminder timer has already sent, so the hourly run never repeats a summary or an escalation.
+model ReminderLedgerEntry {
+  id          String   @id
+  tenantId    String
+  recipientId String
+  /// "summary" for the daily summary, an assignment key for an escalation.
+  subjectKey  String
+  ruleKey     String
+  sentOn      DateTime @db.Date
+  createdAt   DateTime @default(now())
+
+  @@unique([tenantId, recipientId, subjectKey, ruleKey, sentOn])
+  @@index([tenantId, recipientId, subjectKey])
+}
+
+/// Problems and risks: a short list. Never part of a donor report.
+model ProjectRisk {
+  id                String    @id
+  tenantId          String
+  projectId         String
+  kind              String
+  title             String
+  seriousness       String
+  ownerId           String?
+  action            String    @default("")
+  status            String    @default("OPEN")
+  closedNote        String?
+  closedById        String?
+  closedAt          DateTime?
+  plannedActivityId String?
+  raisedById        String
+  reviewBy          DateTime? @db.Date
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@index([tenantId, projectId, status])
+  @@index([tenantId, ownerId, status])
+}
+
+/// A job the API could not hand to the queue (Kestra down, network error). Kept so it is retried with backoff and, after
+/// the last attempt, dead-lettered where it can be seen, instead of being logged and lost.
+model JobOutbox {
+  id            String   @id
+  tenantId      String
+  jobName       String
+  payloadJson   String   @db.Text
+  status        String   @default("PENDING") // PENDING | DONE | DEAD
+  attempts      Int      @default(0)
+  lastError     String?
+  nextAttemptAt DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status, nextAttemptAt])
+  @@index([tenantId])
+}
+
+/// The results framework of a project as it stood after one change: append-only, so a target that moved, or a report
+/// approved against an earlier framework, can be shown. `approvedAt` marks a version a person signed off as the agreed one.
+model LogframeVersion {
+  id           String    @id
+  tenantId     String
+  projectId    String
+  version      Int
+  snapshotJson String    @db.Text
+  contentHash  String
+  summary      String
+  createdById  String
+  createdAt    DateTime  @default(now())
+  approvedById String?
+  approvedAt   DateTime?
+
+  @@unique([tenantId, projectId, version])
+  @@index([tenantId, projectId])
+}
+
+/// A programme groups related grants and projects (a country programme, a thematic portfolio).
+model Programme {
+  id          String   @id
+  tenantId    String
+  name        String
+  code        String?
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE | CLOSED
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+/// A funding award: who funds, how much, for how long. Projects delivered under it point at it.
+model Grant {
+  id          String    @id
+  tenantId    String
+  programmeId String?
+  title       String
+  donorName   String
+  awardNumber String?
+  amount      String? // decimal string, with currency
+  currency    String?
+  startDate   DateTime?
+  endDate     DateTime?
+  status      String    @default("ACTIVE") // ACTIVE | CLOSED
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([tenantId, programmeId])
+}
+
+
+/// A person's decision about one indicator a donor's template asks for: the project indicator that answers it, or null for
+/// "this project will not report it". Automatic matches are not stored; only decisions are.
+model DonorIndicatorMapping {
+  id            String   @id
+  tenantId      String
+  templateId    String
+  requirementId String
+  indicatorId   String?
+  decidedById   String
+  decidedAt     DateTime @default(now())
+
+  @@unique([templateId, requirementId])
+  @@index([tenantId])
+}
+
+/// A change to what the project planned or does: what changed, why, and what it did to the results. Pointers are plain ids so a
+/// removed activity or indicator never blocks the record.
+model ProjectAdaptation {
+  id                String   @id
+  tenantId          String
+  projectId         String
+  recordedOn        DateTime @db.Date
+  whatChanged       String
+  why               String
+  effectOnResults   String?
+  plannedActivityId String?
+  indicatorId       String?
+  reportingPeriodId String?
+  recordedById      String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([projectId, recordedOn])
+}
+
+/// Boundary files an organisation uploads for one country and one admin level (Phase 41.7): districts, sub-districts, wards or
+/// communities where no open file exists. Normalised on upload into the app's own boundary format (name, P-code, parent P-code) and kept in
+/// storage; the row says which file it is. A layer replaces the bundled file for that country and level, for this organisation only.
+model TenantBoundaryLayer {
+  id               String   @id
+  tenantId         String
+  /// ISO 3166-1 alpha-3, upper case.
+  iso              String
+  countryName      String
+  /// 1 state/province ... 4 community or ward.
+  adminLevel       Int
+  /// What the file was called when it was uploaded.
+  name             String
+  nameField        String
+  pcodeField       String?
+  parentPcodeField String?
+  /// Where the normalised GeoJSON lives (storage key). Never sent to a browser.
+  storageKey       String
+  sizeBytes        Int
+  featureCount     Int
+  uploadedById     String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([tenantId, iso, adminLevel])
+  @@index([tenantId])
+}
+
+/// The workspace's own map boundaries: one uploaded GeoJSON layer (districts, sub-districts) that the
+/// site map draws instead of the bundled country outlines. One layer per organization; a new upload
+/// replaces it.
+model TenantMapLayer {
+  id           String   @id
+  tenantId     String   @unique
+  name         String
+  /// Where the GeoJSON bytes live (storage key, workspace-prefixed).
+  storageKey   String
+  sizeBytes    Int
+  featureCount Int
+  uploadedById String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+/// A saved infographic (Phase 31): the composition — template, selections, authored text — never a
+/// copy of project data. Figures are read from project records at generation time.
+model ProjectInfographic {
+  id              String   @id
+  tenantId        String
+  projectId       String
+  title           String
+  templateId      String
+  templateVersion Int
+  /// The validated InfographicConfig as JSON.
+  configJson      String
+  createdById     String
+  updatedById     String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  /// DRAFT | IN_REVIEW | APPROVED (Phase 32): any edit returns an approved design to DRAFT.
+  status              String   @default("DRAFT")
+  reviewRequestedById String?
+  reviewRequestedAt   DateTime?
+  approvedById        String?
+  approvedAt          DateTime?
+  /// The approver was the person who asked for the review (allowed only when nobody else can approve).
+  selfApproved        Boolean  @default(false)
+  /// The design this one was made from (a per-location / per-period variant), when any.
+  parentId            String?
+
+  @@index([tenantId, projectId])
+}
+
+/// One published rendering of an infographic (PNG or PDF). The file lives in storage; the row keeps
+/// the exact inputs (snapshot) and provenance, so a published export stays reproducible while the
+/// live design keeps evolving.
+model InfographicExport {
+  id             String   @id
+  tenantId       String
+  infographicId  String
+  projectId      String
+  /// PNG | PDF | SVG | PPTX | PACK
+  format         String
+  storageKey     String
+  sizeBytes      Int
+  /// The exact inputs used: period ids, indicator ids, config and data digests.
+  snapshotJson   String
+  /// The provenance stamp rendered into the footer.
+  provenanceJson String
+  generatedById  String
+  createdAt      DateTime @default(now())
+  /// Pages in the rendering (a carousel or a multi-page print).
+  pageCount      Int      @default(1)
+  /// The design was APPROVED when this was published.
+  approved       Boolean  @default(false)
+  /// Design-check blockers the author waived (rule ids and reasons), as JSON.
+  waivedJson     String?
+  /// The text description published with the image (for screen readers and captions).
+  altText        String?
+
+  @@index([tenantId, projectId, infographicId])
+}
+
+/// An image or logo an organization uploaded for its infographics (Phase 32). Re-encoded on upload (metadata such as
+/// GPS position is removed), never taken from evidence files.
+model InfographicAsset {
+  id          String    @id
+  tenantId    String
+  /// IMAGE | LOGO
+  kind        String
+  name        String
+  contentType String
+  storageKey  String
+  width       Int
+  height      Int
+  sizeBytes   Int
+  credit      String?
+  createdById String
+  createdAt   DateTime  @default(now())
+  archivedAt  DateTime?
+
+  @@index([tenantId, kind])
+}
+
+/// One brand kit per organization: colours, logos and standard lines, as validated JSON.
+model InfographicBrandKit {
+  id          String   @id
+  tenantId    String   @unique
+  brandJson   String
+  updatedById String
+  updatedAt   DateTime @updatedAt
+}
+
+/// A saved layout an organization reuses (private to the organization): the design's config without its data.
+model InfographicUserTemplate {
+  id             String   @id
+  tenantId       String
+  name           String
+  description    String?
+  /// The built-in template it started from (kept so the design stays valid against the registry).
+  baseTemplateId String
+  configJson     String
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId])
+}
+
+/// A public, expiring link to one published export. Only the SHA-256 of the token is stored.
+model InfographicShareLink {
+  id            String    @id
+  tenantId      String
+  infographicId String
+  exportId      String
+  tokenHash     String    @unique
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  viewCount     Int       @default(0)
+  createdById   String
+  createdAt     DateTime  @default(now())
+
+  @@index([tenantId, infographicId])
+}
+
+/// An organisation's own list of where it works (Phase 33.1): a point or an area with a parent, so a
+/// value recorded at one place reads at the places above it. Names and aliases are matched through
+/// the domain's `normalizeLocationKey`; nothing here is derived from a gazetteer at read time.
+model Place {
+  id          String    @id
+  tenantId    String
+  name        String
+  /// POINT or AREA.
+  kind        String
+  /// 0 country, 1 state/province, 2 district/locality, 3 sub-district, 4 community/site.
+  adminLevel  Int
+  parentId    String?
+  country     String?
+  latitude    Float?
+  longitude   Float?
+  aliases     String[]  @default([])
+  code        String?
+  /// A place people go to for a service (clinic, school, water point, distribution site), as opposed to an area.
+  facility    Boolean   @default(false)
+  /// POLYGON (an outline) or LINE (a route) when a drawn shape is stored for this area; the shape itself is a GeoJSON file in storage, never in the row.
+  geometryKind  String?
+  /// Where the shape's file is kept (`places/<tenantId>/<placeId>.geojson`). Never sent to a browser.
+  geometryKey   String?
+  geometryBytes Int?
+  /// How the location came to be: TYPED, MAP_PIN, MAP_DRAWN, SNAPPED, IMPORT or GPS.
+  placedBy      String?
+  archivedAt  DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId, parentId])
+  @@index([tenantId, archivedAt])
+}
+
+/// A key another system uses to read the organisation's data (Phase 33.7). Only the SHA-256 of the token is stored.
+model ApiKey {
+  id          String    @id
+  tenantId    String
+  name        String
+  prefix      String
+  tokenHash   String    @unique
+  scopes      String[]  @default([])
+  /// Empty = every project of the organisation.
+  projectIds  String[]  @default([])
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId])
+}
+
+/// Where the organisation wants to be told when something happens (Phase 33.7). The signing secret is shown once.
+model WebhookEndpoint {
+  id                  String    @id
+  tenantId            String
+  url                 String
+  secret              String
+  events              String[]  @default([])
+  enabled             Boolean   @default(true)
+  disabledReason      String?
+  consecutiveFailures Int       @default(0)
+  createdById         String
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([tenantId])
+}
+
+/// One event queued for one endpoint, with its retry state. Carries ids and statuses only, never text.
+model WebhookDelivery {
+  id             String    @id
+  tenantId       String
+  endpointId     String
+  eventId        String
+  event          String
+  payloadJson    String
+  /// PENDING, DELIVERED or FAILED (gave up).
+  status         String
+  attempts       Int       @default(0)
+  nextAttemptAt  DateTime
+  lastStatusCode Int?
+  lastError      String?
+  deliveredAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([tenantId, endpointId, createdAt])
+  @@index([status, nextAttemptAt])
+}
+
+/// A collection form that feeds indicators (Phase 33.5). Only a draft can be edited; publishing freezes the fields.
+model CollectionForm {
+  id             String   @id
+  tenantId       String
+  projectId      String
+  name           String
+  description    String?
+  definitionJson String   @default("{\"fields\":[]}")
+  /// How collected records add up to indicator values (RecordMapping[]).
+  mappingsJson   String   @default("[]")
+  /// DRAFT | PUBLISHED | CLOSED
+  status         String   @default("DRAFT")
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([tenantId, projectId])
+}
+
+/// One submission of a form: the answers as validated, kept until a person accepts or rejects them.
+model CollectionRecord {
+  id            String    @id
+  tenantId      String
+  formId        String
+  projectId     String
+  answersJson   String
+  /// The day it was submitted, a plain day (YYYY-MM-DD, UTC).
+  submittedOn   String
+  /// USER | LINK
+  source        String
+  submittedById String?
+  /// Who the collector said they were, for a record that came through a link.
+  submitterName String?
+  /// PENDING | ACCEPTED | REJECTED
+  status        String    @default("PENDING")
+  reviewNote    String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([tenantId, formId, status])
+}
+
+/// A photo or document attached to an answer (Phase 33.5). Uploaded before the record; the answer holds its id.
+model CollectionFile {
+  id          String   @id
+  tenantId    String
+  formId      String
+  fileName    String
+  contentType String
+  size        Int
+  storageKey  String
+  /// USER | LINK
+  source      String
+  uploadedById String?
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, formId])
+}
+
+/// An anonymous collection link for a published form. Only the SHA-256 of the token is stored; it expires and can be revoked.
+model CollectionLink {
+  id          String    @id
+  tenantId    String
+  formId      String
+  label       String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId, formId])
+}
+
+/// A page of Data Center charts (Phase 33.8): saved chart specs and where they sit, never data.
+model Dashboard {
+  id          String   @id
+  tenantId    String
+  /// ORG | PROJECT | MINE
+  scope       String
+  projectId   String?
+  ownerId     String
+  name        String
+  widgetsJson String   @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId, scope])
+  @@index([tenantId, projectId])
+}
+
+/// A read-only link to a dashboard. Only the SHA-256 of the token is stored; it expires and can be revoked.
+model DashboardShareLink {
+  id          String    @id
+  tenantId    String
+  dashboardId String
+  label       String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId, dashboardId])
+}
+
+/// A link from a DonorDesk collection form to the same survey in KoboToolbox or SurveyCTO (Phase 33.7). The secret is stored encrypted and never shown.
+model DataConnector {
+  id              String    @id
+  tenantId        String
+  formId          String
+  projectId       String
+  name            String
+  /// KOBOTOOLBOX | SURVEYCTO
+  kind            String
+  serverUrl       String
+  sourceId        String
+  fieldMapJson    String    @default("[]")
+  /// AES-256-GCM of the API token (or user:password), keyed by CONNECTOR_SECRET_KEY.
+  credentialEnc   String?
+  /// The submission time already brought in (ISO); only later or equal ones are asked for.
+  cursor          String?
+  lastSyncAt      DateTime?
+  lastSyncJson    String?
+  createdById     String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([tenantId, formId])
+}
+
+/// A chart the team keeps (Phase 34.1): the chart specification only, never data. Every figure is drawn from the project's data sheet
+/// when the chart is opened. `scope`: MINE (its owner only) or PROJECT (everyone who can see the project).
+model SavedChart {
+  id        String   @id
+  tenantId  String
+  scope     String
+  projectId String
+  ownerId   String
+  name      String
+  specJson  String
+  /// The last few earlier versions (newest first): when each was replaced, by whom, its name and specification.
+  versionsJson String @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, projectId])
+  @@index([tenantId, ownerId])
+}
+
+/// A report the team keeps (Phase 34.5): the question only (indicators, periods, measure, rows), never figures.
+model SavedReport {
+  id        String   @id
+  tenantId  String
+  scope     String
+  projectId String
+  ownerId   String
+  name      String
+  queryJson String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, projectId])
+}
+
+/// A person's own shortcut to a page in the app (Phase 34.7): a title and an in-app address, never data.
+model Bookmark {
+  id        String   @id
+  tenantId  String
+  userId    String
+  title     String
+  href      String
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, userId])
+}
+
+/// A context overlay the organisation keeps for its maps (Phase 35): rivers, roads, a camp outline. The GeoJSON lives in storage; ticked per map, never reported against.
+model MapOverlay {
+  id           String   @id
+  tenantId     String
+  name         String
+  storageKey   String
+  sizeBytes    Int
+  featureCount Int
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId])
+}
+
+/// A dashboard an administrator shows on everyone's Home (Phase 35, after DevResults' "push" and "default" dashboards). A reference only; what each person sees is still
+/// limited by who may open the dashboard.
+model FeaturedDashboard {
+  id            String   @id
+  tenantId      String
+  dashboardId   String
+  /// "*" = everyone; otherwise the id of the one person it is shown to.
+  audience      String   @default("*")
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  @@unique([tenantId, dashboardId, audience])
+  @@index([tenantId])
+}
+
+/// A person's own pinned tile on their Home (Phase 35.H4): a dashboard they can open. Stores a reference, never data; only the caller's rows are read or removed.
+model HomePin {
+  id        String   @id
+  tenantId  String
+  userId    String
+  kind      String
+  ref       String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([tenantId, userId, kind, ref])
+  @@index([tenantId, userId])
+}
+
+/// How a person has arranged the panels of their Home (Phase 40): order, width and hidden flags only, never data. One row per person per Home variant.
+model HomeLayout {
+  id         String   @id
+  tenantId   String
+  userId     String
+  variant    String
+  layoutJson String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tenantId, userId, variant])
+  @@index([tenantId, userId])
+}
+
+/// A dashboard template the organisation keeps (Phase 34.3): the whole template (roles and charts by role) as JSON. Always a draft,
+/// always editable. Built-in templates live in code and are never stored; copying one makes a row here.
+model DashboardTemplate {
+  id        String   @id
+  tenantId  String
+  ownerId   String
+  sector    String
+  title     String
+  json      String
+  revision  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId, sector])
+}
+
+/// An organisation's funding source (finance register). `ownFunding` sources count towards a project's headline figures; others are listed apart.
+model FundingSource {
+  id         String   @id
+  tenantId   String
+  name       String
+  ownFunding Boolean  @default(true)
+  archived   Boolean  @default(false)
+  createdById String
+  createdAt  DateTime @default(now())
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+}
+
+/// What a project is allocated from a funding source (the "Obligated" figure). Amounts are whole minor units.
+model ProjectFunding {
+  id              String   @id
+  tenantId        String
+  projectId       String
+  fundingSourceId String
+  allocatedOn     DateTime @db.Date
+  amountMinor     BigInt
+  currency        String
+  note            String   @default("")
+  createdById     String
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId, projectId])
+  @@index([tenantId, fundingSourceId])
+}
+
+/// An organisation's own budget categories, added to the built-in ones.
+model BudgetCategory {
+  id          String   @id
+  tenantId    String
+  code        String
+  label       String
+  archived    Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+/// Money received from a funder for a project. DRAFT until a person with `finance.approve` decides.
+model Disbursement {
+  id              String    @id
+  tenantId        String
+  projectId       String
+  fundingSourceId String
+  paidOn          DateTime  @db.Date
+  amountMinor     BigInt
+  currency        String
+  memo            String    @default("")
+  /// DRAFT | APPROVED | REJECTED
+  status          String    @default("DRAFT")
+  decidedById     String?
+  decidedAt       DateTime?
+  decisionNote    String?
+  createdById     String
+  createdAt       DateTime  @default(now())
+
+  @@index([tenantId, projectId])
+  @@index([tenantId, fundingSourceId])
+}
+
+/// A payment milestone: approved by a named person at a time, then paid.
+model Deliverable {
+  id           String    @id
+  tenantId     String
+  projectId    String
+  name         String
+  amountMinor  BigInt
+  currency     String
+  dueOn        DateTime  @db.Date
+  approvedById String?
+  approvedAt   DateTime?
+  paidOn       DateTime? @db.Date
+  createdById  String
+  createdAt    DateTime  @default(now())
+
+  @@index([tenantId, projectId])
+}
+
+/// Money given out that must be accounted for.
+model Advance {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  heldBy      String
+  givenOn     DateTime @db.Date
+  amountMinor BigInt
+  currency    String
+  note        String   @default("")
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, projectId])
+}
+
+/// What has been accounted for against an advance (receipts, returned cash).
+model AdvanceAccounting {
+  id          String   @id
+  tenantId    String
+  advanceId   String
+  accountedOn DateTime @db.Date
+  amountMinor BigInt
+  currency    String
+  note        String   @default("")
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, advanceId])
+}
+
+/// A manual, dated exchange rate: units of `to` for one unit of `from`, in force from `effectiveOn`. Never deleted once entered.
+model CurrencyRate {
+  id          String   @id
+  tenantId    String
+  fromCurrency String
+  toCurrency  String
+  /// Plain decimal text, at most 8 decimals.
+  rate        String
+  effectiveOn DateTime @db.Date
+  source      String   @default("")
+  enteredById String
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, fromCurrency, toCurrency, effectiveOn])
+}
+
+/// A project setup the assistant proposed from an uploaded document (Phase 36). The proposal is stored data a person
+/// reviews and then applies through the ordinary import handlers; the model never writes project records directly. The
+/// stored source document is encrypted, deleted at expiry (30 days) or on discard, and never exported.
+model ProjectSetupProposal {
+  id                String   @id
+  tenantId          String
+  createdById       String
+  /// EXTRACTING | READY | APPLYING | APPLIED | PARTIAL | FAILED | DISCARDED.
+  status            String
+  sourceName        String
+  /// Storage key of the uploaded document (the encrypting storage); never exported, deleted at expiry or on discard.
+  sourceStorageKey  String
+  sourceHash        String
+  sourceLength      Int
+  /// The areas as `ProjectSetupProposal` (domain), stored as JSON and read back unchanged.
+  proposalJson      String   @default("{}")
+  /// The latest `checkProposal` problems, as JSON.
+  problemsJson      String   @default("[]")
+  /// The wizard's own decisions as `SetupExtras` (domain): team, owners, collection, schedule, finance extras, answers, sign-off (Phase 38).
+  extrasJson        String   @default("{}")
+  appliedProjectId  String?
+  promptVersion     String?
+  model             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  expiresAt         DateTime
+
+  @@index([tenantId, createdById])
+  @@index([tenantId, status])
+}
+
+/// One extraction or apply run over (part of) a proposal (Phase 36): counts, dropped items and timings, never document text.
+model ProjectSetupRun {
+  id          String    @id
+  tenantId    String
+  proposalId  String
+  /// EXTRACT | APPLY.
+  kind        String
+  /// The one area a rerun or apply step covered; null for a whole-document extraction.
+  area        String?
+  /// RUNNING | FINISHED | FAILED.
+  status      String
+  detailJson  String    @default("{}")
+  startedAt   DateTime  @default(now())
+  finishedAt  DateTime?
+
+  @@index([tenantId, proposalId])
+}
+
+/// A person named when a project was set up who had no account yet (Phase 38.9c), and what they are to own once they join. Joining
+/// (by any invitation to this email) makes them a member of the project and applies `responsibilitiesJson`; the record is then removed.
+model ProjectPendingMember {
+  id                   String   @id
+  tenantId             String
+  projectId            String
+  /// Lower case.
+  email                String
+  name                 String
+  role                 String
+  /// Who launched the project; the resolver acts with their authority.
+  createdById          String
+  responsibilitiesJson String   @default("[]")
+  createdAt            DateTime @default(now())
+
+  @@unique([tenantId, projectId, email])
+  @@index([tenantId, email])
+}
+
+/// An organisation's own default pack for one sector (Phase 38): the starting answers its wizard offers instead of the built-in ones.
+/// `sectorKey` is a sector or "GENERAL". The pack is stored whole as JSON (`DefaultPack`, checked by `checkPackInput`); it holds no people or donor.
+model SetupDefaultPack {
+  id          String   @id
+  tenantId    String
+  sectorKey   String
+  packJson    Json
+  updatedById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, sectorKey])
 }

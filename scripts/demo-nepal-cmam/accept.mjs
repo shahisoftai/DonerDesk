@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs"; import { appendFileSync } from "node:fs";
+const { browser } = await attach("accept"); const [token, name, email, pw, file] = process.argv.slice(2);
+const ctx = await browser.newContext(); const page = await ctx.newPage();
+await page.goto(`${BASE}/invite/accept?token=${token}`); await page.waitForLoadState("networkidle");
+await page.getByLabel(/full name/i).fill(name);
+await page.getByLabel(/password/i).first().fill(pw);
+await page.getByRole("checkbox").check();
+await page.getByRole("button", { name: /accept invitation/i }).click(); await page.waitForTimeout(6000);
+console.log(page.url()); console.log((await page.locator("body").innerText()).replace(/\n+/g, " | ").slice(0, 300));
+if (!/invite\/accept/.test(page.url())) appendFileSync(file, `${email} ${pw}\n`);
+await ctx.close(); await browser.close(); process.exit(0);

@@ -9,12 +9,15 @@ import type { IEvidenceLinker, IndicatorLinkOutcome } from "../ports/evidence-li
 
 const ok = <T>(value: T): Result<T, DomainError> => ({ ok: true, value });
 
+import type { ITaskReconciliation } from "../ports/tasks.js";
+
 export class EvidenceLinkService implements IEvidenceLinker {
   constructor(
     private readonly evidence: IEvidenceRepository,
     private readonly activities: IActivityUpdateRepository,
     private readonly indicatorUpdates: IIndicatorUpdateRepository,
     private readonly audit: IAuditLogger,
+    private readonly tasks?: ITaskReconciliation,
   ) {}
 
   async attachToActivity(ctx: AuthenticatedContext, evidenceId: string, activityId: string): Promise<Result<void, DomainError>> {
@@ -176,6 +179,7 @@ export class EvidenceLinkService implements IEvidenceLinker {
         }
       }
     }
+    await this.tasks?.reconcileForCurrentUser(ctx);
     return ok({ indicator, activity });
   }
 

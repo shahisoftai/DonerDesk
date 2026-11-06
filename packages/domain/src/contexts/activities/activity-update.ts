@@ -16,6 +16,8 @@ export interface ActivityUpdateProps {
   outputId?: string;
   /** The logframe ACTIVITY node this record delivers. */
   logframeActivityId?: string;
+  /** The planned activity this completed activity delivers (work plan). */
+  plannedActivityId?: string;
   indicatorId?: string;
   participantsTotal?: number;
   participantsMale?: number;
@@ -58,6 +60,7 @@ export class ActivityUpdate extends Entity<string> {
     location?: string;
     outputId?: string;
     logframeActivityId?: string;
+    plannedActivityId?: string;
     indicatorId?: string;
     participantsTotal?: number;
     participantsMale?: number;
@@ -106,6 +109,7 @@ export class ActivityUpdate extends Entity<string> {
   get location(): string | undefined { return this.props.location; }
   get outputId(): string | undefined { return this.props.outputId; }
   get logframeActivityId(): string | undefined { return this.props.logframeActivityId; }
+  get plannedActivityId(): string | undefined { return this.props.plannedActivityId; }
   get indicatorId(): string | undefined { return this.props.indicatorId; }
   get participantsTotal(): number | undefined { return this.props.participantsTotal; }
   get participantsMale(): number | undefined { return this.props.participantsMale; }
@@ -214,6 +218,7 @@ export class ActivityUpdate extends Entity<string> {
         | "indicatorId"
         | "outputId"
         | "logframeActivityId"
+        | "plannedActivityId"
       >
     >,
   ): void {

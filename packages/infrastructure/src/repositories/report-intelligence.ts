@@ -15,6 +15,7 @@ import {
   type AssertionType,
   type Materiality,
   type NumericAtom,
+  ok,
 } from "@donordesk/domain";
 import type {
   IReportPlanRepository,
@@ -22,10 +23,6 @@ import type {
   IGenerationRunRepository,
   IDonorTemplateMappingRepository,
 } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 export class PrismaReportPlanRepository implements IReportPlanRepository {
   constructor(private readonly prisma: PrismaClient) {}

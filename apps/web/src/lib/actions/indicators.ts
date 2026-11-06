@@ -1,6 +1,6 @@
 "use server";
 
-import { UpdateIndicatorSchema, MoveIndicatorSchema, CreateIndicatorSchema, CreateIndicatorUpdateSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema, IndicatorUpdateReviewReasonSchema } from "@donordesk/contracts";
+import { UpdateIndicatorSchema, MoveIndicatorSchema, CreateIndicatorSchema, CreateIndicatorUpdateSchema, QuickEnterIndicatorValueSchema, BulkUpsertIndicatorUpdatesSchema, ParseIndicatorSheetSchema, ImportIndicatorsTextSchema, IndicatorUpdateReviewReasonSchema } from "@donordesk/contracts";
 import type { UpsertIndicatorUpdateInput } from "@donordesk/contracts";
 import { z } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
@@ -13,10 +13,16 @@ import { IdResponseSchema, OkResponseSchema } from "./_schemas";
 import {
   PeriodIndicatorsResponseSchema,
   ParseIndicatorSheetResponseSchema,
+  ValueHistoryResponseSchema,
   BulkUpsertResponseSchema,
+  QuickEntryResponseSchema,
+  type QuickEntryResponse,
   CreateIndicatorResponseSchema,
   ConfirmSemanticsResponseSchema,
   VerifyAllResponseSchema,
+  SubmitAllResponseSchema,
+  EntryWindowResponseSchema,
+  ReturnAllResponseSchema,
   ImportIndicatorsResponseSchema,
   type ImportIndicatorsResponse,
 } from "@/lib/server/schemas";
@@ -84,6 +90,19 @@ export async function createIndicatorUpdateAction(input: unknown): Promise<Resul
   });
 }
 
+/**
+ * Quick entry: one value from a date. The server finds the reporting period, suggests the running total and, in a project with
+ * simple review, hands the value in. The answer carries plain sentences for the person (never blocks).
+ */
+export async function quickEnterValueAction(input: unknown): Promise<Result<QuickEntryResponse, AppError>> {
+  const context = await requireSession();
+  const parsed = QuickEnterIndicatorValueSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  }
+  return gatewayRequest("/v1/indicator-updates/quick", QuickEntryResponseSchema, context.token, { method: "POST", body: parsed.data });
+}
+
 export type BulkSaveRow = UpsertIndicatorUpdateInput;
 
 export type BulkSaveIndicatorUpdatesResult = Result<import("zod").infer<typeof BulkUpsertResponseSchema>, AppError>;
@@ -91,9 +110,11 @@ export type BulkSaveIndicatorUpdatesResult = Result<import("zod").infer<typeof B
 export async function bulkSaveIndicatorUpdatesAction(
   reportingPeriodId: string,
   rows: BulkSaveRow[],
+  /** `handIn`: an explicit Save (never autosave). With the project's simple review on, the saved values are handed in. */
+  options: { handIn?: boolean } = {},
 ): Promise<BulkSaveIndicatorUpdatesResult> {
   const context = await requireSession();
-  const parsed = BulkUpsertIndicatorUpdatesSchema.safeParse({ reportingPeriodId, updates: rows });
+  const parsed = BulkUpsertIndicatorUpdatesSchema.safeParse({ reportingPeriodId, updates: rows, ...(options.handIn ? { handIn: true } : {}) });
   if (!parsed.success) {
     return {
       ok: false,
@@ -111,7 +132,7 @@ export async function bulkSaveIndicatorUpdatesAction(
 }
 
 export type LoadPeriodIndicatorsResult = Result<
-  { periodId: string; projectId: string; indicators: import("@/lib/server/schemas").PeriodIndicatorRow[] },
+  { periodId: string; projectId: string; indicators: import("@/lib/server/schemas").PeriodIndicatorRow[]; dataStatus?: import("@/lib/server/schemas").PeriodIndicators["dataStatus"]; entryWindow?: import("@/lib/server/schemas").PeriodIndicators["entryWindow"] },
   AppError
 >;
 
@@ -124,6 +145,18 @@ export type ParseIndicatorSheetResult = Result<
   { rows: Array<{ indicatorId: string | null; code: string; name: string | null; periodAchievement: string; cumulativeAchievement: string; comments: string; dataSource: string; matched: boolean }>; warnings: string[] },
   AppError
 >;
+
+/** An uploaded entry workbook (.xlsx), read for the grid to preview. Nothing is saved. */
+export async function parseIndicatorWorkbookAction(reportingPeriodId: string, formData: FormData): Promise<ParseIndicatorSheetResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-sheet/parse`, ParseIndicatorSheetResponseSchema, context.token, { method: "POST", formData, timeoutMs: 60_000 });
+}
+
+/** Who saved, handed in, verified or returned one value, and what the figure was before and after. */
+export async function loadValueHistoryAction(updateId: string): Promise<Result<import("@/lib/server/schemas").ValueHistoryResponse, AppError>> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/indicator-updates/${encodeURIComponent(updateId)}/history`, ValueHistoryResponseSchema, context.token);
+}
 
 export async function parseIndicatorSheetAction(reportingPeriodId: string, sheetUrl: string): Promise<ParseIndicatorSheetResult> {
   const context = await requireSession();
@@ -199,6 +232,40 @@ export async function verifyAllIndicatorUpdatesAction(reportingPeriodId: string,
     method: "POST",
     body: updateIds ? { updateIds } : {},
   });
+}
+
+export type SubmitAllResult = Result<import("zod").infer<typeof SubmitAllResponseSchema>, AppError>;
+
+/** Hands in every draft or returned value of a period for review. */
+export async function submitAllIndicatorUpdatesAction(reportingPeriodId: string): Promise<SubmitAllResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/submit-all`, SubmitAllResponseSchema, context.token, { method: "POST", body: {} });
+}
+
+export type ReturnAllResult = Result<import("zod").infer<typeof ReturnAllResponseSchema>, AppError>;
+
+/** Sends every value that is waiting for review back to the people who entered it, with one reason. */
+export async function returnAllIndicatorUpdatesAction(reportingPeriodId: string, reason: string): Promise<ReturnAllResult> {
+  const context = await requireSession();
+  const trimmed = reason.trim();
+  if (!trimmed) return { ok: false, error: { kind: "validation", message: "Say what needs to change; the person who entered the values will read it.", fields: { reason: ["Required"] } } };
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/return-all`, ReturnAllResponseSchema, context.token, { method: "POST", body: { reason: trimmed } });
+}
+
+/** Reopens verified values (all of the period's, or the ones named) so they can be corrected; the reason is stored as each value's review note. */
+export async function reopenIndicatorUpdatesAction(reportingPeriodId: string, reason: string, updateIds?: string[]): Promise<ReturnAllResult> {
+  const context = await requireSession();
+  const trimmed = reason.trim();
+  if (!trimmed) return { ok: false, error: { kind: "validation", message: "Say why the verified values are being reopened.", fields: { reason: ["Required"] } } };
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/indicator-updates/reopen`, ReturnAllResponseSchema, context.token, { method: "POST", body: updateIds ? { reason: trimmed, updateIds } : { reason: trimmed } });
+}
+
+export type EntryWindowResult = Result<import("zod").infer<typeof EntryWindowResponseSchema>, AppError>;
+
+/** Sets or clears when the people who enter values may do so (empty days clear it). Reviewers are never held to it. */
+export async function setEntryWindowAction(reportingPeriodId: string, opensOn: string, closesOn: string): Promise<EntryWindowResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/reporting-periods/${encodeURIComponent(reportingPeriodId)}/entry-window`, EntryWindowResponseSchema, context.token, { method: "PUT", body: { opensOn: opensOn || null, closesOn: closesOn || null } });
 }
 
 const IndicatorMovedResponseSchema = z.object({ id: z.string(), moved: z.boolean() });

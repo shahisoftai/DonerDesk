@@ -1,11 +1,13 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
+import { DEFAULT_ENTRY_DUE_DAYS, DomainError, describeFormula, summarizePeriodData, describePeriodData, entryStoplight, describeEntryWindow, entryWindowRefusal, Permissions, type Role, type EntryStoplight, type PeriodDataSummary, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import { toIndicatorUpdateView, type IndicatorUpdateView } from "./indicator-update-view.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
+import type { IEntryDueDays } from "../../ports/health.js";
+import type { IClock } from "../../ports/core.js";
 import { periodIndicatorScope, inIndicatorScope } from "../../services/period-activities.js";
 
 export interface PeriodIndicatorRow {
@@ -22,6 +24,8 @@ export interface PeriodIndicatorRow {
   disaggregationRequired: boolean;
   /** Each breakdown dimension must add up to the period value (counts and amounts, not rates). */
   breakdownMustSum: boolean;
+  /** Groups the indicator carries targets for (e.g. the six locations), so the entry grid can offer them as the breakdown categories. */
+  targetGroups: Array<{ dimension: string; category: string }>;
   /** Percentage/ratio indicators without a configured denominator indicator
    * cannot be independently calculated; their result stays unverifiable. */
   requiresDenominator: boolean;
@@ -36,10 +40,16 @@ export interface PeriodIndicatorRow {
   dueThisPeriod: boolean;
   /** How a period's value adds up over time (SUM, LATEST, PERCENTAGE...), so the grid can offer a running total. */
   aggregation: string;
+  /** Set when the value is calculated from other indicators: the grid shows it, it is never typed. */
+  calculation?: string;
+  /** Target met / below target on the values entered (drafts included), or why there is no light. Absent without a value. */
+  stoplight?: EntryStoplight;
   /** This indicator's value from the latest earlier period, to repeat or add to; absent when there is none. */
   previous?: PreviousIndicatorValue;
   /** A non-blocking prompt when linked activities record a different head-count than the indicator reports. */
   participantsHint?: string;
+  /** When the value is due and who collects it ("Due by 5 Nov · Amina"); the same rule as the assignment list and the health label. */
+  collection?: { dueBy: string; state: import("@donordesk/domain").CollectionState; ownerId?: string };
 }
 
 /** Activity/situation reports: the activities the report covers (absent for other types). */
@@ -57,12 +67,15 @@ export class ListPeriodIndicatorsHandler {
     private readonly activities?: IActivityUpdateRepository,
     /** Gives the project's start, which a frequency counts from; without it every indicator is due every period. */
     private readonly projects?: IProjectRepository,
+    /** Without these two, rows carry no due date (as before). */
+    private readonly entryDueDays?: IEntryDueDays,
+    private readonly clock?: IClock,
   ) {}
 
   async handle(
     ctx: AuthenticatedContext,
     reportingPeriodId: string,
-  ): Promise<Result<{ periodId: string; projectId: string; reportType: string; indicators: PeriodIndicatorRow[]; scope?: PeriodScopeSummary }, DomainError>> {
+  ): Promise<Result<{ periodId: string; projectId: string; reportType: string; indicators: PeriodIndicatorRow[]; scope?: PeriodScopeSummary; dataStatus: PeriodDataSummary & { description: string }; entryWindow: { opensOn?: string; closesOn?: string; description: string | null; refusal: string | null } }, DomainError>> {
     const periodResult = await this.periods.findById(reportingPeriodId, ctx.tenant.tenantId);
     if (!periodResult.ok) return periodResult;
     if (!periodResult.value) return { ok: false, error: DomainError.notFound("ReportingPeriod", reportingPeriodId) };
@@ -96,6 +109,9 @@ export class ListPeriodIndicatorsHandler {
     const project = this.projects ? await this.projects.findById(period.projectId, ctx.tenant.tenantId) : undefined;
     if (project && !project.ok) return project;
     const projectStart = project?.value?.duration.start;
+    const dueDays = this.entryDueDays ? await this.entryDueDays.forProject(period.projectId, ctx.tenant.tenantId) : DEFAULT_ENTRY_DUE_DAYS;
+    const today = this.clock ? toPlainDate(this.clock.now()) : undefined;
+    const periodForDue = { id: period.id, start: toPlainDate(period.duration.start)!, end: toPlainDate(period.duration.end)!, isFinal: period.reportType === "FINAL" };
 
     const itemsById = new Map(itemsResult.value.map((item) => [item.id, item]));
     const updatesByIndicator = new Map(updatesResult.value.map((u) => [u.indicatorId, u]));
@@ -134,12 +150,15 @@ export class ListPeriodIndicatorsHandler {
         dataSource: ind.dataSource,
         frequency: ind.frequency,
         disaggregationRequired: ind.disaggregationRequired,
+        ...(ind.formula ? { calculation: describeFormula(ind.formula, (id) => indicatorsResult.value.find((x) => x.id === id)?.code ?? "?") } : {}),
         breakdownMustSum: disaggregationMustSum(ind.type),
+        targetGroups: (ind.targetBreakdowns ?? []).map((g) => ({ dimension: g.dimension, category: g.category })),
         requiresDenominator,
         logframeLevel: item?.level ?? null,
         logframeCode: item?.code ?? null,
         logframeTitle: item?.title ?? null,
         update: update ? toIndicatorUpdateView(update) : null,
+        ...(update?.isNotApplicable ? { stoplight: { light: "NONE" as const, note: "Marked not applicable for this period, so it is not judged against its target." } } : update && !ind.formula ? { stoplight: entryStoplight({ semantics: effectiveIndicatorSemantics(ind), baseline: ind.baseline, target: ind.target, schedule: ind.targetSchedule, periodEnd: period.duration.end.toISOString().slice(0, 10), periodValue: update.periodAchievement, cumulativeValue: update.cumulativeAchievement }) } : {}),
         // A recorded value is always expected; otherwise the indicator's own frequency decides.
         dueThisPeriod:
           Boolean(update) ||
@@ -148,6 +167,13 @@ export class ListPeriodIndicatorsHandler {
         aggregation: effectiveIndicatorSemantics({ type: ind.type, name: ind.name, unit: ind.unit, semantics: ind.semantics }).aggregation,
         ...(previousByIndicator.has(ind.id) ? { previous: previousByIndicator.get(ind.id)! } : {}),
         ...(hint ? { participantsHint: hint.message } : {}),
+        ...(projectStart && today
+          ? (() => {
+              const due = collectionDue({ indicator: { id: ind.id, code: ind.code, name: ind.name, frequency: ind.frequency, responsibleUserId: ind.responsibleUserId }, period: periodForDue, projectStart: toPlainDate(projectStart)!, hasValue: Boolean(update && (update.isNotApplicable || update.periodAchievement.trim() !== "")), today, dueDays });
+              const owner = collectionOwner(ind, { meOfficerId: project?.value?.meOfficerId, projectManagerId: project?.value?.projectManagerId });
+              return { collection: { dueBy: due.dueBy, state: due.state, ...(owner ? { ownerId: owner } : {}) } };
+            })()
+          : {}),
       };
     });
 
@@ -158,6 +184,14 @@ export class ListPeriodIndicatorsHandler {
         projectId: period.projectId,
         reportType: period.reportType,
         indicators: rows,
+        entryWindow: (() => {
+          const day = (this.clock ? this.clock.now() : new Date()).toISOString().slice(0, 10);
+          const window = { opensOn: period.entryOpensOn, closesOn: period.entryClosesOn };
+          // Reviewers are not held to the window, so it never says "closed" to them as a refusal.
+          const exempt = Permissions.can(ctx.tenant.role as Role, "indicator.verify");
+          return { ...(window.opensOn ? { opensOn: window.opensOn } : {}), ...(window.closesOn ? { closesOn: window.closesOn } : {}), description: describeEntryWindow(window, day), refusal: exempt ? null : entryWindowRefusal(window, day) };
+        })(),
+        dataStatus: (() => { const summary = summarizePeriodData(rows.filter((r) => r.update && !r.calculation).map((r) => r.update!.verificationStatus)); return { ...summary, description: describePeriodData(summary) }; })(),
         ...(scope.activities
           ? { scope: { activityCount: scope.activities.length, acceptedActivityCount: scope.activities.filter((a) => a.status === "ACCEPTED").length } }
           : {}),

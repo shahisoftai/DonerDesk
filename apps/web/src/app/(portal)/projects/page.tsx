@@ -36,6 +36,8 @@ export default async function ProjectsList({
     query: raw("q") || DEFAULT_PROJECT_FILTERS.query,
     status: raw("status") || DEFAULT_PROJECT_FILTERS.status,
     sector: raw("sector") || DEFAULT_PROJECT_FILTERS.sector,
+    donor: raw("donor") || DEFAULT_PROJECT_FILTERS.donor,
+    country: raw("country") || DEFAULT_PROJECT_FILTERS.country,
     sort: isSort(raw("sort")) ? (raw("sort") as ProjectFilters["sort"]) : DEFAULT_PROJECT_FILTERS.sort,
     page: Math.max(1, Number.parseInt(raw("page"), 10) || 1),
     archived: raw("archived") === "true",
@@ -43,6 +45,8 @@ export default async function ProjectsList({
 
   const projects: PortfolioProject[] = result.ok ? result.value.items : [];
   const sectors = [...new Set(projects.map((p) => p.sector).filter((s): s is string => Boolean(s)))];
+  const donors = [...new Set(projects.map((p) => p.donorName).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  const countries = [...new Set(projects.map((p) => p.country).filter(Boolean))].sort((a, b) => a.localeCompare(b));
   const filtered = result.ok ? filterProjects(projects, filters) : [];
   const sorted = result.ok ? sortProjects(filtered, filters.sort) : [];
   const total = sorted.length;
@@ -54,6 +58,8 @@ export default async function ProjectsList({
     if (next.query) url.set("q", next.query);
     if (next.status !== "all") url.set("status", next.status);
     if (next.sector !== "all") url.set("sector", next.sector);
+    if (next.donor !== "all") url.set("donor", next.donor);
+    if (next.country !== "all") url.set("country", next.country);
     if (next.sort !== "deadline") url.set("sort", next.sort);
     if (next.page > 1) url.set("page", String(next.page));
     if (next.archived) url.set("archived", "true");
@@ -65,7 +71,7 @@ export default async function ProjectsList({
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
         <PermissionGate capabilities={ctx.capabilities} capability="project.create">
-          <Link className="btn" href="/projects/new">New project</Link>
+          <div className="flex gap-2"><Link className="btn-secondary" href="/programmes">Programmes and grants</Link><Link className="btn-secondary" href="/portfolio">Portfolio dashboard</Link><Link className="btn-secondary" href="/portfolio/indicators">Indicators across projects</Link><Link className="btn" href="/projects/new">New project</Link></div>
         </PermissionGate>
       </header>
 
@@ -89,6 +95,20 @@ export default async function ProjectsList({
           </select>
         </label>
         <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          Donor
+          <select name="donor" defaultValue={filters.donor} className="input mt-1">
+            <option value="all">All</option>
+            {donors.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          Country
+          <select name="country" defaultValue={filters.country} className="input mt-1">
+            <option value="all">All</option>
+            {countries.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
           Sort
           <select name="sort" defaultValue={filters.sort} className="input mt-1">
             <option value="deadline">Soonest deadline</option>
@@ -101,7 +121,7 @@ export default async function ProjectsList({
           Show archived
         </label>
         <button className="btn" type="submit">Apply</button>
-        {filters.query || filters.status !== "all" || filters.sector !== "all" || filters.archived ? (
+        {filters.query || filters.status !== "all" || filters.sector !== "all" || filters.donor !== "all" || filters.country !== "all" || filters.archived ? (
           <Link className="btn-secondary" href="/projects">Clear</Link>
         ) : null}
       </form>
@@ -128,7 +148,7 @@ export default async function ProjectsList({
               <tbody>
                 {rows.map((p) => (
                   <tr key={p.id} className="trow">
-                    <td className="px-3 py-2"><Link className="font-medium hover:text-brand-700 dark:hover:text-brand-300" href={`/projects/${p.id}`}>{p.title}</Link><div className="text-xs text-slate-400">{p.country} · {p.sector ? (SECTOR_LABEL[p.sector] ?? p.sector) : "—"}</div></td>
+                    <td className="px-3 py-2"><Link className="font-medium hover:text-brand-700 dark:hover:text-brand-300" href={`/projects/${p.id}`} prefetch={false}>{p.title}</Link><div className="text-xs text-slate-400">{p.country} · {p.sector ? (SECTOR_LABEL[p.sector] ?? p.sector) : "—"}</div></td>
                     <td className="px-3 py-2">{p.donorName}</td>
                     <td className="px-3 py-2"><Badge tone={projectStatusTone(p.status)}>{p.status}</Badge></td>
                     <td className="px-3 py-2">{p.daysRemaining}</td>
@@ -139,7 +159,7 @@ export default async function ProjectsList({
           </div>
           <div className="mt-4 grid gap-3 md:hidden">
             {rows.map((p) => (
-              <Link key={p.id} href={`/projects/${p.id}`} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
+              <Link key={p.id} href={`/projects/${p.id}`} prefetch={false} className="card transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-medium">{p.title}</span>
                   <Badge tone={projectStatusTone(p.status)}>{p.status}</Badge>

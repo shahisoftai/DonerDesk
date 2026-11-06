@@ -9,6 +9,7 @@ import {
   UpdateTemplateRequirementsSchema,
   UpdateTemplateSectionsSchema,
   SetTemplateDefaultForTypeSchema,
+  SetDonorIndicatorMappingSchema,
 } from "@donordesk/contracts";
 import { DomainError } from "@donordesk/domain";
 import {
@@ -140,6 +141,22 @@ export async function registerTemplateRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.updateTemplateRequirements.handle(ctx, id, body.requirements, body.expectedVersion);
     if (!r.ok) throw r.error;
     return { ok: true, version: r.value.version };
+  });
+
+  // Which project indicator answers each indicator the donor's template asks for.
+  app.get("/v1/templates/:id/indicator-mapping", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const r = await req.container.handlers.getDonorIndicatorMapping.handle({ tenant: req.tenant, requestId: req.id }, id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.put("/v1/templates/:id/indicator-mapping/:requirementId", async (req) => {
+    const { id, requirementId } = req.params as { id: string; requirementId: string };
+    const body = SetDonorIndicatorMappingSchema.parse(req.body);
+    const r = await req.container.handlers.setDonorIndicatorMapping.handle({ tenant: req.tenant, requestId: req.id }, id, requirementId, body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
   });
 
   app.post("/v1/templates/:id/extract", async (req, reply) => {

@@ -93,7 +93,11 @@ export function IndicatorHistoryPanel({
                       label={INDICATOR_VERIFICATION_LABEL[row.verificationStatus] ?? row.verificationStatus}
                     />
                   </td>
-                  <td className="max-w-xs py-2 pr-3 text-slate-600 dark:text-slate-300">{row.comments || "—"}</td>
+                  <td className="max-w-xs py-2 pr-3 text-slate-600 dark:text-slate-300">{row.comments || (row.reviewNote ? null : "—")}
+                    {row.reviewNote && row.verificationStatus !== "VERIFIED" ? (
+                      <div className="text-xs text-amber-700 dark:text-amber-300">Reviewer: {row.reviewNote}</div>
+                    ) : null}
+                  </td>
                   {canReview && (
                     <td className="py-2">
                       {pending?.id === row.id ? (

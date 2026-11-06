@@ -42,7 +42,7 @@ export function SupportSearch({ entries }: { entries: SearchEntry[] }) {
   return (
     <div className="relative mx-auto mt-8 max-w-xl text-left">
       <div className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
-        <svg className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+        <svg className="h-5 w-5 text-mist" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
           <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clipRule="evenodd" />
         </svg>
       </div>
@@ -56,15 +56,15 @@ export function SupportSearch({ entries }: { entries: SearchEntry[] }) {
         }}
         aria-label="Search the Support Center"
         placeholder="Search guides, how-tos, donor requirements..."
-        className="w-full rounded-xl border border-white/15 bg-white/5 py-3.5 pl-11 pr-4 text-sm text-white placeholder-slate-400 backdrop-blur focus:border-brand-400/60 focus:outline-none focus:ring-1 focus:ring-brand-400/40"
+        className="w-full rounded-xl border border-white/15 bg-white/5 py-3.5 pl-11 pr-4 text-sm text-white placeholder-fog backdrop-blur focus:border-saffron/60 focus:outline-none focus:ring-1 focus:ring-saffron/40"
       />
       {terms.length > 0 && (
         <div
           role="listbox"
-          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-96 overflow-y-auto rounded-xl border border-white/15 bg-slate-900/95 p-1 shadow-2xl backdrop-blur"
+          className="absolute left-0 right-0 top-full z-30 mt-2 max-h-96 overflow-y-auto rounded-xl border border-white/15 bg-spruce-2/95 p-1 shadow-2xl backdrop-blur"
         >
           {results.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-slate-400">No guides match “{query.trim()}”. Try fewer or different words.</p>
+            <p className="px-4 py-3 text-sm text-mist">No guides match “{query.trim()}”. Try fewer or different words.</p>
           ) : (
             results.map((r) => (
               <Link
@@ -76,9 +76,9 @@ export function SupportSearch({ entries }: { entries: SearchEntry[] }) {
               >
                 <span className="flex items-center justify-between gap-3">
                   <span className="text-sm font-medium text-white">{r.title}</span>
-                  <span className="shrink-0 text-[11px] text-slate-400">{r.category}</span>
+                  <span className="shrink-0 text-[11px] text-mist">{r.category}</span>
                 </span>
-                <span className="mt-0.5 line-clamp-1 block text-xs text-slate-400">{r.description}</span>
+                <span className="mt-0.5 line-clamp-1 block text-xs text-mist">{r.description}</span>
               </Link>
             ))
           )}

@@ -9,7 +9,7 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { idempotency, type CreateOptions } from "./_idempotency";
 import { IdResponseSchema, OkResponseSchema, PolishActivityResponseSchema } from "./_schemas";
-import { ImportActivitiesResponseSchema, type ImportActivitiesResponse } from "@/lib/server/schemas";
+import { ActivityDetailSchema, ImportActivitiesResponseSchema, type ImportActivitiesResponse } from "@/lib/server/schemas";
 
 export type CreateActivityResult = Result<{ id: string }, AppError>;
 
@@ -91,7 +91,8 @@ export async function updateActivityAction(input: unknown): Promise<UpdateActivi
       error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
     };
   }
-  return gatewayRequest(`/v1/activities/${parsed.data.activityId}`, OkResponseSchema, context.token, {
+  // The API answers with the updated activity, not a bare "ok".
+  return gatewayRequest(`/v1/activities/${parsed.data.activityId}`, ActivityDetailSchema, context.token, {
     method: "PATCH",
     body: parsed.data,
   });

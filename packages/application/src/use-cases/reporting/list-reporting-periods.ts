@@ -24,8 +24,11 @@ export class ListReportingPeriodsHandler {
         let readinessScore = p.readinessScore;
         const draftList = this.drafts ? await this.drafts.findByReportingPeriod(p.id, ctx.tenant.tenantId) : undefined;
         const releasedReport = draftList?.ok ? hasReleasedReport(draftList.value.map((d) => d.status)) : false;
-        const breakdown = await this.readiness.handle(ctx, p.id);
-        if (breakdown.ok) readinessScore = breakdown.value.overall;
+        // A cancelled period is not worked on: keep its stored score instead of recomputing it on every list.
+        if (!p.isCancelled) {
+          const breakdown = await this.readiness.handle(ctx, p.id);
+          if (breakdown.ok) readinessScore = breakdown.value.overall;
+        }
         return {
           id: p.id,
           reportType: p.reportType,
@@ -37,6 +40,7 @@ export class ListReportingPeriodsHandler {
           endDate: p.duration.end.toISOString(),
           daysUntilDeadline: p.daysUntilDeadline(),
           donorTemplateId: p.donorTemplateId,
+          responsibleOfficerId: p.responsibleOfficerId ?? null,
           scope: p.scope,
           releasedReport,
           cancelled: p.isCancelled,

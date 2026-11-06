@@ -5,6 +5,7 @@ import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
 import type { IAuditLogger } from "../../ports/core.js";
 import type { ActivityLinkResolver } from "../../services/activity-link-resolver.js";
+import type { PlanLinkResolver } from "../../services/plan-link-resolver.js";
 import { toActivityUpdateDto, type ActivityUpdateDto } from "./dto.js";
 
 export interface UpdateActivityInput {
@@ -19,6 +20,7 @@ export interface UpdateActivityInput {
     indicatorId?: string;
     outputId?: string;
     logframeActivityId?: string;
+    plannedActivityId?: string;
   };
   attachEvidenceIds?: string[];
   detachEvidenceIds?: string[];
@@ -30,6 +32,7 @@ export class UpdateActivityHandler {
     private readonly evidenceRepo: IEvidenceRepository,
     private readonly audit: IAuditLogger,
     private readonly links?: ActivityLinkResolver,
+    private readonly planLinks?: PlanLinkResolver,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: UpdateActivityInput): Promise<Result<ActivityUpdateDto, DomainError>> {
@@ -42,6 +45,11 @@ export class UpdateActivityHandler {
 
     if (input.patch) {
       const patch = { ...input.patch };
+      if (this.planLinks && patch.plannedActivityId) {
+        const plan = await this.planLinks.resolve(ctx, activity.projectId, { plannedActivityId: patch.plannedActivityId, logframeActivityId: patch.logframeActivityId ?? activity.logframeActivityId });
+        if (!plan.ok) return plan;
+        if (plan.value.logframeActivityId) patch.logframeActivityId = plan.value.logframeActivityId;
+      }
       if (this.links && (patch.logframeActivityId !== undefined || patch.outputId !== undefined)) {
         // Changing either end re-checks the pair, so an activity can never point at a node under another output.
         const link = await this.links.resolve(ctx, activity.projectId, {

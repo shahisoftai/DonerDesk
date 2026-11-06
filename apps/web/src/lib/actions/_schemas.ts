@@ -125,6 +125,9 @@ export const SectionRevisionsResponseSchema = z.object({
       byAi: z.boolean(),
       isCurrent: z.boolean(),
       content: z.string(),
+      modelId: z.string().nullable().default(null),
+      promptVersion: z.number().nullable().default(null),
+      changeSummary: z.string().nullable().default(null),
     }),
   ),
 });
@@ -138,6 +141,8 @@ export const InviteUserResponseSchema = z.object({
   invitationId: z.string(),
   token: z.string(),
 });
+
+export const PlanSuggestionResponseSchema = z.object({ suggestion: z.object({ challenges: z.string().optional(), varianceExplanations: z.string().optional() }) });
 
 export const StoryContextResponseSchema = z.object({
   storyContext: z

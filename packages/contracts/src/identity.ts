@@ -45,7 +45,7 @@ export const EmailSchema = z.string().email().max(254);
 export const SignUpSchema = z.object({
   name: z.string().min(2).max(120),
   email: EmailSchema,
-  password: z.string().min(8).max(200),
+  password: z.string().min(12, "Password must be at least 12 characters.").max(128),
   requestedPlan: z.enum(["STARTER", "TEAM", "GROWTH"]).optional(),
   startTrial: z.boolean().optional(),
   organization: z.object({
@@ -77,7 +77,7 @@ export type GoogleSignInInput = z.infer<typeof GoogleSignInSchema>;
 export const AcceptInvitationSchema = z.object({
   token: z.string().min(10).max(200),
   name: z.string().min(2).max(120),
-  password: z.string().min(8).max(200),
+  password: z.string().min(12, "Password must be at least 12 characters.").max(128),
 });
 export type AcceptInvitationInput = z.infer<typeof AcceptInvitationSchema>;
 
@@ -113,6 +113,8 @@ export const InviteUserSchema = z.object({
   email: EmailSchema,
   role: RoleSchema,
   projectIds: z.array(z.string()).default([]),
+  /** An outside implementing partner: sees only the listed projects, and only through a limited set of screens. */
+  external: z.boolean().default(false),
 });
 export type InviteUserInput = z.infer<typeof InviteUserSchema>;
 
@@ -174,6 +176,8 @@ export const OrganizationProfileSchema = z.object({
   contactEmail: EmailSchema,
   website: z.string().url().optional(),
   defaultLanguage: LanguageCodeSchema,
+  /** IANA name such as Africa/Nairobi; the daily summary goes out at 07:00 here. */
+  timeZone: z.string().min(1).max(64).optional(),
   logoUrl: z.string().url().optional(),
   mainOfficeLocation: z.string().optional(),
   donorTypesServed: z.string().optional(),
@@ -182,3 +186,14 @@ export const OrganizationProfileSchema = z.object({
   storageProvider: StorageProviderSchema.default("LOCAL"),
 });
 export type OrganizationProfileInput = z.infer<typeof OrganizationProfileSchema>;
+
+/** Second step of sign-in: the challenge from the password step plus a code from the app (six digits) or a recovery code. */
+export const LoginMfaSchema = z.object({
+  challenge: z.string().min(10).max(2000),
+  code: z.string().min(6).max(30),
+});
+export type LoginMfaInput = z.infer<typeof LoginMfaSchema>;
+
+export const MfaEnableSchema = z.object({ code: z.string().min(6).max(30) });
+export const MfaDisableSchema = z.object({ password: z.string().min(1).max(200), code: z.string().min(6).max(30) });
+

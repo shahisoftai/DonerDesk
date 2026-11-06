@@ -36,6 +36,14 @@ export async function registerStorageRoutes(app: FastifyInstance) {
     return GoogleDriveCallbackResponseSchema.parse({ ok: true, storageProvider: r.value.storageProvider });
   });
 
+  // "Set up folders": the organisation folder tree in the tenant's Drive. Idempotent: folders already there are found, never copied.
+  app.post("/v1/drive/organisation-folders", async (req) => {
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setupOrganisationFolders.handle(ctx);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   // List current files inside project workspace folders (Google Drive or the
   // local mirror). Refreshing this endpoint re-reads the storage provider, so
   // files added directly in Drive appear on the next call.

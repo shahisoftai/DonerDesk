@@ -24,6 +24,7 @@ and do not use up the feedback retry. Any other error (including a reply with
 no JSON) gets one plain retry. Worst case is 2 completed LLM calls per section,
 typical case 1.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -33,12 +34,12 @@ import time
 from typing import Any
 
 from . import artifact_builder
-from .scrub import scrub_section, trim_to_word_limit
 from .artifact_validators import ValidationResult, run_all
 from .draft_writer import draft, pop_last_telemetry
 from .llm_gateway import ProviderQuotaError, TransientProviderError
 from .models import GeneratedSection, SectionDraftRequest, SectionDraftResponse
 from .outline import section_kind
+from .scrub import scrub_section, trim_to_word_limit
 from .timeouts import SectionTimeoutError, TotalBudgetExceededError, TotalBudgetTracker
 from .writer_contract import system_prompt
 
@@ -172,7 +173,10 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
             break
         feedback = list(result.issues) + list(result.warnings)
         if req.section.maxWords and _over_word_limit(result):
-            feedback.append(f"Rewrite to at most {int(req.section.maxWords * 0.9)} words: keep every figure and the main causes, drop the least important detail.")
+            feedback.append(
+                f"Rewrite to at most {int(req.section.maxWords * 0.9)} words: keep every figure and the main causes, "
+                f"drop the least important detail."
+            )
         previous = written.content
 
     if not attempts:
@@ -194,7 +198,9 @@ def run_pipeline(req: SectionDraftRequest) -> tuple[GeneratedSection, dict[str, 
         "attempts": len(attempts),
         "validatorIssues": list(result.issues),
         "qualityWarnings": list(result.warnings),
-        "parseOutcome": "VALID" if result.ok else ("VALIDATOR_FAILED" if result.integrity_issues else "VALID_WITH_ISSUES"),
+        "parseOutcome": "VALID"
+        if result.ok
+        else ("VALIDATOR_FAILED" if result.integrity_issues else "VALID_WITH_ISSUES"),
     }
     if result.integrity_issues:
         telemetry["usedFallback"] = True

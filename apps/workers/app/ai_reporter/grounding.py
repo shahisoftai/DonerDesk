@@ -14,11 +14,13 @@ not restate every indicator; that check is kept only for explicit callers.
 
 Mirrored in TypeScript at `packages/infrastructure/src/ai/number-grounding.ts`.
 """
+
 from __future__ import annotations
 
 import json
 import re
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from .models import SectionDraftRequest
 
@@ -28,8 +30,18 @@ from .models import SectionDraftRequest
 _NUMBER_RE = re.compile(r"(?<![\w\-:/.])(\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![\w])")
 _ISO_DATE_RE = re.compile(r"(?<![\d-])(\d{4})-(\d{2})-(\d{2})(?![\d-])")
 _MONTH_NAMES = (
-    "january", "february", "march", "april", "may", "june", "july", "august",
-    "september", "october", "november", "december",
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
 )
 _MONTH_ALT = "|".join(sorted({*_MONTH_NAMES, *(m[:3] for m in _MONTH_NAMES), "sept"}, key=len, reverse=True))
 # "20 April 2028", "20th April", "April 20, 2028": a written date whose parts are
@@ -67,7 +79,7 @@ def _month_number(name: str) -> int:
 
 def _strip_grounded_dates(text: str, allowed: set[str]) -> str:
     """Blank out written dates ("20 April 2028") that match an ISO date in the inputs."""
-    dates = [a[len(_DATE_PREFIX):] for a in allowed if a.startswith(_DATE_PREFIX)]
+    dates = [a[len(_DATE_PREFIX) :] for a in allowed if a.startswith(_DATE_PREFIX)]
     if not dates:
         return text
 
@@ -80,7 +92,11 @@ def _strip_grounded_dates(text: str, allowed: set[str]) -> str:
         return False
 
     def repl(match: re.Match[str]) -> str:
-        day, month, year = (match.group(1), match.group(2), match.group(3)) if match.group(1) else (match.group(5), match.group(4), match.group(6))
+        day, month, year = (
+            (match.group(1), match.group(2), match.group(3))
+            if match.group(1)
+            else (match.group(5), match.group(4), match.group(6))
+        )
         return " " if grounded(day, month, year) else match.group(0)
 
     return _WRITTEN_DATE_RE.sub(repl, text)
@@ -97,7 +113,7 @@ def extract_numbers(text: str) -> list[str]:
 def _to_float(value: Any) -> float | None:
     if value is None:
         return None
-    if isinstance(value, (int, float)):
+    if isinstance(value, int | float):
         return float(value)
     try:
         return float(str(value).replace(",", "").strip())
@@ -121,12 +137,12 @@ def _walk_values(value: Any) -> Iterable[str]:
     if isinstance(value, dict):
         for v in value.values():
             yield from _walk_values(v)
-    elif isinstance(value, (list, tuple)):
+    elif isinstance(value, list | tuple):
         for v in value:
             yield from _walk_values(v)
     elif isinstance(value, bool) or value is None:
         return
-    elif isinstance(value, (int, float)):
+    elif isinstance(value, int | float):
         yield json.dumps(value)
     else:
         yield str(value)

@@ -57,7 +57,7 @@ test("request correction from VERIFIED clears the verifier and stores the reason
   upd.verify("verifier-1");
   upd.requestCorrection("  Wrong source  ");
   assert.equal(upd.verificationStatus, "NEEDS_CORRECTION");
-  assert.equal(upd.comments, "Wrong source");
+  assert.equal(upd.reviewNote, "Wrong source");
   assert.equal(upd.verifiedById, undefined);
   assert.equal(upd.verifiedAt, undefined);
   upd.submit();
@@ -78,7 +78,7 @@ test("reject only from SUBMITTED, with a reason", () => {
   assert.throws(() => upd.reject(""));
   upd.reject("Duplicate entry");
   assert.equal(upd.verificationStatus, "REJECTED");
-  assert.equal(upd.comments, "Duplicate entry");
+  assert.equal(upd.reviewNote, "Duplicate entry");
   assert.throws(() => upd.reject("again"));
   const verified = submitted("iu-r2");
   verified.verify("v");

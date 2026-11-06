@@ -17,6 +17,8 @@ export function DisaggregationEditor({
   total,
   summable,
   label,
+  targetGroups = [],
+  touch = false,
 }: {
   entries: DisaggregationEntryInput[];
   onChange: (entries: DisaggregationEntryInput[]) => void;
@@ -24,13 +26,20 @@ export function DisaggregationEditor({
   total: string;
   summable: boolean;
   label: string;
+  /** Groups the indicator has targets for: offered as the categories of their dimension. */
+  targetGroups?: ReadonlyArray<{ dimension: string; category: string }>;
+  /** Phone-sized controls (44 px) for the Record screens; the sheet and grid keep the compact size. */
+  touch?: boolean;
 }) {
+  const control = touch ? "min-h-[44px] px-3 py-2 text-sm" : "min-h-[34px] px-2 py-1 text-xs";
+
   const set = (index: number, patch: Partial<DisaggregationEntryInput>) =>
     onChange(entries.map((entry, i) => (i === index ? { ...entry, ...patch } : entry)));
 
   function addPreset(dimension: DisaggregationEntryInput["dimension"]) {
     const existing = new Set(entries.filter((e) => e.dimension === dimension).map((e) => e.category.toLowerCase()));
-    const additions = (DISAGGREGATION_PRESETS[dimension] ?? [""])
+    const fromTargets = targetGroups.filter((g) => g.dimension === dimension).map((g) => g.category);
+    const additions = (fromTargets.length > 0 ? fromTargets : DISAGGREGATION_PRESETS[dimension] ?? [""])
       .filter((category) => !category || !existing.has(category.toLowerCase()))
       .map((category) => ({ dimension, category, value: "" }));
     onChange([...entries, ...additions]);
@@ -53,7 +62,7 @@ export function DisaggregationEditor({
             value={entry.dimension}
             disabled={disabled}
             onChange={(event) => set(index, { dimension: event.target.value as DisaggregationEntryInput["dimension"] })}
-            className="min-h-[34px] px-2 py-1 text-xs"
+            className={control}
             aria-label="Dimension"
           >
             {DIMENSIONS.map((d) => <option key={d} value={d}>{DISAGGREGATION_DIMENSION_LABEL[d] ?? d}</option>)}
@@ -65,7 +74,7 @@ export function DisaggregationEditor({
             disabled={disabled}
             onChange={(event) => set(index, { category: event.target.value })}
             placeholder="Category"
-            className="min-h-[34px] px-2 py-1 text-xs"
+            className={control}
             aria-label="Category"
           />
           </div>
@@ -76,12 +85,12 @@ export function DisaggregationEditor({
             inputMode="decimal"
             onChange={(event) => set(index, { value: event.target.value })}
             placeholder="Value"
-            className="min-h-[34px] px-2 py-1 text-xs"
+            className={control}
             aria-label={`Value for ${entry.category || "category"}`}
           />
           </div>
           {!disabled && (
-            <Button type="button" variant="ghost" size="sm" onClick={() => onChange(entries.filter((_, i) => i !== index))} aria-label={`Remove ${entry.category || "row"}`}>
+            <Button type="button" variant="ghost" size={touch ? "touch" : "sm"} onClick={() => onChange(entries.filter((_, i) => i !== index))} aria-label={`Remove ${entry.category || "row"}`}>
               Remove
             </Button>
           )}
@@ -104,7 +113,7 @@ export function DisaggregationEditor({
       {!disabled && (
         <div className="flex flex-wrap gap-2">
           {DIMENSIONS.map((d) => (
-            <Button key={d} type="button" variant="secondary" size="sm" onClick={() => addPreset(d)}>
+            <Button key={d} type="button" variant="secondary" size={touch ? "touch" : "sm"} onClick={() => addPreset(d)}>
               + {DISAGGREGATION_DIMENSION_LABEL[d] ?? d}
             </Button>
           ))}

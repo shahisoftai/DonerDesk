@@ -133,6 +133,7 @@ test("provision tenant workspaces ensures the root and marks projects ready", as
   };
   const workspace = {
     ensureTenantRoot: async () => ({ ok: true, value: { provider: "GOOGLE_DRIVE", rootId: "root-1" } }),
+    ensureOrganisationFolders: async () => ({ ok: true, value: { folders: [] } }),
     ensureProjectWorkspace: async (_t, projectId) => ({ ok: true, value: { provider: "GOOGLE_DRIVE", rootId: `root-${projectId}`, subfolders: [] } }),
   };
   const made = [];

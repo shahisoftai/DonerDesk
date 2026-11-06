@@ -9,6 +9,12 @@ import { formatDate } from "@/lib/shared/dates";
 
 export const dynamic = "force-dynamic";
 
+/** Dollars with the precision a single section needs: under a cent shows as "< $0.01", never as "$0.00". */
+function formatUsd(value: number): string {
+  if (value <= 0) return "—";
+  return value < 0.01 ? "< $0.01" : `$${value.toFixed(2)}`;
+}
+
 const OUTCOME_TONE = { WRITTEN: "success", RECOVERED: "info", STUB: "warning", NO_INPUT: "neutral" } as const;
 
 /** What the AI writer did for the last 50 sections: who wrote each, after how many tries, and why a basic version was used. */
@@ -19,7 +25,7 @@ export default async function AiUsagePage() {
   if (!result.ok) {
     return <InlineError title={result.error.message} referenceId={result.error.referenceId} />;
   }
-  const { counts, runs } = result.value;
+  const { counts, runs, monthCostUsd } = result.value;
   return (
     <div className="animate-fade-in space-y-4">
       {result.value.alert && (
@@ -32,6 +38,9 @@ export default async function AiUsagePage() {
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           The last {runs.length} sections the AI writer worked on: {counts.WRITTEN} written, {counts.RECOVERED} written after a retry, {counts.STUB} with a basic version
           {counts.NO_INPUT > 0 ? `, ${counts.NO_INPUT} with nothing recorded to write from` : ""}.
+        </p>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+          Estimated provider cost this month: <strong>{monthCostUsd > 0 ? `$${monthCostUsd.toFixed(2)}` : "none recorded"}</strong>. An estimate from list prices, not an invoice.
         </p>
       </header>
       {runs.length === 0 ? (
@@ -48,6 +57,7 @@ export default async function AiUsagePage() {
                 <th scope="col" className="px-3 py-2">Tries</th>
                 <th scope="col" className="px-3 py-2">Time</th>
                 <th scope="col" className="px-3 py-2">Tokens</th>
+                <th scope="col" className="px-3 py-2">Est. cost</th>
               </tr>
             </thead>
             <tbody>
@@ -64,6 +74,7 @@ export default async function AiUsagePage() {
                     <td className="px-3 py-2">{run.attempts}</td>
                     <td className="px-3 py-2 text-xs">{(run.latencyMs / 1000).toFixed(1)} s</td>
                     <td className="px-3 py-2 text-xs">{run.tokens.toLocaleString("en")}</td>
+                    <td className="px-3 py-2 text-xs">{formatUsd(run.costUsd)}</td>
                   </tr>
                 );
               })}

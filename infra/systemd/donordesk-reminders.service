@@ -1,0 +1,13 @@
+# Sends the daily summaries (one run per organisation; each does something only in its own 07:00 hour).
+# Triggered by donordesk-reminders.timer. See memorybank/docs/runbooks/reminders.md.
+[Unit]
+Description=DonorDesk reminders (daily summaries and escalations)
+After=network.target donordesk-api.service
+Wants=donordesk-api.service
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/donordesk/shared/bin/run-reminders.sh
+# Reads the API env file (0600, owned by donordesk), so it runs as root; it only calls the local API and lists organisations.
+TimeoutStartSec=600

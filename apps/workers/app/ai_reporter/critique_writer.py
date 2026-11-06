@@ -5,15 +5,16 @@ The new typed `IssueKind` enum allows the deterministic validator to route
 each issue to the right downstream check. Issues are plain strings on the
 wire (compatible with v1) but we annotate each with a `kind` for routing.
 """
+
 from __future__ import annotations
 
 from enum import Enum
 
+from . import timeouts
 from .draft_writer import build_user_prompt
 from .llm_gateway import _chat
 from .models import GeneratedSection, SectionDraftRequest
 from .writer_contract import system_prompt
-from . import timeouts
 
 
 class IssueKind(str, Enum):
@@ -71,9 +72,7 @@ def critique(req: SectionDraftRequest, draft_section: GeneratedSection) -> list[
     system = system_prompt(req.writerContractVersion) + "\n" + _CRITIQUE_PROMPT
     user = build_user_prompt(req) + "\n\n# Draft to critique:\n" + draft_section.content
     try:
-        content, _ = timeouts.run_with_section_timeout(
-            lambda: _chat(system, user, model=req.model)
-        )
+        content, _ = timeouts.run_with_section_timeout(lambda: _chat(system, user, model=req.model))
     except Exception:
         # Critique failures are non-fatal: return empty so the refine step
         # receives the original draft.

@@ -13,6 +13,7 @@ the donor document's part — so headings, lists and tables pick up the donor's
 own styles when they exist, and fall back to direct formatting when they
 don't. The parser is total: unknown syntax degrades to a plain paragraph.
 """
+
 from __future__ import annotations
 
 import re
@@ -199,7 +200,9 @@ def markdown_to_subdoc(tpl: Any, content: str) -> Any:
                 table.style = "Table Grid"
             for c in range(columns):
                 cell = table.rows[0].cells[c]
-                _add_runs(cell.paragraphs[0], parse_inline(block.header[c] if c < len(block.header) else ""), bold_all=True)
+                _add_runs(
+                    cell.paragraphs[0], parse_inline(block.header[c] if c < len(block.header) else ""), bold_all=True
+                )
             for r, row in enumerate(block.rows, start=1):
                 for c in range(columns):
                     cell = table.rows[r].cells[c]

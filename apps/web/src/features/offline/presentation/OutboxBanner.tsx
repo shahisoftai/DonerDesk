@@ -13,7 +13,7 @@ export function OutboxBanner() {
 
   const stuck = entries.filter((e) => e.state === "needs-attention");
   return (
-    <div role="status" aria-live="polite" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-lg backdrop-blur dark:border-white/10 dark:bg-slate-900/95">
+    <div role="status" aria-live="polite" className="outbox-banner fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-4 py-3 text-sm shadow-lg backdrop-blur dark:border-white/10 dark:bg-slate-900/95">
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3">
         <p className="text-slate-800 dark:text-slate-100">
           {!online && waiting === 0 && needsAttention === 0

@@ -7,12 +7,9 @@ import {
   type ChecklistItemType,
   type Severity,
   type ChecklistStatus,
+  ok,
 } from "@donordesk/domain";
 import type { IChecklistRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 export class PrismaChecklistRepository implements IChecklistRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -50,7 +47,7 @@ export class PrismaChecklistRepository implements IChecklistRepository {
         severity: c.severity,
         relatedEntityType: c.relatedEntityType,
         relatedEntityId: c.relatedEntityId,
-        assignedToId: c.assignedToId,
+        assignedToId: c.assignedToId ?? null,
         dueDate: c.dueDate,
         status: c.status,
         resolutionNotes: c.resolutionNotes,

@@ -6,6 +6,7 @@ import { parseFileAction } from "@/lib/actions/parse";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { importNotesFile } from "../domain/notes-file";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
@@ -19,7 +20,7 @@ export interface ImportOutcome {
 }
 
 export interface TextImportPanelProps<R extends ImportOutcome> {
-  kind: "logframe" | "indicators" | "evidence" | "activities";
+  kind: "logframe" | "indicators" | "evidence" | "activities" | "work-plan";
   title: string;
   intro: string;
   /** Singular and plural nouns for the result line, e.g. ["indicator", "indicators"]. */
@@ -53,6 +54,8 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
   const [busy, setBusy] = useState(false);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<R | null>(null);
+  /** Set when the words were read from a scan by text recognition: the person is told to check them. */
+  const [scanNote, setScanNote] = useState<string | null>(null);
   const [plural, singular] = [props.noun[1], props.noun[0]];
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -61,6 +64,7 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
     setBusy(true);
     setError(null);
     setResult(null);
+    setScanNote(null);
     const parsed = await parseFileAction(props.kind, file);
     setBusy(false);
     if (!parsed.ok) {
@@ -69,6 +73,8 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
     }
     setText(parsed.value.text);
     setFileName(file.name);
+    const note = parsed.value.metadata?.ocrNote;
+    setScanNote(typeof note === "string" ? note : null);
   }
 
   async function createRecords() {
@@ -106,6 +112,7 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
           {props.templateHref && <a className="btn-secondary text-xs" href={props.templateHref}>Download template</a>}
         </div>
 
+        {!result && scanNote && <p role="note" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">{scanNote}</p>}
         {!result && (
           <Field label="Or paste or dictate it here" htmlFor={`${props.kind}Text`} description="Edit anything before creating the records. A file you upload appears here too.">
             <Textarea
@@ -131,6 +138,20 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
                   <li key={i} className="text-xs text-amber-600 dark:text-amber-400">{w}</li>
                 ))}
               </ul>
+            )}
+            {result.warnings.length > 0 && (
+              <button
+                type="button"
+                className="mt-2 text-xs underline"
+                onClick={() => {
+                  const url = URL.createObjectURL(new Blob([importNotesFile(result.warnings)], { type: "text/csv;charset=utf-8" }));
+                  const a = document.createElement("a");
+                  a.href = url; a.download = "import-notes.csv"; a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Download these notes as a file
+              </button>
             )}
             {result.items.length > 0 && (
               <ul className="mt-3 divide-y divide-slate-200/70 dark:divide-white/10">

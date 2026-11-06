@@ -9,7 +9,7 @@ import type { LegalConsent } from "@/lib/server/schemas";
 const TERMS_OF_REFERENCE = [
   {
     title: "Service and your data",
-    body: "DonorDesk provides AI-assisted donor reporting, evidence management, and compliance tools. You retain ownership of your content and data; we process it only to operate the Service.",
+    body: "DonorDesk provides grant programme management, including the logframe, indicators, activities, evidence, compliance and AI-assisted donor reports. You retain ownership of your content and data; we process it only to operate the Service.",
   },
   {
     title: "Acceptable use",
@@ -70,7 +70,7 @@ export function LegalConsentCard({
         <InlineAlert tone="success" title="Terms accepted">
           You accepted the Terms of Service ({consent.termsVersion}) and Privacy
           Policy ({consent.privacyVersion}) on{" "}
-          {consent.acceptedAt ? new Date(consent.acceptedAt).toLocaleString() : "record"}. This
+          <span suppressHydrationWarning>{consent.acceptedAt ? new Date(consent.acceptedAt).toLocaleString() : "record"}</span>. This
           consent is recorded in your workspace's immutable audit trail.
         </InlineAlert>
       </div>

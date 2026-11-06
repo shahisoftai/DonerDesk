@@ -35,7 +35,7 @@ export function ResolvedChartFigure({ resolved, caption }: { resolved: ResolvedC
   return <EChartFigure option={optionFromResolved(resolved, resolved.type)} caption={caption} />;
 }
 
-function EChartFigure({ option, caption }: { option: Record<string, unknown>; caption?: string }) {
+export function EChartFigure({ option, caption }: { option: Record<string, unknown>; caption?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const instance = useRef<echarts.ECharts | null>(null);
   const latest = useRef(option);

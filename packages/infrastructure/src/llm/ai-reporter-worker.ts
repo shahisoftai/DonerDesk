@@ -177,6 +177,8 @@ export interface AiReporterFinding {
   lifeOfProject?: { value: string; basis: string; periodsCovered?: number; asOf?: string; disaggregation?: Array<{ dimension: string; category: string; value: string }> } | null;
   /** Recorded breakdown (sex, age, ...) behind the value; absent when none was recorded. */
   disaggregation?: Array<{ dimension: string; category: string; value: string }>;
+  /** Targets set by group on the indicator; the worker shows them beside the recorded breakdown. */
+  targetBreakdowns?: Array<{ dimension: string; category: string; value: string }>;
 }
 
 export interface AiReporterIndicatorUpdate {

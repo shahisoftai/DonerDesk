@@ -79,8 +79,8 @@ export default function SignupForm({ initialPlan }: { initialPlan: RequestedPlan
         <Field label="Email" htmlFor="email" error={fields.email?.[0]}>
           <Input id="email" name="email" type="email" autoComplete="email" invalid={Boolean(fields.email)} required />
         </Field>
-        <Field label="Password" htmlFor="password" error={fields.password?.[0]}>
-          <Input id="password" name="password" type="password" autoComplete="new-password" minLength={8} invalid={Boolean(fields.password)} required />
+        <Field label="Password" htmlFor="password" error={fields.password?.[0]} hint="At least 12 characters with no spaces, using three of: lowercase, uppercase, number, symbol.">
+          <Input id="password" name="password" type="password" autoComplete="new-password" minLength={12} maxLength={128} invalid={Boolean(fields.password)} required />
         </Field>
         <div className="sm:col-span-2">
           <Field label="Organization name" htmlFor="orgName" error={fields.orgName?.[0]}>

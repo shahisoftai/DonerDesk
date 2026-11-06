@@ -16,7 +16,7 @@ import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IIndicatorUpdateRepository, IIndicatorRepository } from "../../ports/logframe.js";
 import type { IIndicatorAnalyticsService } from "../../ports/reporting.js";
 import type { IFinanceInputs } from "../../services/finance-inputs.js";
-import { semanticsReviewItems, confirmedSemanticsIndicatorIds, activityEvidenceItems, activityRecordAcceptedItems, cumulativeDataItems, financeItems, priorReportItem, type ChecklistSuggestion, type PriorPeriodStatus } from "../../services/report-type-checklist.js";
+import { semanticsReviewItems, confirmedSemanticsIndicatorIds, activityEvidenceItems, activityRecordAcceptedItems, cumulativeDataItems, varianceItems, financeItems, priorReportItem, type ChecklistSuggestion, type PriorPeriodStatus } from "../../services/report-type-checklist.js";
 
 export class DetectMissingEvidenceHandler {
   constructor(
@@ -228,6 +228,10 @@ export class DetectMissingEvidenceHandler {
       const gaps = cumulativeDataItems(findings.value, period.reportType);
       items.push(...gaps);
       facts.cumulativeGapIds = new Set(gaps.flatMap((g) => (g.relatedEntityId ? [g.relatedEntityId] : [])));
+      const variances = varianceItems(findings.value, period.reportType);
+      items.push(...variances);
+      facts.offTargetIndicatorIds = new Set(variances.flatMap((v) => (v.relatedEntityId ? [v.relatedEntityId] : [])));
+      facts.varianceExplained = (period.storyContext.varianceExplanations ?? "").trim().length > 0;
     }
     if (this.finance) {
       const status = await this.finance.statusFor(period, ctx.tenant.tenantId);

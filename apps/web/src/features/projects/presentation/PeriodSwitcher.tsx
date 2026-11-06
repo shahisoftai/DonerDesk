@@ -1,14 +1,13 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { REPORT_TYPE_LABEL } from "@/lib/labels";
 
-/** Switches which reporting period the project overview shows readiness and compliance for. */
+/** Switches which reporting period the project overview shows readiness and compliance for. Each option is named by type and month. */
 export function PeriodSwitcher({
   periods,
   value,
 }: {
-  periods: Array<{ id: string; reportType: string; status: string }>;
+  periods: Array<{ id: string; label: string; status: string }>;
   value: string;
 }) {
   const router = useRouter();
@@ -22,7 +21,7 @@ export function PeriodSwitcher({
     >
       {periods.map((p) => (
         <option key={p.id} value={p.id}>
-          {REPORT_TYPE_LABEL[p.reportType] ?? p.reportType} — {p.status.replace(/_/g, " ")}
+          {p.label} — {p.status.replace(/_/g, " ")}
         </option>
       ))}
     </select>

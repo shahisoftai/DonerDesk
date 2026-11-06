@@ -6,7 +6,7 @@ import ExcelJS from "exceljs";
 import { ZipArchive } from "archiver";
 import { renderChartPngCached, chartHasData, type ChartSource } from "./chart-png-renderer.js";
 import { parseMarkdownBlocks, renderDocxBlocks, renderPdfBlocks } from "./markdown-renderer.js";
-import { indicatorExportColumns, indicatorExportCell, isRollUpIndicatorTable, NOT_MEASURED_LABEL } from "@donordesk/domain";
+import { slugify, indicatorExportColumns, indicatorExportCell, isRollUpIndicatorTable, NOT_MEASURED_LABEL } from "@donordesk/domain";
 
 /** Report section depth (1 = section, 2-4 = sub-sections); absent on legacy data. */
 function sectionLevel(level: number | undefined): number {
@@ -30,11 +30,36 @@ function textRuns(s: string): TextRun[] {
   return [new TextRun({ text: s })];
 }
 
-/** The charts of each section as images, in reading order: every chart of a section (one per table it charts, plus any hand-made one). */
-async function renderSectionCharts(charts: Parameters<IExportBuilder["build"]>[0]["charts"]): Promise<Map<string, Array<{ png: Buffer; caption: string }>>> {
-  const bySection = new Map<string, Array<{ png: Buffer; caption: string }>>();
+type FigureImage = { png: Buffer; caption: string; /** height / width of the picture */ aspect: number };
+
+/** Width and height (px) a figure is placed at: charts keep their width, a tall infographic is limited in height. */
+function figureSize(aspect: number): { width: number; height: number } {
+  const width = aspect > 0.7 ? Math.min(480, 600 / aspect) : 540;
+  return { width: Math.round(width), height: Math.round(width * aspect) };
+}
+
+/** Height over width of a PNG, read from its header; a chart's own 420/720 when it cannot be read. */
+function pngAspect(png: Buffer): number {
+  if (png.length > 24 && png.readUInt32BE(0) === 0x89504e47) {
+    const w = png.readUInt32BE(16);
+    const h = png.readUInt32BE(20);
+    if (w > 0 && h > 0) return h / w;
+  }
+  return 420 / 720;
+}
+
+/** The charts of each section as images, in reading order: every chart of a section (one per table it charts, plus any hand-made one) and every placed infographic. */
+async function renderSectionCharts(charts: Parameters<IExportBuilder["build"]>[0]["charts"]): Promise<Map<string, FigureImage[]>> {
+  const bySection = new Map<string, FigureImage[]>();
   let figure = 0;
   for (const c of charts ?? []) {
+    if ("image" in c) {
+      figure += 1;
+      const list = bySection.get(c.sectionTitle) ?? [];
+      list.push({ png: c.image.png, caption: `Figure ${figure}. ${c.caption ?? "Infographic"}`, aspect: pngAspect(c.image.png) });
+      bySection.set(c.sectionTitle, list);
+      continue;
+    }
     const source: ChartSource = "resolved" in c ? { resolved: c.resolved } : { config: c.config, indicators: c.indicators };
     if (!chartHasData(source)) continue;
     try {
@@ -42,7 +67,7 @@ async function renderSectionCharts(charts: Parameters<IExportBuilder["build"]>[0
       figure += 1;
       const list = bySection.get(c.sectionTitle) ?? [];
       const caption = c.caption ?? ("resolved" in c ? c.resolved.title : c.sectionTitle);
-      list.push({ png, caption: `Figure ${figure}. ${caption}` });
+      list.push({ png, caption: `Figure ${figure}. ${caption}`, aspect: 420 / 720 });
       bySection.set(c.sectionTitle, list);
     } catch {
       // Chart rendering must never break an export; skip the image.
@@ -106,7 +131,7 @@ export class DefaultExportBuilder implements IExportBuilder {
       // markdown text shipped to the donor).
       sections.push(...renderDocxBlocks(parseMarkdownBlocks(s.content)));
       for (const chart of chartImages.get(s.title) ?? []) {
-        sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: chart.png, transformation: { width: 540, height: 315 } })] }));
+        sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: [new ImageRun({ type: "png", data: chart.png, transformation: figureSize(chart.aspect) })] }));
         sections.push(new Paragraph({ alignment: AlignmentType.CENTER, children: textRuns(chart.caption) }));
       }
     }
@@ -219,7 +244,7 @@ export class DefaultExportBuilder implements IExportBuilder {
       for (const chart of chartImages.get(s.title) ?? []) {
         doc.moveDown();
         try {
-          doc.image(chart.png, { fit: [480, 280], align: "center" });
+          doc.image(chart.png, { fit: chart.aspect > 0.7 ? [400, 560] : [480, 280], align: "center" });
           doc.moveDown(0.3);
           doc.fontSize(9).text(chart.caption, { align: "center" });
           doc.fontSize(10);
@@ -232,12 +257,12 @@ export class DefaultExportBuilder implements IExportBuilder {
     }
     doc.fontSize(14).font("Helvetica-Bold").text("Indicator Progress");
     doc.font("Helvetica").fontSize(10);
+    const indicatorColumns = indicatorExportColumns(input.indicators);
     for (const i of input.indicators) {
-      doc.text(
-        isRollUpIndicatorTable(input.indicators)
-          ? `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, this period ${i.periodValue || "not measured"}, life of project to date ${i.lifeOfProjectValue || "not measured"}${i.percentOfTarget ? `, ${i.percentOfTarget} of target` : ""}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`
-          : `${i.code} — ${i.name} (baseline ${i.baseline}, target ${i.target}, achievement ${i.achievement || "not measured"}${i.unit ? ` ${i.unit}` : ""}, status ${i.status})`,
-      );
+      const cells = indicatorColumns
+        .filter((c) => c.key !== "code" && c.key !== "name")
+        .map((c) => `${c.header}: ${indicatorExportCell(i, c.key, { notMeasured: NOT_MEASURED_LABEL })}`.trim());
+      doc.text(`${i.code} — ${i.name} (${cells.join(", ")})`);
     }
     doc.moveDown();
     doc.fontSize(14).text("Compliance Checklist");
@@ -430,9 +455,5 @@ export function packReadme(input: Pick<Parameters<IExportBuilder["build"]>[0], "
 }
 
 function slug(s: string): string {
-  return s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80);
+  return slugify(s).slice(0, 80);
 }

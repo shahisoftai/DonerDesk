@@ -15,7 +15,7 @@ import {
 import type { IOrganizationRepository, IUserRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IIdGenerator, IAuditLogger, IClock } from "../../ports/core.js";
 import type { IEntitlementGrantRepository, ITrialIdentityRepository } from "../../ports/billing.js";
-import { emailFingerprint, domainFingerprint } from "../billing/_usage.js";
+import { emailFingerprint, legacyEmailFingerprint, domainFingerprint } from "../billing/_usage.js";
 
 export interface ProvisionTenantCommand {
   name: string;
@@ -112,6 +112,8 @@ export class ProvisionTenantHandler {
         // Agent Memory (Phase 21) is off by default for every new tenant;
         // self-service opt-in via Settings once the platform flag is on.
         agentMemoryEnabled: false,
+        // Ask DonorDesk (Phase 33.9) is off for every new organisation until an administrator opts in.
+        askEnabled: false,
       },
     });
     const orgResult = await this.orgs.create(org);
@@ -161,7 +163,9 @@ export class ProvisionTenantHandler {
         const emailFp = emailFingerprint(cmd.email);
         const alreadyUsed = await this.trialIdentities.existsByEmailFingerprint(emailFp);
         if (!alreadyUsed.ok) return alreadyUsed;
-        if (!alreadyUsed.value) {
+        const alreadyUsedOld = alreadyUsed.value ? alreadyUsed : await this.trialIdentities.existsByEmailFingerprint(legacyEmailFingerprint(cmd.email));
+        if (!alreadyUsedOld.ok) return alreadyUsedOld;
+        if (!alreadyUsedOld.value) {
           const trialDays = PLAN_CATALOG[requestedPlan].trialDays;
           if (trialDays !== null) {
             const trialEnd = new Date(now.getTime() + trialDays * 24 * 60 * 60 * 1000);

@@ -16,6 +16,7 @@ export function CameraButton({ onFiles, label = "Take a photo" }: { onFiles: (fi
         capture="environment"
         className="sr-only"
         tabIndex={-1}
+        aria-label={label}
         aria-hidden="true"
         onChange={(event) => {
           const taken = new Date();
@@ -26,7 +27,7 @@ export function CameraButton({ onFiles, label = "Take a photo" }: { onFiles: (fi
           event.currentTarget.value = "";
         }}
       />
-      <Button type="button" variant="secondary" size="sm" onClick={() => inputRef.current?.click()}>
+      <Button type="button" variant="secondary" size="touch" onClick={() => inputRef.current?.click()}>
         {label}
       </Button>
     </>

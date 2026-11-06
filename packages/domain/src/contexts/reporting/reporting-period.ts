@@ -99,6 +99,9 @@ export interface ReportingPeriodProps {
   /** Set when the period was cancelled: its data stays, but it no longer takes part in the calendar or the closing report. */
   cancelledAt?: Date;
   cancelReason?: string;
+  /** Optional window in which the people who enter values may do so (plain days, `YYYY-MM-DD`); reviewers are not held to it. */
+  entryOpensOn?: string;
+  entryClosesOn?: string;
 }
 
 export class ReportingPeriod extends Entity<string> {
@@ -176,6 +179,8 @@ export class ReportingPeriod extends Entity<string> {
 
   get cancelledAt(): Date | undefined { return this.props.cancelledAt ? new Date(this.props.cancelledAt.getTime()) : undefined; }
   get cancelReason(): string | undefined { return this.props.cancelReason; }
+  get entryOpensOn(): string | undefined { return this.props.entryOpensOn; }
+  get entryClosesOn(): string | undefined { return this.props.entryClosesOn; }
   get isCancelled(): boolean { return this.props.cancelledAt !== undefined; }
 
   daysUntilDeadline(): number {
@@ -199,6 +204,33 @@ export class ReportingPeriod extends Entity<string> {
     const next = ReportStatus.create(value);
     if (this.props.status.value === value || !this.props.status.canTransitionTo(next)) return;
     this.props.status = next;
+    this.touch();
+  }
+
+  /**
+   * A report returned for changes takes its period back from "under review" to "draft generated", so the reports list and the
+   * gates see a report that is being changed again. Any other status is left alone.
+   */
+  returnToDraftStatus(): void {
+    if (this.props.status.value !== "UNDER_REVIEW") return;
+    this.props.status = ReportStatus.create("DRAFT_GENERATED");
+    this.touch();
+  }
+
+  /**
+   * A reopened report takes its period back from approved/submitted to "draft generated", so the reports list and the gates see
+   * a report that is being changed again. Status otherwise only moves forward (`advanceStatus`); a closed period is left alone.
+   */
+  reopenStatus(): void {
+    const current = this.props.status.value;
+    if (current !== "APPROVED" && current !== "SUBMITTED") return;
+    this.props.status = ReportStatus.create("DRAFT_GENERATED");
+    this.touch();
+  }
+
+  /** Who is responsible for this report; `undefined` clears it. */
+  assignResponsibleOfficer(userId: string | undefined): void {
+    this.props.responsibleOfficerId = userId;
     this.touch();
   }
 
@@ -244,6 +276,15 @@ export class ReportingPeriod extends Entity<string> {
   /** Replaces what an activity/situation/custom report covers. Validated by the caller (`ReportScopeResolver`). */
   setScope(scope: ReportScope): void {
     this.props.scopeJson = JSON.stringify(scope);
+    this.touch();
+  }
+
+  /** Sets or clears the window for entering values. Validated by the caller (`validateEntryWindow`); an empty window clears it. */
+  setEntryWindow(window: { opensOn?: string | undefined; closesOn?: string | undefined }): void {
+    if (window.opensOn) this.props.entryOpensOn = window.opensOn;
+    else delete this.props.entryOpensOn;
+    if (window.closesOn) this.props.entryClosesOn = window.closesOn;
+    else delete this.props.entryClosesOn;
     this.touch();
   }
 

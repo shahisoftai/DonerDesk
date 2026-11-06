@@ -91,6 +91,7 @@ export function LegalLayout({
           <div className="flex gap-6">
             <Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link>
             <Link href="/terms" className="transition hover:text-white">Terms of Service</Link>
+            <Link href="/refunds" className="transition hover:text-white">Refund &amp; Cancellation Policy</Link>
           </div>
         </div>
       </footer>

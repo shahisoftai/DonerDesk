@@ -1,6 +1,6 @@
 # LLM Provider Wiring — Implementation Plan
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Status:** IMPLEMENTED (Phase 1–4, 2026-08-17) + AI Reporter sidecar (2026-08-28)
 **Date:** 2026-08-17
@@ -686,3 +686,12 @@ validatorIssues: []`).
 - **Credits:** see `Features/19-Tiers-And-Payments.md` §8.4 (a tenant's own provider is not metered).
 - **Tests:** `apps/workers/tests/test_ai_reporter_providers.py`, `packages/infrastructure/test/llm-providers.test.mjs`, `packages/application/test/tenant-own-ai-provider.test.mjs`.
 - **Production state 2026-09-26:** the GLOBAL default is `anthropic` / `claude-sonnet-4-6` (DeepSeek and MiniMax disabled). A production smoke test through the real api → worker path resolved every tenant to it correctly, but **Anthropic returned 400 "credit balance is too low"**. Until the Anthropic account is funded, sections fall back to the deterministic draft.
+
+## 21. Claude (Anthropic) in production: what was learned (2026-10-31)
+
+- Superadmin configuration: provider `anthropic`, model typed exactly (`claude-haiku-5-5`); **a blank model falls back to `claude-opus-5`** (the code default), the most expensive. One enabled global configuration means one model for every call (reports, template reading, Ask, the setup wizard, the AI Reporter worker); a tenant row overrides it only on a plan with `byoLlmEnabled`.
+- **The Test button only lists models**, which is free, so it can pass while real calls fail. Check with one small real message.
+- A key that is **not scoped to a workspace** is refused with HTTP 400 ("must include the anthropic-workspace-id header"): create the key inside a workspace. An account with no credit answers 400 "Your credit balance is too low". Neither is visible in the portal: the portal's Test only shows "HTTP 400" (showing the provider's reason is not done).
+- DonorDesk's calls now keep the provider's own reason in the server log (`Project setup: the AI service refused a request`) and show people one plain sentence with the status code (`plainProviderError`).
+- The built-in price table has no Claude entries: usage is recorded but shown as "not priced" until `LLM_PRICES_JSON` has them.
+- The GLM key behind the demo tenant answered `429 Weekly/Monthly Limit Exhausted` (resets at a time on the provider's clock).

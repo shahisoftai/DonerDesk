@@ -20,6 +20,7 @@ export type ComplianceType =
   | "ACTIVITY_RECORD_ACCEPTED"
   | "CUMULATIVE_DATA_COMPLETE"
   | "PRIOR_REPORT_LINKED"
+  | "VARIANCE_UNEXPLAINED"
   | "FINANCE_FIGURES_PROVIDED"
   | "INDICATOR_SEMANTICS_UNREVIEWED";
 
@@ -61,6 +62,7 @@ export function complianceFixLink(input: {
     case "UNREVIEWED_AI_OUTPUT":
       return { label: "Open report workspace", href: `/projects/${project}/reports/${period}` };
     case "CUMULATIVE_DATA_COMPLETE":
+    case "VARIANCE_UNEXPLAINED":
     case "FINANCE_FIGURES_PROVIDED":
     case "AFFECTED_FIGURES_CONFIRMED":
       return { label: "Open report inputs", href: `/projects/${project}/reports/${period}/inputs` };

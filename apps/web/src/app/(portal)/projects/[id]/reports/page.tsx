@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { ReportingPeriodsResponseSchema, EnsureAutoPeriodResponseSchema, PeriodsPlanSchema } from "@/lib/server/schemas";
+import { ReportingPeriodsResponseSchema, EnsureAutoPeriodResponseSchema, PeriodsPlanSchema, ProjectSetupResponseSchema } from "@/lib/server/schemas";
 import { CreateAllPeriodsPanel } from "@/features/reporting/presentation/CreateAllPeriodsPanel";
 import { reportHeading, REPORT_STATUS_LABEL } from "@/lib/labels";
 import { InlineError } from "@/components/feedback/PageState";
@@ -29,6 +29,9 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
     ctx.token,
   );
   const planResult = await gatewayRequest(`/v1/projects/${resolvedParams.id}/periods-plan`, PeriodsPlanSchema, ctx.token);
+  // Periods cannot be created until setup is complete: say so before offering the button, not after it fails.
+  const setupResult = await gatewayRequest(`/v1/projects/${resolvedParams.id}/setup`, ProjectSetupResponseSchema, ctx.token);
+  const setupBlocker = setupResult.ok && !setupResult.value.readiness.ready ? setupResult.value.readiness.blockers[0]?.label ?? "Project setup is not complete" : undefined;
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
@@ -68,7 +71,11 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
     <div className="animate-fade-in" data-tour-id="reporting-period-list">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
-        <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>
+        <div className="flex gap-2">
+          <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/adaptations`}>Changes of plan</Link>
+          <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/management-report`}>Management report</Link>
+          <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>
+        </div>
       </header>
 
       {createdAutomatically && (
@@ -78,7 +85,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
       )}
 
       {planResult.ok && ctx.capabilities.has("reporting.edit") && (
-        <CreateAllPeriodsPanel projectId={resolvedParams.id} plan={planResult.value.plan} note={planResult.value.note} />
+        <CreateAllPeriodsPanel projectId={resolvedParams.id} plan={planResult.value.plan} note={planResult.value.note} setupBlocker={setupBlocker} setupHref={`/projects/${resolvedParams.id}/setup`} />
       )}
 
       {!hasItems ? (

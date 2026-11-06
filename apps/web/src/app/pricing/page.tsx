@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/pricing" },
   title: "Plans & Pricing",
   description:
-    "DonorDesk plans and pricing: start free, upgrade when you grow. AI-assisted donor reporting, evidence management, and compliance for NGOs.",
+    "DonorDesk plans and pricing: start free, upgrade when the programme grows. Project and programme management in one record: logframe, work plan, field data collection, maps, dashboards, evidence and compliance, with donor reports drafted from it, for NGOs.",
 };
 
 type Cell = string | { text: string; muted?: boolean };
@@ -30,7 +30,7 @@ const PLANS = [
       "Full evidence vault with Google Drive link-first storage and R2 uploads within quota",
       "Claim-level provenance: every number in a draft traces to a verified source",
       "Immutable audit trail and human-approved review workflow",
-      "Core reporting, logframe & indicator tracking, DOCX/PDF exports",
+      "Core reporting, logframe & indicator tracking, work plan, collection forms, DOCX/PDF exports",
       "Community support",
     ],
   },
@@ -81,7 +81,7 @@ const PLANS = [
     code: "ENTERPRISE",
     name: "Enterprise",
     priceLine: "Custom",
-    annualLine: "Annual contract from $12,000 / year · guided pilot",
+    annualLine: "Annual contract from $12,000 / year, arranged with sales · guided pilot",
     tagline: "For INGOs, research institutions, public bodies, and multi-country programmes.",
     cta: { label: "Talk to us", href: "/contact-sales" },
     highlight: false,
@@ -188,10 +188,10 @@ export default function PricingPage() {
             />
           </Link>
           <div className="hidden items-center gap-7 text-sm font-medium text-slate-300 lg:flex">
-            <Link href="/#features" className="transition hover:text-white">Features</Link>
-            <Link href="/#how-it-works" className="transition hover:text-white">How it works</Link>
+            <Link href="/features" className="transition hover:text-white">Features</Link>
+            <Link href="/#flow" className="transition hover:text-white">How it works</Link>
             <span className="font-semibold text-white">Pricing</span>
-            <Link href="/#security" className="transition hover:text-white">Security</Link>
+            <Link href="/security" className="transition hover:text-white">Security</Link>
             <Link href="/support" className="text-brand-300 transition hover:text-white">Support</Link>
           </div>
           <div className="flex items-center gap-3">
@@ -408,10 +408,10 @@ export default function PricingPage() {
             <div>
               <h4 className="font-semibold text-white">Product</h4>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
-                <li><Link href="/#features" className="transition hover:text-white">Features</Link></li>
+                <li><Link href="/features" className="transition hover:text-white">Features</Link></li>
                 <li><Link href="/pricing" className="text-brand-300 transition hover:text-white">Pricing & plans</Link></li>
-                <li><Link href="/#security" className="transition hover:text-white">Security</Link></li>
-                <li><a href="mailto:sales@donordesk.online" className="transition hover:text-white">Sales: sales@donordesk.online</a></li>
+                <li><Link href="/security" className="transition hover:text-white">Security</Link></li>
+                <li><a href="mailto:support@donordesk.online" className="transition hover:text-white">Sales: support@donordesk.online</a></li>
               </ul>
             </div>
 
@@ -420,6 +420,7 @@ export default function PricingPage() {
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
                 <li><Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="transition hover:text-white">Terms of Service</Link></li>
+                <li><Link href="/refunds" className="transition hover:text-white">Refund &amp; Cancellation</Link></li>
                 <li><Link href="/cookies" className="transition hover:text-white">Cookie Policy</Link></li>
                 <li><Link href="/security" className="transition hover:text-white">Security</Link></li>
               </ul>

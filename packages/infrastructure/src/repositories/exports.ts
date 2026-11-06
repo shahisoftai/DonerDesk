@@ -5,12 +5,9 @@ import {
   DomainError,
   type Result,
   type ExportType,
+  ok,
 } from "@donordesk/domain";
 import type { IExportRepository } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 export class PrismaExportRepository implements IExportRepository {
   constructor(private readonly prisma: PrismaClient) {}

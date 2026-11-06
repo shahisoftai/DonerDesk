@@ -14,5 +14,10 @@ const results = fixtures.cases.map((c) => {
   const correct = result.passed === (expected === "pass");
   return { name: c.name, expected, passed: result.passed, correct, scores: result.scores };
 });
+const failed = results.filter((r) => !r.correct);
+console.log(
+  `reporting eval: ${results.length - failed.length}/${results.length} golden cases behaved as expected` +
+    (failed.length ? ` — failed: ${failed.map((r) => r.name).join(", ")}` : ""),
+);
 console.log(JSON.stringify(results, null, 2));
-process.exitCode = results.every((r) => r.correct) ? 0 : 1;
+process.exitCode = failed.length === 0 ? 0 : 1;

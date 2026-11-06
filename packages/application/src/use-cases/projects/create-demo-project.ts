@@ -6,6 +6,7 @@ import type { IProjectSetupRepository, IReportingProfileRepository } from "../..
 import type { ILogframeRepository, IIndicatorRepository } from "../../ports/logframe.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
+import type { DemoContentSeeder } from "../../services/demo-content-seeder.js";
 
 /**
  * DonorDesk Academy (Feature 22): seeds one self-contained, reporting-ready
@@ -29,18 +30,21 @@ export class CreateDemoProjectHandler {
     private readonly indicators: IIndicatorRepository,
     private readonly templates: IDonorTemplateRepository,
     private readonly audit: IAuditLogger,
+    /** Fills the first quarter (period, verified values, activities); without it the demo has the framework and template only. */
+    private readonly content?: DemoContentSeeder,
   ) {}
 
-  async handle(ctx: AuthenticatedContext): Promise<Result<{ id: string; reused: boolean }, DomainError>> {
+  async handle(ctx: AuthenticatedContext): Promise<Result<{ id: string; reused: boolean; /** Why the first quarter was left out, when it was. */ contentNote?: string }, DomainError>> {
     const existing = await this.projects.listByTenant(ctx.tenant.tenantId);
     if (!existing.ok) return existing;
     const existingDemo = existing.value.find((p) => p.isDemo);
     if (existingDemo) return { ok: true, value: { id: existingDemo.id, reused: true } };
 
     const projectId = this.ids.generate();
-    const startDate = new Date();
-    const endDate = new Date(startDate.getTime());
-    endDate.setUTCFullYear(endDate.getUTCFullYear() + 1);
+    // The project began three months ago, so its first quarter has just ended and there is already something to report.
+    const today = new Date();
+    const startDate = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 3, 1));
+    const endDate = new Date(Date.UTC(startDate.getUTCFullYear() + 1, startDate.getUTCMonth(), 0, 23, 59, 59));
 
     const project = Project.create({
       id: projectId,
@@ -123,6 +127,7 @@ export class CreateDemoProjectHandler {
         unit: "%",
       },
     ];
+    const createdIndicators: Array<{ id: string; code: string }> = [];
     for (const spec of indicatorSpecs) {
       const indicator = Indicator.create({
         id: this.ids.generate(),
@@ -139,6 +144,7 @@ export class CreateDemoProjectHandler {
       });
       const r = await this.indicators.create(indicator);
       if (!r.ok) return r;
+      createdIndicators.push({ id: indicator.id, code: spec.code });
     }
 
     const templateId = this.ids.generate();
@@ -201,6 +207,13 @@ export class CreateDemoProjectHandler {
       newValue: project.title,
     });
 
-    return { ok: true, value: { id: projectId, reused: false } };
+    // Best effort: a refusal leaves the demo without the first quarter, never without the demo.
+    let contentNote: string | undefined;
+    if (this.content) {
+      const seeded = await this.content.seed(ctx, { projectId, startDate, outputId: output.id, indicators: createdIndicators }).catch((e: unknown) => ({ seeded: false, reason: e instanceof Error ? e.message : String(e) }));
+      if (!seeded.seeded) contentNote = seeded.reason ?? "The first quarter could not be added.";
+    }
+
+    return { ok: true, value: { id: projectId, reused: false, ...(contentNote ? { contentNote } : {}) } };
   }
 }

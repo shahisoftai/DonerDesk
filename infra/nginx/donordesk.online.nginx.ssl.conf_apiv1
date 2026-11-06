@@ -1,0 +1,51 @@
+# Public read-only API (Phase 33.7): /api/v1/* -> donordesk-api on 127.0.0.1:4001
+location ^~ /api/v1/ {
+	limit_req zone=dd_public_api burst=30 nodelay;
+	proxy_pass http://127.0.0.1:4001;
+	proxy_set_header Host $host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+	proxy_read_timeout 60s;
+	client_max_body_size 1m;
+}
+
+# Public collection link answers (Phase 33.5): small bodies, limited per address.
+location ^~ /api/collect/ {
+	limit_req zone=dd_public_collect burst=20 nodelay;
+	client_max_body_size 128k;
+	proxy_pass http://127.0.0.1:3002;
+	proxy_set_header Host $host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+# Public dashboard links and embeds (Phase 33.8).
+location ^~ /shared/dashboard/ {
+	limit_req zone=dd_public_dashboards burst=20 nodelay;
+	proxy_pass http://127.0.0.1:3002;
+	proxy_set_header Host $host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+}
+location ^~ /embed/dashboard/ {
+	limit_req zone=dd_public_dashboards burst=20 nodelay;
+	proxy_pass http://127.0.0.1:3002;
+	proxy_set_header Host $host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+# A results map on a shared dashboard asking for another level or period (Phase 41.8). Each question reads the database, so it shares the
+# dashboard zone; a map that is moved around asks a few times, hence the burst.
+location ^~ /api/shared/dashboard/ {
+	limit_req zone=dd_public_dashboards burst=30 nodelay;
+	proxy_pass http://127.0.0.1:3002;
+	proxy_set_header Host $host;
+	proxy_set_header X-Real-IP $remote_addr;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header X-Forwarded-Proto $scheme;
+}

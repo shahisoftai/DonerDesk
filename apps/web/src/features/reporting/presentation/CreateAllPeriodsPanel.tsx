@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { planSummary, type PlanLike } from "../domain/periods-plan-copy";
 
 /** "Create all periods": the preview is the plan the server will execute, one action creates them. */
-export function CreateAllPeriodsPanel({ projectId, plan, note }: { projectId: string; plan: PlanLike; note?: string }) {
+export function CreateAllPeriodsPanel({ projectId, plan, note, setupBlocker, setupHref }: { projectId: string; plan: PlanLike; note?: string; setupBlocker?: string; setupHref?: string }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{ tone: "ok" | "error"; text: string; failures: string[] } | null>(null);
@@ -40,7 +40,12 @@ export function CreateAllPeriodsPanel({ projectId, plan, note }: { projectId: st
           </div>
         )}
       </div>
-      {plan.periods.length > 0 && (
+      {plan.periods.length > 0 && setupBlocker && (
+        <p role="status" className="basis-full text-sm text-amber-800 dark:text-amber-300">
+          Finish the project setup first: {setupBlocker}. {setupHref && <a className="underline" href={setupHref}>Open setup</a>}
+        </p>
+      )}
+      {plan.periods.length > 0 && !setupBlocker && (
         <div className="flex flex-wrap gap-2">
           {plan.periods.length > 1 && (
             <Button variant="secondary" onClick={() => void createAll(1)} pending={busy}>Create just the next one</Button>

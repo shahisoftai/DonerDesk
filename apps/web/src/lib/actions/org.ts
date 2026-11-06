@@ -1,12 +1,15 @@
 "use server";
 
-import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema } from "@donordesk/contracts";
+import { z } from "zod";
+import { OrganizationProfileSchema, UpdateOrganizationReportingDefaultsSchema, UpdateAgentMemorySettingsSchema, UpdateAskSettingsSchema, UpdateMfaRequirementSchema, SetupAssistSettingsSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { OkResponseSchema } from "./_schemas";
+import { MapLayerMetaResponseSchema } from "@/lib/server/schemas";
+import { BoundaryLayerListSchema, BoundaryLayerMetaSchema, BoundaryLayerRemovedSchema, type BoundaryLayerMeta } from "@/lib/server/schemas-boundary-layers";
 
 export type UpdateOrganizationResult = Result<undefined, AppError>;
 
@@ -64,4 +67,85 @@ export async function updateAgentMemorySettingsAction(input: unknown): Promise<U
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+/** AI project setup from a document (Phase 36): administrator opt-in. */
+export async function updateSetupAssistSettingsAction(input: unknown): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const parsed = SetupAssistSettingsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  const result = await gatewayRequest("/v1/organization/setup-assist", OkResponseSchema, context.token, { method: "PUT", body: parsed.data });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+/** Ask DonorDesk (Phase 33.9): administrator opt-in. */
+export async function updateAskSettingsAction(input: unknown): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const parsed = UpdateAskSettingsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  const result = await gatewayRequest("/v1/organization/ask-settings", OkResponseSchema, context.token, { method: "PUT", body: parsed.data });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+/** Require two-step sign-in of everyone, from a chosen day (Phase 33.12). */
+export async function updateMfaRequirementAction(input: unknown): Promise<Result<{ requiredFrom: string | null }, AppError>> {
+  const context = await requireSession();
+  const parsed = UpdateMfaRequirementSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  return gatewayRequest("/v1/organization/mfa-requirement", z.object({ requiredFrom: z.string().nullable() }), context.token, { method: "PUT", body: parsed.data });
+}
+
+export type UploadMapLayerResult = Result<{ name: string; featureCount: number }, AppError>;
+
+/** The workspace's own map boundaries (Phase 30.1): one GeoJSON file; a new upload replaces the old layer. */
+export async function uploadMapLayerAction(formData: FormData): Promise<UploadMapLayerResult> {
+  const context = await requireSession();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, error: { kind: "validation", message: "Choose a GeoJSON file to upload.", fields: {} } };
+  }
+  const body = new FormData();
+  body.set("file", file);
+  const result = await gatewayRequest("/v1/organization/map-layer", MapLayerMetaResponseSchema, context.token, { method: "POST", formData: body });
+  if (!result.ok) return result;
+  return { ok: true, value: { name: result.value.name, featureCount: result.value.featureCount } };
+}
+
+export async function removeMapLayerAction(): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest("/v1/organization/map-layer", OkResponseSchema, context.token, { method: "DELETE" });
+  if (!result.ok) return result;
+  return { ok: true, value: undefined };
+}
+
+/** The boundary files this organisation uploaded, per country and level (Phase 41.7). */
+export async function listBoundaryLayersAction(): Promise<Result<BoundaryLayerMeta[], AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest("/v1/organization/boundary-layers", BoundaryLayerListSchema, context.token);
+  return result.ok ? { ok: true, value: result.value.layers } : result;
+}
+
+/**
+ * Uploads one boundary file for a country and level; a new upload replaces the old one. The choices are sent first and the file last
+ * (the server reads the fields that arrive before the file). The server normalises the file and refuses it, naming the boundary, if any does not fit.
+ */
+export async function uploadBoundaryLayerAction(formData: FormData): Promise<Result<BoundaryLayerMeta, AppError>> {
+  const context = await requireSession();
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) return { ok: false, error: { kind: "validation", message: "Choose a GeoJSON file to upload.", fields: {} } };
+  const body = new FormData();
+  for (const key of ["iso", "countryName", "adminLevel", "nameField", "pcodeField", "parentPcodeField"]) {
+    const value = formData.get(key);
+    if (typeof value === "string" && value.trim() !== "") body.set(key, value.trim());
+  }
+  body.set("file", file);
+  return gatewayRequest("/v1/organization/boundary-layers", BoundaryLayerMetaSchema, context.token, { method: "PUT", formData: body });
+}
+
+export async function removeBoundaryLayerAction(iso: string, adminLevel: number): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/organization/boundary-layers/${encodeURIComponent(iso)}/${encodeURIComponent(String(adminLevel))}`, BoundaryLayerRemovedSchema, context.token, { method: "DELETE" });
+  return result.ok ? { ok: true, value: undefined } : result;
 }

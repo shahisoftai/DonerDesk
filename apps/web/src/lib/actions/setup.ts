@@ -8,7 +8,6 @@ import { flattenZodFields } from "@/lib/shared/validation";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { ProjectSetupResponseSchema, ReportingProfileResponseSchema } from "@/lib/server/schemas";
-import { IdResponseSchema } from "./_schemas";
 
 export type SetupLoad = Result<{ setup: import("@/lib/server/schemas").ProjectSetupResponse }, AppError>;
 
@@ -78,15 +77,34 @@ export async function upsertReportingProfileAction(
       error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) },
     };
   }
-  return gatewayRequest(`/v1/projects/${projectId}/reporting-profile`, IdResponseSchema, context.token, {
-    method: "PUT",
-    body: parsed.data,
-  });
+  // The API answers with the saved profile (`{ profile, created }`), not a bare id.
+  const saved = await gatewayRequest(
+    `/v1/projects/${projectId}/reporting-profile`,
+    z.object({ profile: z.object({ id: z.string() }).passthrough(), created: z.boolean().optional() }),
+    context.token,
+    { method: "PUT", body: parsed.data },
+  );
+  return saved.ok ? { ok: true, value: { id: saved.value.profile.id } } : saved;
 }
 
 /** Whether the author of a report may approve it. Off by default; a team of one leaves it off. */
 export async function setRequireSecondApproverAction(projectId: string, value: boolean): Promise<Result<undefined, AppError>> {
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/second-approver`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: { value } });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** Whether an indicator value needs an attached file before it can be verified. */
+export async function setRequireEvidenceForVerificationAction(projectId: string, value: boolean): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/evidence-for-verification`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: { value } });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
+
+/** Simple review: saving an indicator value hands it in at once (and verifies it when the saver may and a file is attached). */
+export async function setSimpleReviewAction(projectId: string, value: boolean): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/simple-review`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: { value } });
   return result.ok ? { ok: true, value: undefined } : result;
 }

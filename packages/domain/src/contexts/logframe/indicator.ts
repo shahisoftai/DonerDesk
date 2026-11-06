@@ -1,4 +1,7 @@
+import type { IndicatorFormula } from "./indicator-formula.js";
+import type { TargetScheduleEntry } from "./target-schedule.js";
 import { Entity } from "../../core/entity.js";
+import type { DisaggregationEntry } from "./indicator-disaggregation.js";
 import { DomainError } from "../../core/domain-error.js";
 import type { IndicatorSemantics } from "./indicator-semantics.js";
 
@@ -23,6 +26,14 @@ export interface IndicatorProps {
   semanticsJson?: string;
   /** Set when the indicator is retired but its recorded values must stay (reports that used it keep their history). */
   archivedAt?: Date;
+  /** The target for each breakdown category (phase 28.1-B), e.g. Women 150 within the total target. Validated like values. */
+  targetBreakdowns?: DisaggregationEntry[];
+  /** The cumulative target due by given dates, so a period is judged against what was due by then (empty: the project target applies). */
+  targetSchedule?: TargetScheduleEntry[];
+  /** What this indicator counts is also counted by another project, so the portfolio roll-up lists it but does not add it. */
+  countedElsewhere?: boolean;
+  /** Set when the value is calculated from other indicators (phase 33.3): nobody types a value for it. */
+  formula?: IndicatorFormula | undefined;
 }
 
 export class Indicator extends Entity<string> {
@@ -52,6 +63,10 @@ export class Indicator extends Entity<string> {
     frequency?: string;
     responsibleUserId?: string;
     disaggregationRequired?: boolean;
+    targetBreakdowns?: DisaggregationEntry[];
+    targetSchedule?: TargetScheduleEntry[];
+    countedElsewhere?: boolean;
+    formula?: IndicatorFormula;
   }): Indicator {
     if (!input.code) throw DomainError.validation("Indicator code required");
     if (!input.name) throw DomainError.validation("Indicator name required");
@@ -63,6 +78,10 @@ export class Indicator extends Entity<string> {
       type: input.type,
       baseline: input.baseline ?? "",
       target: input.target ?? "",
+      targetBreakdowns: input.targetBreakdowns ?? [],
+      targetSchedule: input.targetSchedule ?? [],
+      countedElsewhere: input.countedElsewhere ?? false,
+      formula: input.formula,
       unit: input.unit,
       meansOfVerification: input.meansOfVerification,
       dataSource: input.dataSource,
@@ -96,6 +115,10 @@ export class Indicator extends Entity<string> {
   get disaggregationRequired(): boolean { return this.props.disaggregationRequired; }
   get semanticsJson(): string | undefined { return this.props.semanticsJson; }
   get archivedAt(): Date | undefined { return this.props.archivedAt; }
+  get targetBreakdowns(): DisaggregationEntry[] { return this.props.targetBreakdowns ?? []; }
+  get targetSchedule(): TargetScheduleEntry[] { return this.props.targetSchedule ?? []; }
+  get formula(): IndicatorFormula | undefined { return this.props.formula; }
+  get countedElsewhere(): boolean { return this.props.countedElsewhere ?? false; }
   get isArchived(): boolean { return this.props.archivedAt !== undefined; }
 
   get semantics(): IndicatorSemantics | undefined {

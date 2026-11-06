@@ -28,7 +28,7 @@ import type {
   GenerationFallback,
   GenerationFallbackReason,
 } from "@donordesk/domain";
-import type { FinanceSummaryView, ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
+import type { FinanceSummaryView, PlanDeliverySummary, ReportingPeriod, ReportDraft, ReportSection } from "@donordesk/domain";
 
 export interface IReportingPeriodRepository {
   create(p: ReportingPeriod): Promise<Result<ReportingPeriod>>;
@@ -283,6 +283,8 @@ export interface GenerateReportDraftInput {
   finance?: FinanceSummaryView;
   /** Indicators with no figure this period (not due, nothing recorded or nothing verified); sent to writer contract v5 only. */
   notMeasured?: ReadonlyArray<{ indicatorCode: string; indicatorName?: string; frequency?: string }>;
+  /** What the work plan says about the period (counts and recorded reasons only); sent to writer contract v6 only. */
+  deliveryPlan?: PlanDeliverySummary;
 }
 
 export interface ReportClaimDraft {
@@ -340,7 +342,7 @@ export interface GeneratedTablePayload {
 
 export interface GeneratedChartSpec {
   type: "BAR" | "LINE" | "PIE" | "AREA" | "RADAR" | "GAUGE";
-  dataBinding: "INDICATOR_PROGRESS" | "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION" | "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS";
+  dataBinding: "INDICATOR_PROGRESS" | "INDICATOR_COMPARISON" | "INDICATOR_ACHIEVEMENT" | "STATUS_DISTRIBUTION" | "TABLE_INDICATOR_PROGRESS" | "TABLE_FINANCE_BY_LINE" | "TABLE_ACTIVITY_PARTICIPANTS" | "DATA_CENTER";
   unit?: string;
   title: string;
   caption: string;
@@ -353,7 +355,19 @@ export interface GeneratedChartSpec {
   stacked?: boolean;
   referenceLine?: { name: string; value: number };
   truncated?: { shown: number; total: number };
+  colors?: string[];
+  /** Set on a chart the user added from the Data Center: its stable id, the settings it was drawn from and what it plotted. */
+  dataCenter?: {
+    id: string;
+    spec: DataChartSpecStored;
+    builtAt: string;
+    points: number;
+    unverified: number;
+    notes: string[];
+  };
 }
+
+export type DataChartSpecStored = import("@donordesk/domain").DataChartSpec;
 
 export interface GeneratedListPayload {
   ordered: boolean;
@@ -685,6 +699,8 @@ export interface IRequirementPackRepository {
   create(pack: ReportingRequirementPack): Promise<Result<ReportingRequirementPack>>;
   update(pack: ReportingRequirementPack): Promise<Result<ReportingRequirementPack>>;
   findById(id: string, tenantId: string | undefined): Promise<Result<ReportingRequirementPack | null>>;
+  /** The organisation's own packs, newest first. */
+  listByTenant(tenantId: string): Promise<Result<ReportingRequirementPack[]>>;
   findActiveByMechanism(input: {
     donorKey: string;
     mechanismKey: string;

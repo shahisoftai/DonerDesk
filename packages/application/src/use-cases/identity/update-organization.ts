@@ -22,6 +22,7 @@ export class UpdateOrganizationHandler {
       contactEmail: input.contactEmail,
       website: input.website,
       defaultLanguage: input.defaultLanguage,
+      ...(input.timeZone ? { timeZone: input.timeZone } : {}),
       logoUrl: input.logoUrl,
       mainOfficeLocation: input.mainOfficeLocation,
       donorTypesServed: input.donorTypesServed,

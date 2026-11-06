@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import type { DisaggregationEntry } from "@donordesk/domain";
 import {
   LogframeItem,
   Indicator,
@@ -6,9 +7,12 @@ import {
   TenantId,
   DomainError,
   parseDisaggregationJson,
+  parseTargetSchedule,
+  parseFormula,
   type Result,
   type IndicatorType,
   type VerificationStatus,
+  ok,
 } from "@donordesk/domain";
 import type {
   ILogframeRepository,
@@ -16,8 +20,15 @@ import type {
   IIndicatorUpdateRepository,
 } from "@donordesk/application";
 
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
+/** Stored per-breakdown targets; a damaged value reads as none rather than failing the whole indicator list. */
+function parseTargetBreakdowns(json: string | null): DisaggregationEntry[] {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json);
+    return Array.isArray(parsed) ? parsed as DisaggregationEntry[] : [];
+  } catch {
+    return [];
+  }
 }
 
 export class PrismaLogframeRepository implements ILogframeRepository {
@@ -118,6 +129,10 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         responsibleUserId: i.responsibleUserId,
         disaggregationRequired: i.disaggregationRequired,
         semanticsJson: i.semanticsJson,
+        targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
+        targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
+        formulaJson: i.formula ? JSON.stringify(i.formula) : null,
+        countedElsewhere: i.countedElsewhere,
       },
     });
     return ok(i);
@@ -137,9 +152,14 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         meansOfVerification: i.meansOfVerification,
         dataSource: i.dataSource,
         frequency: i.frequency,
-        responsibleUserId: i.responsibleUserId,
+        // null (not undefined) so that removing the lead really clears it
+        responsibleUserId: i.responsibleUserId ?? null,
         disaggregationRequired: i.disaggregationRequired,
         semanticsJson: i.semanticsJson,
+        targetBreakdownsJson: i.targetBreakdowns.length ? JSON.stringify(i.targetBreakdowns) : null,
+        targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
+        formulaJson: i.formula ? JSON.stringify(i.formula) : null,
+        countedElsewhere: i.countedElsewhere,
       },
     });
     return ok(i);
@@ -181,6 +201,10 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     responsibleUserId: string | null;
     disaggregationRequired: boolean;
     semanticsJson: string | null;
+    targetBreakdownsJson: string | null;
+    targetScheduleJson: string | null;
+    formulaJson: string | null;
+    countedElsewhere: boolean;
     archivedAt: Date | null;
     createdAt: Date;
   }): Indicator {
@@ -203,6 +227,10 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         responsibleUserId: row.responsibleUserId ?? undefined,
         disaggregationRequired: row.disaggregationRequired,
         semanticsJson: row.semanticsJson ?? undefined,
+        targetBreakdowns: parseTargetBreakdowns(row.targetBreakdownsJson),
+        targetSchedule: parseTargetSchedule(row.targetScheduleJson),
+        formula: parseFormula(row.formulaJson),
+        countedElsewhere: row.countedElsewhere,
         archivedAt: row.archivedAt ?? undefined,
       },
     });
@@ -221,6 +249,8 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         periodAchievement: u.periodAchievement,
         cumulativeAchievement: u.cumulativeAchievement,
         comments: u.comments,
+        reviewNote: u.reviewNote,
+        notApplicableReason: u.notApplicableReason,
         dataSource: u.dataSource,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
         disaggregationJson: JSON.stringify(u.disaggregation),
@@ -238,8 +268,11 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
       data: {
         periodAchievement: u.periodAchievement,
         cumulativeAchievement: u.cumulativeAchievement,
-        comments: u.comments,
-        dataSource: u.dataSource,
+        // null (not undefined) so clearing a note really clears it.
+        comments: u.comments ?? null,
+        reviewNote: u.reviewNote ?? null,
+        dataSource: u.dataSource ?? null,
+        notApplicableReason: u.notApplicableReason ?? null,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
         disaggregationJson: JSON.stringify(u.disaggregation),
         verificationStatus: u.verificationStatus,
@@ -284,6 +317,8 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
     periodAchievement: string;
     cumulativeAchievement: string;
     comments: string | null;
+    reviewNote: string | null;
+    notApplicableReason: string | null;
     dataSource: string | null;
     attachedEvidenceIds: string;
     disaggregationJson: string;
@@ -292,17 +327,21 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
     verifiedAt: Date | null;
     createdById: string;
     createdAt: Date;
+    updatedAt: Date;
   }): IndicatorUpdate {
     return IndicatorUpdate.rehydrate({
       id: row.id,
       tenantId: row.tenantId,
       createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
       props: {
         indicatorId: row.indicatorId,
         reportingPeriodId: row.reportingPeriodId,
         periodAchievement: row.periodAchievement,
         cumulativeAchievement: row.cumulativeAchievement,
         comments: row.comments ?? undefined,
+        reviewNote: row.reviewNote ?? undefined,
+        notApplicableReason: row.notApplicableReason ?? undefined,
         dataSource: row.dataSource ?? undefined,
         attachedEvidenceIds: JSON.parse(row.attachedEvidenceIds),
         disaggregation: parseDisaggregationJson(row.disaggregationJson),

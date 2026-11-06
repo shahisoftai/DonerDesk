@@ -92,3 +92,10 @@ export const ImportEvidenceTextSchema = z.object({
   sourceName: z.string().max(300).optional(),
 });
 export type ImportEvidenceTextInput = z.infer<typeof ImportEvidenceTextSchema>;
+
+/** A reviewer's decision about a piece of evidence; a reason is required for a correction request and a rejection. */
+export const ReviewEvidenceSchema = z.object({
+  action: z.enum(["VERIFY", "REQUEST_CORRECTION", "REJECT", "ARCHIVE", "RESTORE"]),
+  note: z.string().trim().max(1000).optional(),
+});
+export type ReviewEvidenceInput = z.infer<typeof ReviewEvidenceSchema>;

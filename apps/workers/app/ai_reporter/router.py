@@ -5,6 +5,7 @@ Routes:
   POST /v1/ai-reporter/section
   POST /v1/ai-reporter/rewrite
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -14,7 +15,7 @@ from fastapi import APIRouter
 
 from . import timeouts
 from .artifact_validators import find_banned_phrases
-from .grounding import normalise_number, ungrounded_numbers, extract_numbers
+from .grounding import extract_numbers, normalise_number, ungrounded_numbers
 from .llm_gateway import _chat, extract_json
 from .models import RewriteRequest, RewriteResponse, SectionDraftRequest, SectionDraftResponse
 from .pipeline import _response_for, run_pipeline
@@ -27,8 +28,10 @@ _AUDIENCE = {
     "INTERNAL": "concise, operational",
 }
 _MODE = {
-    "REWRITE": "Improve clarity and donor voice (active voice, result-first sentences, plain words) without changing any fact.",
-    "SHORTEN": "Cut length by roughly a third: remove repetition and filler first; keep every figure, caveat, list, and table.",
+    "REWRITE": "Improve clarity and donor voice (active voice, result-first sentences, plain words) without changing "
+    "any fact.",
+    "SHORTEN": "Cut length by roughly a third: remove repetition and filler first; keep every figure, caveat, list, "
+    "and table.",
 }
 
 
@@ -71,14 +74,14 @@ def rewrite_section(req: RewriteRequest) -> RewriteResponse:
         "do not add outcomes, impact, or evaluative language not already stated; keep lists and tables intact.\n"
         'Return STRICT JSON: {"content":"rewritten text"}'
     )
-    prompt_hash = hashlib.sha256(f"{system}\n\n{base_user}".encode("utf-8")).hexdigest()
+    prompt_hash = hashlib.sha256(f"{system}\n\n{base_user}".encode()).hexdigest()
     temperature = 0.1 if req.mode == "SHORTEN" else 0.3
 
     user = base_user
-    for attempt in (1, 2):
+    for _attempt in (1, 2):
 
-        def _call() -> tuple[str, dict[str, Any]]:
-            return _chat(system, user, model=req.model, temperature=temperature, max_tokens=2048)
+        def _call(user_prompt: str = user) -> tuple[str, dict[str, Any]]:
+            return _chat(system, user_prompt, model=req.model, temperature=temperature, max_tokens=2048)
 
         content, _ = timeouts.run_with_section_timeout(_call)
         raw = extract_json(content)

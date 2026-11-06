@@ -1,258 +1,21 @@
 import { PrismaClient } from "@prisma/client";
-import { TenantId } from "@donordesk/domain";
+import { UnitOfWork } from "./db/unit-of-work.js";
+import { TenantId, configureLlmPrices, pricesFromEnv, type DomainError, type FinanceOperation, type PlaceOperation, type PlanOperation, type ResultOperation, type RiskOperation, type Result } from "@donordesk/domain";
 
-import {
-  UpdateTemplateRequirementsHandler,
-  UpdateTemplateMetadataHandler,
-  ReextractTemplateHandler,
-  MarkTemplateReviewedHandler,
-  GetTemplateHandler,
-  GetTemplateVersionHandler,
-  GetTemplateOriginalFileHandler,
-  SetTemplateLibraryHandler,
-  SetDefaultTemplateHandler,
-  ListLibraryTemplatesHandler,
-  CloneTemplateHandler,
-  ParseTemplateFileHandler,
-  PreviewTemplateBriefHandler,
-  TemplateExtractionRunner,
-  PeriodTemplateResolver,
-  type ITemplateExtractionService,
-  type ILLMProvider,
-  SignUpHandler,
-  LoginHandler,
-  InviteUserHandler,
-  ListPendingInvitationsHandler,
-  AcceptInvitationHandler,
-  ChangeRoleHandler,
-  ChangePasswordHandler,
-  RequestPasswordResetHandler,
-  ConfirmPasswordResetHandler,
-  UpdateOrganizationHandler,
-  UpdateOrganizationReportingDefaultsHandler,
-  ConnectGoogleDriveHandler,
-  GoogleSignInHandler,
-  LinkGoogleDriveEvidenceHandler,
-  ListUsersHandler,
-  CreateProjectHandler,
-  CreateDemoProjectHandler,
-  DeleteDemoProjectHandler,
-  UpdateProjectHandler,
-  ArchiveProjectHandler,
-  RestoreProjectHandler,
-  ListProjectsHandler,
-  GetProjectHandler,
-  AssignProjectMemberHandler,
-  UpdateProjectMemberHandler,
-  RemoveProjectMemberHandler,
-  ListProjectMembersHandler,
-  UploadTemplateHandler,
-  DetectTemplateRegionsHandler,
-  UpdateTemplateMappingHandler,
-  ApproveTemplateMappingHandler,
-  LockTemplateMappingHandler,
-  UpdateTemplateSectionsHandler,
-  DeleteTemplateHandler,
-  ListTemplatesHandler,
-  CreateLogframeItemHandler,
-  MoveLogframeItemHandler,
-  ImportLogframeHandler,
-  CopyProjectSetupHandler,
-  ImportIndicatorsHandler,
-  CreateIndicatorHandler,
-  UpdateIndicatorSemanticsHandler,
-  UpdateIndicatorHandler,
-  MoveIndicatorHandler,
-  ArchiveIndicatorHandler,
-  RestoreIndicatorHandler,
-  ListArchivedIndicatorsHandler,
-  IndicatorApprovalGuard,
-  ActivityApprovalGuard,
-  DefaultTemplateResolver,
-  ChangePeriodTemplateHandler,
-  ResubmitActivityHandler,
-  WithdrawActivityHandler,
-  RestoreActivityHandler,
-  BulkReviewActivitiesHandler,
-  GetDefaultTemplatesHandler,
-  CreateAllPeriodsHandler,
-  EvidenceLinkService,
-  ActivityLinkResolver,
-  GetPeriodOptionsHandler,
-  PlanClosingReportHandler,
-  StartClosingReportHandler,
-  GetEvidenceSupportHandler,
-  ResolveSectionFlagsHandler,
-  ConfirmIndicatorSemanticsHandler,
-  VerifyPeriodIndicatorUpdatesHandler,
-  CreateIndicatorUpdateHandler,
-  BulkUpsertIndicatorUpdatesHandler,
-  ListPeriodIndicatorsHandler,
-  ParseIndicatorSheetHandler,
-  VerifyIndicatorUpdateHandler,
-  RequestIndicatorUpdateCorrectionHandler,
-  RejectIndicatorUpdateHandler,
-  ListIndicatorUpdatesHandler,
-  ListLogframeHandler,
-  ListIndicatorsHandler,
-  UploadEvidenceHandler,
-  ImportEvidenceHandler,
-  SuggestEvidenceTagsHandler,
-  AcceptEvidenceTagsHandler,
-  SetEvidencePeriodHandler,
-  PersistEvidenceTagsHandler,
-  VerifyEvidenceHandler,
-  SearchEvidenceHandler,
-  GetEvidenceHandler,
-  CreateActivityUpdateHandler,
-  ImportActivitiesHandler,
-  PolishActivityHandler,
-  ReviewActivityHandler,
-  ListActivitiesHandler,
-  GetActivityHandler,
-  UpdateActivityHandler,
-  AttachEvidenceHandler,
-  DetachEvidenceHandler,
-  SuggestEvidenceLinksHandler,
-  CreateReportingPeriodHandler,
-  EnsureAutoPeriodHandler,
-  ListReportingPeriodsHandler,
-  GenerateReportDraftHandler,
-  GetReportDraftHandler,
-  GetSmartReviewHandler,
-  UpdateReportSectionHandler,
-  CreateReportSectionHandler,
-  DeleteReportSectionHandler,
-  ReorderReportSectionsHandler,
-  UpdateReportSectionChartHandler,
-  RefreshSectionChartsHandler,
-  SectionChartService,
-  ApproveReportSectionHandler,
-  SubmitReportForReviewHandler,
-  CancelReportGenerationHandler,
-  ActivateReportDraftHandler,
-  ApproveReportHandler,
-  RejectReportHandler,
-  ResolveReportClaimHandler,
-  BulkResolveReportClaimHandler,
-  UpdateReportingPeriodStoryHandler,
-  UpdateReportingPeriodScopeHandler,
-  CancelReportingPeriodHandler,
-  MarkSummaryCurrentHandler,
-  ConfirmClaimMatchesIndicatorHandler,
-  SetStandingStatementHandler,
-  SetTemplateDefaultForTypeHandler,
-  SetRequireSecondApproverHandler,
-  BulkVerifyEvidenceHandler,
-  GetComplianceNotesHandler,
-  SaveSectionNoteHandler,
-  RestoreReportingPeriodHandler,
-  ConvertPeriodToFinalHandler,
-  FinanceInputsService,
-  GetPeriodFinanceHandler,
-  SavePeriodFinanceHandler,
-  PreviewPeriodFinanceImportHandler,
-  VerifyPeriodFinanceHandler,
-  ImportPeriodIndicatorValuesHandler,
-  ProposeFieldReportExtractionHandler,
-  ApplyFieldReportExtractionHandler,
-  DetectMissingEvidenceHandler,
-  ResolveChecklistItemHandler,
-  BulkResolveChecklistHandler,
-  ListChecklistHandler,
-  ListAiSectionRunsHandler,
-  RequestIdempotencyService,
-  ChecklistReconciler,
-  CalculateReadinessHandler,
-  RecomputeReadinessHandler,
-  GenerateChecklistHandler,
-  RewriteReportSectionHandler,
-  IndicatorAnalyticsService,
-  InferredReportPlanner,
-  CreateExportHandler,
-  GetExportPreflightHandler,
-  RunExportHandler,
-  GenerateDeadlineRemindersHandler,
-  AddCommentHandler,
-  ResolveCommentHandler,
-  ListCommentsHandler,
-  ListNotificationsHandler,
-  MarkNotificationReadHandler,
-  ListAuditLogHandler,
-  RecordLegalConsentHandler,
-  GetLegalConsentHandler,
-  GetProjectSetupHandler,
-  AcknowledgeProjectSetupHandler,
-  RetryProjectWorkspaceHandler,
-  RepairProjectWorkspaceHandler,
-  ListWorkspaceFilesHandler,
-  ProvisionTenantWorkspacesHandler,
-  ImportDriveFileHandler,
-  GetReportingProfileHandler,
-  UpsertReportingProfileHandler,
-  ProjectReadinessService,
-  UuidIdGenerator,
-  type SystemClock,
-  SystemClock as SystemClockImpl,
-  ProvisionTenantHandler,
-  EntitlementService,
-  CreateCheckoutHandler,
-  CreateTopupCheckoutHandler,
-  SubmitContactSalesInquiryHandler,
-  SubmitNonprofitVerificationHandler,
-  ApproveNonprofitVerificationHandler,
-  RejectNonprofitVerificationHandler,
-  ListPendingNonprofitVerificationsHandler,
-  ListCreditPacksHandler,
-  CompCreditPackHandler,
-  RefundCreditPackHandler,
-  CreateCustomerPortalHandler,
-  GetBillingSummaryHandler,
-  ProcessBillingWebhookHandler,
-  ExpireLocalTrialsHandler,
-  ReconcileBillingSubscriptionsHandler,
-  ReconcileManagedStorageUsageHandler,
-  ReleaseStaleUsageReservationsHandler,
-  RetryBillingInboxHandler,
-  RunGrandfatherCreditCutoverHandler,
-  RunGrandfatherByoLlmHandler,
-  BillingSubscriptionSynchronizer,
-  ReportRevisionService,
-  ReportAssuranceService,
-  RecordChunkBuilder,
-  LintGrounding,
-  GetReportAssuranceHandler,
-  ReassessReportRevisionHandler,
-  ResolveEffectiveRequirementsHandler,
-  UpsertRequirementPackHandler,
-  ActivateRequirementPackHandler,
-  UpsertAwardOverrideHandler,
-  CreateSubmissionSnapshotHandler,
-  RegenerateReportSectionHandler,
-  ReopenReportClaimHandler,
-  ApplyClaimSuggestionHandler,
-  GetClaimSuggestionHandler,
-  ListSectionRevisionsHandler,
-  ReportGenerationContextBuilder,
-  SectionGenerationService,
-  AiCreditGate,
-  UpdateAgentMemorySettingsHandler,
-  ExtractAgentMemoryHandler,
-  ListPendingAgentMemoryHandler,
-  ApproveAgentMemoryHandler,
-  RejectAgentMemoryHandler,
-  DeactivateAgentMemoryHandler,
-} from "@donordesk/application";
+import { UpdateTemplateRequirementsHandler, UpdateTemplateMetadataHandler, ReextractTemplateHandler, MarkTemplateReviewedHandler, GetTemplateHandler, GetTemplateVersionHandler, GetTemplateOriginalFileHandler, SetTemplateLibraryHandler, SetDefaultTemplateHandler, ListLibraryTemplatesHandler, CloneTemplateHandler, ParseTemplateFileHandler, PreviewTemplateBriefHandler, TemplateExtractionRunner, PeriodTemplateResolver, type ITemplateExtractionService, type ILLMProvider, SignUpHandler, LoginHandler, InviteUserHandler, ListPendingInvitationsHandler, AcceptInvitationHandler, ChangeRoleHandler, ChangePasswordHandler, RequestPasswordResetHandler, ConfirmPasswordResetHandler, UpdateOrganizationHandler, UpdateOrganizationReportingDefaultsHandler, ConnectGoogleDriveHandler, GoogleSignInHandler, LinkGoogleDriveEvidenceHandler, ListUsersHandler, IssueScimCredentialHandler, ListScimCredentialsHandler, RevokeScimCredentialHandler, CreateProjectHandler, CreateDemoProjectHandler, DeleteDemoProjectHandler, UpdateProjectHandler, ArchiveProjectHandler, RestoreProjectHandler, ListProjectsHandler, GetProjectHandler, AssignProjectMemberHandler, UpdateProjectMemberHandler, RemoveProjectMemberHandler, ListProjectMembersHandler, UploadTemplateHandler, DetectTemplateRegionsHandler, UpdateTemplateMappingHandler, ApproveTemplateMappingHandler, LockTemplateMappingHandler, UpdateTemplateSectionsHandler, DeleteTemplateHandler, ListTemplatesHandler, CreateLogframeItemHandler, MoveLogframeItemHandler, ImportLogframeHandler, CopyProjectSetupHandler, ImportIndicatorsHandler, CreateIndicatorHandler, UpdateIndicatorSemanticsHandler, UpdateIndicatorHandler, MoveIndicatorHandler, ArchiveIndicatorHandler, RestoreIndicatorHandler, ListArchivedIndicatorsHandler, IndicatorApprovalGuard, ActivityApprovalGuard, DefaultTemplateResolver, ChangePeriodTemplateHandler, ResubmitActivityHandler, WithdrawActivityHandler, RestoreActivityHandler, BulkReviewActivitiesHandler, GetDefaultTemplatesHandler, CreateAllPeriodsHandler, EvidenceLinkService, ActivityLinkResolver, PlanDeliveryService, GetPlanStorySuggestionHandler, GetPortfolioIndicatorsHandler, RunAutomationsHandler, SetWorkPlanningVisibilityHandler, ListProjectPeopleHandler, CreateRiskHandler, UpdateRiskHandler, CloseRiskHandler, ListRisksHandler, ListPlacesHandler, CreatePlaceHandler, UpdatePlaceHandler, ArchivePlaceHandler, SetPlaceGeometryHandler, ClearPlaceGeometryHandler, GetPlaceGeometryHandler, ImportPlacesHandler, SeedPlacesFromBoundariesHandler, ResolvePlacesHandler, ListUnconfirmedLocationsHandler, ListCollectionFormsHandler, GetCollectionFormHandler, SaveCollectionFormHandler, SetCollectionFormStatusHandler, SubmitCollectionRecordHandler, ListCollectionRecordsHandler, ReviewCollectionRecordHandler, CreateCollectionLinkHandler, ListCollectionLinksHandler, RevokeCollectionLinkHandler, ResolveCollectionLinkHandler, PublicCollectionFormHandler, PublicSubmitCollectionRecordHandler, PreviewCollectionTotalsHandler, ApplyCollectionTotalsHandler, GetCollectionSheetTemplateHandler, ImportCollectionRecordsHandler, UploadCollectionFileHandler, GetCollectionFileHandler, GetOfflinePackHandler, ListDashboardsHandler, GetDashboardHandler, SaveDashboardHandler, AddDashboardWidgetHandler, DeleteDashboardHandler, GetDashboardDataHandler, PreviewDashboardChartsHandler, ShareMapReader, ResolveDatasetsHandler, ListSavedChartsHandler, ListBookmarksHandler, ListHomePinsHandler, ListMapOverlaysHandler, SetDashboardFeaturedHandler, IsDashboardFeaturedHandler, AddMapOverlayHandler, ReadMapOverlayHandler, RemoveMapOverlayHandler, AddHomePinHandler, MoveHomePinHandler, RemoveHomePinHandler, GetHomeLayoutHandler, SaveHomeLayoutHandler, ResetHomeLayoutHandler, ListSavedReportsHandler, SaveSavedReportHandler, DeleteSavedReportHandler, AddBookmarkHandler, RemoveBookmarkHandler, DatasetExtrasService, ListDashboardTemplatesHandler, GetDashboardTemplateHandler, SaveDashboardTemplateHandler, DeleteDashboardTemplateHandler, ApplyDashboardTemplateHandler, GetSavedChartHandler, SaveSavedChartHandler, DeleteSavedChartHandler, GetIndicatorValueHistoryHandler, GetIndicatorEntryFileHandler, ParseIndicatorWorkbookHandler, CreateDashboardShareHandler, ListDashboardSharesHandler, RevokeDashboardShareHandler, ResolveDashboardShareHandler, PublicDashboardHandler, PublicDashboardMapResultsHandler, GetProjectPlaceResultsHandler, SubmitPeriodIndicatorUpdatesHandler, ReturnPeriodIndicatorUpdatesHandler, SetPeriodEntryWindowHandler, CreateApiKeyHandler, ListApiKeysHandler, RevokeApiKeyHandler, ApiKeyAuthenticator, CreateWebhookEndpointHandler, ListWebhookEndpointsHandler, UpdateWebhookEndpointHandler, DeleteWebhookEndpointHandler, ListWebhookDeliveriesHandler, WebhookDispatcher, ListApiProjectsHandler, GetActivityFileNeedsHandler, ProjectHealthService, VisibleProjects, GetDeliveryHealthHandler, GetEntryDueDaysHandler, SetEntryDueDaysHandler, GetPortfolioHealthHandler, GetPortfolioOverviewHandler, GetDonorIndicatorMappingHandler, SetDonorIndicatorMappingHandler, ReviewEvidenceHandler, GetManagementReportHandler, RecordAdaptationHandler, UpdateAdaptationHandler, ListAdaptationsHandler, DemoContentSeeder, GetRiskTrendHandler, RefreshProjectRiskHandler, CreateTaskHandler, CompleteTaskHandler, CancelTaskHandler, ListAssignmentsHandler, ListTeamWorkHandler, SetIndicatorOwnerHandler, SetPeriodOwnerHandler, AssignChecklistItemHandler, AssignmentQueue, TaskReconciler, GetPeriodOptionsHandler, PlanClosingReportHandler, StartClosingReportHandler, GetEvidenceSupportHandler, ResolveSectionFlagsHandler, ConfirmIndicatorSemanticsHandler, VerifyPeriodIndicatorUpdatesHandler, CreateIndicatorUpdateHandler, ParseUploadedFileHandler, ExportOrganizationHandler, UploadMapLayerHandler, GetMapLayerHandler, ReadMapLayerHandler, RemoveMapLayerHandler, UploadBoundaryLayerHandler, ListBoundaryLayersHandler, ReadBoundaryLayerHandler, RemoveBoundaryLayerHandler, LogframeVersioner, withLogframeVersioning, ListLogframeVersionsHandler, GetLogframeChangesHandler, ApproveLogframeVersionHandler, SetRequireEvidenceForVerificationHandler, VerificationEvidencePolicy, CompleteMfaLoginHandler, GetMfaStatusHandler, BeginMfaEnrollmentHandler, EnableMfaHandler, DisableMfaHandler, ResetUserMfaHandler, ListFundingHandler, SaveProgrammeHandler, SaveGrantHandler, PlaceProjectHandler, BulkUpsertIndicatorUpdatesHandler, ListPeriodIndicatorsHandler, ParseIndicatorSheetHandler, VerifyIndicatorUpdateHandler, RequestIndicatorUpdateCorrectionHandler, RejectIndicatorUpdateHandler, ListIndicatorUpdatesHandler, GetProjectDataSheetHandler, GetProjectInfographicDataHandler, SectionDataChartsHandler, ReopenReportHandler, ImportDataSheetHandler, ListLogframeHandler, ListIndicatorsHandler, UploadEvidenceHandler, ImportEvidenceHandler, SuggestEvidenceTagsHandler, AcceptEvidenceTagsHandler, SetEvidencePeriodHandler, PersistEvidenceTagsHandler, VerifyEvidenceHandler, SearchEvidenceHandler, GetEvidenceHandler, CreateActivityUpdateHandler, ImportActivitiesHandler, PolishActivityHandler, ReviewActivityHandler, ListActivitiesHandler, GetActivityHandler, UpdateActivityHandler, AttachEvidenceHandler, DetachEvidenceHandler, SuggestEvidenceLinksHandler, CreateReportingPeriodHandler, EnsureAutoPeriodHandler, ListReportingPeriodsHandler, GenerateReportDraftHandler, GetReportDraftHandler, GetSmartReviewHandler, UpdateReportSectionHandler, CreateReportSectionHandler, DeleteReportSectionHandler, ReorderReportSectionsHandler, UpdateReportSectionChartHandler, RefreshSectionChartsHandler, SectionChartService, ApproveReportSectionHandler, SubmitReportForReviewHandler, CancelReportGenerationHandler, ActivateReportDraftHandler, ApproveReportHandler, RejectReportHandler, ResolveReportClaimHandler, BulkResolveReportClaimHandler, UpdateReportingPeriodStoryHandler, UpdateReportingPeriodScopeHandler, CancelReportingPeriodHandler, MarkSummaryCurrentHandler, ConfirmClaimMatchesIndicatorHandler, SetStandingStatementHandler, SetTemplateDefaultForTypeHandler, SetRequireSecondApproverHandler, BulkVerifyEvidenceHandler, GetComplianceNotesHandler, SaveSectionNoteHandler, RestoreReportingPeriodHandler, ConvertPeriodToFinalHandler, FinanceInputsService, GetPeriodFinanceHandler, SavePeriodFinanceHandler, PreviewPeriodFinanceImportHandler, VerifyPeriodFinanceHandler, ImportPeriodIndicatorValuesHandler, ProposeFieldReportExtractionHandler, ApplyFieldReportExtractionHandler, DetectMissingEvidenceHandler, ResolveChecklistItemHandler, BulkResolveChecklistHandler, ListChecklistHandler, ListAiSectionRunsHandler, RequestIdempotencyService, ChecklistReconciler, CalculateReadinessHandler, RecomputeReadinessHandler, GenerateChecklistHandler, RewriteReportSectionHandler, IndicatorAnalyticsService, InferredReportPlanner, CreateExportHandler, GetExportPreflightHandler, RunExportHandler, RunRemindersHandler, GetNotificationPreferencesHandler, UpdateNotificationPreferencesHandler, PersonNotifier, ReportNotifier, AddCommentHandler, ResolveCommentHandler, ReopenCommentHandler, ListCommentsHandler, ListNotificationsHandler, MarkNotificationReadHandler, ListAuditLogHandler, RecordLegalConsentHandler, GetLegalConsentHandler, GetProjectSetupHandler, AcknowledgeProjectSetupHandler, RetryProjectWorkspaceHandler, RepairProjectWorkspaceHandler, ListWorkspaceFilesHandler, ProvisionTenantWorkspacesHandler, SetupOrganisationFoldersHandler, ImportDriveFileHandler, GetReportingProfileHandler, UpsertReportingProfileHandler, ProjectReadinessService, UuidIdGenerator, type SystemClock, SystemClock as SystemClockImpl, ProvisionTenantHandler, EntitlementService, CreateCheckoutHandler, CreateTopupCheckoutHandler, SubmitContactSalesInquiryHandler, SubmitNonprofitVerificationHandler, ApproveNonprofitVerificationHandler, RejectNonprofitVerificationHandler, ListPendingNonprofitVerificationsHandler, ListCreditPacksHandler, CompCreditPackHandler, RefundCreditPackHandler, CreateCustomerPortalHandler, GetBillingSummaryHandler, ProcessBillingWebhookHandler, ExpireLocalTrialsHandler, ReconcileBillingSubscriptionsHandler, ReconcileManagedStorageUsageHandler, ReleaseStaleUsageReservationsHandler, RetryBillingInboxHandler, RunGrandfatherCreditCutoverHandler, RunGrandfatherByoLlmHandler, BillingSubscriptionSynchronizer, ReportRevisionService, ReportAssuranceService, RecordChunkBuilder, LintGrounding, GetReportAssuranceHandler, ReassessReportRevisionHandler, ResolveEffectiveRequirementsHandler, UpsertRequirementPackHandler, ListRequirementPacksHandler, ActivateRequirementPackHandler, UpsertAwardOverrideHandler, CreateSubmissionSnapshotHandler, RegenerateReportSectionHandler, ReopenReportClaimHandler, ApplyClaimSuggestionHandler, GetClaimSuggestionHandler, ListSectionRevisionsHandler, ReportGenerationContextBuilder, SectionGenerationService, AiCreditGate, UpdateAgentMemorySettingsHandler, UpdateAskSettingsHandler, UpdateMfaRequirementHandler, AskProjectHandler, withWebhookEmission, ListConnectorsHandler, SaveConnectorHandler, DeleteConnectorHandler, SyncConnectorHandler, ExtractAgentMemoryHandler, ListPendingAgentMemoryHandler, ApproveAgentMemoryHandler, RejectAgentMemoryHandler, DeactivateAgentMemoryHandler, AutoReviewService, QuickEnterIndicatorValueHandler, SetSimpleReviewHandler, CreateFormFromIndicatorHandler, UpdateSetupAssistSettingsHandler, StartSetupExtractionHandler, GetSetupProposalHandler, ListSetupProposalsHandler, EditSetupProposalHandler, RerunSetupAreaHandler, SetSetupDocumentKindHandler, GetSetupSourcePassageHandler, DiscardSetupProposalHandler, StartBlankSetupHandler, GetSetupDraftHandler, EditSetupDraftHandler, ApplyDefaultPackHandler, ListOrganisationPacksHandler, SaveOrganisationPackHandler, RemoveOrganisationPackHandler, ChangeSetupProposalHandler, SignOffSetupHandler, LaunchProjectHandler, PreviewSetupApplyHandler, ApplySetupProposalHandler, SetProjectDeadlineOffsetHandler } from "@donordesk/application";
 import type { IJobQueue, IReportDraftGenerator, INotificationPort, IAgentMemoryRepository, IAgentMemoryExtractor } from "@donordesk/application";
 import { EmailAdapter } from "./comms/email.js";
+import { LocalSmtpEmailAdapter } from "./comms/local-smtp-email.js";
 import { PostmarkNotificationAdapter, FanOutNotificationAdapter } from "./comms/postmark-notification-adapter.js";
 import { ConsoleContactSalesNotifier } from "./comms/console-contact-sales-notifier.js";
+import { EmailContactSalesNotifier } from "./comms/email-contact-sales-notifier.js";
 
 import {
   PrismaOrganizationRepository,
   PrismaUserRepository,
   PrismaInvitationRepository,
   PrismaPasswordResetTokenRepository,
+  PrismaScimCredentialRepository,
 } from "./repositories/identity.js";
 import { PrismaProjectRepository } from "./repositories/projects.js";
 import { PrismaDemoProjectRepository } from "./repositories/demo.js";
@@ -280,10 +43,26 @@ import {
   PrismaIndicatorRepository,
   PrismaIndicatorUpdateRepository,
 } from "./repositories/logframe.js";
-import { PrismaEvidenceRepository } from "./repositories/evidence.js";
+import { PrismaEvidenceRepository, PrismaEvidenceUseGuard } from "./repositories/evidence.js";
 import { PrismaIdempotencyRepository } from "./repositories/idempotency.js";
 import { PrismaRequestIdempotencyRepository } from "./repositories/request-idempotency.js";
 import { PrismaActivityUpdateRepository } from "./repositories/activities.js";
+import { PrismaProjectRiskRepository } from "./repositories/risks.js";
+import { PrismaDonorIndicatorMappingRepository } from "./repositories/donor-indicator-mapping.js";
+import { PrismaAdaptationRepository } from "./repositories/adaptations.js";
+import { RiskReviewAssignmentSource } from "./assignment-sources/risk-review-source.js";
+import { PrismaCollectionFactsReader, PrismaRiskTrendStore, PrismaEntryDueDays } from "./repositories/health.js";
+import { IndicatorValueAssignmentSource } from "./assignment-sources/indicator-value-source.js";
+import { PrismaReminderLedger, PrismaNotificationPreferences, PrismaReminderAudience } from "./repositories/reminders.js";
+import { PrismaCommentTargets } from "./repositories/comment-targets.js";
+import { PrismaProjectTaskRepository, PrismaTaskSubjectResolver, PrismaTaskFactsReader, PrismaProjectRoster } from "./repositories/tasks.js";
+import { TaskAssignmentSource } from "./assignment-sources/task-source.js";
+import { PlanItemAssignmentSource } from "./assignment-sources/plan-item-source.js";
+import { ChecklistAssignmentSource } from "./assignment-sources/checklist-source.js";
+import { ReportDeadlineAssignmentSource } from "./assignment-sources/report-deadline-source.js";
+import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource, ValueReviewAssignmentSource, RecordReviewAssignmentSource } from "./assignment-sources/review-sources.js";
+import { PrismaPortfolioValueReader } from "./repositories/portfolio.js";
+import { PrismaDeliveryFactsReader } from "./repositories/workplan.js";
 import {
   PrismaReportingPeriodRepository,
   PrismaReportDraftRepository,
@@ -318,14 +97,34 @@ import { JwtAuthProvider } from "./auth/jwt.js";
 import { OidcAuthProvider } from "./auth/oidc.js";
 import { GoogleSignInConnector } from "./auth/google-sign-in.js";
 import { LocalStorage } from "./storage/local-storage.js";
+import { PrismaTenantMapLayerRepository } from "./repositories/tenant-map-layer.js";
+import { PrismaTenantBoundaryLayerRepository } from "./repositories/tenant-boundary-layer.js";
+import { PrismaPlaceRepository, PrismaPlaceUsageReader } from "./repositories/places.js";
+import { PrismaCollectionFormRepository, PrismaCollectionRecordRepository, PrismaCollectionLinkRepository, PrismaCollectionFileRepository } from "./repositories/collection.js";
+import { PrismaTrialStatus } from "./repositories/trial-status.js";
+import { PrismaBudgetRepository } from "./repositories/work-plan/budget.js";
+import { PrismaMyWeekReader } from "./repositories/work-plan/my-week.js";
+import { PrismaDashboardRepository, PrismaDashboardLinkRepository, PrismaSavedChartRepository, PrismaBookmarkRepository, PrismaHomePinRepository, PrismaHomeLayoutRepository, PrismaMapOverlayRepository, PrismaFeaturedDashboardRepository, PrismaSavedReportRepository, PrismaDashboardTemplateRepository } from "./repositories/dashboards.js";
+import { EnvConnectorSecrets, PrismaDataConnectorRepository, SafeConnectorHttp } from "./integrations/connector-adapters.js";
+import { PrismaApiKeyRepository, PrismaWebhookRepository } from "./repositories/integrations.js";
+import { WebhookDeliveryRunner } from "./integrations/webhook-runner.js";
+import { randomBytes as nodeRandomBytes } from "node:crypto";
+import { PrismaInfographicRepository, PrismaInfographicAssetRepository, PrismaBrandKitRepository, PrismaInfographicUserTemplateRepository, PrismaInfographicShareRepository } from "./repositories/infographics.js";
+import { SharpImageNormalizer } from "./infographics/image-normalizer.js";
+import { InfographicComposerRenderer, PrismaOrganizationBrandReader } from "./infographics/renderer.js";
+import { CreateInfographicHandler, UpdateInfographicHandler, ListProjectInfographicsHandler, GetInfographicHandler, DeleteInfographicHandler, ExportInfographicHandler, ListInfographicExportsHandler, GetInfographicExportFileHandler, InfographicRenderService, PreviewInfographicHandler, GetInfographicSuggestionsHandler, GetInfographicAiTextHandler, SuggestPresenceRowsHandler, ListInfographicTemplatesHandler, SaveInfographicTemplateHandler, DeleteInfographicTemplateHandler, UploadInfographicAssetHandler, ListInfographicAssetsHandler, GetInfographicAssetFileHandler, RemoveInfographicAssetHandler, GetBrandKitHandler, SaveBrandKitHandler, InfographicNotifier, InfographicReviewHandler, CreateInfographicShareLinkHandler, ListInfographicShareLinksHandler, RevokeInfographicShareLinkHandler, ResolveInfographicShareHandler, GenerateInfographicVariantsHandler, SectionInfographicsHandler, GetPortfolioInfographicDataHandler, AutoRefreshInfographicsHandler } from "@donordesk/application";
 import { EvidenceStorageResolver } from "./storage/router.js";
 import { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
 import { PrismaGoogleDriveTokenStore } from "./storage/prisma-google-drive-token-store.js";
 import { GoogleDriveOAuthConnector } from "./storage/google-drive-oauth.js";
 import { GoogleDriveFileReader } from "./storage/google-drive.js";
+import { GoogleDriveWorkspaceDrive } from "./storage/google-drive-workspace.js";
+import { GoogleDriveSetupDocuments } from "./storage/google-drive-setup-documents.js";
 import { GoogleSheetsReader } from "./storage/google-sheets-reader.js";
 import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
+import { OcrFallbackDocumentParser } from "./parsers/ocr-fallback-parser.js";
+import { withEncryptionAtRest } from "./storage/at-rest-encryption.js";
 import { MammothDonorTemplateStructureParser } from "./parsers/donor-template-structure-parser.js";
 import { HttpDonorTemplateWorkerClient } from "./llm/donor-template-worker-client.js";
 import { FallbackTemplateExtractionService, HeuristicTemplateExtractor, LlmTemplateExtractor, TemplateExtractionQuota, TEMPLATE_EXTRACTION_OPERATION, TocTemplateExtractor } from "./llm/template-extraction/index.js";
@@ -361,6 +160,12 @@ import {
 } from "./support.js";
 import { OutboxEventBus, DEFAULT_EVENT_TO_JOB } from "./events/outbox-event-bus.js";
 import { createJobQueue } from "./jobs/index.js";
+import { JobRetryRunner } from "./jobs/retry-runner.js";
+import { OrganizationExporter } from "./exports/organization-exporter.js";
+import { PrismaFailedJobStore } from "./repositories/failed-jobs.js";
+import { PrismaLogframeVersionRepository } from "./repositories/logframe-versions.js";
+import { PrismaFundingRepository } from "./repositories/funding.js";
+import { TotpMfaService } from "./auth/totp-mfa-service.js";
 import { createBillingProvider } from "./billing/index.js";
 import { InMemoryPasswordResetRateLimiter } from "./security/password-reset-rate-limiter.js";
 
@@ -379,11 +184,20 @@ export interface Container {
   googleDriveOAuth: GoogleDriveOAuthConnector;
   googleDriveCredentials: PrismaGoogleDriveCredentialStore;
   driveFileReader: GoogleDriveFileReader;
-  parser: TolerantDocumentParser;
+  parser: OcrFallbackDocumentParser;
   logger: ReturnType<typeof createLogger>;
   ids: UuidIdGenerator;
   clock: SystemClock;
   events: OutboxEventBus;
+  /** Re-hands jobs the API could not queue; the api runs it on a timer. */
+  jobRetry: JobRetryRunner;
+  /** Sends queued webhook deliveries; the api runs it on a timer. */
+  webhookRunner: WebhookDeliveryRunner;
+  /** Where the rest of the system says "this happened": queues deliveries, never sends, never throws. */
+  webhookDispatcher: WebhookDispatcher;
+  /** Turns an API key header into a principal (admin container only: the caller's organisation is not yet known). */
+  apiKeyAuth: ApiKeyAuthenticator;
+  failedJobs: PrismaFailedJobStore;
   notify: INotificationPort;
   jobQueue: IJobQueue;
   evidenceTagger: StubEvidenceTagger;
@@ -398,6 +212,13 @@ export interface Container {
   users: PrismaUserRepository;
   invitations: PrismaInvitationRepository;
   passwordResetTokens: PrismaPasswordResetTokenRepository;
+  scimCredentials: PrismaScimCredentialRepository;
+  /** Resolves a public share link (the visitor has no session): only meaningful on the admin container. */
+  resolveInfographicShare: ResolveInfographicShareHandler;
+  /** Finds which form (and organisation) a public collection link opens: only meaningful on the admin container. */
+  resolveCollectionLink: ResolveCollectionLinkHandler;
+  /** Finds which dashboard (and organisation) a public share link opens: only meaningful on the admin container. */
+  resolveDashboardShare: ResolveDashboardShareHandler;
   passwordResetRateLimiter: InMemoryPasswordResetRateLimiter;
   billingSubscriptions: PrismaBillingSubscriptionRepository;
   entitlementGrants: PrismaEntitlementGrantRepository;
@@ -447,6 +268,12 @@ export interface Container {
   handlers: {
     signUp: SignUpHandler;
     login: LoginHandler;
+    completeMfaLogin: CompleteMfaLoginHandler;
+    getMfaStatus: GetMfaStatusHandler;
+    beginMfaEnrollment: BeginMfaEnrollmentHandler;
+    enableMfa: EnableMfaHandler;
+    disableMfa: DisableMfaHandler;
+    resetUserMfa: ResetUserMfaHandler;
     googleSignIn: GoogleSignInHandler;
     inviteUser: InviteUserHandler;
     listPendingInvitations: ListPendingInvitationsHandler;
@@ -458,11 +285,46 @@ export interface Container {
     updateOrganization: UpdateOrganizationHandler;
     updateOrganizationReportingDefaults: UpdateOrganizationReportingDefaultsHandler;
     updateAgentMemorySettings: UpdateAgentMemorySettingsHandler;
+    updateAskSettings: UpdateAskSettingsHandler;
+    updateSetupAssistSettings: UpdateSetupAssistSettingsHandler;
+    previewSetupApply: PreviewSetupApplyHandler;
+    applySetupProposal: ApplySetupProposalHandler;
+    startSetupExtraction: StartSetupExtractionHandler;
+    getSetupProposal: GetSetupProposalHandler;
+    listSetupProposals: ListSetupProposalsHandler;
+    editSetupProposal: EditSetupProposalHandler;
+    rerunSetupArea: RerunSetupAreaHandler;
+    setSetupDocumentKind: SetSetupDocumentKindHandler;
+    getSetupSourcePassage: GetSetupSourcePassageHandler;
+    discardSetupProposal: DiscardSetupProposalHandler;
+    startBlankSetup: StartBlankSetupHandler;
+    getSetupDraft: GetSetupDraftHandler;
+    editSetupDraft: EditSetupDraftHandler;
+    applyDefaultPack: ApplyDefaultPackHandler;
+    listOrganisationPacks: ListOrganisationPacksHandler;
+    saveOrganisationPack: SaveOrganisationPackHandler;
+    removeOrganisationPack: RemoveOrganisationPackHandler;
+    changeSetupResults: ChangeSetupProposalHandler<ResultOperation>;
+    changeSetupPlaces: ChangeSetupProposalHandler<PlaceOperation>;
+    changeSetupPlan: ChangeSetupProposalHandler<PlanOperation>;
+    changeSetupFinance: ChangeSetupProposalHandler<FinanceOperation>;
+    changeSetupRisks: ChangeSetupProposalHandler<RiskOperation>;
+    signOffSetup: SignOffSetupHandler;
+    launchProject: LaunchProjectHandler;
+    updateMfaRequirement: UpdateMfaRequirementHandler;
+    askProject: AskProjectHandler;
+    listConnectors: ListConnectorsHandler;
+    saveConnector: SaveConnectorHandler;
+    deleteConnector: DeleteConnectorHandler;
+    syncConnector: SyncConnectorHandler;
     listPendingAgentMemory: ListPendingAgentMemoryHandler;
     approveAgentMemory: ApproveAgentMemoryHandler;
     rejectAgentMemory: RejectAgentMemoryHandler;
     deactivateAgentMemory: DeactivateAgentMemoryHandler;
     listUsers: ListUsersHandler;
+    issueScimCredential: IssueScimCredentialHandler;
+    listScimCredentials: ListScimCredentialsHandler;
+    revokeScimCredential: RevokeScimCredentialHandler;
     createProject: CreateProjectHandler;
     createDemoProject: CreateDemoProjectHandler;
     deleteDemoProject: DeleteDemoProjectHandler;
@@ -481,6 +343,7 @@ export interface Container {
     repairProjectWorkspace: RepairProjectWorkspaceHandler;
     listWorkspaceFiles: ListWorkspaceFilesHandler;
     provisionTenantWorkspaces: ProvisionTenantWorkspacesHandler;
+    setupOrganisationFolders: SetupOrganisationFoldersHandler;
     importDriveFile: ImportDriveFileHandler;
     getReportingProfile: GetReportingProfileHandler;
     upsertReportingProfile: UpsertReportingProfileHandler;
@@ -516,17 +379,153 @@ export interface Container {
     moveIndicator: MoveIndicatorHandler;
     archiveIndicator: ArchiveIndicatorHandler;
     restoreIndicator: RestoreIndicatorHandler;
+    listLogframeVersions: ListLogframeVersionsHandler;
+    getLogframeChanges: GetLogframeChangesHandler;
+    approveLogframeVersion: ApproveLogframeVersionHandler;
+    listFunding: ListFundingHandler;
+    saveProgramme: SaveProgrammeHandler;
+    saveGrant: SaveGrantHandler;
+    placeProject: PlaceProjectHandler;
     listArchivedIndicators: ListArchivedIndicatorsHandler;
     confirmIndicatorSemantics: ConfirmIndicatorSemanticsHandler;
     verifyPeriodIndicatorUpdates: VerifyPeriodIndicatorUpdatesHandler;
     createIndicatorUpdate: CreateIndicatorUpdateHandler;
+    parseUploadedFile: ParseUploadedFileHandler;
+    exportOrganization: ExportOrganizationHandler;
+    listCollectionForms: ListCollectionFormsHandler;
+    getCollectionForm: GetCollectionFormHandler;
+    saveCollectionForm: SaveCollectionFormHandler;
+    createFormFromIndicator: CreateFormFromIndicatorHandler;
+    setCollectionFormStatus: SetCollectionFormStatusHandler;
+    submitCollectionRecord: SubmitCollectionRecordHandler;
+    listCollectionRecords: ListCollectionRecordsHandler;
+    reviewCollectionRecord: ReviewCollectionRecordHandler;
+    createCollectionLink: CreateCollectionLinkHandler;
+    listCollectionLinks: ListCollectionLinksHandler;
+    revokeCollectionLink: RevokeCollectionLinkHandler;
+    publicCollectionForm: PublicCollectionFormHandler;
+    publicSubmitCollectionRecord: PublicSubmitCollectionRecordHandler;
+    previewCollectionTotals: PreviewCollectionTotalsHandler;
+    applyCollectionTotals: ApplyCollectionTotalsHandler;
+    getCollectionSheetTemplate: GetCollectionSheetTemplateHandler;
+    importCollectionRecords: ImportCollectionRecordsHandler;
+    uploadCollectionFile: UploadCollectionFileHandler;
+    getCollectionFile: GetCollectionFileHandler;
+    getOfflinePack: GetOfflinePackHandler;
+    listDashboards: ListDashboardsHandler;
+    getDashboard: GetDashboardHandler;
+    saveDashboard: SaveDashboardHandler;
+    addDashboardWidget: AddDashboardWidgetHandler;
+    deleteDashboard: DeleteDashboardHandler;
+    getDashboardData: GetDashboardDataHandler;
+    previewDashboardCharts: PreviewDashboardChartsHandler;
+    resolveDatasets: ResolveDatasetsHandler;
+    listSavedCharts: ListSavedChartsHandler;
+    listBookmarks: ListBookmarksHandler;
+    listHomePins: ListHomePinsHandler;
+    listMapOverlays: ListMapOverlaysHandler;
+    setDashboardFeatured: SetDashboardFeaturedHandler;
+    isDashboardFeatured: IsDashboardFeaturedHandler;
+    addMapOverlay: AddMapOverlayHandler;
+    readMapOverlay: ReadMapOverlayHandler;
+    removeMapOverlay: RemoveMapOverlayHandler;
+    addHomePin: AddHomePinHandler;
+    moveHomePin: MoveHomePinHandler;
+    removeHomePin: RemoveHomePinHandler;
+    getHomeLayout: GetHomeLayoutHandler;
+    saveHomeLayout: SaveHomeLayoutHandler;
+    resetHomeLayout: ResetHomeLayoutHandler;
+    listSavedReports: ListSavedReportsHandler;
+    saveSavedReport: SaveSavedReportHandler;
+    deleteSavedReport: DeleteSavedReportHandler;
+    addBookmark: AddBookmarkHandler;
+    removeBookmark: RemoveBookmarkHandler;
+    listDashboardTemplates: ListDashboardTemplatesHandler;
+    getDashboardTemplate: GetDashboardTemplateHandler;
+    saveDashboardTemplate: SaveDashboardTemplateHandler;
+    deleteDashboardTemplate: DeleteDashboardTemplateHandler;
+    applyDashboardTemplate: ApplyDashboardTemplateHandler;
+    getSavedChart: GetSavedChartHandler;
+    saveSavedChart: SaveSavedChartHandler;
+    deleteSavedChart: DeleteSavedChartHandler;
+    getIndicatorValueHistory: GetIndicatorValueHistoryHandler;
+    getIndicatorEntryFile: GetIndicatorEntryFileHandler;
+    parseIndicatorWorkbook: ParseIndicatorWorkbookHandler;
+    createDashboardShare: CreateDashboardShareHandler;
+    listDashboardShares: ListDashboardSharesHandler;
+    revokeDashboardShare: RevokeDashboardShareHandler;
+    publicDashboard: PublicDashboardHandler;
+    publicDashboardMapResults: PublicDashboardMapResultsHandler;
+    listPlaces: ListPlacesHandler;
+    createPlace: CreatePlaceHandler;
+    updatePlace: UpdatePlaceHandler;
+    archivePlace: ArchivePlaceHandler;
+    setPlaceGeometry: SetPlaceGeometryHandler;
+    clearPlaceGeometry: ClearPlaceGeometryHandler;
+    getPlaceGeometry: GetPlaceGeometryHandler;
+    importPlaces: ImportPlacesHandler;
+    seedPlacesFromBoundaries: SeedPlacesFromBoundariesHandler;
+    resolvePlaces: ResolvePlacesHandler;
+    listUnconfirmedLocations: ListUnconfirmedLocationsHandler;
+    getProjectPlaceResults: GetProjectPlaceResultsHandler;
+    submitPeriodIndicatorUpdates: SubmitPeriodIndicatorUpdatesHandler;
+    returnPeriodIndicatorUpdates: ReturnPeriodIndicatorUpdatesHandler;
+    setPeriodEntryWindow: SetPeriodEntryWindowHandler;
+    createApiKey: CreateApiKeyHandler;
+    listApiKeys: ListApiKeysHandler;
+    revokeApiKey: RevokeApiKeyHandler;
+    createWebhook: CreateWebhookEndpointHandler;
+    listWebhooks: ListWebhookEndpointsHandler;
+    updateWebhook: UpdateWebhookEndpointHandler;
+    deleteWebhook: DeleteWebhookEndpointHandler;
+    listWebhookDeliveries: ListWebhookDeliveriesHandler;
+    listApiProjects: ListApiProjectsHandler;
+    uploadMapLayer: UploadMapLayerHandler;
+    uploadBoundaryLayer: UploadBoundaryLayerHandler;
+    listBoundaryLayers: ListBoundaryLayersHandler;
+    readBoundaryLayer: ReadBoundaryLayerHandler;
+    removeBoundaryLayer: RemoveBoundaryLayerHandler;
+    getMapLayer: GetMapLayerHandler;
+    readMapLayer: ReadMapLayerHandler;
+    removeMapLayer: RemoveMapLayerHandler;
     bulkUpsertIndicatorUpdates: BulkUpsertIndicatorUpdatesHandler;
+    quickEnterIndicatorValue: QuickEnterIndicatorValueHandler;
     listPeriodIndicators: ListPeriodIndicatorsHandler;
     parseIndicatorSheet: ParseIndicatorSheetHandler;
     verifyIndicatorUpdate: VerifyIndicatorUpdateHandler;
     requestIndicatorUpdateCorrection: RequestIndicatorUpdateCorrectionHandler;
     rejectIndicatorUpdate: RejectIndicatorUpdateHandler;
     listIndicatorUpdates: ListIndicatorUpdatesHandler;
+    getProjectDataSheet: GetProjectDataSheetHandler;
+    getProjectInfographicData: GetProjectInfographicDataHandler;
+    getPortfolioInfographicData: GetPortfolioInfographicDataHandler;
+    createInfographic: CreateInfographicHandler;
+    updateInfographic: UpdateInfographicHandler;
+    listProjectInfographics: ListProjectInfographicsHandler;
+    getInfographic: GetInfographicHandler;
+    deleteInfographic: DeleteInfographicHandler;
+    exportInfographic: ExportInfographicHandler;
+    listInfographicExports: ListInfographicExportsHandler;
+    getInfographicExportFile: GetInfographicExportFileHandler;
+    previewInfographic: PreviewInfographicHandler;
+    getInfographicSuggestions: GetInfographicSuggestionsHandler;
+    getInfographicAiText: GetInfographicAiTextHandler;
+    suggestPresenceRows: SuggestPresenceRowsHandler;
+    listInfographicTemplates: ListInfographicTemplatesHandler;
+    saveInfographicTemplate: SaveInfographicTemplateHandler;
+    deleteInfographicTemplate: DeleteInfographicTemplateHandler;
+    uploadInfographicAsset: UploadInfographicAssetHandler;
+    listInfographicAssets: ListInfographicAssetsHandler;
+    getInfographicAssetFile: GetInfographicAssetFileHandler;
+    removeInfographicAsset: RemoveInfographicAssetHandler;
+    getInfographicBrandKit: GetBrandKitHandler;
+    saveInfographicBrandKit: SaveBrandKitHandler;
+    reviewInfographic: InfographicReviewHandler;
+    createInfographicShareLink: CreateInfographicShareLinkHandler;
+    listInfographicShareLinks: ListInfographicShareLinksHandler;
+    revokeInfographicShareLink: RevokeInfographicShareLinkHandler;
+    generateInfographicVariants: GenerateInfographicVariantsHandler;
+    importDataSheet: ImportDataSheetHandler;
     listLogframe: ListLogframeHandler;
     listIndicators: ListIndicatorsHandler;
     uploadEvidence: UploadEvidenceHandler;
@@ -539,6 +538,36 @@ export interface Container {
     searchEvidence: SearchEvidenceHandler;
     getEvidence: GetEvidenceHandler;
     createActivityUpdate: CreateActivityUpdateHandler;
+    getPortfolioIndicators: GetPortfolioIndicatorsHandler;
+    setWorkPlanningVisibility: SetWorkPlanningVisibilityHandler;
+    listProjectPeople: ListProjectPeopleHandler;
+    createRisk: CreateRiskHandler;
+    updateRisk: UpdateRiskHandler;
+    closeRisk: CloseRiskHandler;
+    listRisks: ListRisksHandler;
+    planStorySuggestion: GetPlanStorySuggestionHandler;
+    getActivityFileNeeds: GetActivityFileNeedsHandler;
+    getDeliveryHealth: GetDeliveryHealthHandler;
+    getEntryDueDays: GetEntryDueDaysHandler;
+    setEntryDueDays: SetEntryDueDaysHandler;
+    getPortfolioHealth: GetPortfolioHealthHandler;
+    getPortfolioOverview: GetPortfolioOverviewHandler;
+    getDonorIndicatorMapping: GetDonorIndicatorMappingHandler;
+    reviewEvidence: ReviewEvidenceHandler;
+    getManagementReport: GetManagementReportHandler;
+    recordAdaptation: RecordAdaptationHandler;
+    updateAdaptation: UpdateAdaptationHandler;
+    listAdaptations: ListAdaptationsHandler;
+    setDonorIndicatorMapping: SetDonorIndicatorMappingHandler;
+    getRiskTrend: GetRiskTrendHandler;
+    createTask: CreateTaskHandler;
+    completeTask: CompleteTaskHandler;
+    cancelTask: CancelTaskHandler;
+    listAssignments: ListAssignmentsHandler;
+    listTeamWork: ListTeamWorkHandler;
+    setIndicatorOwner: SetIndicatorOwnerHandler;
+    setPeriodOwner: SetPeriodOwnerHandler;
+    assignChecklistItem: AssignChecklistItemHandler;
     importActivities: ImportActivitiesHandler;
     polishActivity: PolishActivityHandler;
     reviewActivity: ReviewActivityHandler;
@@ -566,6 +595,8 @@ export interface Container {
     setStandingStatement: SetStandingStatementHandler;
     setTemplateDefaultForType: SetTemplateDefaultForTypeHandler;
     setRequireSecondApprover: SetRequireSecondApproverHandler;
+    setRequireEvidenceForVerification: SetRequireEvidenceForVerificationHandler;
+    setSimpleReview: SetSimpleReviewHandler;
     bulkVerifyEvidence: BulkVerifyEvidenceHandler;
     getComplianceNotes: GetComplianceNotesHandler;
     saveSectionNote: SaveSectionNoteHandler;
@@ -594,6 +625,9 @@ export interface Container {
     reorderReportSections: ReorderReportSectionsHandler;
     updateReportSectionChart: UpdateReportSectionChartHandler;
     refreshSectionCharts: RefreshSectionChartsHandler;
+    sectionDataCharts: SectionDataChartsHandler;
+    sectionInfographics: SectionInfographicsHandler;
+    reopenReport: ReopenReportHandler;
     approveReportSection: ApproveReportSectionHandler;
     submitReportForReview: SubmitReportForReviewHandler;
     approveReport: ApproveReportHandler;
@@ -610,6 +644,7 @@ export interface Container {
     resolveEffectiveRequirements: ResolveEffectiveRequirementsHandler;
     upsertRequirementPack: UpsertRequirementPackHandler;
     activateRequirementPack: ActivateRequirementPackHandler;
+    listRequirementPacks: ListRequirementPacksHandler;
     upsertAwardOverride: UpsertAwardOverrideHandler;
     createSubmissionSnapshot: CreateSubmissionSnapshotHandler;
     detectMissingEvidence: DetectMissingEvidenceHandler;
@@ -623,9 +658,12 @@ export interface Container {
     createExport: CreateExportHandler;
     getExportPreflight: GetExportPreflightHandler;
     runExport: RunExportHandler;
-    generateDeadlineReminders: GenerateDeadlineRemindersHandler;
+    runReminders: RunRemindersHandler;
+    getNotificationPreferences: GetNotificationPreferencesHandler;
+    updateNotificationPreferences: UpdateNotificationPreferencesHandler;
     addComment: AddCommentHandler;
     resolveComment: ResolveCommentHandler;
+    reopenComment: ReopenCommentHandler;
     listComments: ListCommentsHandler;
     listNotifications: ListNotificationsHandler;
     markNotificationRead: MarkNotificationReadHandler;
@@ -655,20 +693,100 @@ export interface Container {
     retryBillingInbox: RetryBillingInboxHandler;
     runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
     runGrandfatherByoLlm: RunGrandfatherByoLlmHandler;
-  };
+  } & WorkplanHandlers & FinanceHandlers;
 }
+
+import { createWorkplanModule, type WorkplanHandlers } from "./container/workplan-module.js";
+import { createFinanceModule, type FinanceHandlers } from "./container/finance-module.js";
+import { createProjectSetupModule, type ProjectSetupHandlers } from "./container/project-setup-module.js";
+import { createLaunchSteps, createPendingMemberResolver, createUserDirectory, type LaunchStepDeps } from "./project-setup/launch-steps.js";
+import { PrismaPendingMemberRepository } from "./repositories/project-setup.js";
+import { createSetupAppliers } from "./project-setup/setup-appliers.js";
+
+/** Use cases that run in one transaction with their audit row (H-3). Add a name here, never a wrapper elsewhere. */
+export const ATOMIC_HANDLERS = [
+  "changeRole",
+  "setRequireSecondApprover",
+  "createIndicatorUpdate",
+  "bulkUpsertIndicatorUpdates",
+  "verifyIndicatorUpdate",
+  "requestIndicatorUpdateCorrection",
+  "rejectIndicatorUpdate",
+  "verifyPeriodIndicatorUpdates",
+  "approveReportSection",
+  "submitReportForReview",
+  "approveReport",
+  "rejectReport",
+  "reviewActivity",
+  "bulkReviewActivities",
+  "resolveChecklistItem",
+  "cancelReportingPeriod",
+  "restoreReportingPeriod",
+  "convertPeriodToFinal",
+  "archiveIndicator",
+  "restoreIndicator",
+] as const satisfies ReadonlyArray<keyof Container["handlers"]>;
+
+/** The outgoing mail sender chosen by EMAIL_PROVIDER: "smtp" (the host's own mail server on 127.0.0.1) or "postmark"; none means mail is only logged. */
+function createEmailSender(): EmailAdapter | null {
+  const fromAddress = process.env.EMAIL_FROM_ADDRESS ?? "notifications@donordesk.online";
+  if (process.env.EMAIL_PROVIDER === "smtp") return new LocalSmtpEmailAdapter({ fromAddress });
+  if (process.env.EMAIL_PROVIDER === "postmark" && process.env.POSTMARK_SERVER_TOKEN) {
+    return new EmailAdapter({ smtpHost: "", smtpPort: 0, smtpUser: process.env.POSTMARK_SERVER_TOKEN, smtpPassword: "", fromAddress });
+  }
+  return null;
+}
+
+// Each distinct connection URL (plain, or tenant-scoped via `withTenantSession`) gets exactly one
+// PrismaClient, reused across requests. Previously every authenticated HTTP request built a brand-new
+// PrismaClient (and its own connection pool) and $disconnect()'d it at the end of the request — the
+// dominant cost of every page load. UnitOfWork's transaction state lives in an AsyncLocalStorage, so
+// sharing one client across concurrent requests is safe. Capped to bound memory when many tenants exist;
+// the oldest client is evicted and disconnected in the background.
+const POOLED_CLIENT_LIMIT = 500;
+const pooledClients = new Map<string, PrismaClient>();
+
+function pooledPrismaClient(url: string | undefined): PrismaClient {
+  const key = url ?? "__default__";
+  const existing = pooledClients.get(key);
+  if (existing) return existing;
+  const client = new PrismaClient({
+    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+    ...(url ? { datasources: { db: { url } } } : {}),
+  });
+  pooledClients.set(key, client);
+  if (pooledClients.size > POOLED_CLIENT_LIMIT) {
+    const oldestKey = pooledClients.keys().next().value;
+    if (oldestKey !== undefined) {
+      const oldest = pooledClients.get(oldestKey);
+      pooledClients.delete(oldestKey);
+      void oldest?.$disconnect();
+    }
+  }
+  return client;
+}
+
+/** Disconnects every pooled PrismaClient. Call on process shutdown only. */
+export async function disconnectAllPooledClients(): Promise<void> {
+  const clients = Array.from(pooledClients.values());
+  pooledClients.clear();
+  await Promise.all(clients.map((c) => c.$disconnect()));
+}
+
+let aiReporterFlagLogged = false;
 
 export function createContainer(options?: { tenantId?: string; useAdminConnection?: boolean }): Container {
   const baseUrl = options?.useAdminConnection ? process.env.DATABASE_ADMIN_URL : process.env.DATABASE_URL;
   const tenantUrl = baseUrl && options?.tenantId ? withTenantSession(baseUrl, options.tenantId) : baseUrl;
-  const prisma = new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
-    ...(tenantUrl ? { datasources: { db: { url: tenantUrl } } } : {}),
-  });
+  const basePrisma = pooledPrismaClient(tenantUrl);
+  // Every repository gets this client: outside a unit of work it is the plain client, inside one it is the open transaction.
+  const unitOfWork = new UnitOfWork(basePrisma);
+  const prisma = unitOfWork.client;
   const logger = createLogger();
   const auth = process.env.AUTH_PROVIDER === "oidc" ? new OidcAuthProvider() : new JwtAuthProvider();
   const googleSignIn = new GoogleSignInConnector();
-  const storage = new LocalStorage();
+  // Stored files are encrypted at rest when EVIDENCE_ENCRYPTION_KEYS is set; older plaintext files stay readable until `storage:encrypt` runs.
+  const storage = withEncryptionAtRest(new LocalStorage());
   const googleDriveCredentials = new PrismaGoogleDriveCredentialStore(
     prisma,
     process.env.PLATFORM_MASTER_KEY ? Buffer.from(process.env.PLATFORM_MASTER_KEY, "base64") : Buffer.alloc(0),
@@ -698,6 +816,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     LocalStorage.resolveRoot(),
     googleDriveTokens,
   );
+  // Project documents live in the organisation's own Google Drive (Phase 36): staged before the project exists, then moved into its folder.
+  const setupDocuments = new GoogleDriveSetupDocuments(googleDriveTokens, new GoogleDriveWorkspaceDrive(googleDriveTokens), projectWorkspace, driveFileReader);
   const evidenceStorage = new EvidenceStorageResolver(
     storage,
     async (tenantId) => {
@@ -711,11 +831,18 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     undefined, // R2 config: wired via env in production; see memorybank/gdrive.md
     projectWorkspace,
   );
-  const parser = new TolerantDocumentParser();
+  const parser = new OcrFallbackDocumentParser(new TolerantDocumentParser());
   const ids = new UuidIdGenerator();
   const clock = new SystemClockImpl();
   const jobQueue = createJobQueue(logger);
-  const events = new OutboxEventBus(logger, jobQueue, DEFAULT_EVENT_TO_JOB);
+  // The operator's own AI rates (LLM_PRICES_JSON) over the built-in estimates.
+  configureLlmPrices(pricesFromEnv(process.env.LLM_PRICES_JSON));
+  const logframeVersions = new PrismaLogframeVersionRepository(prisma);
+  const mfaService = new TotpMfaService();
+  const funding = new PrismaFundingRepository(prisma);
+  const failedJobs = new PrismaFailedJobStore(prisma);
+  const jobRetry = new JobRetryRunner(failedJobs, jobQueue, logger);
+  const events = new OutboxEventBus(logger, jobQueue, DEFAULT_EVENT_TO_JOB, failedJobs);
   const jobRegistrar = jobQueue as unknown as { register?: (n: string, h: (payload: Record<string, unknown>) => Promise<void>) => void };
   if (jobRegistrar?.register) {
     jobRegistrar.register(
@@ -752,25 +879,39 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const organizations = new PrismaOrganizationRepository(prisma);
   const users = new PrismaUserRepository(prisma);
   const loggingNotifier = new LoggingNotificationAdapter(logger);
-  const notify: INotificationPort =
-    process.env.EMAIL_PROVIDER === "postmark" && process.env.POSTMARK_SERVER_TOKEN
-      ? new FanOutNotificationAdapter([
-          loggingNotifier,
-          new PostmarkNotificationAdapter(
-            new EmailAdapter({
-              smtpHost: "",
-              smtpPort: 0,
-              smtpUser: process.env.POSTMARK_SERVER_TOKEN,
-              smtpPassword: "",
-              fromAddress: process.env.EMAIL_FROM_ADDRESS ?? "notifications@donordesk.online",
-            }),
-            users,
-            logger,
-          ),
-        ])
-      : loggingNotifier;
+  const emailSender = createEmailSender();
+  const notify: INotificationPort = emailSender
+    ? new FanOutNotificationAdapter([loggingNotifier, new PostmarkNotificationAdapter(emailSender, users, logger)])
+    : loggingNotifier;
   const invitations = new PrismaInvitationRepository(prisma);
   const passwordResetTokens = new PrismaPasswordResetTokenRepository(prisma);
+  const scimCredentials = new PrismaScimCredentialRepository(prisma);
+  const mapLayers = new PrismaTenantMapLayerRepository(prisma);
+  const boundaryLayers = new PrismaTenantBoundaryLayerRepository(prisma);
+  const places = new PrismaPlaceRepository(prisma);
+  const collectionForms = new PrismaCollectionFormRepository(prisma);
+  const collectionRecords = new PrismaCollectionRecordRepository(prisma);
+  const collectionLinks = new PrismaCollectionLinkRepository(prisma);
+  const collectionFiles = new PrismaCollectionFileRepository(prisma);
+  const dashboards = new PrismaDashboardRepository(prisma);
+  const savedCharts = new PrismaSavedChartRepository(prisma);
+  const bookmarks = new PrismaBookmarkRepository(prisma);
+  const homePins = new PrismaHomePinRepository(prisma);
+  const homeLayouts = new PrismaHomeLayoutRepository(prisma);
+  const mapOverlays = new PrismaMapOverlayRepository(prisma);
+  const featuredDashboards = new PrismaFeaturedDashboardRepository(prisma);
+  const savedReports = new PrismaSavedReportRepository(prisma);
+  const dashboardTemplates = new PrismaDashboardTemplateRepository(prisma);
+  const dataConnectors = new PrismaDataConnectorRepository(prisma);
+  const connectorSecrets = new EnvConnectorSecrets();
+  const connectorHttp = new SafeConnectorHttp();
+  const dashboardLinks = new PrismaDashboardLinkRepository(prisma);
+  const placeUsage = new PrismaPlaceUsageReader(prisma);
+  const apiKeys = new PrismaApiKeyRepository(prisma);
+  const webhooks = new PrismaWebhookRepository(prisma);
+  const webhookRunner = new WebhookDeliveryRunner(webhooks, logger);
+  const webhookDispatcher = new WebhookDispatcher(webhooks, ids, clock, (error) => logger.warn("webhook.emit_failed", { error: error instanceof Error ? error.message : String(error) }));
+  const apiKeyAuth = new ApiKeyAuthenticator(apiKeys, clock);
   const passwordResetRateLimiter = new InMemoryPasswordResetRateLimiter();
   const projects = new PrismaProjectRepository(prisma);
   const demoProjects = new PrismaDemoProjectRepository(prisma);
@@ -806,7 +947,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const exports = new PrismaExportRepository(prisma);
   const comments = new PrismaCommentRepository(prisma);
   const notifications = new PrismaNotificationRepository(prisma);
-  const audits = new PrismaAuditRepository(prisma);
+  // Verifying a value, verifying evidence, accepting an activity and sealing a submission are announced to subscribed webhooks.
+  const audits = withWebhookEmission(new PrismaAuditRepository(prisma), webhookDispatcher);
 
   const billingSubscriptions = new PrismaBillingSubscriptionRepository(prisma);
   const entitlementGrants = new PrismaEntitlementGrantRepository(prisma);
@@ -858,14 +1000,16 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // Resolved once per process so it is visible in startup logs without
   // waiting for the first /v1/reporting-periods/:id/generate-draft request.
   const aiReporterFlagEnabled = isTruthyFlag(process.env.AI_REPORTER_ENABLED);
-  if (aiReporterFlagEnabled) {
+  // A tenant container is built per request: say it once per process, not on every request.
+  if (aiReporterFlagEnabled && !aiReporterFlagLogged) {
+    aiReporterFlagLogged = true;
     logger?.info("AI Reporter flag is enabled; the dedicated Python worker will be used for report drafting", {
       url: process.env.AI_REPORTER_URL ?? "http://127.0.0.1:8092 (default)",
       httpTimeoutMs: process.env.AI_REPORTER_HTTP_TIMEOUT_MS ?? `derived from AI_REPORTER_DRAFT_TIMEOUT_MS=${process.env.AI_REPORTER_DRAFT_TIMEOUT_MS ?? "90000 (default)"} (2x + 30s)`,
       writerContractVersion: process.env.AI_REPORTER_CONTRACT_VERSION ?? "4 (default)",
       internalTokenSet: Boolean(process.env.INTERNAL_TOKEN),
     });
-  } else if (process.env.AI_REPORTER_ENABLED !== undefined) {
+  } else if (!aiReporterFlagEnabled && process.env.AI_REPORTER_ENABLED !== undefined) {
     logger?.warn("AI_REPORTER_ENABLED is set but unrecognised; treating as disabled. Accepted values: 1, true, on, yes, enabled (case-insensitive).", {
       raw: process.env.AI_REPORTER_ENABLED,
     });
@@ -998,7 +1142,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const gateTenantLlm = async (
     resolved: ResolvedLlmConfig | null,
     tenantId: string | undefined,
-    path: "report-draft" | "template-extraction",
+    path: "report-draft" | "template-extraction" | "infographic-text" | "ask-donordesk" | "project-setup",
   ): Promise<ResolvedLlmConfig | null> => {
     if (resolved?.scope !== "TENANT" || !tenantId) return resolved;
     const entitlementResult = await entitlements.resolve({ tenantId });
@@ -1055,6 +1199,35 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // deterministic extractor. The template is donor guidance (no beneficiary
   // data), and redaction would break source-grounding, so no PII firewall.
   const templateExtractionQuota = new TemplateExtractionQuota(llmUsage);
+  const resolveInfographicLlm = async (tenantId: string): Promise<ILLMProvider | null> => {
+    try {
+      const org = await organizations.findByTenant(TenantId.create(tenantId));
+      if (!org.ok || !org.value?.aiEnabled) return null;
+      const resolved = await gateTenantLlm(await resolveTenantLlm(tenantId), tenantId, "infographic-text");
+      const provider = resolved ? createLLMProvider(resolved) : process.env.LLM_PROVIDER ? createLLMProvider() : null;
+      if (!provider || provider.name === "stub") return null;
+      return new UsageRecordingLlmProvider(provider, llmUsage, ids, { tenantId, operationType: "INFOGRAPHIC_TEXT", promptId: "infographic-text" });
+    } catch (error) {
+      logger.warn("Infographic text LLM unavailable", { tenantId, error: error instanceof Error ? error.message : String(error) });
+      return null;
+    }
+  };
+
+  // Ask DonorDesk (Phase 33.9): the organisation must have AI on (checked here) and have opted in to Ask (checked by the handler).
+  const resolveAskLlm = async (tenantId: string): Promise<ILLMProvider | null> => {
+    try {
+      const org = await organizations.findByTenant(TenantId.create(tenantId));
+      if (!org.ok || !org.value?.aiEnabled || !org.value.askEnabled) return null;
+      const resolved = await gateTenantLlm(await resolveTenantLlm(tenantId), tenantId, "ask-donordesk");
+      const provider = resolved ? createLLMProvider(resolved) : process.env.LLM_PROVIDER ? createLLMProvider() : null;
+      if (!provider || provider.name === "stub") return null;
+      return new UsageRecordingLlmProvider(provider, llmUsage, ids, { tenantId, operationType: "ASK_DONORDESK", promptId: "ask-donordesk" });
+    } catch (error) {
+      logger.warn("Ask DonorDesk LLM unavailable", { tenantId, error: error instanceof Error ? error.message : String(error) });
+      return null;
+    }
+  };
+
   const resolveTemplateLlm = async (tenantId: string): Promise<ILLMProvider | null> => {
     try {
       const org = await organizations.findByTenant(TenantId.create(tenantId));
@@ -1092,7 +1265,30 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const exportBuilder = new DefaultExportBuilder(storage, donorTemplateRenderer);
 
   const activityLinks = new ActivityLinkResolver(logframe);
-  const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits);
+  // Requests (Phase 28.3): the reconciler closes the ones the records show were met, and is told after the changes that meet them.
+  const projectTasks = new PrismaProjectTaskRepository(prisma);
+  const projectRoster = new PrismaProjectRoster(prisma);
+  const notificationPreferences = new PrismaNotificationPreferences(prisma);
+  // Tells one person: an in-app note always, an email only when their setting allows it.
+  const personNotifier = new PersonNotifier(ids, notifications, notify, notificationPreferences);
+  const taskReconciler = new TaskReconciler(projectTasks, new PrismaTaskFactsReader(prisma), audits, clock);
+  // The work plan: repositories, services and handlers are built in one module (see container/workplan-module.ts).
+  const workplan = createWorkplanModule({ prisma, ids, clock, audits, logframe, indicators, indicatorUpdates, periods, projects, activities, activityLinks, taskReconciler });
+  const { plannedActivities, planRevisions, planContext, planLinks, automationSettings, beneficiaries: planBeneficiaries, beneficiaryLinks: planBeneficiaryLinks } = workplan;
+  const runAutomations = new RunAutomationsHandler(projects, plannedActivities, new PrismaDeliveryFactsReader(prisma), automationSettings, new PrismaReminderAudience(prisma), new PrismaReminderLedger(prisma), personNotifier, automationSettings);
+  const projectRisks = new PrismaProjectRiskRepository(prisma);
+  const donorIndicatorMappings = new PrismaDonorIndicatorMappingRepository(prisma);
+  const collectionFacts = new PrismaCollectionFactsReader(prisma);
+  const entryDueDays = new PrismaEntryDueDays(prisma);
+  const projectHealth = new ProjectHealthService(plannedActivities, new PrismaDeliveryFactsReader(prisma), collectionFacts);
+  const riskTrendStore = new PrismaRiskTrendStore(prisma);
+  const riskRefresh = new RefreshProjectRiskHandler(projects, projectHealth, checklist, periods, riskTrendStore, audits);
+  const assignmentQueue = new AssignmentQueue([
+    new PlanItemAssignmentSource(prisma), new TaskAssignmentSource(prisma), new ChecklistAssignmentSource(prisma), new ReportDeadlineAssignmentSource(prisma),
+    new ActivityFixAssignmentSource(prisma), new EvidenceReviewAssignmentSource(prisma), new ActivityReviewAssignmentSource(prisma), new ValueReviewAssignmentSource(prisma), new RecordReviewAssignmentSource(prisma),
+    new IndicatorValueAssignmentSource(collectionFacts), new RiskReviewAssignmentSource(prisma),
+  ]);
+  const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits, taskReconciler);
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates, logframe);
   const periodFinancials = new PrismaPeriodFinancialRepository(prisma);
   const financeInputs = new FinanceInputsService(reportingProfiles, periodFinancials);
@@ -1100,18 +1296,68 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const evidencePackageBuilder = new EvidencePackageBuilder(evidence);
   const claimVerifier = new DeterministicClaimVerifier();
   const hashService = new Sha256HashService();
+  const logframeVersioner = new LogframeVersioner(logframe, indicators, logframeVersions, hashService, ids);
+  const verificationEvidencePolicy = new VerificationEvidencePolicy(indicators, reportingProfiles);
   const assertionExtractor = new DeterministicAssertionExtractor();
   const revisionService = new ReportRevisionService(reportRevisions, sections, hashService);
   const sectionRegenerationTracker = new InMemorySectionRegenerationTracker();
   const backgroundTasks = new Set<Promise<void>>();
   const runInBackground = (task: () => Promise<void>): void => {
-    const running: Promise<void> = task()
-      .catch((error: unknown) => logger.error("Background task failed", { error: error instanceof Error ? error.message : String(error) }))
-      .finally(() => backgroundTasks.delete(running));
-    backgroundTasks.add(running);
+    // Started inside a unit of work, a task waits for the commit: it must see what the request wrote, and it must
+    // never hold on to a transaction that has closed.
+    const start = (): void => {
+      const running: Promise<void> = Promise.resolve()
+        .then(() => task())
+        .catch((error: unknown) => logger.error("Background task failed", { error: error instanceof Error ? error.message : String(error) }))
+        .finally(() => backgroundTasks.delete(running));
+      backgroundTasks.add(running);
+    };
+    UnitOfWork.afterCommit(start);
   };
+  // Project setup wizard (Phase 36): the organisation must have AI on and have opted in (checked here) before any
+  // document is read. The daily cap comes from the environment; 10 a day across the organisation by default.
+  const resolveSetupLlm = async (tenantId: string, model?: string): Promise<ILLMProvider | null> => {
+    try {
+      const org = await organizations.findByTenant(TenantId.create(tenantId));
+      if (!org.ok || !org.value?.aiEnabled || !org.value.setupAssistEnabled) return null;
+      const resolved = await gateTenantLlm(await resolveTenantLlm(tenantId), tenantId, "project-setup");
+      // A heavier model for the structural areas is used only with the same provider (its key and endpoint stay the organisation's).
+      const pinned = (config?: Parameters<typeof createLLMProvider>[0]) => createLLMProvider(model ? { ...(config ?? {}), model } : config);
+      const provider = resolved ? pinned(resolved) : process.env.LLM_PROVIDER ? pinned() : null;
+      if (!provider || provider.name === "stub") return null;
+      return new UsageRecordingLlmProvider(provider, llmUsage, ids, { tenantId, operationType: "SETUP_ASSIST", promptId: "project-setup" });
+    } catch (error) {
+      logger.warn("Project setup LLM unavailable", { tenantId, error: error instanceof Error ? error.message : String(error) });
+      return null;
+    }
+  };
+  const projectSetupWizard = createProjectSetupModule({
+    prisma,
+    ids,
+    clock,
+    audits,
+    orgs: organizations,
+    storage,
+    documents: setupDocuments,
+    parseUploadedFile: new ParseUploadedFileHandler(parser),
+    llmFor: resolveSetupLlm,
+    heavyModel: process.env.SETUP_HEAVY_MODEL?.trim() || undefined,
+    placeLookupUrl: process.env.PLACE_LOOKUP_URL?.trim() || undefined,
+    onProviderError: (info) => logger.warn("Project setup: the AI service refused a request", info),
+    runInBackground,
+    maxRunsPerDay: Number.parseInt(process.env.SETUP_ASSIST_RUNS_PER_DAY ?? "10", 10) || 10,
+    // Enterprise has no daily document cap; any failure to read the plan keeps the cap.
+    hasNoDailyCap: async (tenantId) => {
+      const entitlement = await entitlements.resolve({ tenantId: tenantId.toString() }).catch(() => null);
+      return !!entitlement?.ok && entitlement.value.planCode === "ENTERPRISE";
+    },
+    concurrency: Math.min(8, Math.max(1, Number.parseInt(process.env.SETUP_ASSIST_CONCURRENCY ?? "3", 10) || 3)),
+    callTimeoutMs: Math.min(240_000, Math.max(15_000, Number.parseInt(process.env.SETUP_ASSIST_CALL_TIMEOUT_MS ?? "90000", 10) || 90_000)),
+  });
   const unsupportedClaimProjector = new ChecklistUnsupportedClaimProjector(ids, checklist);
-  const recordChunkBuilder = new RecordChunkBuilder(periods, projects, activities, indicators, indicatorUpdates, evidence);
+  const planDelivery = new PlanDeliveryService(plannedActivities, planRevisions);
+  const adaptationRepo = new PrismaAdaptationRepository(prisma);
+  const recordChunkBuilder = new RecordChunkBuilder(periods, projects, activities, indicators, indicatorUpdates, evidence, planDelivery, adaptationRepo);
   const lintGrounding = new LintGrounding(recordChunkBuilder, evidencePackageBuilder, financeInputs);
   const assuranceService = new ReportAssuranceService(ids, sections, drafts, reportRevisions, reportClaims, assertionExtractor, claimVerifier, indicatorAnalytics, evidencePackageBuilder, unsupportedClaimProjector, financeInputs, recordChunkBuilder);
 
@@ -1139,7 +1385,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const detectMissingEvidenceHandler = new DetectMissingEvidenceHandler(ids, checklist, checklistDetector, periods, drafts, templates, indicatorUpdates, sections, activities, evidence, audits, indicatorAnalytics, financeInputs, indicators);
   // Reading the checklist or a period's readiness closes the items the data already satisfies: no manual scan needed.
   const checklistReconciler = new ChecklistReconciler(detectMissingEvidenceHandler);
-  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding, checklistReconciler, audits);
+  const calculateReadinessHandler = new CalculateReadinessHandler(periods, drafts, sections, indicators, indicatorUpdates, evidence, activities, checklist, templates, indicatorAnalytics, lintGrounding, checklistReconciler, audits, planDelivery);
 
   if (jobRegistrar?.register) {
     jobRegistrar.register(
@@ -1170,20 +1416,92 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const updateTemplateMappingHandler = new UpdateTemplateMappingHandler(donorTemplateMappings, audits);
   const approveTemplateMappingHandler = new ApproveTemplateMappingHandler(donorTemplateMappings, donorTemplateRenderer, storage, audits);
   const lockTemplateMappingHandler = new LockTemplateMappingHandler(periods, donorTemplateMappings, audits);
-  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding, { profiles: reportingProfiles, projects, members: projectMembers });
+  const reportNotifier = new ReportNotifier(personNotifier, projects, projectMembers, webhookDispatcher);
+  // The infographic handlers are built further down; approval reaches them through this late-bound hook.
+  let autoRefreshInfographics: AutoRefreshInfographicsHandler | undefined;
+  const approveReportHandler = new ApproveReportHandler(drafts, periods, checklist, reportClaims, sections, reportRevisions, resolvedRequirements, audits, indicatorAnalytics, lintGrounding, { profiles: reportingProfiles, projects, members: projectMembers }, reportNotifier, logframeVersions, { afterApproval: async (hookCtx, report) => autoRefreshInfographics?.afterApproval(hookCtx, report) });
   const defaultTemplateResolver = new DefaultTemplateResolver(templates, reportingProfiles);
   const closingPlanHandler = new PlanClosingReportHandler(projects, periods, drafts, indicators, indicatorUpdates, activities, reportingProfiles, templates, financeInputs, defaultTemplateResolver, projectMembers);
   const createReportingPeriodHandler = new CreateReportingPeriodHandler(ids, periods, projects, templates, projectSetup, reportingProfiles, readiness, audits, events, activities, defaultTemplateResolver);
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
-  const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence);
+  const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence, planDelivery);
+  const visibleProjects = new VisibleProjects(projects, projectMembers);
+  const saveDashboard = new SaveDashboardHandler(ids, dashboards, visibleProjects, audits, clock);
+  const placeResults = new GetProjectPlaceResultsHandler(projects, periods, indicators, indicatorUpdates, places);
+  const finance = createFinanceModule({ prisma, ids, clock, audits, projects, visible: visibleProjects, evidence });
+  const datasetExtras = new DatasetExtrasService(workplan.handlers.listWorkPlan, activities, new PrismaBudgetRepository(prisma), placeResults, places, logframe, finance.handlers.getProjectFinance, visibleProjects, bookmarks);
+  const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials, finance.registerFinanceRows);
+  const getProjectInfographicData = new GetProjectInfographicDataHandler(
+    projects, periods, indicators, indicatorUpdates, financeInputs, periodFinancials,
+    planBeneficiaries, planBeneficiaryLinks, plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock,
+  );
+  const infographicRepository = new PrismaInfographicRepository(prisma);
+  const infographicRenderer = new InfographicComposerRenderer();
+  const infographicBrand = new PrismaOrganizationBrandReader(prisma);
+  const infographicAssets = new PrismaInfographicAssetRepository(prisma);
+  const infographicBrandKits = new PrismaBrandKitRepository(prisma);
+  const infographicUserTemplates = new PrismaInfographicUserTemplateRepository(prisma);
+  const infographicShares = new PrismaInfographicShareRepository(prisma);
+  const portfolioOverview = new GetPortfolioOverviewHandler(new VisibleProjects(projects, projectMembers), projectHealth, projectRisks, periods, clock);
+  const getPortfolioInfographicData = new GetPortfolioInfographicDataHandler(portfolioOverview, clock);
+  const infographicRender = new InfographicRenderService(getProjectInfographicData, getProjectDataSheet, infographicBrand, infographicBrandKits, infographicAssets, storage, clock, getPortfolioInfographicData);
+  const infographicNotifier = new InfographicNotifier(personNotifier, projects, projectMembers, users);
+  const createInfographic = new CreateInfographicHandler(ids, infographicRepository, audits, clock, infographicUserTemplates);
+  const updateInfographic = new UpdateInfographicHandler(infographicRepository, audits, clock);
+  const listProjectInfographics = new ListProjectInfographicsHandler(infographicRepository);
+  const getInfographic = new GetInfographicHandler(infographicRepository);
+  const deleteInfographic = new DeleteInfographicHandler(infographicRepository, audits);
+  autoRefreshInfographics = new AutoRefreshInfographicsHandler(infographicRepository, createInfographic, periods, infographicNotifier, audits);
+  const exportInfographic = new ExportInfographicHandler(infographicRepository, infographicRender, infographicRenderer, storage, ids, audits, clock);
+  const listInfographicExports = new ListInfographicExportsHandler(infographicRepository);
+  const getInfographicExportFile = new GetInfographicExportFileHandler(infographicRepository, storage);
+  const previewCollectionTotals = new PreviewCollectionTotalsHandler(collectionForms, collectionRecords, indicators, periods);
+  const autoReview = new AutoReviewService(indicatorUpdates, reportingProfiles, audits);
+  const bulkUpsertIndicatorUpdates = new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker, taskReconciler, undefined, autoReview);
+  const getDonorIndicatorMappingHandler = new GetDonorIndicatorMappingHandler(templates, indicators, donorIndicatorMappings);
+  const sectionDataCharts = new SectionDataChartsHandler(sections, drafts, periods, reportArtifacts, getProjectDataSheet, ids, audits);
+  const sectionInfographics = new SectionInfographicsHandler(sections, drafts, periods, reportArtifacts, infographicRepository, ids, audits);
+  const listPeriodIndicators = new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities, projects, new PrismaEntryDueDays(prisma), clock);
+  const setupAppliers = createSetupAppliers(() => ({
+    importLogframe: handlers.importLogframe, importIndicators: handlers.importIndicators, createAllPeriods: handlers.createAllPeriods,
+    importWorkPlan: handlers.importWorkPlan, importPlaces: handlers.importPlaces, createRisk: handlers.createRisk, listRisks: handlers.listRisks,
+    listFundingSources: finance.handlers.listFundingSources, createFundingSource: finance.handlers.createFundingSource,
+    addProjectFunding: finance.handlers.addProjectFunding, fundings: finance.fundings, projects,
+    workspace: {
+      // Only the folders hold periods back here; any other readiness gap is the periods' own refusal to report.
+      stillPreparing: async (ctx, projectId) => {
+        const r = await readiness.compute(projectId, ctx.tenant.tenantId);
+        return r.ok && r.value.blockers.some((b) => b.code === "WORKSPACE_PENDING");
+      },
+    },
+  }));
+  const pendingMembers = new PrismaPendingMemberRepository(prisma);
+  const launchStepDeps = (): LaunchStepDeps => ({
+    setSimpleReview: handlers.setSimpleReview, setPeriodEntryWindow: handlers.setPeriodEntryWindow, listReportingPeriods: handlers.listReportingPeriods,
+    listIndicators: handlers.listIndicators, createFormFromIndicator: handlers.createFormFromIndicator, inviteUser: handlers.inviteUser,
+    listPendingInvitations: handlers.listPendingInvitations, assignProjectMember: handlers.assignProjectMember, setIndicatorOwner: handlers.setIndicatorOwner,
+    listWorkPlan: handlers.listWorkPlan, assignPlannedActivity: handlers.assignPlannedActivity, addBudgetLine: handlers.addBudgetLine,
+    getPlanItemBudget: handlers.getPlanItemBudget, applyDashboardTemplate: handlers.applyDashboardTemplate, updateProject: handlers.updateProject,
+  });
+  const setupLaunchSteps = createLaunchSteps(launchStepDeps, { users: createUserDirectory(users), pending: pendingMembers, now: () => clock.now(), newId: () => ids.generate() });
+  const pendingMemberResolver = createPendingMemberResolver(launchStepDeps, pendingMembers, users, audits);
   const handlers: Container["handlers"] = {
+    ...workplan.handlers,
+    ...finance.handlers,
+    suggestPresenceRows: new SuggestPresenceRowsHandler(workplan.handlers.listWorkPlan, new ListProjectPeopleHandler(projectMembers, users)),
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
-    login: new LoginHandler(users, auth, audits),
+    login: new LoginHandler(users, auth, audits, mfaService),
+    completeMfaLogin: new CompleteMfaLoginHandler(users, auth, mfaService, audits),
+    getMfaStatus: new GetMfaStatusHandler(users, organizations, process.env.AUTH_PROVIDER === "oidc"),
+    beginMfaEnrollment: new BeginMfaEnrollmentHandler(users, mfaService),
+    enableMfa: new EnableMfaHandler(users, mfaService, audits),
+    disableMfa: new DisableMfaHandler(users, auth, mfaService, audits, organizations),
+    resetUserMfa: new ResetUserMfaHandler(users, audits),
     googleSignIn: new GoogleSignInHandler(googleSignIn, users, organizations, auth, ids, audits, provisionTenant),
-    inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify, entitlements),
+    inviteUser: new InviteUserHandler(ids, users, invitations, audits, notify, entitlements, projects),
     listPendingInvitations: new ListPendingInvitationsHandler(invitations),
-    acceptInvitation: new AcceptInvitationHandler(ids, users, invitations, auth, audits, entitlements),
+    acceptInvitation: new AcceptInvitationHandler(ids, users, invitations, auth, audits, entitlements, projectMembers, pendingMemberResolver),
     changeRole: new ChangeRoleHandler(users, audits, entitlements),
     changePassword: new ChangePasswordHandler(users, auth, audits, clock),
     requestPasswordReset: new RequestPasswordResetHandler(
@@ -1194,6 +1512,39 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     updateOrganization: new UpdateOrganizationHandler(organizations, audits),
     updateOrganizationReportingDefaults: new UpdateOrganizationReportingDefaultsHandler(organizations, audits),
     updateAgentMemorySettings: new UpdateAgentMemorySettingsHandler(organizations, audits),
+    updateAskSettings: new UpdateAskSettingsHandler(organizations, audits),
+    updateMfaRequirement: new UpdateMfaRequirementHandler(organizations, users, audits, clock, process.env.AUTH_PROVIDER === "oidc"),
+    listConnectors: new ListConnectorsHandler(dataConnectors, connectorSecrets),
+    saveConnector: new SaveConnectorHandler(ids, collectionForms, dataConnectors, connectorSecrets, audits, clock),
+    deleteConnector: new DeleteConnectorHandler(dataConnectors, audits),
+    syncConnector: new SyncConnectorHandler(collectionForms, collectionRecords, dataConnectors, connectorSecrets, connectorHttp, audits, clock),
+    askProject: new AskProjectHandler(organizations, projects, visibleProjects, getProjectDataSheet, activities, evidence, llmUsage, audits, clock, (tenantId) => resolveAskLlm(tenantId)),
+    startSetupExtraction: projectSetupWizard.handlers.startSetupExtraction,
+    getSetupProposal: projectSetupWizard.handlers.getSetupProposal,
+    listSetupProposals: projectSetupWizard.handlers.listSetupProposals,
+    editSetupProposal: projectSetupWizard.handlers.editSetupProposal,
+    rerunSetupArea: projectSetupWizard.handlers.rerunSetupArea,
+    setSetupDocumentKind: projectSetupWizard.handlers.setSetupDocumentKind,
+    getSetupSourcePassage: projectSetupWizard.handlers.getSetupSourcePassage,
+    discardSetupProposal: projectSetupWizard.handlers.discardSetupProposal,
+    updateSetupAssistSettings: projectSetupWizard.handlers.updateSetupAssistSettings,
+    startBlankSetup: projectSetupWizard.handlers.startBlankSetup,
+    getSetupDraft: projectSetupWizard.handlers.getSetupDraft,
+    editSetupDraft: projectSetupWizard.handlers.editSetupDraft,
+    applyDefaultPack: projectSetupWizard.handlers.applyDefaultPack,
+    listOrganisationPacks: projectSetupWizard.handlers.listOrganisationPacks,
+    saveOrganisationPack: projectSetupWizard.handlers.saveOrganisationPack,
+    removeOrganisationPack: projectSetupWizard.handlers.removeOrganisationPack,
+    changeSetupResults: projectSetupWizard.handlers.changeSetupResults,
+    changeSetupPlaces: projectSetupWizard.handlers.changeSetupPlaces,
+    changeSetupPlan: projectSetupWizard.handlers.changeSetupPlan,
+    changeSetupFinance: projectSetupWizard.handlers.changeSetupFinance,
+    changeSetupRisks: projectSetupWizard.handlers.changeSetupRisks,
+    signOffSetup: projectSetupWizard.handlers.signOffSetup,
+    // Apply (Phase 36.3) delegates to the ordinary handlers in this table, read when it runs (after their versioning wrappers).
+    previewSetupApply: new PreviewSetupApplyHandler(projectSetupWizard.proposals, setupAppliers, clock),
+    applySetupProposal: new ApplySetupProposalHandler(projectSetupWizard.proposals, projectSetupWizard.runs, setupAppliers, { handle: (ctx, input) => handlers.createProject.handle(ctx, input) }, setupDocuments, audits, clock, ids, new SetProjectDeadlineOffsetHandler(reportingProfiles, audits)),
+    launchProject: new LaunchProjectHandler(projectSetupWizard.proposals, projectSetupWizard.runs, { handle: (ctx, id, input) => handlers.applySetupProposal.handle(ctx, id, input) }, organizations, createUserDirectory(users), setupLaunchSteps, audits, clock, ids),
     listPendingAgentMemory: new ListPendingAgentMemoryHandler(agentMemory),
     approveAgentMemory: new ApproveAgentMemoryHandler(agentMemory, audits),
     rejectAgentMemory: new RejectAgentMemoryHandler(agentMemory, audits),
@@ -1206,8 +1557,18 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     ),
     linkGoogleDriveEvidence: new LinkGoogleDriveEvidenceHandler(ids, evidence, evidenceStorage, events, audits, evidenceLinker),
     listUsers: new ListUsersHandler(users),
-    createProject: new CreateProjectHandler(ids, projects, projectSetup, reportingProfiles, organizations, projectWorkspace, events, audits, entitlements),
-    createDemoProject: new CreateDemoProjectHandler(ids, projects, projectSetup, reportingProfiles, logframe, indicators, templates, audits),
+    issueScimCredential: new IssueScimCredentialHandler(scimCredentials, ids, audits),
+    listScimCredentials: new ListScimCredentialsHandler(scimCredentials),
+    revokeScimCredential: new RevokeScimCredentialHandler(scimCredentials, audits),
+    createProject: new CreateProjectHandler(ids, projects, projectSetup, reportingProfiles, organizations, projectWorkspace, events, audits, entitlements, projectMembers),
+    createDemoProject: new CreateDemoProjectHandler(ids, projects, projectSetup, reportingProfiles, logframe, indicators, templates, audits, new DemoContentSeeder({
+      acknowledgeSetup: { handle: (ctx, projectId) => handlers.acknowledgeProjectSetup.handle(ctx, projectId) },
+      createPeriod: { handle: (ctx, input) => handlers.createReportingPeriod.handle(ctx, input) },
+      createIndicatorValue: { handle: (ctx, input) => handlers.createIndicatorUpdate.handle(ctx, input) },
+      verifyIndicatorValue: { handle: (ctx, id) => handlers.verifyIndicatorUpdate.handle(ctx, id) },
+      createActivity: { handle: (ctx, input) => handlers.createActivityUpdate.handle(ctx, input as never) },
+      reviewActivity: { handle: (ctx, id, decision) => handlers.reviewActivity.handle(ctx, id, decision) },
+    })),
     deleteDemoProject: new DeleteDemoProjectHandler(projects, demoProjects, audits),
     updateProject: new UpdateProjectHandler(projects, periods, audits),
     archiveProject: new ArchiveProjectHandler(projects, audits),
@@ -1224,6 +1585,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     repairProjectWorkspace: new RepairProjectWorkspaceHandler(projectWorkspace, projects, projectSetup, audits),
     listWorkspaceFiles: new ListWorkspaceFilesHandler(projectWorkspace, projects),
     provisionTenantWorkspaces: new ProvisionTenantWorkspacesHandler(projectWorkspace, projects, projectSetup, events, audits),
+    setupOrganisationFolders: new SetupOrganisationFoldersHandler(projectWorkspace, projects, audits),
     importDriveFile: new ImportDriveFileHandler(driveFileReader, parser, uploadTemplateHandler, new ImportLogframeHandler(ids, logframe, audits), audits, parseTemplateFileHandler),
     getReportingProfile: new GetReportingProfileHandler(reportingProfiles),
     upsertReportingProfile: new UpsertReportingProfileHandler(ids, reportingProfiles, templates, audits),
@@ -1259,14 +1621,152 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     moveIndicator: new MoveIndicatorHandler(indicators, logframe, indicatorApprovalGuard, audits),
     archiveIndicator: new ArchiveIndicatorHandler(indicators, indicatorUpdates, indicatorApprovalGuard, audits),
     restoreIndicator: new RestoreIndicatorHandler(indicators, audits),
+    listLogframeVersions: new ListLogframeVersionsHandler(logframeVersions),
+    getLogframeChanges: new GetLogframeChangesHandler(logframeVersions),
+    approveLogframeVersion: new ApproveLogframeVersionHandler(logframeVersions, logframeVersioner, audits),
+    listFunding: new ListFundingHandler(funding, new VisibleProjects(projects, projectMembers)),
+    saveProgramme: new SaveProgrammeHandler(funding, ids, audits),
+    saveGrant: new SaveGrantHandler(funding, ids, audits),
+    placeProject: new PlaceProjectHandler(funding, projects, audits),
     listArchivedIndicators: new ListArchivedIndicatorsHandler(indicators),
     confirmIndicatorSemantics: new ConfirmIndicatorSemanticsHandler(indicators, audits),
-    verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits),
-    createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, evidenceLinker),
-    bulkUpsertIndicatorUpdates: new BulkUpsertIndicatorUpdatesHandler(ids, indicatorUpdates, indicators, periods, audits, evidenceLinker),
-    listPeriodIndicators: new ListPeriodIndicatorsHandler(periods, logframe, indicators, indicatorUpdates, activities, projects),
+    submitPeriodIndicatorUpdates: new SubmitPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits, { notify: personNotifier, projects, members: projectMembers }),
+    setPeriodEntryWindow: new SetPeriodEntryWindowHandler(periods, audits),
+    returnPeriodIndicatorUpdates: new ReturnPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits, personNotifier),
+    verifyPeriodIndicatorUpdates: new VerifyPeriodIndicatorUpdatesHandler(indicatorUpdates, indicators, periods, activities, audits, verificationEvidencePolicy),
+    parseUploadedFile: new ParseUploadedFileHandler(parser),
+    exportOrganization: new ExportOrganizationHandler(new OrganizationExporter(prisma, storage), audits),
+    listCollectionForms: new ListCollectionFormsHandler(collectionForms, collectionRecords),
+    getCollectionForm: new GetCollectionFormHandler(collectionForms, collectionRecords),
+    saveCollectionForm: new SaveCollectionFormHandler(ids, collectionForms, indicators, audits, clock),
+    createFormFromIndicator: new CreateFormFromIndicatorHandler(indicators, { handle: (ctx, input, formId) => handlers.saveCollectionForm.handle(ctx, input, formId) }),
+    setCollectionFormStatus: new SetCollectionFormStatusHandler(collectionForms, audits, clock),
+    submitCollectionRecord: new SubmitCollectionRecordHandler(ids, collectionForms, collectionRecords, audits, clock, collectionFiles),
+    listCollectionRecords: new ListCollectionRecordsHandler(collectionForms, collectionRecords, async (tenantId) => {
+      const listed = await users.listByTenant(tenantId);
+      return new Map(listed.ok ? listed.value.map((u) => [u.id.toString(), u.name] as [string, string]) : []);
+    }, places, collectionFiles),
+    uploadCollectionFile: new UploadCollectionFileHandler(ids, collectionForms, collectionFiles, storage, clock),
+    getCollectionFile: new GetCollectionFileHandler(collectionFiles, storage),
+    getOfflinePack: new GetOfflinePackHandler(collectionForms, places, clock, { indicators, periods, myWeek: new PrismaMyWeekReader(prisma) }),
+    listDashboards: new ListDashboardsHandler(dashboards),
+    getDashboard: new GetDashboardHandler(dashboards),
+    saveDashboard,
+    addDashboardWidget: new AddDashboardWidgetHandler(ids, dashboards, visibleProjects, clock, audits),
+    deleteDashboard: new DeleteDashboardHandler(dashboards, dashboardLinks, audits),
+    getDashboardData: new GetDashboardDataHandler(dashboards, getProjectDataSheet, visibleProjects, datasetExtras),
+    previewDashboardCharts: new PreviewDashboardChartsHandler(getProjectDataSheet, visibleProjects, datasetExtras),
+    resolveDatasets: new ResolveDatasetsHandler(getProjectDataSheet, visibleProjects, datasetExtras),
+    listSavedCharts: new ListSavedChartsHandler(savedCharts, visibleProjects),
+    listBookmarks: new ListBookmarksHandler(bookmarks),
+    listHomePins: new ListHomePinsHandler(homePins, dashboards, featuredDashboards),
+    setDashboardFeatured: new SetDashboardFeaturedHandler(ids, featuredDashboards, dashboards, audits, clock),
+    isDashboardFeatured: new IsDashboardFeaturedHandler(featuredDashboards),
+    listMapOverlays: new ListMapOverlaysHandler(mapOverlays),
+    addMapOverlay: new AddMapOverlayHandler(ids, storage, mapOverlays, audits, clock),
+    readMapOverlay: new ReadMapOverlayHandler(storage, mapOverlays),
+    removeMapOverlay: new RemoveMapOverlayHandler(storage, mapOverlays, audits),
+    addHomePin: new AddHomePinHandler(ids, homePins, dashboards, audits, clock),
+    moveHomePin: new MoveHomePinHandler(homePins),
+    removeHomePin: new RemoveHomePinHandler(homePins, audits),
+    getHomeLayout: new GetHomeLayoutHandler(homeLayouts),
+    saveHomeLayout: new SaveHomeLayoutHandler(ids, homeLayouts, audits, clock),
+    resetHomeLayout: new ResetHomeLayoutHandler(homeLayouts, audits),
+    listSavedReports: new ListSavedReportsHandler(savedReports, visibleProjects),
+    saveSavedReport: new SaveSavedReportHandler(ids, savedReports, visibleProjects, audits, clock),
+    deleteSavedReport: new DeleteSavedReportHandler(savedReports, visibleProjects, audits),
+    addBookmark: new AddBookmarkHandler(ids, bookmarks, audits, clock),
+    removeBookmark: new RemoveBookmarkHandler(bookmarks, audits),
+    listDashboardTemplates: new ListDashboardTemplatesHandler(dashboardTemplates),
+    getDashboardTemplate: new GetDashboardTemplateHandler(dashboardTemplates),
+    saveDashboardTemplate: new SaveDashboardTemplateHandler(ids, dashboardTemplates, audits, clock),
+    deleteDashboardTemplate: new DeleteDashboardTemplateHandler(dashboardTemplates, audits),
+    applyDashboardTemplate: new ApplyDashboardTemplateHandler(ids, dashboardTemplates, saveDashboard),
+    getSavedChart: new GetSavedChartHandler(savedCharts, visibleProjects),
+    saveSavedChart: new SaveSavedChartHandler(ids, savedCharts, visibleProjects, audits, clock),
+    deleteSavedChart: new DeleteSavedChartHandler(savedCharts, visibleProjects, audits),
+    getIndicatorValueHistory: new GetIndicatorValueHistoryHandler(indicatorUpdates, audits, users),
+    createDashboardShare: new CreateDashboardShareHandler(ids, dashboards, dashboardLinks, audits, clock),
+    listDashboardShares: new ListDashboardSharesHandler(dashboards, dashboardLinks, clock),
+    revokeDashboardShare: new RevokeDashboardShareHandler(dashboards, dashboardLinks, audits, clock),
+    publicDashboard: new PublicDashboardHandler(dashboards, getProjectDataSheet, datasetExtras, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects)),
+    publicDashboardMapResults: new PublicDashboardMapResultsHandler(dashboards, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects)),
+    reviewCollectionRecord: new ReviewCollectionRecordHandler(collectionRecords, audits, clock),
+    createCollectionLink: new CreateCollectionLinkHandler(ids, collectionForms, collectionLinks, audits, clock),
+    listCollectionLinks: new ListCollectionLinksHandler(collectionLinks, clock),
+    revokeCollectionLink: new RevokeCollectionLinkHandler(collectionLinks, audits, clock),
+    publicCollectionForm: new PublicCollectionFormHandler(collectionForms),
+    publicSubmitCollectionRecord: new PublicSubmitCollectionRecordHandler(ids, collectionForms, collectionRecords, audits, clock, collectionFiles),
+    previewCollectionTotals: previewCollectionTotals,
+    applyCollectionTotals: new ApplyCollectionTotalsHandler(previewCollectionTotals, indicatorUpdates, bulkUpsertIndicatorUpdates),
+    getCollectionSheetTemplate: new GetCollectionSheetTemplateHandler(collectionForms),
+    importCollectionRecords: new ImportCollectionRecordsHandler(ids, collectionForms, collectionRecords, audits, clock),
+    listPlaces: new ListPlacesHandler(places),
+    createPlace: new CreatePlaceHandler(ids, places, audits),
+    updatePlace: new UpdatePlaceHandler(places, audits),
+    archivePlace: new ArchivePlaceHandler(places, audits),
+    setPlaceGeometry: new SetPlaceGeometryHandler(places, storage, audits),
+    clearPlaceGeometry: new ClearPlaceGeometryHandler(places, storage, audits),
+    getPlaceGeometry: new GetPlaceGeometryHandler(places, storage),
+    importPlaces: new ImportPlacesHandler(ids, places, audits),
+    seedPlacesFromBoundaries: new SeedPlacesFromBoundariesHandler(ids, places, audits),
+    resolvePlaces: new ResolvePlacesHandler(places),
+    listUnconfirmedLocations: new ListUnconfirmedLocationsHandler(places, placeUsage),
+    getProjectPlaceResults: placeResults,
+    createApiKey: new CreateApiKeyHandler(ids, apiKeys, audits, clock, nodeRandomBytes),
+    listApiKeys: new ListApiKeysHandler(apiKeys, clock),
+    revokeApiKey: new RevokeApiKeyHandler(apiKeys, audits, clock),
+    createWebhook: new CreateWebhookEndpointHandler(ids, webhooks, audits, clock, nodeRandomBytes),
+    listWebhooks: new ListWebhookEndpointsHandler(webhooks),
+    updateWebhook: new UpdateWebhookEndpointHandler(webhooks, audits),
+    deleteWebhook: new DeleteWebhookEndpointHandler(webhooks, audits),
+    listWebhookDeliveries: new ListWebhookDeliveriesHandler(webhooks),
+    listApiProjects: new ListApiProjectsHandler(projects),
+    uploadMapLayer: new UploadMapLayerHandler(storage, mapLayers, audits),
+    uploadBoundaryLayer: new UploadBoundaryLayerHandler(storage, boundaryLayers, audits),
+    listBoundaryLayers: new ListBoundaryLayersHandler(boundaryLayers),
+    readBoundaryLayer: new ReadBoundaryLayerHandler(storage, boundaryLayers),
+    removeBoundaryLayer: new RemoveBoundaryLayerHandler(storage, boundaryLayers, audits),
+    getMapLayer: new GetMapLayerHandler(mapLayers),
+    readMapLayer: new ReadMapLayerHandler(storage, mapLayers),
+    removeMapLayer: new RemoveMapLayerHandler(storage, mapLayers, audits),
+    createIndicatorUpdate: new CreateIndicatorUpdateHandler(ids, indicatorUpdates, audits, indicators, periods, evidenceLinker, taskReconciler),
+    bulkUpsertIndicatorUpdates,
+    // Goes through the atomic createIndicatorUpdate by reference, so its write and audit row still commit together.
+    quickEnterIndicatorValue: new QuickEnterIndicatorValueHandler(indicators, periods, indicatorUpdates, { handle: (ctx, input) => handlers.createIndicatorUpdate.handle(ctx, input) }, autoReview, audits),
+    getProjectDataSheet,
+    getProjectInfographicData,
+    createInfographic,
+    updateInfographic,
+    listProjectInfographics,
+    getInfographic,
+    deleteInfographic,
+    exportInfographic,
+    listInfographicExports,
+    getInfographicExportFile,
+    previewInfographic: new PreviewInfographicHandler(infographicRepository, infographicRender, infographicRenderer),
+    getInfographicSuggestions: new GetInfographicSuggestionsHandler(getProjectInfographicData, getProjectDataSheet),
+    getInfographicAiText: new GetInfographicAiTextHandler(getProjectInfographicData, getProjectDataSheet, (tenantId) => resolveInfographicLlm(tenantId)),
+    listInfographicTemplates: new ListInfographicTemplatesHandler(infographicUserTemplates),
+    saveInfographicTemplate: new SaveInfographicTemplateHandler(infographicRepository, infographicUserTemplates, ids, audits, clock),
+    deleteInfographicTemplate: new DeleteInfographicTemplateHandler(infographicUserTemplates, audits),
+    uploadInfographicAsset: new UploadInfographicAssetHandler(infographicAssets, new SharpImageNormalizer(), storage, ids, audits, clock),
+    listInfographicAssets: new ListInfographicAssetsHandler(infographicAssets),
+    getInfographicAssetFile: new GetInfographicAssetFileHandler(infographicAssets, storage),
+    removeInfographicAsset: new RemoveInfographicAssetHandler(infographicAssets, audits, clock),
+    getInfographicBrandKit: new GetBrandKitHandler(infographicBrandKits),
+    saveInfographicBrandKit: new SaveBrandKitHandler(infographicBrandKits, infographicAssets, ids, audits),
+    reviewInfographic: new InfographicReviewHandler(infographicRepository, infographicNotifier, audits, clock),
+    createInfographicShareLink: new CreateInfographicShareLinkHandler(infographicRepository, infographicShares, ids, audits, clock),
+    listInfographicShareLinks: new ListInfographicShareLinksHandler(infographicShares),
+    revokeInfographicShareLink: new RevokeInfographicShareLinkHandler(infographicShares, audits, clock),
+    generateInfographicVariants: new GenerateInfographicVariantsHandler(infographicRepository, createInfographic, getProjectInfographicData),
+    importDataSheet: new ImportDataSheetHandler(getProjectDataSheet, bulkUpsertIndicatorUpdates),
+    listPeriodIndicators,
+    getIndicatorEntryFile: new GetIndicatorEntryFileHandler(listPeriodIndicators),
+    parseIndicatorWorkbook: new ParseIndicatorWorkbookHandler(periods, indicators),
     parseIndicatorSheet: new ParseIndicatorSheetHandler(periods, indicators, sheetReader),
-    verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits),
+    verifyIndicatorUpdate: new VerifyIndicatorUpdateHandler(indicatorUpdates, audits, verificationEvidencePolicy),
     requestIndicatorUpdateCorrection: new RequestIndicatorUpdateCorrectionHandler(indicatorUpdates, audits),
     rejectIndicatorUpdate: new RejectIndicatorUpdateHandler(indicatorUpdates, audits),
     listIndicatorUpdates: new ListIndicatorUpdatesHandler(indicators, indicatorUpdates, periods),
@@ -1282,17 +1782,48 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     bulkVerifyEvidence: new BulkVerifyEvidenceHandler(new VerifyEvidenceHandler(evidence, audits)),
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
-    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks),
+    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
+    getPortfolioIndicators: new GetPortfolioIndicatorsHandler(projects, projectMembers, new PrismaPortfolioValueReader(prisma)),
+    setWorkPlanningVisibility: new SetWorkPlanningVisibilityHandler(projects, audits),
+    listProjectPeople: new ListProjectPeopleHandler(projectMembers, users),
+    createTask: new CreateTaskHandler(ids, projectTasks, new PrismaTaskSubjectResolver(prisma), projectRoster, personNotifier, audits, clock),
+    completeTask: new CompleteTaskHandler(projectTasks, audits, clock),
+    cancelTask: new CancelTaskHandler(projectTasks, audits, clock),
+    listAssignments: new ListAssignmentsHandler(assignmentQueue, taskReconciler, clock),
+    listTeamWork: new ListTeamWorkHandler(assignmentQueue, taskReconciler, clock),
+    setIndicatorOwner: new SetIndicatorOwnerHandler(indicators, projectRoster, audits),
+    setPeriodOwner: new SetPeriodOwnerHandler(periods, projectRoster, audits),
+    assignChecklistItem: new AssignChecklistItemHandler(checklist, projectRoster, personNotifier, audits),
+    getDeliveryHealth: new GetDeliveryHealthHandler(projects, projectHealth, clock),
+    getEntryDueDays: new GetEntryDueDaysHandler(entryDueDays),
+    setEntryDueDays: new SetEntryDueDaysHandler(entryDueDays, audits),
+    getPortfolioHealth: new GetPortfolioHealthHandler(new VisibleProjects(projects, projectMembers), projectHealth, clock),
+    getDonorIndicatorMapping: getDonorIndicatorMappingHandler,
+    reviewEvidence: new ReviewEvidenceHandler(evidence, audits, new PrismaEvidenceUseGuard(prisma)),
+    recordAdaptation: new RecordAdaptationHandler(ids, adaptationRepo, audits, { planned: plannedActivities, indicators, periods }),
+    updateAdaptation: new UpdateAdaptationHandler(adaptationRepo, audits, { planned: plannedActivities, indicators, periods }),
+    listAdaptations: new ListAdaptationsHandler(adaptationRepo),
+    getManagementReport: new GetManagementReportHandler(projects, projectHealth, getProjectDataSheet, projectRisks, periods, evidence, activities, clock, calculateReadinessHandler),
+    setDonorIndicatorMapping: new SetDonorIndicatorMappingHandler(templates, indicators, donorIndicatorMappings, ids, audits),
+    getPortfolioOverview: portfolioOverview,
+    getPortfolioInfographicData,
+    getRiskTrend: new GetRiskTrendHandler(riskTrendStore, projects),
+    getActivityFileNeeds: new GetActivityFileNeedsHandler(activities, plannedActivities, evidence),
+    createRisk: new CreateRiskHandler(ids, projectRisks, projectRoster, plannedActivities, personNotifier, audits, clock),
+    updateRisk: new UpdateRiskHandler(projectRisks, projectRoster, personNotifier, audits, clock),
+    closeRisk: new CloseRiskHandler(projectRisks, audits, clock),
+    listRisks: new ListRisksHandler(projectRisks),
+    planStorySuggestion: new GetPlanStorySuggestionHandler(periods, planDelivery),
     importActivities: new ImportActivitiesHandler(ids, activities, logframe, indicators, periods, audits),
     polishActivity: new PolishActivityHandler(activities, activityPolisher),
-    reviewActivity: new ReviewActivityHandler(activities, audits, activityApprovalGuard),
+    reviewActivity: new ReviewActivityHandler(activities, audits, activityApprovalGuard, taskReconciler),
     resubmitActivity: new ResubmitActivityHandler(activities, audits),
     withdrawActivity: new WithdrawActivityHandler(activities, audits, activityApprovalGuard),
     restoreActivity: new RestoreActivityHandler(activities, audits),
     bulkReviewActivities: new BulkReviewActivitiesHandler(new ReviewActivityHandler(activities, audits)),
     listActivities: new ListActivitiesHandler(activities),
     getActivity: new GetActivityHandler(activities),
-    updateActivity: new UpdateActivityHandler(activities, evidence, audits, activityLinks),
+    updateActivity: new UpdateActivityHandler(activities, evidence, audits, activityLinks, planLinks),
     attachEvidence: new AttachEvidenceHandler(evidenceLinker),
     getPeriodOptions: new GetPeriodOptionsHandler(projects, periods, activities),
     getEvidenceSupport: new GetEvidenceSupportHandler(evidence, activities, indicators, indicatorUpdates, reportClaims, sections),
@@ -1310,6 +1841,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     setStandingStatement: new SetStandingStatementHandler(ids, reportingProfiles, audits),
     setTemplateDefaultForType: new SetTemplateDefaultForTypeHandler(ids, reportingProfiles, templates, audits),
     setRequireSecondApprover: new SetRequireSecondApproverHandler(ids, reportingProfiles, audits),
+    setRequireEvidenceForVerification: new SetRequireEvidenceForVerificationHandler(ids, reportingProfiles, audits),
+    setSimpleReview: new SetSimpleReviewHandler(ids, reportingProfiles, audits),
     getComplianceNotes: new GetComplianceNotesHandler(periodContextBuilder, periods, reportingProfiles),
     saveSectionNote: new SaveSectionNoteHandler(periodContextBuilder, periods, audits),
     restoreReportingPeriod: new RestoreReportingPeriodHandler(periods, drafts, audits),
@@ -1336,6 +1869,15 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
       inputsChangeReader: new PrismaReportInputsChangeReader(prisma),
       regenerationTracker: sectionRegenerationTracker,
       commentCounter: comments,
+      reopenReader: {
+        latestFor: async ({ draftId, projectId, tenantId }) => {
+          const rows = await audits.listByTenant(tenantId, { projectId, eventType: "report.draft.reopened", limit: 100 });
+          const row = rows.ok ? rows.value.filter((r) => r.entityId === draftId).sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())[0] : undefined;
+          if (!row) return null;
+          const read = (json: string | undefined): Record<string, unknown> => { try { return JSON.parse(json ?? "{}") as Record<string, unknown>; } catch { return {}; } };
+          return { at: row.createdAt.toISOString(), byId: row.actorId, reason: String(read(row.newValue).reason ?? ""), previousStatus: String(read(row.oldValue).status ?? "") };
+        },
+      },
     }),
     getSmartReview: new GetSmartReviewHandler(drafts, approveReportHandler, reportClaims, sections),
     cancelReportGeneration: new CancelReportGenerationHandler(drafts, sections, audits),
@@ -1347,21 +1889,24 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     reorderReportSections: new ReorderReportSectionsHandler(drafts, sections, audits),
     updateReportSectionChart: new UpdateReportSectionChartHandler(sections, audits),
     refreshSectionCharts: new RefreshSectionChartsHandler(sections, sectionChartService, audits),
+    sectionDataCharts,
+    sectionInfographics,
+    reopenReport: new ReopenReportHandler(drafts, periods, audits),
     rewriteReportSection: new RewriteReportSectionHandler(
       ids, drafts, sections, periods, indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder,
       getReportDraftGenerator, revisionService, assuranceService, generationRuns, audits, reportArtifacts,
     ),
     approveReportSection: new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits),
-    submitReportForReview: new SubmitReportForReviewHandler(drafts, audits),
+    submitReportForReview: new SubmitReportForReviewHandler(drafts, audits, reportNotifier, periods),
     approveReport: approveReportHandler,
-    rejectReport: new RejectReportHandler(drafts, audits),
+    rejectReport: new RejectReportHandler(drafts, audits, reportNotifier, periods),
     resolveReportClaim: new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService),
     resolveSectionFlags: new ResolveSectionFlagsHandler(sections, reportClaims, new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService), new ApproveReportSectionHandler(sections, reportClaims, reportRevisions, audits), audits),
     bulkResolveReportClaims: new BulkResolveReportClaimHandler(new ResolveReportClaimHandler(reportClaims, audits, sections, assuranceService)),
     reassessReportRevision: new ReassessReportRevisionHandler(sections, reportRevisions, assuranceService, audits),
     regenerateReportSection: new RegenerateReportSectionHandler(
       ids, drafts, sections, reportPlans, generationRuns,
-      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence),
+      new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence, planDelivery),
       new SectionGenerationService(ids, llmUsage, revisionService, assuranceService, audits, reportArtifacts),
       sectionRegenerationTracker, new AiCreditGate(entitlements, llmUsage, audits, purchasedCreditPacks), audits, runInBackground,
     ),
@@ -1372,6 +1917,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     resolveEffectiveRequirements: new ResolveEffectiveRequirementsHandler(requirementResolver, audits),
     upsertRequirementPack: new UpsertRequirementPackHandler(ids, requirementPacks, audits),
     activateRequirementPack: new ActivateRequirementPackHandler(requirementPacks, audits),
+    listRequirementPacks: new ListRequirementPacksHandler(requirementPacks),
     upsertAwardOverride: new UpsertAwardOverrideHandler(ids, awardOverrides, audits),
     createSubmissionSnapshot: new CreateSubmissionSnapshotHandler(ids, drafts, sections, reportClaims, reportRevisions, resolvedRequirements, submissionSnapshots, periods, generationRuns, approveReportHandler, audits, events, requirementResolver),
     detectMissingEvidence: detectMissingEvidenceHandler,
@@ -1383,19 +1929,27 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     generateChecklist: new GenerateChecklistHandler(detectMissingEvidenceHandler),
     createExport: createExportHandler,
     runExport: new RunExportHandler(createExportHandler),
-    getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence, approveReportHandler, activities),
-    generateDeadlineReminders: new GenerateDeadlineRemindersHandler(ids, drafts, sections, notifications, notify),
-    addComment: new AddCommentHandler(ids, comments, audits, notify),
+    getExportPreflight: new GetExportPreflightHandler(periods, drafts, sections, indicatorUpdates, checklist, evidence, approveReportHandler, activities, sectionDataCharts, getDonorIndicatorMappingHandler),
+    runReminders: new RunRemindersHandler(assignmentQueue, new PrismaReminderLedger(prisma), notificationPreferences, new PrismaReminderAudience(prisma), personNotifier, audits, clock, riskRefresh, runAutomations, new PrismaTrialStatus(entitlementGrants, entitlements, prisma)),
+    getNotificationPreferences: new GetNotificationPreferencesHandler(notificationPreferences),
+    updateNotificationPreferences: new UpdateNotificationPreferencesHandler(notificationPreferences, audits),
+    addComment: new AddCommentHandler(ids, comments, audits, personNotifier, new PrismaCommentTargets(prisma)),
     resolveComment: new ResolveCommentHandler(comments, audits),
-    listComments: new ListCommentsHandler(comments),
+    reopenComment: new ReopenCommentHandler(comments, audits),
+    listComments: new ListCommentsHandler(comments, users),
     listNotifications: new ListNotificationsHandler(notifications),
     markNotificationRead: new MarkNotificationReadHandler(notifications, audits),
-    listAuditLog: new ListAuditLogHandler(audits),
+    listAuditLog: new ListAuditLogHandler(audits, users),
     recordLegalConsent: new RecordLegalConsentHandler(audits),
     getLegalConsent: new GetLegalConsentHandler(audits),
     createCheckout: new CreateCheckoutHandler(billingProvider, organizations, billingSubscriptions, ids, audits),
     createTopupCheckout: new CreateTopupCheckoutHandler(billingProvider, organizations, entitlements, audits, purchasedCreditPacks),
-    submitContactSalesInquiry: new SubmitContactSalesInquiryHandler(new ConsoleContactSalesNotifier(logger), audits),
+    submitContactSalesInquiry: new SubmitContactSalesInquiryHandler(
+      emailSender
+        ? new EmailContactSalesNotifier(emailSender, process.env.SALES_INBOX_EMAIL ?? "support@donordesk.online")
+        : new ConsoleContactSalesNotifier(logger),
+      audits,
+    ),
     submitNonprofitVerification: new SubmitNonprofitVerificationHandler(ids, nonprofitVerifications, audits),
     listPendingNonprofitVerifications: new ListPendingNonprofitVerificationsHandler(nonprofitVerifications),
     listCreditPacks: new ListCreditPacksHandler(purchasedCreditPacks),
@@ -1416,14 +1970,51 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     runGrandfatherByoLlm: new RunGrandfatherByoLlmHandler(platformLlmConfigs, entitlementGrants, entitlements, audits, clock, planCatalog),
   };
 
+  // Every change to the results framework leaves a version behind (H-1). The project is found before the call, because
+  // a delete removes the record it would be found by; versioning never fails the change itself.
+  const versionError = (error: unknown) => logger.error("logframe.version_failed", { error: error instanceof Error ? error.message : String((error as { message?: string })?.message ?? error) });
+  const tenantOf = (args: unknown[]) => (args[0] as { tenant: { tenantId: TenantId } }).tenant.tenantId;
+  const projectInArg = (field: string) => (args: unknown[]) => (args[1] as Record<string, string | undefined>)[field];
+  const projectOfItem = async (args: unknown[]) => {
+    const found = await logframe.findById(args[1] as string, tenantOf(args));
+    return found.ok ? found.value?.projectId : undefined;
+  };
+  const projectOfIndicator = (pick: (args: unknown[]) => string) => async (args: unknown[]) => {
+    const found = await indicators.findById(pick(args), tenantOf(args));
+    return found.ok ? found.value?.projectId : undefined;
+  };
+  const versioned = <H extends { handle: (...a: never[]) => Promise<Result<unknown, DomainError>> }>(handler: H, projectOf: (args: unknown[]) => Promise<string | undefined> | string | undefined): H =>
+    withLogframeVersioning(handler, logframeVersioner, { projectOf, onError: versionError });
+  versioned(handlers.createLogframeItem, projectInArg("projectId"));
+  versioned(handlers.moveLogframeItem, projectOfItem);
+  versioned(handlers.importLogframe, projectInArg("projectId"));
+  versioned(handlers.copyProjectSetup, projectInArg("targetProjectId"));
+  versioned(handlers.importIndicators, projectInArg("projectId"));
+  versioned(handlers.createIndicator, projectInArg("projectId"));
+  versioned(handlers.updateIndicatorSemantics, projectOfIndicator((a) => (a[1] as { indicatorId: string }).indicatorId));
+  versioned(handlers.updateIndicator, projectOfIndicator((a) => (a[1] as { indicatorId: string }).indicatorId));
+  versioned(handlers.moveIndicator, projectOfIndicator((a) => (a[1] as { indicatorId: string }).indicatorId));
+  versioned(handlers.archiveIndicator, projectOfIndicator((a) => a[1] as string));
+  versioned(handlers.restoreIndicator, projectOfIndicator((a) => a[1] as string));
+
+  // Sign-off, role and indicator-review use cases: the change and its audit row commit together or not at all.
+  // Only short, database-only use cases belong here (see UnitOfWork): nothing that calls a model or a payment provider,
+  // and nothing whose repository catches a database error and carries on.
+  for (const name of ATOMIC_HANDLERS) unitOfWork.atomic(handlers[name]);
+
+
   return {
     prisma,
     settleBackgroundWork: async () => {
       while (backgroundTasks.size > 0) await Promise.allSettled([...backgroundTasks]);
     },
-    auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, notify, jobQueue,
+    auth, storage, evidenceStorage, googleDriveOAuth, googleDriveCredentials, driveFileReader, parser, logger, ids, clock, events, jobRetry, failedJobs, notify, jobQueue,
     evidenceTagger, activityPolisher, templateExtraction, structuredParser, templateFiles, checklistDetector, exportBuilder,
-    organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter,    projects, demoProjects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, requestIdempotency, activities,
+    organizations, users, invitations, passwordResetTokens, passwordResetRateLimiter, scimCredentials, webhookRunner, webhookDispatcher, apiKeyAuth,
+    resolveInfographicShare: new ResolveInfographicShareHandler(infographicShares, infographicRepository, storage, clock),
+    resolveCollectionLink: new ResolveCollectionLinkHandler(collectionLinks, clock),
+    resolveDashboardShare: new ResolveDashboardShareHandler(dashboardLinks, clock),
+    projects, demoProjects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, requestIdempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, agentMemory, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, purchasedCreditPacks, llmUsage, planCatalog, billingProvider,
     handlers,

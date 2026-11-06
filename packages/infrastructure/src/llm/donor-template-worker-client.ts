@@ -1,9 +1,5 @@
-import { DomainError, type Result } from "@donordesk/domain";
+import { ok, DomainError, type Result } from "@donordesk/domain";
 import type { IDonorTemplateRenderer } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 /**
  * HTTP transport for the Python worker's donor-template docxtpl routes.

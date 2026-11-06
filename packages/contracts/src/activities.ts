@@ -11,6 +11,8 @@ export const CreateActivityUpdateSchema = z.object({
   outputId: z.string().optional(),
   /** The logframe Activity-level item this record delivers; the output is derived from it. */
   logframeActivityId: z.string().optional(),
+  /** The planned activity this completed activity delivers (work plan); validated by `PlanLinkResolver`. */
+  plannedActivityId: z.string().optional(),
   indicatorId: z.string().optional(),
   participantsTotal: z.number().int().nonnegative().optional(),
   participantsMale: z.number().int().nonnegative().optional(),
@@ -47,6 +49,7 @@ export const PatchActivitySchema = z.object({
   indicatorId: z.string().optional(),
   outputId: z.string().optional(),
   logframeActivityId: z.string().optional(),
+  plannedActivityId: z.string().optional(),
 });
 
 export const UpdateActivitySchema = z.object({

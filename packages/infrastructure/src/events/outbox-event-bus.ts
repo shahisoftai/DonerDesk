@@ -1,4 +1,4 @@
-import type { IEventBus, IJobQueue, ILogger } from "@donordesk/application";
+import type { IEventBus, IFailedJobStore, IJobQueue, ILogger } from "@donordesk/application";
 import { DomainEvent, EvidenceUploaded, ReportingPeriodCreated } from "@donordesk/domain";
 
 /**
@@ -51,6 +51,8 @@ export class OutboxEventBus implements IEventBus {
     private readonly logger: ILogger,
     private readonly jobs: IJobQueue,
     private readonly mappings: EventToJobMapping[],
+    /** With a store, a job that could not be queued is kept and retried; without one it is only logged. */
+    private readonly failed?: IFailedJobStore,
   ) {}
 
   async publish(events: DomainEvent[]): Promise<void> {
@@ -64,14 +66,21 @@ export class OutboxEventBus implements IEventBus {
         // is already committed, and side effects are recoverable through
         // their own retry paths (e.g. `POST /v1/projects/:id/workspace/retry`).
         // Log at error level so the dropped dispatch is observable.
+        const payload = mapping.buildPayload(event);
         try {
-          await this.jobs.enqueue(mapping.jobName, mapping.buildPayload(event));
+          await this.jobs.enqueue(mapping.jobName, payload);
         } catch (error) {
-          this.logger.error("outbox.enqueue_failed", {
-            eventName: event.eventName,
-            jobName: mapping.jobName,
-            error: error instanceof Error ? error.message : String(error),
-          });
+          const message = error instanceof Error ? error.message : String(error);
+          this.logger.error("outbox.enqueue_failed", { eventName: event.eventName, jobName: mapping.jobName, error: message });
+          // Keep the job so it is retried with backoff rather than lost (H-18).
+          const tenantId = typeof payload.tenantId === "string" ? payload.tenantId : undefined;
+          if (this.failed && tenantId) {
+            try {
+              await this.failed.record({ tenantId, jobName: mapping.jobName, payload, error: message, now: new Date() });
+            } catch (storeError) {
+              this.logger.error("outbox.record_failed", { jobName: mapping.jobName, error: storeError instanceof Error ? storeError.message : String(storeError) });
+            }
+          }
         }
       }
     }

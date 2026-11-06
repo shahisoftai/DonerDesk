@@ -9,16 +9,13 @@ import {
   TenantId,
   DomainError,
   type Result,
+  ok,
 } from "@donordesk/domain";
 import type {
   IProjectSetupRepository,
   IReportingProfileRepository,
   UpsertReportingProfileResult,
 } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function err<T = never>(e: unknown): Result<T, DomainError> {
   return { ok: false, error: new DomainError("CONFLICT", e instanceof Error ? e.message : String(e)) };
@@ -142,6 +139,8 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           financeDataMode: p.financeDataMode,
           defaultTemplateByTypeJson: JSON.stringify(p.defaultTemplateByType),
           requireSecondApprover: p.requireSecondApprover,
+          requireEvidenceForVerification: p.requireEvidenceForVerification,
+          simpleReview: p.simpleReview,
           standingStatementsJson: JSON.stringify(p.standingStatements),
           version: p.version,
           createdById: p.createdById,
@@ -172,6 +171,8 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           financeDataMode: p.financeDataMode,
           defaultTemplateByTypeJson: JSON.stringify(p.defaultTemplateByType),
           requireSecondApprover: p.requireSecondApprover,
+          requireEvidenceForVerification: p.requireEvidenceForVerification,
+          simpleReview: p.simpleReview,
           standingStatementsJson: JSON.stringify(p.standingStatements),
           version: p.version,
           updatedById: p.updatedById,
@@ -208,6 +209,8 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
     financeDataMode: string;
     defaultTemplateByTypeJson?: string | null;
     requireSecondApprover?: boolean | null;
+    requireEvidenceForVerification?: boolean | null;
+    simpleReview?: boolean | null;
     standingStatementsJson?: string | null;
     version: number;
     createdById: string;
@@ -228,6 +231,8 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
       financeDataMode: normalizeFinanceDataMode(row.financeDataMode),
       defaultTemplateByType: parseStringMap(row.defaultTemplateByTypeJson),
       requireSecondApprover: row.requireSecondApprover ?? false,
+      requireEvidenceForVerification: row.requireEvidenceForVerification ?? false,
+      simpleReview: row.simpleReview ?? false,
       standingStatements: parseStringMap(row.standingStatementsJson),
       version: row.version,
       createdById: row.createdById,

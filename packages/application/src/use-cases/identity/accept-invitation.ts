@@ -1,5 +1,6 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, Email, TenantId, User, UserId } from "@donordesk/domain";
+import { DomainError, Email, PasswordPolicy, ProjectMember, TenantId, User, UserId } from "@donordesk/domain";
+import type { IProjectMemberRepository } from "../../ports/project-members.js";
 import type { Role } from "@donordesk/domain";
 import type { IInvitationRepository, IUserRepository, IAuthProvider } from "../../ports/identity.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -43,6 +44,10 @@ export class AcceptInvitationHandler {
     private readonly auth: IAuthProvider,
     private readonly audit: IAuditLogger,
     private readonly entitlements: EntitlementService,
+    /** With this, the projects an invitation names become the new member's project memberships (what lets them open those projects). */
+    private readonly members?: IProjectMemberRepository,
+    /** With this, a person named in a project setup before they had an account joins that project and gets what the setup gave them. */
+    private readonly pending?: { resolve(input: { tenantId: string; userId: string; email: string }): Promise<unknown> },
   ) {}
 
   /** Read-side preview for the accept page: who was invited, where, as what. */
@@ -105,6 +110,8 @@ export class AcceptInvitationHandler {
       }
     }
 
+    const policy = PasswordPolicy.validate(cmd.password);
+    if (!policy.ok) return { ok: false, error: DomainError.validation(policy.errors[0] ?? "Password does not meet policy", { errors: policy.errors }) };
     let passwordHash: string;
     try {
       passwordHash = await this.auth.hashPassword(cmd.password);
@@ -120,10 +127,22 @@ export class AcceptInvitationHandler {
       passwordHash,
       role: invitation.role,
       assignedProjectIds: invitation.projectIds,
+      external: invitation.external,
     });
     user.activate();
     const created = await this.users.create(user);
     if (!created.ok) return created;
+
+    // The projects the invitation named are the person's projects: membership is what opens a project, and what keeps an
+    // outside partner to exactly those.
+    if (this.members) {
+      for (const projectId of invitation.projectIds) {
+        const member = await this.members.create(
+          ProjectMember.create({ id: this.ids.generate(), tenantId, projectId, userId, role: invitation.role, assignedById: invitation.invitedById }),
+        );
+        if (!member.ok) return member;
+      }
+    }
 
     // Single-use: the aggregate throws on a second accept or an expired one.
     try {
@@ -141,11 +160,18 @@ export class AcceptInvitationHandler {
       eventType: "identity.invitation_accepted",
       entityType: "invitation",
       entityId: invitation.id,
-      newValue: JSON.stringify({ email: invitation.email.toString(), role: invitation.role, invitedById: invitation.invitedById }),
+      newValue: JSON.stringify({ email: invitation.email.toString(), role: invitation.role, invitedById: invitation.invitedById, external: invitation.external }),
     });
 
+    // Joining never fails because of this: what cannot be done is kept for the project's people to finish by hand.
+    try {
+      await this.pending?.resolve({ tenantId: tenantId.toString(), userId, email: invitation.email.toString() });
+    } catch {
+      /* the person has joined; the pending record stays */
+    }
+
     const token = await this.auth.sign(
-      { sub: userId, tid: tenantId.toString(), role: invitation.role, name: cmd.name, email: invitation.email.toString() },
+      { sub: userId, tid: tenantId.toString(), role: invitation.role, name: cmd.name, email: invitation.email.toString(), ...(invitation.external ? { ext: true } : {}) },
       60 * 60 * 24 * 7,
     );
 

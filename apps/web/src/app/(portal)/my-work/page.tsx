@@ -1,172 +1,138 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
-import { loadWorkItems } from "@/features/work-items/application/work-items-read-model";
-import {
-  filterWorkItems,
-  paginate,
-  workItemHref,
-  workItemTitle,
-  workItemMeta,
-  DEFAULT_WORK_FILTERS,
-  type WorkFilters,
-} from "@/features/work-items/presentation/work-items-view";
-import { InlineError, EmptyState } from "@/components/feedback/PageState";
-import { Badge } from "@/components/data/Badge";
-import { type WorkItem, type WorkItemType } from "@/features/work-items/domain/work-item";
+import { gatewayRequest } from "@/lib/server/api-gateway";
+import { AssignmentsResponseSchema, NotificationsResponseSchema, ProjectsResponseSchema, TeamWorkResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
+import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
+import { InlineError } from "@/components/feedback/PageState";
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { MyWorkPanel } from "@/features/tasks/presentation/MyWorkPanel";
+import { AskPanel } from "@/features/tasks/presentation/AskPanel";
+import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 20;
-const TYPE_OPTIONS: Array<{ value: WorkItemType | "all"; label: string }> = [
-  { value: "all", label: "All types" },
-  { value: "report", label: "Reports" },
-  { value: "checklist", label: "Compliance" },
-  { value: "evidence", label: "Evidence" },
-  { value: "activity", label: "Activities" },
-  { value: "notification", label: "Notifications" },
-];
-
-export default async function MyWorkPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const params = await searchParams;
+/**
+ * My Work: one grouped list of everything that is mine (plan items, requests, compliance items, reports I lead, reviews I am
+ * asked for because of my role). Managers get a second tab, Team: people with counts; choose a person to read their list.
+ */
+export default async function MyWorkPage({ searchParams }: { searchParams: Promise<{ tab?: string; project?: string; person?: string }> }) {
+  const { tab, project, person } = await searchParams;
   const ctx = await requireSession();
-  const load = await loadWorkItems(ctx.token);
+  const userId = decodeSessionPayload(ctx.token)?.sub ?? "";
+  const canTeam = ctx.capabilities.has("team.view-work");
+  const showTeam = canTeam && tab === "team";
 
-  const raw = (key: string) => {
-    const v = params[key];
-    return typeof v === "string" ? v : "";
-  };
-  const filters: WorkFilters = {
-    type: isWorkType(raw("type")) ? (raw("type") as WorkItemType) : DEFAULT_WORK_FILTERS.type,
-    projectId: raw("project") || DEFAULT_WORK_FILTERS.projectId,
-    due: isDue(raw("due")) ? (raw("due") as WorkFilters["due"]) : DEFAULT_WORK_FILTERS.due,
-  };
-  const page = Math.max(1, Number.parseInt(raw("page"), 10) || 1);
+  const heading = (
+    <>
+      <h1 className="text-xl font-semibold tracking-tight">My work</h1>
+      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Everything that is yours, by when it is due.</p>
+      {canTeam && (
+        <nav aria-label="My work" className="mt-4 flex gap-2">
+          <Link href="/my-work" aria-current={!showTeam ? "page" : undefined} className={`rounded-full px-3 py-1 text-sm ${!showTeam ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200"}`}>Mine</Link>
+          <Link href="/my-work?tab=team" aria-current={showTeam ? "page" : undefined} className={`rounded-full px-3 py-1 text-sm ${showTeam ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200"}`}>Team</Link>
+        </nav>
+      )}
+    </>
+  );
 
-  if (!load.ok) {
-    return (
-      <div className="animate-fade-in">
-        <h1 className="text-xl font-semibold tracking-tight">My work</h1>
-        <div className="mt-6"><InlineError title={load.error?.message ?? "Could not load your work."} referenceId={load.error?.referenceId} /></div>
-      </div>
-    );
-  }
+  if (showTeam) return <TeamTab heading={heading} token={ctx.token} userId={userId} canAsk={ctx.capabilities.has("task.assign")} projectId={project} personId={person} />;
 
-  const filtered = filterWorkItems(load.items, filters);
-  const total = filtered.length;
-  const rows = paginate(filtered, page, PAGE_SIZE);
+  const [mine, notifications] = await Promise.all([
+    gatewayRequest("/v1/me/assignments", AssignmentsResponseSchema, ctx.token),
+    gatewayRequest("/v1/notifications", NotificationsResponseSchema, ctx.token),
+  ]);
+  if (!mine.ok) return <div className="animate-fade-in">{heading}<div className="mt-6"><InlineError title={mine.error.message} referenceId={mine.error.referenceId} /></div></div>;
 
-  const projectIds = [...load.projectLookup.keys()];
-
-  const qs = (patch: Partial<WorkFilters> & { page?: number }) => {
-    const url = new URLSearchParams();
-    const next = { ...filters, ...patch };
-    if (next.type !== "all") url.set("type", next.type);
-    if (next.projectId !== "all") url.set("project", next.projectId);
-    if (next.due !== "all") url.set("due", next.due);
-    return `/my-work${url.toString() ? `?${url.toString()}` : ""}`;
-  };
+  // Names for "asked by": the people of every project that has a request.
+  const projectIds = [...new Set(mine.value.groups.flatMap((g) => g.items.filter((i) => i.kind === "TASK").map((i) => i.projectId)))];
+  const names: Record<string, string> = {};
+  for (const people of await Promise.all(projectIds.map((id) => loadProjectPeople(ctx.token, id, userId)))) for (const p of people) names[p.id] = p.label.replace(/ \(you\)$/, "");
+  const unread = notifications.ok ? notifications.value.items.filter((n) => !n.read).slice(0, 10) : [];
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">My work</h1>
-      <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-        Assigned reports, compliance gaps, pending evidence reviews, activities, and notifications — ordered by urgency.
-      </p>
-
-      <div className="mt-6 flex flex-wrap items-end gap-3">
-        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-          Type
-          <Link href={qs({ type: "all", page: 1 })} className={`ml-2 rounded-lg border px-2 py-1 text-xs ${filters.type === "all" ? "border-brand-500 text-brand-700 dark:text-brand-300" : "border-slate-300 dark:border-white/15"}`}>All</Link>
-          {TYPE_OPTIONS.filter((o) => o.value !== "all").map((o) => (
-            <Link key={o.value} href={qs({ type: o.value, page: 1 })} className={`ml-1 rounded-lg border px-2 py-1 text-xs ${filters.type === o.value ? "border-brand-500 text-brand-700 dark:text-brand-300" : "border-slate-300 dark:border-white/15"}`}>
-              {o.label}
-            </Link>
-          ))}
-        </label>
-        <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
-          Project
-          <Link href={qs({ projectId: "all", page: 1 })} className={`ml-2 rounded-lg border px-2 py-1 text-xs ${filters.projectId === "all" ? "border-brand-500 text-brand-700 dark:text-brand-300" : "border-slate-300 dark:border-white/15"}`}>All</Link>
-          {projectIds.slice(0, 6).map((id) => (
-            <Link key={id} href={qs({ projectId: id, page: 1 })} className={`ml-1 inline-block max-w-40 truncate rounded-lg border px-2 py-1 align-bottom text-xs ${filters.projectId === id ? "border-brand-500 text-brand-700 dark:text-brand-300" : "border-slate-300 dark:border-white/15"}`}>
-              {load.projectLookup.get(id)}
-            </Link>
-          ))}
-        </div>
-        <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-          Due
-          {(["all", "overdue", "today", "soon"] as const).map((d) => (
-            <Link key={d} href={qs({ due: d, page: 1 })} className={`ml-1 rounded-lg border px-2 py-1 text-xs ${filters.due === d ? "border-brand-500 text-brand-700 dark:text-brand-300" : "border-slate-300 dark:border-white/15"}`}>
-              {dueLabel(d)}
-            </Link>
-          ))}
-        </label>
-      </div>
-
-      <div className="mt-6 space-y-2">
-        {rows.length === 0 && <EmptyState>No work items match these filters.</EmptyState>}
-        {rows.map((item) => (
-          <WorkItemRow key={`${item.kind}-${item.id}`} item={item} />
-        ))}
-      </div>
-
-      <div className="mt-6 flex items-center justify-between text-sm">
-        <p className="text-xs text-slate-500 dark:text-slate-400">Page {page} · {total} item{total === 1 ? "" : "s"}</p>
-        <div className="flex gap-2">
-          {page > 1 && <Link className="btn-secondary px-3 py-1 text-xs" href={qs({ page: page - 1 })}>Previous</Link>}
-          {page * PAGE_SIZE < total && <Link className="btn-secondary px-3 py-1 text-xs" href={qs({ page: page + 1 })}>Next</Link>}
-        </div>
-      </div>
+      {heading}
+      <MyWorkPanel data={mine.value} names={names} userId={userId} mine />
+      {unread.length > 0 && (
+        <section className="mt-8" aria-labelledby="mw-notes">
+          <h2 id="mw-notes" className="text-sm font-semibold">Notifications <span className="font-normal text-slate-500">({unread.length})</span></h2>
+          <ul className="mt-2 divide-y divide-slate-200 rounded-xl border border-slate-200 dark:divide-white/10 dark:border-white/10">
+            {unread.map((n) => (
+              <li key={n.id} className="p-3 text-sm"><span className="font-medium">{n.title}</span>{n.message ? <span className="text-slate-600 dark:text-slate-300"> · {n.message}</span> : null}</li>
+            ))}
+          </ul>
+          <p className="mt-2 text-sm"><Link className="text-brand-700 hover:underline dark:text-brand-300" href="/notifications">All notifications</Link></p>
+        </section>
+      )}
     </div>
   );
 }
 
-function WorkItemRow({ item }: { item: WorkItem }) {
+async function TeamTab({ heading, token, userId, canAsk, projectId, personId }: { heading: React.ReactNode; token: string; userId: string; canAsk: boolean; projectId?: string | undefined; personId?: string | undefined }) {
+  const projects = await gatewayRequest("/v1/projects", ProjectsResponseSchema, token);
+  if (!projects.ok) return <div className="animate-fade-in">{heading}<div className="mt-6"><InlineError title={projects.error.message} referenceId={projects.error.referenceId} /></div></div>;
+  const list = projects.value.items.filter((p) => p.status === "ACTIVE" || p.status === "DRAFT" || p.status === "PAUSED");
+  const chosen = list.find((p) => p.id === projectId) ?? list[0];
+  if (!chosen) return <div className="animate-fade-in">{heading}<p className="mt-6 text-sm text-slate-600 dark:text-slate-300">There are no active projects.</p></div>;
+
+  const [team, people, theirs, plan] = await Promise.all([
+    gatewayRequest(`/v1/projects/${chosen.id}/team-work`, TeamWorkResponseSchema, token),
+    loadProjectPeople(token, chosen.id, userId),
+    personId ? gatewayRequest(`/v1/me/assignments?userId=${encodeURIComponent(personId)}&projectId=${encodeURIComponent(chosen.id)}`, AssignmentsResponseSchema, token) : Promise.resolve(null),
+    canAsk ? gatewayRequest(`/v1/projects/${chosen.id}/work-plan`, WorkPlanResponseSchema, token) : Promise.resolve(null),
+  ]);
+  // "Ask for completed activity" lives here (plan §16b), not on the item page: the manager picks one of the open activities.
+  const openItems = plan?.ok ? plan.value.items.filter((i) => i.status === "PLANNED" || i.status === "IN_PROGRESS") : [];
+  const names: Record<string, string> = Object.fromEntries(people.map((p) => [p.id, p.label.replace(/ \(you\)$/, "")]));
+  const today = new Date().toISOString().slice(0, 10);
+
   return (
-    <Link href={workItemHref(item)} className="card flex items-center justify-between gap-3 transition hover:border-brand-400/40 dark:hover:border-brand-400/30">
-      <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <Badge tone={kindTone(item.kind)} className="shrink-0">{item.kind}</Badge>
-          <span className="min-w-0 break-words text-sm font-medium leading-5">{workItemTitle(item)}</span>
-        </div>
-        <div className="mt-1 break-words text-xs leading-4 text-slate-500 dark:text-slate-400">{workItemMeta(item)}</div>
-      </div>
-      {("daysUntilDeadline" in item && item.daysUntilDeadline !== null && item.daysUntilDeadline !== undefined) && (
-        <span className={`shrink-0 self-start text-[11px] font-medium ${item.daysUntilDeadline < 0 ? "font-semibold text-danger-600 dark:text-danger-400" : item.daysUntilDeadline <= 3 ? "text-warning-600 dark:text-warning-400" : "text-slate-500 dark:text-slate-400"}`}>
-          {item.daysUntilDeadline < 0 ? `${Math.abs(item.daysUntilDeadline)}d overdue` : `${item.daysUntilDeadline}d left`}
-        </span>
+    <div className="animate-fade-in">
+      {heading}
+      <form className="mt-4 flex items-end gap-2" action="/my-work" method="get">
+        <input type="hidden" name="tab" value="team" />
+        <label className="text-sm">Project
+          <select name="project" defaultValue={chosen.id} className="ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm dark:border-white/15 dark:bg-slate-900/60">
+            {list.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+          </select>
+        </label>
+        <button className="btn-secondary text-xs" type="submit">Show</button>
+      </form>
+
+      {!team.ok ? <div className="mt-6"><InlineError title={team.error.message} referenceId={team.error.referenceId} /></div> : team.value.rows.length === 0 ? (
+        <p className="mt-6 text-sm text-slate-600 dark:text-slate-300">Nobody has open work in this project.</p>
+      ) : (
+        <table className="mt-6 w-full max-w-2xl text-sm">
+          <thead className="text-left text-xs text-slate-500"><tr><th className="py-1 font-medium">Person</th><th className="font-medium">Late</th><th className="font-medium">Due this week</th><th className="font-medium">Open</th></tr></thead>
+          <tbody>
+            {team.value.rows.map((r) => (
+              <tr key={r.assigneeId} className="border-t border-slate-200 dark:border-white/10">
+                <td className="py-2"><Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/my-work?tab=team&project=${chosen.id}&person=${r.assigneeId}`}>{names[r.assigneeId] ?? "A team member"}</Link></td>
+                <td className={r.late > 0 ? "font-medium text-red-600" : ""}>{r.late}</td><td>{r.dueThisWeek}</td><td>{r.open}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-    </Link>
+
+      {theirs?.ok && (
+        <section className="mt-8" aria-label="Their work">
+          <h2 className="text-sm font-semibold">{names[personId!] ?? "A team member"}</h2>
+          <MyWorkPanel data={theirs.value} names={names} userId={userId} mine={false} />
+        </section>
+      )}
+
+      {canAsk && (
+        <section className="mt-8" aria-label="Ask someone">
+          <div className="flex flex-wrap gap-3">
+            <AskPanel projectId={chosen.id} kind="OTHER" buttonLabel="Ask someone…" people={people} suggestedDue={suggestTaskDueDate("OTHER", { today })} />
+            {openItems.length > 0 && (
+              <AskPanel projectId={chosen.id} kind="RECORD_ACTIVITY" buttonLabel={WORKPLAN_COPY.askForCompleted} subjects={openItems.map((i) => ({ id: i.id, title: i.title }))} people={people} suggestedDue={suggestTaskDueDate("RECORD_ACTIVITY", { today })} />
+            )}
+          </div>
+        </section>
+      )}
+    </div>
   );
-}
-
-function kindTone(kind: WorkItem["kind"]): "info" | "success" | "warning" | "danger" | "neutral" | "ai" {
-  switch (kind) {
-    case "report": return "info";
-    case "checklist": return "warning";
-    case "evidence": return "ai";
-    case "activity": return "success";
-    case "notification": return "neutral";
-  }
-}
-
-function dueLabel(d: string): string {
-  switch (d) {
-    case "all": return "Any";
-    case "overdue": return "Overdue";
-    case "today": return "Today";
-    case "soon": return "Within 3 days";
-    default: return d;
-  }
-}
-
-function isWorkType(v: string): v is WorkItemType {
-  return v === "report" || v === "checklist" || v === "evidence" || v === "activity" || v === "notification";
-}
-
-function isDue(v: string): v is WorkFilters["due"] {
-  return v === "all" || v === "overdue" || v === "today" || v === "soon";
 }

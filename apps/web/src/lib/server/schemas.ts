@@ -43,6 +43,10 @@ export const ProjectDetailSchema = z.object({
   reportingOfficerId: z.string().optional(),
   workspaceRootId: z.string().optional(),
   isDemo: z.boolean().optional(),
+  /** Admin setting: false hides the work plan screens (the data is kept). */
+  showWorkPlanning: z.boolean().optional(),
+  /** Optional IANA zone for this project's own "today"; absent means the organisation's. */
+  timeZone: z.string().optional(),
 });
 export type ProjectDetail = z.infer<typeof ProjectDetailSchema>;
 
@@ -62,6 +66,7 @@ export const ProjectMembersResponseSchema = z.object({ items: z.array(ProjectMem
 export const OrganizationSchema = z.object({
   id: z.string().optional(),
   name: z.string().default(""),
+  timeZone: z.string().optional(),
   aiEnabled: z.boolean().optional(),
   storageProvider: z.string().default("LOCAL"),
 });
@@ -86,6 +91,7 @@ export const OrganizationProfileSchema = z.object({
   contactEmail: z.string(),
   website: z.string().optional(),
   defaultLanguage: z.string(),
+  timeZone: z.string().optional(),
   logoUrl: z.string().optional(),
   mainOfficeLocation: z.string().optional(),
   donorTypesServed: z.string().optional(),
@@ -95,6 +101,9 @@ export const OrganizationProfileSchema = z.object({
   reportingDefaults: OrganizationReportingDefaultsSchema.optional(),
   /** Agent Memory (Phase 21) tenant self-service toggle. */
   agentMemoryEnabled: z.boolean().optional(),
+  askEnabled: z.boolean().optional(),
+  setupAssistEnabled: z.boolean().optional(),
+  mfaRequiredFrom: z.string().nullable().optional(),
   /** Platform-wide rollout flag; the Settings tab is hidden entirely when false. */
   agentMemoryPlatformEnabled: z.boolean().optional(),
 });
@@ -113,6 +122,8 @@ export type LegalConsent = z.infer<typeof LegalConsentSchema>;
 export const AuditLogSchema = z.object({
   id: z.string(),
   actorId: z.string(),
+  /** The actor's name, resolved by the server; absent for a platform job or a person who no longer exists. */
+  actorName: z.string().optional(),
   eventType: z.string(),
   entityType: z.string(),
   entityId: z.string(),
@@ -148,6 +159,8 @@ export const TeamMemberSchema = z.object({
   email: z.string(),
   role: z.string(),
   status: z.string(),
+  external: z.boolean().default(false),
+  mfaEnabled: z.boolean().default(false),
 });
 
 export const TeamResponseSchema = z.object({ items: z.array(TeamMemberSchema) });
@@ -340,7 +353,16 @@ export const IndicatorItemSchema = z.object({
   meansOfVerification: z.string().optional(),
   dataSource: z.string().optional(),
   frequency: z.string().optional(),
+  responsibleUserId: z.string().nullish(),
   disaggregationRequired: z.boolean().optional(),
+  /** Targets per breakdown category (phase 28.1-B). */
+  targetBreakdowns: z.array(z.object({ dimension: z.string(), category: z.string(), value: z.string() })).default([]),
+  /** The cumulative target due by each date; empty = the project target applies. */
+  targetSchedule: z.array(z.object({ asOf: z.string(), target: z.string() })).default([]),
+  /** The value is calculated from other indicators of the project (never typed). */
+  formula: z.object({ op: z.enum(["RATIO", "SUM", "DIFFERENCE"]), terms: z.array(z.string()), percent: z.boolean().optional() }).optional(),
+  /** Counted by another project too: left out of the portfolio totals. */
+  countedElsewhere: z.boolean().default(false),
   semantics: z
     .object({
       aggregation: z.string(),
@@ -380,6 +402,8 @@ export const PeriodIndicatorUpdateSchema = z.object({
   periodAchievement: z.string(),
   cumulativeAchievement: z.string(),
   comments: z.string().optional(),
+  reviewNote: z.string().optional(),
+  notApplicableReason: z.string().optional(),
   dataSource: z.string().optional(),
   verificationStatus: z.string(),
   verifiedAt: z.string().nullable().optional(),
@@ -401,10 +425,17 @@ export const PeriodIndicatorRowSchema = z.object({
   dataSource: z.string().optional(),
   frequency: z.string().optional(),
   disaggregationRequired: z.boolean(),
+  /** The value is calculated from other indicators (never typed): a plain sentence saying from what. */
+  calculation: z.string().optional(),
+  /** Target met / below target on the values entered, or why there is no light. */
+  stoplight: z.object({ light: z.enum(["MET", "BELOW", "NONE"]), target: z.string().optional(), compared: z.string().optional(), variance: z.string().optional(), note: z.string() }).optional(),
   breakdownMustSum: z.boolean().optional(),
+  targetGroups: z.array(z.object({ dimension: z.string(), category: z.string() })).default([]),
   requiresDenominator: z.boolean(),
   /** False when the indicator's frequency says no value is expected in this period (and none is recorded). */
   dueThisPeriod: z.boolean().optional(),
+  /** When the value is due and who collects it. */
+  collection: z.object({ dueBy: z.string(), state: z.enum(["RECORDED", "DUE", "OVERDUE", "NOT_DUE"]), ownerId: z.string().optional() }).optional(),
   participantsHint: z.string().optional(),
   aggregation: z.string().default("LATEST"),
   previous: z
@@ -424,7 +455,12 @@ export const PeriodIndicatorsResponseSchema = z.object({
   reportType: z.string().optional(),
   indicators: z.array(PeriodIndicatorRowSchema),
   scope: z.object({ activityCount: z.number(), acceptedActivityCount: z.number() }).optional(),
+  /** When the people who enter values may do so; `refusal` is set when this person may not enter right now. */
+  entryWindow: z.object({ opensOn: z.string().optional(), closesOn: z.string().optional(), description: z.string().nullable(), refusal: z.string().nullable() }).optional(),
+  /** Where the period's data stands, derived from the values' statuses, with one sentence for the screen. */
+  dataStatus: z.object({ status: z.enum(["NO_DATA", "IN_PROGRESS", "RETURNED", "SUBMITTED", "VERIFIED"]), total: z.number(), drafts: z.number(), submitted: z.number(), returned: z.number(), verified: z.number(), description: z.string() }).optional(),
 });
+export type PeriodIndicators = z.infer<typeof PeriodIndicatorsResponseSchema>;
 
 export const IndicatorUpdateHistoryRowSchema = PeriodIndicatorUpdateSchema.extend({
   reportingPeriodId: z.string(),
@@ -449,7 +485,14 @@ export const ParsedIndicatorRowSchema = z.object({
   comments: z.string(),
   dataSource: z.string(),
   matched: z.boolean(),
+  /** Verified or calculated: shown in the preview, never applied. */
+  locked: z.boolean().default(false),
 });
+
+export const ValueHistoryResponseSchema = z.object({
+  entries: z.array(z.object({ at: z.string(), by: z.string(), what: z.string(), change: z.string().optional() })),
+});
+export type ValueHistoryResponse = z.infer<typeof ValueHistoryResponseSchema>;
 
 export const ParseIndicatorSheetResponseSchema = z.object({
   rows: z.array(ParsedIndicatorRowSchema),
@@ -461,7 +504,21 @@ export const BulkUpsertResponseSchema = z.object({
   skipped: z.number(),
   /** One entry per accepted row, so a caller can verify without a second lookup. */
   updates: z.array(z.object({ indicatorId: z.string(), updateId: z.string(), changed: z.boolean() })).default([]),
+  /** What the project's simple review did with the saved values, in plain sentences (empty when it is off). */
+  notices: z.array(z.string()).default([]),
+  handedIn: z.number().default(0),
 });
+
+export const QuickEntryResponseSchema = z.object({
+  id: z.string(),
+  reportingPeriodId: z.string(),
+  chosenBy: z.enum(["DATE", "PERIOD"]),
+  cumulative: z.string(),
+  cumulativeSource: z.enum(["TYPED", "SUGGESTED", "NONE"]),
+  outcome: z.enum(["SAVED_DRAFT", "HANDED_IN", "VERIFIED"]),
+  notices: z.array(z.string()).default([]),
+});
+export type QuickEntryResponse = z.infer<typeof QuickEntryResponseSchema>;
 
 export const SemanticsDescriptionSchema = z.object({
   aggregationLabel: z.string(),
@@ -484,6 +541,21 @@ export const ConfirmSemanticsResponseSchema = z.object({
 export const VerifyAllResponseSchema = z.object({
   verified: z.number(),
   failed: z.array(z.object({ updateId: z.string(), indicatorCode: z.string(), message: z.string() })),
+});
+
+export const ReturnAllResponseSchema = z.object({
+  returned: z.number(),
+  failed: z.array(z.object({ updateId: z.string(), indicatorCode: z.string(), message: z.string() })),
+  status: z.string(),
+});
+
+export const EntryWindowResponseSchema = z.object({ opensOn: z.string().optional(), closesOn: z.string().optional(), description: z.string().nullable() });
+
+export const SubmitAllResponseSchema = z.object({
+  submitted: z.number(),
+  unchanged: z.number(),
+  failed: z.array(z.object({ updateId: z.string(), indicatorCode: z.string(), message: z.string() })),
+  status: z.string(),
 });
 
 export const ActivityItemSchema = z.object({
@@ -512,6 +584,8 @@ export const ActivityDetailSchema = z.object({
   location: z.string().optional(),
   outputId: z.string().optional(),
   logframeActivityId: z.string().optional(),
+  /** The planned activity this completed activity delivers. */
+  plannedActivityId: z.string().optional(),
   indicatorId: z.string().optional(),
   participantsTotal: z.number().optional(),
   participantsMale: z.number().optional(),
@@ -579,6 +653,11 @@ export const EvidenceDetailSchema = z.object({
   confidentialityLevel: z.string(),
   notes: z.string().optional(),
   aiSummary: z.string().optional(),
+  /** EXTRACTED, EMPTY, FAILED or UNSUPPORTED; absent while reading has not been attempted. */
+  textExtractionStatus: z.string().optional(),
+  textExtractionNote: z.string().optional(),
+  /** Why a reviewer asked for a correction or rejected the file. */
+  reviewNote: z.string().optional(),
   aiSuggestedTags: z
     .array(
       z.object({
@@ -592,6 +671,15 @@ export const EvidenceDetailSchema = z.object({
   sensitivityWarning: z.string().optional(),
 });
 export type EvidenceDetail = z.infer<typeof EvidenceDetailSchema>;
+
+/** The evidence fields a map of photos needs (the list route sends more; the rest is ignored). */
+export const PhotoEvidenceResponseSchema = z.object({
+  items: z.array(z.object({
+    id: z.string(), title: z.string(), fileName: z.string(), fileType: z.string(), fileUrl: z.string(), storageProvider: z.string().optional(),
+    location: z.string().nullable().optional(), activityDate: z.string().optional(),
+  })),
+  total: z.number(),
+});
 
 export const EvidenceResponseSchema = z.object({
   items: z.array(EvidenceItemSchema),
@@ -609,6 +697,8 @@ export const ReportingPeriodItemSchema = z.object({
   internalReviewDeadline: z.string().nullable().optional(),
   daysUntilDeadline: z.number(),
   donorTemplateId: z.string().nullish(),
+  /** Who is responsible for this report. */
+  responsibleOfficerId: z.string().nullish(),
   /** A cancelled period keeps its data but is out of the calendar; it is listed apart so it can be restored. */
   /** An approved, exported or sent report exists: the period cannot be cancelled or converted. */
   releasedReport: z.boolean().optional(),
@@ -714,6 +804,8 @@ export const ReportClaimSchema = z.object({
   verificationReasonCode: z.string().nullable().optional(),
   /** MATERIAL claims gate approval; NOT_MATERIAL ones never do. */
   materiality: z.string().nullable().optional(),
+  /** Follows the statement's wording, not its id (ids change on every re-check): what a comment on it hangs from. */
+  fingerprint: z.string().optional(),
   /** "Your report is wrong" (REPORT_ERROR) vs "our checker could not confirm" (UNCONFIRMED); presentation only. */
   flagClass: z.enum(["REPORT_ERROR", "NEEDS_DECISION", "UNCONFIRMED"]).optional(),
   /** Span of the statement in the section markdown when it was checked. */
@@ -767,6 +859,8 @@ export const ReportDraftResponseSchema = z.object({
   summaryStaleSectionIds: z.array(z.string()).optional(),
   /** Open comments per section id. */
   commentCounts: z.record(z.string(), z.number().int().nonnegative()).optional(),
+  /** When and why the current draft was reopened after approval (shown until it is approved again). */
+  reopened: z.object({ at: z.string(), byId: z.string(), reason: z.string(), previousStatus: z.string() }).nullable().optional(),
   /** Indicator values / evidence changed after this draft was written. */
   inputsChangedSince: z
     .object({ indicators: z.number().int().nonnegative(), evidence: z.number().int().nonnegative(), sectionIds: z.array(z.string()) })
@@ -818,6 +912,7 @@ export const ChecklistResponseSchema = z.object({ items: z.array(ChecklistItemSc
 
 export const ExportItemSchema = z.object({
   id: z.string(),
+  reportingPeriodId: z.string().optional(),
   exportType: z.string(),
   fileUrl: z.string(),
   /** Readable download name (project, report kind, period, version); absent for old rows the API cannot name. */
@@ -879,8 +974,15 @@ export const CommentItemSchema = z.object({
   entityId: z.string(),
   commentText: z.string(),
   authorId: z.string().optional(),
+  /** The author's name, resolved by the server. The id is only a fallback. */
+  authorName: z.string().optional(),
   mentionedUserId: z.string().optional(),
   status: z.string().default("OPEN"),
+  /** Set on a reply: the first comment of its thread. */
+  parentId: z.string().optional(),
+  resolvedById: z.string().optional(),
+  resolvedByName: z.string().optional(),
+  resolvedAt: z.string().optional(),
   createdAt: z.string().optional(),
 });
 
@@ -1069,6 +1171,8 @@ export const ReportingProfileSchema = z.object({
   /** The template explicitly made the default for each report type. */
   defaultTemplateByType: z.record(z.string()).default({}),
   requireSecondApprover: z.boolean().default(false),
+  requireEvidenceForVerification: z.boolean().default(false),
+  simpleReview: z.boolean().default(false),
   standingStatements: z.record(z.string()).default({}),
   version: z.number(),
   createdAt: z.string(),
@@ -1145,7 +1249,555 @@ export const AiSectionRunsResponseSchema = z.object({
       attempts: z.number(),
       latencyMs: z.number(),
       tokens: z.number(),
+      costUsd: z.number().default(0),
+    }),
+  ),
+  monthCostUsd: z.number().default(0),
+});
+export type AiSectionRunsResponse = z.infer<typeof AiSectionRunsResponseSchema>;
+
+export const DataSheetResponseSchema = z.object({
+  projectId: z.string(),
+  financeEnabled: z.boolean(),
+  periods: z.array(z.object({ id: z.string(), label: z.string(), start: z.string(), end: z.string(), reportType: z.string(), locked: z.boolean(), reportStatus: z.string().optional() })),
+  indicators: z.array(
+    z.object({
+      id: z.string(),
+      code: z.string(),
+      name: z.string(),
+      level: z.string().nullable(),
+      type: z.string(),
+      unit: z.string().nullish().transform((v) => v ?? undefined),
+      baseline: z.string(),
+      target: z.string(),
+      isRate: z.boolean(),
+      /** Lower is better (deaths, stock-out days): the target is a ceiling, so there is no share of target. */
+      lowerIsBetter: z.boolean().optional(),
+      targetSchedule: z.array(z.object({ asOf: z.string(), target: z.string() })).optional(),
+      /** The value is calculated from other indicators: a plain sentence saying from what. */
+      calculation: z.string().optional(),
+    }),
+  ),
+  cells: z.array(
+    z.object({
+      indicatorId: z.string(),
+      periodId: z.string(),
+      periodValue: z.string(),
+      cumulativeValue: z.string(),
+      dataSource: z.string().optional(),
+      comments: z.string().optional(),
+      status: z.string(),
+      calculated: z.boolean().optional(),
+      breakdown: z.array(z.object({ dimension: z.string(), category: z.string(), value: z.string() })).optional(),
+    }),
+  ),
+  finance: z.array(
+    z.object({
+      periodId: z.string(),
+      currency: z.string(),
+      budget: z.string(),
+      expenditure: z.string(),
+      committed: z.string().optional(),
+      balance: z.string(),
+      burnRatePercent: z.string().optional(),
+      verified: z.boolean(),
     }),
   ),
 });
-export type AiSectionRunsResponse = z.infer<typeof AiSectionRunsResponseSchema>;
+export type DataSheetResponse = z.infer<typeof DataSheetResponseSchema>;
+
+export const DataSheetImportResponseSchema = z.object({
+  saved: z.number(),
+  preview: z.object({
+    missingColumns: z.array(z.string()),
+    changed: z.number(),
+    unchanged: z.number(),
+    skipped: z.number().default(0),
+    errors: z.number(),
+    rows: z.array(
+      z.object({
+        rowNumber: z.number(),
+        indicatorCode: z.string(),
+        periodLabel: z.string(),
+        status: z.enum(["CHANGED", "UNCHANGED", "SKIPPED", "ERROR"]),
+        error: z.string().optional(),
+        periodValue: z.string().optional(),
+        cumulativeValue: z.string().optional(),
+        previousPeriodValue: z.string().optional(),
+        previousCumulativeValue: z.string().optional(),
+      }),
+    ),
+  }),
+});
+export type DataSheetImportResponse = z.infer<typeof DataSheetImportResponseSchema>;
+
+export const SectionDataChartSchema = z.object({
+  id: z.string(),
+  caption: z.string(),
+  title: z.string(),
+  spec: z.object({
+    template: z.enum(["INDICATOR_OVER_TIME", "INDICATOR_VS_TARGET", "INDICATORS_PROGRESS", "INDICATORS_OVER_TIME", "STATUS_DISTRIBUTION", "FINANCE_BUDGET_VS_SPEND", "FINANCE_BURN_RATE"]),
+    indicatorIds: z.array(z.string()),
+    measure: z.enum(["PERIOD", "CUMULATIVE", "PERCENT_OF_TARGET"]),
+    type: z.enum(["BAR", "LINE", "PIE", "AREA", "RADAR", "GAUGE"]),
+    fromPeriodId: z.string().optional(),
+    toPeriodId: z.string().optional(),
+    showTarget: z.boolean(),
+    title: z.string().optional(),
+    colors: z.array(z.string()).optional(),
+  }),
+  builtAt: z.string(),
+  points: z.number(),
+  unverified: z.number(),
+  notes: z.array(z.string()),
+  stale: z.boolean(),
+  broken: z.string().optional(),
+});
+export type SectionDataChart = z.infer<typeof SectionDataChartSchema>;
+export const SectionDataChartsResponseSchema = z.object({ items: z.array(SectionDataChartSchema) });
+
+// ---- Work plan (Phase 28) ----
+export const WorkPlanRowSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  kind: z.enum(["ACTIVITY", "MILESTONE"]),
+  plannedStart: z.string(),
+  plannedEnd: z.string(),
+  originalStart: z.string().optional(),
+  originalEnd: z.string().optional(),
+  status: z.enum(["PLANNED", "IN_PROGRESS", "DONE", "CANCELLED"]),
+  state: z.string(),
+  signal: z.enum(["ON_TIME", "LATE", "DONE", "CANCELLED"]),
+  signalLabel: z.string(),
+  signalReason: z.string().optional(),
+  ownerUserId: z.string().optional(),
+  supportUserIds: z.array(z.string()),
+  logframeActivityId: z.string().optional(),
+  outputId: z.string().optional(),
+  location: z.string().optional(),
+  /** A hand-placed place when no gazetteer name matches (Phase 30.1). */
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
+  /** Places from the places list this activity names (phase 42.1). */
+  places: z.array(z.object({ id: z.string(), name: z.string(), latitude: z.number().optional(), longitude: z.number().optional() })).optional(),
+  targetCount: z.number().optional(),
+  /** How heavy it is for its lead, 1 to 5. */
+  effort: z.number().default(1),
+  deliveredCount: z.number(),
+  completedActivities: z.number(),
+  suggestedStatus: z.enum(["IN_PROGRESS", "DONE"]).optional(),
+  seriesId: z.string().optional(),
+  /** Kinds of file that should prove it, and the ones no completed activity has shown yet. */
+  requiredFiles: z.array(z.string()).default([]),
+  stillNeeded: z.array(z.string()).default([]),
+  reasonRequired: z.boolean(),
+  /** "Comes after" (must finish first) and "Comes before" (waits for this one); "waitingFor" = unfinished ones. */
+  comesAfter: z.array(z.object({ id: z.string(), title: z.string(), finished: z.boolean() })).default([]),
+  comesBefore: z.array(z.object({ id: z.string(), title: z.string() })).default([]),
+  waitingFor: z.array(z.object({ id: z.string(), title: z.string(), finished: z.boolean() })).default([]),
+});
+export type WorkPlanRow = z.infer<typeof WorkPlanRowSchema>;
+export const WorkPlanResponseSchema = z.object({ items: z.array(WorkPlanRowSchema) });
+
+export const CreatedPlannedActivitiesSchema = z.object({ ids: z.array(z.string()), capped: z.boolean() });
+
+/** The workspace's uploaded map boundaries: metadata (the GeoJSON itself comes from the data route). */
+export const MapLayerMetaSchema = z.object({
+  name: z.string(),
+  sizeBytes: z.number(),
+  featureCount: z.number(),
+  uploadedAt: z.string(),
+});
+export type MapLayerMeta = z.infer<typeof MapLayerMetaSchema>;
+export const MapLayerMetaResponseSchema = MapLayerMetaSchema;
+
+export const PlanPreviewSchema = z.object({
+  preview: z.object({
+    rows: z.array(
+      z.object({
+        logframeActivityId: z.string(),
+        title: z.string(),
+        outputId: z.string().optional(),
+        plannedStart: z.string(),
+        plannedEnd: z.string(),
+        repeats: z.object({ every: z.enum(["WEEK", "MONTH"]), interval: z.number(), until: z.string() }).optional(),
+        ownerUserId: z.string().optional(),
+      }),
+    ),
+    total: z.number(),
+    repeating: z.number(),
+  }),
+  createdIds: z.array(z.string()).optional(),
+});
+export type PlanPreviewResponse = z.infer<typeof PlanPreviewSchema>;
+
+export const PlanRevisionSchema = z.object({
+  id: z.string(),
+  changes: z.record(z.string(), z.object({ from: z.unknown(), to: z.unknown() })),
+  reason: z.string().optional(),
+  changedById: z.string(),
+  changedAt: z.string(),
+});
+export const PlanRevisionsResponseSchema = z.object({ items: z.array(PlanRevisionSchema) });
+
+export const ProjectPeopleResponseSchema = z.object({ items: z.array(z.object({ userId: z.string(), name: z.string(), role: z.string() })) });
+
+export const ImportWorkPlanResponseSchema = z.object({
+  applied: z.boolean(),
+  created: z.number(),
+  skipped: z.number(),
+  warnings: z.array(z.string()),
+  problems: z.array(z.string()),
+  items: z.array(z.object({ id: z.string().optional(), title: z.string(), plannedStart: z.string(), plannedEnd: z.string() })),
+});
+export type ImportWorkPlanResponse = z.infer<typeof ImportWorkPlanResponseSchema>;
+
+export const MyWeekSchema = z.object({
+  today: z.string(),
+  weekStart: z.string(),
+  planned: z.array(WorkPlanRowSchema.omit({ reasonRequired: true }).extend({ projectId: z.string(), projectTitle: z.string() })),
+  sentBack: z.array(z.object({ id: z.string(), projectId: z.string(), projectTitle: z.string(), title: z.string(), activityDate: z.string(), status: z.enum(["NEEDS_REVISION", "REJECTED"]) })),
+});
+export type MyWeek = z.infer<typeof MyWeekSchema>;
+
+// ---- Requests, assignments, team work (Phase 28.3) ----
+const AssignmentSchema = z.object({
+  key: z.string(),
+  kind: z.enum(["PLAN_ITEM", "TASK", "CHECKLIST_ITEM", "REPORT_DEADLINE", "EVIDENCE_REVIEW", "ACTIVITY_REVIEW", "ACTIVITY_FIX", "INDICATOR_VALUE", "RISK_REVIEW", "VALUE_REVIEW", "RECORD_REVIEW"]),
+  projectId: z.string(),
+  projectTitle: z.string(),
+  title: z.string(),
+  assigneeId: z.string(),
+  dueDate: z.string().optional(),
+  state: z.enum(["OPEN", "LATE"]),
+  urgent: z.boolean(),
+  href: z.string(),
+  urgency: z.number(),
+  because: z.string().optional(),
+  askedById: z.string().optional(),
+  manual: z.boolean().optional(),
+});
+export type AssignmentItem = z.infer<typeof AssignmentSchema>;
+export const AssignmentsResponseSchema = z.object({
+  today: z.string(),
+  userId: z.string(),
+  total: z.number(),
+  groups: z.array(z.object({ key: z.enum(["LATE", "TODAY", "THIS_WEEK", "LATER", "NO_DATE"]), label: z.string(), items: z.array(AssignmentSchema) })),
+});
+export type AssignmentsResponse = z.infer<typeof AssignmentsResponseSchema>;
+export const TeamWorkResponseSchema = z.object({
+  today: z.string(),
+  rows: z.array(z.object({ assigneeId: z.string(), open: z.number(), late: z.number(), dueThisWeek: z.number() })),
+  /** The open requests on the project, whoever they are for. */
+  requests: z
+    .array(z.object({ key: z.string(), title: z.string(), assigneeId: z.string(), dueDate: z.string().optional(), state: z.string(), urgent: z.boolean(), href: z.string() }))
+    .default([]),
+});
+
+export const NotificationPreferencesSchema = z.object({ emailSummaryMode: z.enum(["DAILY_SUMMARY", "URGENT_ONLY", "NEVER"]) });
+
+// ---- Delivery health (Phase 28.4): a label with reasons, never a score ----
+export const DeliveryHealthSchema = z.object({
+  projectId: z.string(),
+  band: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "NO_PLAN"]),
+  label: z.string(),
+  reasons: z.array(z.string()),
+  health: z.object({ planned: z.number(), done: z.number(), doneLate: z.number(), overdue: z.number(), lateStart: z.number(), dueSoon: z.number(), valuesOverdue: z.number(), valuesDue: z.number(), valuesRecorded: z.number() }),
+});
+export type DeliveryHealthResponse = z.infer<typeof DeliveryHealthSchema>;
+export const PortfolioHealthSchema = z.object({
+  items: z.array(z.object({ projectId: z.string(), title: z.string(), band: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "NO_PLAN"]), label: z.string(), reasons: z.array(z.string()) })),
+});
+
+export const FileNeedsSchema = z.object({ required: z.array(z.string()), provided: z.array(z.string()), stillNeeded: z.array(z.string()) });
+
+// ---- Problems and risks (Phase 28.7) ----
+export const RiskSchema = z.object({
+  id: z.string(),
+  kind: z.enum(["PROBLEM", "RISK", "ASSUMPTION", "DECISION", "DEPENDENCY"]),
+  title: z.string(),
+  seriousness: z.enum(["HIGH", "MEDIUM", "LOW"]),
+  ownerId: z.string().optional(),
+  action: z.string(),
+  status: z.enum(["OPEN", "CLOSED"]),
+  closedNote: z.string().optional(),
+  plannedActivityId: z.string().optional(),
+  raisedById: z.string(),
+  reviewBy: z.string().optional(),
+  canChange: z.boolean(),
+});
+export type RiskItem = z.infer<typeof RiskSchema>;
+export const RisksResponseSchema = z.object({ items: z.array(RiskSchema) });
+
+/** The fields of one planned activity and the values filled so far (phase 28.1-C). */
+export const PlanItemFieldsSchema = z.object({
+  fields: z.array(z.object({
+    id: z.string(),
+    key: z.string(),
+    label: z.string(),
+    type: z.enum(["TEXT", "NUMBER", "DATE", "CHOICE"]),
+    choices: z.array(z.string()).default([]),
+  })),
+  values: z.record(z.string(), z.string()),
+});
+export type PlanItemFields = z.infer<typeof PlanItemFieldsSchema>;
+
+/** Indicators summed across the projects a person can see, per donor and code (phase 28.1-F). */
+export const PortfolioIndicatorsSchema = z.object({
+  items: z.array(z.object({
+    donorName: z.string(),
+    indicatorCode: z.string(),
+    indicatorName: z.string(),
+    unit: z.string().nullable(),
+    total: z.number().nullable(),
+    targetTotal: z.number().nullable(),
+    percentOfTarget: z.number().nullable(),
+    projects: z.array(z.object({ projectId: z.string(), projectTitle: z.string(), value: z.number().nullable(), target: z.number().nullable(), asOf: z.string().nullable() })),
+    mismatched: z.array(z.object({ projectId: z.string(), projectTitle: z.string(), value: z.number().nullable(), target: z.number().nullable(), asOf: z.string().nullable() })),
+    countedElsewhere: z.array(z.object({ projectId: z.string(), projectTitle: z.string(), value: z.number().nullable(), target: z.number().nullable(), asOf: z.string().nullable() })).default([]),
+    possibleOverlap: z.object({ projects: z.array(z.string()), message: z.string() }).nullable().default(null),
+  })),
+});
+
+/** The budget of one planned activity: each line, what is spent, and where it stands (phase 28.1-D). */
+export const PlanItemBudgetSchema = z.object({
+  items: z.array(z.object({
+    id: z.string(),
+    code: z.string(),
+    category: z.enum(["PERSONNEL", "TRAVEL", "SUPPLIES", "EQUIPMENT", "SERVICES", "OTHER"]),
+    description: z.string(),
+    donorName: z.string(),
+    currency: z.string(),
+    position: z.object({
+      budgetedMinor: z.number().nullable(),
+      spentMinor: z.number(),
+      remainingMinor: z.number().nullable(),
+      spentPercent: z.number().nullable(),
+      overspent: z.boolean(),
+      state: z.enum(["NO_BUDGET", "NOT_STARTED", "UNDER_SPENT", "FULLY_SPENT", "OVERSPENT"]),
+    }),
+    expenses: z.array(z.object({ id: z.string(), date: z.string(), amountMinor: z.number(), description: z.string() })),
+    waiting: z.array(z.object({ id: z.string(), date: z.string(), amountMinor: z.number(), description: z.string() })).default([]),
+  })),
+});
+export type PlanItemBudget = z.infer<typeof PlanItemBudgetSchema>;
+
+/** What a bulk change would do (preview), or how many it did (apply) (phase 28.1-L). */
+export const BulkPlanResultSchema = z.object({
+  preview: z.array(z.object({ id: z.string(), title: z.string(), before: z.string(), after: z.string() })),
+  applied: z.number(),
+  /** The steps that put each activity back; sent to the undo endpoint as they are. */
+  undo: z.array(z.object({ id: z.string(), action: z.record(z.string(), z.unknown()) })).default([]),
+});
+export type BulkPlanResult = z.infer<typeof BulkPlanResultSchema>;
+
+/** Planned activities each person leads, week by week, against their limit (phase 28.1-J). */
+export const WorkloadResponseSchema = z.object({
+  weeks: z.array(z.string()),
+  rows: z.array(z.object({
+    userId: z.string(),
+    capacity: z.number().nullable(),
+    weeks: z.array(z.object({ weekStart: z.string(), load: z.number(), capacity: z.number().nullable(), over: z.boolean() })),
+  })),
+});
+
+export type WorkloadResponse = z.infer<typeof WorkloadResponseSchema>;
+export type AutomationRulesResponse = z.infer<typeof AutomationRulesResponseSchema>;
+
+/** The automation rules of a project and whether each is on (phase 28.1-K). */
+export const AutomationRulesResponseSchema = z.object({
+  items: z.array(z.object({
+    ruleKey: z.string(),
+    label: z.string(),
+    enabled: z.boolean(),
+    /** The numbers the project may adjust for this rule, each with its range and the value now in force. */
+    settings: z.array(z.object({ name: z.string(), label: z.string(), min: z.number(), max: z.number(), default: z.number(), value: z.number() })).default([]),
+  })),
+});
+
+/** What the automations sent for a project, newest first (phase 28.1-K). */
+export const AutomationHistorySchema = z.object({
+  items: z.array(z.object({ sentOn: z.string(), rule: z.string(), activity: z.string(), recipientId: z.string() })),
+});
+export type AutomationHistory = z.infer<typeof AutomationHistorySchema>;
+
+/** People a project reaches, by case code, with counts by sex and age group (phase 28.1-G). */
+export const BeneficiariesResponseSchema = z.object({
+  items: z.array(z.object({ id: z.string(), caseCode: z.string(), sex: z.string(), ageGroup: z.string(), location: z.string(), enrolledOn: z.string() })),
+  counts: z.object({ total: z.number(), bySex: z.record(z.string(), z.number()), byAgeGroup: z.record(z.string(), z.number()) }),
+});
+export type BeneficiariesResponse = z.infer<typeof BeneficiariesResponseSchema>;
+
+/** The progress log of one planned activity: its breakdown fields, entries, and the indicators it reports on. */
+export const ProgressResponseSchema = z.object({
+  fields: z.array(z.object({ key: z.string(), label: z.string(), usedBy: z.array(z.string()) })),
+  indicatorIds: z.array(z.string()),
+  entries: z.array(z.object({
+    id: z.string(),
+    kind: z.enum(["DAILY", "WEEKLY", "MONTHLY", "END"]),
+    from: z.string(),
+    to: z.string(),
+    values: z.object({ total: z.number().nullable(), breakdowns: z.record(z.string(), z.number().nullable()), sessions: z.number().nullable(), unique: z.number().nullable() }),
+    narrative: z.object({ notes: z.string(), summary: z.string(), achievements: z.string(), challenges: z.string(), nextSteps: z.string(), lessons: z.string() }),
+    absorbedById: z.string().nullable(),
+  })),
+});
+export type ProgressResponse = z.infer<typeof ProgressResponseSchema>;
+
+/** What a form opens with for a kind and range: the sum of the live entries it covers, blank where nothing was recorded. */
+export const PrepareProgressResponseSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  fields: z.array(z.object({ key: z.string(), label: z.string(), usedBy: z.array(z.string()) })),
+  values: z.object({
+    total: z.number().nullable(),
+    breakdowns: z.record(z.string(), z.number().nullable()),
+    sessions: z.number().nullable(),
+    unique: z.number().nullable(),
+  }),
+  sources: z.number(),
+});
+export type PrepareProgressResponse = z.infer<typeof PrepareProgressResponseSchema>;
+
+/** The saved column mapping of a project, or none (phase 28.1-I). */
+export const SubmissionMappingResponseSchema = z.object({ mapping: z.record(z.string(), z.string()).nullable() });
+
+/** The people (by case code) an activity reached, each once, with counts by sex and age group. */
+export const ActivityPeopleSchema = z.object({
+  people: z.array(z.object({ id: z.string(), caseCode: z.string(), sex: z.string(), ageGroup: z.string() })),
+  counts: z.object({ total: z.number(), bySex: z.record(z.string(), z.number()), byAgeGroup: z.record(z.string(), z.number()) }),
+});
+export type ActivityPeople = z.infer<typeof ActivityPeopleSchema>;
+
+/** What an import would do, read from a file without saving (phase 28.1-I review). */
+export const SubmissionReviewSchema = z.object({
+  ready: z.number(),
+  problems: z.array(z.object({ line: z.number(), message: z.string() })),
+  clashes: z.array(z.object({ line: z.number(), caseCode: z.string() })),
+  likely: z.array(z.object({ line: z.number(), caseCode: z.string(), looksLike: z.array(z.string()) })),
+});
+export type SubmissionReview = z.infer<typeof SubmissionReviewSchema>;
+
+/** A project's budget against spending, per currency (never added across currencies) and per activity. */
+export const ProjectBudgetSchema = z.object({
+  items: z.array(z.object({
+    currency: z.string(),
+    budgetedMinor: z.number(),
+    spentMinor: z.number(),
+    remainingMinor: z.number(),
+    overspentActivities: z.number(),
+    byActivity: z.array(z.object({ activityId: z.string(), activityTitle: z.string(), budgetedMinor: z.number(), spentMinor: z.number(), remainingMinor: z.number(), overspent: z.boolean() })),
+  })),
+});
+export type ProjectBudget = z.infer<typeof ProjectBudgetSchema>;
+
+/** A project's custom fields and every activity's values (activity id -> field id -> value), for the plan list and the export. */
+export const PlanFieldValuesSchema = z.object({
+  fields: z.array(z.object({ id: z.string(), key: z.string(), label: z.string(), type: z.enum(["TEXT", "NUMBER", "DATE", "CHOICE"]), choices: z.array(z.string()).default([]) })),
+  values: z.record(z.string(), z.record(z.string(), z.string())),
+});
+
+export const LogframeVersionsResponseSchema = z.object({
+  items: z.array(z.object({ version: z.number(), summary: z.string(), createdAt: z.string(), createdById: z.string(), approvedAt: z.string().nullable(), approvedById: z.string().nullable() })),
+});
+
+export const LogframeChangesResponseSchema = z.object({
+  from: z.number().nullable(),
+  to: z.number(),
+  changes: z.array(z.object({ text: z.string() })),
+});
+
+export const RequirementPacksResponseSchema = z.object({
+  items: z.array(z.object({
+    id: z.string(), name: z.string(), donorKey: z.string(), mechanismKey: z.string(), reportType: z.string(), status: z.string(), version: z.number(),
+    requirements: z.array(z.object({ key: z.string(), kind: z.string(), required: z.boolean() })),
+  })),
+});
+
+
+const FundedProjectSchema = z.object({
+  id: z.string(), title: z.string(), status: z.string(),
+  budget: z.object({ amount: z.union([z.number(), z.string()]), currency: z.string() }).optional(),
+});
+const FundingTotalsSchema = z.object({
+  projectCount: z.number(), activeProjectCount: z.number(),
+  budgetByCurrency: z.record(z.string(), z.number()), awardedByCurrency: z.record(z.string(), z.number()),
+});
+const GrantSchema = z.object({
+  id: z.string(), title: z.string(), donorName: z.string(), awardNumber: z.string().optional(), amount: z.string().optional(), currency: z.string().optional(),
+  startDate: z.string().optional(), endDate: z.string().optional(), status: z.string(), programmeId: z.string().optional(),
+});
+export const FundingResponseSchema = z.object({
+  programmes: z.array(z.object({ id: z.string(), name: z.string(), code: z.string().optional(), description: z.string().optional(), status: z.string(), grants: z.array(GrantSchema), projects: z.array(FundedProjectSchema), totals: FundingTotalsSchema })),
+  looseGrants: z.array(GrantSchema.extend({ projects: z.array(FundedProjectSchema), totals: FundingTotalsSchema })),
+  unplacedProjects: z.array(FundedProjectSchema),
+});
+export type FundingResponse = z.infer<typeof FundingResponseSchema>;
+
+export const MfaStatusSchema = z.object({
+  enabled: z.boolean(), enabledAt: z.string().nullable(), recoveryCodesLeft: z.number(),
+  /** Where this person stands against the organisation's requirement. */
+  requirement: z.enum(["NOT_REQUIRED", "REQUIRED_SOON", "SETUP_REQUIRED", "DONE"]).default("NOT_REQUIRED"),
+  requiredFrom: z.string().nullable().default(null),
+});
+export const MfaSetupSchema = z.object({ secret: z.string(), otpauthUri: z.string() });
+export const MfaEnabledSchema = z.object({ recoveryCodes: z.array(z.string()) });
+
+export const PortfolioOverviewSchema = z.object({
+  totals: z.object({ projects: z.number(), behind: z.number(), needAttention: z.number(), openRisks: z.number(), highRisks: z.number(), reportsOverdue: z.number() }),
+  rows: z.array(
+    z.object({
+      projectId: z.string(),
+      title: z.string(),
+      donorName: z.string(),
+      country: z.string(),
+      status: z.string(),
+      sector: z.string().default(""),
+      delivery: z.object({ band: z.enum(["ON_TRACK", "AT_RISK", "OFF_TRACK", "NO_PLAN"]), label: z.string(), reason: z.string().nullable(), lateActivities: z.number(), valuesOverdue: z.number() }),
+      risks: z.object({ open: z.number(), high: z.number(), reviewOverdue: z.number() }),
+      reporting: z.object({ periodId: z.string(), deadline: z.string(), daysUntil: z.number(), status: z.string(), readinessScore: z.number() }).nullable(),
+      reportsOverdue: z.number(),
+    }),
+  ),
+});
+
+/** The indicators a donor's template asks for, each with the project indicator that answers it (or why none does). */
+export const DonorIndicatorMappingSchema = z.object({
+  templateId: z.string(),
+  indicators: z.array(z.object({ id: z.string(), code: z.string(), name: z.string() })),
+  summary: z.object({ total: z.number(), mapped: z.number(), suggested: z.number(), unmapped: z.number(), notTracked: z.number() }),
+  rows: z.array(z.object({
+    requirementId: z.string(),
+    text: z.string(),
+    status: z.enum(["MAPPED", "SUGGESTED", "UNMAPPED", "NOT_TRACKED"]),
+    indicatorId: z.string().nullable(),
+    indicatorCode: z.string().nullable(),
+    indicatorName: z.string().nullable(),
+    basis: z.string(),
+    alternatives: z.array(z.string()),
+  })),
+});
+
+/** The standard management report of one project: titled tables with a sentence each. */
+export const ManagementReportSchema = z.object({
+  today: z.string(),
+  projectTitle: z.string(),
+  sections: z.array(z.object({ title: z.string(), summary: z.string(), headers: z.array(z.string()), rows: z.array(z.array(z.string())) })),
+});
+
+/** The adaptation log: each change of plan with what changed, why, and its effect on the results. */
+export const AdaptationsResponseSchema = z.object({
+  items: z.array(
+    z.object({
+      id: z.string(),
+      recordedOn: z.string(),
+      whatChanged: z.string(),
+      why: z.string(),
+      effectOnResults: z.string().optional(),
+      plannedActivityId: z.string().optional(),
+      indicatorId: z.string().optional(),
+      reportingPeriodId: z.string().optional(),
+      recordedById: z.string(),
+    }),
+  ),
+});

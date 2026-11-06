@@ -1,6 +1,6 @@
 # Verification demo 3 — a fully completed 6-month Education project, one AI final report (2026-10-05)
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 End-to-end build of a completed six-month **Education** project on production (`donordesk.online`, tenant `GEC`, `mnpiracha@gmail.com`), then **one AI final report** generated from the UI in a
 visible browser. As in demos 1 and 2 everything went through the real HTTP API (bearer token from `POST /v1/auth/login`, run on the Contabo host over `ssh contabo` because the API is

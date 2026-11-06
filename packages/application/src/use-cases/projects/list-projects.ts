@@ -3,6 +3,7 @@ import { DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { IProjectMemberRepository } from "../../ports/project-members.js";
+import { VisibleProjects } from "../../services/visible-projects.js";
 
 /**
  * ADMIN sees every project in the tenant. Any other role sees only projects
@@ -12,22 +13,15 @@ import type { IProjectMemberRepository } from "../../ports/project-members.js";
  * already used by the field-level ABAC policy engine.
  */
 export class ListProjectsHandler {
-  constructor(
-    private readonly projects: IProjectRepository,
-    private readonly projectMembers: IProjectMemberRepository,
-  ) {}
+  private readonly visible: VisibleProjects;
+  constructor(projects: IProjectRepository, projectMembers: IProjectMemberRepository) {
+    this.visible = new VisibleProjects(projects, projectMembers);
+  }
 
   async handle(ctx: AuthenticatedContext): Promise<Result<Array<unknown>, DomainError>> {
-    const r = await this.projects.listByTenant(ctx.tenant.tenantId);
+    const r = await this.visible.for(ctx);
     if (!r.ok) return r;
-
-    let items = r.value;
-    if (ctx.tenant.role !== "ADMIN") {
-      const memberIds = await this.projectMembers.listActiveProjectIdsForUser(ctx.tenant.userId, ctx.tenant.tenantId);
-      if (!memberIds.ok) return memberIds;
-      const allowed = new Set(memberIds.value);
-      items = items.filter((p) => allowed.has(p.id));
-    }
+    const items = r.value;
 
     return {
       ok: true,

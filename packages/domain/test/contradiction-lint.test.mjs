@@ -291,6 +291,12 @@ test("life-of-project totals, their percent of target and both breakdowns are qu
   assert.deepEqual(states(r), []);
 });
 
+test("a target set by group is a figure the section may quote", () => {
+  const grouped = toLintFindingData({ indicatorCode: "IND-1", value: "240", target: "1200", unit: "children", qualityFlags: [], targetBreakdowns: [{ value: "700" }, { value: "500" }] });
+  const r = lintReportContradictions({ sections: [{ id: "s1", title: "Results", content: "The group targets are 700 female and 500 male children." }], findings: [grouped] });
+  assert.deepEqual(states(r), []);
+});
+
 test("a figure that is in no record is still a contradiction", () => {
   const r = quote("Enrolment closed at 1,500 children, with 700 female and 800 male.");
   assert.ok(states(r).includes("PROSE_VALUE_NOT_IN_VERIFIED_DATA"));
@@ -397,6 +403,45 @@ test("an award number is an identifier, not a figure (demo 6: Introduction block
 test("a label such as P25 in an activity title is not a figure (demo 6)", () => {
   const result = lintReportContradictions({
     sections: sections(["Activity", "The P25 CHECK mentorship visit took place in Lodwar."]),
+    findings,
+  });
+  assert.equal(result.blockers, 0, JSON.stringify(result.findings));
+});
+
+test("a percentage written with the word is read like one written with the sign", () => {
+  const run = (content) => lintReportContradictions({
+    sections: sections(["Results", content]),
+    findings: [{ indicatorCode: "IND-2", value: "340", target: "320", qualityFlags: [] }],
+  });
+  const kinds = (r) => r.findings.map((f) => f.kind);
+  assert.deepEqual(kinds(run("The project ran 340 tests against a target of 320 (106 percent of target).")), []);
+  assert.ok(kinds(run("Coverage reached 87 percent of the planned districts.")).includes("PERCENTAGE_WITHOUT_BASIS"));
+});
+
+test("a quarterly report may quote one value per month for the same noun; two undated values for it still diverge", () => {
+  const monthly = lintReportContradictions({
+    sections: [
+      { id: "a", title: "Activities", content: "Volunteers screened 3,200 children (1,664 girls and 1,536 boys) between 3 and 31 March, 3,400 children (1,768 girls and 1,632 boys) between 3 and 30 April, and 3,300 children in May." },
+      { id: "b", title: "Context", content: "Health post staff admitted 150 children in March, 170 in April and 165 in May; each month about 3,400 children were screened." },
+    ],
+    findings: [],
+    groundedFigures: ["3200", "3400", "3300", "1664", "1536", "1768", "1632", "150", "170", "165"],
+  });
+  assert.equal(monthly.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 0, JSON.stringify(monthly.findings.map((f) => f.detail)));
+  const undated = lintReportContradictions({
+    sections: [
+      { id: "a", title: "Activities", content: "The project screened 3,200 children aged 6 to 59 months." },
+      { id: "b", title: "Summary", content: "The project screened 3,400 children aged 6 to 59 months." },
+    ],
+    findings: [],
+    groundedFigures: ["3200", "3400"],
+  });
+  assert.equal(undated.findings.filter((f) => f.kind === "SAME_METRIC_DIVERGENCE").length, 1);
+});
+
+test("a span of days inside one month is a date range, not a figure (demo 12)", () => {
+  const result = lintReportContradictions({
+    sections: sections(["Activities", "Referral vehicles ran from 15 to 30 November. The review meetings were held on 26 and 27 November. Outreach took place 9-13 November and again November 16 to 20."]),
     findings,
   });
   assert.equal(result.blockers, 0, JSON.stringify(result.findings));

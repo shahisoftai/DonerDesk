@@ -3,7 +3,7 @@ import { cn } from "./cn";
 import { Spinner } from "./Spinner";
 
 export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
-export type ButtonSize = "sm" | "md";
+export type ButtonSize = "sm" | "md" | "touch";
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -25,6 +25,8 @@ const variants: Record<ButtonVariant, string> = {
 const sizes: Record<ButtonSize, string> = {
   sm: "min-h-[32px] px-2.5 py-1 text-xs",
   md: "min-h-[38px] px-3.5 py-2 text-sm",
+  /** Thumb-sized: 44 px tall, for screens used on a phone (Phase 44). */
+  touch: "min-h-[44px] px-4 py-2 text-sm",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(

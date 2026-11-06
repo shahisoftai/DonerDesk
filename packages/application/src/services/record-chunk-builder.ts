@@ -1,10 +1,12 @@
-import type { FinanceSummaryView, ReportScope, Result, TenantId, VerifiedFinding } from "@donordesk/domain";
+import { adaptationSentence, planDeliverySentences, redactForLlm, toPlainDate, resolvePiiPolicy, type FinanceSummaryView, type PlanDeliverySummary, type PiiPolicy, type ReportScope, type Result, type TenantId, type VerifiedFinding } from "@donordesk/domain";
 import { DomainError } from "@donordesk/domain";
 import type { IRecordChunkBuilder, IReportingPeriodRepository, RecordChunk } from "../ports/reporting.js";
 import type { IProjectRepository } from "../ports/projects.js";
 import type { IActivityUpdateRepository } from "../ports/activities.js";
 import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../ports/logframe.js";
 import type { IEvidenceRepository } from "../ports/evidence.js";
+import type { IPlanDelivery } from "./plan-delivery-service.js";
+import type { IAdaptationRepository } from "../ports/adaptations.js";
 import { resolveGenerationActivities } from "./period-activities.js";
 import { taggedEvidenceIds } from "./period-evidence.js";
 
@@ -47,6 +49,8 @@ export interface RecordSources {
     nextSteps: string;
   }>;
   indicatorUpdates: Array<{ indicatorCode: string; comments?: string; dataSource?: string }>;
+  /** The logframe's own statement of where each indicator's results come from. */
+  indicatorDefinitions?: Array<{ code: string; name?: string; meansOfVerification?: string }>;
 }
 
 const LONG_DATE = (d: Date): string => `${d.getUTCDate()} ${d.toLocaleString("en-GB", { month: "long", timeZone: "UTC" })} ${d.getUTCFullYear()}`;
@@ -58,7 +62,8 @@ export function recordSentences(text: string | undefined): string[] {
   if (!text) return [];
   return text
     .split(/\n+|(?<=[.!?])\s+/)
-    .map((s) => s.replace(/^[-*•\d.)\s]+/, "").trim())
+    // Only a real list marker ("- ", "* ", "1. ", "2) ") is dropped: a sentence that starts with a figure ("420 cartons were delivered") keeps it.
+    .map((s) => s.replace(/^(?:[-*•]\s+|\d{1,2}[.)]\s+)+/, "").trim())
     .filter((s) => s.length >= 8)
     .map((s) => (s.length > MAX_SENTENCE ? s.slice(0, MAX_SENTENCE) : s));
 }
@@ -89,13 +94,20 @@ export function scopeStatements(scope: ReportScope | undefined): string[] {
  * or qualitative claim that restates one of them ("rainy-season delays were managed through early
  * ordering") is supported by the record it came from, even though no evidence file says it.
  */
-export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
+export function buildRecordChunks(sources: RecordSources, piiPolicy: PiiPolicy = resolvePiiPolicy(process.env.LLM_PII_POLICY)): RecordChunk[] {
   const chunks: RecordChunk[] = [];
   const add = (kind: string, owner: string, label: string, texts: Array<string | undefined>): void => {
     texts.forEach((text, i) => {
       if (text && text.trim() && chunks.length < MAX_CHUNKS) chunks.push({ chunkId: `record:${kind}:${owner}:${i}`, label, text: text.trim() });
     });
   };
+  /**
+   * The officer's own words are redacted for the model (LLM_PII_POLICY). The
+   * writer and the claim verifier both read these chunks, so a redacted
+   * sentence still grounds a claim that quotes it.
+   */
+  const words = (text: string | undefined): string | undefined =>
+    text === undefined ? undefined : redactForLlm(text, piiPolicy);
 
   const p = sources.project;
   const place = [p.district, p.region, p.country].filter(Boolean).join(", ");
@@ -105,7 +117,7 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
     `${p.implementingOrganization} implements the project${p.partnerOrganization ? ` with ${p.partnerOrganization}` : ""} in ${place}.`,
     `The project runs from ${bothDates(p.duration.start)} to ${bothDates(p.duration.end)}.`,
     p.budget ? `The project budget is ${p.budget.amount} ${p.budget.currency}.` : undefined,
-    ...recordSentences(p.description),
+    ...recordSentences(words(p.description)),
   ]);
   add("period", "dates", "Reporting period", [
     `This ${sources.period.reportType.toLowerCase().replace(/_/g, "-")} report covers ${bothDates(sources.period.duration.start)} to ${bothDates(sources.period.duration.end)}.`,
@@ -117,10 +129,10 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
   if (s) {
     const STORY_LABEL: Record<string, string> = { achievements: "the achievements", challenges: "the challenges", varianceExplanations: "the reason for any variance or unspent balance", adaptations: "the adaptations made", lessons: "the lessons learned" };
     for (const [index, text] of Object.values(s.sectionNotes ?? {}).entries()) {
-      add("story", `sectionNote${index}`, "Reporting officer's statement for a compliance section", recordSentences(text).map((sentence) => `The reporting officer recorded: ${sentence}`));
+      add("story", `sectionNote${index}`, "Reporting officer's statement for a compliance section", recordSentences(words(text)).map((sentence) => `The reporting officer recorded: ${sentence}`));
     }
     for (const [field, text] of Object.entries(s).filter(([k]) => k !== "sectionNotes") as Array<[string, string | undefined]>) {
-      add("story", field, `Reporting officer's story: ${field}`, recordSentences(text).map((sentence) => `The reporting officer recorded ${STORY_LABEL[field] ?? field}: ${sentence}`));
+      add("story", field, `Reporting officer's story: ${field}`, recordSentences(words(text)).map((sentence) => `The reporting officer recorded ${STORY_LABEL[field] ?? field}: ${sentence}`));
     }
   }
 
@@ -134,24 +146,31 @@ export function buildRecordChunks(sources: RecordSources): RecordChunk[] {
       a.participantsDisability !== undefined ? `${a.participantsDisability} with disabilities` : undefined,
     ].filter(Boolean);
     add("activity", a.id, label, [
-      `${a.activityTitle}${a.location ? ` at ${a.location}` : ""} ${a.activityEndDate ? `from ${bothDates(a.activityDate)} to ${bothDates(a.activityEndDate)}` : `on ${bothDates(a.activityDate)}`}.`,
+      `${a.activityTitle}${a.location ? ` at ${words(a.location)}` : ""} ${a.activityEndDate ? `from ${bothDates(a.activityDate)} to ${bothDates(a.activityEndDate)}` : `on ${bothDates(a.activityDate)}`}.`,
       participants.length ? `Participants: ${participants.join(", ")}.` : undefined,
-      ...recordSentences(a.summary),
-      ...recordSentences(a.achievements),
-      ...recordSentences(a.challenges),
-      ...recordSentences(a.lessonsLearned),
-      ...recordSentences(a.nextSteps),
+      ...recordSentences(words(a.summary)),
+      ...recordSentences(words(a.achievements)),
+      ...recordSentences(words(a.challenges)),
+      ...recordSentences(words(a.lessonsLearned)),
+      ...recordSentences(words(a.nextSteps)),
     ]);
   }
 
   const seen = new Set<string>();
   sources.indicatorUpdates.forEach((u, i) => {
-    const texts = [u.comments && recordSentences(u.comments).join(" "), u.dataSource ? `${u.indicatorCode} data source: ${u.dataSource}.` : undefined];
+    const texts = [u.comments && recordSentences(words(u.comments)).join(" "), u.dataSource ? `${u.indicatorCode} data source: ${words(u.dataSource)}.` : undefined];
     const key = texts.join("|");
     if (seen.has(key)) return;
     seen.add(key);
     add("indicator", `${u.indicatorCode}-${i}`, `Indicator update ${u.indicatorCode}`, texts);
   });
+
+  for (const d of sources.indicatorDefinitions ?? []) {
+    const mov = d.meansOfVerification?.trim().replace(/[.;\s]+$/, "");
+    if (!mov) continue;
+    const name = d.name ? `${d.code} ${d.name}` : d.code;
+    add("indicator", `${d.code}-mov`, `Means of verification ${d.code}`, [`${name} is verified through: ${mov}. The results for ${d.code} are recorded in these sources: ${mov}.`]);
+  }
 
   add("report", "counts", "Records behind this report", [
     `This report draws on ${sources.activities.length} activity records and ${sources.indicatorUpdates.length} indicator updates.`,
@@ -194,6 +213,17 @@ function breakdownSentence(total: string, unit: string, entries: ReadonlyArray<{
   return `Of the ${total}${unit}, ${entries.map((e) => `${e.value} ${groupLabel(e.category)}`).join(" and ")}.`;
 }
 
+/** Pure. What the plan says about the period, as statements a claim can be supported by (never cited as evidence). */
+export function recordChunksFromPlan(summary: PlanDeliverySummary | undefined): RecordChunk[] {
+  if (!summary) return [];
+  return planDeliverySentences(summary).map((text, i) => ({ chunkId: `record:plan:${i}`, label: "The work plan for this period", text }));
+}
+
+/** Pure. The adaptations recorded for the period, as statements a claim about a change of plan can be supported by (never cited as evidence). */
+export function recordChunksFromAdaptations(list: ReadonlyArray<Parameters<typeof adaptationSentence>[0]>): RecordChunk[] {
+  return list.map((a, i) => ({ chunkId: `record:adaptation:${i}`, label: "A recorded change of plan", text: adaptationSentence(a) }));
+}
+
 export function recordChunksFromFindings(findings: ReadonlyArray<VerifiedFinding>): RecordChunk[] {
   const chunks: RecordChunk[] = [];
   const push = (code: string, i: number, label: string, text: string): void => {
@@ -224,6 +254,9 @@ export function recordChunksFromFindings(findings: ReadonlyArray<VerifiedFinding
     if ((f.lifeOfProject?.disaggregation ?? []).length > 0) {
       push(f.indicatorCode, i++, label, `${name}, recorded breakdown of the life-of-project ${f.lifeOfProject!.value}${unit}: ${f.lifeOfProject!.disaggregation!.map((e) => `${e.category} ${e.value}`).join(", ")}.`);
       push(f.indicatorCode, i++, label, `${name}: ${breakdownSentence(f.lifeOfProject!.value, unit, f.lifeOfProject!.disaggregation!)}`);
+    }
+    if ((f.targetBreakdowns ?? []).length > 0) {
+      push(f.indicatorCode, i++, label, `${name}, targets set by group: ${f.targetBreakdowns!.map((e) => `${e.category} ${e.value}`).join(", ")}.`);
     }
     if (f.performanceEvaluation?.type === "POSITIVE") push(f.indicatorCode, i++, label, `${name} is on track: it meets or exceeds its target.`);
     if (f.performanceEvaluation?.type === "NEGATIVE") push(f.indicatorCode, i++, label, `${name} is below expectation against its target.`);
@@ -303,6 +336,10 @@ export class RecordChunkBuilder implements IRecordChunkBuilder {
     private readonly indicators: IIndicatorRepository,
     private readonly indicatorUpdates: IIndicatorUpdateRepository,
     private readonly evidenceFiles?: IEvidenceRepository,
+    /** Absent: the work plan is not a record (a project without a plan reports exactly as before). */
+    private readonly plan?: IPlanDelivery,
+    /** Absent: changes of plan are not a record (a project without any reports exactly as before). */
+    private readonly adaptations?: IAdaptationRepository,
   ) {}
 
   async evidenceIds(input: { tenantId: TenantId; projectId: string; reportingPeriodId: string }): Promise<Result<string[], DomainError>> {
@@ -337,15 +374,22 @@ export class RecordChunkBuilder implements IRecordChunkBuilder {
     if (!indicators.ok) return indicators;
     const codeById = new Map(indicators.value.map((i) => [i.id, i.code]));
 
+    const planned = this.plan ? await this.plan.forPeriod({ tenantId: input.tenantId, projectId: input.projectId, start: period.duration.start, end: period.duration.end }) : undefined;
+
+    const adapted = this.adaptations
+      ? await this.adaptations.findInRange(input.projectId, toPlainDate(period.duration.start)!, toPlainDate(period.duration.end)!, input.tenantId)
+      : undefined;
+
     return {
       ok: true,
-      value: buildRecordChunks({
+      value: [...buildRecordChunks({
         project,
         period,
         story: period.storyContext,
         activities: activities.value,
+        indicatorDefinitions: indicators.value.map((i) => ({ code: i.code, name: i.name, meansOfVerification: i.meansOfVerification })),
         indicatorUpdates: updates.value.map((u) => ({ indicatorCode: codeById.get(u.indicatorId) ?? u.indicatorId, comments: u.comments, dataSource: u.dataSource })),
-      }),
+      }), ...(planned?.ok ? recordChunksFromPlan(planned.value) : []), ...(adapted?.ok ? recordChunksFromAdaptations(adapted.value) : [])],
     };
   }
 }

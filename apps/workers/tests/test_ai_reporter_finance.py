@@ -1,4 +1,5 @@
 """Verified financial figures in the AI Reporter request."""
+
 from __future__ import annotations
 
 from app.ai_reporter import grounding
@@ -22,9 +23,7 @@ def _finance() -> ContextFinance:
         balance="6749.5",
         burnRatePercent="32.5",
         lines=[
-            FinanceLine(
-                budgetLine="Staff", budget="6000", expenditure="2000", balance="4000", burnRatePercent="33.3"
-            ),
+            FinanceLine(budgetLine="Staff", budget="6000", expenditure="2000", balance="4000", burnRatePercent="33.3"),
             FinanceLine(
                 budgetLine="Supplies", budget="4000", expenditure="1250.5", balance="2749.5", burnRatePercent="31.3"
             ),

@@ -2,6 +2,8 @@ import { execSync } from "node:child_process";
 const DATABASE_URL = process.env.DATABASE_ADMIN_URL ?? "postgresql://donordesk:donordesk-dev@localhost:5432/donordesk";
 
 console.log("Pushing Prisma schema to configured PostgreSQL database...");
+console.log("NOTE: this pushes the schema directly and does NOT run the checked-in migrations.");
+console.log("      CI and production use `pnpm db:migrate:deploy`, which applies them.");
 execSync(`pnpm exec prisma db push --skip-generate --accept-data-loss`, {
   stdio: "inherit",
   env: { ...process.env, DATABASE_URL },

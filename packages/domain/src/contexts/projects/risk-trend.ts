@@ -17,7 +17,7 @@ export interface RiskTrendProps {
 }
 
 export interface RiskFactor {
-  type: "missing_evidence" | "deadline_slip" | "indicator_gap" | "budget_variance" | "staffing_gap" | "compliance_flag";
+  type: "missing_evidence" | "deadline_slip" | "indicator_gap" | "budget_variance" | "staffing_gap" | "compliance_flag" | "plan_slip" | "value_overdue";
   weight: number;
   description: string;
   affectedIndicatorIds: string[];
@@ -155,6 +155,13 @@ export class ProjectRiskTrend extends Entity<string> {
       if (factor.type === "staffing_gap") {
         score += Math.min(factor.weight, 100) * 0.10;
       }
+      // Phase 28.4: work that is late (weight = how many) and indicator values past their due date.
+      if (factor.type === "plan_slip") {
+        score += Math.min(factor.weight * 3, 15);
+      }
+      if (factor.type === "value_overdue") {
+        score += Math.min(factor.weight * 3, 15);
+      }
     }
 
     this.props.riskScore = Math.min(100, Math.round(score));
@@ -181,13 +188,23 @@ export class ProjectRiskTrend extends Entity<string> {
   removeRiskFactor(type: RiskFactor["type"], indicatorId?: string): void {
     this.props.contributingFactors = this.props.contributingFactors.filter((f) => {
       if (f.type !== type) return true;
-      if (indicatorId && f.affectedIndicatorIds.includes(indicatorId)) return false;
-      return true;
+      // With an indicator: only that indicator's factor. Without one: every factor of the type (it used to remove nothing).
+      if (indicatorId === undefined) return false;
+      return !f.affectedIndicatorIds.includes(indicatorId);
     });
     this.recalculateScore();
     this.props.lastUpdated = new Date();
     this.touch();
   }
+}
+
+/** The factors the work plan and the collection of indicator values add. Weight is how many; 0 means no factor. */
+export function planAndCollectionFactors(input: { lateActivities: number; valuesOverdue: number }): RiskFactor[] {
+  const level = (n: number): RiskLevel => (n >= 5 ? "HIGH" : n >= 2 ? "MEDIUM" : "LOW");
+  const out: RiskFactor[] = [];
+  if (input.lateActivities > 0) out.push({ type: "plan_slip", weight: Math.min(100, input.lateActivities), description: `${input.lateActivities} planned ${input.lateActivities === 1 ? "activity is" : "activities are"} late`, affectedIndicatorIds: [], severity: level(input.lateActivities) });
+  if (input.valuesOverdue > 0) out.push({ type: "value_overdue", weight: Math.min(100, input.valuesOverdue), description: `${input.valuesOverdue} indicator ${input.valuesOverdue === 1 ? "value is" : "values are"} overdue`, affectedIndicatorIds: [], severity: level(input.valuesOverdue) });
+  return out;
 }
 
 export interface OrganizationRiskSummary {

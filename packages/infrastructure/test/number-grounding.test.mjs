@@ -23,3 +23,18 @@ test("a not-calculable indicator grounds no derived percent from its updates", (
   const allowed = allowedNumbers({ indicatorUpdates: sources.indicatorUpdates }, notCalculable);
   assert.deepEqual(ungroundedNumbers("That is 87.5% of the target.", allowed), ["87.5"]);
 });
+
+test("plan delivery counts in the writer context are grounded", async () => {
+  const { allowedNumbers, ungroundedNumbers } = await import("../dist/ai/number-grounding.js");
+  const allowed = allowedNumbers({ context: { deliveryPlan: { planned: 41, held: 38, notHeld: 3, cancelled: 1, moved: 4 } } });
+  assert.deepEqual(ungroundedNumbers("38 of 41 sessions were held.", allowed), []);
+  assert.deepEqual(ungroundedNumbers("39 of 41 sessions were held.", allowed), ["39"]);
+});
+
+test("a calculated (formula) indicator's value is grounded like any finding value, and its life-of-project figure too", () => {
+  // A formula indicator reaches the writer as an ordinary finding whose value was computed from its terms.
+  const findings = [{ indicatorCode: "OUT-RATIO", value: "62.5", target: "80", lifeOfProject: { value: "58.3" } }];
+  const allowed = allowedNumbers({}, findings);
+  assert.deepEqual(ungroundedNumbers("Coverage was 62.5% this period and 58.3% to date.", allowed), []);
+  assert.notDeepEqual(ungroundedNumbers("Coverage was 71.4% this period.", allowed), []);
+});

@@ -2,6 +2,9 @@ export type ProjectFilters = {
   query: string;
   status: string;
   sector: string;
+  /** "all" or a donor / country name as written on the project. */
+  donor: string;
+  country: string;
   sort: "updated" | "deadline" | "title";
   page: number;
   archived: boolean;
@@ -11,6 +14,8 @@ export const DEFAULT_PROJECT_FILTERS: ProjectFilters = {
   query: "",
   status: "all",
   sector: "all",
+  donor: "all",
+  country: "all",
   sort: "deadline",
   page: 1,
   archived: false,
@@ -38,6 +43,8 @@ export function filterProjects<T extends PortfolioProject>(projects: T[], filter
     if (filters.archived === false && p.status === "ARCHIVED") return false;
     if (filters.status !== "all" && p.status !== filters.status) return false;
     if (filters.sector !== "all" && p.sector !== filters.sector) return false;
+    if (filters.donor && filters.donor !== "all" && p.donorName !== filters.donor) return false;
+    if (filters.country && filters.country !== "all" && p.country !== filters.country) return false;
     if (query) {
       const haystack = `${p.title} ${p.projectCode} ${p.donorName} ${p.country}`.toLowerCase();
       if (!haystack.includes(query)) return false;

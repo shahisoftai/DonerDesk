@@ -87,6 +87,7 @@ export function toLintFindingData(f: {
   priorCumulativeValue?: string;
   lifeOfProject?: { value: string; disaggregation?: ReadonlyArray<{ value: string }> } | null;
   disaggregation?: ReadonlyArray<{ value: string }>;
+  targetBreakdowns?: ReadonlyArray<{ value: string }>;
 }): ContradictionLintFindingData {
   return {
     indicatorCode: f.indicatorCode,
@@ -99,7 +100,7 @@ export function toLintFindingData(f: {
     cumulativeValue: f.cumulativeValue,
     priorCumulativeValue: f.priorCumulativeValue,
     lifeValue: f.lifeOfProject?.value,
-    breakdownValues: [...(f.disaggregation ?? []), ...(f.lifeOfProject?.disaggregation ?? [])].map((e) => e.value),
+    breakdownValues: [...(f.disaggregation ?? []), ...(f.lifeOfProject?.disaggregation ?? []), ...(f.targetBreakdowns ?? [])].map((e) => e.value),
   };
 }
 
@@ -167,6 +168,9 @@ const DATE_PATTERNS: RegExp[] = [
   // A day without a year ("as of August 31", "by 31 August") is still a date, not a figure.
   new RegExp(`\\b(?:${MONTH_NAMES})[a-z]*\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\b`, "gi"),
   new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${MONTH_NAMES})[a-z]*\\b`, "gi"),
+  // A span of days inside one month ("15 to 30 November", "26 and 27 November", "9-13 November", "November 15 to 30") is a date range.
+  new RegExp(`\\b\\d{1,2}(?:st|nd|rd|th)?\\s*(?:-|–|to|and|until|through)\\s*\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${MONTH_NAMES})[a-z]*\\b`, "gi"),
+  new RegExp(`\\b(?:${MONTH_NAMES})[a-z]*\\.?\\s+\\d{1,2}(?:st|nd|rd|th)?\\s*(?:-|–|to|and|until|through)\\s*\\d{1,2}(?:st|nd|rd|th)?\\b`, "gi"),
 ];
 
 /**
@@ -197,6 +201,16 @@ const STOPWORDS = new Set([
   "were", "was", "is", "are", "have", "has", "had", "by", "at", "as", "be",
   "been", "their", "its", "our", "this", "that", "these", "those", "per",
 ]);
+
+/**
+ * A figure that is a component of a sub-period ("3,200 children in March", "170 (94 girls) between 3 and 30 April", "each month")
+ * differs by design from the report's other figures of the same noun: a quarterly report quotes one value per month.
+ */
+function hasSubPeriodQualifier(sentence: string, endIndex: number): boolean {
+  const tail = sentence.slice(endIndex, endIndex + 200).replace(/\([^)]*\)/g, " ");
+  const own = (tail.split(/[;.]/)[0] ?? "").split(/,\s*(?=\d)/)[0] ?? "";
+  return new RegExp(`\\b(?:in|during|for|between|on|by|of|from)\\s+(?:\\d{1,2}(?:\\s+(?:and|to)\\s+\\d{1,2})?\\s+)?(?:${MONTH_NAMES})[a-z]*\\b|\\b(?:each|every|per|a)\\s+month\\b|\\b(?:monthly|weekly)\\b`, "i").test(own);
+}
 
 function parseDecimalSafe(raw: string): number | null {
   const n = Number.parseFloat(raw.replace(/,/g, ""));
@@ -289,8 +303,10 @@ function dateRanges(text: string): Array<[number, number]> {
 interface ProseNumber {
   raw: string;
   value: number;
-  /** Number written as a percentage ("87%"). */
+  /** Number written as a percentage ("87%" or "87 percent"). */
   isPercent: boolean;
+  /** Written with the word ("87 percent") rather than the sign. */
+  wordPercent: boolean;
   isYear: boolean;
   start: number;
   end: number;
@@ -308,9 +324,10 @@ function extractProseNumbers(text: string): ProseNumber[] {
     const start = m.index;
     const end = m.index + raw.length;
     const after = text.slice(end, end + 12);
-    const isPercent = /^\s*%/.test(after);
+    const wordPercent = /^\s*(?:percent|per cent)\b/i.test(after);
+    const isPercent = /^\s*%/.test(after) || wordPercent;
     const isYear = !isPercent && Number.isInteger(value) && value >= 1900 && value <= 2100;
-    out.push({ raw, value, isPercent, isYear, start, end });
+    out.push({ raw, value, isPercent, wordPercent, isYear, start, end });
   }
   return out;
 }
@@ -339,7 +356,8 @@ class AcceptedNumbers {
     if (!text) return;
     for (const p of extractProseNumbers(text)) {
       if (p.isPercent) this.percent.add(normalizeKey(p.value));
-      else this.addNumber(p.value);
+      // "88 percent" in a record has always been read as the plain figure too.
+      if (!p.isPercent || p.wordPercent) this.addNumber(p.value);
     }
   }
 
@@ -456,7 +474,7 @@ export function lintReportContradictions(input: ContradictionLintInput): Contrad
       }
 
       // Same-metric divergence model.
-      if (!sentence.quoted && !DELTA_CONTEXT_RE.test(text) && p.value >= 5) {
+      if (!sentence.quoted && !DELTA_CONTEXT_RE.test(text) && p.value >= 5 && !hasSubPeriodQualifier(text, p.end)) {
         const basis = LIFE_BASIS_RE.test(text) ? "life of project" : "period";
         const noun = `${followingNounPhrase(text, p.end)}|${basis}`;
         const phrase = followingNounPhrase(text, p.end);

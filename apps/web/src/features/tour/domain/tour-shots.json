@@ -4,28 +4,27 @@
   "shots": {
     "dashboard-demo-project": null,
     "project-setup": null,
-    "donor-template": {
-      "x": 0.18888888888888888,
-      "y": 0.29555555555555557,
-      "w": 0.7944444444444444,
-      "h": 0.33555555555555555
-    },
+    "donor-template": null,
     "logframe-indicators": null,
     "evidence": null,
-    "reporting-period": {
-      "x": 0.18888888888888888,
-      "y": 0.29555555555555557,
-      "w": 0.7944444444444444,
-      "h": 0.24333333333333335
-    },
+    "reporting-period": null,
     "ai-draft": {
-      "x": 0.6118055555555556,
-      "y": 0.6722222222222223,
+      "x": 0.5423611111111111,
+      "y": 0.9511111111111111,
       "w": 0.0763888888888889,
-      "h": 0.06222222222222222
+      "h": 0.04888888888888889
     },
     "report-editor": null,
+    "activity-capture": null,
+    "indicator-entry": null,
+    "closing-report": null,
+    "team": null,
     "compliance": null,
-    "export": null
+    "export": null,
+    "plan-timeline": null,
+    "data-center": null,
+    "infographics": null,
+    "my-work": null,
+    "portfolio": null
   }
 }

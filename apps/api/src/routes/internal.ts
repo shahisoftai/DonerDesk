@@ -5,6 +5,7 @@ import { createContainer } from "@donordesk/infrastructure";
 import { internalAuthMiddleware } from "../middleware/internal.js";
 
 const ReportingPeriodBodySchema = z.object({ reportingPeriodId: z.string().min(1) });
+const RunRemindersBodySchema = z.object({ force: z.boolean().default(false) });
 const RemindersBodySchema = z.object({ reportingPeriodId: z.string().min(1), recipientId: z.string().min(1).optional() });
 
 /**
@@ -20,7 +21,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       req.container = createContainer({ tenantId: req.tenant.tenantId.toString() });
     });
     instance.addHook("onResponse", async (req) => {
-      await req.container?.prisma.$disconnect();
+      // The client is pooled per tenant and shared with requests in flight: never disconnected here (see createContainer).
+      await req.container?.settleBackgroundWork();
     });
 
     instance.get("/internal/evidence/:id", async (req) => {
@@ -51,6 +53,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         notes?: string;
         aiSummary?: string;
         extractedText?: string;
+        textExtractionStatus?: string;
+        textExtractionNote?: string;
         aiSuggestedTags: unknown[];
       };
       const storageKey = dto.fileUrl.startsWith("/v1/files/")
@@ -80,6 +84,8 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         notes: dto.notes,
         aiSummary: dto.aiSummary,
         extractedText: dto.extractedText,
+        textExtractionStatus: dto.textExtractionStatus,
+        textExtractionNote: dto.textExtractionNote,
         aiSuggestedTags: dto.aiSuggestedTags,
       });
     });
@@ -122,6 +128,7 @@ export async function registerInternalRoutes(app: FastifyInstance) {
         sensitivityWarning: body.sensitivityWarning,
         model: body.model,
         extractedText: body.extractedText,
+        extractionStatus: body.extractionStatus,
         idempotencyKey: body.idempotencyKey,
       });
       if (!r.ok) throw r.error;
@@ -186,12 +193,24 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       return r.value;
     });
 
-    instance.post("/internal/reminders/deadline", async (req) => {
-      const body = RemindersBodySchema.parse(req.body);
+    // Called every hour for each organisation by the reminders timer (scripts/run-reminders.sh). It does something only in the
+    // organisation's 07:00 hour; `force` runs it now (the ledger still prevents a second summary the same day).
+    instance.post("/internal/reminders/run", async (req) => {
+      const body = RunRemindersBodySchema.parse(req.body ?? {});
       const ctx = { tenant: req.tenant, requestId: req.id };
-      const r = await req.container.handlers.generateDeadlineReminders.handle(ctx, body);
+      const r = await req.container.handlers.runReminders.handle(ctx, { force: body.force });
       if (!r.ok) throw r.error;
       return r.value;
+    });
+
+    // DEPRECATED, removed after one release: the old Kestra flow still calls this. It now runs the same reminders (now, not at
+    // 07:00) and answers in the old shape. `pendingSections` is no longer computed and is always 0.
+    instance.post("/internal/reminders/deadline", async (req) => {
+      RemindersBodySchema.parse(req.body);
+      const ctx = { tenant: req.tenant, requestId: req.id };
+      const r = await req.container.handlers.runReminders.handle(ctx, { force: true });
+      if (!r.ok) throw r.error;
+      return { pendingSections: 0, remindersCreated: r.value.summariesSent + r.value.escalationsSent, deprecated: true };
     });
 
     // Billing reconciliation entry points for scheduled Kestra flows. These are

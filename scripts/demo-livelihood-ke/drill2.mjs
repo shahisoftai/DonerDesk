@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs"; import { readFileSync } from "node:fs";
+const P = readFileSync("pid.txt","utf8").trim(); const { page, browser } = await attach("ke-drill");
+await page.goto(`${BASE}/projects/${P}/maps`); await page.waitForLoadState("networkidle"); await page.waitForTimeout(6000);
+await page.mouse.move(573,585); await page.waitForTimeout(800);
+console.log("tip:", await page.locator("canvas").first().evaluate(c=>c.parentElement.innerText.slice(0,200)));
+await page.mouse.click(573,585); await page.waitForTimeout(1200);
+const m = await page.locator("main").innerText(); console.log(m.match(/Kenya[^\n]*\n[^\n]*\n[^\n]*/)?.[0], "|", m.match(/(Open its provinces|Drill[^\n]*)/)?.[0]);
+await page.getByRole("button",{name:/Open its provinces/}).click(); await page.waitForTimeout(3500);
+console.log(await page.locator("button, a").allInnerTexts().then(a=>a.filter(x=>/Kenya|World|Counties|Districts|Sub-/i.test(x))));
+await page.screenshot({path:"drill2.png", clip:{x:200,y:250,width:900,height:560}});
+await browser.close(); process.exit(0);

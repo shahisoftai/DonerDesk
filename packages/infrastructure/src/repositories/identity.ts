@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import {
   Organization,
   PasswordResetToken,
+  ScimCredential,
   TenantId,
   User,
   Email,
@@ -11,17 +12,15 @@ import {
   Invitation,
   DomainError,
   type Result,
+  ok,
 } from "@donordesk/domain";
 import type {
   IOrganizationRepository,
   IUserRepository,
   IInvitationRepository,
   IPasswordResetTokenRepository,
+  IScimCredentialRepository,
 } from "@donordesk/application";
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
-}
 
 function err<T = never>(e: DomainError): Result<T, DomainError> {
   return { ok: false, error: e };
@@ -44,6 +43,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           contactEmail: org.contactEmail,
           website: org.website,
           defaultLanguage: org.defaultLanguage,
+          timeZone: org.timeZone,
           logoUrl: org.logoUrl,
           mainOfficeLocation: org.mainOfficeLocation,
           donorTypesServed: org.donorTypesServed,
@@ -52,6 +52,9 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           storageProvider: org.storageProvider,
           reportingDefaults: JSON.stringify(org.reportingDefaults),
           agentMemoryEnabled: org.agentMemoryEnabled,
+          askEnabled: org.askEnabled,
+          setupAssistEnabled: org.setupAssistEnabled,
+          mfaRequiredFrom: org.mfaRequiredFrom ?? null,
           nonprofitVerifiedAt: org.nonprofitVerifiedAt,
         } as Parameters<typeof this.prisma.organization.create>[0]["data"],
       });
@@ -74,6 +77,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           contactEmail: org.contactEmail,
           website: org.website,
           defaultLanguage: org.defaultLanguage,
+          timeZone: org.timeZone,
           logoUrl: org.logoUrl,
           mainOfficeLocation: org.mainOfficeLocation,
           donorTypesServed: org.donorTypesServed,
@@ -82,6 +86,9 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
           storageProvider: org.storageProvider,
           reportingDefaults: JSON.stringify(org.reportingDefaults),
           agentMemoryEnabled: org.agentMemoryEnabled,
+          askEnabled: org.askEnabled,
+          setupAssistEnabled: org.setupAssistEnabled,
+          mfaRequiredFrom: org.mfaRequiredFrom ?? null,
           nonprofitVerifiedAt: org.nonprofitVerifiedAt,
         } as Parameters<typeof this.prisma.organization.update>[0]["data"],
       });
@@ -94,13 +101,13 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
   async findByTenant(tenantId: TenantId): Promise<Result<Organization | null, DomainError>> {
     const row = await this.prisma.organization.findUnique({ where: { tenantId: tenantId.toString() } });
     if (!row) return ok(null);
-    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean }));
+    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean; askEnabled?: boolean; setupAssistEnabled?: boolean; mfaRequiredFrom?: Date | null }));
   }
 
   async findById(id: string, tenantId: TenantId): Promise<Result<Organization | null, DomainError>> {
     const row = await this.prisma.organization.findFirst({ where: { id, tenantId: tenantId.toString() } });
     if (!row) return ok(null);
-    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean }));
+    return ok(this.toDomain(row as typeof row & { aiEnabled?: boolean; agentMemoryEnabled?: boolean; askEnabled?: boolean; setupAssistEnabled?: boolean; mfaRequiredFrom?: Date | null }));
   }
 
   private toDomain(row: {
@@ -114,6 +121,7 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     contactEmail: string;
     website: string | null;
     defaultLanguage: string;
+    timeZone?: string | null;
     logoUrl: string | null;
     mainOfficeLocation: string | null;
     donorTypesServed: string | null;
@@ -122,6 +130,9 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
     storageProvider?: string;
     reportingDefaults?: string | null;
     agentMemoryEnabled?: boolean;
+    askEnabled?: boolean;
+    setupAssistEnabled?: boolean;
+    mfaRequiredFrom?: Date | null;
     nonprofitVerifiedAt?: Date | null;
     createdAt: Date;
   }): Organization {
@@ -138,6 +149,8 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         contactEmail: row.contactEmail,
         website: row.website ?? undefined,
         defaultLanguage: row.defaultLanguage as import("@donordesk/domain").LanguageCode,
+        // Stored organisations always have a zone (UTC unless set); only a new one is suggested from its country.
+        timeZone: row.timeZone ?? "UTC",
         logoUrl: row.logoUrl ?? undefined,
         mainOfficeLocation: row.mainOfficeLocation ?? undefined,
         donorTypesServed: row.donorTypesServed ?? undefined,
@@ -146,6 +159,9 @@ export class PrismaOrganizationRepository implements IOrganizationRepository {
         storageProvider: (row.storageProvider as import("@donordesk/domain").StorageProvider) ?? "LOCAL",
         reportingDefaults: JSON.parse(row.reportingDefaults ?? "{}") as import("@donordesk/domain").OrganizationReportingDefaults,
         agentMemoryEnabled: row.agentMemoryEnabled ?? false,
+        askEnabled: row.askEnabled ?? false,
+        setupAssistEnabled: row.setupAssistEnabled ?? false,
+        mfaRequiredFrom: row.mfaRequiredFrom ?? undefined,
         nonprofitVerifiedAt: row.nonprofitVerifiedAt ?? undefined,
       },
     });
@@ -169,6 +185,14 @@ export class PrismaUserRepository implements IUserRepository {
           lastLoginAt: user.lastLoginAt,
           assignedProjectIds: JSON.stringify(user.assignedProjectIds),
           passwordChangedAt: user.passwordChangedAt,
+          failedLoginCount: user.failedLoginCount,
+          lockedUntil: user.lockedUntil,
+          external: user.external,
+          mfaSecretEnc: user.mfaSecretEnc,
+          mfaPendingSecretEnc: user.mfaPendingSecretEnc,
+          mfaEnabledAt: user.mfaEnabledAt,
+          mfaRecoveryHashes: JSON.stringify(user.mfaRecoveryHashes),
+          mfaLastStep: user.mfaLastStep,
         },
       });
       return ok(user);
@@ -190,6 +214,14 @@ export class PrismaUserRepository implements IUserRepository {
           lastLoginAt: user.lastLoginAt,
           assignedProjectIds: JSON.stringify(user.assignedProjectIds),
           passwordChangedAt: user.passwordChangedAt,
+          failedLoginCount: user.failedLoginCount,
+          lockedUntil: user.lockedUntil,
+          external: user.external,
+          mfaSecretEnc: user.mfaSecretEnc,
+          mfaPendingSecretEnc: user.mfaPendingSecretEnc,
+          mfaEnabledAt: user.mfaEnabledAt,
+          mfaRecoveryHashes: JSON.stringify(user.mfaRecoveryHashes),
+          mfaLastStep: user.mfaLastStep,
         },
       });
       return ok(user);
@@ -202,7 +234,7 @@ export class PrismaUserRepository implements IUserRepository {
     try {
       const updated = await this.prisma.user.update({
         where: { id: userId },
-        data: { passwordHash, passwordChangedAt: new Date() },
+        data: { passwordHash, passwordChangedAt: new Date(), failedLoginCount: 0, lockedUntil: null },
       });
       if (updated.tenantId !== tenantId.toString()) {
         return err(DomainError.notFound("User", userId));
@@ -243,10 +275,12 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async setStatus(id: string, tenantId: TenantId, status: UserStatus): Promise<Result<User, DomainError>> {
-    await this.prisma.user.update({ where: { id }, data: { status } });
+    // Check the tenant before writing: updating by id alone would let a caller
+    // change another organisation's user and only then be told it was not found.
     const found = await this.findById(id, tenantId);
     if (!found.ok) return { ok: false, error: found.error };
     if (!found.value) return { ok: false, error: DomainError.notFound("User", id) };
+    await this.prisma.user.update({ where: { id, tenantId: tenantId.toString() }, data: { status } });
     return { ok: true, value: found.value };
   }
 
@@ -261,6 +295,14 @@ export class PrismaUserRepository implements IUserRepository {
     lastLoginAt: Date | null;
     assignedProjectIds: string;
     passwordChangedAt?: Date | null;
+    failedLoginCount?: number;
+    lockedUntil?: Date | null;
+    external?: boolean;
+    mfaSecretEnc?: string | null;
+    mfaPendingSecretEnc?: string | null;
+    mfaEnabledAt?: Date | null;
+    mfaRecoveryHashes?: string;
+    mfaLastStep?: number | null;
     createdAt: Date;
   }): User {
     return User.rehydrate({
@@ -276,8 +318,25 @@ export class PrismaUserRepository implements IUserRepository {
         lastLoginAt: row.lastLoginAt ?? undefined,
         assignedProjectIds: JSON.parse(row.assignedProjectIds),
         passwordChangedAt: row.passwordChangedAt ?? null,
+        failedLoginCount: row.failedLoginCount ?? 0,
+        lockedUntil: row.lockedUntil ?? null,
+        external: row.external === true,
+        mfaSecretEnc: row.mfaSecretEnc ?? null,
+        mfaPendingSecretEnc: row.mfaPendingSecretEnc ?? null,
+        mfaEnabledAt: row.mfaEnabledAt ?? null,
+        mfaRecoveryHashes: parseHashes(row.mfaRecoveryHashes),
+        mfaLastStep: row.mfaLastStep ?? null,
       },
     });
+  }
+}
+
+function parseHashes(json: string | undefined): string[] {
+  try {
+    const parsed = JSON.parse(json ?? "[]") as unknown;
+    return Array.isArray(parsed) ? parsed.filter((h): h is string => typeof h === "string") : [];
+  } catch {
+    return [];
   }
 }
 
@@ -297,6 +356,7 @@ export class PrismaInvitationRepository implements IInvitationRepository {
           expiresAt: invitation.expiresAt,
           acceptedAt: invitation.acceptedAt,
           projectIds: JSON.stringify(invitation.projectIds),
+          external: invitation.external,
         },
       });
       return ok(invitation);
@@ -324,6 +384,7 @@ export class PrismaInvitationRepository implements IInvitationRepository {
             expiresAt: row.expiresAt,
             acceptedAt: undefined,
             projectIds: JSON.parse(row.projectIds) as string[],
+            external: row.external === true,
           },
         }),
       ),
@@ -345,6 +406,7 @@ export class PrismaInvitationRepository implements IInvitationRepository {
         expiresAt: row.expiresAt,
         acceptedAt: row.acceptedAt ?? undefined,
         projectIds: JSON.parse(row.projectIds) as string[],
+        external: row.external === true,
       },
     }));
   }
@@ -430,5 +492,109 @@ export class PrismaPasswordResetTokenRepository implements IPasswordResetTokenRe
         userAgent: row.userAgent,
       },
     });
+  }
+}
+
+export class PrismaScimCredentialRepository implements IScimCredentialRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(credential: ScimCredential): Promise<Result<ScimCredential, DomainError>> {
+    try {
+      await this.prisma.scimCredential.create({
+        data: {
+          id: credential.id,
+          tenantId: credential.tenantId.toString(),
+          name: credential.name,
+          tokenHash: credential.tokenHash,
+          createdById: credential.createdById,
+          lastUsedAt: credential.lastUsedAt,
+          revokedAt: credential.revokedAt,
+        },
+      });
+      return ok(credential);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  async update(credential: ScimCredential): Promise<Result<ScimCredential, DomainError>> {
+    try {
+      await this.prisma.scimCredential.update({
+        where: { id: credential.id },
+        data: { name: credential.name, lastUsedAt: credential.lastUsedAt, revokedAt: credential.revokedAt },
+      });
+      return ok(credential);
+    } catch (e) {
+      return err(new DomainError("CONFLICT", String(e)));
+    }
+  }
+
+  /**
+   * By token hash, across organisations: the caller does not yet know which
+   * organisation it is, and the token is what tells it. Run on the admin
+   * connection, because the runtime role is bound to one tenant.
+   */
+  async findByTokenHash(tokenHash: string): Promise<Result<ScimCredential | null, DomainError>> {
+    const row = await this.prisma.scimCredential.findFirst({ where: { tokenHash } });
+    if (!row) return ok(null);
+    return ok(
+      ScimCredential.rehydrate({
+        id: row.id,
+        tenantId: TenantId.create(row.tenantId),
+        createdAt: row.createdAt,
+        props: {
+          tenantId: row.tenantId,
+          name: row.name,
+          tokenHash: row.tokenHash,
+          createdById: row.createdById,
+          lastUsedAt: row.lastUsedAt,
+          revokedAt: row.revokedAt,
+        },
+      }),
+    );
+  }
+
+  async findById(id: string, tenantId: TenantId): Promise<Result<ScimCredential | null, DomainError>> {
+    const row = await this.prisma.scimCredential.findFirst({ where: { id, tenantId: tenantId.toString() } });
+    if (!row) return ok(null);
+    return ok(
+      ScimCredential.rehydrate({
+        id: row.id,
+        tenantId: TenantId.create(row.tenantId),
+        createdAt: row.createdAt,
+        props: {
+          tenantId: row.tenantId,
+          name: row.name,
+          tokenHash: row.tokenHash,
+          createdById: row.createdById,
+          lastUsedAt: row.lastUsedAt,
+          revokedAt: row.revokedAt,
+        },
+      }),
+    );
+  }
+
+  async listByTenant(tenantId: TenantId): Promise<Result<ScimCredential[], DomainError>> {
+    const rows = await this.prisma.scimCredential.findMany({
+      where: { tenantId: tenantId.toString() },
+      orderBy: { createdAt: "desc" },
+    });
+    return ok(
+      rows.map((row) =>
+        ScimCredential.rehydrate({
+          id: row.id,
+          tenantId: TenantId.create(row.tenantId),
+          createdAt: row.createdAt,
+          props: {
+            tenantId: row.tenantId,
+            name: row.name,
+            tokenHash: row.tokenHash,
+            createdById: row.createdById,
+            lastUsedAt: row.lastUsedAt,
+            revokedAt: row.revokedAt,
+          },
+        }),
+      ),
+    );
   }
 }

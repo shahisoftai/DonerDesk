@@ -1,6 +1,7 @@
 export interface AuditRecord {
   id: string;
   actorId: string;
+  actorName?: string;
   eventType: string;
   entityType: string;
   entityId: string;

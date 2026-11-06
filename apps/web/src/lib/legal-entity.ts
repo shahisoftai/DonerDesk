@@ -5,8 +5,18 @@
 export const LEGAL = {
   entityName: "DonorDesk.Online", // TO CONFIRM: registered company name
   address: "Registered address to be confirmed", // TO CONFIRM
+  /** Contractual notices (the Terms). */
   legalEmail: "legal@donordesk.online",
-  privacyEmail: "privacy@donordesk.online", // TO CONFIRM mailbox exists
+  /** Privacy questions, data requests, security reports and the DPA. */
+  privacyEmail: "support@donordesk.online", // privacy and sales requests share the support mailbox
+  /** Billing and refund requests (handled case by case from the support mailbox). */
+  billingEmail: "support@donordesk.online",
   hostingLocation: "Contabo data centre",
-  updated: "7 October 2026 (Version 1.93)",
+  /** One label for every legal page, so the pages do not carry several versions. */
+  updated: "Product version 3.007 · 7 October 2026",
+  /**
+   * The refund policy is re-issued on its own date, so it carries its own
+   * effective date rather than the label shared by the other policies.
+   */
+  refundPolicyUpdated: "21 October 2026 · product version 3.007",
 } as const;

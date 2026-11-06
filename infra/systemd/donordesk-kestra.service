@@ -31,7 +31,9 @@ Environment="PATH=/opt/donordesk/workers/.venv/bin:/usr/local/sbin:/usr/local/bi
 # The 1.3 CLI's standalone command supplies its own port default, so pass the
 # allocated port explicitly; Micronaut's `host` setting still enforces loopback.
 ExecStart=/usr/bin/java -jar /opt/donordesk/kestra/kestra-1.3.30 server standalone --config=/opt/donordesk/kestra/.kestra/config.yml --plugins=/opt/donordesk/kestra/plugins --port=8093 --worker-thread=8 --no-tutorials
-Restart=on-failure
+# Kestra exits 0 on its own when its queue connection is lost (PostgreSQL restarted by an
+# unattended upgrade, 2026-10-22), so on-failure left it down. Always bring it back.
+Restart=always
 RestartSec=10
 KillMode=mixed
 TimeoutStopSec=150

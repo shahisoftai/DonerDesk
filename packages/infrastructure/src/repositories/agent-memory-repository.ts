@@ -17,6 +17,7 @@ import {
   type AgentMemoryStatus,
   type AgentMemoryConfidence,
   type AgentMemoryProvenance,
+  ok,
 } from "@donordesk/domain";
 import type { IAgentMemoryRepository, AgentMemoryCandidate } from "@donordesk/application";
 
@@ -98,10 +99,6 @@ function toRow(memory: AgentMemory): Omit<AgentMemoryRow, "createdAt"> {
     approvedAt: memory.approvedAt,
     updatedAt: memory.updatedAt,
   };
-}
-
-function ok<T>(value: T): Result<T, DomainError> {
-  return { ok: true, value };
 }
 
 export class PrismaAgentMemoryRepository implements IAgentMemoryRepository {

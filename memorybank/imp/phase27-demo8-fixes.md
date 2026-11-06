@@ -1,6 +1,6 @@
 # Phase 27 — fixes from demo 8 (Nigeria WASH), implementation plan
 
-**DonorDesk Version 2.001 → 2.002** · branch `0012-demo8-fixes` · source: [`../demo/verification-demo-8.md`](../demo/verification-demo-8.md) (29 findings, user assessment 7.4/10).
+**DonorDesk Version 3.007 → 2.002** · branch `0012-demo8-fixes` · source: [`../demo/verification-demo-8.md`](../demo/verification-demo-8.md) (29 findings, user assessment 7.4/10).
 
 Goal: raise every user-facing score (relevance, usefulness, simplicity, ease of use, user-friendliness, trust, report quality, flexibility, speed, export, learning curve) by removing the blockers and friction found, without
 weakening the existing invariants in `AGENTS.md`.

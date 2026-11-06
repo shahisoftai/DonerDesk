@@ -18,12 +18,30 @@ export async function loginAction(
   const email = String(form.get("email") ?? "").trim();
   const password = String(form.get("password") ?? "");
   const next = String(form.get("next") ?? "");
+  const challenge = String(form.get("challenge") ?? "");
+  const code = String(form.get("code") ?? "").trim();
+
+  // Step two: the person answered the code prompt.
+  if (challenge) {
+    if (!code) return { error: "Enter the code from your authenticator app.", fields: { code: ["Required"] }, mfaChallenge: challenge };
+    try {
+      const { token } = await service.loginMfa(challenge, code);
+      await setSessionCookie(token);
+    } catch (err) {
+      // A wrong code keeps the prompt open; an expired or refused sign-in starts again from the password.
+      if (err instanceof AuthFormError) return { ...err.state, mfaChallenge: /too long|start again/i.test(err.state.error ?? "") ? undefined : challenge };
+      return { error: "Unable to sign you in. Please try again." };
+    }
+    redirect(safeRedirect(next));
+  }
+
   if (!email || !password) {
     return { error: "Please enter your email and password.", fields: { email: ["Required"], password: ["Required"] } };
   }
   try {
-    const { token } = await service.login(email, password);
-    await setSessionCookie(token);
+    const result = await service.login(email, password);
+    if ("mfaChallenge" in result) return { error: null, mfaChallenge: result.mfaChallenge };
+    await setSessionCookie(result.token);
   } catch (err) {
     if (err instanceof AuthFormError) return err.state;
     return { error: "Unable to sign you in. Please try again." };

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError } from "@donordesk/domain";
+import { DomainError, readableConfidentialityLevels, type Role } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IEvidenceRepository, EvidenceFilter } from "../../ports/evidence.js";
 import { toEvidenceDto } from "./dto.js";
@@ -8,7 +8,9 @@ export class SearchEvidenceHandler {
   constructor(private readonly repo: IEvidenceRepository) {}
 
   async handle(ctx: AuthenticatedContext, filter: EvidenceFilter): Promise<Result<{ items: unknown[]; total: number; page: number; pageSize: number }, DomainError>> {
-    const r = await this.repo.search(filter, ctx.tenant.tenantId);
+    // The list never shows a file the caller may not open.
+    const allowed = readableConfidentialityLevels(ctx.tenant.role as Role);
+    const r = await this.repo.search({ ...filter, allowedConfidentialityLevels: allowed }, ctx.tenant.tenantId);
     if (!r.ok) return r;
     return {
       ok: true,

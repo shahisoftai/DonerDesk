@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { LegalLayout } from "@/components/legal/LegalLayout";
+import { LEGAL } from "@/lib/legal-entity";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/cookies" },
@@ -29,7 +30,7 @@ function Section({ id, title, children }: { id: string; title: string; children:
 
 export default function CookiesPage() {
   return (
-    <LegalLayout title="Cookie Policy" subtitle="Legal" updated="7 October 2026 (Version 1.0)" toc={TOC}>
+    <LegalLayout title="Cookie Policy" subtitle="Legal" updated={LEGAL.updated} toc={TOC}>
       <Section id="what" title="1. What are cookies">
         <p>
           Cookies are small text files stored by your browser. We also use similar browser storage

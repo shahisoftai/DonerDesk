@@ -2,6 +2,7 @@ import type { Result, TenantId } from "@donordesk/domain";
 import {
   Organization,
   PasswordResetToken,
+  ScimCredential,
   type Invitation,
   type User,
   type Role,
@@ -59,6 +60,15 @@ export interface IPasswordResetTokenRepository {
   markUsed(id: string, tenantId: TenantId): Promise<Result<PasswordResetToken>>;
 }
 
+export interface IScimCredentialRepository {
+  create(credential: ScimCredential): Promise<Result<ScimCredential>>;
+  update(credential: ScimCredential): Promise<Result<ScimCredential>>;
+  /** The credential for a bearer token, whichever organisation owns it. Used by the SCIM endpoint before a tenant is known. */
+  findByTokenHash(tokenHash: string): Promise<Result<ScimCredential | null>>;
+  findById(id: string, tenantId: TenantId): Promise<Result<ScimCredential | null>>;
+  listByTenant(tenantId: TenantId): Promise<Result<ScimCredential[]>>;
+}
+
 export interface IPasswordResetRateLimiter {
   /** Returns true if the action is allowed; false if the limit has been reached. */
   check(key: string, limit: number, windowMs: number): Promise<boolean>;
@@ -86,6 +96,66 @@ export interface AuthenticatedUser {
 export interface IAuthProvider {
   hashPassword(plain: string): Promise<string>;
   verifyPassword(plain: string, hash: string): Promise<boolean>;
-  sign(payload: { sub: string; tid: string; role: Role; name: string; email: string }, ttlSeconds: number): Promise<string>;
+  sign(payload: { sub: string; tid: string; role: Role; name: string; email: string; ext?: boolean }, ttlSeconds: number): Promise<string>;
   verify(token: string): Promise<AuthenticatedUser | null>;
+}
+
+/** Time-based one-time passwords for tenant users (see `TotpMfaService`). The application never touches the cryptography. */
+export interface IMfaService {
+  /** A new shared secret, base32, for an authenticator app. */
+  newSecret(): string;
+  encrypt(plain: string): string;
+  decrypt(encrypted: string): string;
+  /** The time step the code matches (within one step of `now`), or null when it matches none. */
+  matchingStep(secret: string, code: string, now: Date): number | null;
+  otpauthUri(secret: string, account: string, issuer: string): string;
+  newRecoveryCodes(): { codes: string[]; hashes: string[] };
+  hashRecoveryCode(code: string): string;
+  /** Proof that the password step succeeded: short-lived, signed, and not a session. */
+  issueChallenge(userId: string, tenantId: string, now: Date): string;
+  readChallenge(token: string, now: Date): { userId: string; tenantId: string } | null;
+}
+
+/** The workspace's uploaded map boundaries: metadata only — the bytes live in storage (Phase 30.1). */
+export interface TenantMapLayerRecord {
+  id: string;
+  tenantId: TenantId;
+  name: string;
+  storageKey: string;
+  sizeBytes: number;
+  featureCount: number;
+  uploadedById: string;
+  updatedAt: Date;
+}
+
+export interface ITenantMapLayerRepository {
+  findByTenant(tenantId: TenantId): Promise<TenantMapLayerRecord | null>;
+  save(layer: TenantMapLayerRecord): Promise<void>;
+  remove(tenantId: TenantId): Promise<void>;
+}
+
+/** A boundary file an organisation uploaded for one country and level (Phase 41.7): metadata only, the bytes live in storage. */
+export interface TenantBoundaryLayerRecord {
+  id: string;
+  tenantId: TenantId;
+  iso: string;
+  countryName: string;
+  adminLevel: number;
+  name: string;
+  nameField: string;
+  pcodeField: string | null;
+  parentPcodeField: string | null;
+  storageKey: string;
+  sizeBytes: number;
+  featureCount: number;
+  uploadedById: string;
+  updatedAt: Date;
+}
+
+export interface ITenantBoundaryLayerRepository {
+  list(tenantId: TenantId): Promise<TenantBoundaryLayerRecord[]>;
+  find(tenantId: TenantId, iso: string, adminLevel: number): Promise<TenantBoundaryLayerRecord | null>;
+  save(layer: TenantBoundaryLayerRecord): Promise<void>;
+  /** True when a layer was there to remove. */
+  remove(tenantId: TenantId, iso: string, adminLevel: number): Promise<boolean>;
 }

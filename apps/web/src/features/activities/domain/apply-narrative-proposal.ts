@@ -4,6 +4,7 @@ import type { ActivityDraft } from "./activity-draft.ts";
 export interface NarrativeProposal {
   activityTitle?: string;
   activityDate?: string;
+  activityEndDate?: string;
   location?: string;
   participantsTotal?: number;
   participantsMale?: number;
@@ -20,6 +21,7 @@ export interface NarrativeProposal {
 export const PROPOSAL_LABELS: Readonly<Record<keyof NarrativeProposal, string>> = {
   activityTitle: "title",
   activityDate: "date",
+  activityEndDate: "end date",
   location: "place",
   participantsTotal: "total participants",
   participantsMale: "men",

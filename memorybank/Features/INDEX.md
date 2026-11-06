@@ -1,10 +1,10 @@
 # DonorDesk Features Index
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
-This directory contains detailed documentation for each of DonorDesk's 19 MVP features.
+This directory contains detailed documentation for DonorDesk's features: 01–21 are the MVP and its first additions, 23–25 are the programme-management batches, and 26–42 are the October 2026 audit and gap-closure batches (listed in the second table below), and 43–52 are the site maps, infographics and the Phase 33 competitive-parity features.
 
-> **Introduced in DonorDesk Version 1.93:** built on branch `0009-agent-memory`. Feature 21
+> **Introduced in DonorDesk Version 3.007:** built on branch `0009-agent-memory`. Feature 21
 > (Agent Memory) is this release's headline addition — see
 > [`21-Agent-Memory.md`](./21-Agent-Memory.md) and
 > [`../imp/Phase21-agent-memory.md`](../imp/Phase21-agent-memory.md).
@@ -95,7 +95,9 @@ This directory contains detailed documentation for each of DonorDesk's 19 MVP fe
 | 18 | [Project Creation Wizard](./18-Project-Creation-Wizard.md) | Implemented (release `20260815054218`) | `packages/application/src/readiness/project-readiness-service.ts`, `packages/infrastructure/src/storage/project-workspace.ts`, `packages/infrastructure/src/storage/workspace-router.ts`, `apps/api/src/routes/project-setup.ts` |
 | 19 | [Tiers and Payments](./19-Tiers-And-Payments.md) | Implemented — AI-credit quotas + SuperAdmin credit/tier management (2026-08-17); **Creem live in test mode, Phase 4 reconciliation, webhook tenant resolution, `/thanks` + `/checkout` flow, trial removal (2026-08-18)** | `packages/domain/src/contexts/billing/`, `packages/application/src/ports/billing.ts`, `packages/application/src/services/entitlement-service.ts`, `packages/application/src/services/billing-subscription-synchronizer.ts`, `packages/application/src/use-cases/billing/`, `packages/infrastructure/src/billing/`, `packages/infrastructure/src/repositories/billing.ts`, `apps/api/src/routes/billing.ts`, `apps/api/src/routes/webhooks.ts`, `apps/api/src/routes/internal.ts`, `apps/api/src/routes/superadmin.ts`, `apps/web/src/app/checkout/`, `apps/web/src/app/thanks/` |
 | 21 | [Agent Memory](./21-Agent-Memory.md) | **Introduced in Version 1.93.** Implemented on branch `0009-agent-memory` (not yet merged to `master`) — learns tenant/donor narrative style and terminology from reviewer edits to AI-drafted sections, subject to human approval; never learns facts/figures (three independent guard layers); two-flag gated (`AGENT_MEMORY_ENABLED` platform + self-service "AI Writing Style" Settings tab) | `packages/domain/src/contexts/memory/agent-memory.ts`, `packages/application/src/ports/agent-memory.ts`, `packages/application/src/use-cases/memory/`, `packages/infrastructure/src/repositories/agent-memory-repository.ts`, `packages/infrastructure/src/memory/deterministic-memory-extractor.ts`, `apps/api/src/routes/agent-memory.ts`, `apps/web/src/app/(portal)/settings/ai-style/` — see [`../imp/Phase21-agent-memory.md`](../imp/Phase21-agent-memory.md) |
-| 22 | [DonorDesk Academy](./22-DonorDesk-Academy.md) | **Proposed** — guided tour, per-tenant demo project, contextual help; no code yet | `apps/web/src/features/tour/` (new), `apps/web/src/features/onboarding/`, `packages/infrastructure/src/db/seed-eerp.ts`, `packages/application/src/services/entitlement-service.ts` |
+| 22 | [DonorDesk Academy](./22-DonorDesk-Academy.md) | Guided tour and demo project are in the app (`/tour`, `/help/how-it-works`, the Academy demo project; the demo's first quarter is [Feature 42](./42-Demo-Project-Content.md)). The design doc is kept as the record of the plan | `apps/web/src/features/tour/` (new), `apps/web/src/features/onboarding/`, `packages/infrastructure/src/db/seed-eerp.ts`, `packages/application/src/services/entitlement-service.ts` |
+| 23 | [Work plan](./23-Work-Plan.md) | **Deployed 2026-10-18 (Batches 28.0–28.2; demo 9)** — planned activities inside the Activities tab, Start-from-logframe wizard, import, List and Timeline (drag to reschedule), My week for field officers, Overview cards, "Show work planning" setting; plan-link on completed activities | `packages/domain/src/contexts/workplan/`, `packages/application/src/use-cases/workplan/`, `packages/infrastructure/src/repositories/workplan.ts`, `apps/api/src/routes/workplan.ts`, `apps/web/src/features/workplan/` — see [`../imp/phase28-new-management.md`](../imp/phase28-new-management.md) |
+| 24 | [Programme management](./24-Programme-Management.md) | **Deployed 2026-10-18 (Batches 28.3–28.9; demo 9)** — requests and My Work by person, Team tab, reminders (daily summary, escalation), delivery health, files the work needs, problems and risks, comments, reports that read the plan (writer contract v6) | `packages/domain/src/contexts/{tasks,risks,workplan}/`, `packages/application/src/{services,use-cases}/`, `packages/infrastructure/src/repositories/`, `apps/api/src/routes/tasks.ts`, `apps/web/src/features/tasks/`, `apps/workers/app/ai_reporter/` — see [`../imp/phase28-new-management.md`](../imp/phase28-new-management.md) §15 |
 
 ## Status Legend
 
@@ -150,3 +152,85 @@ Dashboard ← Audit Log
     ↑
 Settings
 ```
+
+## Batch 3 features (2026-10-21)
+
+| # | Feature | Status | Source |
+|---|---|---|---|
+| 26 | [Logframe versioning](26-Logframe-Versioning.md) | Built, tested, deployed 2026-10-20; history page browser check pending | H-1 |
+| 27 | [Programmes and grants](27-Programmes-And-Grants.md) | Built, tested, deployed 2026-10-20; browser check pending | H-2 |
+| 28 | [Outside partners](28-Outside-Partners.md) | Built, tested, deployed 2026-10-20; partner screens and trimmed menu open | H-15 |
+| 29 | [Organisation export](29-Organisation-Export.md) | Built, tested, deployed 2026-10-20 | H-11 |
+| 30 | [Donor requirements](30-Donor-Requirements.md) | Built, tested, deployed 2026-10-20; authoring page check pending | H-8, H-9, H-10 |
+| 31 | [Account security and project access](31-Account-Security-And-Access.md) | Built, tested, deployed 2026-10-20; optional two-step sign-in added 2026-10-21 (no MFA for partners) | H-12, H-14 |
+| 32 | [Report locks and reopening](32-Report-Locks-And-Reopening.md) | Built, tested, deployed 2026-10-20 | H-4 |
+| 33 | [AI cost and usage](33-AI-Cost-And-Usage.md) | Built, tested, deployed 2026-10-20; price is an estimate until set | H-19 |
+| 34 | [Background jobs and retries](34-Background-Jobs-And-Retries.md) | Built, tested, deployed 2026-10-20; default queue still in-process | H-18 |
+
+Existing features updated for batch 3: 01, 03, 06, 07, 10, 11, 12, 13, 14, 16, 25. Plan and status of every High finding: `memorybank/imp/product-gap-audit-2026-10-20.md` §5.2 and §14.
+
+
+
+## Gap-closure features (2026-10-21, Version 2.007)
+
+Built from `../imp/product-gap-audit-2026-10-20.md` (status ledger in §18). Each doc lists what is built, the rules that matter, the code map and what is left over.
+
+| # | Feature | Audit items | Doc |
+|---|---|---|---|
+| 35 | Target schedule and variance | ME-02, ME-11 | [35-Target-Schedule-And-Variance.md](./35-Target-Schedule-And-Variance.md) |
+| 36 | Portfolio dashboard and double-count guard | PM-07, PM-08, ME-07 | [36-Portfolio-Dashboard-And-Roll-Up-Guard.md](./36-Portfolio-Dashboard-And-Roll-Up-Guard.md) |
+| 37 | Donor indicator mapping | AI-04 | [37-Donor-Indicator-Mapping.md](./37-Donor-Indicator-Mapping.md) |
+| 38 | Scanned documents (OCR) and encryption at rest | AI-03, SE-03 | [38-Scanned-Documents-And-Encryption-At-Rest.md](./38-Scanned-Documents-And-Encryption-At-Rest.md) |
+| 39 | Evidence review and evidence filters | EV-06, RP-06 | [39-Evidence-Review-And-Filters.md](./39-Evidence-Review-And-Filters.md) |
+| 40 | Comment threads | CG-10 | [40-Comment-Threads.md](./40-Comment-Threads.md) |
+| 41 | Management report and changes of plan | RP-05, PM-09 | [41-Management-Report-And-Changes-Of-Plan.md](./41-Management-Report-And-Changes-Of-Plan.md) |
+| 42 | Demo project with a first quarter | UX-03 | [42-Demo-Project-Content.md](./42-Demo-Project-Content.md) |
+| 31 | (addendum) two-step sign-in, lockout | H-12 | [31-Account-Security-And-Access.md](./31-Account-Security-And-Access.md) |
+| 44 | Infographic Studio (Phase 31 + 32): designs, templates, Design check, approval, share links | INF-* | [44-Infographic-Studio.md](./44-Infographic-Studio.md) |
+
+Also in this batch, documented in the audit and `CONTABO-DEPLOY.md` rather than a feature file: off-host backup to Google Drive (SE-06), help articles inside the app (UX-10), sales and privacy mail through the host's mail server (MK-10, SE-09), PDF indicator lines on the shared column definition (RP-08), and the audit-verification schedule (CG-07). Support-centre articles for these features are in `../docs/support/`.
+
+## Phase 30 — site maps (2026-10-24)
+
+Maps on the project plan and the project Overview: a **Map** view beside List and Timeline, a **"Where we work"** Overview section, places resolved from the officer's own location text against a bundled offline gazetteer (never guessed; unmatched places are listed), hand-placed pins for places no gazetteer knows, and one uploaded GeoJSON of the workspace's own boundaries (districts, sub-districts) that every map draws instead of the built-in outlines.
+
+| # | Feature | Doc |
+|---|---|---|
+| 43 | Site maps (plan Map view, Overview "Where we work", pins, custom boundaries) | [43-Site-Maps.md](./43-Site-Maps.md) |
+
+Plan, rules and deployment: `../imp/phase30-maps.md` (§10 = batch 30.1). Invariants: `AGENTS.md` → "Phase 30 invariants — maps". Support articles, unpublished until the live check: `../docs/support/_unpublished-phase30/`.
+
+## Phase 31–32 — Infographic Studio (2026-10-25)
+
+Designed results pictures from the project's own records (feature 44). Plan: `../imp/phase32-infographic-studio.md`. Support articles, unpublished until the signed-in check: `../docs/support/_unpublished-phase32/`.
+
+## Phase 33 — competitive parity (2026-10-27 to 2026-10-29)
+
+Features 45–52 describe what Phase 33 added. Plan and status by batch: `../imp/phase33-competitive-parity-plan.md` (§ Status). Operator facts: `../docs/runbooks/phase33-operations.md`.
+
+| # | Feature | Batch | Deployed |
+|---|---|---|---|
+| 45 | [Places and results by place](./45-Places-And-Results-By-Place.md) | 33.1, 33.2 | 2026-10-27 |
+| 46 | [Formula indicators, target schedules and period submission](./46-Indicator-Sources-And-Period-Submission.md) | 33.3, 33.4 | 2026-10-28 |
+| 47 | [Collection forms, record review and the offline field app](./47-Collection-Forms-And-Field-App.md) | 33.5, 33.6 | 2026-10-28 (field app not yet tried on a phone) |
+| 48 | [Dashboards of Data Center charts](./48-Dashboards.md) | 33.8 | 2026-10-28 |
+| 49 | [Ask DonorDesk](./49-Ask-DonorDesk.md) | 33.9 | 2026-10-28, switched off in every organisation |
+| 50 | [Interface languages](./50-Interface-Languages.md) | 33.10 | 2026-10-28 (translations unreviewed) |
+| 51 | [Integrations: public API, webhooks, MCP and connectors](./51-Integrations-API-Webhooks-MCP-Connectors.md) | 33.7 | 2026-10-28 |
+| 52 | [Trust: two-step requirement, trials and readiness](./52-Trust-Two-Step-Requirement-And-Trials.md) | 33.12 | 2026-10-28 |
+
+Batch 33.11 (cost per result, IATI export) is not started. Support articles for Phase 33 are drafts in `../docs/support/_unpublished-phase33/`.
+
+## Phase 34 — dashboards, charts, sheet, maps, reports (deployed 2026-10-28, `releaseId=20261028133938`)
+
+| # | Feature | Batch | Status |
+|---|---|---|---|
+| 53 | [Chart Studio and saved charts](./53-Chart-Studio.md) | 34.1 | 2026-10-28 (not yet tried signed-in) |
+| 54 | [The Entry Sheet](./54-Entry-Sheet.md) | 34.2 | 2026-10-28 |
+| 55 | [Dashboards v2, sector templates, tabs, full screen, print](./55-Dashboard-Templates-Tabs-And-Viewing.md) | 34.3 | 2026-10-28 |
+| 56 | [The Maps screen](./56-Maps-Screen.md) | 34.4 (first slice) | 2026-10-28 |
+| 57 | [Indicator views and the report builder](./57-Indicator-Views-And-Report-Builder.md) | 34.5 | 2026-10-28 |
+| 58 | [Bookmarks](./58-Bookmarks.md) | Home | 2026-10-28 |
+
+Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project workspace (34.7), document templates (34.8), partner portal (34.9), polish (34.10) — see `../imp/phase34-devresults-parity-plan.md` "What is left". Support articles are drafts in `../docs/support/_unpublished-phase34/`.
+

@@ -9,7 +9,7 @@ test("authentication contracts reject malformed edge input", () => {
 
 test("organization contracts validate data residency", () => {
   const signup = SignUpSchema.parse({
-    name: "Admin User", email: "admin@example.org", password: "password123",
+    name: "Admin User", email: "admin@example.org", password: "Correct-Horse-9-Battery",
     organization: { name: "Example NGO", organizationType: "LOCAL_NGO", country: "PK", primarySector: "WASH" },
   });
   assert.equal(signup.organization.dataResidency, "DEFAULT");
@@ -28,4 +28,12 @@ test("attach-evidence accepts the clear indicatorUpdateId name and the legacy in
   assert.deepEqual(AttachEvidenceSchema.parse({ evidenceId: "e1", indicatorUpdateId: "u1" }), { evidenceId: "e1", indicatorId: "u1" });
   assert.deepEqual(AttachEvidenceSchema.parse({ evidenceId: "e1", indicatorId: "u1" }), { evidenceId: "e1", indicatorId: "u1" });
   assert.deepEqual(AttachEvidenceSchema.parse({ evidenceId: "e1", activityId: "a1" }), { evidenceId: "e1", activityId: "a1", indicatorId: undefined });
+});
+
+test("consent is accepted from every place the web records it (invitation was once rejected, silently)", async () => {
+  const { RecordConsentSchema, CONSENT_SOURCES } = await import("../dist/index.js");
+  for (const source of ["onboarding", "invitation"]) assert.ok(CONSENT_SOURCES.includes(source), source);
+  for (const source of CONSENT_SOURCES) assert.equal(RecordConsentSchema.safeParse({ accepted: true, source }).success, true, source);
+  assert.equal(RecordConsentSchema.safeParse({ accepted: true }).data.source, "onboarding");
+  assert.equal(RecordConsentSchema.safeParse({ accepted: false }).success, false);
 });

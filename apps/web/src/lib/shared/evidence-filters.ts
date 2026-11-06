@@ -1,10 +1,17 @@
-export const EVIDENCE_SEARCH_FILTERS = [
+/** The text filters, in the order they are written into a link. `page` is handled separately (a whole number, 1 is left out). */
+const TEXT_FILTERS = [
   "query",
   "verificationStatus",
   "confidentialityLevel",
   "evidenceType",
-  "page",
+  "projectId",
+  "reportingPeriodId",
+  "location",
+  "donor",
+  "country",
 ] as const;
+
+export const EVIDENCE_SEARCH_FILTERS = [...TEXT_FILTERS, "page"] as const;
 
 export type EvidenceFilterName = (typeof EVIDENCE_SEARCH_FILTERS)[number];
 
@@ -13,6 +20,14 @@ export type EvidenceSearchParams = {
   verificationStatus?: string;
   confidentialityLevel?: string;
   evidenceType?: string;
+  /** The API filters by project and period; the project page fixes the project, the library page lets the person choose. */
+  projectId?: string;
+  reportingPeriodId?: string;
+  /** Matched as typed against where the evidence was collected. */
+  location?: string;
+  /** A project's donor and country are not evidence fields: the library page keeps the evidence of projects with that donor or country. */
+  donor?: string;
+  country?: string;
   page?: number;
 };
 
@@ -25,17 +40,10 @@ export function parseEvidenceFilters(entries: Iterable<[string, string]>): Evide
   const map = new Map<string, string>();
   for (const [key, value] of entries) map.set(key, value);
 
-  const query = map.get("query")?.trim();
-  if (query) params.query = query;
-
-  const verificationStatus = map.get("verificationStatus")?.trim();
-  if (verificationStatus) params.verificationStatus = verificationStatus;
-
-  const confidentialityLevel = map.get("confidentialityLevel")?.trim();
-  if (confidentialityLevel) params.confidentialityLevel = confidentialityLevel;
-
-  const evidenceType = map.get("evidenceType")?.trim();
-  if (evidenceType) params.evidenceType = evidenceType;
+  for (const key of TEXT_FILTERS) {
+    const value = map.get(key)?.trim();
+    if (value) params[key] = value;
+  }
 
   const pageRaw = map.get("page")?.trim();
   const page = pageRaw ? Number(pageRaw) : undefined;
@@ -67,19 +75,21 @@ export function withEvidenceFilter(
   key: EvidenceFilterName,
   value: string | number | undefined,
 ): EvidenceSearchParams {
-  const next: EvidenceSearchParams = {
-    query: current.query,
-    verificationStatus: current.verificationStatus,
-    confidentialityLevel: current.confidentialityLevel,
-    evidenceType: current.evidenceType,
-  };
+  const next: EvidenceSearchParams = { ...current };
+  delete next.page;
   const empty = value === undefined || value === "";
   if (key === "page") {
     if (!empty) next.page = Number(value);
-  } else {
-    if (empty) delete next[key];
-    else next[key] = String(value);
+    return next;
   }
-  if (key !== "page") delete next.page;
+  if (empty) delete next[key];
+  else next[key] = String(value);
   return next;
+}
+
+/** The evidence of projects with a given donor and/or country (case-insensitive), from a list of projects. */
+export function projectIdsFor<T extends { id: string; donorName: string; country: string }>(projects: ReadonlyArray<T>, filters: Pick<EvidenceSearchParams, "donor" | "country">): Set<string> | null {
+  if (!filters.donor && !filters.country) return null;
+  const same = (a: string, b: string | undefined): boolean => !b || a.trim().toLowerCase() === b.trim().toLowerCase();
+  return new Set(projects.filter((p) => same(p.donorName, filters.donor) && same(p.country, filters.country)).map((p) => p.id));
 }

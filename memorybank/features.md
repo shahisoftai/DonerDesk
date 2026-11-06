@@ -1,6 +1,6 @@
 # DonorDesk — Global Light/Dark Theming Implementation
 
-**DonorDesk Version 1.93**
+**DonorDesk Version 3.007**
 
 **Status:** Deployed to production (donordesk.online), release `20260812163749`
 **Date:** 2026-08-12
@@ -174,3 +174,5 @@ honestly, never presented as production.
   per-row submit/verify, and Google Sheets import
   (`POST /v1/indicator-updates/parse-sheet`). See
   `Features/06-Logframe-And-Indicator-Manager.md`.
+
+- **AI project setup wizard (2026-10-31):** upload up to five project documents (proposal, concept note, logframe or work-plan sheet); DonorDesk proposes the project facts, results, indicators, reporting rhythm, activities, places, funding and risks, each with the exact words it was read from; the person reviews slide by slide and creates the project as a draft. Documents are saved in the organisation's own Google Drive and moved into the project's `00-Project-Documents` folder. English, French, Spanish and Arabic. Off by default (Settings, administrator). See `Features/25-AI-Project-Setup.md`.

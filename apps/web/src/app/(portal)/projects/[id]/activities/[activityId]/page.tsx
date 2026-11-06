@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDisclosure";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -18,7 +19,16 @@ import { ActivityLifecyclePanel } from "@/features/activities/presentation/Activ
 import { splitReviewerNotes, canApplyActivityAction } from "@donordesk/domain/contexts/activities/activity-transitions.js";
 import { activityOptionLabel } from "@/lib/shared/option-labels";
 import { ActivitiesResponseSchema } from "@/lib/server/schemas";
+import { AskPanel } from "@/features/tasks/presentation/AskPanel";
+import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
+import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
+import { FileNeedsSchema } from "@/lib/server/schemas";
+import { stillNeededLine } from "@/features/workplan/domain/file-needs-view";
 import { ActivityEvidencePanel } from "@/features/activities/presentation/ActivityEvidencePanel";
+import { PlanLinkPanel } from "@/features/activities/presentation/PlanLinkPanel";
+import { WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { dependencyLabel } from "@/features/workplan/domain/dependency-view";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +83,18 @@ export default async function ActivityDetailPage({
   const logframeActivities = logframeResult?.ok
     ? logframeResult.value.items.filter((n) => n.level === "ACTIVITY").map((n) => ({ id: n.id, label: `${n.code ? `${n.code} — ` : ""}${n.title}` }))
     : [];
+  // Files the planned activity asked for that this one does not have yet: said once, never blocking.
+  const needs = activity.plannedActivityId ? await gatewayRequest(`/v1/activities/${activity.id}/file-needs`, FileNeedsSchema, ctx.token) : null;
+  const stillNeeded = needs?.ok ? needs.value.stillNeeded : [];
+  // The planned activity it delivers: shown on every record, changeable only while the record can still be edited.
+  const planResult = await gatewayRequest(`/v1/projects/${resolvedParams.id}/work-plan`, WorkPlanResponseSchema, ctx.token);
+  const planItems = planResult.ok ? planResult.value.items.filter((i) => i.status !== "CANCELLED") : [];
+  const linkedPlan = planItems.find((i) => i.id === activity.plannedActivityId);
+  const canEditLink = hasCapability(ctx, "activity.create") && canApplyActivityAction(status, "EDIT");
+  const canAsk = hasCapability(ctx, "task.assign") && activity.status === "SUBMITTED";
+  const canAskFile = hasCapability(ctx, "task.assign") && stillNeeded.length > 0 && activity.status !== "WITHDRAWN";
+  const me = decodeSessionPayload(ctx.token)?.sub ?? "";
+  const askPeople = canAsk ? await loadProjectPeople(ctx.token, resolvedParams.id, me) : [];
   const canPolish = hasCapability(ctx, "activity.create");
   const canManageEvidence = hasCapability(ctx, "activity.create");
   const demoMode = process.env.NODE_ENV !== "production";
@@ -98,6 +120,33 @@ export default async function ActivityDetailPage({
           </Badge>
         </div>
       </header>
+
+      {stillNeeded.length > 0 && <p role="status" className="text-sm font-medium text-amber-700 dark:text-amber-400">{stillNeededLine(stillNeeded)}</p>}
+      {canAskFile && (
+        <AskPanel projectId={resolvedParams.id} kind="PROVIDE_EVIDENCE" buttonLabel="Ask for a file" subject={{ type: "activityUpdate", id: activity.id }} people={askPeople.length ? askPeople : await loadProjectPeople(ctx.token, resolvedParams.id, me)} leadId={activity.submittedById} suggestedDue={suggestTaskDueDate("PROVIDE_EVIDENCE", { today: new Date().toISOString().slice(0, 10) })} />
+      )}
+      {canAsk && (
+        <AskPanel
+          projectId={resolvedParams.id}
+          kind="REVIEW_RECORD"
+          buttonLabel="Ask for a review"
+          subject={{ type: "activityUpdate", id: activity.id }}
+          people={askPeople}
+          suggestedDue={suggestTaskDueDate("REVIEW_RECORD", { today: new Date().toISOString().slice(0, 10) })}
+        />
+      )}
+
+      {planResult.ok && (
+        <PlanLinkPanel
+          activityId={activity.id}
+          current={linkedPlan ? dependencyLabel(linkedPlan.title, linkedPlan.plannedStart, linkedPlan.plannedEnd) : undefined}
+          options={[...planItems]
+            .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title))
+            .map((i) => ({ id: i.id, label: dependencyLabel(i.title, i.plannedStart, i.plannedEnd), selected: i.id === activity.plannedActivityId }))}
+          canEdit={canEditLink}
+          lockedReason={!canEditLink && activity.status === "ACCEPTED" ? "This record is accepted. To change the link, send it back for revision first." : undefined}
+        />
+      )}
 
       <section className="card" aria-label="Activity summary">
         <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Summary</h2>
@@ -204,7 +253,7 @@ export default async function ActivityDetailPage({
         />
       )}
 
-      {canReview && <ActivityReviewPanel activityId={activity.id} />}
+      {canReview && <ActivityReviewPanel activityId={activity.id} stillNeeded={stillNeeded} />}
       {canReopen && <ActivityReopenPanel activityId={activity.id} />}
 
       {canWithdraw && (
@@ -216,6 +265,8 @@ export default async function ActivityDetailPage({
           replacements={replacements}
         />
       )}
+
+      <CommentsDisclosure entityType="activity_update" entityId={activity.id} />
 
       <div className="flex gap-3">
         <Link className="btn-secondary" href={`/projects/${activity.projectId}/activities`}>

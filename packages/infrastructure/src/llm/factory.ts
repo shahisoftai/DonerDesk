@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { ILLMProvider, LLMCompletionInput } from "@donordesk/application";
 import { StubLLMProvider } from "./stub.js";
 import { OllamaProvider } from "../ai/ollama.js";
-import { createPiiFirewall, type PiiPolicy } from "../ai/pii-firewall.js";
+import { createPiiFirewall, type PiiPolicy } from "@donordesk/domain";
 
 export type LLMProviderName = "stub" | "openai" | "anthropic" | "gemini" | "ollama" | "deepseek" | "minimax" | "glm";
 
@@ -212,12 +212,13 @@ function createOpenAIAdapter(config: { name: "openai" | "gemini"; apiKey: string
       }
 
       const data = await response.json() as {
-        choices: Array<{ message: { content: string } }>;
+        choices: Array<{ message: { content: string }; finish_reason?: string }>;
         usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
 
       return {
         text: data.choices[0]?.message.content ?? "",
+        ...(data.choices[0]?.finish_reason === "length" ? { truncated: true } : {}),
         model: config.model,
         promptVersion: "1.0.0",
         usage: {
@@ -254,14 +255,22 @@ function createAnthropicAdapter(config: { apiKey: string; model: string; baseUrl
     model: config.model,
     promptVersion: "1.0.0",
     async complete(input: LLMCompletionInput) {
-      const response = await client.beta.messages.create({
+      const send = (schema: Record<string, unknown> | undefined) => client.beta.messages.create({
         model: config.model,
         max_tokens: Math.max(input.maxTokens ?? 0, CLAUDE_MIN_MAX_TOKENS),
         ...(input.systemPrompt ? { system: input.systemPrompt } : {}),
         messages: [{ role: "user", content: input.userPrompt }],
-        ...(config.effort ? { output_config: { effort: config.effort as "low" | "medium" | "high" | "xhigh" | "max" } } : {}),
+        ...(config.effort || schema ? { output_config: {
+          ...(config.effort ? { effort: config.effort as "low" | "medium" | "high" | "xhigh" | "max" } : {}),
+          ...(schema ? { format: { type: "json_schema" as const, schema } } : {}),
+        } } : {}),
         ...(useFallbacks ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
       }, input.timeoutMs && input.timeoutMs > (config.timeoutMs ?? 180_000) ? { timeout: input.timeoutMs } : undefined);
+      // A model or schema the API will not take for structured output still answers from the prompt's own shape.
+      const response = await send(input.jsonSchema).catch((e: unknown) => {
+        if (input.jsonSchema && e instanceof Anthropic.BadRequestError) return send(undefined);
+        throw e;
+      });
       if (response.stop_reason === "refusal") {
         throw new Error(`Anthropic API refusal${response.stop_details?.category ? ` (${response.stop_details.category})` : ""}`);
       }
@@ -271,6 +280,7 @@ function createAnthropicAdapter(config: { apiKey: string; model: string; baseUrl
         .join("");
       return {
         text,
+        ...(response.stop_reason === "max_tokens" ? { truncated: true } : {}),
         model: response.model,
         promptVersion: "1.0.0",
         usage: {
@@ -314,12 +324,13 @@ function createDeepSeekAdapter(config: { apiKey: string; model?: string; baseUrl
       }
 
       const data = await response.json() as {
-        choices: Array<{ message: { content: string } }>;
+        choices: Array<{ message: { content: string }; finish_reason?: string }>;
         usage: { prompt_tokens: number; completion_tokens: number };
       };
 
       return {
         text: data.choices[0]?.message.content ?? "",
+        ...(data.choices[0]?.finish_reason === "length" ? { truncated: true } : {}),
         model,
         promptVersion: "1.0.0",
         usage: {
@@ -359,16 +370,26 @@ function createGlmAdapter(config: { apiKey: string; model?: string; baseUrl?: st
       });
 
       if (!response.ok) {
-        throw new Error(`GLM API error: ${response.status}`);
+        // The provider says why (rate limit, balance, bad key); keep a short, non-secret copy of it for the logs.
+        const body = await response.text().catch(() => "");
+        let reason = "";
+        try {
+          const parsed = JSON.parse(body) as { error?: { message?: unknown } };
+          reason = typeof parsed.error?.message === "string" ? parsed.error.message : "";
+        } catch {
+          reason = body;
+        }
+        throw new Error(`GLM API error: ${response.status}${reason ? ` (${reason.replace(/\s+/g, " ").trim().slice(0, 200)})` : ""}`);
       }
 
       const data = await response.json() as {
-        choices: Array<{ message: { content: string } }>;
+        choices: Array<{ message: { content: string }; finish_reason?: string }>;
         usage: { prompt_tokens: number; completion_tokens: number };
       };
 
       return {
         text: data.choices[0]?.message.content ?? "",
+        ...(data.choices[0]?.finish_reason === "length" ? { truncated: true } : {}),
         model,
         promptVersion: "1.0.0",
         usage: {

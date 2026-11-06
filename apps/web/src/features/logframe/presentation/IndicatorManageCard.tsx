@@ -1,16 +1,21 @@
 "use client";
 
+import { formatTargetScheduleText, parseTargetScheduleText, type TargetEntryMode } from "@donordesk/domain/contexts/logframe/target-schedule.js";
+import { Textarea } from "@/components/ui/Textarea";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { archiveIndicatorAction, moveIndicatorAction, updateIndicatorAction } from "@/lib/actions/indicators";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
 import { LogframeItemSelect } from "./LogframeItemSelect";
+import { TargetBreakdownsEditor } from "./TargetBreakdownsEditor";
+import { completeBreakdownRows, type BreakdownTargetRow } from "../domain/target-breakdown-rows";
 
 export interface ManagedIndicator {
   id: string;
@@ -22,27 +27,92 @@ export interface ManagedIndicator {
   target: string;
   unit?: string;
   disaggregationRequired: boolean;
+  targetBreakdowns?: BreakdownTargetRow[];
+  targetSchedule?: { asOf: string; target: string }[];
+  type?: string;
+  formula?: { op: "RATIO" | "SUM" | "DIFFERENCE"; terms: string[]; percent?: boolean | undefined };
+  countedElsewhere?: boolean;
+  frequency?: string | undefined;
 }
 
 /**
  * Fixes an indicator after it was created: its wording, targets and breakdown, the item it measures, or removing it.
  * Every refusal comes back from the server with its reason and is shown as-is.
  */
-export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIndicator; items: OutlineSource[] }) {
+const RATE_TYPES = new Set(["PERCENTAGE", "RATIO"]);
+
+/** "Calculate this value from other indicators": nobody types a value for it; it is worked out from theirs. */
+function FormulaEditor({ value, onChange, others, disabled }: { value: NonNullable<ManagedIndicator["formula"]> | null; onChange: (v: NonNullable<ManagedIndicator["formula"]> | null) => void; others: OtherIndicator[]; disabled: boolean }) {
+  const counts = others.filter((o) => !RATE_TYPES.has(o.type));
+  if (counts.length < 2 && !value) return null;
+  const terms = value?.terms ?? [];
+  const set = (next: Partial<NonNullable<ManagedIndicator["formula"]>>) => onChange({ op: "RATIO", terms: ["", ""], ...value, ...next });
+  const pick = (index: number, id: string) => set({ terms: Object.assign([...terms, "", ""].slice(0, Math.max(2, terms.length)), { [index]: id }) });
+  return (
+    <fieldset className="rounded-lg border border-slate-200 p-3 text-sm dark:border-white/10">
+      <legend className="px-1 text-sm font-medium">Calculate this value from other indicators</legend>
+      <label className="flex items-center gap-2">
+        <Checkbox checked={value !== null} onChange={(e) => onChange(e.target.checked ? { op: "RATIO", terms: ["", ""], percent: true } : null)} disabled={disabled} />
+        <span>Nobody types this value; it is worked out from the values recorded for the indicators below.</span>
+      </label>
+      {value && (
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Field label="How" htmlFor="formula-op">
+            <Select id="formula-op" value={value.op} onChange={(e) => set({ op: e.target.value as NonNullable<ManagedIndicator["formula"]>["op"], terms: terms.slice(0, 2) })} disabled={disabled}>
+              <option value="RATIO">One divided by another</option>
+              <option value="SUM">The total of several</option>
+              <option value="DIFFERENCE">One minus another</option>
+            </Select>
+          </Field>
+          {[0, 1].map((i) => (
+            <Field key={i} label={value.op === "RATIO" ? (i === 0 ? "Counted (top)" : "Out of (bottom)") : `Indicator ${i + 1}`} htmlFor={`formula-term-${i}`}>
+              <Select id={`formula-term-${i}`} value={terms[i] ?? ""} onChange={(e) => pick(i, e.target.value)} disabled={disabled}>
+                <option value="">Choose…</option>
+                {counts.map((o) => <option key={o.id} value={o.id}>{o.code} {o.name}</option>)}
+              </Select>
+            </Field>
+          ))}
+          {value.op === "RATIO" && (
+            <label className="flex items-center gap-2 sm:col-span-3">
+              <Checkbox checked={value.percent === true} onChange={(e) => set({ percent: e.target.checked })} disabled={disabled} />
+              <span>Show as a percentage (multiply by 100)</span>
+            </label>
+          )}
+          <p className="text-xs text-slate-500 sm:col-span-3">The indicator's type must be Percentage or Ratio for a division, Number or Currency for a total or a difference. If a value it needs is missing, the result is left empty, never shown as zero.</p>
+        </div>
+      )}
+    </fieldset>
+  );
+}
+
+export interface OtherIndicator { id: string; code: string; name: string; type: string }
+
+export function IndicatorManageCard({ indicator, items, others = [] }: { indicator: ManagedIndicator; items: OutlineSource[]; others?: OtherIndicator[] }) {
   const router = useRouter();
   const [name, setName] = useState(indicator.name);
   const [code, setCode] = useState(indicator.code);
   const [baseline, setBaseline] = useState(indicator.baseline);
   const [target, setTarget] = useState(indicator.target);
   const [unit, setUnit] = useState(indicator.unit ?? "");
+  const [frequency, setFrequency] = useState(indicator.frequency ?? "");
   const [breakdown, setBreakdown] = useState(indicator.disaggregationRequired);
   const [itemId, setItemId] = useState(indicator.logframeItemId ?? "");
+  const [breakdowns, setBreakdowns] = useState<BreakdownTargetRow[]>(indicator.targetBreakdowns ?? []);
+  const [scheduleText, setScheduleText] = useState(formatTargetScheduleText(indicator.targetSchedule ?? []));
+  const [scheduleMode, setScheduleMode] = useState<TargetEntryMode>("CUMULATIVE");
+  const [countedElsewhere, setCountedElsewhere] = useState(indicator.countedElsewhere ?? false);
+  const [calc, setCalc] = useState<NonNullable<ManagedIndicator["formula"]> | null>(indicator.formula ?? null);
   const [busy, setBusy] = useState<"save" | "move" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
 
   async function save() {
     if (busy) return;
+    const parsedSchedule = parseTargetScheduleText(scheduleText, scheduleMode);
+    if (parsedSchedule.problems.length > 0) {
+      const first = parsedSchedule.problems[0]!;
+      return setMessage({ tone: "error", text: `Target schedule, line ${first.row}: ${first.message}` });
+    }
     setBusy("save");
     setMessage(null);
     const result = await updateIndicatorAction({
@@ -52,7 +122,12 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
       baseline,
       target,
       unit: unit.trim() || undefined,
+      frequency: frequency.trim() || undefined,
       disaggregationRequired: breakdown,
+      targetBreakdowns: completeBreakdownRows(breakdowns),
+      targetSchedule: parsedSchedule.schedule,
+      countedElsewhere,
+      formula: calc,
     });
     setBusy(null);
     if (!result.ok) return setMessage({ tone: "error", text: result.error.message });
@@ -93,6 +168,13 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
         <Field label="Unit" htmlFor="manage-unit"><Input id="manage-unit" value={unit} onChange={(e) => setUnit(e.target.value)} /></Field>
       </div>
       <Field label="Name" htmlFor="manage-name"><Input id="manage-name" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+      <Field
+        label="Frequency"
+        htmlFor="manage-frequency"
+        hint="How often it is measured, for example monthly, quarterly, every 6 months, annual or baseline and endline. Text that is not recognised means every period."
+      >
+        <Input id="manage-frequency" value={frequency} maxLength={50} onChange={(e) => setFrequency(e.target.value)} />
+      </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Baseline" htmlFor="manage-baseline"><Input id="manage-baseline" value={baseline} onChange={(e) => setBaseline(e.target.value)} /></Field>
         <Field label="Target" htmlFor="manage-target"><Input id="manage-target" value={target} onChange={(e) => setTarget(e.target.value)} /></Field>
@@ -101,6 +183,31 @@ export function IndicatorManageCard({ indicator, items }: { indicator: ManagedIn
         <Checkbox checked={breakdown} onChange={(e) => setBreakdown(e.target.checked)} />
         <span>Record a breakdown by sex, age group and disability</span>
       </label>
+      <label className="flex items-start gap-2 text-sm">
+        <Checkbox checked={countedElsewhere} onChange={(e) => setCountedElsewhere(e.target.checked)} />
+        <span>Another project also counts these people or things. Show it in the portfolio but do not add it to the totals, so nobody is counted twice.</span>
+      </label>
+      <Field label="Target schedule (optional)" htmlFor="manage-schedule" description={scheduleMode === "CUMULATIVE" ? "The cumulative target due by each date, one per line, for example 2026-03-31: 250. A period is then judged against what was due by then. Leave empty to judge against the target above." : "The amount to add by each date, one per line, for example 2026-03-31: 250 then 2026-06-30: 150 means 400 by the end of June. It is stored as the running total. Leave empty to judge against the target above."}>
+        <Select
+          aria-label="How the schedule is written"
+          value={scheduleMode}
+          disabled={busy !== null}
+          onChange={(e) => {
+            const next = e.target.value as TargetEntryMode;
+            if (next === scheduleMode) return;
+            // Switching converts what is typed, so nothing is lost; a schedule that cannot be read yet is left as typed.
+            const current = parseTargetScheduleText(scheduleText, scheduleMode);
+            if (current.problems.length === 0) setScheduleText(formatTargetScheduleText(current.schedule, next));
+            setScheduleMode(next);
+          }}
+        >
+          <option value="CUMULATIVE">Running total due by each date</option>
+          <option value="INCREMENTAL">Amount added at each date</option>
+        </Select>
+        <Textarea id="manage-schedule" rows={4} value={scheduleText} onChange={(e) => setScheduleText(e.target.value)} disabled={busy !== null} />
+      </Field>
+      <TargetBreakdownsEditor rows={breakdowns} onChange={setBreakdowns} disabled={busy !== null} />
+      <FormulaEditor value={calc} onChange={setCalc} others={others} disabled={busy !== null} />
       <div><Button onClick={() => void save()} pending={busy === "save"} disabled={busy !== null || !name.trim() || !code.trim()}>Save changes</Button></div>
 
       <div className="border-t border-slate-200 pt-4 dark:border-white/10">
