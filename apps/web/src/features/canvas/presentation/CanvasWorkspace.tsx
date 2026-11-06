@@ -97,12 +97,12 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
 
   return (
     <div className="space-y-4" data-testid="canvas-workspace" data-editing={editing || undefined}>
-      <header className="flex flex-wrap items-center gap-3 print:hidden">
+      <header className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           {editing ? <input aria-label="Name" className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xl font-semibold dark:border-slate-600 dark:bg-slate-900" value={canvas.title} onChange={(e) => ed.rename(e.target.value)} /> : <h1 className="truncate text-xl font-semibold tracking-tight">{canvas.title}</h1>}
           <p className="text-xs text-slate-500">{SCOPE_LABEL[initial.scope]} · {canvas.mode === "LIVE" ? "Live: figures are read when you open it" : "Published: a design to share"}{initial.sourceKind ? ` · from an older ${initial.sourceKind.toLowerCase()}` : ""}{dirty ? " · Unsaved changes" : ""}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 print:hidden">
           {canEdit && <button type="button" className={BTN} aria-pressed={editing} onClick={() => setEditing((v) => !v)}>{editing ? "Done editing" : "Edit"}</button>}
           {editing && <><button type="button" className={BTN} onClick={ed.undo} disabled={!ed.canUndo}>Undo</button><button type="button" className={BTN} onClick={ed.redo} disabled={!ed.canRedo}>Redo</button></>}
           {canEdit && <button type="button" className={`${BTN} bg-sky-700 text-white hover:bg-sky-800 dark:hover:bg-sky-800`} onClick={() => void save()} disabled={!dirty || busy !== null}>{busy === "save" ? "Saving…" : "Save"}</button>}
