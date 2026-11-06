@@ -5,6 +5,7 @@ export interface DividerProps { line: boolean }
 export const dividerBlock = defineBlock<DividerProps, DividerProps, undefined>({
   kind: "DIVIDER",
   family: "TEXT",
+  bare: true,
   labelKey: "canvas.block.DIVIDER",
   defaults: () => ({ line: true }),
   validate: () => [],

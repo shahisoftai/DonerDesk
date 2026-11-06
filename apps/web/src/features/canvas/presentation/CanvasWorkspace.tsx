@@ -8,6 +8,7 @@ import { deleteCanvasAction, duplicateCanvasAction, resolveCanvasAction, saveCan
 import type { CanvasView, ResolvedCanvas } from "@/lib/server/schemas-canvas";
 import { blockLabelKey } from "../domain/canvas-copy";
 import { BlockBoundary } from "./BlockBoundary";
+import { downloadPicture } from "./download-picture";
 import { CanvasBlockView } from "./CanvasBlockView";
 import { BlockPalette } from "./editor/BlockPalette";
 import type { IndicatorOption } from "./editor/FieldWidget";
@@ -33,6 +34,9 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const router = useRouter();
   const { t } = useI18n();
   const ed = useCanvasEditor(initial.canvas, initial.projectId ?? projects[0]?.id);
+  const menu = useRef<HTMLDetailsElement>(null);
+  /** An action chosen from the menu closes it. */
+  const choose = (action: () => void) => () => { menu.current?.removeAttribute("open"); action(); };
   const [editing, setEditing] = useState(false);
   const [resolved, setResolved] = useState(first);
   const [busy, setBusy] = useState<string | null>(null);
@@ -102,14 +106,15 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
           {canEdit && <button type="button" className={BTN} aria-pressed={editing} onClick={() => setEditing((v) => !v)}>{editing ? "Done editing" : "Edit"}</button>}
           {editing && <><button type="button" className={BTN} onClick={ed.undo} disabled={!ed.canUndo}>Undo</button><button type="button" className={BTN} onClick={ed.redo} disabled={!ed.canRedo}>Redo</button></>}
           {canEdit && <button type="button" className={`${BTN} bg-sky-700 text-white hover:bg-sky-800 dark:hover:bg-sky-800`} onClick={() => void save()} disabled={!dirty || busy !== null}>{busy === "save" ? "Saving…" : "Save"}</button>}
-          <details className="relative">
+          <details className="relative" ref={menu}>
             <summary className={`${BTN} cursor-pointer list-none`}>More</summary>
             <ul className="absolute end-0 z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
-              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => window.print()}>Print or save as PDF</button></li>
-              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => download(`${canvas.title}.canvas.json`, "application/json", canvasJson(canvas))}>Download the canvas file</button></li>
-              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => download(`${canvas.title}-descriptions.txt`, "text/plain", altPack(canvas))}>Download descriptions and captions</button></li>
-              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => void copy()} disabled={busy !== null}>Make a copy for me</button></li>
-              {canEdit && <li><button type="button" className="block w-full px-3 py-1.5 text-start text-red-700 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={() => void remove()} disabled={busy !== null}>Delete</button></li>}
+              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => void downloadPicture(document.querySelector<HTMLElement>('[data-testid="canvas-grid"]'), canvas.title).then((r) => setNotice(r.ok ? { tone: "ok", text: "Picture saved to your downloads." } : { tone: "error", text: r.message })))}>Download as a picture</button></li>
+              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => window.print())}>Print or save as PDF</button></li>
+              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => download(`${canvas.title}.canvas.json`, "application/json", canvasJson(canvas)))}>Download the canvas file</button></li>
+              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => download(`${canvas.title}-descriptions.txt`, "text/plain", altPack(canvas)))}>Download descriptions and captions</button></li>
+              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => void copy())} disabled={busy !== null}>Make a copy for me</button></li>
+              {canEdit && <li><button type="button" className="block w-full px-3 py-1.5 text-start text-red-700 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => void remove())} disabled={busy !== null}>Delete</button></li>}
             </ul>
           </details>
         </div>
@@ -145,7 +150,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
           ) : (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:auto-rows-[5.5rem]" dir={canvas.language === "ar" ? "rtl" : "ltr"} data-testid="canvas-grid">
               {blocks.map((b) => (
-                <div key={b.id} className="sm:[grid-column:var(--c)/span_var(--w)] sm:[grid-row:var(--r)/span_var(--h)]" style={{ "--c": b.bounds.x + 1, "--w": b.bounds.w, "--r": b.bounds.y + 1, "--h": b.bounds.h } as React.CSSProperties}>
+                <div key={b.id} className="h-[var(--mh)] sm:h-auto sm:[grid-column:var(--c)/span_var(--w)] sm:[grid-row:var(--r)/span_var(--h)]" style={{ "--c": b.bounds.x + 1, "--w": b.bounds.w, "--r": b.bounds.y + 1, "--h": b.bounds.h, "--mh": `${Math.max(b.bounds.h, 1) * 5.5}rem` } as React.CSSProperties}>
                   <BlockBoundary label={label(b.kind)}><CanvasBlockView block={b} canvas={canvas} drawing={drawings.get(b.id)} widget={widgets.get(b.id)} serverModel={resolved?.models[b.id]} changed={savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)} selected={ed.selected === b.id} editing={editing} onSelect={() => ed.setSelected(b.id)} /></BlockBoundary>
                 </div>
               ))}

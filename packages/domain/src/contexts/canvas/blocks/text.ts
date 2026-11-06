@@ -7,6 +7,7 @@ export interface TextProps { text: string; role: "body" | "heading" | "caption" 
 export const textBlock = defineBlock<TextProps, { text: string; role: TextProps["role"] }, undefined>({
   kind: "TEXT",
   family: "TEXT",
+  bare: true,
   labelKey: "canvas.block.TEXT",
   defaults: () => ({ text: "", role: "body" }),
   validate: (p) => ((typeof p.text === "string" ? p.text.length : 0) > CANVAS_MAX_TEXT ? [{ message: `Text is at most ${CANVAS_MAX_TEXT} characters.` }] : []),

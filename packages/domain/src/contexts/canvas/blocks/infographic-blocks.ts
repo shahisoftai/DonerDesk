@@ -11,13 +11,13 @@ import { INFOGRAPHIC_MODELS } from "../models/index.js";
 
 export type InfographicBlockProps = Omit<InfographicSectionConfig, "kind">;
 
-interface Spec { family: BlockFamily; w: number; h: number; maxH: number; minW?: number; seed?: InfographicBlockProps; needsAlt?: true; headline?: true }
+interface Spec { family: BlockFamily; w: number; h: number; maxH: number; minW?: number; seed?: InfographicBlockProps; needsAlt?: true; headline?: true; bare?: true }
 
 const wide = (family: BlockFamily, h: number, maxH = 10, seed?: InfographicBlockProps): Spec => ({ family, w: 12, h, maxH, ...(seed ? { seed } : {}) });
 
 export const INFOGRAPHIC_BLOCK_SPECS = {
-  HERO: { ...wide("TEXT", 3, 5), headline: true },
-  BANNER: { ...wide("TEXT", 1, 2), headline: true },
+  HERO: { ...wide("TEXT", 3, 5), headline: true, bare: true },
+  BANNER: { ...wide("TEXT", 1, 2), headline: true, bare: true },
   KEY_MESSAGES: { family: "TEXT", w: 6, h: 3, maxH: 8 },
   QUOTE: { family: "TEXT", w: 6, h: 3, maxH: 6 },
   LEGEND_NOTES: wide("TEXT", 2, 6),
@@ -54,6 +54,7 @@ function makeBlock(kind: InfographicBlockKind): BlockDefinition<InfographicBlock
     reads: "FACTS",
     ...(spec.needsAlt ? { needsAlt: true } : {}),
     ...(spec.headline ? { headline: true } : {}),
+    ...(spec.bare ? { bare: true } : {}),
     defaults: () => ({ ...(spec.seed ?? {}) }),
     validate: (props) => { const m = sectionProblem({ ...props, kind: kind as InfographicSectionKind }); return m ? [{ message: m }] : []; },
     slots: [optionalProjectSlot()],

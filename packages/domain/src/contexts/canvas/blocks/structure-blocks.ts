@@ -16,12 +16,14 @@ export interface RepeaterProps { over: "PROJECT" | "PLACE" | "SECTOR"; limit: nu
 export interface FilterBarProps { dimensions: FilterDimension[] }
 
 const MAX_INSTRUCTION = 300;
+/** The structure blocks that are their own frame. */
+const BARE: ReadonlySet<string> = new Set(["CALLOUT", "FILTER_BAR"]);
 type Size = { w: number; h: number; minW?: number; maxH?: number };
 
 /** The one place a structure block is defined. `extra` replaces the parts a family needs differently (slots, how it resolves). */
 function make<P, M, D>(kind: string, family: BlockFamily, size: Size, seed: () => P, validate: (p: P) => BlockProblem[], extra: Partial<BlockDefinition<P, M, D>> & Pick<BlockDefinition<P, M, D>, "resolve">): BlockDefinition<P, M, D> {
   return defineBlock<P, M, D>({
-    kind, family, labelKey: `canvas.block.${kind}`, defaults: seed, validate, slots: [], lint: [],
+    kind, family, labelKey: `canvas.block.${kind}`, defaults: seed, validate, slots: [], lint: [], ...(BARE.has(kind) ? { bare: true } : {}),
     sizes: { min: { w: size.minW ?? 2, h: 1 }, max: { w: 12, h: size.maxH ?? 10 }, default: { w: size.w, h: size.h } },
     ...extra,
   });

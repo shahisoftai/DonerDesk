@@ -62,9 +62,9 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
     <div role={editing ? "button" : undefined} tabIndex={editing ? 0 : undefined} onClick={editing ? onSelect : undefined} onKeyDown={keyDown} aria-pressed={editing ? selected : undefined} aria-label={editing ? `${label}${hidden ? " (hidden)" : ""}` : undefined}
       data-block={block.id} data-kind={block.kind} data-selected={selected || undefined} data-hidden={hidden || undefined}
       className={`h-full rounded-xl ${editing ? "cursor-pointer" : ""} ${selected ? "outline outline-2 outline-offset-2 outline-sky-600" : ""} ${hidden ? "opacity-40" : ""}`}>
-      <Tile title={title} status="ready" ariaLabel={`${title}`} flush {...(changed && editing ? { subtitle: "Unsaved: figures update when you save" } : {})}>
-        <div className="h-full min-h-0 overflow-auto">{body}</div>
-      </Tile>
+      {def?.bare === true && !(drawing && widget)
+        ? <div className="h-full min-h-0 overflow-auto" aria-label={title}>{body}</div>
+        : <Tile title={title} status="ready" ariaLabel={`${title}`} flush {...(changed && editing ? { subtitle: "Unsaved: figures update when you save" } : {})}><div className="h-full min-h-0 overflow-auto">{body}</div></Tile>}
     </div>
   );
 }

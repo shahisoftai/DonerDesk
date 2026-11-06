@@ -190,3 +190,7 @@ test("a model never throws on half-filled or malformed settings; it shows what i
     }
   }
 });
+
+test("blocks that are their own frame say so, so a screen does not put a titled card around a banner", () => {
+  assert.deepEqual(KINDS.filter((k) => definitionFor(k).bare).sort(), ["BANNER", "CALLOUT", "DIVIDER", "FILTER_BAR", "HERO", "TEXT"]);
+});
