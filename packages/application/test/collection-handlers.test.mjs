@@ -220,3 +220,36 @@ test("the offline pack holds the open forms and the live places, and only for pe
   assert.deepEqual(r.value.places.map((p) => [p.id, p.path]), [["uga", "Uganda"], ["gulu", "Gulu › Uganda"]]);
   assert.equal(r.value.generatedAt, "2026-10-10T08:00:00.000Z");
 });
+
+test("pack v2 adds the typable indicators, the reporting periods and the person's own open plan for this project only", async () => {
+  const w = world();
+  const places = { list: async () => ok([]) };
+  const indicator = (id, code, extra = {}) => ({ id, code, name: `Name ${code}`, type: "NUMBER", disaggregationRequired: false, unit: "people", frequency: "MONTHLY", formula: undefined, ...extra });
+  const indicators = { findByProject: async () => ok([indicator("i1", "A1"), indicator("i2", "A2", { disaggregationRequired: true }), indicator("i3", "CALC", { formula: { kind: "TOTAL" } })]) };
+  const period = (id, start, end, status) => ({ id, reportType: "MONTHLY", duration: { start: new Date(`${start}T00:00:00Z`), end: new Date(`${end}T00:00:00Z`) }, status: { toString: () => status } });
+  const periods = { findByProject: async () => ok([period("p-oct", "2026-10-01", "2026-10-31", "APPROVED"), period("p-nov", "2026-11-01", "2026-11-30", "DRAFT")]) };
+  const planned = (id, projectId, title, start, end) => ({ item: { id, projectId, title, plannedStart: start, plannedEnd: end, status: "PLANNED", snapshot: () => ({ location: "Kondo" }) }, projectTitle: "T" });
+  let askedUntil;
+  const myWeek = { openPlannedFor: async (_u, _t, until) => { askedUntil = until; return ok([planned("a2", "p1", "Later", "2026-10-15", "2026-10-15"), planned("a1", "p1", "Hygiene", "2026-10-10", "2026-10-10"), planned("x", "other", "Elsewhere", "2026-10-10", "2026-10-10")]); } };
+  const pack = new GetOfflinePackHandler(w.forms, places, clock, { indicators, periods, myWeek });
+  const r = await pack.handle(manager, "p1");
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.value.indicators.map((i) => i.code), ["A1", "A2"], "a calculated indicator is never typed, so it is not carried");
+  assert.equal(r.value.indicators[1].disaggregationRequired, true);
+  assert.deepEqual(r.value.periods.map((p) => [p.id, p.startDate, p.endDate, p.status]), [["p-oct", "2026-10-01", "2026-10-31", "APPROVED"], ["p-nov", "2026-11-01", "2026-11-30", "DRAFT"]]);
+  assert.deepEqual(r.value.plan.map((p) => p.id), ["a1", "a2"], "this project's items only, earliest first");
+  assert.equal(r.value.plan[0].location, "Kondo");
+  assert.equal(askedUntil, "2026-10-24", "the plan looks 14 days ahead of the pack's day");
+  // Still nothing but names and dates: no figure, no person.
+  assert.deepEqual(Object.keys(r.value.indicators[0]).sort(), ["code", "disaggregationRequired", "frequency", "id", "name", "type", "unit"]);
+  assert.deepEqual(Object.keys(r.value.plan[0]).sort(), ["id", "location", "plannedEnd", "plannedStart", "status", "title"]);
+});
+
+test("a handler built without the v2 readers answers exactly as pack v1 did", async () => {
+  const w = world();
+  const r = await new GetOfflinePackHandler(w.forms, { list: async () => ok([]) }, clock).handle(manager, "p1");
+  assert.equal(r.ok, true);
+  assert.equal("indicators" in r.value, false);
+  assert.equal("periods" in r.value, false);
+  assert.equal("plan" in r.value, false);
+});

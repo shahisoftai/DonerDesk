@@ -95,7 +95,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge tone={SIGNAL_TONE[row.signal]} title={row.signalReason}>{row.signalLabel}</Badge>
-                    {changeableIds.includes(row.id) && (row.status === "PLANNED" || row.status === "IN_PROGRESS") && <MarkDoneButton itemId={row.id} title={row.title} today={today} />}
+                    {changeableIds.includes(row.id) && (row.status === "PLANNED" || row.status === "IN_PROGRESS") && <MarkDoneButton projectId={projectId} itemId={row.id} />}
                     <PlanStatusControl itemId={row.id} status={row.status} suggested={row.suggestedStatus} canChange={changeableIds.includes(row.id)} />
                   </div>
                 </li>

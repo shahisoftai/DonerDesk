@@ -5,7 +5,7 @@ import { LogframeResponseSchema, ReportingPeriodsResponseSchema } from "@/lib/se
 import { loadReportingProfileAction } from "@/lib/actions/setup";
 import { InlineError } from "@/components/feedback/PageState";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
-import { QuickEntryForm } from "@/features/reporting/presentation/QuickEntryForm";
+import { ValueFormHost } from "@/features/record/presentation/ValueFormHost";
 
 export const dynamic = "force-dynamic";
 
@@ -29,16 +29,15 @@ export default async function EnterDataPage({ params, searchParams }: { params: 
       <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
         Pick an indicator, type the value and the day it is for. DonerDesk finds the reporting period for you. To enter many values at once, use the <Link className="underline" href={`/projects/${id}/reports`}>period&rsquo;s sheet</Link>, or <Link className="underline" href={`/projects/${id}/import`}>bring in a file</Link>.
       </p>
-      <div className="mt-5">
+      <div className="mt-5 max-w-2xl">
         {canEnter ? (
-          <QuickEntryForm
+          <ValueFormHost
             projectId={id}
             indicators={logframe.value.indicators.map((i) => ({ id: i.id, code: i.code, name: i.name, unit: i.unit, type: i.type, disaggregationRequired: i.disaggregationRequired, formula: i.formula }))}
             periods={periods.value.items.map((p) => ({ id: p.id, reportType: p.reportType, startDate: p.startDate, endDate: p.endDate, cancelled: p.cancelled, status: p.status }))}
             initialIndicatorId={indicator}
-            today={new Date().toISOString().slice(0, 10)}
             simpleReview={profile.ok ? profile.value.profile?.simpleReview === true : false}
-            canVerify={ctx.capabilities.has("indicator.verify")}
+            canOpenPeriod={ctx.capabilities.has("project.edit")}
           />
         ) : (
           <InlineAlert tone="info" title="You can look but not enter">Your role cannot enter indicator values on this project. Ask a project manager for access.</InlineAlert>

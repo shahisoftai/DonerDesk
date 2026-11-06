@@ -40,7 +40,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
   const field = (
     <textarea
       ref={setRef}
-      className={cn(BASE, invalid && "border-danger-500 focus:border-danger-500 focus:ring-danger-500/30", dictate && supported && "pr-11", className)}
+      className={cn(BASE, invalid && "border-danger-500 focus:border-danger-500 focus:ring-danger-500/30", dictate && supported && "pr-11 [@media(pointer:coarse)]:pr-14", className)}
       aria-invalid={invalid || undefined}
       {...props}
     />
@@ -60,7 +60,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
         aria-pressed={listening}
         title={label}
         className={cn(
-          "absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg border text-slate-600 transition disabled:opacity-50 dark:text-slate-300",
+          "absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg border [@media(pointer:coarse)]:h-11 [@media(pointer:coarse)]:w-11 text-slate-600 transition disabled:opacity-50 dark:text-slate-300",
           listening
             ? "animate-pulse border-danger-500 bg-danger-500/10 text-danger-600"
             : "border-slate-300 bg-white hover:border-brand-400 hover:text-brand-600 dark:border-white/15 dark:bg-white/5",

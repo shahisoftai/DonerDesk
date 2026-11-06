@@ -10,7 +10,7 @@ import { cancelTaskAction, completeTaskAction } from "@/lib/actions/tasks";
 import { useActionState } from "@/lib/client/action-state";
 import { Badge } from "@/components/data/Badge";
 import { Button } from "@/components/ui/Button";
-import { askedByText, dueText, filterGroupsByProject, projectChips, totalIn } from "../domain/my-work-view";
+import { askedByText, dueText, filterGroupsByProject, filterGroupsByView, projectChips, reviewCount, totalIn, type WorkView } from "../domain/my-work-view";
 
 /**
  * One list of everything a person is responsible for, grouped Late / Today / This week / Later / No date (empty groups hidden),
@@ -20,8 +20,10 @@ export function MyWorkPanel({ data, names, userId, mine }: { data: AssignmentsRe
   const router = useRouter();
   const state = useActionState();
   const [project, setProject] = useState<string>("all");
+  const [view, setView] = useState<WorkView>("all");
+  const reviews = reviewCount(data.groups);
   const chips = projectChips(data.groups);
-  const groups = filterGroupsByProject(data.groups, project);
+  const groups = filterGroupsByProject(filterGroupsByView(data.groups, view), project);
 
   async function act(run: () => Promise<{ ok: boolean }>) {
     const done = await state.run(async () => (await run()) as never);
@@ -34,6 +36,16 @@ export function MyWorkPanel({ data, names, userId, mine }: { data: AssignmentsRe
 
   return (
     <div className="mt-4 space-y-5">
+      {reviews > 0 && (
+        <div role="group" aria-label="What to show" className="flex flex-wrap gap-2">
+          {([["all", `Everything ${data.total}`], ["review", `To review ${reviews}`]] as const).map(([key, label]) => (
+            <button key={key} type="button" aria-pressed={view === key} onClick={() => setView(key)}
+              className={`min-h-11 rounded-full px-4 text-sm font-semibold ${view === key ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200"}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       {chips.length > 1 && (
         <div role="group" aria-label="Project" className="flex flex-wrap gap-2">
           {[{ id: "all", title: "All projects", count: data.total }, ...chips].map((c) => (

@@ -320,7 +320,9 @@
 }
 
 @layer components {
-  .btn {
+  /* `btn-primary` is the name call sites use for the primary action; it was never defined, so those buttons rendered as plain text. */
+  .btn,
+  .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60;
   }
   .btn-secondary {
@@ -525,4 +527,9 @@
 .pcw-bar::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.45), transparent); animation: pcw-shimmer 1.4s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
   .pcw-pop-in, .pcw-scan, .pcw-check-pop, .pcw-bar::after { animation: none; }
+}
+
+/* The floating "saved on this device" banner sits above the phone's bottom bar when that bar is shown (Phase 44). */
+@media (max-width: 1023px) {
+  html[data-phone-bar="1"] .outbox-banner { bottom: 72px; }
 }

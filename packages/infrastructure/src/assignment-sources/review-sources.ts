@@ -69,3 +69,62 @@ export class ActivityFixAssignmentSource implements IAssignmentSource {
     })));
   }
 }
+
+/** Numbers handed in and waiting to be verified, for people who verify numbers in a project. Role-based: nobody is named. */
+export class ValueReviewAssignmentSource implements IAssignmentSource {
+  readonly kind = "VALUE_REVIEW" as const;
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async list(q: AssignmentQuery) {
+    if (!q.assigneeId) return ok([] as Assignment[]);
+    const projects = await projectsWithPermission(this.prisma, q.tenantId, q.assigneeId, "indicator.verify", q.projectId);
+    if (projects.length === 0) return ok([] as Assignment[]);
+    const rows = await this.prisma.indicatorUpdate.findMany({
+      where: { tenantId: q.tenantId.toString(), verificationStatus: "SUBMITTED", indicator: { projectId: { in: projects } } },
+      include: { indicator: { select: { code: true, name: true, projectId: true, project: { select: { title: true } } } } },
+      orderBy: { updatedAt: "asc" }, take: CAP,
+    });
+    return ok(rows.map((r): Assignment => ({
+      key: `VALUE_REVIEW:${r.id}`, kind: "VALUE_REVIEW", projectId: r.indicator.projectId, projectTitle: r.indicator.project.title,
+      title: `${r.indicator.code}: ${r.periodAchievement}`, assigneeId: q.assigneeId!,
+      state: "OPEN", urgent: false, href: `/projects/${r.indicator.projectId}/reports/${r.reportingPeriodId}/inputs?tab=indicators`, urgency: 9,
+      because: ASSIGNMENT_KINDS.VALUE_REVIEW.because!,
+    })));
+  }
+}
+
+/** Answers sent in through a collection form and not yet accepted or rejected, for people who review them. Role-based. */
+export class RecordReviewAssignmentSource implements IAssignmentSource {
+  readonly kind = "RECORD_REVIEW" as const;
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async list(q: AssignmentQuery) {
+    if (!q.assigneeId) return ok([] as Assignment[]);
+    const projects = await projectsWithPermission(this.prisma, q.tenantId, q.assigneeId, "indicator.verify", q.projectId);
+    if (projects.length === 0) return ok([] as Assignment[]);
+    // One row per form, not per record: a morning's worth of answers is one thing to look at.
+    const groups = await this.prisma.collectionRecord.groupBy({
+      by: ["formId", "projectId"],
+      where: { tenantId: q.tenantId.toString(), projectId: { in: projects }, status: "PENDING" },
+      _count: { _all: true },
+      orderBy: { formId: "asc" },
+      take: CAP,
+    });
+    if (groups.length === 0) return ok([] as Assignment[]);
+    const forms = await this.prisma.collectionForm.findMany({ where: { id: { in: groups.map((g) => g.formId) } }, select: { id: true, name: true } });
+    const titles = await this.prisma.project.findMany({ where: { id: { in: [...new Set(groups.map((g) => g.projectId))] } }, select: { id: true, title: true } });
+    const byId = new Map(forms.map((f) => [f.id, f]));
+    const titleOf = new Map(titles.map((p) => [p.id, p.title]));
+    return ok(groups.flatMap((g): Assignment[] => {
+      const form = byId.get(g.formId);
+      const projectTitle = titleOf.get(g.projectId);
+      if (!form || !projectTitle) return [];
+      return [{
+        key: `RECORD_REVIEW:${g.formId}`, kind: "RECORD_REVIEW", projectId: g.projectId, projectTitle,
+        title: `${form.name} · ${g._count._all}`, assigneeId: q.assigneeId!,
+        state: "OPEN", urgent: false, href: `/projects/${g.projectId}/forms/${g.formId}`, urgency: 8,
+        because: ASSIGNMENT_KINDS.RECORD_REVIEW.because!,
+      }];
+    }));
+  }
+}

@@ -3,6 +3,7 @@
  * depends on a number has `.one` / `.other` forms; `{name}` is filled in at run time. Every other language must have every key here
  * (a type check and a test enforce it), with the same `{placeholders}`.
  */
+import { recordEn } from "./record-en.ts";
 export const en = {
   "language.label": "Language",
 
@@ -698,6 +699,7 @@ export const en = {
   "maps.boundary.upload": "Upload boundaries",
   "maps.boundary.uploading": "Uploading…",
   "maps.sources.link": "Map sources and licences",
+  ...recordEn,
 } as const;
 
 export type MessageKey = keyof typeof en;

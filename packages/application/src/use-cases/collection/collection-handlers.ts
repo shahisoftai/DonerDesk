@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  DomainError, PlaceRegistry, Permissions, formFromIndicator, effectiveIndicatorSemantics, resolvePlace, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
+  DomainError, PlaceRegistry, Permissions, formFromIndicator, effectiveIndicatorSemantics, resolvePlace, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, addDays, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
   type FormDefinition, type FormField, type RecordAggregation, type RecordMapping, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { ApplyRecordsInput, CreateCollectionLinkInput, PublicSubmitInput, ReviewRecordInput, SaveCollectionFormInput, SubmitRecordInput } from "@donordesk/contracts";
@@ -10,6 +10,7 @@ import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../por
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
 import type { IStorage } from "../../ports/infrastructure.js";
 import type { IPlaceRepository } from "../../ports/places.js";
+import type { IMyWeekReader } from "../../ports/workplan.js";
 import type {
   CollectionFormStatus, ICollectionFileRepository, StoredCollectionFile, ICollectionFormRepository, ICollectionLinkRepository, ICollectionRecordRepository, StoredCollectionForm, StoredCollectionLink, StoredCollectionRecord,
 } from "../../ports/collection.js";
@@ -603,14 +604,32 @@ export interface OfflinePackDto {
   forms: Array<{ id: string; name: string; description?: string; fields: FormField[] }>;
   /** The live places, for place questions: an id, a name and the path that tells two of the same name apart. */
   places: Array<{ id: string; name: string; path: string }>;
+  /**
+   * Pack v2 (Phase 44), present only when the handler was given the readers. The numbers the person may type (calculated ones left
+   * out), the project's reporting periods (so a day can be matched to one with no connection) and the person's OWN open planned
+   * items for the next 14 days. Still no recorded values, no people and no files.
+   */
+  indicators?: Array<{ id: string; code: string; name: string; type: string; disaggregationRequired: boolean; unit?: string; frequency?: string }>;
+  periods?: Array<{ id: string; reportType: string; startDate: string; endDate: string; status: string }>;
+  plan?: Array<{ id: string; title: string; plannedStart: string; plannedEnd: string; status: string; location?: string }>;
 }
+
+/** The readers pack v2 needs. All optional: a handler built without them answers exactly as pack v1 did. */
+export interface OfflinePackReaders {
+  indicators?: Pick<IIndicatorRepository, "findByProject">;
+  periods?: Pick<IReportingPeriodRepository, "findByProject">;
+  myWeek?: Pick<IMyWeekReader, "openPlannedFor">;
+}
+
+/** How far ahead the pack carries the person's own planned items. */
+export const PACK_PLAN_DAYS_AHEAD = 14;
 
 /**
  * What a phone needs to fill a project's forms with no connection: the open forms and the places list. Only people who may submit
  * records get it; it holds no records, no figures and no people, so a lost phone gives away the questions and place names only.
  */
 export class GetOfflinePackHandler {
-  constructor(private readonly forms: ICollectionFormRepository, private readonly places: IPlaceRepository, private readonly clock: IClock) {}
+  constructor(private readonly forms: ICollectionFormRepository, private readonly places: IPlaceRepository, private readonly clock: IClock, private readonly readers: OfflinePackReaders = {}) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<OfflinePackDto, DomainError>> {
     if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
@@ -618,12 +637,38 @@ export class GetOfflinePackHandler {
     if (!listed.ok) return listed;
     if (!all.ok) return all;
     const registry = new PlaceRegistry(all.value.map(({ tenantId: _t, createdById: _c, archivedAt: _a, ...record }) => record));
-    return ok({
+    const dto: OfflinePackDto = {
       projectId,
       generatedAt: this.clock.now().toISOString(),
       forms: listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({ id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields] })),
       places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id) })),
-    });
+    };
+
+    if (this.readers.indicators) {
+      const found = await this.readers.indicators.findByProject(projectId, ctx.tenant.tenantId);
+      if (!found.ok) return found;
+      dto.indicators = found.value
+        .filter((i) => !i.formula)
+        .map((i) => ({ id: i.id, code: i.code, name: i.name, type: String(i.type), disaggregationRequired: i.disaggregationRequired, ...(i.unit ? { unit: i.unit } : {}), ...(i.frequency ? { frequency: i.frequency } : {}) }));
+    }
+    if (this.readers.periods) {
+      const found = await this.readers.periods.findByProject(projectId, ctx.tenant.tenantId);
+      if (!found.ok) return found;
+      dto.periods = found.value.map((p) => ({ id: p.id, reportType: String(p.reportType), startDate: p.duration.start.toISOString().slice(0, 10), endDate: p.duration.end.toISOString().slice(0, 10), status: p.status.toString() }));
+    }
+    if (this.readers.myWeek) {
+      const today = toPlainDate(this.clock.now())!;
+      const open = await this.readers.myWeek.openPlannedFor(ctx.tenant.userId, ctx.tenant.tenantId, addDays(today, PACK_PLAN_DAYS_AHEAD));
+      if (!open.ok) return open;
+      dto.plan = open.value
+        .filter(({ item }) => item.projectId === projectId)
+        .map(({ item }) => {
+          const location = item.snapshot().location;
+          return { id: item.id, title: item.title, plannedStart: item.plannedStart, plannedEnd: item.plannedEnd, status: item.status, ...(location ? { location } : {}) };
+        })
+        .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title));
+    }
+    return ok(dto);
   }
 }
 

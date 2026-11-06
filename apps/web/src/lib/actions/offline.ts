@@ -14,6 +14,10 @@ const PackSchema = z.object({
   projectId: z.string(), generatedAt: z.string(),
   forms: z.array(z.object({ id: z.string(), name: z.string(), description: z.string().optional(), fields: z.array(FormFieldViewSchema) })),
   places: z.array(z.object({ id: z.string(), name: z.string(), path: z.string() })),
+  // Pack v2: absent from an older server, so each part is optional.
+  indicators: z.array(z.object({ id: z.string(), code: z.string(), name: z.string(), type: z.string(), disaggregationRequired: z.boolean(), unit: z.string().optional(), frequency: z.string().optional() })).optional(),
+  periods: z.array(z.object({ id: z.string(), reportType: z.string(), startDate: z.string(), endDate: z.string(), status: z.string() })).optional(),
+  plan: z.array(z.object({ id: z.string(), title: z.string(), plannedStart: z.string(), plannedEnd: z.string(), status: z.string(), location: z.string().optional() })).optional(),
 });
 
 /** The projects whose forms the signed-in person can fill, for the "download for offline" list. */
@@ -34,6 +38,6 @@ export async function downloadOfflinePackAction(projectId: string, projectName: 
   if (!result.ok) return result;
   return {
     ok: true,
-    value: packFromServer({ userId: payload.sub, userName: payload.name ?? "", projectId, projectName, generatedAt: result.value.generatedAt, forms: result.value.forms as never, places: result.value.places }),
+    value: packFromServer({ userId: payload.sub, userName: payload.name ?? "", projectId, projectName, generatedAt: result.value.generatedAt, forms: result.value.forms as never, places: result.value.places, indicators: result.value.indicators, periods: result.value.periods, plan: result.value.plan }),
   };
 }

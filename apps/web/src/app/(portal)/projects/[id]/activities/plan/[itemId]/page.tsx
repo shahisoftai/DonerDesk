@@ -71,7 +71,7 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
         <div className="flex flex-wrap items-center gap-3">
           <Badge tone={SIGNAL_TONE[row.signal]} title={row.signalReason}>{row.signalLabel}</Badge>
           {row.signalReason && <span className="text-xs text-slate-500">{row.signalReason}</span>}
-          {canChange && (row.status === "PLANNED" || row.status === "IN_PROGRESS") && <MarkDoneButton itemId={row.id} title={row.title} today={data.today} size="md" />}
+          {canChange && (row.status === "PLANNED" || row.status === "IN_PROGRESS") && <MarkDoneButton projectId={id} itemId={row.id} size="md" />}
           <PlanStatusControl itemId={row.id} status={row.status} suggested={row.suggestedStatus} canChange={canChange} />
         </div>
         <PlanItemMenu

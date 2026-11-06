@@ -60,7 +60,7 @@ import { TaskAssignmentSource } from "./assignment-sources/task-source.js";
 import { PlanItemAssignmentSource } from "./assignment-sources/plan-item-source.js";
 import { ChecklistAssignmentSource } from "./assignment-sources/checklist-source.js";
 import { ReportDeadlineAssignmentSource } from "./assignment-sources/report-deadline-source.js";
-import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource } from "./assignment-sources/review-sources.js";
+import { EvidenceReviewAssignmentSource, ActivityReviewAssignmentSource, ActivityFixAssignmentSource, ValueReviewAssignmentSource, RecordReviewAssignmentSource } from "./assignment-sources/review-sources.js";
 import { PrismaPortfolioValueReader } from "./repositories/portfolio.js";
 import { PrismaDeliveryFactsReader } from "./repositories/workplan.js";
 import {
@@ -103,6 +103,7 @@ import { PrismaPlaceRepository, PrismaPlaceUsageReader } from "./repositories/pl
 import { PrismaCollectionFormRepository, PrismaCollectionRecordRepository, PrismaCollectionLinkRepository, PrismaCollectionFileRepository } from "./repositories/collection.js";
 import { PrismaTrialStatus } from "./repositories/trial-status.js";
 import { PrismaBudgetRepository } from "./repositories/work-plan/budget.js";
+import { PrismaMyWeekReader } from "./repositories/work-plan/my-week.js";
 import { PrismaDashboardRepository, PrismaDashboardLinkRepository, PrismaSavedChartRepository, PrismaBookmarkRepository, PrismaHomePinRepository, PrismaHomeLayoutRepository, PrismaMapOverlayRepository, PrismaFeaturedDashboardRepository, PrismaSavedReportRepository, PrismaDashboardTemplateRepository } from "./repositories/dashboards.js";
 import { EnvConnectorSecrets, PrismaDataConnectorRepository, SafeConnectorHttp } from "./integrations/connector-adapters.js";
 import { PrismaApiKeyRepository, PrismaWebhookRepository } from "./repositories/integrations.js";
@@ -1284,7 +1285,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const riskRefresh = new RefreshProjectRiskHandler(projects, projectHealth, checklist, periods, riskTrendStore, audits);
   const assignmentQueue = new AssignmentQueue([
     new PlanItemAssignmentSource(prisma), new TaskAssignmentSource(prisma), new ChecklistAssignmentSource(prisma), new ReportDeadlineAssignmentSource(prisma),
-    new ActivityFixAssignmentSource(prisma), new EvidenceReviewAssignmentSource(prisma), new ActivityReviewAssignmentSource(prisma),
+    new ActivityFixAssignmentSource(prisma), new EvidenceReviewAssignmentSource(prisma), new ActivityReviewAssignmentSource(prisma), new ValueReviewAssignmentSource(prisma), new RecordReviewAssignmentSource(prisma),
     new IndicatorValueAssignmentSource(collectionFacts), new RiskReviewAssignmentSource(prisma),
   ]);
   const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits, taskReconciler);
@@ -1647,7 +1648,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     }, places, collectionFiles),
     uploadCollectionFile: new UploadCollectionFileHandler(ids, collectionForms, collectionFiles, storage, clock),
     getCollectionFile: new GetCollectionFileHandler(collectionFiles, storage),
-    getOfflinePack: new GetOfflinePackHandler(collectionForms, places, clock),
+    getOfflinePack: new GetOfflinePackHandler(collectionForms, places, clock, { indicators, periods, myWeek: new PrismaMyWeekReader(prisma) }),
     listDashboards: new ListDashboardsHandler(dashboards),
     getDashboard: new GetDashboardHandler(dashboards),
     saveDashboard,

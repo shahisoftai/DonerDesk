@@ -111,7 +111,7 @@ export default async function ReportInputsPage({
   const tabs: Array<{ id: Tab; label: string; count: string }> = [
     { id: "indicators", label: "Indicators", count: indicators.length > 0 ? `${verified}/${indicators.length} verified` : "none yet" },
     { id: "story", label: "Story", count: `${countStoryAnswers(story)}/5 answered${complianceNotesResult.ok && complianceNotesResult.value.missingCount > 0 ? ` · ${complianceNotesResult.value.missingCount} to do` : ""}` },
-    { id: "import", label: "Import", count: `${evidenceCount} evidence file${evidenceCount === 1 ? "" : "s"}` },
+    { id: "import", label: "Files", count: `${evidenceCount} evidence file${evidenceCount === 1 ? "" : "s"}` },
     ...(hasScope ? [{ id: "scope" as const, label: "Covers", count: "what it is about" }] : []),
     ...(finance
       ? [{ id: "finance" as const, label: "Finance", count: finance.mode === "DISABLED" ? "off" : !finance.summary ? "none yet" : finance.summary.verified ? "verified" : "not verified" }]

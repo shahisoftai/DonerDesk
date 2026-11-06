@@ -37,8 +37,9 @@ export function parseActivityDraft(raw: unknown): ActivityDraft | null {
   return draft;
 }
 
+/** A date alone is not typed content: the form starts on today, so an untouched form must not be offered back as an unfinished one. */
 export function hasActivityDraftInput(draft: ActivityDraft): boolean {
-  return ACTIVITY_DRAFT_FIELDS.some((f) => draft[f].trim() !== "");
+  return ACTIVITY_DRAFT_FIELDS.some((f) => f !== "activityDate" && draft[f].trim() !== "");
 }
 
 /** One draft per project, so two projects never offer each other's text. */

@@ -1463,7 +1463,7 @@ export type MyWeek = z.infer<typeof MyWeekSchema>;
 // ---- Requests, assignments, team work (Phase 28.3) ----
 const AssignmentSchema = z.object({
   key: z.string(),
-  kind: z.enum(["PLAN_ITEM", "TASK", "CHECKLIST_ITEM", "REPORT_DEADLINE", "EVIDENCE_REVIEW", "ACTIVITY_REVIEW", "ACTIVITY_FIX", "INDICATOR_VALUE", "RISK_REVIEW"]),
+  kind: z.enum(["PLAN_ITEM", "TASK", "CHECKLIST_ITEM", "REPORT_DEADLINE", "EVIDENCE_REVIEW", "ACTIVITY_REVIEW", "ACTIVITY_FIX", "INDICATOR_VALUE", "RISK_REVIEW", "VALUE_REVIEW", "RECORD_REVIEW"]),
   projectId: z.string(),
   projectTitle: z.string(),
   title: z.string(),

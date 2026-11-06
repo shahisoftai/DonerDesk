@@ -1,20 +1,9 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { createActivityAction } from "@/lib/actions/activities";
-import { uploadEvidenceAction } from "@/lib/actions/evidence";
-import { guardNetwork } from "@/lib/shared/connectivity";
-import { createActivitySender } from "../domain/activity-outbox";
-import { ACTIVITY_KIND } from "../domain/activity-outbox";
-import { PLAN_STATUS_KIND, createPlanStatusSender } from "../domain/plan-status-outbox";
-import { INDICATOR_VALUES_KIND, createIndicatorValuesSender } from "../domain/indicator-values-outbox";
-import { PROGRESS_LOG_KIND, createProgressSender } from "../domain/progress-outbox";
-import { changePlanStatusAction, saveProgressAction } from "@/lib/actions/workplan";
-import { submitCollectionRecordAction } from "@/lib/actions/collection";
-import { bulkSaveIndicatorUpdatesAction, type BulkSaveRow } from "@/lib/actions/indicators";
-import { COLLECTION_RECORD_KIND, createCollectionRecordSender } from "../domain/collection-outbox";
 import { createMemoryOutboxStore, createSerialFlusher, retryEntry, summarise, type OutboxEntry, type OutboxSender, type OutboxStore } from "../domain/outbox";
 import { canUseDurableOutbox, createIndexedDbOutboxStore } from "../infrastructure/indexeddb-outbox-store";
+import { createOutboxSender } from "../infrastructure/outbox-senders";
 
 export interface OutboxApi {
   /** False where nothing can be kept on the device; callers then behave exactly as before (no offline saving). */
@@ -58,31 +47,7 @@ export function OutboxProvider({ scope, children }: { scope: string; children: R
     [supported, scope],
   );
   const flush = useMemo(() => {
-    const senders: Record<string, OutboxSender> = {
-      [ACTIVITY_KIND]: createActivitySender({
-        createActivity: (input, options) => guardNetwork(() => createActivityAction(input, options)),
-        uploadEvidence: (form) => guardNetwork(() => uploadEvidenceAction(form)),
-      }),
-      [PROGRESS_LOG_KIND]: createProgressSender({ save: (itemId, input) => guardNetwork(() => saveProgressAction(itemId, input)) }),
-      [COLLECTION_RECORD_KIND]: createCollectionRecordSender({
-        uploadFile: (formId, file) => guardNetwork(async () => {
-          const body = new FormData();
-          body.set("file", file);
-          const response = await fetch(`/api/collection-forms/${encodeURIComponent(formId)}/files`, { method: "POST", body });
-          const json = (await response.json().catch(() => null)) as { id?: string; title?: string; detail?: string } | null;
-          if (response.ok && json?.id) return { ok: true as const, value: { id: json.id } };
-          const message = json?.detail ?? json?.title ?? "That file could not be sent.";
-          if (response.status === 401) return { ok: false as const, error: { kind: "unauthenticated" as const, message } };
-          if (response.status >= 500 || response.status === 429) return { ok: false as const, error: { kind: "unavailable" as const, message, retryable: true } };
-          return { ok: false as const, error: { kind: "validation" as const, message, fields: {} } };
-        }),
-        submit: (formId, input) => guardNetwork(() => submitCollectionRecordAction(formId, input)),
-      }),
-      [PLAN_STATUS_KIND]: createPlanStatusSender({ changeStatus: (itemId, input) => guardNetwork(() => changePlanStatusAction(itemId, input)) }),
-      [INDICATOR_VALUES_KIND]: createIndicatorValuesSender({ bulkSave: (periodId, rows) => guardNetwork(() => bulkSaveIndicatorUpdatesAction(periodId, rows as BulkSaveRow[])) }),
-    };
-    const send: OutboxSender = (entry, save) =>
-      senders[entry.kind]?.(entry, save) ?? Promise.resolve({ kind: "rejected" as const, message: "This kind of saved record is no longer supported." });
+    const send: OutboxSender = createOutboxSender();
     return createSerialFlusher(store, send);
   }, [store]);
 

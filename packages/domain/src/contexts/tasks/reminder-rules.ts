@@ -29,6 +29,8 @@ export const REMINDER_RULES: Readonly<Record<AssignmentKind, ReadonlyArray<Remin
   ACTIVITY_FIX: [],
   EVIDENCE_REVIEW: [],
   ACTIVITY_REVIEW: [],
+  VALUE_REVIEW: [],
+  RECORD_REVIEW: [],
 };
 
 /** Whole days past the due date (0 when not past). */

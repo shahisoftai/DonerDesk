@@ -4,7 +4,7 @@
  * storage), so keeping it is safe. It never stores signed-in pages, API responses or anything under /v1, /api or /internal,
  * so no project data is kept by the worker; the offline packs live in the page's own IndexedDB and are removed on sign-out.
  */
-const VERSION = "donordesk-shell-v2";
+const VERSION = "donordesk-shell-v3";
 const FIELD_PAGE = "/field";
 const SHELL = ["/offline.html"];
 const NEVER_CACHE = ["/api", "/v1", "/internal"];

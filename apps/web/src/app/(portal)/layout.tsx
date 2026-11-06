@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { NOINDEX_METADATA } from "@/lib/seo";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { navFor } from "@/features/navigation/domain/role-navigation";
+import { homeVariantFor, navFor } from "@/features/navigation/domain/role-navigation";
 import { translateNav } from "@/features/i18n/domain/nav-keys";
 import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
 import { getLocale, getTranslator } from "@/lib/server/locale";
@@ -16,6 +16,8 @@ import { ToastProvider } from "@/components/feedback/Toast";
 import { TourOverlay } from "@/features/tour/presentation/TourOverlay";
 import { OutboxProvider } from "@/features/offline/presentation/OutboxProvider";
 import { OutboxBanner } from "@/features/offline/presentation/OutboxBanner";
+import { RecordHost } from "@/features/record/presentation/RecordHost";
+import { RECORD_KINDS } from "@/features/record/domain/record-kinds";
 
 export const dynamic = "force-dynamic";
 export const metadata = NOINDEX_METADATA;
@@ -49,6 +51,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     }
   }
 
+  const canRecord = RECORD_KINDS.some((k) => k.anyOf.some((c) => hasCapability(ctx, c)));
   const orgName = orgResult.ok ? (orgResult.value.name ?? "") : "";
   const identity = decodeSessionPayload(ctx.token);
   const user = { name: identity?.name ?? "", email: identity?.email ?? "" };
@@ -66,11 +69,14 @@ export default async function PortalLayout({ children }: { children: ReactNode }
     <I18nProvider initialLocale={locale}>
     <ToastProvider>
       <OutboxProvider scope={identity?.sub ?? user.email ?? "user"}>
+      <RecordHost capabilities={[...ctx.capabilities]}>
       <AppShell
         orgName={orgName}
         user={user}
         navItems={navItems}
         canCreate={hasCapability(ctx, "project.create")}
+        canRecord={canRecord}
+        phoneBar={canRecord && homeVariantFor(ctx.role) === "FIELD"}
         bellItems={bellItems}
       >
         {mfaResult.ok && mfaResult.value.requirement === "REQUIRED_SOON" && mfaResult.value.requiredFrom && (
@@ -80,6 +86,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         )}
         {children}
       </AppShell>
+      </RecordHost>
       <TourOverlay />
       <OutboxBanner />
       </OutboxProvider>

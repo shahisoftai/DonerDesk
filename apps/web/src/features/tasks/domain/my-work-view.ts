@@ -50,3 +50,20 @@ export function askedByText(item: Pick<AssignmentItem, "kind" | "askedById">, us
 export function totalIn(groups: ReadonlyArray<{ items: unknown[] }>): number {
   return groups.reduce((n, g) => n + g.items.length, 0);
 }
+
+/**
+ * The reviews that reach a person because of their role: numbers to verify, form records to look at, completed activities to accept
+ * and files to check. "To review" shows just these, so a manager's inbox of what others handed in is one tap away. They are the same
+ * assignments as everything else in My Work, filtered: there is no second queue.
+ */
+export const REVIEW_KINDS: ReadonlyArray<string> = ["VALUE_REVIEW", "RECORD_REVIEW", "ACTIVITY_REVIEW", "EVIDENCE_REVIEW"];
+export type WorkView = "all" | "review";
+
+export function filterGroupsByView<G extends { items: WorkItemShape[] }>(groups: ReadonlyArray<G>, view: WorkView): G[] {
+  if (view === "all") return [...groups];
+  return groups.map((g) => ({ ...g, items: g.items.filter((i) => REVIEW_KINDS.includes(i.kind)) })).filter((g) => g.items.length > 0);
+}
+
+export function reviewCount(groups: ReadonlyArray<{ items: WorkItemShape[] }>): number {
+  return groups.reduce((n, g) => n + g.items.filter((i) => REVIEW_KINDS.includes(i.kind)).length, 0);
+}

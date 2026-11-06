@@ -224,6 +224,7 @@ export function EvidenceUploadQueue({
           <div className="flex gap-2">
             <Input
               id="driveLink"
+              aria-label="Google Drive link or file ID"
               value={driveLink}
               onChange={(e) => {
                 setDriveLink(e.target.value);

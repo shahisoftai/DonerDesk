@@ -1,11 +1,11 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { getProject } from "@/lib/server/project-queries";
 import { Breadcrumbs } from "@/components/data/Breadcrumbs";
 import { Tabs } from "@/components/data/Tabs";
 import { InlineError } from "@/components/feedback/PageState";
+import { RecordButton } from "@/features/record/presentation/RecordButton";
 import { ProjectLifecycleBanner } from "@/features/projects/presentation/ProjectLifecycleBanner";
 import { formatDate } from "@/lib/shared/dates";
 
@@ -47,16 +47,20 @@ export default async function ProjectLayout({ params, children }: { params: Prom
       <Breadcrumbs items={[{ label: "Projects", href: "/projects" }, { label: project.title }]} />
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">{project.title}</h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+          {/* On a phone the header must not push the page's first field below the fold: two title lines, one meta line (Phase 44). */}
+          <h1 className="line-clamp-2 text-lg font-semibold tracking-tight sm:line-clamp-none sm:text-xl">{project.title}</h1>
+          <p className="mt-1 truncate text-sm text-slate-500 sm:hidden dark:text-slate-400">
+            {project.projectCode} · {project.country}
+          </p>
+          <p className="mt-1 hidden text-sm text-slate-500 sm:block dark:text-slate-400">
             {project.projectCode} · {project.donorName} · {project.country} · {project.sector}
           </p>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="mt-1 hidden text-xs text-slate-400 sm:block">
             {formatDate(project.startDate)} – {formatDate(project.endDate)} · {project.reportingFrequency.replace(/_/g, " ").toLowerCase()} reporting
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {ctx.capabilities.has("indicator.update") && <Link className="btn-primary" href={`/projects/${project.id}/enter`}>Enter data</Link>}
+          {ctx.capabilities.has("indicator.update") && <RecordButton projectId={project.id} kind="NUMBER" />}
           <span className="tag tag-blue">{project.status.replace(/_/g, " ")}</span>
         </div>
       </div>

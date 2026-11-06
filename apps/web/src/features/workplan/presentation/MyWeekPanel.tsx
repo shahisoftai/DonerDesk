@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/Select";
 import { groupMyWeek } from "../domain/my-week";
 import { monthCells, weekCells } from "../domain/calendar-layout";
 import { PlanStatusControl } from "./PlanStatusControl";
+import { useRecordSheet } from "@/features/record/presentation/RecordHost";
 
 const SIGNAL_TONE = { ON_TIME: "success", LATE: "danger", DONE: "neutral", CANCELLED: "neutral" } as const;
 type Layout = "list" | "week" | "month";
@@ -23,8 +24,8 @@ function dates(start: string, end: string, today: string): string {
 /** Where "Add completed activity" goes: straight there for one project, a choice for several. */
 function AddCompleted({ projects }: { projects: Array<{ id: string; title: string }> }) {
   const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
+  const record = useRecordSheet();
   if (projects.length === 0) return null;
-  const href = `/projects/${projectId}/activities/new`;
   return (
     <div className="flex flex-wrap items-center gap-2">
       {projects.length > 1 && (
@@ -35,7 +36,7 @@ function AddCompleted({ projects }: { projects: Array<{ id: string; title: strin
           {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
         </Select>
       )}
-      <Link className="btn text-base" href={href}>{WORKPLAN_COPY.addCompleted}</Link>
+      <button type="button" className="btn min-h-[52px] text-base" onClick={() => record.open({ projectId, kind: "ACTIVITY" })}>{WORKPLAN_COPY.addCompleted}</button>
     </div>
   );
 }

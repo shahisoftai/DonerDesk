@@ -7,10 +7,13 @@ import Image from "next/image";
 import { cn } from "@/components/ui/cn";
 import { SkipLink } from "./SkipLink";
 import { SideNav } from "./SideNav";
+import { PhoneTabBar } from "./PhoneTabBar";
 import { NotificationBell, type BellItem } from "./NotificationBell";
 import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LocaleSwitcher } from "@/features/i18n/presentation/LocaleSwitcher";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { useRecordSheet } from "@/features/record/presentation/RecordHost";
 import { BookmarkButton } from "@/features/bookmarks/presentation/BookmarkButton";
 import { AcademyHeaderButton } from "@/features/tour/presentation/AcademyHeaderButton";
 import { useStartOrResumeTour } from "@/features/tour/presentation/useStartOrResumeTour";
@@ -23,6 +26,8 @@ export function AppShell({
   user,
   navItems,
   canCreate,
+  canRecord = false,
+  phoneBar = false,
   bellItems,
   children,
 }: {
@@ -30,6 +35,10 @@ export function AppShell({
   user: { name: string; email: string } | null;
   navItems: Array<{ href: string; label: string; group?: string }>;
   canCreate: boolean;
+  /** The person may record something (a number, an activity, a file, an expense or a form answer). */
+  canRecord?: boolean;
+  /** Show the phone's bottom bar (Today, Record, Waiting, More): for people whose home is the field home. */
+  phoneBar?: boolean;
   bellItems: BellItem[];
   children: ReactNode;
 }) {
@@ -155,7 +164,7 @@ export function AppShell({
             </Link>
             <BookmarkButton />
             <AcademyHeaderButton />
-            {canCreate && <CreateMenu />}
+            <RecordMenu canCreate={canCreate} canRecord={canRecord} />
             <LocaleSwitcher />
             <ThemeToggle />
             <NotificationBell items={bellItems} />
@@ -178,10 +187,12 @@ export function AppShell({
           </div>
         </aside>
 
-        <main id="main-content" className="min-w-0 flex-1 py-6" tabIndex={-1}>
+        <main id="main-content" className={cn("min-w-0 flex-1 py-6", phoneBar && "pb-28 lg:pb-6")} tabIndex={-1}>
           {children}
         </main>
       </div>
+
+      {phoneBar && <PhoneTabBar />}
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
@@ -208,13 +219,41 @@ export function AppShell({
   );
 }
 
-function CreateMenu() {
+/**
+ * The header's one menu (Phase 44): "Record" opens the Record sheet; "Create" keeps what the old menu offered. A person who can only
+ * record gets a single button that opens the sheet; one who can only create gets the old menu; one who can do both gets both under
+ * two headings. It is on every screen size, so recording is never more than a tap away.
+ */
+function RecordMenu({ canCreate, canRecord }: { canCreate: boolean; canRecord: boolean }) {
+  const record = useRecordSheet();
+  const { t } = useI18n();
+  const menu = useRef<HTMLDetailsElement>(null);
+  const close = () => { if (menu.current) menu.current.open = false; };
+  const plus = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>;
+
+  if (!canRecord && !canCreate) return null;
+  if (canRecord && !canCreate) {
+    return (
+      <button type="button" className="btn min-h-11 gap-1.5 px-3 text-sm" aria-label={t("record.button")} onClick={() => record.open()}>
+        {plus}<span className="hidden sm:inline">{t("record.button")}</span>
+      </button>
+    );
+  }
   return (
-    <details className="group relative hidden sm:block">
-      <summary className="btn cursor-pointer list-none px-3 text-xs">+ Create</summary>
-      <div className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-slate-900">
-        <Link href="/projects/new" className="block rounded-lg px-3 py-2 text-sm font-medium hover:bg-slate-100 dark:hover:bg-white/5">New project</Link>
-        <Link href="/projects" className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">Choose a project to add a report, activity, or evidence</Link>
+    <details ref={menu} className="group relative">
+      <summary className="btn min-h-11 cursor-pointer list-none gap-1.5 px-3 text-sm" aria-label={canRecord ? t("record.button") : "Create"}>
+        {plus}<span className="hidden sm:inline">{canRecord ? t("record.button") : "Create"}</span>
+      </summary>
+      <div className="absolute right-0 top-12 z-50 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-slate-900">
+        {canRecord && (
+          <>
+            <p className="px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("record.button")}</p>
+            <button type="button" className="block min-h-11 w-full rounded-lg px-3 py-2 text-start text-sm font-medium hover:bg-slate-100 dark:hover:bg-white/5" onClick={() => { close(); record.open(); }}>{t("record.sheet.chooseWhat")}</button>
+            <p className="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wide text-slate-500">Create</p>
+          </>
+        )}
+        <Link href="/projects/new" onClick={close} className="block min-h-11 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-slate-100 dark:hover:bg-white/5">New project</Link>
+        <Link href="/projects" onClick={close} className="block rounded-lg px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-white/5">Choose a project to add a report, activity, or evidence</Link>
       </div>
     </details>
   );

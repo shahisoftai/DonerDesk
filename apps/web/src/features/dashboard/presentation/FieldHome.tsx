@@ -8,6 +8,7 @@ import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { loadDashboard } from "../application/dashboard-read-model";
 import { loadWorkItems } from "@/features/work-items/application/work-items-read-model";
 import { workItemHref, workItemMeta, workItemTitle } from "@/features/work-items/presentation/work-items-view";
+import { RecordCard } from "@/features/record/presentation/RecordCard";
 import { MyWeekPanel } from "@/features/workplan/presentation/MyWeekPanel";
 import { Badge } from "@/components/data/Badge";
 import { InlineError } from "@/components/feedback/PageState";
@@ -44,6 +45,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
         subtitle="Your planned work, what needs fixing, and the quickest ways to record what you did."
         actions={<Link className="btn-secondary" href="/my-work">Open My Work</Link>}
       />
+      <RecordCard capabilities={[...ctx.capabilities]} />
       {!week.ok && <InlineError title={week.error.message} referenceId={week.error.referenceId} />}
       {week.ok && <MyWeekPanel week={week.value} projects={projects.map((p) => ({ id: p.id, title: p.title }))} />}
       <HomePinsPanel />

@@ -1,4 +1,5 @@
 import type { MessageKey } from "./en.ts";
+import { recordEs } from "./record-es.ts";
 
 /** Spanish. Drafted for review by a native speaker of the sector before it is relied on. */
 export const es: Record<MessageKey, string> = {
@@ -696,4 +697,5 @@ export const es: Record<MessageKey, string> = {
   "maps.boundary.upload": "Subir límites",
   "maps.boundary.uploading": "Subiendo…",
   "maps.sources.link": "Fuentes y licencias de los mapas",
+  ...recordEs,
 };

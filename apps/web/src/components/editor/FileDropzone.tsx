@@ -58,6 +58,8 @@ export function FileDropzone({
         id={inputId}
         type="file"
         className="sr-only"
+        aria-label={label ?? "Upload files"}
+        tabIndex={-1}
         accept={accept}
         multiple={multiple}
         onChange={(event) => {

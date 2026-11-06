@@ -19,8 +19,39 @@ export interface PackPlace {
   path: string;
 }
 
+/** Pack v2 (Phase 44): a number the person may type. Calculated indicators are never carried. */
+export interface PackIndicator {
+  id: string;
+  code: string;
+  name: string;
+  type: string;
+  disaggregationRequired: boolean;
+  unit?: string;
+  frequency?: string;
+}
+
+/** A reporting period, so a day can be matched to one with no connection. */
+export interface PackPeriod {
+  id: string;
+  reportType: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
+/** One of the person's own open planned items for the next 14 days. */
+export interface PackPlanItem {
+  id: string;
+  title: string;
+  plannedStart: string;
+  plannedEnd: string;
+  status: string;
+  location?: string;
+}
+
 export interface OfflinePack {
-  version: 1;
+  /** 1 = forms and places only (Phase 33.6). 2 adds the parts below. A v1 pack still fills forms. */
+  version: 1 | 2;
   /** Who downloaded it: a pack is only ever shown to, and sent by, this person. */
   userId: string;
   userName: string;
@@ -30,6 +61,10 @@ export interface OfflinePack {
   generatedAt: number;
   forms: PackForm[];
   places: PackPlace[];
+  /** v2 parts. Absent on a v1 pack, or when the server was older: then numbers and the plan need a connection. */
+  indicators?: PackIndicator[];
+  periods?: PackPeriod[];
+  plan?: PackPlanItem[];
 }
 
 export interface PackStore {
@@ -57,12 +92,27 @@ export function describePackFreshness(pack: Pick<OfflinePack, "generatedAt">, no
 /** Builds a pack from the server's answer. Dates arrive as text and are kept as numbers. */
 export function packFromServer(input: {
   userId: string; userName: string; projectId: string; projectName: string; generatedAt: string; forms: PackForm[]; places: PackPlace[];
+  indicators?: PackIndicator[] | undefined; periods?: PackPeriod[] | undefined; plan?: PackPlanItem[] | undefined;
 }): OfflinePack {
   const at = Date.parse(input.generatedAt);
+  const v2 = input.indicators !== undefined || input.periods !== undefined || input.plan !== undefined;
   return {
-    version: 1, userId: input.userId, userName: input.userName, projectId: input.projectId, projectName: input.projectName,
+    version: v2 ? 2 : 1, userId: input.userId, userName: input.userName, projectId: input.projectId, projectName: input.projectName,
     generatedAt: Number.isFinite(at) ? at : 0, forms: input.forms, places: input.places,
+    ...(input.indicators !== undefined ? { indicators: input.indicators } : {}),
+    ...(input.periods !== undefined ? { periods: input.periods } : {}),
+    ...(input.plan !== undefined ? { plan: input.plan } : {}),
   };
+}
+
+/** Whether a pack carries what recording a number needs offline. A v1 pack (or one from an older server) does not. */
+export function packCanRecordNumbers(pack: Pick<OfflinePack, "indicators" | "periods">): boolean {
+  return pack.indicators !== undefined && pack.periods !== undefined;
+}
+
+/** What is on the phone for one project, as numbers the "Ready for offline" screen words (never a sentence made here). */
+export function packCounts(pack: Pick<OfflinePack, "forms" | "places" | "indicators" | "plan">): { forms: number; places: number; indicators: number; plan: number } {
+  return { forms: pack.forms.length, places: pack.places.length, indicators: pack.indicators?.length ?? 0, plan: pack.plan?.length ?? 0 };
 }
 
 const fold = (text: string): string => text.normalize("NFKD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();

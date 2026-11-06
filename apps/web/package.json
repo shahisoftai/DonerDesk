@@ -22,7 +22,8 @@
     "test:setup-wizard": "node tests/harness/setup-wizard/run.mjs",
     "test:pcw": "node tests/harness/pcw/run.mjs",
     "test:visuals": "node tests/harness/dashboard-visuals/run.mjs",
-    "test:home-layout": "node tests/harness/home-layout/run.mjs"
+    "test:home-layout": "node tests/harness/home-layout/run.mjs",
+    "test:record": "node tests/harness/record/run.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

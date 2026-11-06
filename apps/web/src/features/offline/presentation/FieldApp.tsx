@@ -7,16 +7,39 @@ import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
 import { FormFiller } from "@/features/collection/presentation/FormFiller";
-import { createMemoryPackStore, describePackFreshness, packsFor, type OfflinePack, type PackStore } from "../domain/offline-pack";
+import { createMemoryPackStore, describePackFreshness, packCanRecordNumbers, packCounts, packsFor, type OfflinePack, type PackStore } from "../domain/offline-pack";
 import { COLLECTION_RECORD_KIND, collectionRecordEntry, type QueuedAttachment } from "../domain/collection-outbox";
 import { canUseDurableOutbox } from "../infrastructure/indexeddb-outbox-store";
 import { createIndexedDbPackStore } from "../infrastructure/indexeddb-pack-store";
 import { OutboxProvider, useOutbox } from "./OutboxProvider";
 import { OutboxBanner } from "./OutboxBanner";
+import { usePackRecordDeps } from "@/features/record/composition";
+import { RecordSheetBody } from "@/features/record/presentation/RecordSheetBody";
+import { WaitingList } from "@/features/record/presentation/WaitingList";
+import type { RecordKind } from "@/features/record/domain/record-kinds";
+import type { Capability } from "@/lib/shared/capabilities";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { LocaleSwitcher } from "@/features/i18n/presentation/LocaleSwitcher";
 
 const IDENTITY_KEY = "donordesk-field-user";
+
+/** A pack is only made for someone who may record numbers; activities are offered too, and the server still checks each record on send. */
+const PACK_CAPABILITIES: readonly Capability[] = ["indicator.update", "activity.create"];
+/** Offline, only what works with no signal is offered; filling a form has its own list below. */
+const OFFLINE_KINDS = (kind: RecordKind) => kind.offline !== "ONLINE_ONLY" && kind.key !== "FORM";
+
+/** The same Record screens as the signed-in app, fed from the packs on this phone, so a number or an activity can be recorded with no signal. */
+function RecordPanel({ packs }: { packs: OfflinePack[] }) {
+  const deps = usePackRecordDeps(packs);
+  const { t } = useI18n();
+  const [session, setSession] = useState(0);
+  return (
+    <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900/40" aria-label={t("record.sheet.title")}>
+      <h2 className="text-lg font-bold">{t("record.sheet.title")}</h2>
+      <RecordSheetBody key={session} deps={deps} capabilities={PACK_CAPABILITIES} request={{}} kindFilter={OFFLINE_KINDS} onClose={() => setSession((n) => n + 1)} />
+    </section>
+  );
+}
 
 function rememberedUser(): string {
   try { return localStorage.getItem(IDENTITY_KEY) ?? ""; } catch { return ""; }
@@ -93,6 +116,8 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
       </header>
       <OutboxBanner />
 
+      {!active && packs && packs.length > 0 && <RecordPanel packs={packs} />}
+
       {active && form ? (
         <section className="space-y-3">
           <button className="text-sm underline" onClick={() => setActive(null)}>{t("field.allForms")}</button>
@@ -112,6 +137,8 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
                 <div key={pack.projectId} className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
                   <p className="font-medium">{pack.projectName}</p>
                   <p className={`text-xs ${fresh.stale ? "text-amber-700 dark:text-amber-300" : "text-slate-500"}`}>{fresh.stale ? t("pack.stale", { count: fresh.days }) : fresh.days === 0 ? t("pack.today") : tp("pack.days", fresh.days)}</p>
+                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{t("record.ready.counts", packCounts(pack))}</p>
+                  {!packCanRecordNumbers(pack) && <p className="mt-1 text-xs font-medium text-amber-700 dark:text-amber-300">{t("record.ready.updateForNumbers")}</p>}
                   <ul className="mt-2 space-y-1">
                     {pack.forms.length === 0 && <li className="text-sm text-slate-500">{t("field.noFormOpen")}</li>}
                     {pack.forms.map((f) => (
@@ -136,6 +163,13 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
             <p className="text-xs text-slate-500">{t("field.whatKept")}</p>
           </section>
         </>
+      )}
+
+      {!active && (
+        <section className="space-y-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+          <h2 className="text-base font-semibold">{t("record.waiting.title")}</h2>
+          <WaitingList />
+        </section>
       )}
     </main>
   );

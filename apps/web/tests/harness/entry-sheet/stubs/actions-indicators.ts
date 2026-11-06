@@ -6,7 +6,7 @@ const ok = <T,>(value: T) => ({ ok: true as const, value });
 export async function bulkSaveIndicatorUpdatesAction(periodId: string, rows: unknown[]) {
   if (h().failNext) { const message = h().failNext!; h().failNext = null; return { ok: false as const, error: { kind: "conflict", message } }; }
   h().saves.push({ periodId, rows });
-  return ok({ saved: rows.length, skipped: 0 });
+  return ok({ saved: rows.length, skipped: 0, notices: [] });
 }
 export async function parseIndicatorSheetAction() { return ok(h().parse); }
 export async function parseIndicatorWorkbookAction() { h().workbookCalls += 1; return ok(h().parse); }

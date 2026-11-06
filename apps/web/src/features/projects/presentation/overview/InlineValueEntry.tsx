@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { quickEnterValueAction } from "@/lib/actions/indicators";
+import { useRecordValueSink } from "@/features/record/composition";
 import type { InlineValueEntry as Entry } from "@/features/projects/domain/overview-derive";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -19,12 +19,17 @@ export function InlineValueEntry({ entry, today }: { entry: Entry; today: string
   const state = useActionState();
   const [value, setValue] = useState("");
   const [done, setDone] = useState<string[] | null>(null);
+  const sink = useRecordValueSink();
 
   async function save() {
     if (value.trim() === "") return;
-    const result = await state.run(() => quickEnterValueAction({ indicatorId: entry.indicatorId, reportingPeriodId: entry.periodId, date: today, periodAchievement: value.trim() }));
+    // The row is about one named period, so the day does not decide it; the same sink as the Record sheet carries the save.
+    const result = await state.run(async () => {
+      const saved = await sink.saveValue({ indicatorId: entry.indicatorId, code: entry.label, date: today, periodId: entry.periodId, periodLabel: entry.label, value, namePeriod: true });
+      return saved.ok ? { ok: true as const, value: saved.value } : { ok: false as const, error: { kind: "validation" as const, message: saved.message, fields: {} } };
+    });
     if (result) {
-      setDone(["Saved.", ...result.notices]);
+      setDone([result.queued ? "Kept on this phone." : "Saved.", ...result.notices]);
       router.refresh();
     }
   }

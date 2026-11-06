@@ -76,13 +76,14 @@ export function valueProblem(value: string): string | null {
   return null;
 }
 
-/** The row an offline queue entry stores: exactly what the sheet's save would send for one value. */
-export function offlineRow(input: { indicatorId: string; value: string; note?: string; source?: string }): Record<string, unknown> {
+/** The row an offline queue entry stores: exactly what the sheet's save would send for one value (a breakdown travels with it). */
+export function offlineRow(input: { indicatorId: string; value: string; note?: string; source?: string; disaggregation?: ReadonlyArray<{ dimension: string; category: string; value: string }> }): Record<string, unknown> {
   return {
     indicatorId: input.indicatorId,
     periodAchievement: input.value.trim(),
     cumulativeAchievement: "",
     ...(input.note?.trim() ? { comments: input.note.trim() } : {}),
     ...(input.source?.trim() ? { dataSource: input.source.trim() } : {}),
+    ...(input.disaggregation && input.disaggregation.length > 0 ? { disaggregation: input.disaggregation.map((d) => ({ ...d })) } : {}),
   };
 }

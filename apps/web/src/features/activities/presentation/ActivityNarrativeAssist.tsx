@@ -29,7 +29,7 @@ export function ActivityNarrativeAssist({
   if (!open) {
     return (
       <p className="text-sm">
-        <button type="button" className="text-brand-600 underline dark:text-brand-300" onClick={() => setOpen(true)}>
+        <button type="button" className="min-h-11 text-start text-brand-700 underline dark:text-brand-300" onClick={() => setOpen(true)}>
           Tell it in your own words (type or speak) and fill the form for me
         </button>
       </p>

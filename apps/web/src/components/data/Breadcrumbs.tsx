@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TOUCH } from "@/components/ui/touch";
 
 export type Crumb = { label: string; href?: string };
 
@@ -16,7 +17,7 @@ export function Breadcrumbs({ items }: { items: Crumb[] }) {
                   {crumb.label}
                 </span>
               ) : (
-                <Link href={crumb.href} className="hover:text-brand-600 hover:underline dark:hover:text-brand-300">
+                <Link href={crumb.href} className={`${TOUCH.inline} hover:text-brand-600 hover:underline dark:hover:text-brand-300`}>
                   {crumb.label}
                 </Link>
               )}
