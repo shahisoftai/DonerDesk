@@ -28,7 +28,8 @@ export interface BlockSizes { min: BlockSize; max: BlockSize; default: BlockSize
  */
 export type BlockModel<M> =
   | { state: "ready"; model: M; notes: string[] }
-  | { state: "empty"; reason: string }
+  /** `authoring`: waiting for a person's words or a choice (not for records), so a screen words it as a prompt and not as "not yet reported". */
+  | { state: "empty"; reason: string; authoring?: true }
   | { state: "unavailable"; reason: string };
 
 export interface BlockDefinition<P, M = unknown, D = unknown> {

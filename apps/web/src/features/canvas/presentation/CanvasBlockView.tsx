@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, type KeyboardEvent } from "react";
-import { definitionFor, themeFor, type BlockInstance, type BlockModel, type Canvas, type PaintFrame } from "@donordesk/domain/contexts/canvas/index.js";
+import { definitionFor, isDashboardKind, themeFor, type BlockInstance, type BlockModel, type Canvas, type PaintFrame } from "@donordesk/domain/contexts/canvas/index.js";
 import type { DashboardWidget } from "@donordesk/domain/contexts/dashboards/index.js";
 import { Tile } from "@/components/ui/Tile";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
@@ -48,6 +48,9 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
     const renderer = rendererFor(drawing);
     title = renderer.title({ widget, drawing }) ?? label;
     body = renderer.render({ widget, drawing });
+  } else if (isDashboardKind(block.kind)) {
+    // A chart-style block is drawn from the records by the server: a block just added or changed has no figures until the canvas is saved.
+    body = <NothingToShow text={screenText(frame)} reason="Save to see this block's figures." authoring />;
   } else {
     const model = modelOf(block, serverModel, changed);
     const Screen = screenRendererFor(block.kind);

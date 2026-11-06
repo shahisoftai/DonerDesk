@@ -13,6 +13,11 @@ type One = { kind: string; props: unknown; h: number; loss?: string };
 type Mapped = One | One[] | string;
 /** A row of key figures shows this many; a longer one becomes more rows, so nothing is cut. */
 const KEY_FIGURES_PER_ROW = 6;
+/** What a key-figures row with no indicators chosen showed in the Studio. */
+const DEFAULT_SUMMARY_FIGURES = [
+  { label: "People reached", source: "REACH_UNIQUE" }, { label: "Activities done", source: "ACTIVITIES_DONE" },
+  { label: "Activities planned", source: "ACTIVITIES_PLANNED" }, { label: "Budget balance", source: "FINANCE_BALANCE" },
+] as const;
 const strip = ({ kind: _k, title: _t, ...rest }: InfographicSectionConfig) => rest;
 
 const CORE_MAPPERS: Readonly<Record<string, (s: InfographicSectionConfig) => Mapped>> = {
@@ -20,7 +25,9 @@ const CORE_MAPPERS: Readonly<Record<string, (s: InfographicSectionConfig) => Map
   DIVIDER: () => ({ kind: "DIVIDER", props: { line: true }, h: 1 }),
   KPIS: (s) => {
     const ids = s.indicatorIds ?? [];
-    const chunks = Array.from({ length: Math.max(1, Math.ceil(ids.length / KEY_FIGURES_PER_ROW)) }, (_, i) => ids.slice(i * KEY_FIGURES_PER_ROW, (i + 1) * KEY_FIGURES_PER_ROW));
+    // No indicators chosen: the Studio showed four summary cards (people reached, activities done and planned, the balance). They stay.
+    if (ids.length === 0) return { kind: "BIG_NUMBERS", props: { numbers: DEFAULT_SUMMARY_FIGURES, ...(s.rounding ? { rounding: s.rounding } : {}) }, h: 2 };
+    const chunks = Array.from({ length: Math.ceil(ids.length / KEY_FIGURES_PER_ROW) }, (_, i) => ids.slice(i * KEY_FIGURES_PER_ROW, (i + 1) * KEY_FIGURES_PER_ROW));
     return chunks.map((chunk) => ({ kind: "BIG_NUMBERS", props: { numbers: chunk.map((id) => ({ label: "", source: "INDICATOR", indicatorId: id })), ...(s.rounding ? { rounding: s.rounding } : {}) }, h: 2 }));
   },
   CHART: (s) => {

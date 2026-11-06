@@ -18,5 +18,5 @@ export const chartBlock = defineBlock<ChartProps, Extract<ChartBuild, { ok: true
   slots: [projectSlot(["PERIOD", "DRAFTS"])],
   sizes: { min: { w: 3, h: 3 }, max: { w: 12, h: 10 }, default: { w: 6, h: 4 } },
   lint: [],
-  resolve: ({ spec }, data) => { const r = buildChart(spec, data); return r.ok ? { state: "ready", model: r, notes: [] } : { state: "unavailable", reason: r.reason }; },
+  resolve: ({ spec }, data) => { if (!data || !spec) return { state: "unavailable", reason: "The figures are read when this is opened." }; const r = buildChart(spec, data); return r.ok ? { state: "ready", model: r, notes: [] } : { state: "unavailable", reason: r.reason }; },
 });

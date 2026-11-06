@@ -16,5 +16,5 @@ export const tableBlock = defineBlock<TableProps, ReportTable, DatasetResult>({
   slots: [projectSlot(["PERIOD", "DRAFTS"])],
   sizes: { min: { w: 3, h: 2 }, max: { w: 12, h: 10 }, default: { w: 6, h: 4 } },
   lint: [],
-  resolve: ({ query }, data) => ({ state: "ready", model: runReport(data, query), notes: [] }),
+  resolve: ({ query }, data) => (!data || !query ? { state: "unavailable", reason: "The figures are read when this is opened." } : { state: "ready", model: runReport(data, query), notes: [] }),
 });

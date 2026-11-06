@@ -30,7 +30,7 @@ function make<P, M, D>(kind: string, family: BlockFamily, size: Size, seed: () =
 const aiBlock = (kind: string, size: Size) => make<AiTextProps, { text: string; accepted: boolean }, AiData>(kind, "AI", { ...size, minW: 3, maxH: 8 }, () => ({}),
   (p) => ((p.instruction?.length ?? 0) > MAX_INSTRUCTION ? [{ message: `The instruction is at most ${MAX_INSTRUCTION} characters.` }] : []),
   { slots: [{ slot: "text", accepts: ["AI_DRAFT", "MANUAL"], min: 0, max: 1, honours: ["PERIOD"] }],
-    resolve: (_p, d) => (d?.text?.trim() ? { state: "ready", model: { text: d.text, accepted: d.accepted === true }, notes: d.accepted === true ? [] : ["AI-drafted. Not accepted yet."] } : { state: "empty", reason: "No text yet." }) });
+    resolve: (_p, d) => (d?.text?.trim() ? { state: "ready", model: { text: d.text, accepted: d.accepted === true }, notes: d.accepted === true ? [] : ["AI-drafted. Not accepted yet."] } : { state: "empty", reason: "No text yet.", authoring: true }) });
 
 const plain = <P>(kind: string, family: BlockFamily, size: Size, seed: () => P, validate: (p: P) => BlockProblem[]) =>
   make<P, P, undefined>(kind, family, size, seed, validate, { resolve: (p) => ({ state: "ready", model: p, notes: [] }) });

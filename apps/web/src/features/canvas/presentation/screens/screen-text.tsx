@@ -7,7 +7,9 @@ export interface ScreenText { l: InfographicLabels; fmt: (n: number, rounding?: 
 export const screenText = (frame: PaintFrame): ScreenText => ({ l: labelsFor(frame.language), fmt: (n, rounding) => formatNumber(n, frame.language, rounding ?? "NONE") });
 
 /** A block with nothing to show says so, with the reason; it never shows a placeholder figure. */
-export function NothingToShow({ text, reason }: { text: ScreenText; reason: string }) {
+export function NothingToShow({ text, reason, authoring }: { text: ScreenText; reason: string; authoring?: boolean | undefined }) {
+  // A block waiting for a person's words is a prompt ("Add a line of text."); one waiting for records is "not yet reported".
+  if (authoring) return <div className="px-4 py-3 text-sm" data-state="prompt"><p className="italic text-slate-500">{reason}</p></div>;
   return (
     <div className="px-4 py-3 text-sm" data-state="nothing">
       <p className="italic text-slate-500">{text.l.notYetReported}</p>
@@ -24,7 +26,7 @@ export function Notes({ notes }: { notes: readonly string[] }) {
 export function readyOrNothing<M>(props: { model: BlockModel<M>; frame: PaintFrame; assetUrl?: ((id: string) => string | undefined) | undefined }, draw: (model: M, text: ScreenText) => ReactNode): ReactNode {
   const text = screenText(props.frame);
   const m = props.model;
-  if (m.state !== "ready") return <NothingToShow text={text} reason={m.reason} />;
+  if (m.state !== "ready") return <NothingToShow text={text} reason={m.reason} authoring={m.state === "empty" && m.authoring === true} />;
   return <>{draw(m.model, text)}<Notes notes={m.notes} /></>;
 }
 

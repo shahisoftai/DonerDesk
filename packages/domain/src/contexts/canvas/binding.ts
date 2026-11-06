@@ -59,5 +59,8 @@ export const unacceptedDrafts = (bindings: ReadonlyArray<Binding>): Binding[] =>
 /** The slot every data-reading block declares: which project it reads, and which filters then change it. */
 export const projectSlot = (honours: SlotDef["honours"]): SlotDef => ({ slot: "project", accepts: ["PROJECT"], min: 1, max: 1, honours });
 
+/** The same slot for a block that falls back to its canvas's project when it names none (infographic-style blocks): a template or a person may still bind it to a project of its own. */
+export const optionalProjectSlot = (honours: SlotDef["honours"] = []): SlotDef => ({ slot: "project", accepts: ["PROJECT"], min: 0, max: 1, honours });
+
 /** The project a block reads, from its binding; undefined when it has none (a text block, or a block that reads the viewer's whole portfolio). */
 export const projectOf = (bindings: ReadonlyArray<Binding>): string | undefined => bindings.find((b): b is Extract<Binding, { type: "PROJECT" }> => b.type === "PROJECT")?.projectId;

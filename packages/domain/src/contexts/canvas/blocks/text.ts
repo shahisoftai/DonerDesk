@@ -9,9 +9,9 @@ export const textBlock = defineBlock<TextProps, { text: string; role: TextProps[
   family: "TEXT",
   labelKey: "canvas.block.TEXT",
   defaults: () => ({ text: "", role: "body" }),
-  validate: (p) => (p.text.length > CANVAS_MAX_TEXT ? [{ message: `Text is at most ${CANVAS_MAX_TEXT} characters.` }] : []),
+  validate: (p) => ((typeof p.text === "string" ? p.text.length : 0) > CANVAS_MAX_TEXT ? [{ message: `Text is at most ${CANVAS_MAX_TEXT} characters.` }] : []),
   slots: [],
   sizes: { min: { w: 2, h: 1 }, max: { w: 12, h: 10 }, default: { w: 6, h: 2 } },
   lint: [],
-  resolve: (p) => ((p.text ?? "").trim() ? { state: "ready", model: { text: p.text, role: p.role ?? "body" }, notes: [] } : { state: "empty", reason: "Nothing written yet." }),
+  resolve: (p) => ((typeof p.text === "string" ? p.text : "").trim() ? { state: "ready", model: { text: p.text, role: p.role ?? "body" }, notes: [] } : { state: "empty", reason: "Nothing written yet.", authoring: true }),
 });

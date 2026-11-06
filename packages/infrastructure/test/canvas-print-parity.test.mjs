@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { BLOCK_KINDS } from "@donordesk/domain";
 import { contextFor } from "../dist/infographics/composer.js";
-import { bigNumbersBlock, funnelBlock, progressRingsBlock, demographicsBlock, fundingBlock, bannerBlock, dividerBlock, keyMessagesBlock, legendNotesBlock, quoteBlock, imageBlock, timelineBlock, sectorGridBlock } from "../dist/infographics/blocks-new.js";
+import { heroBlock, bigNumbersBlock, funnelBlock, progressRingsBlock, demographicsBlock, fundingBlock, bannerBlock, dividerBlock, keyMessagesBlock, legendNotesBlock, quoteBlock, imageBlock, timelineBlock, sectorGridBlock } from "../dist/infographics/blocks-new.js";
 import { threeWBlock } from "../dist/infographics/blocks-portfolio.js";
 import { reachBlock, activitiesBlock, locationResultsBlock, locationComparisonBlock, textBlock } from "../dist/infographics/blocks-core.js";
 import { notReported } from "../dist/infographics/kit.js";
@@ -13,6 +13,8 @@ import { paintSection, PRINT_PAINTERS, PRINT_PENDING, printPainterFor, unpaintab
 const LEGACY = {
   BIG_NUMBERS: bigNumbersBlock, PROGRESS_RINGS: progressRingsBlock, FUNNEL: funnelBlock, REACH: reachBlock, ACTIVITIES_BY_LOCATION: activitiesBlock,
   LOCATION_RESULTS: locationResultsBlock, LOCATION_COMPARISON: locationComparisonBlock, DEMOGRAPHICS: demographicsBlock, FUNDING: fundingBlock,
+  // The composer hands a cover the design's cover picture when the section names none; the model does the same.
+  HERO: (c, section, width) => heroBlock(c, section.assetId || !c.config.coverAssetId ? section : { ...section, assetId: c.config.coverAssetId }, width),
   TEXT: textBlock, DIVIDER: (c, _section, width) => dividerBlock(c, width), BANNER: bannerBlock, KEY_MESSAGES: keyMessagesBlock, LEGEND_NOTES: legendNotesBlock,
   QUOTE: quoteBlock, IMAGE: imageBlock, TIMELINE: timelineBlock, SECTOR_GRID: sectorGridBlock, THREE_W: threeWBlock,
 };
@@ -81,6 +83,7 @@ const SECTIONS = {
   LOCATION_RESULTS: [{}, { locationKeys: ["gulu"] }, { indicatorIds: ["i2"] }, { indicatorIds: ["i3"] }, { locationKeys: ["nowhere"] }],
   LOCATION_COMPARISON: [{}],
   TEXT: [{ text: "Boreholes now serve more homes across the district. ".repeat(6) }, { text: "Short", title: "A heading" }, {}],
+  HERO: [{}, { title: "Own title", text: "A subtitle that runs long enough to wrap onto a second line when the page is narrow enough" }, { assetId: "a1", title: "With a picture" }, { text: "Only a subtitle" }],
   DIVIDER: [{}],
   BANNER: [{ text: "Funded by the European Union" }, { title: "A title banner" }, {}],
   KEY_MESSAGES: [{ messages: [{ text: "Boreholes now serve more homes." }, { text: "Women lead the water committees across the district and keep the records." , iconId: "water" }, { text: "x".repeat(300) }] }, { messages: [] }, {}],
@@ -95,7 +98,7 @@ const SECTIONS = {
 test("every ported painter draws exactly what the Studio's own block draws, for rich, empty and gappy data in every language and mode", () => {
   let compared = 0;
   const failures = new Set();
-  const contexts = [{}, { preview: true }, { config: { language: "fr" } }, { config: { language: "ar" }, preview: true }, { config: { themeId: "MONO" } }, { config: { periodFromId: "q2", periodToId: "q3", locationKeys: ["gulu", "lira"] } }, { config: { acknowledgement: "Funded by the European Union", language: "es" } }];
+  const contexts = [{}, { preview: true }, { config: { language: "fr" } }, { config: { language: "ar" }, preview: true }, { config: { themeId: "MONO" } }, { config: { periodFromId: "q2", periodToId: "q3", locationKeys: ["gulu", "lira"] } }, { config: { acknowledgement: "Funded by the European Union", language: "es" } }, { config: { title: "Annual review 2026", subtitle: "Borno State", coverAssetId: "a1" } }];
   for (const [dataName, data] of Object.entries({ rich, nothing, zeros })) {
     for (const over of contexts) {
       for (const [kind, sections] of Object.entries(SECTIONS)) {
@@ -121,14 +124,14 @@ test("the painters registry covers exactly the ported kinds, each is a real bloc
   assert.deepEqual(Object.keys(PRINT_PAINTERS).sort(), Object.keys(LEGACY).sort());
   for (const k of Object.keys(PRINT_PAINTERS)) assert.ok(BLOCK_KINDS.includes(k), k);
   assert.deepEqual([...PRINT_PENDING, ...Object.keys(PRINT_PAINTERS)].sort(), [...BLOCK_KINDS].sort());
-  const PRINT_PENDING_MAX = 21; // lower this as the rest of the blocks are ported
+  const PRINT_PENDING_MAX = 20; // lower this as the rest of the blocks are ported
   assert.ok(PRINT_PENDING.length <= PRINT_PENDING_MAX);
 });
 
 test("a kind with no painter yet is reported unpaintable, and a ported one is not", () => {
   assert.equal(printPainterFor("NOPE"), undefined);
-  assert.equal(paintSection(ctxFor(rich), { kind: "HERO" }, 640), null, "the caller falls back");
-  assert.deepEqual(unpaintable(["REACH", "HERO", "HERO", "CHART"]), ["CHART", "HERO"]);
+  assert.equal(paintSection(ctxFor(rich), { kind: "SMALL_MULTIPLES" }, 640), null, "the caller falls back");
+  assert.deepEqual(unpaintable(["REACH", "SMALL_MULTIPLES", "SMALL_MULTIPLES", "CHART"]), ["CHART", "SMALL_MULTIPLES"]);
   assert.deepEqual(unpaintable(["REACH", "FUNDING"]), []);
 });
 

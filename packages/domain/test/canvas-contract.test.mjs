@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BLOCK_KINDS, PENDING_KINDS, BLOCK_FIXTURES, SAMPLE_SHEET, BLOCK_FAMILIES, RENDER_SURFACES, definitionFor, checkCanvas, canPublish, modelProblems, functionPaths, modelFingerprint, canvasAiEnabledFor, aiGate } from "../dist/index.js";
+import { BLOCK_KINDS, PENDING_KINDS, BLOCK_FIXTURES, SAMPLE_FACTS, SAMPLE_SHEET, BLOCK_FAMILIES, RENDER_SURFACES, definitionFor, checkCanvas, canPublish, modelProblems, functionPaths, modelFingerprint, canvasAiEnabledFor, aiGate } from "../dist/index.js";
 
 const KINDS = [...BLOCK_KINDS];
 const STATES = ["ready", "empty", "unavailable"];
@@ -158,4 +158,35 @@ test("a block says what data it reads, so a resolver never has to name a block",
   const withFacts = KINDS.filter((k) => reads(k) === "FACTS");
   for (const k of ["REACH", "BIG_NUMBERS", "FUNDING", "DEMOGRAPHICS", "LOCATION_RESULTS", "SECTOR_GRID", "THREE_W", "HERO"]) assert.ok(withFacts.includes(k), k);
   for (const k of ["TEXT", "DIVIDER", "CALLOUT", "KPI", "CHART"]) assert.equal(reads(k), undefined, `${k} reads nothing the resolver supplies`);
+});
+
+test("no block throws when asked to resolve with no data, however it is set up or not: a block just added can be previewed", () => {
+  for (const kind of KINDS) {
+    const def = definitionFor(kind);
+    for (const props of [def.defaults(), BLOCK_FIXTURES[kind].props, {}, undefined]) {
+      let r;
+      assert.doesNotThrow(() => { r = def.resolve(props ?? def.defaults(), undefined); }, `${kind} with ${JSON.stringify(props)?.slice(0, 40)}`);
+      assert.ok(STATES.includes(r.state), kind);
+    }
+  }
+  // a chart-style block with no data says when it will have figures, and never draws one
+  for (const kind of ["KPI", "CHART", "TABLE"]) assert.equal(definitionFor(kind).resolve(BLOCK_FIXTURES[kind].props, undefined).state, "unavailable", kind);
+});
+
+test("a model never throws on half-filled or malformed settings; it shows what it can and says what is missing", () => {
+  const junk = [
+    { numbers: [{}, { source: "NOPE" }, null, { label: "x", source: "INDICATOR" }] }, { stages: [{}, null, { label: "a", bind: "NOPE" }] }, { messages: [{}, null, { text: 5 }] },
+    { sectors: [{}, { label: "x" }, null] }, { presence: [{}, { who: "a" }, { who: "a", what: "b" }, null] }, { events: [{}, { date: "2026-01-01" }, null] },
+    { notes: [null, 5, "ok"] }, { indicatorIds: [null, 5, "a"] }, { locationKeys: [null, "x"] }, { title: 5, text: 5, attribution: 5 },
+  ];
+  const facts = [SAMPLE_FACTS, undefined];
+  for (const kind of KINDS) {
+    const def = definitionFor(kind);
+    for (const props of junk) for (const f of facts) {
+      let r;
+      assert.doesNotThrow(() => { r = def.resolve(props, def.reads === "FACTS" ? f : undefined); }, `${kind} with ${JSON.stringify(props).slice(0, 50)}`);
+      assert.ok(STATES.includes(r.state));
+      if (r.state === "ready") assert.deepEqual(modelProblems(r.model), [], kind);
+    }
+  }
 });

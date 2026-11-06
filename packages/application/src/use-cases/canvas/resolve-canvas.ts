@@ -1,4 +1,4 @@
-import { DomainError, canvasToWidgets, definitionFor, isDashboardKind, type BlockModel, type CanvasFacts, type Result } from "@donordesk/domain";
+import { DomainError, canvasToWidgets, definitionFor, isDashboardKind, projectOf, type BlockModel, type Canvas, type CanvasFacts, type Result } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ICanvasRepository } from "../../ports/canvas.js";
 import type { IDatasetExtras } from "../../services/dataset-extras.js";
@@ -44,25 +44,34 @@ export class ResolveCanvasHandler {
     const mine = await this.visible.for(ctx);
     if (!mine.ok) return mine;
     const allowed = new Set(mine.value.map((p) => p.id));
-    const facts = stored.projectId && allowed.has(stored.projectId) ? await this.factsFor(ctx, stored.projectId, stored.canvas.options) : undefined;
+    // Each block reads the project it names, else its canvas's; the facts of a project are read once however many blocks use them.
+    const factsByProject = new Map<string, Promise<CanvasFacts | undefined>>();
+    const factsOf = (projectId: string | undefined): Promise<CanvasFacts | undefined> => {
+      if (!projectId || !allowed.has(projectId)) return Promise.resolve(undefined);
+      if (!factsByProject.has(projectId)) factsByProject.set(projectId, this.factsFor(ctx, projectId, stored.canvas, stored.title));
+      return factsByProject.get(projectId)!;
+    };
     const list = await this.projectList(ctx);
 
     for (const page of stored.canvas.pages) for (const block of page.blocks) {
       if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id]) continue;
       const def = definitionFor(block.kind) as unknown as { reads?: "FACTS" | "VIEWER_PROJECTS"; resolve(props: unknown, data: unknown): BlockModel<unknown> } | undefined;
       if (!def) { models[block.id] = unavailable("This block is not one the product knows."); continue; }
-      models[block.id] = def.resolve(block.props, def.reads === "VIEWER_PROJECTS" ? list : def.reads === "FACTS" ? facts : undefined);
+      const data = def.reads === "VIEWER_PROJECTS" ? list : def.reads === "FACTS" ? await factsOf(projectOf(block.bindings) ?? stored.projectId) : undefined;
+      models[block.id] = def.resolve(block.props, data);
     }
     return ok({ canvasId: id, drawings, models });
   }
 
   /** The figures an infographic-style block reads, taken from the same records the Data Center and the Studio read. */
-  private async factsFor(ctx: AuthenticatedContext, projectId: string, options: { periodFromId?: string | undefined; periodToId?: string | undefined; locationKeys?: string[] | undefined; acknowledgement?: string | undefined } | undefined): Promise<CanvasFacts | undefined> {
+  private async factsFor(ctx: AuthenticatedContext, projectId: string, canvas: Canvas, title: string): Promise<CanvasFacts | undefined> {
     const [sheet, data] = await Promise.all([this.sheets.handle(ctx, projectId), this.infographicData.handle(ctx, projectId)]);
     if (!sheet.ok || !data.ok) return undefined;
+    const o = canvas.options;
     return {
       sheet: sheet.value, reach: data.value.reach, activities: data.value.activities, finance: data.value.finance, indicators: data.value.indicators,
-      range: { fromId: options?.periodFromId, toId: options?.periodToId }, locationKeys: options?.locationKeys, acknowledgement: options?.acknowledgement,
+      range: { fromId: o?.periodFromId, toId: o?.periodToId }, locationKeys: o?.locationKeys, acknowledgement: o?.acknowledgement, subtitle: o?.subtitle,
+      project: { title: data.value.project.title, donorName: data.value.project.donorName, country: data.value.project.country }, designTitle: title,
     };
   }
 

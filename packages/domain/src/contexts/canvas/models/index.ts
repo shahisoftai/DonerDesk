@@ -6,7 +6,7 @@
 import { bigNumbersModel, funnelModel, progressRingsModel } from "./numbers.js";
 import { activitiesByLocationModel, locationComparisonModel, locationResultsModel, reachModel } from "./location.js";
 import { demographicsModel, fundingModel } from "./people-money.js";
-import { bannerModel, imageModel, keyMessagesModel, legendNotesModel, quoteModel, sectorGridModel, threeWModel, timelineModel } from "./authored.js";
+import { heroModel, bannerModel, imageModel, keyMessagesModel, legendNotesModel, quoteModel, sectorGridModel, threeWModel, timelineModel } from "./authored.js";
 import type { ModelFn } from "./props.js";
 
 export const INFOGRAPHIC_MODELS: Readonly<Record<string, ModelFn>> = {
@@ -14,10 +14,10 @@ export const INFOGRAPHIC_MODELS: Readonly<Record<string, ModelFn>> = {
   REACH: reachModel, ACTIVITIES_BY_LOCATION: activitiesByLocationModel, LOCATION_RESULTS: locationResultsModel, LOCATION_COMPARISON: locationComparisonModel,
   DEMOGRAPHICS: demographicsModel, FUNDING: fundingModel,
   KEY_MESSAGES: keyMessagesModel, QUOTE: quoteModel, LEGEND_NOTES: legendNotesModel, BANNER: bannerModel, IMAGE: imageModel,
-  TIMELINE: timelineModel, THREE_W: threeWModel, SECTOR_GRID: sectorGridModel,
+  TIMELINE: timelineModel, THREE_W: threeWModel, SECTOR_GRID: sectorGridModel, HERO: heroModel,
 };
 
-export const PENDING_MODEL_KINDS: readonly string[] = ["HERO", "SMALL_MULTIPLES", "RESULTS_CHAIN", "PORTFOLIO_SUMMARY", "PORTFOLIO_TABLE", "PORTFOLIO_HEALTH", "PORTFOLIO_COUNTRIES"];
+export const PENDING_MODEL_KINDS: readonly string[] = ["SMALL_MULTIPLES", "RESULTS_CHAIN", "PORTFOLIO_SUMMARY", "PORTFOLIO_TABLE", "PORTFOLIO_HEALTH", "PORTFOLIO_COUNTRIES"];
 export type { ModelFn, SectionProps } from "./props.js";
 import type { BlockModel } from "../block-definition.js";
 /** The model a function returns when it has something to show: lets a painter be typed against the model it paints. */
@@ -27,4 +27,4 @@ export { activitiesByLocationModel, locationComparisonModel, locationResultsMode
 export { demographicsModel, fundingModel } from "./people-money.js";
 export * from "./places.js";
 export type { Figure } from "./numbers.js";
-export { bannerModel, imageModel, keyMessagesModel, legendNotesModel, quoteModel, sectorGridModel, threeWModel, timelineModel } from "./authored.js";
+export { heroModel, bannerModel, imageModel, keyMessagesModel, legendNotesModel, quoteModel, sectorGridModel, threeWModel, timelineModel } from "./authored.js";

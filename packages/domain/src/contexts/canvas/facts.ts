@@ -21,6 +21,12 @@ export interface CanvasFacts {
   indicators: FactsIndicator[];
   /** The design's acknowledgement line (a banner with no words of its own shows it). */
   acknowledgement?: string | undefined;
+  /** The project the figures belong to, for a cover. */
+  project?: { title: string; donorName: string; country: string } | undefined;
+  /** The design's own title and subtitle, and its cover picture. */
+  designTitle?: string | undefined;
+  subtitle?: string | undefined;
+  coverAssetId?: string | undefined;
   /** Portfolio totals, for portfolio designs; absent for a single project. */
   portfolio?: { rows: unknown[]; totals: { projects: number; countries: number; behind: number; needAttention: number; openRisks: number; reportsOverdue: number } } | undefined;
 }

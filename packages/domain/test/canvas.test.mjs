@@ -36,7 +36,7 @@ test("a valid canvas has no problems; an unknown block, bad bounds and duplicate
 });
 
 test("an empty text block says it is empty, never a placeholder", () => {
-  assert.deepEqual(definitionFor("TEXT").resolve({ text: "  ", role: "body" }), { state: "empty", reason: "Nothing written yet." });
+  assert.deepEqual(definitionFor("TEXT").resolve({ text: "  ", role: "body" }), { state: "empty", reason: "Nothing written yet.", authoring: true });
 });
 
 test("bindings are checked against the block's slots", () => {
@@ -130,4 +130,13 @@ test("a converted dashboard block names the project it reads as a binding, and t
   assert.deepEqual(byId.l.bindings, []);
   assert.equal(dom.projectOf(byId.k.bindings), "proj-9");
   assert.deepEqual(dom.canvasProblems(canvas), [], "a converted dashboard is a valid canvas");
+});
+
+test("a key-figures row with no indicators keeps the four summary cards the Studio showed; with indicators it shows those", () => {
+  const plain = legacyInfographicToCanvas({ id: "i", title: "I", revision: 1, config: { templateId: "CUSTOM", templateVersion: 1, sections: [{ kind: "KPIS", span: 12 }] } });
+  const cards = plain.canvas.pages[0].blocks[0].props.numbers;
+  assert.deepEqual(cards.map((n) => n.source), ["REACH_UNIQUE", "ACTIVITIES_DONE", "ACTIVITIES_PLANNED", "FINANCE_BALANCE"]);
+  assert.ok(cards.every((n) => n.label.length > 0), "each card says what it is");
+  assert.equal(plain.canvas.pages[0].blocks.length, 1);
+  assert.deepEqual(dom.canvasProblems(plain.canvas), [], "and the result is a sound canvas");
 });

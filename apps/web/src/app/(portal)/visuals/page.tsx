@@ -5,6 +5,7 @@ import { DashboardListSchema } from "@/lib/server/schemas-dashboards";
 import { CanvasListSchema } from "@/lib/server/schemas-canvas";
 import { InlineError } from "@/components/feedback/PageState";
 import { z } from "zod";
+import { OpenAsCanvasButton } from "@/features/canvas/presentation/OpenAsCanvasButton";
 
 export const dynamic = "force-dynamic";
 
@@ -60,8 +61,8 @@ export default async function VisualsPage() {
           <h2 className="text-sm font-semibold">Older dashboards and designs</h2>
           <p className="text-xs text-slate-500">Open one here to edit it with the new tools. The original stays where it was.</p>
           <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700" data-testid="older-list">
-            {olderDashboards.map((d) => <li key={`d${d.id}`} className="flex flex-wrap items-center justify-between gap-2 p-3"><div><span className="font-medium">{d.name}</span><p className="text-xs text-slate-500">Dashboard · {SCOPE[d.scope]} · {d.chartCount} chart{d.chartCount === 1 ? "" : "s"}</p></div><span className="flex gap-3 text-sm"><a className="underline" href={`/visuals/from/dashboard/${d.id}`}>Open here</a><a className="text-slate-500 underline" href={`/dashboards/${d.id}`}>Open the original</a></span></li>)}
-            {olderDesigns.map((d) => <li key={`i${d.id}`} className="flex flex-wrap items-center justify-between gap-2 p-3"><div><span className="font-medium">{d.title}</span><p className="text-xs text-slate-500">Infographic · {names.get(d.projectId) ?? "A project"}</p></div><span className="flex gap-3 text-sm"><a className="underline" href={`/visuals/from/infographic/${d.id}`}>Open here</a><a className="text-slate-500 underline" href={`/projects/${d.projectId}/infographics/${d.id}`}>Open the original</a></span></li>)}
+            {olderDashboards.map((d) => <li key={`d${d.id}`} className="flex flex-wrap items-center justify-between gap-2 p-3"><div><span className="font-medium">{d.name}</span><p className="text-xs text-slate-500">Dashboard · {SCOPE[d.scope]} · {d.chartCount} chart{d.chartCount === 1 ? "" : "s"}</p></div><span className="flex gap-3 text-sm"><OpenAsCanvasButton kind="dashboard" sourceId={d.id} /><a className="text-slate-500 underline" href={`/dashboards/${d.id}`}>Open the original</a></span></li>)}
+            {olderDesigns.map((d) => <li key={`i${d.id}`} className="flex flex-wrap items-center justify-between gap-2 p-3"><div><span className="font-medium">{d.title}</span><p className="text-xs text-slate-500">Infographic · {names.get(d.projectId) ?? "A project"}</p></div><span className="flex gap-3 text-sm"><OpenAsCanvasButton kind="infographic" sourceId={d.id} /><a className="text-slate-500 underline" href={`/projects/${d.projectId}/infographics/${d.id}`}>Open the original</a></span></li>)}
           </ul>
         </section>
       )}

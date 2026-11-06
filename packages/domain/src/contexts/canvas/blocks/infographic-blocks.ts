@@ -4,6 +4,7 @@
  * and no rule is copied. Each row of `SPECS` makes one definition; a block that needs its own props type later gets its own file.
  */
 import { sectionProblem, type InfographicSectionConfig, type InfographicSectionKind } from "../../infographics/composition.js";
+import { optionalProjectSlot } from "../binding.js";
 import { defineBlock, type BlockDefinition, type BlockFamily, type BlockSizes } from "../block-definition.js";
 import type { CanvasFacts } from "../facts.js";
 import { INFOGRAPHIC_MODELS } from "../models/index.js";
@@ -55,7 +56,7 @@ function makeBlock(kind: InfographicBlockKind): BlockDefinition<InfographicBlock
     ...(spec.headline ? { headline: true } : {}),
     defaults: () => ({ ...(spec.seed ?? {}) }),
     validate: (props) => { const m = sectionProblem({ ...props, kind: kind as InfographicSectionKind }); return m ? [{ message: m }] : []; },
-    slots: [],
+    slots: [optionalProjectSlot()],
     sizes,
     lint: [],
     // A kind with a model resolves through it (one pure function the screen and the print composer share); the rest (`PENDING_MODEL_KINDS`) still pass their settings through until 45.2.

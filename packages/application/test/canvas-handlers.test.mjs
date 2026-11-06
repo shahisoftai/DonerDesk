@@ -181,7 +181,7 @@ test("an infographic becomes one canvas that keeps its period range and places, 
 function resolver(w, over = {}) {
   const preview = { handle: async (_c, widgets) => ok({ charts: widgets.map((x) => ({ widgetId: x.id, text: "drawn" })) }) };
   const sheets = { handle: async () => ok(SAMPLE_SHEET) };
-  const info = { handle: async () => ok({ reach: SAMPLE_FACTS.reach, activities: SAMPLE_FACTS.activities, finance: SAMPLE_FACTS.finance, indicators: SAMPLE_FACTS.indicators }) };
+  const info = { handle: async () => ok({ project: { title: "Safe Water", donorName: "EU", country: "Kenya" }, reach: SAMPLE_FACTS.reach, activities: SAMPLE_FACTS.activities, finance: SAMPLE_FACTS.finance, indicators: SAMPLE_FACTS.indicators }) };
   const visible = { for: async () => ok([{ id: "p1" }]) };
   return new ResolveCanvasHandler(w.repo, over.preview ?? preview, sheets, over.info ?? info, visible, over.extras);
 }
@@ -235,4 +235,20 @@ test("the project list block is built from the viewer's own projects", async () 
   const r = await resolver(w, { extras }).handle(VIEWER, c.id);
   assert.deepEqual(r.value.models.l.model.rows, [["Water", "Active", "Wash", "Kenya", "EU"]]);
   assert.equal((await resolver(w).handle(VIEWER, c.id)).value.models.l.state, "unavailable", "with no way to read the viewer's projects it says so");
+});
+
+test("each infographic-style block reads the project it names, else its canvas's; a project's facts are read once", async () => {
+  const w = world();
+  const c = (await w.create.handle(VIEWER, { title: "Mixed", scope: "MINE" })).value;
+  const bind = (p) => [{ type: "PROJECT", slot: "project", projectId: p }];
+  await w.save.handle(VIEWER, saveInput(c, { pages: pageOf([block("a", "REACH", {}, bind("p1")), block("b", "DEMOGRAPHICS", {}, bind("p1"), 6, 0), block("c", "FUNDING", {}, bind("p2"), 0, 3), block("d", "HERO", {}, bind("p1"), 6, 3)]) }));
+  const reads = [];
+  const sheets = { handle: async (_c, pid) => { reads.push(`sheet:${pid}`); return ok(SAMPLE_SHEET); } };
+  const info = { handle: async (_c, pid) => { reads.push(`info:${pid}`); return ok({ project: { title: "Safe Water", donorName: "EU", country: "Kenya" }, reach: SAMPLE_FACTS.reach, activities: SAMPLE_FACTS.activities, finance: SAMPLE_FACTS.finance, indicators: [] }); } };
+  const h = new ResolveCanvasHandler(w.repo, { handle: async () => ok({ charts: [] }) }, sheets, info, { for: async () => ok([{ id: "p1" }]) });
+  const r = await h.handle(VIEWER, c.id);
+  assert.equal(r.value.models.a.state, "ready"); assert.equal(r.value.models.b.state, "ready");
+  assert.equal(r.value.models.c.state, "unavailable", "a project the viewer cannot see is unavailable, and is never read");
+  assert.deepEqual(reads.sort(), ["info:p1", "sheet:p1"], "p1 read once for three blocks; p2 not at all");
+  assert.deepEqual([r.value.models.d.model.title, r.value.models.d.model.kicker], ["Mixed", "EU · Kenya"], "the cover reads the canvas's title and the project");
 });

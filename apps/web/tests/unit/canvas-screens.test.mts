@@ -28,9 +28,11 @@ before(async () => {
   registry = mod; render = mod.renderToStaticMarkup; React = mod;
 });
 
-const PAINTED = ["BIG_NUMBERS", "PROGRESS_RINGS", "FUNNEL", "REACH", "ACTIVITIES_BY_LOCATION", "LOCATION_RESULTS", "LOCATION_COMPARISON", "DEMOGRAPHICS", "FUNDING", "TEXT", "DIVIDER", "BANNER", "KEY_MESSAGES", "LEGEND_NOTES", "QUOTE", "IMAGE", "TIMELINE", "SECTOR_GRID", "THREE_W"] as const;
+const PAINTED = ["BIG_NUMBERS", "PROGRESS_RINGS", "FUNNEL", "REACH", "ACTIVITIES_BY_LOCATION", "LOCATION_RESULTS", "LOCATION_COMPARISON", "DEMOGRAPHICS", "FUNDING", "HERO", "TEXT", "DIVIDER", "BANNER", "KEY_MESSAGES", "LEGEND_NOTES", "QUOTE", "IMAGE", "TIMELINE", "SECTOR_GRID", "THREE_W"] as const;
 // Blocks with nothing authored are blank rather than worded (a divider has nothing to say, text is blank until written).
 const QUIET_WHEN_EMPTY: readonly string[] = ["TEXT", "DIVIDER"];
+// Authored blocks waiting for words show a prompt, not "not yet reported".
+const PROMPT_WHEN_EMPTY: readonly string[] = ["HERO", "LEGEND_NOTES", "BANNER", "KEY_MESSAGES", "QUOTE", "IMAGE", "TIMELINE", "THREE_W", "SECTOR_GRID", "BIG_NUMBERS", "FUNNEL"];
 const frame = (language = "en") => ({ theme: themeFor("DEFAULT"), size: { w: 12, h: 4 }, language, rtl: language === "ar" });
 // With one argument the block's own fixture is used; passing props (and data, even `undefined`) replaces it.
 const modelOf = (kind: string, ...given: [] | [unknown] | [unknown, unknown]) => {
@@ -47,7 +49,7 @@ test("the screen renderers are a registry: only known kinds, and the missing lis
   for (const kind of Object.keys(registry.SCREEN_RENDERERS)) assert.ok((BLOCK_KINDS as readonly string[]).includes(kind), kind);
   assert.deepEqual([...registry.SCREEN_PENDING, ...Object.keys(registry.SCREEN_RENDERERS)].sort(), [...BLOCK_KINDS].sort());
   assert.deepEqual(Object.keys(registry.SCREEN_RENDERERS).sort(), [...PAINTED].sort(), "the same kinds the print side paints");
-  const SCREEN_PENDING_MAX = 21; // lower this as the rest are ported
+  const SCREEN_PENDING_MAX = 20; // lower this as the rest are ported
   assert.ok(registry.SCREEN_PENDING.length <= SCREEN_PENDING_MAX);
 });
 
@@ -83,6 +85,7 @@ test("a block with nothing to show says so with the reason", () => {
   for (const kind of PAINTED.filter((k) => !QUIET_WHEN_EMPTY.includes(k))) {
     const markup = html(kind, modelOf(kind, {}, undefined));
     const words = textOf(markup);
+    if (PROMPT_WHEN_EMPTY.includes(kind)) { assert.ok(/data-state="prompt"/.test(markup), `${kind} asks for words`); assert.ok(!/Not yet reported/.test(words), `${kind} is not missing data`); assert.match(words, /\S{3,}/); continue; }
     assert.match(words, /Not yet reported/, `${kind} says it has nothing`);
     assert.ok(/data-state="nothing"/.test(markup));
   }
@@ -128,4 +131,14 @@ test("a picture shows when it can be loaded, and its words when it cannot; text 
   assert.match(textOf(without), /People queue at a new borehole\./);
   const hostile = html("KEY_MESSAGES", definitionFor("KEY_MESSAGES")!.resolve({ messages: [{ text: "<script>alert(1)</script>" }] } as never, undefined as never));
   assert.ok(!hostile.includes("<script>"));
+});
+
+test("the cover shows who funds it, the title and the subtitle, over its picture when it can be loaded", () => {
+  const model = definitionFor("HERO")!.resolve({ title: "Water for Borno", text: "2026" } as never, { ...SAMPLE_FACTS, project: { title: "x", donorName: "EU", country: "Nigeria" }, coverAssetId: "cover" } as never);
+  const Screen = registry.screenRendererFor("HERO")!;
+  const plain = render(React.createElement(Screen as never, { model, frame: frame() }));
+  assert.match(textOf(plain), /EU · Nigeria\s+Water for Borno\s+2026/);
+  assert.ok(!/background-image/.test(plain));
+  const withPicture = render(React.createElement(Screen as never, { model, frame: frame(), assetUrl: (id: string) => `/files/${id}` }));
+  assert.match(withPicture, /background-image:linear-gradient\(rgba\(0,0,0,.5\), rgba\(0,0,0,.5\)\), url\(\/files\/cover\)/);
 });

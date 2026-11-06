@@ -12,6 +12,10 @@ export function factsOf(c: RenderCtx): CanvasFacts {
     finance: c.data.finance,
     indicators: c.data.indicators,
     acknowledgement: c.config.acknowledgement,
+    project: { title: c.data.project.title, donorName: c.data.project.donorName, country: c.data.project.country },
+    designTitle: c.config.title,
+    subtitle: c.config.subtitle,
+    coverAssetId: c.config.coverAssetId,
     ...(c.portfolio ? { portfolio: { rows: c.portfolio.rows, totals: c.portfolio.totals } } : {}),
   };
 }

@@ -10,7 +10,7 @@ const facts = (over) => ({ ...structuredClone(SAMPLE_FACTS), sheet: SAMPLE_SHEET
 test("the blocks still drawn from their settings are exactly the pending list, and it can only shrink", () => {
   const withoutModel = Object.keys(INFOGRAPHIC_BLOCK_SPECS).filter((k) => !(k in INFOGRAPHIC_MODELS));
   assert.deepEqual(withoutModel.sort(), [...PENDING_MODEL_KINDS].sort());
-  const PENDING_MAX = 7; // lower this as 45.2 ports HERO, small multiples, results chain and the four portfolio blocks
+  const PENDING_MAX = 6; // lower this as 45.2 ports small multiples, results chain and the four portfolio blocks
   assert.ok(PENDING_MODEL_KINDS.length <= PENDING_MAX);
   for (const k of Object.keys(INFOGRAPHIC_MODELS)) assert.ok(BLOCK_KINDS.includes(k), k);
 });
@@ -233,16 +233,43 @@ test("the project list is drawn for the person looking; a bookmarks list with no
 
 // ---- bindings and filters ----
 
-test("a block that reads a project declares the slot, the binding names it, and a block without one is not valid", () => {
-  const withProject = BLOCK_KINDS.filter((k) => definitionFor(k).slots.some((s) => s.slot === "project"));
-  assert.deepEqual(withProject.sort(), ["CHART", "KPI", "MAP", "METRIC", "TABLE"]);
+test("a block that reads a project declares the slot: chart-style blocks need one, infographic-style blocks may name one and otherwise use their canvas's", () => {
+  const slotOf = (k) => definitionFor(k).slots.find((x) => x.slot === "project");
+  const required = BLOCK_KINDS.filter((k) => slotOf(k)?.min === 1);
+  assert.deepEqual(required.sort(), ["CHART", "KPI", "MAP", "METRIC", "TABLE"]);
+  const optional = BLOCK_KINDS.filter((k) => slotOf(k)?.min === 0);
+  assert.deepEqual(optional.sort(), BLOCK_KINDS.filter((k) => definitionFor(k).reads === "FACTS").sort(), "every block that reads the project's facts may carry its own project");
   const slots = definitionFor("KPI").slots;
   assert.equal(bindingProblems(slots, []).length, 1);
   assert.deepEqual(bindingProblems(slots, [{ type: "PROJECT", slot: "project", projectId: "p" }]), []);
   assert.equal(bindingProblems(slots, [{ type: "MANUAL", slot: "project", value: "5" }]).length, 1, "a typed figure is not a project");
+  assert.deepEqual(bindingProblems(definitionFor("REACH").slots, []), [], "a block that falls back to its canvas's project needs no binding");
+  assert.deepEqual(bindingProblems(definitionFor("REACH").slots, [{ type: "PROJECT", slot: "project", projectId: "p" }]), []);
   assert.equal(projectOf([{ type: "PROJECT", slot: "project", projectId: "p" }]), "p");
   assert.equal(projectOf([]), undefined);
   assert.deepEqual(projectSlot(["PERIOD"]).honours, ["PERIOD"]);
+});
+
+test("a cover takes its title from the design, else the page, else the project; with nothing it asks for one; the picture falls back to the design's cover", () => {
+  const f = { ...SAMPLE_FACTS, project: { title: "Safe Water for Borno", donorName: "EU", country: "Nigeria" }, designTitle: "Annual review", subtitle: "2026", coverAssetId: "cover" };
+  const m = run("HERO", {}, f).model;
+  assert.deepEqual([m.title, m.kicker, m.subtitle, m.assetId], ["Annual review", "EU · Nigeria", "2026", "cover"]);
+  assert.equal(run("HERO", { title: "Own title", text: "Own sub", assetId: "mine" }, f).model.title, "Own title");
+  assert.equal(run("HERO", { assetId: "mine" }, f).model.assetId, "mine");
+  assert.equal(run("HERO", {}, { ...f, designTitle: undefined }).model.title, "Safe Water for Borno");
+  const none = run("HERO", {}, undefined);
+  assert.deepEqual([none.state, none.authoring], ["empty", true]);
+  assert.equal(run("HERO", { title: "T" }, undefined).model.kicker, "", "no project facts, no kicker");
+});
+
+test("a block waiting for a person's words says so as a prompt; one waiting for records is not marked as a prompt", () => {
+  for (const kind of ["KEY_MESSAGES", "QUOTE", "BANNER", "IMAGE", "TIMELINE", "THREE_W", "SECTOR_GRID", "BIG_NUMBERS", "FUNNEL"]) {
+    const r = run(kind, {}, SAMPLE_FACTS);
+    assert.equal(r.state, "empty", kind); assert.equal(r.authoring, true, `${kind} is waiting for words or a choice`);
+  }
+  assert.equal(run("TEXT", { text: " ", role: "body" }).authoring, true);
+  assert.equal(run("REACH", {}, { ...SAMPLE_FACTS, reach: { ...SAMPLE_FACTS.reach, overallUnique: 0 } }).authoring, undefined, "no registered people is missing data, not a prompt");
+  assert.equal(run("REACH", {}, undefined).state, "unavailable");
 });
 
 test("filters come from the slots now: what a block responds to is what it declares", () => {

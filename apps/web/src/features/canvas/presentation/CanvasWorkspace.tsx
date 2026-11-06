@@ -7,6 +7,7 @@ import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { deleteCanvasAction, duplicateCanvasAction, resolveCanvasAction, saveCanvasAction } from "@/lib/actions/canvas";
 import type { CanvasView, ResolvedCanvas } from "@/lib/server/schemas-canvas";
 import { blockLabelKey } from "../domain/canvas-copy";
+import { BlockBoundary } from "./BlockBoundary";
 import { CanvasBlockView } from "./CanvasBlockView";
 import { BlockPalette } from "./editor/BlockPalette";
 import type { IndicatorOption } from "./editor/FieldWidget";
@@ -145,7 +146,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:auto-rows-[5.5rem]" dir={canvas.language === "ar" ? "rtl" : "ltr"} data-testid="canvas-grid">
               {blocks.map((b) => (
                 <div key={b.id} className="sm:[grid-column:var(--c)/span_var(--w)] sm:[grid-row:var(--r)/span_var(--h)]" style={{ "--c": b.bounds.x + 1, "--w": b.bounds.w, "--r": b.bounds.y + 1, "--h": b.bounds.h } as React.CSSProperties}>
-                  <CanvasBlockView block={b} canvas={canvas} drawing={drawings.get(b.id)} widget={widgets.get(b.id)} serverModel={resolved?.models[b.id]} changed={savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)} selected={ed.selected === b.id} editing={editing} onSelect={() => ed.setSelected(b.id)} />
+                  <BlockBoundary label={label(b.kind)}><CanvasBlockView block={b} canvas={canvas} drawing={drawings.get(b.id)} widget={widgets.get(b.id)} serverModel={resolved?.models[b.id]} changed={savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)} selected={ed.selected === b.id} editing={editing} onSelect={() => ed.setSelected(b.id)} /></BlockBoundary>
                 </div>
               ))}
             </div>

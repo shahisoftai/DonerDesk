@@ -1,4 +1,4 @@
-import { computeMetric, validateMetricQuery, type MetricInputs, type MetricQuery, type MetricTile } from "../../dashboards/metric-tile.js";
+import { METRICS, computeMetric, validateMetricQuery, type MetricInputs, type MetricQuery, type MetricTile } from "../../dashboards/metric-tile.js";
 import { projectSlot } from "../binding.js";
 import { defineBlock } from "../block-definition.js";
 
@@ -12,5 +12,5 @@ export const metricBlock = defineBlock<MetricQuery, MetricTile, MetricInputs>({
   slots: [projectSlot([])],
   sizes: { min: { w: 2, h: 2 }, max: { w: 6, h: 3 }, default: { w: 3, h: 2 } },
   lint: [],
-  resolve: (q, inputs) => ({ state: "ready", model: computeMetric(q, inputs ?? {}), notes: [] }),
+  resolve: (q, inputs) => (q && q.metric in METRICS ? { state: "ready", model: computeMetric(q, inputs ?? {}), notes: [] } : { state: "unavailable", reason: "Choose which figure this tile shows." }),
 });

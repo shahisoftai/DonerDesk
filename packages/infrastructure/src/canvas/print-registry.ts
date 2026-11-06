@@ -6,7 +6,7 @@ import { factsOf } from "./facts-of.js";
 import { paintBigNumbers, paintFunnel, paintProgressRings } from "./painters/numbers.js";
 import { paintActivitiesByLocation, paintLocationComparison, paintLocationResults, paintReach } from "./painters/places.js";
 import { paintDemographics, paintFunding } from "./painters/people-money.js";
-import { paintBanner, paintDivider, paintKeyMessages, paintLegendNotes, paintText } from "./painters/text.js";
+import { paintBanner, paintHero, paintDivider, paintKeyMessages, paintLegendNotes, paintText } from "./painters/text.js";
 import { paintImage, paintQuote, paintSectorGrid, paintThreeW, paintTimeline } from "./painters/stories.js";
 import type { PrintPainter } from "./print-types.js";
 
@@ -23,7 +23,7 @@ export const PRINT_PAINTERS: Readonly<Partial<Record<BlockKind, PrintPainter<nev
   BIG_NUMBERS: paintBigNumbers, PROGRESS_RINGS: paintProgressRings, FUNNEL: paintFunnel,
   REACH: paintReach, ACTIVITIES_BY_LOCATION: paintActivitiesByLocation, LOCATION_RESULTS: paintLocationResults, LOCATION_COMPARISON: paintLocationComparison,
   DEMOGRAPHICS: paintDemographics, FUNDING: paintFunding,
-  TEXT: paintText, DIVIDER: paintDivider, BANNER: paintBanner, KEY_MESSAGES: paintKeyMessages, LEGEND_NOTES: paintLegendNotes,
+  HERO: paintHero, TEXT: paintText, DIVIDER: paintDivider, BANNER: paintBanner, KEY_MESSAGES: paintKeyMessages, LEGEND_NOTES: paintLegendNotes,
   QUOTE: paintQuote, IMAGE: paintImage, TIMELINE: paintTimeline, SECTOR_GRID: paintSectorGrid, THREE_W: paintThreeW,
 };
 

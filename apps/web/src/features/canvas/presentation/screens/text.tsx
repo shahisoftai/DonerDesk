@@ -1,4 +1,4 @@
-import type { bannerModel, keyMessagesModel, legendNotesModel, ScreenRendererPropsOf } from "./types";
+import type { bannerModel, heroModel, keyMessagesModel, legendNotesModel, ScreenRendererPropsOf } from "./types";
 import type { BlockModel, PaintFrame } from "@donordesk/domain/contexts/canvas/index.js";
 import { readyOrNothing, screenText } from "./screen-text";
 
@@ -36,5 +36,19 @@ export function LegendNotesScreen(props: ScreenRendererPropsOf<typeof legendNote
     const origin = `${text.l.source}: ${FROM[props.frame.language as keyof typeof FROM] ?? "project records"}`;
     const source = [origin, m.source?.periods ? range(m.source.periods) : "", m.source?.indicators ? `${text.l.indicators} ${range(m.source.indicators)}` : ""].filter(Boolean).join(" · ");
     return <ul className="space-y-1 px-4 py-3 text-xs text-slate-600">{[...m.notes, source].map((line, i) => <li key={i}>{line}</li>)}</ul>;
+  });
+}
+
+/** The cover: who funds it and where, the title, and a subtitle, over the design's picture when one can be loaded. */
+export function HeroScreen(props: ScreenRendererPropsOf<typeof heroModel>) {
+  return readyOrNothing(props, (m) => {
+    const picture = m.assetId ? props.assetUrl?.(m.assetId) : undefined;
+    return (
+      <header className="relative overflow-hidden rounded-xl bg-sky-700 px-6 py-6 text-white" style={picture ? { backgroundImage: `linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(${picture})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
+        {m.kicker && <p className="text-xs font-semibold uppercase tracking-widest opacity-90">{m.kicker}</p>}
+        <h2 className="mt-1 text-3xl font-bold leading-tight">{m.title}</h2>
+        {m.subtitle && <p className="mt-2 text-sm opacity-95">{m.subtitle}</p>}
+      </header>
+    );
   });
 }

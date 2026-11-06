@@ -1,6 +1,6 @@
 /** Reach, activities and the two by-place tables (Phase 45.1). A place nobody planned is `null` ("Not planned"), a place nobody reported is `null` ("Not reported"); per-place uniques may not add up to the overall total, and the model says so. */
 import type { CanvasFacts } from "../facts.js";
-import { empty, ready, unavailable, NO_FACTS, type SectionProps } from "./props.js";
+import { empty, ready, strings, unavailable, NO_FACTS, type SectionProps } from "./props.js";
 
 export const reachModel = (_props: SectionProps, facts: CanvasFacts | undefined) => {
   if (!facts) return unavailable(NO_FACTS);
@@ -26,12 +26,13 @@ const ROW_CAP = 18;
 
 export const locationResultsModel = (props: SectionProps, facts: CanvasFacts | undefined) => {
   if (!facts) return unavailable(NO_FACTS);
-  const named = props.indicatorIds;
+  const named = strings(props.indicatorIds);
   const pick = (i: { id: string }) => !named?.length || named.includes(i.id);
   const withTargets = facts.indicators.filter((i) => i.targetActual.kind === "WITH_TARGETS" && pick(i));
   const tracked = withTargets.length > 0 ? withTargets : facts.indicators.filter((i) => i.location.kind !== "PROJECT_WIDE" && pick(i));
   if (tracked.length === 0) return empty("No indicator is recorded by place yet.");
-  const keys = props.locationKeys?.length ? props.locationKeys : facts.locationKeys;
+  const own = strings(props.locationKeys);
+  const keys = own.length ? own : facts.locationKeys;
   const seen = new Set<string>();
   const rows: Array<{ indicator: string; location: string; target: string | null; actual: string | null; percentOfTarget: string | null; verified: boolean | null }> = [];
   for (const indicator of tracked) {

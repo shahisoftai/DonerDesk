@@ -1,7 +1,7 @@
 /** Text, divider, banner, key messages and notes, painted from their models (Phase 45.2). */
 import type { ModelOf } from "@donordesk/domain";
-import { bannerModel, keyMessagesModel, legendNotesModel } from "@donordesk/domain";
-import { framed, icon, notReported, onColor, paragraph, previewHint, r, text, wrapText } from "../../infographics/kit.js";
+import { bannerModel, heroModel, keyMessagesModel, legendNotesModel } from "@donordesk/domain";
+import { flipBack, framed, icon, notReported, onColor, paragraph, previewHint, r, text, wrapText } from "../../infographics/kit.js";
 import type { Slot } from "../../infographics/kit.js";
 import type { PrintPainter } from "../print-types.js";
 
@@ -63,4 +63,28 @@ export const paintLegendNotes: PrintPainter<Notes> = ({ model, ctx: c, title, wi
     y += p.height + 4 * s;
   }
   return framed(c, title, width, y + 10 * s, body, t.surface);
+};
+
+type Hero = ModelOf<typeof heroModel>;
+export const paintHero: PrintPainter<Hero> = ({ model, ctx: c, title: _heading, width }) => {
+  if (model.state !== "ready") return previewHint(c, undefined, width, "Give the page a title");
+  const { title, kicker, subtitle, assetId } = model.model;
+  const { t, s } = c;
+  const asset = assetId ? c.assets.get(assetId) : undefined;
+  const compact = c.format.height < 1300 || width < 700;
+  const pad = 28 * s;
+  const ink = asset ? "#ffffff" : onColor(c, t.accent);
+  const titleSize = (compact ? 28 : 36) * s;
+  const titleLines = wrapText(title, width - pad * 2, titleSize, 3, true);
+  const subLines = subtitle ? wrapText(subtitle, width - pad * 2, 14 * s, 2) : [];
+  const minH = asset ? (compact ? 200 : 260) * s : 0;
+  const h = Math.max(minH, pad + 24 * s + titleLines.length * titleSize * 1.15 + (subLines.length ? 12 * s + subLines.length * 14 * s * 1.4 : 0) + pad);
+  let svg = "";
+  if (asset) svg += `<clipPath id="hero-clip"><rect x="0" y="0" width="${r(width)}" height="${r(h)}" rx="${t.radius}"/></clipPath><g clip-path="url(#hero-clip)">${flipBack(c, width / 2, `<image x="0" y="0" width="${r(width)}" height="${r(h)}" href="${asset.dataUri}" preserveAspectRatio="xMidYMid slice"/>`)}<rect x="0" y="0" width="${r(width)}" height="${r(h)}" fill="#000000" opacity="0.5"/></g>`;
+  else svg += `<rect x="0" y="0" width="${r(width)}" height="${r(h)}" rx="${t.radius}" fill="${t.accent}"/>`;
+  svg += text(c, pad, pad + 6 * s, kicker.toUpperCase(), { size: 11 * s, fill: ink, spacing: 1, opacity: 0.9 });
+  const tp = paragraph(c, pad, pad + 14 * s, title, width - pad * 2, { size: titleSize, bold: true, fill: ink, maxLines: 3, lineHeight: titleSize * 1.15 });
+  svg += tp.svg;
+  if (subtitle) svg += paragraph(c, pad, pad + 20 * s + tp.height, subtitle, width - pad * 2, { size: 14 * s, fill: ink, maxLines: 2, opacity: 0.95 }).svg;
+  return { svg, width, height: h + 18 * s };
 };

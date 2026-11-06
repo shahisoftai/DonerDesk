@@ -2,7 +2,7 @@
 import type { BigNumberItem, BigNumberSource } from "../../infographics/composition.js";
 import { parseFigure } from "../../infographics/grounding.js";
 import { chosenIndicators, latestById, latestFinance, type CanvasFacts } from "../facts.js";
-import { empty, ready, unavailable, NO_FACTS, type SectionProps } from "./props.js";
+import { empty, prompt, ready, records, strings, unavailable, NO_FACTS, type SectionProps } from "./props.js";
 
 export interface Figure { amount: number | null; text: string; prefix?: string; suffix?: string; unverified: boolean }
 type Pick = (item: BigNumberItem, f: CanvasFacts) => Figure | null;
@@ -41,24 +41,24 @@ const PICK: Readonly<Record<BigNumberSource, Pick>> = {
 };
 
 export const bigNumbersModel = (props: SectionProps, facts: CanvasFacts | undefined) => {
-  const items = props.numbers ?? [];
-  if (items.length === 0) return empty("Add the figures to show.");
+  const items = records<BigNumberItem>(props.numbers).filter((i) => i.source in PICK);
+  if (items.length === 0) return prompt("Add the figures to show.");
   if (!facts && items.some((i) => i.source !== "MANUAL")) return unavailable(NO_FACTS);
-  const cards = items.map((item) => ({ label: item.label, source: item.source, ...(item.caption ? { caption: item.caption } : {}), ...(item.iconId ? { iconId: item.iconId } : {}), figure: facts ? PICK[item.source](item, facts) : PICK.MANUAL(item, undefined as never) }));
+  const cards = items.map((item) => ({ label: typeof item.label === "string" ? item.label : "", source: item.source, ...(item.caption ? { caption: item.caption } : {}), ...(item.iconId ? { iconId: item.iconId } : {}), figure: facts ? PICK[item.source](item, facts) : PICK.MANUAL(item, undefined as never) }));
   const sources = [...new Set(items.filter((x) => x.source === "MANUAL" && x.sourceNote).map((x) => x.sourceNote as string))];
   return ready({ cards, sources, ...(props.rounding ? { rounding: props.rounding } : {}) }, cards.some((c) => c.figure?.unverified) ? ["Some figures are not verified yet."] : []);
 };
 
 export const progressRingsModel = (props: SectionProps, facts: CanvasFacts | undefined) => {
   if (!facts) return unavailable(NO_FACTS);
-  const picked = chosenIndicators(facts, props.indicatorIds, 6, !props.indicatorIds?.length);
+  const picked = chosenIndicators(facts, strings(props.indicatorIds), 6, strings(props.indicatorIds).length === 0);
   if (picked.length === 0) return empty("No indicator has a recorded value yet.");
   return ready({ rings: picked.map((p) => ({ id: p.id, code: p.code, name: p.name, amount: p.number, text: p.value, unit: p.unit ?? "", isRate: p.isRate, percent: p.percent, target: p.targetNumber, verified: p.verified })) }, picked.some((p) => !p.verified) ? ["Some figures are not verified yet."] : []);
 };
 
 export const funnelModel = (props: SectionProps, facts: CanvasFacts | undefined) => {
-  const stages = props.stages ?? [];
-  if (stages.length === 0) return empty("Add people in need, targeted and reached.");
+  const stages = records<{ label?: string; value?: number; bind?: string; sourceNote?: string }>(props.stages).map((s) => ({ ...s, label: typeof s.label === "string" ? s.label : "" }));
+  if (stages.length === 0) return prompt("Add people in need, targeted and reached.");
   const amounts = stages.map((s) => (s.bind === "REACH_UNIQUE" ? facts?.reach.overallUnique || null : s.bind === "REACH_REGISTERED" ? facts?.reach.registeredTotal || null : s.value ?? null));
   let prev: number | null = null;
   const notes: string[] = [];
