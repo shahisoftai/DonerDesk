@@ -65,7 +65,7 @@ export function PlanStatusControl({ itemId, status, suggested, canChange, queueO
               aria-pressed={current}
               disabled={!reachable || state.busy}
               onClick={() => (current ? undefined : apply(step))}
-              className={`min-h-[32px] px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${current ? "bg-brand-600 text-white" : "bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-900/40 dark:text-slate-200"}`}
+              className={`min-h-[32px] px-2.5 text-xs font-medium [@media(pointer:coarse)]:min-h-11 transition disabled:cursor-not-allowed disabled:opacity-40 ${current ? "bg-brand-600 text-white" : "bg-white text-slate-700 hover:bg-slate-50 dark:bg-slate-900/40 dark:text-slate-200"}`}
             >
               {PLAN_STATUS_LABEL[step]}
             </button>

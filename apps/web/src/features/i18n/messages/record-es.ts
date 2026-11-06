@@ -160,4 +160,5 @@ export const recordEs: Record<keyof typeof recordEn, string> = {
   "record.more.signOut": "Cerrar sesión",
   "record.ready.counts": "{indicators} números · {forms} formularios · {places} lugares · {plan} previstos",
   "record.ready.updateForNumbers": "Descargue de nuevo cuando tenga señal para registrar números sin señal.",
+  "record.period.open": "Abrirlo",
 };

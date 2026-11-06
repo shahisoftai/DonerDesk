@@ -26,6 +26,7 @@ import { FileCapture } from "@/features/evidence/presentation/FileCapture";
 import { DayChips } from "@/features/record/presentation/DayChips";
 import { PeriodOpenCard } from "@/features/record/presentation/PeriodOpenCard";
 import { useNetworkServices } from "@/features/record/composition";
+import type { PeriodOpener } from "@/features/record/ports/record-services";
 import { localPlainDay } from "@/features/record/domain/record-day";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { applyNarrativeProposal, type NarrativeProposal } from "@/features/activities/domain/apply-narrative-proposal";
@@ -57,6 +58,7 @@ function NewActivityFormInner({
   places = [],
   onPeriodsChanged,
   canOpenPeriod = false,
+  periodOpener: periodOpenerProp,
   today: todayProp,
 }: {
   projectId: string;
@@ -85,6 +87,8 @@ function NewActivityFormInner({
   /** A manager opened a reporting period from here: the host reloads the periods. */
   onPeriodsChanged?: (() => void) | undefined;
   canOpenPeriod?: boolean;
+  /** What to do when the day lands in no period; the Record sheet passes its own (offline it answers "not now"), the page uses the server's. */
+  periodOpener?: PeriodOpener | undefined;
   /** Today as a plain day. Defaults to the phone's own calendar day. */
   today?: string;
 }) {
@@ -93,7 +97,8 @@ function NewActivityFormInner({
   const actionState = useActionState();
   const outbox = useOutbox();
   const { t } = useI18n();
-  const { periods: periodOpener } = useNetworkServices();
+  const networkServices = useNetworkServices();
+  const periodOpener = periodOpenerProp ?? networkServices.periods;
   const today = useMemo(() => todayProp ?? localPlainDay(new Date()), [todayProp]);
 
   // The form starts on today and the period follows the day; a day no period covers is never given to whichever period is listed first.
@@ -384,6 +389,10 @@ function NewActivityFormInner({
 
   const errorCount = Object.keys(fields).reduce((sum, key) => sum + (fields[key]?.length ?? 0), 0);
 
+  // The periods can change while the form is open (a manager opened one): follow the day again unless the person chose a period.
+  useEffect(() => {
+    if (!periodChosenByUser) setReportingPeriodId(periodContainingDate(reportingPeriods, activityDate) ?? "");
+  }, [reportingPeriods, activityDate, periodChosenByUser]);
   const periodCovers = dateInsidePeriodId !== undefined;
   const periodLabel = reportingPeriods.find((p) => p.id === reportingPeriodId)?.label;
 
@@ -423,7 +432,7 @@ function NewActivityFormInner({
         <p className="-mt-2 text-sm font-semibold text-success-700 dark:text-success-300" data-testid="derived-period">{t("record.value.countsToward", { period: periodLabel })}</p>
       )}
       {activityDate && !periodCovers && (
-        <PeriodOpenCard projectId={projectId} date={activityDate} canOpen={canOpenPeriod} opener={periodOpener} onOpened={() => (onPeriodsChanged ? onPeriodsChanged() : router.refresh())} />
+        <PeriodOpenCard projectId={projectId} date={activityDate} canOpen={canOpenPeriod} opener={periodOpener} savesAfter={false} onOpened={() => (onPeriodsChanged ? onPeriodsChanged() : router.refresh())} />
       )}
 
       <Field label="Location" htmlFor="location" error={fields.location?.[0]}>

@@ -11,7 +11,7 @@ import { useI18n } from "@/features/i18n/presentation/I18nProvider";
  * opens the period the project's own schedule calls for (the same rule as the period form), anyone else asks the project manager
  * through an ordinary request. With no connection it shows nothing, and the note above it already says the day has nowhere to count.
  */
-export function PeriodOpenCard({ projectId, date, canOpen, opener, onOpened }: { projectId: string; date: string; canOpen: boolean; opener: PeriodOpener; onOpened: () => void }) {
+export function PeriodOpenCard({ projectId, date, canOpen, opener, onOpened, savesAfter = true }: { projectId: string; date: string; canOpen: boolean; opener: PeriodOpener; onOpened: () => void; /** The form saves what was typed once the period is open (the number form does); otherwise the button only opens it. */ savesAfter?: boolean }) {
   const { t } = useI18n();
   const [proposal, setProposal] = useState<PeriodProposal | "unknown" | null>(null);
   const [busy, setBusy] = useState<"open" | "ask" | null>(null);
@@ -66,7 +66,7 @@ export function PeriodOpenCard({ projectId, date, canOpen, opener, onOpened }: {
             <>
               <p className="text-sm leading-snug">{t("record.period.managerBody")}</p>
               <p className="text-sm font-semibold">{t("record.period.willOpen", { dates: `${formatDate(proposal.target.startDate)} – ${formatDate(proposal.target.endDate)}` })}</p>
-              <button type="button" className="btn-primary min-h-[52px] w-full text-base" disabled={busy !== null} onClick={() => void open()}>{busy === "open" ? t("record.period.opening") : t("record.period.openAndSave")}</button>
+              <button type="button" className="btn-primary min-h-[52px] w-full text-base" disabled={busy !== null} onClick={() => void open()}>{busy === "open" ? t("record.period.opening") : savesAfter ? t("record.period.openAndSave") : t("record.period.open")}</button>
             </>
           ) : (
             <button type="button" className="btn-primary min-h-[52px] w-full text-base" disabled={busy !== null} onClick={() => void ask()}>{t("record.period.ask")}</button>

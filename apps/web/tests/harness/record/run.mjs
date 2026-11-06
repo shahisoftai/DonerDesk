@@ -93,6 +93,46 @@ await check("a day in no reporting period is explained, Save is off, and who can
   await manager.waitForFunction(() => window.__h.calls.some((c) => c[0] === "period.open"));
 });
 
+await check("opened on a kind, Back reaches the chooser and stays there", async () => {
+  const page = await open("kind=NUMBER");
+  await page.getByLabel(/How many/).waitFor();
+  await page.getByRole("button", { name: /Back/ }).click();
+  await page.getByRole("heading", { name: "What are you recording?" }).waitFor();
+  await page.waitForTimeout(600);
+  assert.equal(await page.getByLabel(/How many/).count(), 0, "it did not jump back into the number form");
+});
+
+await check("opening a missing period keeps what was typed and saves it into the new period", async () => {
+  const page = await open("noPeriod=1&caps=indicator.update,project.edit");
+  await pickNumber(page);
+  await page.getByLabel(/How many/).fill("77");
+  await page.getByText("Add detail", { exact: true }).click();
+  await page.getByLabel("A note (optional)").fill("typed before the period existed");
+  await page.getByRole("button", { name: "Pick a day" }).click();
+  await page.locator('input[type="date"]').fill("2035-01-15");
+  await page.getByRole("button", { name: "Open it and save" }).click();
+  await page.getByRole("heading", { name: "Saved" }).waitFor();
+  const [[sent]] = await calls(page, "quickEnterValueAction");
+  assert.equal(sent.periodAchievement, "77");
+  assert.equal(sent.date, "2035-01-15");
+  assert.equal(sent.comments, "typed before the period existed");
+});
+
+await check("an activity on a day with no period: a manager opens it, the form follows and then saves into it", async () => {
+  const page = await open("kind=ACTIVITY&noPeriod=1&caps=activity.create,project.edit");
+  await page.getByLabel("Activity title").fill("Late record");
+  await page.getByLabel("What happened?").fill("Recorded for a later month.");
+  await page.getByRole("button", { name: "Pick a day" }).click();
+  await page.locator('input[type="date"]').first().fill("2035-01-15");
+  await page.getByRole("button", { name: "Open it", exact: true }).click();
+  await page.getByText(/Counts toward/).waitFor();
+  await page.getByRole("button", { name: /^Save$/ }).click();
+  await page.getByRole("heading", { name: "Saved" }).waitFor();
+  const [[input]] = await calls(page, "createActivityAction");
+  assert.equal(input.reportingPeriodId, "per-new");
+  assert.equal(input.activityTitle, "Late record");
+});
+
 await check("a number that needs a split says so, and the split travels with it", async () => {
   const page = await open("breakdown=1");
   await pickNumber(page);

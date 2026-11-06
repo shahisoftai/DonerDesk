@@ -20,8 +20,9 @@ export function ActivityView({ deps, projectId, today, can, plannedActivityId, o
   const [saved, setSaved] = useState<{ title: string; queued: boolean } | null>(null);
   const [session, setSession] = useState(0);
 
-  const load = useCallback(async () => {
-    setData(null);
+  // A refresh after a period was opened keeps the form on screen (and what was typed in it).
+  const load = useCallback(async (keepShown = false) => {
+    if (!keepShown) setData(null);
     try {
       const [periods, plan, places] = await Promise.all([deps.lookup.periods(projectId), deps.lookup.plan(projectId), deps.lookup.places(projectId)]);
       setData(periods === null ? "missing" : { periods, plan: plan ?? [], places });
@@ -69,7 +70,8 @@ export function ActivityView({ deps, projectId, today, can, plannedActivityId, o
       places={data.places.map((p) => p.name)}
       today={today}
       canOpenPeriod={can("project.edit")}
-      onPeriodsChanged={() => { deps.lookup.refresh(projectId); void load(); }}
+      periodOpener={deps.periods}
+      onPeriodsChanged={() => { deps.lookup.refresh(projectId); void load(true); }}
       onSaved={(info) => { setSaved(info); void afterSave?.(info); }}
       {...(chosen ? { initialPlannedActivityId: chosen.id } : {})}
     />

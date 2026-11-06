@@ -621,6 +621,9 @@ export interface OfflinePackReaders {
   myWeek?: Pick<IMyWeekReader, "openPlannedFor">;
 }
 
+/** What lets someone take a project pack: any way of recording. The parts they get follow the permission for each. */
+const PACK_PERMISSIONS = ["indicator.update", "activity.create", "evidence.upload", "workplan.update-own"] as const;
+
 /** How far ahead the pack carries the person's own planned items. */
 export const PACK_PLAN_DAYS_AHEAD = 14;
 
@@ -632,7 +635,9 @@ export class GetOfflinePackHandler {
   constructor(private readonly forms: ICollectionFormRepository, private readonly places: IPlaceRepository, private readonly clock: IClock, private readonly readers: OfflinePackReaders = {}) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<OfflinePackDto, DomainError>> {
-    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    // Anyone who can record something may take the pack; what is in it follows what they may record (below).
+    if (!PACK_PERMISSIONS.some((p) => can(ctx, p))) return fail(DomainError.forbidden("You cannot record on this project"));
+    const mayEnterNumbers = can(ctx, "indicator.update");
     const [listed, all] = await Promise.all([this.forms.listByProject(projectId, ctx.tenant.tenantId), this.places.list(ctx.tenant.tenantId)]);
     if (!listed.ok) return listed;
     if (!all.ok) return all;
@@ -640,11 +645,12 @@ export class GetOfflinePackHandler {
     const dto: OfflinePackDto = {
       projectId,
       generatedAt: this.clock.now().toISOString(),
-      forms: listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({ id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields] })),
+      // Forms and numbers are answered with the permission to enter numbers; without it they are simply not carried.
+      forms: !mayEnterNumbers ? [] : listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({ id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields] })),
       places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id) })),
     };
 
-    if (this.readers.indicators) {
+    if (this.readers.indicators && mayEnterNumbers) {
       const found = await this.readers.indicators.findByProject(projectId, ctx.tenant.tenantId);
       if (!found.ok) return found;
       dto.indicators = found.value
@@ -656,7 +662,7 @@ export class GetOfflinePackHandler {
       if (!found.ok) return found;
       dto.periods = found.value.map((p) => ({ id: p.id, reportType: String(p.reportType), startDate: p.duration.start.toISOString().slice(0, 10), endDate: p.duration.end.toISOString().slice(0, 10), status: p.status.toString() }));
     }
-    if (this.readers.myWeek) {
+    if (this.readers.myWeek && (can(ctx, "activity.create") || can(ctx, "workplan.update-own"))) {
       const today = toPlainDate(this.clock.now())!;
       const open = await this.readers.myWeek.openPlannedFor(ctx.tenant.userId, ctx.tenant.tenantId, addDays(today, PACK_PLAN_DAYS_AHEAD));
       if (!open.ok) return open;

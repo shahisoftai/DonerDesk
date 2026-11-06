@@ -164,7 +164,7 @@ export function AppShell({
             </Link>
             <BookmarkButton />
             <AcademyHeaderButton />
-            <RecordMenu canCreate={canCreate} canRecord={canRecord} />
+            <RecordMenu canCreate={canCreate} canRecord={canRecord} hideOnPhone={phoneBar} />
             <LocaleSwitcher />
             <ThemeToggle />
             <NotificationBell items={bellItems} />
@@ -224,7 +224,7 @@ export function AppShell({
  * record gets a single button that opens the sheet; one who can only create gets the old menu; one who can do both gets both under
  * two headings. It is on every screen size, so recording is never more than a tap away.
  */
-function RecordMenu({ canCreate, canRecord }: { canCreate: boolean; canRecord: boolean }) {
+function RecordMenu({ canCreate, canRecord, hideOnPhone }: { canCreate: boolean; canRecord: boolean; /** The bottom bar has the Record button on a phone, so the header's one is not shown there. */ hideOnPhone: boolean }) {
   const record = useRecordSheet();
   const { t } = useI18n();
   const menu = useRef<HTMLDetailsElement>(null);
@@ -234,13 +234,13 @@ function RecordMenu({ canCreate, canRecord }: { canCreate: boolean; canRecord: b
   if (!canRecord && !canCreate) return null;
   if (canRecord && !canCreate) {
     return (
-      <button type="button" className="btn min-h-11 gap-1.5 px-3 text-sm" aria-label={t("record.button")} onClick={() => record.open()}>
+      <button type="button" className={cn("btn min-h-11 gap-1.5 px-3 text-sm", hideOnPhone && "max-lg:hidden")} aria-label={t("record.button")} onClick={() => record.open()}>
         {plus}<span className="hidden sm:inline">{t("record.button")}</span>
       </button>
     );
   }
   return (
-    <details ref={menu} className="group relative">
+    <details ref={menu} className={cn("group relative", hideOnPhone && "max-lg:hidden")}>
       <summary className="btn min-h-11 cursor-pointer list-none gap-1.5 px-3 text-sm" aria-label={canRecord ? t("record.button") : "Create"}>
         {plus}<span className="hidden sm:inline">{canRecord ? t("record.button") : "Create"}</span>
       </summary>

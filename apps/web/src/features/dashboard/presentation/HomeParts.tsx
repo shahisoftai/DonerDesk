@@ -56,7 +56,7 @@ export function Panel({ title, href, linkLabel, children }: { title: string; hre
     <section className="min-w-0">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-medium">{title}</h2>
-        {href && <Link href={href} className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400">{linkLabel ?? "View all →"}</Link>}
+        {href && <Link href={href} className="inline-flex items-center py-2 text-xs font-medium text-brand-600 hover:underline dark:text-brand-400 [@media(pointer:coarse)]:min-h-11">{linkLabel ?? "View all →"}</Link>}
       </div>
       <div className="mt-3">{children}</div>
     </section>
@@ -81,7 +81,7 @@ export function QuickLinks({ links }: { links: ReadonlyArray<QuickLink> }) {
     <Panel title="Quick links">
       <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {links.map((l) => (
-          <Link key={l.href + l.label} href={l.href} className="rounded-lg border border-slate-200/70 bg-white px-3 py-2.5 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
+          <Link key={l.href + l.label} href={l.href} className="min-h-11 rounded-lg border border-slate-200/70 bg-white px-3 py-2.5 transition hover:border-brand-400/40 dark:border-white/10 dark:bg-white/[0.03]">
             <span className="block text-sm font-medium">{l.label}</span>
             {l.hint && <span className="block text-xs text-slate-500 dark:text-slate-400">{l.hint}</span>}
           </Link>

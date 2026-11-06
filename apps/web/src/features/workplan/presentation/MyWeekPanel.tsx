@@ -6,11 +6,10 @@ import { countOf } from "@donordesk/domain/core/plural.js";
 import { formatShortDate, WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
 import type { MyWeek } from "@/lib/server/schemas";
 import { Badge } from "@/components/data/Badge";
-import { Select } from "@/components/ui/Select";
 import { groupMyWeek } from "../domain/my-week";
 import { monthCells, weekCells } from "../domain/calendar-layout";
 import { PlanStatusControl } from "./PlanStatusControl";
-import { useRecordSheet } from "@/features/record/presentation/RecordHost";
+import { MarkDoneButton } from "./MarkDoneButton";
 
 const SIGNAL_TONE = { ON_TIME: "success", LATE: "danger", DONE: "neutral", CANCELLED: "neutral" } as const;
 type Layout = "list" | "week" | "month";
@@ -21,31 +20,11 @@ function dates(start: string, end: string, today: string): string {
   return start === end ? formatShortDate(start, today) : `${formatShortDate(start, today)} to ${formatShortDate(end, today)}`;
 }
 
-/** Where "Add completed activity" goes: straight there for one project, a choice for several. */
-function AddCompleted({ projects }: { projects: Array<{ id: string; title: string }> }) {
-  const [projectId, setProjectId] = useState(projects[0]?.id ?? "");
-  const record = useRecordSheet();
-  if (projects.length === 0) return null;
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {projects.length > 1 && (
-        <label className="sr-only" htmlFor="my-week-project">Project</label>
-      )}
-      {projects.length > 1 && (
-        <Select id="my-week-project" className="max-w-xs" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-          {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-        </Select>
-      )}
-      <button type="button" className="btn min-h-[52px] text-base" onClick={() => record.open({ projectId, kind: "ACTIVITY" })}>{WORKPLAN_COPY.addCompleted}</button>
-    </div>
-  );
-}
-
 /**
  * A field officer's landing: late, this week and next week as a list, or as a week / month calendar; the activities a
  * reviewer sent back; and one big "Add completed activity". Status changes are kept on the device when offline.
  */
-export function MyWeekPanel({ week, projects }: { week: MyWeek; projects: Array<{ id: string; title: string }> }) {
+export function MyWeekPanel({ week }: { week: MyWeek; /** Kept so existing callers still compile; recording now starts from the Record button, not from here. */ projects?: Array<{ id: string; title: string }> }) {
   const [layout, setLayout] = useState<Layout>("list");
   const today = week.today;
   const groups = groupMyWeek(week.planned, today);
@@ -54,12 +33,13 @@ export function MyWeekPanel({ week, projects }: { week: MyWeek; projects: Array<
   const row = (p: MyWeek["planned"][number]) => (
     <li key={p.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="min-w-0">
-        <Link href={`/projects/${p.projectId}/activities/plan/${p.id}`} className="font-medium text-brand-700 hover:underline dark:text-brand-300">{p.title}</Link>
+        <Link href={`/projects/${p.projectId}/activities/plan/${p.id}`} className="inline-block py-1 font-medium text-brand-700 hover:underline dark:text-brand-300 [@media(pointer:coarse)]:py-3">{p.title}</Link>
         <p className="text-xs text-slate-500">{dates(p.plannedStart, p.plannedEnd, today)} · {p.projectTitle}{p.location ? ` · ${p.location}` : ""}</p>
       </div>
       <div className="flex items-center gap-3">
         <Badge tone={SIGNAL_TONE[p.signal]} title={p.signalReason}>{p.signalLabel}</Badge>
         <PlanStatusControl itemId={p.id} status={p.status} suggested={p.suggestedStatus} canChange queueOffline={{ title: p.title }} />
+        {(p.status === "PLANNED" || p.status === "IN_PROGRESS") && <MarkDoneButton projectId={p.projectId} itemId={p.id} label="Finished?" />}
       </div>
     </li>
   );
@@ -68,7 +48,6 @@ export function MyWeekPanel({ week, projects }: { week: MyWeek; projects: Array<
     <section aria-labelledby="my-week-title" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="my-week-title" className="text-lg font-semibold tracking-tight">My week</h2>
-        <AddCompleted projects={projects} />
       </div>
 
       {week.sentBack.length > 0 && (
@@ -85,7 +64,7 @@ export function MyWeekPanel({ week, projects }: { week: MyWeek; projects: Array<
       <div role="group" aria-label="Layout" className="inline-flex overflow-hidden rounded-lg border border-slate-300 dark:border-white/15">
         {(Object.keys(LAYOUT_LABEL) as Layout[]).map((key) => (
           <button key={key} type="button" aria-pressed={layout === key} onClick={() => setLayout(key)}
-            className={`min-h-[32px] px-3 text-xs font-medium ${layout === key ? "bg-brand-600 text-white" : "bg-white text-slate-700 dark:bg-slate-900/40 dark:text-slate-200"}`}>
+            className={`min-h-[32px] px-3 text-xs font-medium [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:px-4 ${layout === key ? "bg-brand-600 text-white" : "bg-white text-slate-700 dark:bg-slate-900/40 dark:text-slate-200"}`}>
             {LAYOUT_LABEL[key]}
           </button>
         ))}

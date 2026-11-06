@@ -162,4 +162,5 @@ export const recordEn = {
   "record.more.signOut": "Sign out",
   "record.ready.counts": "{indicators} numbers · {forms} forms · {places} places · {plan} planned",
   "record.ready.updateForNumbers": "Download again while you have signal to record numbers with no signal.",
+  "record.period.open": "Open it",
 } as const;

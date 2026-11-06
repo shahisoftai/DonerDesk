@@ -93,7 +93,7 @@ export const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/dashboards\/[^/]+\/links$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/dashboards\/[^/]+\/links$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/dashboard-links\/[^/]+\/revoke$/, permission: "project.view" },
-  { method: "GET", route: /^\/v1\/projects\/[^/]+\/offline-pack$/, permission: "indicator.update" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/offline-pack$/, permission: "project.view" }, // the handler applies the finer rule: any way of recording, and each part follows its own permission
   { method: "POST", route: /^\/v1\/collection-forms$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/indicators\/[^/]+\/collection-form$/, permission: "project.edit" },
   { method: "GET", route: /^\/v1\/collection-forms\/[^/]+$/, permission: "project.view" },

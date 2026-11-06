@@ -32,8 +32,6 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
   const planned = week.ok ? week.value.planned.length : 0;
 
   const links: QuickLink[] = [];
-  if (ctx.capabilities.has("activity.create")) links.push({ href: "/projects", label: "Record a completed activity", hint: "Pick the project, then Activities" });
-  if (ctx.capabilities.has("evidence.upload")) links.push({ href: "/evidence", label: "Upload evidence" });
   links.push({ href: "/my-work", label: "Everything assigned to me" });
   links.push({ href: "/projects", label: "My projects" });
 

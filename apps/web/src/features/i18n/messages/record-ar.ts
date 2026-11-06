@@ -160,4 +160,5 @@ export const recordAr: Record<keyof typeof recordEn, string> = {
   "record.more.signOut": "تسجيل الخروج",
   "record.ready.counts": "{indicators} أرقام · {forms} نماذج · {places} أماكن · {plan} مخطَّط",
   "record.ready.updateForNumbers": "نزّل مرة أخرى عند توفر الإشارة لتسجيل الأرقام دون إشارة.",
+  "record.period.open": "افتحها",
 };

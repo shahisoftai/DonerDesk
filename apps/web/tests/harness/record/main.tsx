@@ -65,7 +65,12 @@ const deps: RecordDeps = {
   workSink: createWorkSink({ complete: (id, b) => w.__call("completePlannedActivityAction", [id, b]) as never, changeStatus: (id, b) => w.__call("changePlanStatusAction", [id, b]) as never, enqueue, canQueue: true, newId: () => `id-${++n}`, now: () => 1 }),
   periods: {
     proposal: async () => (has("noCadence") ? { kind: "NONE", reason: "NO_CADENCE" } : (h.proposal as never)),
-    open: async (...a) => { h.calls.push(["period.open", a]); return { ok: true }; },
+    open: async (...a) => {
+      h.calls.push(["period.open", a]);
+      // Opening makes a period that covers the day, as the server would, and the form is told to look again.
+      pack.periods = [...(pack.periods ?? []), { id: "per-new", reportType: "MONTHLY", startDate: "2035-01-01", endDate: "2035-01-31", status: "DRAFT" }];
+      return { ok: true };
+    },
     ask: async (...a) => { h.calls.push(["period.ask", a]); return { ok: true }; },
   },
   facts: { simpleReview: async () => has("simple") },

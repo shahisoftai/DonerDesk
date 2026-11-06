@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Capability } from "@/lib/shared/capabilities";
 import { Select } from "@/components/ui/Select";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
@@ -61,9 +61,14 @@ export function RecordSheetBody({ deps, capabilities, request, onClose, kindFilt
   }, [deps.lookup, projectId]);
 
   // A kind asked for by the opener, or the one used last, is opened without another tap only when the opener named it.
+  const startedOn = useRef(false);
   useEffect(() => {
-    if (request.kind && !kind) setKind(startingKind(kinds, request.kind));
-  }, [request.kind, kind, kinds]);
+    if (startedOn.current || !request.kind) return;
+    const first = startingKind(kinds, request.kind);
+    if (first?.key !== request.kind) return;
+    startedOn.current = true;
+    setKind(first);
+  }, [request.kind, kinds]);
 
   function choose(next: RecordKind) {
     setKind(next);

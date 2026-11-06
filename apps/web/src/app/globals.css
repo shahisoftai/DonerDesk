@@ -533,3 +533,9 @@
 @media (max-width: 1023px) {
   html[data-phone-bar="1"] .outbox-banner { bottom: 72px; }
 }
+
+/* A finger needs 44 px (Phase 44): on a touch screen every button style and the header's controls are at least that big. A mouse keeps the compact sizes. */
+@media (pointer: coarse) {
+  .btn, .btn-primary, .btn-secondary, .btn-danger { min-height: 44px; }
+  header button, header summary, header select, header > div a { min-height: 44px; min-width: 44px; }
+}

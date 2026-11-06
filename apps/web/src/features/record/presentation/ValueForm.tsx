@@ -62,6 +62,8 @@ export function ValueForm(props: ValueFormProps) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState<ValueSaved | null>(null);
+  // "Open it and save": once the period exists, the number the person already typed is saved without typing it again.
+  const [saveWhenOpen, setSaveWhenOpen] = useState(false);
 
   const indicator = typable.find((i) => i.id === indicatorId);
   const landing = useMemo(() => dateLanding(date, periods), [date, periods]);
@@ -100,6 +102,15 @@ export function ValueForm(props: ValueFormProps) {
     setSaved(result.value);
     props.onSaved?.(result.value);
   }
+
+  useEffect(() => {
+    if (saveWhenOpen && landing.kind === "FOUND" && !blocked && !busy) {
+      setSaveWhenOpen(false);
+      void save();
+    }
+    // `save` reads the latest state it closes over on each render; only the arrival of the period triggers it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveWhenOpen, landing.kind, blocked]);
 
   function another() {
     setValue(""); setNote(""); setSource(""); setSplit([]); setFilter(""); setSaved(null); setError(null);
@@ -152,7 +163,7 @@ export function ValueForm(props: ValueFormProps) {
         </p>
       )}
 
-      {landing.kind === "NONE" && <PeriodOpenCard projectId={projectId} date={date} canOpen={canOpenPeriod} opener={props.periodOpener} onOpened={props.onPeriodsChanged} />}
+      {landing.kind === "NONE" && <PeriodOpenCard projectId={projectId} date={date} canOpen={canOpenPeriod} opener={props.periodOpener} onOpened={() => { if (value.trim() !== "") setSaveWhenOpen(true); props.onPeriodsChanged(); }} />}
       <AdviceList advice={advice} hide={landing.kind === "NONE" ? ["NO_PERIOD_FOR_DAY"] : []} />
 
       <details className="group rounded-2xl border border-slate-300 bg-white dark:border-white/15 dark:bg-slate-900/40" open={indicator?.disaggregationRequired && split.length > 0 ? true : undefined}>

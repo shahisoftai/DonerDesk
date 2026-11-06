@@ -16,8 +16,9 @@ export function NumberView({ deps, projectId, today, can, indicatorId, onClose }
   const [data, setData] = useState<{ indicators: QuickIndicator[]; periods: QuickPeriod[] } | "missing" | "failed" | null>(null);
   const [simpleReview, setSimpleReview] = useState(false);
 
-  const load = useCallback(async () => {
-    setData(null);
+  // A refresh after a period was opened keeps the form on screen (and what was typed in it); only a first load shows the waiting line.
+  const load = useCallback(async (keepShown = false) => {
+    if (!keepShown) setData(null);
     try {
       const [indicators, periods] = await Promise.all([deps.lookup.indicators(projectId), deps.lookup.periods(projectId)]);
       setData(indicators === null || periods === null ? "missing" : { indicators: indicators.map(toQuickIndicator), periods: periods.map(toQuickPeriod) });
@@ -41,7 +42,7 @@ export function NumberView({ deps, projectId, today, can, indicatorId, onClose }
   }
   return (
     <ValueForm
-      key={`${projectId}:${data.periods.length}`}
+      key={projectId}
       projectId={projectId}
       indicators={data.indicators}
       periods={data.periods}
@@ -51,7 +52,7 @@ export function NumberView({ deps, projectId, today, can, indicatorId, onClose }
       simpleReview={simpleReview}
       canOpenPeriod={can("project.edit")}
       initialIndicatorId={indicatorId}
-      onPeriodsChanged={() => { deps.lookup.refresh(projectId); void load(); }}
+      onPeriodsChanged={() => { deps.lookup.refresh(projectId); void load(true); }}
       onDone={onClose}
     />
   );

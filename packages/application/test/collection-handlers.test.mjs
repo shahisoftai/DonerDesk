@@ -253,3 +253,23 @@ test("a handler built without the v2 readers answers exactly as pack v1 did", as
   assert.equal("periods" in r.value, false);
   assert.equal("plan" in r.value, false);
 });
+
+test("a field officer (no permission to enter numbers) gets the periods, places and own plan, but no forms or numbers", async () => {
+  const w = world();
+  const field = { tenant: { tenantId, userId: "u-field", role: "FIELD_OFFICER" } };
+  const periods = { findByProject: async () => ok([{ id: "p-nov", reportType: "MONTHLY", duration: { start: new Date("2026-10-01T00:00:00Z"), end: new Date("2026-10-31T00:00:00Z") }, status: { toString: () => "DRAFT" } }]) };
+  const indicators = { findByProject: async () => ok([{ id: "i1", code: "A1", name: "n", type: "NUMBER", disaggregationRequired: false, formula: undefined }]) };
+  const myWeek = { openPlannedFor: async () => ok([{ item: { id: "a1", projectId: "p1", title: "Hygiene", plannedStart: "2026-10-10", plannedEnd: "2026-10-10", status: "PLANNED", snapshot: () => ({}) }, projectTitle: "T" }]) };
+  const r = await new GetOfflinePackHandler(w.forms, { list: async () => ok([]) }, clock, { indicators, periods, myWeek }).handle(field, "p1");
+  assert.equal(r.ok, true, r.error?.message);
+  assert.deepEqual(r.value.forms, []);
+  assert.equal("indicators" in r.value, false, "numbers are not carried for someone who cannot enter them");
+  assert.deepEqual(r.value.periods.map((p) => p.id), ["p-nov"]);
+  assert.deepEqual(r.value.plan.map((p) => p.id), ["a1"]);
+});
+
+test("a viewer still cannot take a pack", async () => {
+  const w = world();
+  const r = await new GetOfflinePackHandler(w.forms, { list: async () => ok([]) }, clock).handle(viewer, "p1");
+  assert.equal(r.ok, false);
+});
