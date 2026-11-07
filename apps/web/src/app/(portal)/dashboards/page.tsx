@@ -1,3 +1,4 @@
+import { MovedToVisuals } from "@/components/layout/MovedToVisuals";
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -22,6 +23,7 @@ export default async function DashboardsPage({ searchParams }: { searchParams: P
   const names = new Map((projects.ok ? projects.value.items : []).map((p) => [p.id, p.title]));
   return (
     <div className="animate-fade-in space-y-6">
+      <MovedToVisuals what="dashboards" />
       <header>
         <div className="flex flex-wrap items-baseline justify-between gap-3"><h1 className="text-xl font-semibold tracking-tight">Dashboards</h1><Link className="text-sm underline" href="/dashboards/templates">Start from a sector template</Link></div>
         <p className="mt-1 max-w-3xl text-sm text-slate-500">Keep the charts you look at often in one place. A dashboard stores which chart and where it sits, never the figures: each chart is drawn from the project&apos;s recorded values when you open it.</p>

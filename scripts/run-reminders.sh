@@ -19,12 +19,14 @@ API="${API_URL:-http://127.0.0.1:${PORT:-4000}}"
 : "${INTERNAL_TOKEN:?INTERNAL_TOKEN is not set in $ENV_FILE}"
 : "${INTERNAL_HMAC_SECRET:?INTERNAL_HMAC_SECRET is not set in $ENV_FILE}"
 
-PATH_="/internal/reminders/run"
-BODY="{\"force\":${FORCE}}"
 failed=0
+# Each organisation is called for each job: its reminders, then the scheduled copies of its canvases that are due.
+JOBS=("/internal/reminders/run|{\"force\":${FORCE}}" "/internal/canvas-snapshots/run|{}")
 
 mapfile -t TENANTS < <(sudo -u postgres psql -At -d "$DB" -c 'SELECT "tenantId" FROM "Organization" ORDER BY "tenantId"')
 for TENANT in "${TENANTS[@]}"; do
+ for JOB in "${JOBS[@]}"; do
+  PATH_="${JOB%%|*}"; BODY="${JOB#*|}"
   TS="$(date +%s)"
   SIG="$(printf 'POST\n%s\n%s\n%s\n%s' "$PATH_" "$TENANT" "$TS" "$BODY" | openssl dgst -sha256 -hmac "$INTERNAL_HMAC_SECRET" -binary | base64)"
   if OUT="$(curl -fsS -m 120 -X POST "$API$PATH_" \
@@ -36,5 +38,6 @@ for TENANT in "${TENANTS[@]}"; do
     echo "$TENANT FAILED" >&2
     failed=1
   fi
+ done
 done
 exit "$failed"

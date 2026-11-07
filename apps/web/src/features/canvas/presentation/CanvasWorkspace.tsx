@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CANVAS_PROFILES, altPack, canPublish, canvasAsDesign, canvasJson, canvasProblems, canvasToWidgets, checkCanvas, listThemes, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
+import { CANVAS_PROFILES, altPack, definitionFor, canPublish, canvasAsDesign, canvasJson, canvasProblems, canvasToWidgets, checkCanvas, listThemes, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { deleteCanvasAction, duplicateCanvasAction, previewCanvasAction, resolveCanvasAction, saveCanvasAction } from "@/lib/actions/canvas";
 import type { CanvasView, ResolvedCanvas } from "@/lib/server/schemas-canvas";
@@ -14,6 +14,8 @@ import { CanvasBlockView } from "./CanvasBlockView";
 import { BlockPalette } from "./editor/BlockPalette";
 import type { IndicatorOption } from "./editor/FieldWidget";
 import { Inspector } from "./editor/Inspector";
+import { PublishPanel } from "./PublishPanel";
+import { VersionsPanel } from "./VersionsPanel";
 import { useCanvasEditor } from "./use-canvas-editor";
 
 export interface ProjectOption { id: string; name: string }
@@ -43,6 +45,8 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const [resolved, setResolved] = useState(first);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(resolveError ? { tone: "error", text: resolveError } : null);
+  const [reviewNow, setReviewNow] = useState(initial.reviewStatus);
+  const [filters, setFilters] = useState<{ periodId: string; places: string[] }>({ periodId: "", places: [] });
   const [serverProblems, setServerProblems] = useState<CanvasProblem[]>([]);
   const base = useRef({ revision: initial.canvas.revision, json: "" });
   const snapshot = useCallback((c: Canvas) => JSON.stringify({ t: c.title, p: c.profile, th: c.themeId, l: c.language, m: c.mode, pages: c.pages }), []);
@@ -54,13 +58,19 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   // An edited, unsaved canvas is read again as the person works (after a short pause), so each change shows its real figures at once.
   const [preview, setPreview] = useState<{ sig: string; value: ResolvedCanvas } | null>(null);
   const [previewError, setPreviewError] = useState<string | null>(null);
-  const sig = useMemo(() => JSON.stringify({ t: canvas.title, th: canvas.themeId, l: canvas.language, m: canvas.mode, pages: canvas.pages, o: canvas.options }), [canvas]);
+  const sig = useMemo(() => JSON.stringify({ t: canvas.title, th: canvas.themeId, l: canvas.language, m: canvas.mode, pages: canvas.pages, o: canvas.options, f: filters }), [canvas, filters]);
   const savedSig = useRef(sig);
+  const filtered = useRef(false);
   useEffect(() => {
-    if (!dirty) { setPreview(null); setPreviewError(null); savedSig.current = sig; return; }
+    if (!dirty) {
+      setPreview(null); setPreviewError(null); savedSig.current = sig;
+      // Narrowing a saved canvas reads it again with the viewer's period and places; nothing is saved.
+      if (filters.periodId || filters.places.length || filtered.current) { filtered.current = Boolean(filters.periodId || filters.places.length); void resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places }).then((r) => { if (r.ok) setResolved(r.value); }); }
+      return;
+    }
     let current = true;
     const timer = setTimeout(async () => {
-      const r = await previewCanvasAction({ title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(initial.projectId ? { projectId: initial.projectId } : {}) });
+      const r = await previewCanvasAction({ title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(initial.projectId ? { projectId: initial.projectId } : {}), ...(filters.periodId ? { periodId: filters.periodId } : {}), ...(filters.places.length ? { placeKeys: filters.places } : {}) });
       if (!current) return;
       if (r.ok) { setPreview({ sig, value: r.value }); setPreviewError(null); } else setPreviewError(r.error.message);
     }, 350);
@@ -73,6 +83,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const drawings = useMemo(() => new Map((live?.drawings ?? []).map((d) => [d.widgetId, d])), [live]);
   const problems = useMemo(() => canvasProblems(canvas), [canvas]);
   const findings = useMemo(() => checkCanvas(canvas), [canvas]);
+  const hasFilterBar = useMemo(() => canvas.pages.some((p) => p.blocks.some((b) => definitionFor(b.kind)?.family === "CONTROLS" && b.style?.hidden !== true)), [canvas]);
   const leftOut = useMemo(() => canvasAsDesign(canvas).skipped, [canvas]);
   const canEdit = initial.canEdit;
 
@@ -91,8 +102,9 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
     base.current = { revision: saved.revision, json: snapshot(canvas) };
     savedBlocks.current = new Map(canvas.pages.flatMap((p) => p.blocks).map((b) => [b.id, JSON.stringify(b.props) + JSON.stringify(b.bindings)]));
     ed.adoptRevision(saved.revision);
+    setReviewNow("DRAFT");
     setServerProblems(r.value.problems);
-    const fresh = await resolveCanvasAction(initial.id);
+    const fresh = await resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places });
     if (fresh.ok) setResolved(fresh.value);
     setBusy(null);
     setNotice({ tone: "ok", text: r.value.problems.length ? `Saved. ${r.value.problems.length} block${r.value.problems.length === 1 ? " is" : "s are"} not set up yet.` : "Saved." });
@@ -166,6 +178,17 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
         {editing && canvas.pages.length > 1 && <button type="button" className="ms-2 text-xs text-red-700 underline" onClick={() => ed.removePage(ed.page.id)}>Remove this page</button>}
       </nav>
 
+      {hasFilterBar && live && (live.choices.periods.length > 0 || live.choices.places.length > 0) && (
+        <section aria-label="Filters" className="flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 p-3 text-sm print:hidden dark:bg-slate-900" data-testid="canvas-filters">
+          {live.choices.periods.length > 0 && <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Up to period</span>
+            <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={filters.periodId} onChange={(e) => setFilters((f) => ({ ...f, periodId: e.target.value }))}><option value="">Latest</option>{live.choices.periods.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>}
+          {live.choices.places.length > 0 && <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Place</span>
+            <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={filters.places[0] ?? ""} onChange={(e) => setFilters((f) => ({ ...f, places: e.target.value ? [e.target.value] : [] }))}><option value="">All places</option>{live.choices.places.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}</select></label>}
+          {(filters.periodId || filters.places.length > 0) && <button type="button" className={BTN} onClick={() => setFilters({ periodId: "", places: [] })}>Clear filters</button>}
+          <p className="text-xs text-slate-500">Narrows what you see here; the saved canvas does not change.</p>
+        </section>
+      )}
+
       <div className={editing ? "grid gap-4 lg:grid-cols-[1fr_20rem]" : ""}>
         <div>
           {blocks.length === 0 ? (
@@ -192,11 +215,22 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
               {leftOut.length > 0 && <p className="mt-2 text-xs text-slate-500">Left out of a file (still shown on screen): {leftOut.map((x) => `${label(x.kind)} (${x.reason.replace(/\.$/, "").toLowerCase()})`).join("; ")}.</p>}
             </details>
           </section>
+
+          {canEdit || initial.mine ? (
+            <section className="mt-2 space-y-2 print:hidden" aria-label="Share and publish">
+              <details data-testid="share-publish"><summary className="cursor-pointer text-sm font-medium">Share and publish · {({ DRAFT: "Draft", IN_REVIEW: "In review", CHANGES_REQUESTED: "Changes requested", APPROVED: "Approved" } as Record<string, string>)[reviewNow] ?? reviewNow}</summary>
+                <div className="mt-3"><PublishPanel key={base.current.revision} canvasId={initial.id} canEdit={canEdit} dirty={dirty} reviewStatus={reviewNow} onStatus={setReviewNow} reviewNote={initial.reviewNote} snapshotEvery={initial.snapshotEvery} /></div>
+              </details>
+              <details data-testid="history"><summary className="cursor-pointer text-sm font-medium">History</summary>
+                <div className="mt-3"><VersionsPanel canvasId={initial.id} revision={base.current.revision} canEdit={canEdit} onRestore={(title, from) => { ed.restore(title, from); setEditing(true); setNotice({ tone: "ok", text: "That version is on the page. Check it, then Save, or Undo to go back." }); }} /></div>
+              </details>
+            </section>
+          ) : null}
         </div>
 
         {editing && (
           <div className="space-y-4 print:hidden">
-            {ed.selectedBlock ? <Inspector block={ed.selectedBlock} label={label(ed.selectedBlock.kind)} projects={projects} indicatorsByProject={indicatorsByProject} fallbackProjectId={initial.projectId} problems={selectedProblems}
+            {ed.selectedBlock ? <Inspector block={ed.selectedBlock} label={label(ed.selectedBlock.kind)} projects={projects} indicatorsByProject={indicatorsByProject} fallbackProjectId={initial.projectId} problems={selectedProblems} language={canvas.language}
               onProps={(p) => ed.setProps(ed.selectedBlock!.id, p)} onProject={(pid) => ed.setProject(ed.selectedBlock!.id, pid)} onBounds={(c) => ed.bounds(ed.selectedBlock!.id, c)} onAlt={(a, d) => ed.alt(ed.selectedBlock!.id, a, d)} onAction={(a) => ed.act(ed.selectedBlock!.id, a)} />
               : <p className="rounded-lg border border-slate-200 p-3 text-sm text-slate-500 dark:border-slate-700">Select a block to change it, or add one below.</p>}
             <BlockPalette onAdd={ed.add} />

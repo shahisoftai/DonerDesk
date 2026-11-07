@@ -1,3 +1,4 @@
+import { MovedToVisuals } from "@/components/layout/MovedToVisuals";
 import { requireSession } from "@/lib/server/auth-context";
 import { InlineError } from "@/components/feedback/PageState";
 import { InfographicsList } from "@/features/infographics/presentation/InfographicsList";
@@ -8,6 +9,9 @@ export default async function ProjectInfographicsPage({ params }: { params: Prom
   const { id } = await params;
   const ctx = await requireSession();
   return (
+    <div className="space-y-4">
+    <MovedToVisuals what="infographics" />
     <InfographicsList projectId={id} canEdit={ctx.capabilities.has("reporting.edit")} canExport={ctx.capabilities.has("export.create")} canManageBrand={ctx.capabilities.has("org.manage")} />
+    </div>
   );
 }

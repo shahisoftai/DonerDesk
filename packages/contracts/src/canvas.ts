@@ -36,10 +36,18 @@ export const SaveCanvasSchema = z.object({
 export type SaveCanvasInput = z.infer<typeof SaveCanvasSchema>;
 
 export const CanvasListQuerySchema = z.object({ projectId: z.string().max(80).optional() });
-export const CanvasResolveQuerySchema = z.object({ periodId: z.string().max(80).optional() });
+export const CanvasResolveQuerySchema = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional() });
+/** Places arrive as one comma-separated query value. */
+export const placeKeysOf = (places: string | undefined): string[] => (places ?? "").split(",").map((p) => p.trim()).filter(Boolean).slice(0, 20);
 
 /** An edited canvas that has not been saved, sent so the screen can show what it would say. Nothing is stored. */
-export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional() });
+export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional(), placeKeys: z.array(z.string().max(80)).max(20).optional() });
 export type PreviewCanvasInput = z.infer<typeof PreviewCanvasSchema>;
 
 export const CanvasExportQuerySchema = z.object({ format: z.enum(["PNG", "PDF", "SVG", "PPTX", "PACK"]), scale: z.coerce.number().int().min(1).max(3).optional() });
+
+export const PublishCanvasSchema = z.object({ format: z.enum(["PNG", "PDF", "SVG", "PPTX"]), scale: z.coerce.number().int().min(1).max(3).optional() });
+export const CreateCanvasShareSchema = z.object({ kind: z.enum(["LIVE", "FROZEN"]), label: z.string().trim().max(80).default("Link"), expiresInDays: z.number().int().min(1).max(180).default(30), exportId: z.string().max(80).optional() });
+export const ReviewCanvasSchema = z.object({ action: z.enum(["SUBMIT", "APPROVE", "REQUEST_CHANGES", "REOPEN"]), note: z.string().trim().max(500).optional() });
+export const CanvasSnapshotsSchema = z.object({ every: z.enum(["NONE", "WEEKLY", "MONTHLY"]) });
+export const DraftCanvasTextSchema = z.object({ style: z.enum(["SUMMARY", "MESSAGES", "QUESTION"]), projectId: z.string().min(1).max(80), instruction: z.string().max(300).optional(), language: z.string().max(10).optional() });

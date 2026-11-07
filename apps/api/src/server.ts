@@ -36,6 +36,7 @@ import { registerTaskRoutes } from "./routes/tasks.js";
 import { registerPlaceRoutes } from "./routes/places.js";
 import { registerFinanceRegisterRoutes } from "./routes/finance-register.js";
 import { registerCollectionRoutes, registerPublicCollectionRoutes } from "./routes/collection.js";
+import { registerPublicCanvasRoutes } from "./routes/canvases.js";
 import { registerChartDashboardRoutes, registerPublicDashboardRoutes } from "./routes/chart-dashboards.js";
 import { registerHomeLayoutRoutes } from "./routes/home-layout.js";
 import { registerCanvasRoutes } from "./routes/canvases.js";
@@ -170,6 +171,7 @@ export async function buildServer(): Promise<FastifyInstance> {
   await registerPublicCollectionRoutes(app, container);
   // A dashboard share link has no session either: its token names the dashboard.
   await registerPublicDashboardRoutes(app, container);
+  await registerPublicCanvasRoutes(app, container);
   // The routes registered inside the scope below are the ones that go through
   // authMiddleware + authorizationMiddleware. They are collected here so
   // test/authorization-coverage.test.mjs can assert the authorisation table

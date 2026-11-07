@@ -5,6 +5,7 @@ import { definitionFor, projectOf, type BlockInstance, type CanvasProblem } from
 import type { ProjectOption } from "../CanvasWorkspace";
 import { afterChange, PROP_FIELDS } from "../../domain/prop-fields";
 import { setAt } from "../../domain/path";
+import { AiDraftControl } from "./AiDraftControl";
 import { FieldWidget, type IndicatorOption } from "./FieldWidget";
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
   indicatorsByProject: Readonly<Record<string, ReadonlyArray<IndicatorOption>>>;
   fallbackProjectId: string | undefined;
   problems: ReadonlyArray<CanvasProblem>;
+  language: string;
   onProps: (props: unknown) => void;
   onProject: (projectId: string) => void;
   onBounds: (change: { x?: number; y?: number; w?: number; h?: number }) => void;
@@ -25,7 +27,7 @@ const BTN = "rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50
 const NUM = "w-16 rounded border border-slate-300 bg-white px-1 py-0.5 text-sm dark:border-slate-600 dark:bg-slate-900";
 
 /** The settings of the selected block: where it sits, what it shows, how it is described. Everything a block offers is a row in the field table; "Advanced" edits any block as text. */
-export function Inspector({ block, label, projects, indicatorsByProject, fallbackProjectId, problems, onProps, onProject, onBounds, onAlt, onAction }: Props) {
+export function Inspector({ block, label, projects, indicatorsByProject, fallbackProjectId, problems, language, onProps, onProject, onBounds, onAlt, onAction }: Props) {
   const def = definitionFor(block.kind);
   const needsProject = def?.slots.some((s) => s.slot === "project") === true;
   const projectId = projectOf(block.bindings) ?? fallbackProjectId;
@@ -57,6 +59,7 @@ export function Inspector({ block, label, projects, indicatorsByProject, fallbac
       <fieldset disabled={locked} className="space-y-3">
         {fields.length === 0 && <p className="text-xs text-slate-500">This block has no settings of its own. Use Advanced to see all it holds.</p>}
         {fields.map((f) => <FieldWidget key={f.path} field={f} settings={block.props} indicators={indicators} onChange={change} />)}
+        {def?.aiDraft && <AiDraftControl style={def.aiDraft} projectId={projectId} instruction={(block.props as { instruction?: string } | undefined)?.instruction} language={language} disabled={locked} onDraft={(text) => onProps({ ...(block.props as object), text, accepted: false })} />}
       </fieldset>
 
       <fieldset disabled={locked} className="space-y-2"><legend className="text-xs font-medium text-slate-600 dark:text-slate-300">Place and size (12 columns)</legend>

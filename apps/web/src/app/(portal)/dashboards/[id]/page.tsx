@@ -1,3 +1,4 @@
+import { MovedToVisuals } from "@/components/layout/MovedToVisuals";
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -20,6 +21,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
   const names = Object.fromEntries((projects.ok ? projects.value.items : []).map((p) => [p.id, p.title]));
   return (
     <div className="animate-fade-in space-y-3">
+      <MovedToVisuals what="dashboards" />
       <p className="text-xs"><Link className="hover:underline" href="/dashboards">Dashboards</Link></p>
       {!data.ok && <InlineError title={data.error.message} referenceId={data.error.referenceId} />}
       <DashboardView dashboard={dashboard.value} charts={data.ok ? data.value.charts : []} periods={data.ok ? data.value.periods : []} projectNames={names} />

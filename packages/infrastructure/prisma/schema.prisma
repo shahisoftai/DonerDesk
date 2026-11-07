@@ -30,6 +30,7 @@ model Organization {
   donorTypesServed String?
   dataResidency String   @default("DEFAULT") // EU | US | AFRICA | ASIA | DEFAULT
   aiEnabled     Boolean  @default(true)
+  canvasAiEnabled Boolean @default(false)
   storageProvider String @default("LOCAL") // LOCAL | GOOGLE_DRIVE | R2
   driveRootFolderId String?
   reportingDefaults String @default("{}") // JSON: OrganizationReportingDefaults
@@ -2485,6 +2486,12 @@ model Canvas {
   revision   Int      @default(1)
   sourceKind String?
   sourceId   String?
+  reviewStatus   String   @default("DRAFT")
+  reviewedById   String?
+  reviewNote     String?
+  snapshotEvery  String   @default("NONE")
+  lastSnapshotAt DateTime?
+  snapshotActor  String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -2492,6 +2499,54 @@ model Canvas {
   @@index([tenantId, scope])
   @@index([tenantId, ownerId])
   @@index([tenantId, projectId])
+}
+
+/// A published copy of a canvas (Phase 45): the rendered file in storage, the exact inputs and the footer's facts. Immutable.
+model CanvasExport {
+  id             String   @id
+  tenantId       String
+  canvasId       String
+  format         String
+  storageKey     String
+  sizeBytes      Int
+  snapshotJson   String
+  provenanceJson String
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  @@index([tenantId, canvasId])
+}
+
+/// A public link to a canvas: LIVE reads current data as an outside guest, FROZEN serves one export. Only the token's hash is kept.
+model CanvasShareLink {
+  id          String    @id
+  tenantId    String
+  canvasId    String
+  kind        String
+  exportId    String?
+  label       String
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  createdById String
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId, canvasId])
+}
+
+/// The document a canvas had before a save replaced it (version history). One row per revision.
+model CanvasVersion {
+  id        String   @id
+  tenantId  String
+  canvasId  String
+  revision  Int
+  title     String
+  docJson   String
+  savedById String
+  createdAt DateTime @default(now())
+
+  @@unique([canvasId, revision])
+  @@index([tenantId, canvasId])
 }
 
 /// A dashboard template the organisation keeps (Phase 34.3): the whole template (roles and charts by role) as JSON. Always a draft,

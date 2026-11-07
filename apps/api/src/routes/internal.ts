@@ -203,6 +203,13 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       return r.value;
     });
 
+    // Called by the same hourly timer: makes the scheduled copies of canvases that are due (WEEKLY/MONTHLY). A repeat run does nothing until the next is due.
+    instance.post("/internal/canvas-snapshots/run", async (req) => {
+      const r = await req.container.handlers.runCanvasSnapshots.handle(req.tenant.tenantId);
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
+
     // DEPRECATED, removed after one release: the old Kestra flow still calls this. It now runs the same reminders (now, not at
     // 07:00) and answers in the old shape. `pendingSections` is no longer computed and is always 0.
     instance.post("/internal/reminders/deadline", async (req) => {

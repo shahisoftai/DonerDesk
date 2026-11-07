@@ -1,4 +1,5 @@
 import type {
+  ReviewStatus, SnapshotSchedule,
   BlockModel, Canvas, CanvasMode, CanvasScope, CanvasTheme, DatasetBudgetLine, DatasetDay, DatasetPlace, DatasetPlanRow, DomainError,
   ExportFormatId, MetricFinanceFigures, ProjectListSource, Result, TenantId,
 } from "@donordesk/domain";
@@ -20,6 +21,13 @@ export interface StoredCanvas {
   canvas: Canvas;
   sourceKind?: CanvasSourceKind;
   sourceId?: string;
+  reviewStatus?: ReviewStatus;
+  reviewedById?: string;
+  reviewNote?: string;
+  snapshotEvery?: SnapshotSchedule;
+  lastSnapshotAt?: Date;
+  /** `userId:ROLE` of whoever switched the schedule on; snapshots are made as them, so they show nothing that person could not see. */
+  snapshotActor?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,6 +40,12 @@ export interface ICanvasRepository {
   delete(id: string, tenantId: TenantId): Promise<Result<void>>;
   findById(id: string, tenantId: TenantId): Promise<Result<StoredCanvas | null>>;
   findBySource(tenantId: TenantId, kind: CanvasSourceKind, sourceId: string): Promise<Result<StoredCanvas | null>>;
+  /** Review state only; the document is untouched. */
+  setReview(id: string, tenantId: TenantId, review: { status: ReviewStatus; reviewedById?: string; note?: string }): Promise<Result<void>>;
+  /** The snapshot schedule and/or the time of the last snapshot. */
+  setSnapshot(id: string, tenantId: TenantId, change: { every?: SnapshotSchedule; lastAt?: Date; actor?: string }): Promise<Result<void>>;
+  /** Canvases with a snapshot schedule in one organisation. */
+  listScheduled(tenantId: TenantId): Promise<Result<StoredCanvas[]>>;
   /** Shared canvases (organisation and portfolio, and the project's when given) plus the person's own. */
   listVisible(tenantId: TenantId, ownerId: string, projectId?: string): Promise<Result<StoredCanvas[]>>;
 }
@@ -43,6 +57,7 @@ export interface StoredCanvasExport {
   canvasId: string;
   format: ExportFormatId;
   storageKey: string;
+  sizeBytes: number;
   /** The exact inputs it was drawn from, as JSON. */
   snapshotJson: string;
   /** Who made it, when, from which data, as JSON (the footer's facts). */
@@ -55,6 +70,20 @@ export interface ICanvasExportRepository {
   create(e: StoredCanvasExport): Promise<Result<void>>;
   findById(id: string, tenantId: TenantId): Promise<Result<StoredCanvasExport | null>>;
   listByCanvas(canvasId: string, tenantId: TenantId): Promise<Result<StoredCanvasExport[]>>;
+}
+
+/** The document a save replaced, kept so an earlier version can be looked at and put back. */
+export interface StoredCanvasVersion { id: string; tenantId: TenantId; canvasId: string; revision: number; title: string; canvas: Canvas; savedById: string; createdAt: Date }
+export interface ICanvasVersionRepository {
+  add(v: StoredCanvasVersion): Promise<Result<void>>;
+  list(canvasId: string, tenantId: TenantId, limit: number): Promise<Result<Array<Omit<StoredCanvasVersion, "canvas">>>>;
+  find(canvasId: string, revision: number, tenantId: TenantId): Promise<Result<StoredCanvasVersion | null>>;
+}
+
+/** Canvas AI is switched on per organisation by SuperAdmin; this port only reads and sets that flag. */
+export interface ICanvasAiSetting {
+  isEnabled(tenantId: TenantId): Promise<boolean>;
+  set(tenantId: TenantId, enabled: boolean): Promise<Result<void>>;
 }
 
 /** LIVE reads current data under the link's guest rules; FROZEN serves one immutable export. Only the token's hash is kept. */
@@ -77,6 +106,8 @@ export interface ICanvasShareLinkRepository {
   create(l: StoredCanvasShareLink): Promise<Result<void>>;
   listByCanvas(canvasId: string, tenantId: TenantId): Promise<Result<StoredCanvasShareLink[]>>;
   findById(id: string, tenantId: TenantId): Promise<Result<StoredCanvasShareLink | null>>;
+  /** Public lookup by the token's hash, across organisations (the caller does not know the tenant yet). */
+  findByTokenHash(hash: string): Promise<Result<StoredCanvasShareLink | null>>;
   revoke(id: string, tenantId: TenantId, at: Date): Promise<Result<void>>;
 }
 

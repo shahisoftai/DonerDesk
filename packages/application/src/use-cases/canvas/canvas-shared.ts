@@ -11,6 +11,7 @@ export interface CanvasSummaryDto {
   id: string; title: string; scope: CanvasScope; mode: Canvas["mode"]; profile: Canvas["profile"]; projectId?: string; ownerId: string;
   mine: boolean; canEdit: boolean; blockCount: number; pageCount: number; revision: number; updatedAt: string;
   sourceKind?: string;
+  reviewStatus: string; reviewNote?: string; snapshotEvery: string; lastSnapshotAt?: string;
 }
 export interface CanvasDto extends CanvasSummaryDto { canvas: Canvas }
 
@@ -19,6 +20,7 @@ export function summaryOf(c: StoredCanvas, ctx: AuthenticatedContext): CanvasSum
     id: c.id, title: c.title, scope: c.scope, mode: c.mode, profile: c.canvas.profile, ...(c.projectId ? { projectId: c.projectId } : {}), ownerId: c.ownerId,
     mine: c.ownerId === ctx.tenant.userId, canEdit: canEditCanvas(c, viewerOf(ctx)), blockCount: c.canvas.pages.reduce((n, p) => n + p.blocks.length, 0),
     pageCount: c.canvas.pages.length, revision: c.canvas.revision, updatedAt: c.updatedAt.toISOString(), ...(c.sourceKind ? { sourceKind: c.sourceKind } : {}),
+    reviewStatus: c.reviewStatus ?? "DRAFT", ...(c.reviewNote ? { reviewNote: c.reviewNote } : {}), snapshotEvery: c.snapshotEvery ?? "NONE", ...(c.lastSnapshotAt ? { lastSnapshotAt: c.lastSnapshotAt.toISOString() } : {}),
   };
 }
 export const dtoOf = (c: StoredCanvas, ctx: AuthenticatedContext): CanvasDto => ({ ...summaryOf(c, ctx), canvas: { ...c.canvas, id: c.id, title: c.title, scope: c.scope, mode: c.mode } });

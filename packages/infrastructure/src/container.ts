@@ -114,6 +114,8 @@ import { SharpImageNormalizer } from "./infographics/image-normalizer.js";
 import { InfographicComposerRenderer, PrismaOrganizationBrandReader } from "./infographics/renderer.js";
 import { ListCanvasesHandler, GetCanvasHandler, CreateCanvasHandler, SaveCanvasHandler, DeleteCanvasHandler, DuplicateCanvasHandler, ConvertDashboardHandler, ConvertInfographicHandler, ResolveCanvasHandler, ExportCanvasHandler } from "@donordesk/application";
 import { PrismaCanvasRepository } from "./repositories/canvas.js";
+import { PrismaCanvasAiSetting, PrismaCanvasExportRepository, PrismaCanvasShareLinkRepository, PrismaCanvasVersionRepository } from "./repositories/canvas-publishing.js";
+import { CreateCanvasShareHandler, DraftCanvasTextHandler, GetCanvasExportFileHandler, GetCanvasShareFileHandler, ListCanvasExportsHandler, ListCanvasSharesHandler, ListCanvasVersionsHandler, PublicCanvasHandler, PublishCanvasHandler, ResolveCanvasShareHandler, ReviewCanvasHandler, RevokeCanvasShareHandler, RunCanvasSnapshotsHandler, SetCanvasSnapshotsHandler } from "@donordesk/application";
 import { CreateInfographicHandler, UpdateInfographicHandler, ListProjectInfographicsHandler, GetInfographicHandler, DeleteInfographicHandler, ExportInfographicHandler, ListInfographicExportsHandler, GetInfographicExportFileHandler, InfographicRenderService, PreviewInfographicHandler, GetInfographicSuggestionsHandler, GetInfographicAiTextHandler, SuggestPresenceRowsHandler, ListInfographicTemplatesHandler, SaveInfographicTemplateHandler, DeleteInfographicTemplateHandler, UploadInfographicAssetHandler, ListInfographicAssetsHandler, GetInfographicAssetFileHandler, RemoveInfographicAssetHandler, GetBrandKitHandler, SaveBrandKitHandler, InfographicNotifier, InfographicReviewHandler, CreateInfographicShareLinkHandler, ListInfographicShareLinksHandler, RevokeInfographicShareLinkHandler, ResolveInfographicShareHandler, GenerateInfographicVariantsHandler, SectionInfographicsHandler, GetPortfolioInfographicDataHandler, AutoRefreshInfographicsHandler } from "@donordesk/application";
 import { EvidenceStorageResolver } from "./storage/router.js";
 import { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
@@ -221,6 +223,8 @@ export interface Container {
   resolveCollectionLink: ResolveCollectionLinkHandler;
   /** Finds which dashboard (and organisation) a public share link opens: only meaningful on the admin container. */
   resolveDashboardShare: ResolveDashboardShareHandler;
+  /** Finds which canvas (and organisation) a public link opens: only meaningful on the admin container. */
+  resolveCanvasShare: ResolveCanvasShareHandler;
   passwordResetRateLimiter: InMemoryPasswordResetRateLimiter;
   billingSubscriptions: PrismaBillingSubscriptionRepository;
   entitlementGrants: PrismaEntitlementGrantRepository;
@@ -447,6 +451,20 @@ export interface Container {
     convertInfographic: ConvertInfographicHandler;
     resolveCanvas: ResolveCanvasHandler;
     exportCanvas: ExportCanvasHandler;
+    publishCanvas: PublishCanvasHandler;
+    listCanvasExports: ListCanvasExportsHandler;
+    getCanvasExportFile: GetCanvasExportFileHandler;
+    createCanvasShare: CreateCanvasShareHandler;
+    listCanvasShares: ListCanvasSharesHandler;
+    revokeCanvasShare: RevokeCanvasShareHandler;
+    publicCanvas: PublicCanvasHandler;
+    getCanvasShareFile: GetCanvasShareFileHandler;
+    reviewCanvas: ReviewCanvasHandler;
+    listCanvasVersions: ListCanvasVersionsHandler;
+    draftCanvasText: DraftCanvasTextHandler;
+    setCanvasSnapshots: SetCanvasSnapshotsHandler;
+    runCanvasSnapshots: RunCanvasSnapshotsHandler;
+    setCanvasAi: { handle(tenantId: string, enabled: boolean): Promise<void> };
     listSavedReports: ListSavedReportsHandler;
     saveSavedReport: SaveSavedReportHandler;
     deleteSavedReport: DeleteSavedReportHandler;
@@ -1466,6 +1484,14 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const getInfographic = new GetInfographicHandler(infographicRepository);
   const deleteInfographic = new DeleteInfographicHandler(infographicRepository, audits);
   autoRefreshInfographics = new AutoRefreshInfographicsHandler(infographicRepository, createInfographic, periods, infographicNotifier, audits);
+  const canvasExports = new PrismaCanvasExportRepository(prisma);
+  const canvasLinks = new PrismaCanvasShareLinkRepository(prisma);
+  const canvasVersions = new PrismaCanvasVersionRepository(prisma);
+  const canvasAi = new PrismaCanvasAiSetting(prisma);
+  const canvasRender = { render: infographicRender, renderer: infographicRenderer };
+  const publishCanvas = new PublishCanvasHandler(canvases, canvasExports, canvasRender, storage, ids, audits, clock);
+  const canvasAskProject = new AskProjectHandler(organizations, projects, visibleProjects, getProjectDataSheet, activities, evidence, llmUsage, audits, clock, (tenantId) => resolveAskLlm(tenantId));
+  const canvasAiText = new GetInfographicAiTextHandler(getProjectInfographicData, getProjectDataSheet, (tenantId) => resolveInfographicLlm(tenantId));
   const exportInfographic = new ExportInfographicHandler(infographicRepository, infographicRender, infographicRenderer, storage, ids, audits, clock);
   const listInfographicExports = new ListInfographicExportsHandler(infographicRepository);
   const getInfographicExportFile = new GetInfographicExportFileHandler(infographicRepository, storage);
@@ -1688,13 +1714,27 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listCanvases: new ListCanvasesHandler(canvases),
     getCanvas: new GetCanvasHandler(canvases),
     createCanvas: new CreateCanvasHandler(ids, canvases, visibleProjects, audits, clock),
-    saveCanvas: new SaveCanvasHandler(canvases, audits, clock),
+    saveCanvas: new SaveCanvasHandler(canvases, audits, clock, canvasVersions),
     deleteCanvas: new DeleteCanvasHandler(canvases, audits),
     duplicateCanvas: new DuplicateCanvasHandler(ids, canvases, audits, clock),
     convertDashboard: new ConvertDashboardHandler(dashboards, canvases, ids, audits, clock),
     convertInfographic: new ConvertInfographicHandler(infographicRepository, canvases, visibleProjects, ids, audits, clock),
     resolveCanvas: new ResolveCanvasHandler(canvases, new PreviewDashboardChartsHandler(getProjectDataSheet, visibleProjects, datasetExtras), getProjectDataSheet, getProjectInfographicData, visibleProjects, datasetExtras, getPortfolioInfographicData),
     exportCanvas: new ExportCanvasHandler(canvases, infographicRender, infographicRenderer),
+    publishCanvas,
+    listCanvasExports: new ListCanvasExportsHandler(canvases, canvasExports),
+    getCanvasExportFile: new GetCanvasExportFileHandler(canvases, canvasExports, storage),
+    createCanvasShare: new CreateCanvasShareHandler(canvases, canvasExports, canvasLinks, ids, audits, clock),
+    listCanvasShares: new ListCanvasSharesHandler(canvases, canvasLinks, clock),
+    revokeCanvasShare: new RevokeCanvasShareHandler(canvases, canvasLinks, audits, clock),
+    publicCanvas: new PublicCanvasHandler(canvases, getProjectDataSheet, getProjectInfographicData, datasetExtras, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects)),
+    getCanvasShareFile: new GetCanvasShareFileHandler(canvasExports, storage),
+    reviewCanvas: new ReviewCanvasHandler(canvases, audits),
+    listCanvasVersions: new ListCanvasVersionsHandler(canvases, canvasVersions),
+    draftCanvasText: new DraftCanvasTextHandler(canvasAi, canvasAiText, canvasAskProject),
+    setCanvasSnapshots: new SetCanvasSnapshotsHandler(canvases, audits),
+    runCanvasSnapshots: new RunCanvasSnapshotsHandler(canvases, publishCanvas, clock),
+    setCanvasAi: { handle: async (tenantId: string, enabled: boolean) => { await canvasAi.set(TenantId.create(tenantId), enabled); } },
     listSavedReports: new ListSavedReportsHandler(savedReports, visibleProjects),
     saveSavedReport: new SaveSavedReportHandler(ids, savedReports, visibleProjects, audits, clock),
     deleteSavedReport: new DeleteSavedReportHandler(savedReports, visibleProjects, audits),
@@ -2037,6 +2077,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     resolveInfographicShare: new ResolveInfographicShareHandler(infographicShares, infographicRepository, storage, clock),
     resolveCollectionLink: new ResolveCollectionLinkHandler(collectionLinks, clock),
     resolveDashboardShare: new ResolveDashboardShareHandler(dashboardLinks, clock),
+    resolveCanvasShare: new ResolveCanvasShareHandler(canvasLinks, clock),
     projects, demoProjects, projectSetup, reportingProfiles, readiness, projectWorkspace, templates, logframe, indicators, indicatorUpdates, evidence, idempotency, requestIdempotency, activities,
     periods, drafts, sections, reportPlans, reportClaims, generationRuns, reportRevisions, reportArtifacts, agentMemory, submissionSnapshots, requirementPacks, awardOverrides, resolvedRequirements, donorTemplateMappings, checklist, exports, comments, notifications, audits, projectMembers,
     billingSubscriptions, entitlementGrants, usageCounters, billingInbox, trialIdentities, purchasedCreditPacks, llmUsage, planCatalog, billingProvider,

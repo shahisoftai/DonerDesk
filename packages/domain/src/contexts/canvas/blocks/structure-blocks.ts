@@ -29,9 +29,9 @@ function make<P, M, D>(kind: string, family: BlockFamily, size: Size, seed: () =
   });
 }
 
-const aiBlock = (kind: string, size: Size) => make<AiTextProps, { text: string; accepted: boolean }, AiData>(kind, "AI", { ...size, minW: 3, maxH: 8 }, () => ({}),
+const aiBlock = (kind: string, size: Size, aiDraft: "SUMMARY" | "MESSAGES" | "QUESTION") => make<AiTextProps, { text: string; accepted: boolean }, AiData>(kind, "AI", { ...size, minW: 3, maxH: 8 }, () => ({}),
   (p) => ((p.instruction?.length ?? 0) > MAX_INSTRUCTION ? [{ message: `The instruction is at most ${MAX_INSTRUCTION} characters.` }] : []),
-  { slots: [{ slot: "text", accepts: ["AI_DRAFT", "MANUAL"], min: 0, max: 1, honours: ["PERIOD"] }],
+  { aiDraft, slots: [{ slot: "text", accepts: ["AI_DRAFT", "MANUAL"], min: 0, max: 1, honours: ["PERIOD"] }],
     // The words are the person's: typed, or a draft they pasted or accepted. They live in the block's own settings, so the screen and a file read the same text.
     resolve: (p, d) => { const text = (typeof p.text === "string" ? p.text : d?.text) ?? ""; const accepted = typeof p.text === "string" ? p.accepted === true : d?.accepted === true; return text.trim() ? { state: "ready", model: { text, accepted }, notes: accepted ? [] : ["AI-drafted. Not accepted yet."] } : { state: "empty", reason: "Write the text, or paste a draft and accept it.", authoring: true }; } });
 
@@ -40,9 +40,9 @@ const plain = <P>(kind: string, family: BlockFamily, size: Size, seed: () => P, 
 
 export const STRUCTURE_BLOCKS: Readonly<Record<string, BlockDefinition<never, unknown, never>>> = Object.fromEntries([
   plain<CalloutProps>("CALLOUT", "TEXT", { w: 12, h: 2, maxH: 4 }, () => ({ text: "", tone: "info" }), (p) => (!CALLOUT_TONES.includes(p.tone) ? [{ message: "Choose how the callout looks." }] : p.text.length > 400 ? [{ message: "A callout is at most 400 characters." }] : [])),
-  aiBlock("AI_SUMMARY", { w: 12, h: 3 }),
-  aiBlock("AI_MESSAGES", { w: 6, h: 3 }),
-  aiBlock("AI_ASK", { w: 6, h: 4 }),
+  aiBlock("AI_SUMMARY", { w: 12, h: 3 }, "SUMMARY"),
+  aiBlock("AI_MESSAGES", { w: 6, h: 3 }, "MESSAGES"),
+  aiBlock("AI_ASK", { w: 6, h: 4 }, "QUESTION"),
   plain<GroupProps>("GROUP", "CONTAINERS", { w: 12, h: 4 }, () => ({}), (p) => ((p.title?.length ?? 0) > 80 ? [{ message: "A group's title is at most 80 characters." }] : [])),
   plain<TabsProps>("TABS", "CONTAINERS", { w: 12, h: 6 }, () => ({ titles: ["Tab 1", "Tab 2"] }), (p) => (p.titles.length < 2 || p.titles.length > 6 ? [{ message: "Tabs take 2 to 6 titles." }] : p.titles.some((t) => !t.trim() || t.length > 40) ? [{ message: "A tab title is 1 to 40 characters." }] : [])),
   plain<RepeaterProps>("REPEATER", "CONTAINERS", { w: 12, h: 4 }, () => ({ over: "PROJECT", limit: 6 }), (p) => (!["PROJECT", "PLACE", "SECTOR"].includes(p.over) ? [{ message: "Choose what to repeat over." }] : p.limit < 1 || p.limit > 12 ? [{ message: "A repeater shows 1 to 12 items." }] : [])),

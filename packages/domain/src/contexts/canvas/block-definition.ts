@@ -46,6 +46,8 @@ export interface BlockDefinition<P, M = unknown, D = unknown> {
   /** What `resolve` is given as data: the project's facts (infographic-style blocks), the viewer's own list of projects, or nothing. The resolver asks the block; it never names one. */
   /** True for a block that is its own frame (a banner, a cover, a divider, a callout, a paragraph): a screen draws it without the titled card the other blocks sit in. */
   bare?: boolean;
+  /** For an AI block: how its words are drafted from the records (a summary, key messages, or an answer to a question). */
+  aiDraft?: "SUMMARY" | "MESSAGES" | "QUESTION";
   reads?: "FACTS" | "VIEWER_PROJECTS" | "PORTFOLIO";
   defaults(): P;
   validate(props: P): BlockProblem[];

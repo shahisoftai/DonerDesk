@@ -1,4 +1,4 @@
-import { TenantId, canvasFromColumns, documentOf, ok, type Result } from "@donordesk/domain";
+import { TenantId, asReviewStatus, asSnapshotSchedule, canvasFromColumns, documentOf, ok, type ReviewStatus, type Result } from "@donordesk/domain";
 import type { CanvasSourceKind, ICanvasRepository, StoredCanvas } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
 
@@ -10,7 +10,8 @@ function fromRow(r: Row): StoredCanvas | null {
   if (!canvas) return null;
   return {
     id: r.id, tenantId: TenantId.create(r.tenantId), scope: canvas.scope, mode: canvas.mode, ...(r.projectId ? { projectId: r.projectId } : {}), ownerId: r.ownerId, title: r.title, canvas,
-    ...(r.sourceKind ? { sourceKind: r.sourceKind as CanvasSourceKind } : {}), ...(r.sourceId ? { sourceId: r.sourceId } : {}), createdAt: r.createdAt, updatedAt: r.updatedAt,
+    ...(r.sourceKind ? { sourceKind: r.sourceKind as CanvasSourceKind } : {}), ...(r.sourceId ? { sourceId: r.sourceId } : {}), reviewStatus: asReviewStatus(r.reviewStatus), ...(r.reviewedById ? { reviewedById: r.reviewedById } : {}), ...(r.reviewNote ? { reviewNote: r.reviewNote } : {}),
+    snapshotEvery: asSnapshotSchedule(r.snapshotEvery), ...(r.lastSnapshotAt ? { lastSnapshotAt: r.lastSnapshotAt } : {}), ...(r.snapshotActor ? { snapshotActor: r.snapshotActor } : {}), createdAt: r.createdAt, updatedAt: r.updatedAt,
   };
 }
 
@@ -33,9 +34,24 @@ export class PrismaCanvasRepository implements ICanvasRepository {
   async update(c: StoredCanvas, expectedRevision: number): Promise<Result<boolean>> {
     const done = await this.prisma.canvas.updateMany({
       where: { id: c.id, tenantId: c.tenantId.toString(), revision: expectedRevision },
-      data: { title: c.title, mode: c.mode, projectId: c.projectId ?? null, docJson: documentOf(c.canvas), revision: expectedRevision + 1 },
+      data: { title: c.title, mode: c.mode, projectId: c.projectId ?? null, docJson: documentOf(c.canvas), revision: expectedRevision + 1, reviewStatus: c.reviewStatus ?? "DRAFT", reviewedById: c.reviewedById ?? null, reviewNote: c.reviewNote ?? null },
     });
     return ok(done.count > 0);
+  }
+
+  async setReview(id: string, tenantId: TenantId, review: { status: ReviewStatus; reviewedById?: string; note?: string }): Promise<Result<void>> {
+    await this.prisma.canvas.updateMany({ where: { id, tenantId: tenantId.toString() }, data: { reviewStatus: review.status, reviewedById: review.reviewedById ?? null, reviewNote: review.note ?? null } });
+    return ok(undefined);
+  }
+
+  async setSnapshot(id: string, tenantId: TenantId, change: { every?: string; lastAt?: Date; actor?: string }): Promise<Result<void>> {
+    await this.prisma.canvas.updateMany({ where: { id, tenantId: tenantId.toString() }, data: { ...(change.every ? { snapshotEvery: change.every } : {}), ...(change.lastAt ? { lastSnapshotAt: change.lastAt } : {}), ...(change.actor ? { snapshotActor: change.actor } : {}) } });
+    return ok(undefined);
+  }
+
+  async listScheduled(tenantId: TenantId): Promise<Result<StoredCanvas[]>> {
+    const rows = await this.prisma.canvas.findMany({ where: { tenantId: tenantId.toString(), snapshotEvery: { not: "NONE" } } });
+    return ok(rows.map(fromRow).filter((c): c is StoredCanvas => c !== null));
   }
 
   async delete(id: string, tenantId: TenantId): Promise<Result<void>> {

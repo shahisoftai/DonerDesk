@@ -59,3 +59,69 @@ t("the list shows shared and own canvases only, newest first, and skips a damage
     assert.equal((await repo.listVisible(other, "u1")).value.some((c) => c.id === "mine"), false);
   } finally { await prisma.$disconnect(); }
 });
+
+// ---- publishing: copies, links, versions, review, schedule, canvas AI ----
+import { PrismaCanvasAiSetting, PrismaCanvasExportRepository, PrismaCanvasShareLinkRepository, PrismaCanvasVersionRepository } from "../dist/repositories/canvas-publishing.js";
+
+t("review and schedule are stored without touching the document; a save sets the review back", async () => {
+  const prisma = new PrismaClient({ datasources: { db: { url } } });
+  try {
+    await prisma.canvas.deleteMany({ where: { tenantId: tenant.toString() } });
+    const repo = new PrismaCanvasRepository(prisma);
+    await repo.create(make("r1"));
+    await repo.setReview("r1", tenant, { status: "APPROVED", reviewedById: "rita", note: "Fine" });
+    let row = (await repo.findById("r1", tenant)).value;
+    assert.deepEqual([row.reviewStatus, row.reviewedById, row.reviewNote, row.canvas.revision], ["APPROVED", "rita", "Fine", 1]);
+    await repo.setSnapshot("r1", tenant, { every: "WEEKLY", actor: "anna:ADMIN" });
+    await repo.setSnapshot("r1", tenant, { lastAt: new Date("2026-11-09T00:00:00Z") });
+    row = (await repo.findById("r1", tenant)).value;
+    assert.deepEqual([row.snapshotEvery, row.snapshotActor, row.lastSnapshotAt.toISOString()], ["WEEKLY", "anna:ADMIN", "2026-11-09T00:00:00.000Z"]);
+    assert.equal((await repo.listScheduled(tenant)).value.length, 1);
+    assert.equal((await repo.listScheduled(other)).value.length, 0);
+    const { reviewedById: _r, reviewNote: _n, ...rest } = row;
+    await repo.update({ ...rest, reviewStatus: "DRAFT" }, 1);
+    row = (await repo.findById("r1", tenant)).value;
+    assert.deepEqual([row.reviewStatus, row.reviewedById], ["DRAFT", undefined]);
+  } finally { await prisma.$disconnect(); }
+});
+
+t("copies are listed newest first and scoped to their organisation; a link is found by its hash and withdrawn once; versions keep one row per revision", async () => {
+  const prisma = new PrismaClient({ datasources: { db: { url } } });
+  try {
+    await prisma.canvasExport.deleteMany({ where: { tenantId: { in: [tenant.toString(), other.toString()] } } });
+    await prisma.canvasShareLink.deleteMany({ where: { tenantId: tenant.toString() } });
+    await prisma.canvasVersion.deleteMany({ where: { tenantId: tenant.toString() } });
+    const exports = new PrismaCanvasExportRepository(prisma), links = new PrismaCanvasShareLinkRepository(prisma), versions = new PrismaCanvasVersionRepository(prisma);
+    await exports.create({ id: "e1", tenantId: tenant, canvasId: "c", format: "PDF", storageKey: "k1", sizeBytes: 10, snapshotJson: "{}", provenanceJson: "{}", createdById: "u", createdAt: new Date() });
+    assert.equal((await exports.listByCanvas("c", tenant)).value.length, 1);
+    assert.equal((await exports.listByCanvas("c", other)).value.length, 0);
+    assert.equal((await exports.findById("e1", other)).value, null);
+    await links.create({ id: "l1", tenantId: tenant, canvasId: "c", kind: "FROZEN", exportId: "e1", label: "Donor", tokenHash: "h".repeat(64), expiresAt: new Date(Date.now() + 1e8), createdById: "u", createdAt: new Date() });
+    const found = (await links.findByTokenHash("h".repeat(64))).value;
+    assert.deepEqual([found.id, found.kind, found.exportId, found.revokedAt], ["l1", "FROZEN", "e1", undefined]);
+    await links.revoke("l1", tenant, new Date());
+    assert.ok((await links.findById("l1", tenant)).value.revokedAt);
+    const doc = blankCanvas({ id: "c", title: "T", scope: "ORG" });
+    await versions.add({ id: "c:1", tenantId: tenant, canvasId: "c", revision: 1, title: "Old", canvas: doc, savedById: "u", createdAt: new Date() });
+    await versions.add({ id: "c:1b", tenantId: tenant, canvasId: "c", revision: 1, title: "Dup", canvas: doc, savedById: "u", createdAt: new Date() });
+    assert.equal((await versions.list("c", tenant, 10)).value.length, 1, "a repeated revision is kept once");
+    assert.equal((await versions.find("c", 1, tenant)).value.title, "Old");
+    assert.equal((await versions.find("c", 1, other)).value, null);
+  } finally { await prisma.$disconnect(); }
+});
+
+t("canvas AI is off by default and needs both switches", async () => {
+  const prisma = new PrismaClient({ datasources: { db: { url } } });
+  try {
+    const org = await prisma.organization.findFirst({ select: { tenantId: true, aiEnabled: true, canvasAiEnabled: true } });
+    if (!org) return; // nothing to test against in an empty scratch database
+    const setting = new PrismaCanvasAiSetting(prisma);
+    const id = TenantId.create(org.tenantId);
+    const before = org.canvasAiEnabled;
+    await setting.set(id, false);
+    assert.equal(await setting.isEnabled(id), false);
+    await setting.set(id, true);
+    assert.equal(await setting.isEnabled(id), org.aiEnabled);
+    await setting.set(id, before);
+  } finally { await prisma.$disconnect(); }
+});

@@ -48,6 +48,7 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
     secured.put("/superadmin/tenants/:id/tier/limits", req => service().setTenantLimits(actor(req), (req.params as { id: string }).id, TenantLimitsSet.parse(req.body), meta(req)));
     secured.post("/superadmin/tenants/:id/tier/reset", req => service().resetTenantTier(actor(req), (req.params as { id: string }).id, meta(req)));
     secured.post("/superadmin/tenants/:id/credits", req => service().adjustCredits(actor(req), (req.params as { id: string }).id, CreditsAdjust.parse(req.body), meta(req)));
+    secured.put("/superadmin/tenants/:id/canvas-ai", req => service().setCanvasAi(actor(req), (req.params as { id: string }).id, z.object({ enabled: z.boolean() }).parse(req.body).enabled, meta(req)));
     secured.post("/superadmin/tenants/:id/credits/reset", req => service().resetCreditsCounter(actor(req), (req.params as { id: string }).id, meta(req)));
     secured.post("/superadmin/tenants/:id/trial", req => service().grantTrial(actor(req), (req.params as { id: string }).id, z.object({ planCode: z.enum(["TEAM", "GROWTH"]), days: z.number().int().min(1).max(365).optional(), reason: z.string().max(200).optional() }).parse(req.body), meta(req)));
     secured.post("/superadmin/tenants/:id/trial/extend", req => service().extendTrial(actor(req), (req.params as { id: string }).id, z.object({ days: z.number().int().min(1).max(365).optional() }).parse(req.body ?? {}), meta(req)));

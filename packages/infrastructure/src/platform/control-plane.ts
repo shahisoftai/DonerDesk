@@ -674,6 +674,15 @@ export class PlatformControlPlane {
     return { tenantId, periodStart: periodStart.toISOString(), used: 0, reserved: 0 };
   }
 
+  /** Switches the AI blocks of the canvas on or off for one organisation (SuperAdmin only; the platform's own AI switch must also be on). */
+  async setCanvasAi(actor: PlatformSession, tenantId: string, enabled: boolean, meta?: { ip?: string; userAgent?: string }) {
+    const org = await this.prisma.organization.findFirst({ where: { tenantId } });
+    if (!org) throw new Error("Tenant not found");
+    await this.prisma.organization.updateMany({ where: { tenantId }, data: { canvasAiEnabled: enabled } });
+    await this.audit(actor, "tenant.canvas_ai.set", "Tenant", tenantId, { enabled: org.canvasAiEnabled }, { enabled }, meta);
+    return { tenantId, canvasAiEnabled: enabled };
+  }
+
   private async resolveCurrentAiCreditLimit(tenantId: string): Promise<number> {
     const plan = await this.currentPlanLimits(tenantId);
     return plan.monthlyAiDraftCredits ?? 0;

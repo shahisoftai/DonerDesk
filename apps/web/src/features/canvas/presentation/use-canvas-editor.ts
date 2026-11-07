@@ -36,6 +36,8 @@ export function useCanvasEditor(initial: Canvas, defaultProjectId: string | unde
     undo: () => setHistory(undo), redo: () => setHistory(redo),
     /** After a save the server's revision replaces ours without becoming an undo step. */
     adoptRevision: (revision: number) => setHistory((h) => ({ ...h, present: { ...h.present, revision } })),
+    /** Puts an earlier version on the page as one edit (undoable); the revision and identity stay the current ones. */
+    restore: (title: string, from: Canvas) => { setHistory((h) => commit(h, { ...h.present, title, pages: from.pages, profile: from.profile, mode: from.mode, language: from.language, themeId: from.themeId, ...(from.options ? { options: from.options } : {}) })); setPageId(from.pages[0]?.id ?? ""); setSelected(null); },
     rename: (title: string) => run(setTitle(latest.current, title)),
     setMeta: (change: Partial<Pick<Canvas, "profile" | "themeId" | "language" | "mode">>) => setHistory((h) => commit(h, { ...h.present, ...change })),
     add(kind: string) {
