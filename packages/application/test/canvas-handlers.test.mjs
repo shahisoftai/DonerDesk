@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { TenantId, SAMPLE_FACTS, SAMPLE_SHEET } from "@donordesk/domain";
-import { ListCanvasesHandler, GetCanvasHandler, CreateCanvasHandler, SaveCanvasHandler, DeleteCanvasHandler, DuplicateCanvasHandler, ConvertDashboardHandler, ConvertInfographicHandler, ResolveCanvasHandler } from "../dist/index.js";
+import { ListCanvasesHandler, GetCanvasHandler, CreateCanvasHandler, SaveCanvasHandler, DeleteCanvasHandler, DuplicateCanvasHandler, ConvertDashboardHandler, ConvertInfographicHandler, ResolveCanvasHandler, ExportCanvasHandler } from "../dist/index.js";
 
 const tenantId = TenantId.create("tenant-a");
 const ctxFor = (userId, role) => ({ tenant: { tenantId, userId, role }, requestId: "r" });
@@ -251,4 +251,55 @@ test("each infographic-style block reads the project it names, else its canvas's
   assert.equal(r.value.models.c.state, "unavailable", "a project the viewer cannot see is unavailable, and is never read");
   assert.deepEqual(reads.sort(), ["info:p1", "sheet:p1"], "p1 read once for three blocks; p2 not at all");
   assert.deepEqual([r.value.models.d.model.title, r.value.models.d.model.kicker], ["Mixed", "EU · Kenya"], "the cover reads the canvas's title and the project");
+});
+
+// ---- preview of an unsaved canvas ----
+
+test("previewing reads an edited canvas without saving it, under the viewer's own access", async () => {
+  const w = world();
+  const c = (await w.create.handle(ADMIN, { title: "Draft", scope: "PROJECT", projectId: "p1" })).value;
+  const edited = { ...c.canvas, pages: pageOf([block("r", "REACH", {}), block("k", "KPI", { indicatorId: "a", includeDraft: false })]) };
+  const before = JSON.stringify(w.rows.get(c.id));
+  const r = await resolver(w).preview(ADMIN, { canvas: edited, projectId: "p1", title: "Draft" });
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.value.drawings.map((d) => d.widgetId), ["k"]);
+  assert.equal(r.value.models.r.state, "ready");
+  assert.equal(JSON.stringify(w.rows.get(c.id)), before, "nothing was stored");
+  const hidden = new ResolveCanvasHandler(w.repo, { handle: async () => ok({ charts: [] }) }, { handle: async () => { throw new Error("must not read"); } }, { handle: async () => { throw new Error("must not read"); } }, { for: async () => ok([]) });
+  assert.equal((await hidden.preview(VIEWER, { canvas: edited, projectId: "p1", title: "x" })).value.models.r.state, "unavailable", "a project the viewer cannot see gives no figures");
+});
+
+test("a portfolio block reads the portfolio the person can see, and nothing else", async () => {
+  const w = world();
+  const c = (await w.create.handle(ADMIN, { title: "All", scope: "ORG" })).value;
+  const portfolio = { handle: async () => ok({ asAt: "2026-03-31", totals: { projects: 1, countries: 1, behind: 0, needAttention: 0, openRisks: 0, reportsOverdue: 0, onTrack: 1, noPlan: 0 }, rows: [{ title: "A", donorName: "D", country: "K", band: "ON_TRACK" }], countries: [{ country: "K", projects: 1, onTrack: 1, atRisk: 0, offTrack: 0, noPlan: 0 }] }) };
+  const sheets = { handle: async () => { throw new Error("a portfolio block reads no project"); } };
+  const h = new ResolveCanvasHandler(w.repo, { handle: async () => ok({ charts: [] }) }, sheets, sheets, { for: async () => ok([{ id: "p1" }]) }, undefined, portfolio);
+  const edited = { ...c.canvas, pages: pageOf([block("s", "PORTFOLIO_SUMMARY", {}), block("t", "PORTFOLIO_TABLE", {}, [], 6, 0)]) };
+  const r = await h.preview(ADMIN, { canvas: edited, projectId: undefined, title: "All" });
+  assert.equal(r.value.models.s.state, "ready");
+  assert.equal(r.value.models.s.model.cards[0].value, 1);
+  assert.equal(r.value.models.t.model.rows[0].title, "A");
+});
+
+// ---- export ----
+
+test("a file is made from the saved canvas; blocks a file cannot hold are named, and a canvas with nothing to print is refused", async () => {
+  const w = world();
+  const c = (await w.create.handle(ADMIN, { title: "Water update", scope: "PROJECT", projectId: "p1" })).value;
+  const seen = [];
+  const render = { build: async (_c, projectId, config) => { seen.push({ projectId, config }); return ok({ input: { marker: 1 }, provenance: { generatedAt: "2026-03-01T00:00:00.000Z", source: "project-records", periodLabels: [], indicatorCodes: [], unverifiedCount: 0, notYetReportedCount: 0 }, altText: "alt" }); } };
+  const renderer = { renderPdf: async () => ok(Buffer.from("%PDF-")), renderPng: async () => ok(Buffer.from("png")), renderSvgPages: async () => ok([{ svg: "<svg/>" }]), renderPptx: async () => ok(Buffer.from("pptx")), renderPack: async () => ok(Buffer.from("zip")) };
+  const exporter = new ExportCanvasHandler(w.repo, render, renderer);
+  const empty = await exporter.handle(ADMIN, c.id, { format: "PDF" });
+  assert.equal(empty.ok, false); assert.match(empty.error.message, /Nothing on this canvas/);
+  await w.save.handle(ADMIN, saveInput(c, { pages: pageOf([block("t", "TEXT", { text: "Hello" }), block("m", "METRIC", { metric: "ACTIVITIES_TOTAL" }, [], 6, 0), block("ai", "AI_SUMMARY", { text: "Draft", accepted: false }, [], 0, 3)]) }));
+  const done = await exporter.handle(ADMIN, c.id, { format: "PDF" });
+  assert.equal(done.ok, true, done.ok ? "" : done.error.message);
+  assert.equal(done.value.contentType, "application/pdf"); assert.equal(done.value.fileName, "water-update.pdf");
+  assert.deepEqual(done.value.skipped.map((s) => s.kind).sort(), ["AI_SUMMARY", "METRIC"], "a tile and an unaccepted draft stay on screen only");
+  assert.equal(seen[0].projectId, "p1"); assert.equal(seen[0].config.sections.length, 1);
+  assert.equal((await exporter.handle(OTHER_VIEWER, c.id, { format: "PNG" })).ok, true, "a shared project canvas is seen by all");
+  const mine = (await w.create.handle(VIEWER, { title: "Mine", scope: "MINE" })).value;
+  assert.equal((await exporter.handle(OTHER_VIEWER, mine.id, { format: "PNG" })).error.code, "NOT_FOUND");
 });

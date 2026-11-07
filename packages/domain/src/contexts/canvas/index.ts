@@ -25,3 +25,4 @@ export * from "./access.js";
 export * from "./to-widgets.js";
 export * from "./templates-builtin.js";
 export * from "./edit/layout.js";
+export * from "./legacy/to-infographic.js";

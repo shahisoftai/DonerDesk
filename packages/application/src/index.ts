@@ -400,3 +400,4 @@ export * from "./use-cases/canvas/duplicate-canvas.js";
 export * from "./use-cases/canvas/convert-dashboard.js";
 export * from "./use-cases/canvas/convert-infographic.js";
 export * from "./use-cases/canvas/resolve-canvas.js";
+export * from "./use-cases/canvas/export-canvas.js";

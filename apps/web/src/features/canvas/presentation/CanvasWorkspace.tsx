@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CANVAS_PROFILES, altPack, canPublish, canvasJson, canvasProblems, canvasToWidgets, checkCanvas, listThemes, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
+import { CANVAS_PROFILES, altPack, canPublish, canvasAsDesign, canvasJson, canvasProblems, canvasToWidgets, checkCanvas, listThemes, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { deleteCanvasAction, duplicateCanvasAction, previewCanvasAction, resolveCanvasAction, saveCanvasAction } from "@/lib/actions/canvas";
 import type { CanvasView, ResolvedCanvas } from "@/lib/server/schemas-canvas";
 import { blockLabelKey } from "../domain/canvas-copy";
 import { BlockBoundary } from "./BlockBoundary";
+import { BlockFrame } from "./BlockFrame";
 import { downloadPicture } from "./download-picture";
 import { CanvasBlockView } from "./CanvasBlockView";
 import { BlockPalette } from "./editor/BlockPalette";
@@ -21,6 +22,7 @@ interface Props { initial: CanvasView; resolved: ResolvedCanvas | null; resolveE
 const PROFILE_LABEL: Record<(typeof CANVAS_PROFILES)[number], string> = { LIVE_INTERNAL: "Live, for the team", SNAPSHOT: "A snapshot to share", DONOR_REPORT: "For a donor", SOCIAL: "For social media", INTERNAL: "Internal document" };
 const SCOPE_LABEL = { ORG: "Whole organisation", PROJECT: "One project", MINE: "Only me", PORTFOLIO: "Portfolio" } as const;
 const SEVERITY = { BLOCKER: "Must fix", WARN: "Should fix", TIP: "Tip" } as const;
+const FILE_FORMATS = [["PDF", "Make a PDF file"], ["PNG", "Make a PNG file"], ["PPTX", "Make a PowerPoint file"], ["PACK", "Make a pack (all files and the text)"]] as const;
 const BTN = "rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800";
 
 function download(name: string, mime: string, content: string): void {
@@ -71,6 +73,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const drawings = useMemo(() => new Map((live?.drawings ?? []).map((d) => [d.widgetId, d])), [live]);
   const problems = useMemo(() => canvasProblems(canvas), [canvas]);
   const findings = useMemo(() => checkCanvas(canvas), [canvas]);
+  const leftOut = useMemo(() => canvasAsDesign(canvas).skipped, [canvas]);
   const canEdit = initial.canEdit;
 
   useEffect(() => {
@@ -128,7 +131,8 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
             <summary className={`${BTN} cursor-pointer list-none`}>More</summary>
             <ul className="absolute end-0 z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
               <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => void downloadPicture(document.querySelector<HTMLElement>('[data-testid="canvas-grid"]'), canvas.title).then((r) => setNotice(r.ok ? { tone: "ok", text: "Picture saved to your downloads." } : { tone: "error", text: r.message })))}>Download as a picture</button></li>
-              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => window.print())}>Print or save as PDF</button></li>
+              <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => window.print())}>Print this page</button></li>
+              {FILE_FORMATS.map(([format, name]) => <li key={format}><a className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" data-export={format} href={dirty ? undefined : `/api/canvases/${encodeURIComponent(initial.id)}/export?format=${format}`} aria-disabled={dirty || undefined} onClick={dirty ? (e) => { e.preventDefault(); menu.current?.removeAttribute("open"); setNotice({ tone: "error", text: "Save your changes first: a file is made from the saved canvas." }); } : () => menu.current?.removeAttribute("open")}>{name}</a></li>)}
               <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => download(`${canvas.title}.canvas.json`, "application/json", canvasJson(canvas)))}>Download the canvas file</button></li>
               <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => download(`${canvas.title}-descriptions.txt`, "text/plain", altPack(canvas)))}>Download descriptions and captions</button></li>
               <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => void copy())} disabled={busy !== null}>Make a copy for me</button></li>
@@ -170,7 +174,9 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:auto-rows-[5.5rem]" dir={canvas.language === "ar" ? "rtl" : "ltr"} data-testid="canvas-grid">
               {blocks.map((b) => (
                 <div key={b.id} className="h-[var(--mh)] sm:h-auto sm:[grid-column:var(--c)/span_var(--w)] sm:[grid-row:var(--r)/span_var(--h)]" style={{ "--c": b.bounds.x + 1, "--w": b.bounds.w, "--r": b.bounds.y + 1, "--h": b.bounds.h, "--mh": `${Math.max(b.bounds.h, 1) * 5.5}rem` } as React.CSSProperties}>
-                  <BlockBoundary label={label(b.kind)}><CanvasBlockView block={b} canvas={canvas} drawing={drawings.get(b.id)} widget={widgets.get(b.id)} serverModel={live?.models[b.id]} changed={!previewCurrent && savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)} selected={ed.selected === b.id} editing={editing} onSelect={() => ed.setSelected(b.id)} /></BlockBoundary>
+                  <BlockFrame bounds={b.bounds} movable={editing && b.style?.locked !== true} selected={ed.selected === b.id} label={label(b.kind)} onBounds={(c) => ed.bounds(b.id, c)} onSelect={() => ed.setSelected(b.id)}>
+                    <BlockBoundary label={label(b.kind)}><CanvasBlockView block={b} canvas={canvas} drawing={drawings.get(b.id)} widget={widgets.get(b.id)} serverModel={live?.models[b.id]} changed={!previewCurrent && savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)} selected={ed.selected === b.id} editing={editing} onSelect={() => ed.setSelected(b.id)} /></BlockBoundary>
+                  </BlockFrame>
                 </div>
               ))}
             </div>
@@ -183,6 +189,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
                 {problems.map((p, i) => <li key={`p${i}`}><span className="font-medium text-amber-800">Not set up</span> · {p.blockId ? `${label(canvas.pages.flatMap((pg) => pg.blocks).find((b) => b.id === p.blockId)?.kind ?? "")}: ` : ""}{p.message}</li>)}
                 {findings.map((f, i) => <li key={`f${i}`}><span className={`font-medium ${f.severity === "BLOCKER" ? "text-red-700" : "text-amber-800"}`}>{SEVERITY[f.severity]}</span> · {f.message}</li>)}
               </ul>
+              {leftOut.length > 0 && <p className="mt-2 text-xs text-slate-500">Left out of a file (still shown on screen): {leftOut.map((x) => `${label(x.kind)} (${x.reason.replace(/\.$/, "").toLowerCase()})`).join("; ")}.</p>}
             </details>
           </section>
         </div>

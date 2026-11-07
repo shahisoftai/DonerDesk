@@ -112,7 +112,7 @@ import { randomBytes as nodeRandomBytes } from "node:crypto";
 import { PrismaInfographicRepository, PrismaInfographicAssetRepository, PrismaBrandKitRepository, PrismaInfographicUserTemplateRepository, PrismaInfographicShareRepository } from "./repositories/infographics.js";
 import { SharpImageNormalizer } from "./infographics/image-normalizer.js";
 import { InfographicComposerRenderer, PrismaOrganizationBrandReader } from "./infographics/renderer.js";
-import { ListCanvasesHandler, GetCanvasHandler, CreateCanvasHandler, SaveCanvasHandler, DeleteCanvasHandler, DuplicateCanvasHandler, ConvertDashboardHandler, ConvertInfographicHandler, ResolveCanvasHandler } from "@donordesk/application";
+import { ListCanvasesHandler, GetCanvasHandler, CreateCanvasHandler, SaveCanvasHandler, DeleteCanvasHandler, DuplicateCanvasHandler, ConvertDashboardHandler, ConvertInfographicHandler, ResolveCanvasHandler, ExportCanvasHandler } from "@donordesk/application";
 import { PrismaCanvasRepository } from "./repositories/canvas.js";
 import { CreateInfographicHandler, UpdateInfographicHandler, ListProjectInfographicsHandler, GetInfographicHandler, DeleteInfographicHandler, ExportInfographicHandler, ListInfographicExportsHandler, GetInfographicExportFileHandler, InfographicRenderService, PreviewInfographicHandler, GetInfographicSuggestionsHandler, GetInfographicAiTextHandler, SuggestPresenceRowsHandler, ListInfographicTemplatesHandler, SaveInfographicTemplateHandler, DeleteInfographicTemplateHandler, UploadInfographicAssetHandler, ListInfographicAssetsHandler, GetInfographicAssetFileHandler, RemoveInfographicAssetHandler, GetBrandKitHandler, SaveBrandKitHandler, InfographicNotifier, InfographicReviewHandler, CreateInfographicShareLinkHandler, ListInfographicShareLinksHandler, RevokeInfographicShareLinkHandler, ResolveInfographicShareHandler, GenerateInfographicVariantsHandler, SectionInfographicsHandler, GetPortfolioInfographicDataHandler, AutoRefreshInfographicsHandler } from "@donordesk/application";
 import { EvidenceStorageResolver } from "./storage/router.js";
@@ -446,6 +446,7 @@ export interface Container {
     convertDashboard: ConvertDashboardHandler;
     convertInfographic: ConvertInfographicHandler;
     resolveCanvas: ResolveCanvasHandler;
+    exportCanvas: ExportCanvasHandler;
     listSavedReports: ListSavedReportsHandler;
     saveSavedReport: SaveSavedReportHandler;
     deleteSavedReport: DeleteSavedReportHandler;
@@ -1693,6 +1694,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     convertDashboard: new ConvertDashboardHandler(dashboards, canvases, ids, audits, clock),
     convertInfographic: new ConvertInfographicHandler(infographicRepository, canvases, visibleProjects, ids, audits, clock),
     resolveCanvas: new ResolveCanvasHandler(canvases, new PreviewDashboardChartsHandler(getProjectDataSheet, visibleProjects, datasetExtras), getProjectDataSheet, getProjectInfographicData, visibleProjects, datasetExtras, getPortfolioInfographicData),
+    exportCanvas: new ExportCanvasHandler(canvases, infographicRender, infographicRenderer),
     listSavedReports: new ListSavedReportsHandler(savedReports, visibleProjects),
     saveSavedReport: new SaveSavedReportHandler(ids, savedReports, visibleProjects, audits, clock),
     deleteSavedReport: new DeleteSavedReportHandler(savedReports, visibleProjects, audits),

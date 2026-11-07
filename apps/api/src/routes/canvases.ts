@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
+import { CanvasExportQuerySchema, CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
 
 /** Canvases (Phase 45): the merged dashboards and infographics. Thin: validate, call one handler, throw its error. The handlers apply who may see and change which canvas. */
 export async function registerCanvasRoutes(app: FastifyInstance) {
@@ -40,6 +40,16 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), CanvasResolveQuerySchema.parse(req.query));
     if (!r.ok) throw r.error;
     return r.value;
+  });
+  app.get("/v1/canvases/:id/export", async (req, reply) => {
+    const q = CanvasExportQuerySchema.parse(req.query);
+    const r = await req.container.handlers.exportCanvas.handle(ctx(req), idOf(req), { format: q.format, ...(q.scale ? { scale: q.scale as 1 | 2 | 3 } : {}) });
+    if (!r.ok) throw r.error;
+    reply.header("content-type", r.value.contentType);
+    reply.header("content-disposition", `attachment; filename="${r.value.fileName}"`);
+    reply.header("x-canvas-skipped", encodeURIComponent(JSON.stringify(r.value.skipped.map((s) => ({ kind: s.kind, reason: s.reason })))));
+    reply.header("cache-control", "private, no-store");
+    return r.value.bytes;
   });
   app.post("/v1/canvases/preview", async (req) => {
     const { projectId, periodId, title, ...rest } = PreviewCanvasSchema.parse(req.body);

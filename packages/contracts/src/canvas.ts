@@ -41,3 +41,5 @@ export const CanvasResolveQuerySchema = z.object({ periodId: z.string().max(80).
 /** An edited canvas that has not been saved, sent so the screen can show what it would say. Nothing is stored. */
 export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional() });
 export type PreviewCanvasInput = z.infer<typeof PreviewCanvasSchema>;
+
+export const CanvasExportQuerySchema = z.object({ format: z.enum(["PNG", "PDF", "SVG", "PPTX", "PACK"]), scale: z.coerce.number().int().min(1).max(3).optional() });

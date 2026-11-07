@@ -1,0 +1,29 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { canvasAsDesign, blankCanvas } from "../dist/index.js";
+
+const canvasOf = (blocks, over = {}) => ({ ...blankCanvas({ id: "c", title: "Water update", scope: "PROJECT" }), ...over, pages: [{ id: "p1", title: "One", format: "WEB_FLUID", blocks }] });
+const b = (id, kind, props, x = 0, y = 0, w = 6, extra = {}) => ({ id, kind, bounds: { x, y, w, h: 2 }, props, bindings: [], ...extra });
+
+test("blocks a file can hold become the renderer's sections in reading order; the rest are named, never dropped silently", () => {
+  const { config, skipped } = canvasAsDesign(canvasOf([
+    b("b", "REACH", {}, 6, 0), b("a", "TEXT", { text: "Hello" }, 0, 0), b("m", "METRIC", { metric: "ACTIVITIES_TOTAL" }, 0, 2),
+    b("k", "KPI", { indicatorId: "i1" }, 6, 2), b("ai", "AI_SUMMARY", { text: "Draft", accepted: false }, 0, 4), b("ok", "AI_MESSAGES", { text: "Checked", accepted: true }, 6, 4),
+    b("h", "TEXT", { text: "Hidden" }, 0, 6, 6, { style: { hidden: true } }),
+  ]));
+  assert.deepEqual(config.sections.map((s) => s.kind), ["TEXT", "REACH", "BIG_NUMBERS", "TEXT"]);
+  assert.deepEqual(skipped.map((s) => s.kind).sort(), ["AI_SUMMARY", "METRIC"]);
+  assert.equal(config.sections[1].span, 6);
+  assert.equal(config.format, "A4_PORTRAIT", "a screen-only page goes on an A4 page in a file");
+});
+
+test("a second page starts a new page, a callout becomes words, and a chart a file cannot draw is reported", () => {
+  const c = canvasOf([b("t", "CALLOUT", { text: "Rains delayed two sites.", tone: "warn" })]);
+  c.pages.push({ id: "p2", title: "Two", format: "WEB_FLUID", blocks: [b("x", "DIVIDER", {}, 0, 0, 12)] });
+  const { config, skipped } = canvasAsDesign(c);
+  assert.equal(config.sections[0].text, "Rains delayed two sites.");
+  assert.equal(config.sections[1].pageBreakBefore, true);
+  const none = canvasAsDesign(canvasOf([b("c", "CHART", { spec: { version: 2, kind: "HEATMAP", dataset: { template: "INDICATORS_OVER_TIME", indicatorIds: [] } } })]));
+  assert.equal(none.config.sections.length + none.skipped.length, 1);
+  assert.equal(skipped.length, 0);
+});
