@@ -77,6 +77,8 @@ function resolveNumber(c: RenderCtx, item: BigNumberItem, rounding: InfographicS
       return reach.registeredTotal > 0 ? { value: fmt(c, reach.registeredTotal, rounding), muted: false } : none;
     case "ACTIVITIES_DONE":
       return activitiesPlanned > 0 ? { value: fmt(c, activitiesDone, rounding), muted: false } : none;
+    case "ACTIVITIES_LATE":
+      return activitiesPlanned > 0 ? { value: fmt(c, c.data.activities.rows.reduce((n, x) => n + x.late, 0), rounding), muted: false } : none;
     case "ACTIVITIES_PLANNED":
       return activitiesPlanned > 0 ? { value: fmt(c, activitiesPlanned, rounding), muted: false } : none;
     case "FINANCE_BUDGET":

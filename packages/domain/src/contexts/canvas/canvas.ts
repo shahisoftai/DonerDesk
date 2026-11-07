@@ -26,6 +26,9 @@ export interface CanvasBlockStyle {
   locked?: boolean | undefined;
 }
 
+/** A block drawn inside a container block (group, tabs, repeater) instead of on the page grid; `tab` is the tab it sits in (0-based). One level only. */
+export interface BlockContainer { id: string; tab?: number | undefined }
+
 export interface BlockInstance<K extends string = string, P = unknown> {
   id: string;
   kind: K;
@@ -36,6 +39,8 @@ export interface BlockInstance<K extends string = string, P = unknown> {
   phone?: CanvasBounds | undefined;
   props: P;
   bindings: Binding[];
+  /** Present when the block sits inside a container block of the same page. */
+  container?: BlockContainer | undefined;
   style?: CanvasBlockStyle | undefined;
   /** Accessible name and long description; required before a web export of a chart or map. */
   alt?: string | undefined;

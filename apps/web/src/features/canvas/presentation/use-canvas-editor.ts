@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   addBlock, addPage, commit, canRedo, canUndo, definitionFor, duplicateBlock, moveBlock, redo, removeBlock, removePage, resizeBlock, setBindings, setBlockAlt, setHidden, setLocked,
-  setTitle, startHistory, undo, updateProps, projectOf, type BlockInstance, type Canvas, type EditResult, type History,
+  setContainer, setTitle, startHistory, undo, updateProps, projectOf, type BlockInstance, type Canvas, type EditResult, type History,
 } from "@donordesk/domain/contexts/canvas/index.js";
 import { seedProps } from "../domain/block-seeds";
 
@@ -57,6 +57,7 @@ export function useCanvasEditor(initial: Canvas, defaultProjectId: string | unde
       if (change.x !== undefined || change.y !== undefined) { const r = run(moveBlock(latest.current, id, next.x, next.y)); if (!r.ok) return; if (change.w === undefined && change.h === undefined) return; withBlockAfter(r.canvas, id, next.w, next.h); return; }
       run(resizeBlock(latest.current, id, next.w, next.h));
     },
+    container: (id: string, container: { id: string; tab?: number } | undefined) => withBlock(id, (c) => setContainer(c, id, container)),
     alt: (id: string, alt: string, description: string) => withBlock(id, (c) => setBlockAlt(c, id, alt || undefined, description || undefined)),
     act(id: string, action: "duplicate" | "remove" | "hide" | "lock") {
       const b = latest.current.pages.flatMap((p) => p.blocks).find((x) => x.id === id);

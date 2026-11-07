@@ -1729,7 +1729,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     revokeCanvasShare: new RevokeCanvasShareHandler(canvases, canvasLinks, audits, clock),
     publicCanvas: new PublicCanvasHandler(canvases, getProjectDataSheet, getProjectInfographicData, datasetExtras, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects)),
     getCanvasShareFile: new GetCanvasShareFileHandler(canvasExports, storage),
-    reviewCanvas: new ReviewCanvasHandler(canvases, audits),
+    reviewCanvas: new ReviewCanvasHandler(canvases, audits, infographicNotifier),
     listCanvasVersions: new ListCanvasVersionsHandler(canvases, canvasVersions),
     draftCanvasText: new DraftCanvasTextHandler(canvasAi, canvasAiText, canvasAskProject),
     setCanvasSnapshots: new SetCanvasSnapshotsHandler(canvases, audits),

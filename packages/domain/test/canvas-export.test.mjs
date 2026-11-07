@@ -7,7 +7,7 @@ const b = (id, kind, props, x = 0, y = 0, w = 6, extra = {}) => ({ id, kind, bou
 
 test("blocks a file can hold become the renderer's sections in reading order; the rest are named, never dropped silently", () => {
   const { config, skipped } = canvasAsDesign(canvasOf([
-    b("b", "REACH", {}, 6, 0), b("a", "TEXT", { text: "Hello" }, 0, 0), b("m", "METRIC", { metric: "ACTIVITIES_TOTAL" }, 0, 2),
+    b("b", "REACH", {}, 6, 0), b("a", "TEXT", { text: "Hello" }, 0, 0), b("m", "METRIC", { metric: "FIN_SPENT" }, 0, 2),
     b("k", "KPI", { indicatorId: "i1" }, 6, 2), b("ai", "AI_SUMMARY", { text: "Draft", accepted: false }, 0, 4), b("ok", "AI_MESSAGES", { text: "Checked", accepted: true }, 6, 4),
     b("h", "TEXT", { text: "Hidden" }, 0, 6, 6, { style: { hidden: true } }),
   ]));
@@ -44,4 +44,13 @@ test("widths snap to the page's grid and an unknown look falls back, so a conver
   assert.equal(snapSpan(5), 6, "a tie between 4 and 6 takes the wider");
   const { config } = canvasAsDesign(canvasOf([b("a", "REACH", {}, 0, 0, 5)], { themeId: "SOME_DASHBOARD_LOOK" }));
   assert.equal(config.themeId, "DEFAULT"); assert.equal(config.sections[0].span, 6);
+});
+
+test("an activity count tile and a project list can go in a file; money stays on screen", () => {
+  const tile = (id, metric) => b(id, "METRIC", { metric }, 0, 0);
+  const { config, skipped } = canvasAsDesign(canvasOf([tile("a", "ACTIVITIES_DONE"), tile("l", "ACTIVITIES_LATE"), tile("t", "ACTIVITIES_TOTAL"), tile("m", "FIN_SPENT"), b("pl", "PROJECT_LIST", {})]));
+  assert.deepEqual(config.sections.map((s) => s.numbers?.[0].source), ["ACTIVITIES_DONE", "ACTIVITIES_LATE", "ACTIVITIES_PLANNED"]);
+  assert.deepEqual(skipped.map((s) => s.kind).sort(), ["METRIC", "PROJECT_LIST"]);
+  const portfolio = canvasAsDesign(canvasOf([b("pl", "PROJECT_LIST", {})], { scope: "PORTFOLIO" }));
+  assert.deepEqual(portfolio.config.sections.map((s) => s.kind), ["PORTFOLIO_TABLE"]);
 });

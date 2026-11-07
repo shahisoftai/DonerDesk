@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  restrictWidgetToPeriod, buildKpi, computeMetric, MAP_VIEW_LABEL, type KpiTile, type MetricTile,
+  restrictSheetToGroup, restrictWidgetToPeriod, buildKpi, computeMetric, MAP_VIEW_LABEL, type KpiTile, type MetricTile,
   DomainError, Permissions, addWidget, projectListTable, buildChart, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, datasetQueryFor, isSpecV2, resolveDataset, runReport, settleLayout, toDatasetQuery, validateReportQuery, widgetProblems, type ReportQuery,
   type ChartSpecV2, type DashboardScope, type DashboardWidget, type DataChartSpec, type DataSheet, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
@@ -11,6 +11,7 @@ import type { IDashboardLinkRepository, IDashboardRepository, StoredDashboard, S
 import type { VisibleProjects } from "../../services/visible-projects.js";
 import type { GetProjectDataSheetHandler } from "../data-center/data-sheet.js";
 import type { IDatasetExtras } from "../../services/dataset-extras.js";
+import { StatusFilteredExtras } from "../../services/status-filtered-extras.js";
 import { ShareLinkExtras, type IShareMapReader } from "../../services/share-link-extras.js";
 
 /**
@@ -316,7 +317,7 @@ export class GetDashboardDataHandler {
 export class PreviewDashboardChartsHandler {
   constructor(private readonly sheets: GetProjectDataSheetHandler, private readonly visible: VisibleProjects, private readonly extras?: IDatasetExtras) {}
 
-  async handle(ctx: AuthenticatedContext, widgets: ReadonlyArray<DashboardWidget>, options: { periodId?: string } = {}): Promise<Result<{ charts: DashboardChartDto[] }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, widgets: ReadonlyArray<DashboardWidget>, options: { periodId?: string; group?: string; status?: string } = {}): Promise<Result<{ charts: DashboardChartDto[] }, DomainError>> {
     if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see dashboards"));
     // A size outside the grid is fitted, not refused, exactly as a save does it; then the rest is checked.
     const fitted = settleLayout([...widgets]);
@@ -324,7 +325,11 @@ export class PreviewDashboardChartsHandler {
     if (problems.length > 0) return fail(DomainError.validation(problems[0]!.message));
     const mine = await this.visible.for(ctx);
     if (!mine.ok) return mine;
-    const charts = await drawCharts(fitted, viewerSheetReader(ctx, this.sheets, new Set(mine.value.map((p) => p.id)), []), this.extras ? { ctx, service: this.extras } : undefined, options.periodId);
+    // A viewer's group narrows every indicator figure to what was recorded for that group; a status narrows what is built from the plan.
+    const read = viewerSheetReader(ctx, this.sheets, new Set(mine.value.map((p) => p.id)), []);
+    const reader = options.group ? async (projectId: string) => { const sheet = await read(projectId); return sheet ? restrictSheetToGroup(sheet, options.group as string) : sheet; } : read;
+    const extras = this.extras ? { ctx, service: options.status ? new StatusFilteredExtras(this.extras, options.status) : this.extras } : undefined;
+    const charts = await drawCharts(fitted, reader, extras, options.periodId);
     return ok({ charts });
   }
 }

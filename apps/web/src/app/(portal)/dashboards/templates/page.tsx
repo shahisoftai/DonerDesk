@@ -18,7 +18,7 @@ export default async function TemplatesPage() {
   if (!list.ok) return <InlineError title={list.error.message} referenceId={list.error.referenceId} />;
   return (
     <div className="animate-fade-in space-y-4">
-      <p className="text-sm"><Link className="underline" href="/dashboards">Dashboards</Link></p>
+      <p className="text-sm"><Link className="underline" href="/visuals">Dashboards and infographics</Link></p>
       <header>
         <h1 className="text-xl font-semibold tracking-tight">Dashboard templates</h1>
         <p className="mt-1 max-w-3xl text-sm text-slate-500">A starting point for each sector. Every template is a draft: copy it, change it, and use your copy. A template names what to show (&ldquo;people with basic water access&rdquo;); you choose which of the project&apos;s indicators answers each one.</p>

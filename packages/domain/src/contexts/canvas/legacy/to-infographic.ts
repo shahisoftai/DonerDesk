@@ -11,6 +11,7 @@ import { INFOGRAPHIC_BLOCK_SPECS } from "../blocks/infographic-blocks.js";
 import { toLegacySpec, type ChartSpecV2 } from "../../reporting/chart-spec-v2.js";
 import type { BlockInstance, Canvas } from "../canvas.js";
 import { projectOf } from "../binding.js";
+import { childrenOf, containerRole, isContainerKind, topLevel } from "../containers.js";
 
 export interface SkippedBlock { blockId: string; kind: string; reason: string }
 export interface CanvasAsDesign { config: InfographicConfig; skipped: SkippedBlock[] }
@@ -32,14 +33,22 @@ const MAPPERS: Readonly<Record<string, (b: BlockInstance, p: Props) => Mapped>> 
   },
   MAP: (_b, p) => ({ kind: "MAP", ...(str(p.title) ? { title: str(p.title) } : {}), ...(str(p.shading) ? { mapMetric: p.shading as never } : {}) }),
   TABLE: (_b, p) => ({ kind: "TABLE", ...(str(p.title) ? { title: str(p.title) } : {}), indicatorIds: Array.isArray((p.query as { indicatorIds?: unknown } | undefined)?.indicatorIds) ? ((p.query as { indicatorIds: string[] }).indicatorIds) : [] }),
+  METRIC: (_b, p) => metricFigure(p),
+  PROJECT_LIST: () => "PROJECT_LIST_FILE",
   AI_SUMMARY: (_b, p) => aiText(p),
   AI_MESSAGES: (_b, p) => aiText(p),
   AI_ASK: (_b, p) => aiText(p),
 };
 // Only words a person accepted go into a file.
 const aiText = (p: Props): Mapped => (p.accepted === true && str(p.text) ? { kind: "TEXT", text: str(p.text) as string } : "The text is a draft that has not been accepted.");
+/** A number tile a file can hold: the activity counts that have a figure in the file renderer. Money is shown on screen only. */
+const METRIC_SOURCE: Readonly<Record<string, string>> = { ACTIVITIES_TOTAL: "ACTIVITIES_PLANNED", ACTIVITIES_DONE: "ACTIVITIES_DONE", ACTIVITIES_LATE: "ACTIVITIES_LATE" };
+const metricFigure = (p: Props): Mapped => {
+  const source = METRIC_SOURCE[String(p.metric)];
+  return source ? { kind: "BIG_NUMBERS", numbers: [{ label: str(p.title) ?? "", source: source as never }] } : "Money and in-progress counts are shown on screen only.";
+};
 const SCREEN_ONLY: Readonly<Record<string, string>> = {
-  METRIC: "Number tiles are shown on screen only.", PROJECT_LIST: "A list of projects is shown on screen only.", GROUP: "A group has no picture of its own.",
+  GROUP: "A group has no picture of its own.",
   TABS: "Tabs are shown on screen only.", REPEATER: "A repeater is shown on screen only.", FILTER_BAR: "Filters are shown on screen only.",
 };
 
@@ -51,7 +60,7 @@ const fileThemeOf = (id: string): string => (id === "BRAND" || themeById(id) ? i
 const fileFormatOf = (format: string | undefined): string => (format && formatById(format) ? format : "A4_PORTRAIT");
 
 /** The section kind a block becomes in a file, where it differs from its own name. */
-const MAP_TO_SECTION: Readonly<Record<string, string>> = { KPI: "BIG_NUMBERS", CALLOUT: "TEXT", AI_SUMMARY: "TEXT", AI_MESSAGES: "TEXT", AI_ASK: "TEXT" };
+const MAP_TO_SECTION: Readonly<Record<string, string>> = { KPI: "BIG_NUMBERS", PROJECT_LIST: "PORTFOLIO_TABLE", CALLOUT: "TEXT", AI_SUMMARY: "TEXT", AI_MESSAGES: "TEXT", AI_ASK: "TEXT" };
 
 /** The project a file reads: the canvas's own, else the first project a block names. */
 export const fileProjectOf = (canvas: Canvas, own: string | undefined): string | undefined => own ?? canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find((p): p is string => Boolean(p));
@@ -60,9 +69,20 @@ export function canvasAsDesign(canvas: Canvas, projectId?: string): CanvasAsDesi
   const skipped: SkippedBlock[] = [];
   const sections: InfographicSectionConfig[] = [];
   canvas.pages.forEach((page, pageIndex) => {
-    const ordered = [...page.blocks].sort((a, b) => a.bounds.y - b.bounds.y || a.bounds.x - b.bounds.x);
+    // A file is a single column of sections: containers are opened in place (a group's name, each tab's title, then what they hold).
+    const ordered: Array<BlockInstance | { heading: string }> = [];
+    for (const top of [...topLevel(page.blocks)].sort((a, b) => a.bounds.y - b.bounds.y || a.bounds.x - b.bounds.x)) {
+      if (!isContainerKind(top.kind)) { ordered.push(top); continue; }
+      if (top.style?.hidden) continue;
+      const p = asProps(top);
+      if (containerRole(top.kind) === "FRAME") { if (str(p.title)) ordered.push({ heading: str(p.title) as string }); ordered.push(...childrenOf(page.blocks, top.id)); }
+      else if (containerRole(top.kind) === "TABS") ((Array.isArray(p.titles) ? p.titles : []) as unknown[]).forEach((t, i) => { ordered.push({ heading: String(t) }); ordered.push(...childrenOf(page.blocks, top.id, i)); });
+      else skipped.push({ blockId: top.id, kind: top.kind, reason: "A repeater is shown on screen only." });
+    }
     let first = true;
-    for (const block of ordered) {
+    for (const entry of ordered) {
+      if ("heading" in entry) { sections.push({ kind: "TEXT", text: entry.heading, span: 12, ...(first && pageIndex > 0 ? { pageBreakBefore: true } : {}) } as InfographicSectionConfig); first = false; continue; }
+      const block = entry;
       if (block.style?.hidden) continue;
       const props = asProps(block);
       // A file reads one project; a block bound to another stays on screen and is named.
@@ -74,6 +94,7 @@ export function canvasAsDesign(canvas: Canvas, projectId?: string): CanvasAsDesi
       if (canvas.scope === "PORTFOLIO" && !PORTFOLIO_KINDS.has(MAP_TO_SECTION[block.kind] ?? block.kind)) { skipped.push({ blockId: block.id, kind: block.kind, reason: "A portfolio canvas puts only portfolio blocks, a map, text and pictures in a file." }); continue; }
       const mapper = MAPPERS[block.kind];
       const mapped: Mapped = mapper ? mapper(block, props) : FILE_KINDS.has(block.kind) ? ({ ...props, kind: block.kind } as Mapped) : SCREEN_ONLY[block.kind] ?? "This kind of block cannot be put in a file.";
+      if (mapped === "PROJECT_LIST_FILE") { if (canvas.scope === "PORTFOLIO") sections.push({ kind: "PORTFOLIO_TABLE", span: snapSpan(block.bounds.w), ...(str(props.title) ? { title: str(props.title) } : {}) } as InfographicSectionConfig); else skipped.push({ blockId: block.id, kind: block.kind, reason: "A list of projects goes in a file only from a portfolio canvas." }); first = false; continue; }
       if (typeof mapped === "string") { skipped.push({ blockId: block.id, kind: block.kind, reason: mapped }); continue; }
       const section: InfographicSectionConfig = { ...mapped, span: snapSpan(block.bounds.w), ...(block.alt ? { altText: block.alt } : {}), ...(first && pageIndex > 0 ? { pageBreakBefore: true } : {}) } as InfographicSectionConfig;
       sections.push(section);

@@ -27,3 +27,5 @@ export * from "./templates-builtin.js";
 export * from "./edit/layout.js";
 export * from "./legacy/to-infographic.js";
 export * from "./review.js";
+export * from "./cross-filter.js";
+export * from "./containers.js";

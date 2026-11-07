@@ -55,6 +55,7 @@ export const NUMBER_SOURCE_INFO: ReadonlyArray<{ value: string; label: string; s
   { value: "REACH_REGISTERED", label: "People registered" },
   { value: "ACTIVITIES_DONE", label: "Activities completed" },
   { value: "ACTIVITIES_PLANNED", label: "Activities planned" },
+  { value: "ACTIVITIES_LATE", label: "Activities running late" },
   { value: "INDICATOR", label: "An indicator's latest value" },
   { value: "FINANCE_BUDGET", label: "Budget (verified finance)" },
   { value: "FINANCE_EXPENDITURE", label: "Spending (verified finance)" },

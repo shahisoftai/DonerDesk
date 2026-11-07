@@ -39,7 +39,7 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
   });
   app.get("/v1/canvases/:id/resolve", async (req) => {
     const q = CanvasResolveQuerySchema.parse(req.query);
-    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), { ...(q.periodId ? { periodId: q.periodId } : {}), placeKeys: placeKeysOf(q.places) });
+    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), { ...(q.periodId ? { periodId: q.periodId } : {}), placeKeys: placeKeysOf(q.places), ...(q.group ? { group: q.group } : {}), ...(q.status ? { status: q.status } : {}) });
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -54,9 +54,9 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
     return r.value.bytes;
   });
   app.post("/v1/canvases/preview", async (req) => {
-    const { projectId, periodId, placeKeys, title, ...rest } = PreviewCanvasSchema.parse(req.body);
+    const { projectId, periodId, placeKeys, group, status, title, ...rest } = PreviewCanvasSchema.parse(req.body);
     const canvas = { id: "preview", title, scope: "MINE", mode: rest.mode ?? "LIVE", revision: 1, ...rest } as never;
-    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, { ...(periodId ? { periodId } : {}), ...(placeKeys?.length ? { placeKeys } : {}) });
+    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, { ...(periodId ? { periodId } : {}), ...(placeKeys?.length ? { placeKeys } : {}), ...(group ? { group } : {}), ...(status ? { status } : {}) });
     if (!r.ok) throw r.error;
     return r.value;
   });

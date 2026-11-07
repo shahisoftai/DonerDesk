@@ -293,7 +293,7 @@ test("a file is made from the saved canvas; blocks a file cannot hold are named,
   const exporter = new ExportCanvasHandler(w.repo, render, renderer);
   const empty = await exporter.handle(ADMIN, c.id, { format: "PDF" });
   assert.equal(empty.ok, false); assert.match(empty.error.message, /Nothing on this canvas/);
-  await w.save.handle(ADMIN, saveInput(c, { pages: pageOf([block("t", "TEXT", { text: "Hello" }), block("m", "METRIC", { metric: "ACTIVITIES_TOTAL" }, [], 6, 0), block("ai", "AI_SUMMARY", { text: "Draft", accepted: false }, [], 0, 3)]) }));
+  await w.save.handle(ADMIN, saveInput(c, { pages: pageOf([block("t", "TEXT", { text: "Hello" }), block("m", "METRIC", { metric: "FIN_SPENT" }, [], 6, 0), block("ai", "AI_SUMMARY", { text: "Draft", accepted: false }, [], 0, 3)]) }));
   const done = await exporter.handle(ADMIN, c.id, { format: "PDF" });
   assert.equal(done.ok, true, done.ok ? "" : done.error.message);
   assert.equal(done.value.contentType, "application/pdf"); assert.equal(done.value.fileName, "water-update.pdf");
@@ -302,4 +302,29 @@ test("a file is made from the saved canvas; blocks a file cannot hold are named,
   assert.equal((await exporter.handle(OTHER_VIEWER, c.id, { format: "PNG" })).ok, true, "a shared project canvas is seen by all");
   const mine = (await w.create.handle(VIEWER, { title: "Mine", scope: "MINE" })).value;
   assert.equal((await exporter.handle(OTHER_VIEWER, mine.id, { format: "PNG" })).error.code, "NOT_FOUND");
+});
+
+// ---- containers: a repeater repeats what it holds, once per project the viewer can see ----
+
+test("a project repeater resolves its blocks once per visible project, and a place repeater narrows to one place; held blocks are not resolved on their own", async () => {
+  const w = world();
+  const c = (await w.create.handle(ADMIN, { title: "Each", scope: "ORG" })).value;
+  const held = (id, kind, props, container) => ({ ...block(id, kind, props), container });
+  const pages = pageOf([
+    block("rep", "REPEATER", { over: "PROJECT", limit: 2 }), held("reach", "REACH", {}, { id: "rep" }), held("kpi", "KPI", { indicatorId: "a", includeDraft: false }, { id: "rep" }),
+    block("rep2", "REPEATER", { over: "PLACE", limit: 5 }, [], 0, 3), held("r2", "REACH", {}, { id: "rep2" }),
+  ]);
+  await w.save.handle(ADMIN, saveInput(c, { pages }));
+  const seen = [];
+  const preview = { handle: async (_c, widgets) => (seen.push(...widgets.map((x) => [x.id, x.projectId])), ok({ charts: widgets.map((x) => ({ widgetId: x.id })) })) };
+  const sheets = { handle: async (_c, pid) => ok({ ...SAMPLE_SHEET, projectId: pid }) };
+  const info = { handle: async () => ok({ project: { title: "P", donorName: "D", country: "K" }, reach: SAMPLE_FACTS.reach, activities: SAMPLE_FACTS.activities, finance: SAMPLE_FACTS.finance, indicators: SAMPLE_FACTS.indicators }) };
+  const visible = { for: async () => ok([{ id: "p1", title: "One" }, { id: "p2", title: "Two" }, { id: "p3", title: "Three" }]) };
+  const r = await new ResolveCanvasHandler(w.repo, preview, sheets, info, visible).handle(ADMIN, c.id);
+  assert.equal(r.ok, true);
+  assert.deepEqual(r.value.repeats.rep.map((x) => x.label), ["One", "Two"], "limited to the number asked for");
+  assert.deepEqual(seen.filter(([id]) => id.startsWith("kpi::")), [["kpi::p1", "p1"], ["kpi::p2", "p2"]], "a chart-style block is drawn once per project");
+  assert.equal(r.value.models["reach::p1"].state, "ready"); assert.equal(r.value.models["reach::p2"].state, "ready");
+  assert.equal(r.value.models.reach, undefined, "a held block has no model of its own");
+  assert.ok(r.value.repeats.rep2.length === 0 || r.value.models[`r2::${r.value.repeats.rep2[0].key}`], "a place repeater resolves per place when the project names places");
 });

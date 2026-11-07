@@ -29,6 +29,7 @@ const PICK: Readonly<Record<BigNumberSource, Pick>> = {
   REACH_REGISTERED: (_i, f) => (f.reach.registeredTotal > 0 ? plain(f.reach.registeredTotal) : null),
   ACTIVITIES_DONE: (_i, f) => (plannedOf(f) > 0 ? plain(doneOf(f)) : null),
   ACTIVITIES_PLANNED: (_i, f) => (plannedOf(f) > 0 ? plain(plannedOf(f)) : null),
+  ACTIVITIES_LATE: (_i, f) => (plannedOf(f) > 0 ? plain(f.activities.rows.reduce((n, x) => n + x.late, 0)) : null),
   FINANCE_BUDGET: financeFigure("budget"),
   FINANCE_EXPENDITURE: financeFigure("expenditure"),
   FINANCE_BALANCE: financeFigure("balance"),

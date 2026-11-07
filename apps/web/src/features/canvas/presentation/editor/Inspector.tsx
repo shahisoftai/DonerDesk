@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { useState } from "react";
 import { definitionFor, projectOf, type BlockInstance, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
 import type { ProjectOption } from "../CanvasWorkspace";
@@ -16,6 +17,9 @@ interface Props {
   fallbackProjectId: string | undefined;
   problems: ReadonlyArray<CanvasProblem>;
   language: string;
+  /** The container blocks of the page this block could be put inside. */
+  containers: ReadonlyArray<{ id: string; label: string; tabs: readonly string[] | null }>;
+  onContainer: (container: { id: string; tab?: number } | undefined) => void;
   onProps: (props: unknown) => void;
   onProject: (projectId: string) => void;
   onBounds: (change: { x?: number; y?: number; w?: number; h?: number }) => void;
@@ -27,7 +31,8 @@ const BTN = "rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50
 const NUM = "w-16 rounded border border-slate-300 bg-white px-1 py-0.5 text-sm dark:border-slate-600 dark:bg-slate-900";
 
 /** The settings of the selected block: where it sits, what it shows, how it is described. Everything a block offers is a row in the field table; "Advanced" edits any block as text. */
-export function Inspector({ block, label, projects, indicatorsByProject, fallbackProjectId, problems, language, onProps, onProject, onBounds, onAlt, onAction }: Props) {
+export function Inspector({ block, label, projects, indicatorsByProject, fallbackProjectId, problems, language, containers, onContainer, onProps, onProject, onBounds, onAlt, onAction }: Props) {
+  const { t } = useI18n();
   const def = definitionFor(block.kind);
   const needsProject = def?.slots.some((s) => s.slot === "project") === true;
   const projectId = projectOf(block.bindings) ?? fallbackProjectId;
@@ -62,7 +67,19 @@ export function Inspector({ block, label, projects, indicatorsByProject, fallbac
         {def?.aiDraft && <AiDraftControl style={def.aiDraft} projectId={projectId} instruction={(block.props as { instruction?: string } | undefined)?.instruction} language={language} disabled={locked} onDraft={(text) => onProps({ ...(block.props as object), text, accepted: false })} />}
       </fieldset>
 
-      <fieldset disabled={locked} className="space-y-2"><legend className="text-xs font-medium text-slate-600 dark:text-slate-300">Place and size (12 columns)</legend>
+      {def?.container === undefined && containers.length > 0 && (
+        <fieldset disabled={locked} className="space-y-1"><legend className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("canvas.ui.putInside")}</legend>
+          <select aria-label="Put inside" className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900" value={block.container?.id ?? ""} onChange={(e) => { const id = e.target.value; const holder = containers.find((c) => c.id === id); onContainer(id ? { id, ...(holder?.tabs ? { tab: 0 } : {}) } : undefined); }}>
+            <option value="">{t("canvas.ui.onPage")}</option>{containers.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+          </select>
+          {block.container && containers.find((c) => c.id === block.container?.id)?.tabs && (
+            <select aria-label="Tab" className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900" value={block.container.tab ?? 0} onChange={(e) => onContainer({ id: block.container!.id, tab: Number(e.target.value) })}>
+              {(containers.find((c) => c.id === block.container?.id)?.tabs ?? []).map((t, i) => <option key={i} value={i}>{t}</option>)}
+            </select>)}
+        </fieldset>
+      )}
+
+      <fieldset disabled={locked} className="space-y-2"><legend className="text-xs font-medium text-slate-600 dark:text-slate-300">{t("canvas.ui.placeSize")}</legend>
         <div className="flex flex-wrap items-center gap-2">
           {(["x", "y", "w", "h"] as const).map((k) => (
             <label key={k} className="flex items-center gap-1 text-xs">{{ x: "Column", y: "Row", w: "Wide", h: "High" }[k]}
@@ -78,10 +95,10 @@ export function Inspector({ block, label, projects, indicatorsByProject, fallbac
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={BTN} onClick={() => onAction("duplicate")}>Duplicate</button>
-        <button type="button" className={BTN} onClick={() => onAction("hide")}>{block.style?.hidden ? "Show" : "Hide"}</button>
-        <button type="button" className={BTN} onClick={() => onAction("lock")}>{locked ? "Unlock" : "Lock"}</button>
-        <button type="button" className={`${BTN} text-red-700`} onClick={() => onAction("remove")} disabled={locked}>Remove</button>
+        <button type="button" className={BTN} onClick={() => onAction("duplicate")}>{t("canvas.ui.duplicate")}</button>
+        <button type="button" className={BTN} onClick={() => onAction("hide")}>{block.style?.hidden ? t("canvas.ui.show") : t("canvas.ui.hide")}</button>
+        <button type="button" className={BTN} onClick={() => onAction("lock")}>{locked ? t("canvas.ui.unlock") : t("canvas.ui.lock")}</button>
+        <button type="button" className={`${BTN} text-red-700`} onClick={() => onAction("remove")} disabled={locked}>{t("canvas.ui.remove")}</button>
       </div>
 
       <details open={advanced} onToggle={(e) => setAdvanced((e.target as HTMLDetailsElement).open)}>

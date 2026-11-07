@@ -1,4 +1,4 @@
-import { DomainError, canvasToWidgets, definitionFor, isDashboardKind, portfolioOnlyFacts, projectOf, type BlockModel, type Canvas, type CanvasFacts, type Result } from "@donordesk/domain";
+import { DomainError, EMPTY_CHOICES, childrenOf, repeatKey, groupsOf, restrictSheetToGroup, statusesOf, type FilterChoices, canvasToWidgets, definitionFor, isDashboardKind, portfolioOnlyFacts, projectOf, type BlockModel, type Canvas, type CanvasFacts, type Result } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ICanvasRepository } from "../../ports/canvas.js";
 import type { IDatasetExtras } from "../../services/dataset-extras.js";
@@ -8,9 +8,10 @@ import type { DashboardChartDto, PreviewDashboardChartsHandler } from "../dashbo
 import type { GetProjectInfographicDataHandler } from "../infographics/infographic-data.js";
 import type { GetPortfolioInfographicDataHandler } from "../infographics/portfolio-data.js";
 import { can, fail, loadCanvas, ok } from "./canvas-shared.js";
+import { heldByRepeater, repeatedWidgets, repeaterItems, type RepeatItems } from "./repeat-canvas.js";
 
 /** What a viewer may narrow a canvas by without changing it: a period and/or places. */
-export interface CanvasFilterOptions { periodId?: string | undefined; placeKeys?: string[] | undefined }
+export interface CanvasFilterOptions { periodId?: string | undefined; placeKeys?: string[] | undefined; group?: string | undefined; status?: string | undefined }
 
 export interface ResolvedCanvasDto {
   canvasId: string;
@@ -19,7 +20,9 @@ export interface ResolvedCanvasDto {
   /** Every other block's model, keyed by block id: the one thing the screen and a file are both painted from. */
   models: Record<string, BlockModel<unknown>>;
   /** What the viewer can narrow the canvas by (the periods and places of its project); empty when it has none. */
-  choices: { periods: Array<{ id: string; label: string }>; places: Array<{ key: string; label: string }> };
+  choices: FilterChoices;
+  /** What each repeater repeats for, by repeater block id. */
+  repeats: Record<string, Array<{ key: string; label: string }>>;
 }
 
 const unavailable = (reason: string): BlockModel<unknown> => ({ state: "unavailable", reason });
@@ -47,17 +50,6 @@ export class ResolveCanvasHandler {
 
   private async resolveDocument(ctx: AuthenticatedContext, stored: { id: string; canvas: Canvas; projectId: string | undefined; title: string }, options: CanvasFilterOptions): Promise<Result<ResolvedCanvasDto, DomainError>> {
     const id = stored.id;
-    const { widgets, withoutProject } = canvasToWidgets(stored.canvas, stored.projectId);
-    const models: Record<string, BlockModel<unknown>> = {};
-    for (const blockId of withoutProject) models[blockId] = unavailable("Choose the project this block reads.");
-
-    let drawings: DashboardChartDto[] = [];
-    if (widgets.length > 0) {
-      const drawn = await this.preview_.handle(ctx, widgets, options);
-      if (!drawn.ok) return drawn;
-      drawings = drawn.value.charts;
-    }
-
     const mine = await this.visible.for(ctx);
     if (!mine.ok) return mine;
     const allowed = new Set(mine.value.map((p) => p.id));
@@ -68,11 +60,29 @@ export class ResolveCanvasHandler {
       if (!factsByProject.has(projectId)) factsByProject.set(projectId, canvasFactsFor(this.sheets, this.infographicData, ctx, projectId, stored.canvas, stored.title, options));
       return factsByProject.get(projectId)!;
     };
+    // The filters offer the periods and places of the canvas's project, else of the first project a block reads.
+    const homeId = stored.projectId ?? stored.canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean);
+    const home = await factsOf(homeId);
+    const items = repeaterItems(stored.canvas, mine.value, home ? filterChoices(home).places : []);
+    const held = heldByRepeater(stored.canvas, items);
+
+    const base = canvasToWidgets(stored.canvas, stored.projectId);
+    const widgets = [...base.widgets.filter((w) => !held.has(w.id)), ...repeatedWidgets(stored.canvas, items)];
+    const models: Record<string, BlockModel<unknown>> = {};
+    for (const blockId of base.withoutProject.filter((b) => !held.has(b))) models[blockId] = unavailable("Choose the project this block reads.");
+
+    let drawings: DashboardChartDto[] = [];
+    if (widgets.length > 0) {
+      const drawn = await this.preview_.handle(ctx, widgets, options);
+      if (!drawn.ok) return drawn;
+      drawings = drawn.value.charts;
+    }
+
     const list = await this.projectList(ctx);
     const portfolio = await this.portfolioFacts(ctx, stored.canvas);
 
     for (const page of stored.canvas.pages) for (const block of page.blocks) {
-      if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id]) continue;
+      if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id] || held.has(block.id)) continue;
       const def = definitionFor(block.kind) as unknown as { reads?: "FACTS" | "VIEWER_PROJECTS" | "PORTFOLIO"; resolve(props: unknown, data: unknown): BlockModel<unknown> } | undefined;
       if (!def) { models[block.id] = unavailable("This block is not one the product knows."); continue; }
       let data: unknown;
@@ -85,9 +95,30 @@ export class ResolveCanvasHandler {
       }
       models[block.id] = def.resolve(block.props, data);
     }
-    // The filters offer the periods and places of the canvas's project, else of the first project a block reads.
-    const home = await factsOf(stored.projectId ?? stored.canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean));
-    return ok({ canvasId: id, drawings, models, choices: home ? filterChoices(home) : { periods: [], places: [] } });
+    await this.resolveRepeated(stored.canvas, items, models, factsOf, home);
+    return ok({ canvasId: id, drawings, models, repeats: Object.fromEntries(Object.entries(items).map(([k, v]) => [k, v.map((x) => ({ key: x.key, label: x.label }))])), choices: home ? { ...filterChoices(home), groups: groupsOf(home.sheet), statuses: await this.statuses(ctx, stored, home) } : EMPTY_CHOICES });
+  }
+
+  /** Each block a repeater holds, once per item: a project\'s own facts, or the project\'s facts narrowed to one place. Chart-style copies were drawn above. */
+  private async resolveRepeated(canvas: Canvas, items: RepeatItems, models: Record<string, BlockModel<unknown>>, factsOf: (id: string | undefined) => Promise<CanvasFacts | undefined>, home: CanvasFacts | undefined): Promise<void> {
+    for (const page of canvas.pages) for (const holderId of Object.keys(items)) for (const child of childrenOf(page.blocks, holderId)) {
+      if (child.style?.hidden || isDashboardKind(child.kind)) continue;
+      const def = definitionFor(child.kind) as unknown as { reads?: string; resolve(p: unknown, d: unknown): BlockModel<unknown> } | undefined;
+      for (const item of items[holderId] ?? []) {
+        const key = repeatKey(child.id, item.key);
+        if (!def || def.reads !== "FACTS") { models[key] = unavailable("This block does not change from one item to the next."); continue; }
+        const facts = item.projectId ? await factsOf(item.projectId) : home && item.placeKey ? { ...home, locationKeys: [item.placeKey] } : undefined;
+        models[key] = def.resolve(child.props, facts);
+      }
+    }
+  }
+
+  /** The plain statuses of the home project's planned work, for the filter. */
+  private async statuses(ctx: AuthenticatedContext, stored: { projectId: string | undefined; canvas: Canvas }, home: CanvasFacts): Promise<string[]> {
+    const pid = stored.projectId ?? stored.canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean);
+    void home;
+    const rows = pid && this.extras ? await this.extras.plan(ctx, pid) : undefined;
+    return rows ? statusesOf(rows) : [];
   }
 
   /** The portfolio, read once and only when some block on the canvas draws from it. */
@@ -112,7 +143,7 @@ export async function canvasFactsFor(sheets: GetProjectDataSheetHandler, infogra
   if (!sheet.ok || !data.ok) return undefined;
   const o = canvas.options;
   return {
-    sheet: sheet.value, reach: data.value.reach, activities: data.value.activities, finance: data.value.finance, indicators: data.value.indicators,
+    sheet: filters.group ? restrictSheetToGroup(sheet.value, filters.group) : sheet.value, reach: data.value.reach, activities: data.value.activities, finance: data.value.finance, indicators: data.value.indicators,
     // A viewer's own filter narrows what the design chose: a period ends the range there, places replace the default places.
     range: { fromId: o?.periodFromId, toId: filters.periodId ?? o?.periodToId }, locationKeys: filters.placeKeys?.length ? filters.placeKeys : o?.locationKeys, acknowledgement: o?.acknowledgement, subtitle: o?.subtitle,
     project: { title: data.value.project.title, donorName: data.value.project.donorName, country: data.value.project.country }, designTitle: title,
@@ -121,7 +152,7 @@ export async function canvasFactsFor(sheets: GetProjectDataSheetHandler, infogra
 
 const MAX_PLACES = 40;
 /** The periods and places a viewer may filter by: what the project's own records name. */
-export function filterChoices(f: CanvasFacts): ResolvedCanvasDto["choices"] {
+export function filterChoices(f: CanvasFacts): Pick<FilterChoices, "periods" | "places"> {
   const places = new Map<string, string>();
   for (const r of f.reach.registeredByLocation) places.set(r.key, r.location);
   for (const r of f.activities.rows) places.set(r.key, r.location);

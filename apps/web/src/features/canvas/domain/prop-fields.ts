@@ -72,7 +72,7 @@ export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
   RESULTS_CHAIN: [title], PORTFOLIO_SUMMARY: [title], PORTFOLIO_TABLE: [title], PORTFOLIO_HEALTH: [title], PORTFOLIO_COUNTRIES: [title],
   AI_SUMMARY: AI_FIELDS, AI_MESSAGES: AI_FIELDS, AI_ASK: AI_FIELDS,
   TABS: [{ type: "lines", path: "titles", label: "Tabs (one title per line, 2 to 6)" }],
-  REPEATER: [{ type: "select", path: "over", label: "Repeat over", options: [{ value: "PROJECT", label: "Projects" }, { value: "PLACE", label: "Places" }, { value: "SECTOR", label: "Sectors" }] }, { type: "number", path: "limit", label: "How many (1 to 12)", min: 1, max: 12 }],
+  REPEATER: [{ type: "select", path: "over", label: "Repeat over", options: [{ value: "PROJECT", label: "Projects" }, { value: "PLACE", label: "Places" }] }, { type: "number", path: "limit", label: "How many (1 to 12)", min: 1, max: 12 }],
   FILTER_BAR: [{ type: "choices", path: "dimensions", label: "Filters to offer", options: FILTER_DIMENSIONS.map((value) => ({ value, label: words(value) })) }],
 };
 

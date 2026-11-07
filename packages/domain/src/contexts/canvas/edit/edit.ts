@@ -2,6 +2,7 @@
  * Editing a canvas (Phase 45.3): pure functions from a canvas to a new canvas or a reason. The editor, keyboard handlers and
  * the API's patch endpoint all call these, so a gesture means the same everywhere. Nothing mutates its input.
  */
+import { containerProblems } from "../containers.js";
 import { settleBoxes } from "./layout.js";
 import { CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, type BlockInstance, type Canvas, type CanvasBounds, type CanvasPage } from "../canvas.js";
 import { definitionFor } from "../blocks/registry.js";
@@ -19,7 +20,14 @@ const mapPage = (c: Canvas, pageId: string, f: (p: CanvasPage) => CanvasPage | s
 };
 
 /** Blocks laid out by their grid cells with the shared rule (a dropped block keeps its place, the rest fall to the highest free row). */
-function settle(blocks: BlockInstance[], pinnedId?: string): BlockInstance[] {
+function settle(all: BlockInstance[], pinnedId?: string): BlockInstance[] {
+  // Blocks held by a container are laid out by it, not by the page grid, so they are never moved to make room.
+  const held = all.filter((b) => b.container);
+  const blocks = all.filter((b) => !b.container);
+  const laid = settleTop(blocks, pinnedId);
+  return all.map((b) => (b.container ? held.find((h) => h.id === b.id)! : laid.find((l) => l.id === b.id)!));
+}
+function settleTop(blocks: BlockInstance[], pinnedId?: string): BlockInstance[] {
   const boxes = blocks.map((b) => ({ id: b.id, ...b.bounds, block: b }));
   return settleBoxes(boxes, pinnedId).map(({ block, x, y, w, h }) => ({ ...block, bounds: { x, y, w, h } }));
 }
@@ -86,7 +94,21 @@ export function removeBlock(c: Canvas, id: string): EditResult {
   const hit = findBlock(c, id);
   if (!hit) return fail("That block does not exist.");
   if (hit.block.style?.locked) return fail("That block is locked.");
-  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.filter((b) => b.id !== id)) }));
+  // Blocks a removed container held go back on the page.
+  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.filter((b) => b.id !== id).map((b) => (b.container?.id === id ? { ...b, container: undefined } : b))) }));
+}
+
+/** Puts a block inside a container of the same page (and tab), or back on the page grid when `container` is undefined. */
+export function setContainer(c: Canvas, id: string, container: { id: string; tab?: number } | undefined): EditResult {
+  const hit = findBlock(c, id);
+  if (!hit) return fail("That block does not exist.");
+  if (hit.block.style?.locked) return fail("That block is locked.");
+  const next: BlockInstance = { ...hit.block, container };
+  if (container) {
+    const problem = containerProblems({ ...hit.page, blocks: hit.page.blocks.map((b) => (b.id === id ? next : b)) }, next)[0];
+    if (problem) return fail(problem);
+  }
+  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.map((b) => (b.id === id ? next : b))) }));
 }
 
 /** A copy goes just below the original, unlocked, with its own id and a deep copy of its settings. */

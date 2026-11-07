@@ -152,7 +152,7 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
   }
   async function remove() {
     if (!window.confirm(`Delete "${dashboard.name}"? Its share links stop working.`)) return;
-    if (await del.run(() => deleteDashboardAction(dashboard.id))) router.push(dashboard.projectId ? `/dashboards?project=${dashboard.projectId}` : "/dashboards");
+    if (await del.run(() => deleteDashboardAction(dashboard.id))) router.push("/visuals");
   }
 
   return (

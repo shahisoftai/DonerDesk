@@ -23,6 +23,8 @@ interface Props {
   selected: boolean;
   editing: boolean;
   onSelect: () => void;
+  /** A click on a bar, point or slice reports its label; the page decides what filter that means. */
+  onPick?: ((name: string) => void) | undefined;
 }
 
 /** A block's model: what it says now. A block that needs no records is worked out here as it is edited; one that does uses the server's, and says so when it is out of date. */
@@ -33,7 +35,7 @@ export function modelOf(block: BlockInstance, serverModel: BlockModel<unknown> |
   return changed && local.state !== "unavailable" ? local : serverModel;
 }
 
-export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, changed, selected, editing, onSelect }: Props) {
+export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, changed, selected, editing, onSelect, onPick }: Props) {
   const { t } = useI18n();
   const def = definitionFor(block.kind);
   const label = t(blockLabelKey(block.kind as never));
@@ -47,7 +49,7 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
   if (drawing && widget) {
     const renderer = rendererFor(drawing);
     title = renderer.title({ widget, drawing }) ?? label;
-    body = renderer.render({ widget, drawing });
+    body = renderer.render({ widget, drawing, onPick: editing ? undefined : onPick });
   } else if (isDashboardKind(block.kind)) {
     // A chart-style block is drawn from the records by the server: a block just added or changed has no figures until the canvas is saved.
     body = <NothingToShow text={screenText(frame)} reason={editing ? "Reading the figures…" : "Nothing to show yet."} authoring />;

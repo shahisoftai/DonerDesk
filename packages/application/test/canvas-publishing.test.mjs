@@ -146,3 +146,17 @@ test("drafting text is off unless the organisation switched canvas AI on, and ne
   const partner = { tenant: { tenantId, userId: "pat", role: "VIEWER", external: true }, requestId: "r" };
   assert.match((await on.handle(partner, { style: "SUMMARY", projectId: "p1" })).value.reason, /outside partners/);
 });
+
+test("a review request tells the people who can approve; a decision tells the person who made the canvas; never the person acting", async () => {
+  const w = world();
+  const told = [];
+  const notifier = { approvers: async () => ["rita", "anna"], tell: async (ctx, to, title) => void told.push({ to: to.filter((x) => x !== ctx.tenant.userId), title }) };
+  const h = new ReviewCanvasHandler(w.repo, log, notifier);
+  await h.handle(VIEWER, "c1", { action: "SUBMIT" });
+  assert.deepEqual(told[0].to, ["rita", "anna"]); assert.match(told[0].title, /waiting for review/);
+  await h.handle(ADMIN, "c1", { action: "APPROVE" });
+  assert.deepEqual(told[1].to, []); assert.match(told[1].title, /approved/, "the owner is the one acting here, so nobody else is told");
+  await h.handle(VIEWER, "c1", { action: "REOPEN" }); await h.handle(VIEWER, "c1", { action: "SUBMIT" });
+  await h.handle(ctxFor("rita", "ADMIN"), "c1", { action: "REQUEST_CHANGES", note: "Add the source" });
+  assert.deepEqual(told.at(-1).to, ["anna"]); assert.match(told.at(-1).title, /Changes/);
+});

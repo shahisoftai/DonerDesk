@@ -11,7 +11,7 @@ const Binding = z.discriminatedUnion("type", [
 ]);
 export const CanvasBlockSchema = z.object({
   id: z.string().min(1).max(60), kind: z.string().min(1).max(40), bounds: Bounds, tablet: Bounds.optional(), phone: Bounds.optional(),
-  props: z.record(z.string(), z.unknown()), bindings: z.array(Binding).max(8),
+  props: z.record(z.string(), z.unknown()), bindings: z.array(Binding).max(8), container: z.object({ id: z.string().min(1).max(60), tab: z.number().int().min(0).max(5).optional() }).optional(),
   style: z.object({ background: z.enum(["none", "card", "tint", "accent"]).optional(), align: z.enum(["start", "center", "end"]).optional(), hidden: z.boolean().optional(), locked: z.boolean().optional() }).optional(),
   alt: z.string().max(500).optional(), description: z.string().max(2000).optional(),
 });
@@ -36,12 +36,12 @@ export const SaveCanvasSchema = z.object({
 export type SaveCanvasInput = z.infer<typeof SaveCanvasSchema>;
 
 export const CanvasListQuerySchema = z.object({ projectId: z.string().max(80).optional() });
-export const CanvasResolveQuerySchema = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional() });
+export const CanvasResolveQuerySchema = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional() });
 /** Places arrive as one comma-separated query value. */
 export const placeKeysOf = (places: string | undefined): string[] => (places ?? "").split(",").map((p) => p.trim()).filter(Boolean).slice(0, 20);
 
 /** An edited canvas that has not been saved, sent so the screen can show what it would say. Nothing is stored. */
-export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional(), placeKeys: z.array(z.string().max(80)).max(20).optional() });
+export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional(), placeKeys: z.array(z.string().max(80)).max(20).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional() });
 export type PreviewCanvasInput = z.infer<typeof PreviewCanvasSchema>;
 
 export const CanvasExportQuerySchema = z.object({ format: z.enum(["PNG", "PDF", "SVG", "PPTX", "PACK"]), scale: z.coerce.number().int().min(1).max(3).optional() });

@@ -2,6 +2,7 @@
  * Everything wrong with a canvas, as sentences (Phase 45). Block rules come from each block's own definition; this file knows
  * the page, the grid and the limits, and never a block by name.
  */
+import { containerProblems } from "./containers.js";
 import { bindingProblems } from "./binding.js";
 import { definitionFor } from "./blocks/registry.js";
 import { CANVAS_MODES, CANVAS_PROFILES, CANVAS_SCOPES, CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, CANVAS_MAX_TITLE, type BlockInstance, type CanvasBounds, type Canvas } from "./canvas.js";
@@ -58,6 +59,7 @@ export function canvasStructureProblems(canvas: Canvas): CanvasProblem[] {
       if (blockIds.has(block.id)) out.push({ pageId: page.id, blockId: block.id, message: "Two blocks share an id." });
       blockIds.add(block.id);
       out.push(...blockStructure(block, page.id));
+      for (const message of containerProblems(page, block)) out.push({ pageId: page.id, blockId: block.id, message });
     }
   }
   return out;

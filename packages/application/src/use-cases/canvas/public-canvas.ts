@@ -33,7 +33,8 @@ export class PublicCanvasHandler {
     for (const id of withoutProject) models[id] = unavailable("This block has no project.");
     const facts = new Map<string, ReturnType<typeof canvasFactsFor>>();
     for (const page of stored.canvas.pages) for (const block of page.blocks) {
-      if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id]) continue;
+      // A repeater is shown on screen only: a link never lists the organisation's projects, so what a repeater holds is not drawn through one.
+      if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id] || block.container) continue;
       const def = definitionFor(block.kind) as unknown as { reads?: string; resolve(p: unknown, d: unknown): BlockModel<unknown> } | undefined;
       if (!def) continue;
       if (def.reads !== "FACTS" && def.reads !== undefined) { models[block.id] = unavailable("This block is not shown through a link."); continue; }

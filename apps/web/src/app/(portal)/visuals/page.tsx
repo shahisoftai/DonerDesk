@@ -14,7 +14,8 @@ const SCOPE = { ORG: "Whole organisation", PROJECT: "One project", MINE: "Only m
 const MAX_PROJECTS_SCANNED = 25;
 
 /** Dashboards and infographics in one place: the canvases, and the older dashboards and designs that have not been opened as a canvas yet (opening one keeps the original). */
-export default async function VisualsPage() {
+export default async function VisualsPage({ searchParams }: { searchParams: Promise<{ notice?: string }> }) {
+  const { notice } = await searchParams;
   const ctx = await requireSession();
   const [canvases, dashboards, projects] = await Promise.all([
     gatewayRequest("/v1/canvases", CanvasListSchema, ctx.token),
@@ -34,12 +35,13 @@ export default async function VisualsPage() {
 
   return (
     <div className="animate-fade-in space-y-6">
+      {notice && <p role="status" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">{notice.slice(0, 200)}</p>}
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Dashboards and infographics</h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-500">One kind of page for both. Open it live to watch the figures, or finish it and share it as an infographic. It stores which blocks you chose and where they sit, never the figures: they are read from the project&apos;s records each time.</p>
         </div>
-        <a className="rounded bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-800" href="/visuals/new">New</a>
+        <div className="flex items-center gap-3"><a className="text-sm underline" href="/dashboards/templates">Start from a sector template</a><a className="rounded bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-800" href="/visuals/new">New</a></div>
       </header>
 
       <section aria-label="Your canvases">
