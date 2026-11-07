@@ -1,0 +1,10 @@
+import { attach } from "./lib.mjs";
+const { page, browser, shot, step, type } = await attach("places");
+const slide = page.locator("section[aria-roledescription='slide']");
+await step("project area", async () => { await type("Project area", "Baidoa District, Bay Region, Somalia", slide); });
+const sel = slide.getByLabel("Show boundaries down to");
+console.log(await sel.locator("option").allInnerTexts());
+await step("boundaries", async () => { await sel.selectOption({ index: 2 }).catch(e=>console.log("boundary sel fail")); await page.waitForTimeout(500); });
+console.log((await page.getByRole("navigation", { name: "Create a project" }).innerText()).replace(/\n/g," | ").slice(0,200));
+await shot("places-done");
+await browser.close();

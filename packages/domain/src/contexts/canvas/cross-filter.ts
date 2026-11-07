@@ -37,21 +37,23 @@ export function pickToFilter(choices: FilterChoices, current: CrossFilter, click
 /** The groups the recorded breakdowns name (every dimension), in the order first seen. */
 export function groupsOf(sheet: DataSheet, limit = 30): string[] {
   const seen = new Map<string, string>();
-  for (const cell of sheet.cells) for (const b of cell.breakdown ?? []) { const k = fold(b.category); if (k && !seen.has(k)) seen.set(k, b.category); }
+  for (const cell of sheet.cells) for (const b of cell.breakdown ?? []) { if (b.dimension === "LOCATION") continue; const k = fold(b.category); if (k && !seen.has(k)) seen.set(k, b.category); }
   return [...seen.values()].slice(0, limit);
 }
 
 /**
  * The sheet as one group sees it: each value is the group's recorded share, and a group nobody recorded is an empty value (never 0).
- * A group has no recorded cumulative figure, so cumulative is left empty rather than invented.
+ * A group has no recorded cumulative figure and no target, so those are left empty rather than invented; places are not groups.
  */
 export function restrictSheetToGroup(sheet: DataSheet, group: string): DataSheet {
   const wanted = fold(group);
   if (!wanted) return sheet;
   return {
     ...sheet,
+    // A group has no target of its own, so nothing is compared with the project\'s target (a share of it would mislead).
+    indicators: sheet.indicators.map((i) => ({ ...i, target: "" })),
     cells: sheet.cells.map((c) => {
-      const found = (c.breakdown ?? []).find((b) => fold(b.category) === wanted);
+      const found = (c.breakdown ?? []).find((b) => b.dimension !== "LOCATION" && fold(b.category) === wanted);
       return { ...c, periodValue: found ? found.value : "", cumulativeValue: "", breakdown: found ? [found] : [] };
     }),
   };

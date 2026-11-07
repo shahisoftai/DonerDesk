@@ -16,8 +16,8 @@ test("a clicked label means one thing, in a fixed order, and the same label agai
   assert.equal(isFiltered(f), false);
 });
 
-const sheet = { projectId: "p", periods: [], indicators: [], finance: [], cells: [
-  { indicatorId: "i", periodId: "q1", periodValue: "100", cumulativeValue: "100", status: "VERIFIED", breakdown: [{ dimension: "SEX", category: "Female", value: "60" }, { dimension: "SEX", category: "Male", value: "40" }] },
+const sheet = { projectId: "p", periods: [], indicators: [{ id: "i", target: "500" }], finance: [], cells: [
+  { indicatorId: "i", periodId: "q1", periodValue: "100", cumulativeValue: "100", status: "VERIFIED", breakdown: [{ dimension: "SEX", category: "Female", value: "60" }, { dimension: "SEX", category: "Male", value: "40" }, { dimension: "LOCATION", category: "Gulu", value: "70" }] },
   { indicatorId: "i", periodId: "q2", periodValue: "50", cumulativeValue: "150", status: "DRAFT" },
 ] };
 
@@ -26,6 +26,8 @@ test("a group sees what was recorded for it; a period nobody broke down is empty
   const f = restrictSheetToGroup(sheet, "female");
   assert.deepEqual(f.cells.map((c) => [c.periodValue, c.cumulativeValue]), [["60", ""], ["", ""]]);
   assert.equal(restrictSheetToGroup(sheet, ""), sheet);
+  assert.equal(f.indicators[0].target, "", "a group is not compared with the project target");
+  assert.deepEqual(restrictSheetToGroup(sheet, "gulu").cells.map((c) => c.periodValue), ["", ""], "a place is not a group");
 });
 
 test("planned work is narrowed by its plain status or its code", () => {

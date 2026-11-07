@@ -1,0 +1,10 @@
+import { attach } from "./lib.mjs";
+const { page, browser, type } = await attach("team");
+const nav = page.getByRole("navigation", { name: "Create a project" });
+const rail = async () => (await nav.getByRole("button",{name:/Project and team/}).innerText()).replace(/\n/g," ");
+console.log("before", await rail());
+await type("Project code", "CBPF-SOM-25-S-NGO-37159X"); console.log("code X", await rail());
+await type("Project code", "CBPF-SOM-25-S-NGO-37159"); console.log("code restored", await rail());
+await type("Project name", "Life-Saving Flagship WASH Response: Community-Driven WASH Services for Crisis-Affected Populations (Baidoa)"); console.log("name", await rail());
+await type("End date", "2026-02-27"); await type("End date", "2026-02-28"); console.log("end", await rail());
+await browser.close();

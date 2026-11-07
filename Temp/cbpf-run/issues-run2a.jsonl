@@ -1,0 +1,3 @@
+{"t":"2026-11-04T10:22:49.798Z","phase":"cbpf","kind":"step-failed","msg":"open wizard (new draft): page.waitForSelector: Timeout 8000ms exceeded.","url":"https://donordesk.online/projects/new/wizard?new=1"}
+{"t":"2026-11-04T10:22:58.726Z","phase":"cbpf","kind":"step-failed","msg":"start answers then upload proposal: locator.fill: Timeout 8000ms exceeded.","url":"https://donordesk.online/projects/new/wizard?new=1"}
+{"t":"2026-11-04T10:23:07.651Z","phase":"cbpf","kind":"step-failed","msg":"answers survived the new draft: page.waitForSelector: Timeout 8000ms exceeded.","url":"https://donordesk.online/projects/new/wizard?new=1"}

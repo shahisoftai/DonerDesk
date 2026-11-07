@@ -1,0 +1,10 @@
+import { attach, BASE } from "./lib.mjs";
+const { page, browser } = await attach("check-partial");
+const w = await browser.contexts()[0].newPage();
+await w.goto(BASE + "/projects"); await w.waitForTimeout(2500);
+const t = await w.locator("main").innerText();
+const idx = [...t.matchAll(/Life-Saving|CBPF-SOM/g)].map(m=>m.index);
+console.log("matches", idx.length); for (const i of idx.slice(0,4)) console.log("…", t.slice(Math.max(0,i-80), i+200).replace(/\n+/g," | "));
+const links = await w.locator("a[href^='/projects/']").evaluateAll(a=>a.map(x=>x.getAttribute("href")+" "+x.textContent.trim().slice(0,60)).filter(s=>/Life-Saving|CBPF/.test(s)));
+console.log(links);
+await w.close(); await browser.close();

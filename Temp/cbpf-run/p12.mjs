@@ -1,0 +1,23 @@
+import { attach } from "./lib.mjs";
+const { page, browser, shot, step } = await attach("indicators");
+const slide = page.locator("section[aria-roledescription='slide']");
+const card = slide.locator("article").first();
+console.log("card title input:", await card.locator("input").first().inputValue());
+const pickLike = async (sel, re) => { for (const o of await sel.locator("option").all()) { const t = (await o.innerText()).replace(/\s+/g," "); if (re.test(t)) { await sel.selectOption(await o.getAttribute("value")); await page.waitForTimeout(250); return; } } throw new Error("no option "+re); };
+const t = async (label, v) => { const b = card.getByLabel(label,{exact:true}); await b.fill(v); await b.press("Tab"); await page.waitForTimeout(250); };
+await step("complete IND1", async () => {
+  await pickLike(card.getByLabel("Measures"), /^Output OP1/);
+  await card.getByLabel("Kind of number").selectOption("NUMBER"); await page.waitForTimeout(250);
+  await t("Unit", "people");
+  await t("Starting value", "0");
+  await t("Target", "13500");
+  await card.getByLabel("How often").selectOption("Monthly"); await page.waitForTimeout(250);
+  await t("Break down by (separate with commas)", "Women, Girls, Men, Boys");
+  await pickLike(card.getByLabel("Responsible"), /M&E Officer/);
+  await card.getByLabel("Better when").selectOption("HIGHER"); await page.waitForTimeout(300);
+  await card.getByRole("button", { name: "Accept" }).click(); await page.waitForTimeout(800);
+});
+console.log("title:", await card.locator("input").first().inputValue());
+console.log((await page.getByRole("navigation", { name: "Create a project" }).innerText()).replace(/\n/g," | ").slice(0,260));
+console.log((await card.innerText()).replace(/\n/g," | ").slice(0,500));
+await browser.close();
