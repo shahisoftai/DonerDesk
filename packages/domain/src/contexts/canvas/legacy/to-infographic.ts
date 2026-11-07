@@ -4,7 +4,8 @@
  * bottom, left to right. Pure.
  */
 import type { InfographicConfig, InfographicSectionConfig, InfographicSectionKind } from "../../infographics/composition.js";
-import { formatById } from "../../infographics/formats.js";
+import { GRID_SPANS, formatById } from "../../infographics/formats.js";
+import { themeById } from "../../infographics/theme.js";
 import { PORTFOLIO_KINDS } from "../../infographics/composition.js";
 import { INFOGRAPHIC_BLOCK_SPECS } from "../blocks/infographic-blocks.js";
 import { toLegacySpec, type ChartSpecV2 } from "../../reporting/chart-spec-v2.js";
@@ -43,6 +44,10 @@ const SCREEN_ONLY: Readonly<Record<string, string>> = {
 };
 
 /** A page that is only a screen (fluid web) is put on an A4 page in a file. */
+/** A block's width in a file: the nearest width the page offers (3, 4, 6, 8, 9 or 12 of 12), the wider one on a tie. */
+export const snapSpan = (w: number): number => [...GRID_SPANS].sort((a, b) => Math.abs(a - w) - Math.abs(b - w) || b - a)[0] ?? 12;
+/** A look the file renderer does not know falls back to the standard one. */
+const fileThemeOf = (id: string): string => (id === "BRAND" || themeById(id) ? id : "DEFAULT");
 const fileFormatOf = (format: string | undefined): string => (format && formatById(format) ? format : "A4_PORTRAIT");
 
 /** The section kind a block becomes in a file, where it differs from its own name. */
@@ -70,14 +75,14 @@ export function canvasAsDesign(canvas: Canvas, projectId?: string): CanvasAsDesi
       const mapper = MAPPERS[block.kind];
       const mapped: Mapped = mapper ? mapper(block, props) : FILE_KINDS.has(block.kind) ? ({ ...props, kind: block.kind } as Mapped) : SCREEN_ONLY[block.kind] ?? "This kind of block cannot be put in a file.";
       if (typeof mapped === "string") { skipped.push({ blockId: block.id, kind: block.kind, reason: mapped }); continue; }
-      const section: InfographicSectionConfig = { ...mapped, span: block.bounds.w, ...(block.alt ? { altText: block.alt } : {}), ...(first && pageIndex > 0 ? { pageBreakBefore: true } : {}) } as InfographicSectionConfig;
+      const section: InfographicSectionConfig = { ...mapped, span: snapSpan(block.bounds.w), ...(block.alt ? { altText: block.alt } : {}), ...(first && pageIndex > 0 ? { pageBreakBefore: true } : {}) } as InfographicSectionConfig;
       sections.push(section);
       first = false;
     }
   });
   const o = canvas.options;
   const config: InfographicConfig = {
-    templateId: "CUSTOM", templateVersion: 1, title: canvas.title, themeId: canvas.themeId, language: canvas.language, profile: canvas.profile === "LIVE_INTERNAL" ? "INTERNAL" : canvas.profile,
+    templateId: "CUSTOM", templateVersion: 1, title: canvas.title, themeId: fileThemeOf(canvas.themeId), language: canvas.language, profile: canvas.profile === "LIVE_INTERNAL" ? "INTERNAL" : canvas.profile,
     format: fileFormatOf(canvas.pages[0]?.format), ...(canvas.scope === "PORTFOLIO" ? { scope: "PORTFOLIO" as const } : {}),
     ...(o?.periodFromId ? { periodFromId: o.periodFromId } : {}), ...(o?.periodToId ? { periodToId: o.periodToId } : {}),
     ...(o?.locationKeys?.length ? { locationKeys: o.locationKeys } : {}), ...(o?.acknowledgement ? { acknowledgement: o.acknowledgement } : {}), ...(o?.subtitle ? { subtitle: o.subtitle } : {}),

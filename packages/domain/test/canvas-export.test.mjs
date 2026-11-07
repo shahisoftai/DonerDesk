@@ -37,3 +37,11 @@ test("a file reads one project: a canvas with none of its own takes the first bl
   assert.equal(config.sections.length, 1);
   assert.deepEqual(skipped.map((s) => s.blockId), ["c"]);
 });
+
+test("widths snap to the page's grid and an unknown look falls back, so a converted dashboard still makes a file", async () => {
+  const { snapSpan } = await import("../dist/index.js");
+  assert.deepEqual([1, 2, 3, 5, 7, 10, 11, 12].map(snapSpan), [3, 3, 3, 6, 8, 9, 12, 12].map((n, i) => (i === 3 ? snapSpan(5) : n)));
+  assert.equal(snapSpan(5), 6, "a tie between 4 and 6 takes the wider");
+  const { config } = canvasAsDesign(canvasOf([b("a", "REACH", {}, 0, 0, 5)], { themeId: "SOME_DASHBOARD_LOOK" }));
+  assert.equal(config.themeId, "DEFAULT"); assert.equal(config.sections[0].span, 6);
+});
