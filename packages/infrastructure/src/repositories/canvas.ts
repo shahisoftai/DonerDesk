@@ -55,7 +55,12 @@ export class PrismaCanvasRepository implements ICanvasRepository {
   }
 
   async delete(id: string, tenantId: TenantId): Promise<Result<void>> {
-    await this.prisma.canvas.deleteMany({ where: { id, tenantId: tenantId.toString() } });
+    const tenant = tenantId.toString();
+    // A deleted canvas takes its links (they would otherwise stay usable), history and kept-copy records with it; the kept files in storage are not touched here.
+    await this.prisma.canvasShareLink.deleteMany({ where: { canvasId: id, tenantId: tenant } });
+    await this.prisma.canvasVersion.deleteMany({ where: { canvasId: id, tenantId: tenant } });
+    await this.prisma.canvasExport.deleteMany({ where: { canvasId: id, tenantId: tenant } });
+    await this.prisma.canvas.deleteMany({ where: { id, tenantId: tenant } });
     return ok(undefined);
   }
 

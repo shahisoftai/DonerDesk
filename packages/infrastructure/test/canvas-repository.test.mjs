@@ -125,3 +125,16 @@ t("canvas AI is off by default and needs both switches", async () => {
     await setting.set(id, before);
   } finally { await prisma.$disconnect(); }
 });
+
+t("deleting a canvas withdraws its links and removes its history and copy records", async () => {
+  const prisma = new PrismaClient({ datasources: { db: { url } } });
+  try {
+    const repo = new PrismaCanvasRepository(prisma);
+    await repo.create(make("d1"));
+    await prisma.canvasShareLink.create({ data: { id: "dl1", tenantId: tenant.toString(), canvasId: "d1", kind: "LIVE", label: "x", tokenHash: "d".repeat(64), expiresAt: new Date(Date.now() + 1e8), createdById: "u" } });
+    await prisma.canvasVersion.create({ data: { id: "d1:1", tenantId: tenant.toString(), canvasId: "d1", revision: 1, title: "t", docJson: "{}", savedById: "u" } });
+    await repo.delete("d1", tenant);
+    assert.equal(await prisma.canvasShareLink.count({ where: { canvasId: "d1" } }), 0);
+    assert.equal(await prisma.canvasVersion.count({ where: { canvasId: "d1" } }), 0);
+  } finally { await prisma.$disconnect(); }
+});
