@@ -1,4 +1,4 @@
-import { DomainError, PORTFOLIO_PROJECT_ID, canvasAsDesign, knownTemplates, provenanceFooter, validateConfig, type InfographicProvenance, type Result, type SkippedBlock } from "@donordesk/domain";
+import { DomainError, PORTFOLIO_PROJECT_ID, canvasAsDesign, fileProjectOf, knownTemplates, provenanceFooter, validateConfig, type InfographicProvenance, type Result, type SkippedBlock } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { StoredCanvas } from "../../ports/canvas.js";
 import type { IInfographicRenderer } from "../../ports/infographics.js";
@@ -20,9 +20,9 @@ const slug = (s: string): string => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").
 /** The one place a canvas becomes a file: it is turned into the design the renderer draws, built from the records the caller can see, and rendered. */
 export async function renderCanvasFile(ctx: AuthenticatedContext, deps: RenderDeps, stored: StoredCanvas, format: CanvasFileFormat, scale: 1 | 2 | 3 = 2): Promise<Result<RenderedCanvasFile, DomainError>> {
   const portfolio = stored.canvas.scope === "PORTFOLIO";
-  const projectId = portfolio ? PORTFOLIO_PROJECT_ID : stored.projectId;
+  const projectId = portfolio ? PORTFOLIO_PROJECT_ID : fileProjectOf(stored.canvas, stored.projectId);
   if (!projectId) return fail(DomainError.validation("Choose the project this canvas is about before making a file."));
-  const design = canvasAsDesign({ ...stored.canvas, title: stored.title });
+  const design = canvasAsDesign({ ...stored.canvas, title: stored.title }, portfolio ? undefined : projectId);
   if (design.config.sections.length === 0) return fail(DomainError.validation("Nothing on this canvas can be put in a file yet.", { skipped: design.skipped }));
   const validated = validateConfig(design.config, knownTemplates());
   if (!validated.ok) return validated;

@@ -54,6 +54,8 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
   } else {
     const model = modelOf(block, serverModel, changed);
     const Screen = screenRendererFor(block.kind);
+    // A prompt ("Write the callout.") is for the person editing; a reader sees nothing where nothing was written.
+    if (!editing && model.state === "empty" && model.authoring === true) return null;
     if (Screen) body = <Screen model={model} frame={frame} />;
     else body = <PendingPreview text={screenText(frame)} reason={def ? "A preview of this block is not available yet. It is included when you publish." : "This block is not one the product knows."} />;
   }

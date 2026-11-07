@@ -10,7 +10,7 @@ import { seedProps } from "../domain/block-seeds";
 const newId = (prefix: string): string => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 /** The editor's state: the canvas with its undo history, the page and block being worked on, and every change as one named step. Every change is a pure domain operation; a refused one says why and changes nothing. */
-export function useCanvasEditor(initial: Canvas, defaultProjectId: string | undefined) {
+export function useCanvasEditor(initial: Canvas, defaultProjectId: string | undefined, fallbackProjectId?: string) {
   const [history, setHistory] = useState<History>(() => startHistory(initial));
   const [pageId, setPageId] = useState(initial.pages[0]?.id ?? "");
   const [selected, setSelected] = useState<string | null>(null);
@@ -43,7 +43,9 @@ export function useCanvasEditor(initial: Canvas, defaultProjectId: string | unde
     add(kind: string) {
       const id = newId("b");
       let r = addBlock(latest.current, pageId, { id, kind, props: seedProps(kind) });
-      if (r.ok && defaultProjectId && definitionFor(kind)?.slots.some((s) => s.slot === "project")) r = setBindings(r.canvas, id, [{ type: "PROJECT", slot: "project", projectId: defaultProjectId }]);
+      // A new block reads the project the canvas is about; a canvas with none follows the project the page already reads.
+      const project = defaultProjectId ?? latest.current.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean) ?? fallbackProjectId;
+      if (r.ok && project && definitionFor(kind)?.slots.some((s) => s.slot === "project")) r = setBindings(r.canvas, id, [{ type: "PROJECT", slot: "project", projectId: project }]);
       if (run(r).ok) setSelected(id);
     },
     setProps: (id: string, props: unknown) => withBlock(id, (c) => updateProps(c, id, props)),

@@ -37,7 +37,7 @@ function download(name: string, mime: string, content: string): void {
 export function CanvasWorkspace({ initial, resolved: first, resolveError, projects, indicatorsByProject }: Props) {
   const router = useRouter();
   const { t } = useI18n();
-  const ed = useCanvasEditor(initial.canvas, initial.projectId ?? projects[0]?.id);
+  const ed = useCanvasEditor(initial.canvas, initial.projectId, projects[0]?.id);
   const menu = useRef<HTMLDetailsElement>(null);
   /** An action chosen from the menu closes it. */
   const choose = (action: () => void) => () => { menu.current?.removeAttribute("open"); action(); };

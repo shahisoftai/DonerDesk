@@ -27,3 +27,13 @@ test("a second page starts a new page, a callout becomes words, and a chart a fi
   assert.equal(none.config.sections.length + none.skipped.length, 1);
   assert.equal(skipped.length, 0);
 });
+
+test("a file reads one project: a canvas with none of its own takes the first block's, and a block bound to another is named, not mixed in", async () => {
+  const { fileProjectOf } = await import("../dist/index.js");
+  const bound = (id, projectId) => b(id, "REACH", {}, 0, 0, 6, { bindings: [{ type: "PROJECT", slot: "project", projectId }] });
+  const c = canvasOf([bound("a", "p1"), bound("c", "p2")]);
+  assert.equal(fileProjectOf(c, undefined), "p1"); assert.equal(fileProjectOf(c, "p9"), "p9");
+  const { config, skipped } = canvasAsDesign(c, "p1");
+  assert.equal(config.sections.length, 1);
+  assert.deepEqual(skipped.map((s) => s.blockId), ["c"]);
+});

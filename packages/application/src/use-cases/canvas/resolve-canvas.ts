@@ -85,7 +85,8 @@ export class ResolveCanvasHandler {
       }
       models[block.id] = def.resolve(block.props, data);
     }
-    const home = await factsOf(stored.projectId);
+    // The filters offer the periods and places of the canvas's project, else of the first project a block reads.
+    const home = await factsOf(stored.projectId ?? stored.canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean));
     return ok({ canvasId: id, drawings, models, choices: home ? filterChoices(home) : { periods: [], places: [] } });
   }
 

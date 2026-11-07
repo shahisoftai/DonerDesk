@@ -5,9 +5,11 @@
  */
 import type { InfographicConfig, InfographicSectionConfig, InfographicSectionKind } from "../../infographics/composition.js";
 import { formatById } from "../../infographics/formats.js";
+import { PORTFOLIO_KINDS } from "../../infographics/composition.js";
 import { INFOGRAPHIC_BLOCK_SPECS } from "../blocks/infographic-blocks.js";
 import { toLegacySpec, type ChartSpecV2 } from "../../reporting/chart-spec-v2.js";
 import type { BlockInstance, Canvas } from "../canvas.js";
+import { projectOf } from "../binding.js";
 
 export interface SkippedBlock { blockId: string; kind: string; reason: string }
 export interface CanvasAsDesign { config: InfographicConfig; skipped: SkippedBlock[] }
@@ -43,7 +45,13 @@ const SCREEN_ONLY: Readonly<Record<string, string>> = {
 /** A page that is only a screen (fluid web) is put on an A4 page in a file. */
 const fileFormatOf = (format: string | undefined): string => (format && formatById(format) ? format : "A4_PORTRAIT");
 
-export function canvasAsDesign(canvas: Canvas): CanvasAsDesign {
+/** The section kind a block becomes in a file, where it differs from its own name. */
+const MAP_TO_SECTION: Readonly<Record<string, string>> = { KPI: "BIG_NUMBERS", CALLOUT: "TEXT", AI_SUMMARY: "TEXT", AI_MESSAGES: "TEXT", AI_ASK: "TEXT" };
+
+/** The project a file reads: the canvas's own, else the first project a block names. */
+export const fileProjectOf = (canvas: Canvas, own: string | undefined): string | undefined => own ?? canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find((p): p is string => Boolean(p));
+
+export function canvasAsDesign(canvas: Canvas, projectId?: string): CanvasAsDesign {
   const skipped: SkippedBlock[] = [];
   const sections: InfographicSectionConfig[] = [];
   canvas.pages.forEach((page, pageIndex) => {
@@ -52,6 +60,13 @@ export function canvasAsDesign(canvas: Canvas): CanvasAsDesign {
     for (const block of ordered) {
       if (block.style?.hidden) continue;
       const props = asProps(block);
+      // A file reads one project; a block bound to another stays on screen and is named.
+      const bound = projectOf(block.bindings);
+      if (projectId && bound && bound !== projectId) { skipped.push({ blockId: block.id, kind: block.kind, reason: "This block reads another project; a file reads one." }); continue; }
+      // A design covers one project or the whole portfolio, never both: the other kind of block stays on screen and is named.
+      const portfolioBlock = block.kind.startsWith("PORTFOLIO_");
+      if (portfolioBlock && canvas.scope !== "PORTFOLIO") { skipped.push({ blockId: block.id, kind: block.kind, reason: "Portfolio blocks go in a file only from a portfolio canvas." }); continue; }
+      if (canvas.scope === "PORTFOLIO" && !PORTFOLIO_KINDS.has(MAP_TO_SECTION[block.kind] ?? block.kind)) { skipped.push({ blockId: block.id, kind: block.kind, reason: "A portfolio canvas puts only portfolio blocks, a map, text and pictures in a file." }); continue; }
       const mapper = MAPPERS[block.kind];
       const mapped: Mapped = mapper ? mapper(block, props) : FILE_KINDS.has(block.kind) ? ({ ...props, kind: block.kind } as Mapped) : SCREEN_ONLY[block.kind] ?? "This kind of block cannot be put in a file.";
       if (typeof mapped === "string") { skipped.push({ blockId: block.id, kind: block.kind, reason: mapped }); continue; }
