@@ -10,7 +10,7 @@ const facts = (over) => ({ ...structuredClone(SAMPLE_FACTS), sheet: SAMPLE_SHEET
 test("the blocks still drawn from their settings are exactly the pending list, and it can only shrink", () => {
   const withoutModel = Object.keys(INFOGRAPHIC_BLOCK_SPECS).filter((k) => !(k in INFOGRAPHIC_MODELS));
   assert.deepEqual(withoutModel.sort(), [...PENDING_MODEL_KINDS].sort());
-  const PENDING_MAX = 6; // lower this as 45.2 ports small multiples, results chain and the four portfolio blocks
+  const PENDING_MAX = 0; // every infographic-style block now has a model
   assert.ok(PENDING_MODEL_KINDS.length <= PENDING_MAX);
   for (const k of Object.keys(INFOGRAPHIC_MODELS)) assert.ok(BLOCK_KINDS.includes(k), k);
 });

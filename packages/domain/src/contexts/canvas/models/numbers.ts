@@ -15,7 +15,7 @@ const financeFigure = (field: "budget" | "expenditure" | "balance"): Pick => (_i
   if (!row) return null;
   return { amount: parseFigure(row[field]), text: row[field], prefix: row.currency, unverified: !row.verified };
 };
-const portfolioFigure = (field: keyof NonNullable<CanvasFacts["portfolio"]>["totals"]): Pick => (_i, f) => (f.portfolio && f.portfolio.rows.length > 0 ? plain(f.portfolio.totals[field]) : null);
+const portfolioFigure = (field: keyof NonNullable<CanvasFacts["portfolio"]>["totals"]): Pick => (_i, f) => (f.portfolio && f.portfolio.rows.length > 0 ? plain(f.portfolio.totals[field] ?? 0) : null);
 
 /** One row per source (exhaustive by type): how each kind of card finds its figure. */
 const PICK: Readonly<Record<BigNumberSource, Pick>> = {

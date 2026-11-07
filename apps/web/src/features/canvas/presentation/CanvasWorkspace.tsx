@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CANVAS_PROFILES, altPack, canPublish, canvasJson, canvasProblems, canvasToWidgets, checkCanvas, listThemes, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
-import { deleteCanvasAction, duplicateCanvasAction, resolveCanvasAction, saveCanvasAction } from "@/lib/actions/canvas";
+import { deleteCanvasAction, duplicateCanvasAction, previewCanvasAction, resolveCanvasAction, saveCanvasAction } from "@/lib/actions/canvas";
 import type { CanvasView, ResolvedCanvas } from "@/lib/server/schemas-canvas";
 import { blockLabelKey } from "../domain/canvas-copy";
 import { BlockBoundary } from "./BlockBoundary";
@@ -49,8 +49,26 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const canvas = ed.canvas;
   const dirty = snapshot(canvas) !== base.current.json;
   const savedBlocks = useRef(new Map(initial.canvas.pages.flatMap((p) => p.blocks).map((b) => [b.id, JSON.stringify(b.props) + JSON.stringify(b.bindings)])));
+  // An edited, unsaved canvas is read again as the person works (after a short pause), so each change shows its real figures at once.
+  const [preview, setPreview] = useState<{ sig: string; value: ResolvedCanvas } | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const sig = useMemo(() => JSON.stringify({ t: canvas.title, th: canvas.themeId, l: canvas.language, m: canvas.mode, pages: canvas.pages, o: canvas.options }), [canvas]);
+  const savedSig = useRef(sig);
+  useEffect(() => {
+    if (!dirty) { setPreview(null); setPreviewError(null); savedSig.current = sig; return; }
+    let current = true;
+    const timer = setTimeout(async () => {
+      const r = await previewCanvasAction({ title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(initial.projectId ? { projectId: initial.projectId } : {}) });
+      if (!current) return;
+      if (r.ok) { setPreview({ sig, value: r.value }); setPreviewError(null); } else setPreviewError(r.error.message);
+    }, 350);
+    return () => { current = false; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sig, dirty]);
+  const live = dirty && preview ? preview.value : resolved;
+  const previewCurrent = !dirty || preview?.sig === sig;
   const widgets = useMemo(() => new Map(canvasToWidgets(canvas, initial.projectId).widgets.map((w) => [w.id, w])), [canvas, initial.projectId]);
-  const drawings = useMemo(() => new Map((resolved?.drawings ?? []).map((d) => [d.widgetId, d])), [resolved]);
+  const drawings = useMemo(() => new Map((live?.drawings ?? []).map((d) => [d.widgetId, d])), [live]);
   const problems = useMemo(() => canvasProblems(canvas), [canvas]);
   const findings = useMemo(() => checkCanvas(canvas), [canvas]);
   const canEdit = initial.canEdit;
@@ -121,6 +139,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
       </header>
 
       {notice && <p role={notice.tone === "error" ? "alert" : "status"} className={`rounded px-3 py-2 text-sm print:hidden ${notice.tone === "error" ? "bg-red-50 text-red-800 dark:bg-red-950 dark:text-red-200" : "bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"}`}>{notice.text}</p>}
+      {previewError && editing && <p role="status" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-900 print:hidden dark:bg-amber-950 dark:text-amber-100">The figures could not be refreshed while you edit: {previewError}</p>}
       {ed.message && <p role="alert" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-900 print:hidden dark:bg-amber-950 dark:text-amber-100">{ed.message} <button type="button" className="underline" onClick={ed.clearMessage}>Dismiss</button></p>}
 
       {editing && (
@@ -151,7 +170,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-12 sm:auto-rows-[5.5rem]" dir={canvas.language === "ar" ? "rtl" : "ltr"} data-testid="canvas-grid">
               {blocks.map((b) => (
                 <div key={b.id} className="h-[var(--mh)] sm:h-auto sm:[grid-column:var(--c)/span_var(--w)] sm:[grid-row:var(--r)/span_var(--h)]" style={{ "--c": b.bounds.x + 1, "--w": b.bounds.w, "--r": b.bounds.y + 1, "--h": b.bounds.h, "--mh": `${Math.max(b.bounds.h, 1) * 5.5}rem` } as React.CSSProperties}>
-                  <BlockBoundary label={label(b.kind)}><CanvasBlockView block={b} canvas={canvas} drawing={drawings.get(b.id)} widget={widgets.get(b.id)} serverModel={resolved?.models[b.id]} changed={savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)} selected={ed.selected === b.id} editing={editing} onSelect={() => ed.setSelected(b.id)} /></BlockBoundary>
+                  <BlockBoundary label={label(b.kind)}><CanvasBlockView block={b} canvas={canvas} drawing={drawings.get(b.id)} widget={widgets.get(b.id)} serverModel={live?.models[b.id]} changed={!previewCurrent && savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)} selected={ed.selected === b.id} editing={editing} onSelect={() => ed.setSelected(b.id)} /></BlockBoundary>
                 </div>
               ))}
             </div>

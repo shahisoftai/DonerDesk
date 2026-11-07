@@ -16,6 +16,6 @@ export function factsOf(c: RenderCtx): CanvasFacts {
     designTitle: c.config.title,
     subtitle: c.config.subtitle,
     coverAssetId: c.config.coverAssetId,
-    ...(c.portfolio ? { portfolio: { rows: c.portfolio.rows, totals: c.portfolio.totals } } : {}),
+    ...(c.portfolio ? { portfolio: { asAt: c.portfolio.asAt, rows: c.portfolio.rows, countries: c.portfolio.countries, totals: c.portfolio.totals } } : {}),
   };
 }

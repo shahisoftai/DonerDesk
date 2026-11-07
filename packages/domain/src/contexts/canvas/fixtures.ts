@@ -62,6 +62,21 @@ const dataset = (ids: string[]) => resolveDataset(SAMPLE_SHEET, { indicatorIds: 
 const chartSpec = { version: 2, kind: "BAR", dataset: { template: "INDICATOR_OVER_TIME", indicatorIds: ["a"], measure: "PERIOD", showTarget: false, includeDraft: false } };
 const tableQuery = { indicatorIds: ["a"], measure: "PERIOD", rows: "PERIOD", includeDraft: false };
 const plan = (status: string, signal: string) => ({ id: status, title: `Activity ${status}`, kind: "ACTIVITY" as const, start: "2026-01-05", end: "2026-02-20", status, signal, signalLabel: signal });
+const portfolioFixture = (title: string): BlockFixture => ({
+  props: { title },
+  data: {
+    ...SAMPLE_FACTS,
+    portfolio: {
+      asAt: "2026-03-31",
+      totals: { projects: 2, countries: 2, behind: 1, needAttention: 0, openRisks: 3, reportsOverdue: 1, onTrack: 1, noPlan: 0 },
+      rows: [
+        { title: "Water for Kisumu", donorName: "Example Donor", country: "Kenya", band: "ON_TRACK", nextReport: { deadline: "2026-04-30", daysUntil: 30 } },
+        { title: "Schools in Gulu", donorName: "Example Donor", country: "Uganda", band: "OFF_TRACK", nextReport: { deadline: "2026-03-01", daysUntil: -30 } },
+      ],
+      countries: [{ country: "Kenya", projects: 1, onTrack: 1, atRisk: 0, offTrack: 0, noPlan: 0 }, { country: "Uganda", projects: 1, onTrack: 0, atRisk: 0, offTrack: 1, noPlan: 0 }],
+    },
+  },
+});
 const titled = (title: string) => ({ props: { title } });
 
 export const BLOCK_FIXTURES: Readonly<Record<BlockKind, BlockFixture>> = {
@@ -78,7 +93,7 @@ export const BLOCK_FIXTURES: Readonly<Record<BlockKind, BlockFixture>> = {
   METRIC: { props: { metric: "ACTIVITIES_TOTAL" }, data: { plan: [plan("DONE", "DONE"), plan("IN_PROGRESS", "LATE")] } },
   PROGRESS_RINGS: withFacts({}),
   CHART: { props: { spec: chartSpec }, data: dataset(["a"]) },
-  SMALL_MULTIPLES: titled("By indicator"),
+  SMALL_MULTIPLES: withFacts({ title: "By indicator" }),
   MAP: { props: { view: "RESULTS" }, data: { places: [{ name: "Kisumu", path: "Kisumu › Kenya", level: 1, value: 25, partly: false, latitude: -0.09, longitude: 34.76 }, { name: "Siaya", path: "Siaya › Kenya", level: 1, value: null, partly: false }] } },
   LOCATION_RESULTS: withFacts({}),
   LOCATION_COMPARISON: withFacts({}),
@@ -87,16 +102,16 @@ export const BLOCK_FIXTURES: Readonly<Record<BlockKind, BlockFixture>> = {
   PROJECT_LIST: { props: { affiliation: "ALL" }, data: { projects: [{ projectId: "p1", title: "Water for Kisumu", status: "ACTIVE", sector: "WASH", country: "Kenya", donorName: "EU" }], userId: "u1" } },
   FUNNEL: withFacts({ stages: [{ label: "In need", value: 1000, sourceNote: "Needs assessment" }, { label: "Reached", bind: "REACH_UNIQUE" }] }),
   FUNDING: withFacts({}),
-  RESULTS_CHAIN: titled("Results chain"),
+  RESULTS_CHAIN: withFacts({ title: "Results chain" }),
   SECTOR_GRID: withFacts({ sectors: [{ label: "Water", indicatorIds: ["a", "zz"] }] }),
   TIMELINE: { props: { events: [{ date: "2026-01-15", label: "Boreholes drilled" }] } },
   THREE_W: { props: { presence: [{ who: "Water NGO", what: "Drilling", where: ["Kisumu", " "] }], caption: "Partner list, March 2026" } },
   DEMOGRAPHICS: withFacts({}),
   REACH: withFacts({}),
-  PORTFOLIO_SUMMARY: titled("Portfolio"),
-  PORTFOLIO_TABLE: titled("Projects"),
-  PORTFOLIO_HEALTH: titled("Health"),
-  PORTFOLIO_COUNTRIES: titled("Countries"),
+  PORTFOLIO_SUMMARY: portfolioFixture("Portfolio"),
+  PORTFOLIO_TABLE: portfolioFixture("Projects"),
+  PORTFOLIO_HEALTH: portfolioFixture("Health"),
+  PORTFOLIO_COUNTRIES: portfolioFixture("Countries"),
   IMAGE: { props: { title: "Distribution day", assetId: "asset-1", altText: "People queue at a new borehole.", consentConfirmed: true } },
   AI_SUMMARY: { props: {}, data: { text: "Two boreholes opened.", accepted: false } },
   AI_MESSAGES: { props: {}, data: { text: "Rains delayed two sites.", accepted: true } },

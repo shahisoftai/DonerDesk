@@ -28,7 +28,9 @@ before(async () => {
   registry = mod; render = mod.renderToStaticMarkup; React = mod;
 });
 
-const PAINTED = ["BIG_NUMBERS", "PROGRESS_RINGS", "FUNNEL", "REACH", "ACTIVITIES_BY_LOCATION", "LOCATION_RESULTS", "LOCATION_COMPARISON", "DEMOGRAPHICS", "FUNDING", "HERO", "TEXT", "DIVIDER", "BANNER", "KEY_MESSAGES", "LEGEND_NOTES", "QUOTE", "IMAGE", "TIMELINE", "SECTOR_GRID", "THREE_W"] as const;
+const PAINTED = ["BIG_NUMBERS", "PROGRESS_RINGS", "FUNNEL", "REACH", "ACTIVITIES_BY_LOCATION", "LOCATION_RESULTS", "LOCATION_COMPARISON", "DEMOGRAPHICS", "FUNDING", "HERO", "TEXT", "DIVIDER", "BANNER", "KEY_MESSAGES", "LEGEND_NOTES", "QUOTE", "IMAGE", "TIMELINE", "SECTOR_GRID", "THREE_W", "SMALL_MULTIPLES", "RESULTS_CHAIN", "PORTFOLIO_SUMMARY", "PORTFOLIO_TABLE", "PORTFOLIO_HEALTH", "PORTFOLIO_COUNTRIES"] as const;
+// Structure blocks are drawn on screen and (where a file can hold them) in print.
+const STRUCTURE = ["CALLOUT", "AI_SUMMARY", "AI_MESSAGES", "AI_ASK", "GROUP", "TABS", "REPEATER", "FILTER_BAR"] as const;
 // Blocks with nothing authored are blank rather than worded (a divider has nothing to say, text is blank until written).
 const QUIET_WHEN_EMPTY: readonly string[] = ["TEXT", "DIVIDER"];
 // Authored blocks waiting for words show a prompt, not "not yet reported".
@@ -48,8 +50,8 @@ const textOf = (markup: string) => markup.replace(/<[^>]+>/g, " ").replace(/&amp
 test("the screen renderers are a registry: only known kinds, and the missing list can only shrink", () => {
   for (const kind of Object.keys(registry.SCREEN_RENDERERS)) assert.ok((BLOCK_KINDS as readonly string[]).includes(kind), kind);
   assert.deepEqual([...registry.SCREEN_PENDING, ...Object.keys(registry.SCREEN_RENDERERS)].sort(), [...BLOCK_KINDS].sort());
-  assert.deepEqual(Object.keys(registry.SCREEN_RENDERERS).sort(), [...PAINTED].sort(), "the same kinds the print side paints");
-  const SCREEN_PENDING_MAX = 20; // lower this as the rest are ported
+  assert.deepEqual(Object.keys(registry.SCREEN_RENDERERS).sort(), [...PAINTED, ...STRUCTURE].sort(), "the same kinds the print side paints");
+  const SCREEN_PENDING_MAX = 6; // lower this as the rest are ported
   assert.ok(registry.SCREEN_PENDING.length <= SCREEN_PENDING_MAX);
 });
 

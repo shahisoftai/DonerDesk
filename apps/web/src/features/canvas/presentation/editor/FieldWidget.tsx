@@ -52,6 +52,14 @@ export function FieldWidget({ field, settings, onChange, indicators }: Props) {
         </fieldset>
       );
     }
+    case "choices": {
+      const chosen = new Set(Array.isArray(value) ? (value as string[]) : []);
+      return (
+        <fieldset className="space-y-1"><legend className="text-xs font-medium text-slate-600 dark:text-slate-300">{field.label}</legend>
+          {field.options.map((o) => <label key={o.value} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={chosen.has(o.value)} onChange={(e) => { const next = new Set(chosen); if (e.target.checked) next.add(o.value); else next.delete(o.value); onChange(field.path, field.options.filter((x) => next.has(x.value)).map((x) => x.value)); }} />{o.label}</label>)}
+        </fieldset>
+      );
+    }
     case "lines": return <div className="space-y-1">{label}<textarea id={id} rows={4} className={INPUT} value={asLines(value)} onChange={(e) => onChange(field.path, e.target.value.split("\n"))} />{hint}</div>;
     case "list": {
       const items = Array.isArray(value) ? (value as unknown[]) : [];

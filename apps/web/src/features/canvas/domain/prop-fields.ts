@@ -1,6 +1,7 @@
 import { CHART_KINDS, kindsForTemplate } from "@donordesk/domain/contexts/reporting/chart-spec-v2.js";
 import { METRICS, TILE_COLORS, MAP_SHADINGS, MAP_VIEWS, PROJECT_LIST_AFFILIATIONS } from "@donordesk/domain/contexts/dashboards/index.js";
 import { BIG_NUMBER_SOURCES } from "@donordesk/domain/contexts/infographics/index.js";
+import { FILTER_DIMENSIONS } from "@donordesk/domain/contexts/canvas/index.js";
 import { setAt } from "./path.ts";
 
 /**
@@ -14,6 +15,7 @@ export type Field =
   | { type: "select"; path: string; label: string; options: ReadonlyArray<{ value: string; label: string }>; empty?: string }
   | { type: "indicator"; path: string; label: string }
   | { type: "indicators"; path: string; label: string }
+  | { type: "choices"; path: string; label: string; options: ReadonlyArray<{ value: string; label: string }> }
   | { type: "lines"; path: string; label: string; hint?: string }
   | { type: "list"; path: string; label: string; add: string; item: ReadonlyArray<Field>; blank: Record<string, unknown> };
 
@@ -23,11 +25,17 @@ const title: Field = { type: "text", path: "title", label: "Heading", hint: "Sho
 const MEASURES = [{ value: "PERIOD", label: "This period" }, { value: "CUMULATIVE", label: "Cumulative" }, { value: "PERCENT_OF_TARGET", label: "% of target" }];
 const CHART_KIND_OPTIONS = [...new Set([...kindsForTemplate("INDICATOR_OVER_TIME"), ...kindsForTemplate("INDICATORS_OVER_TIME")])].map((k) => ({ value: k, label: CHART_KINDS[k].label }));
 
+const AI_FIELDS: ReadonlyArray<Field> = [
+  { type: "textarea", path: "text", label: "Text", hint: "Write it, or paste a draft from an assistant and tick Accepted once you have checked every figure." },
+  { type: "boolean", path: "accepted", label: "Accepted: I checked this text" },
+  { type: "textarea", path: "instruction", label: "Note on what this should say (optional)" },
+];
+
 export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
   TEXT: [{ type: "textarea", path: "text", label: "Text", hint: "A line starting with # is a heading." }],
   BANNER: [{ type: "text", path: "text", label: "Words on the banner" }],
   CALLOUT: [{ type: "textarea", path: "text", label: "Text" }, { type: "select", path: "tone", label: "Look", options: [{ value: "info", label: "Information" }, { value: "good", label: "Good news" }, { value: "warn", label: "Warning" }] }],
-  HERO: [title, { type: "text", path: "text", label: "Subtitle" }],
+  HERO: [title, { type: "text", path: "text", label: "Subtitle" }, { type: "text", path: "assetId", label: "Cover picture id", hint: "The id of an image in the infographic library." }],
   KEY_MESSAGES: [title, { type: "list", path: "messages", label: "Messages", add: "Add a message", blank: { text: "" }, item: [{ type: "textarea", path: "text", label: "Message" }] }],
   QUOTE: [{ type: "textarea", path: "text", label: "Quotation" }, { type: "text", path: "attribution", label: "Who said it" }, { type: "boolean", path: "consentConfirmed", label: "The person agreed to be quoted" }],
   LEGEND_NOTES: [title, { type: "lines", path: "notes", label: "Notes", hint: "One note per line. The source line is added for you." }],
@@ -60,6 +68,12 @@ export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
   LOCATION_RESULTS: [title, { type: "indicators", path: "indicatorIds", label: "Indicators (none = all recorded by place)" }, { type: "lines", path: "locationKeys", label: "Only these places (one per line, lower case)" }],
   REACH: [title], ACTIVITIES_BY_LOCATION: [title], LOCATION_COMPARISON: [title], DEMOGRAPHICS: [title], FUNDING: [title],
   GROUP: [{ type: "text", path: "title", label: "Name" }],
+  SMALL_MULTIPLES: [title, { type: "indicators", path: "indicatorIds", label: "Indicators (none = those with two or more recorded periods)" }],
+  RESULTS_CHAIN: [title], PORTFOLIO_SUMMARY: [title], PORTFOLIO_TABLE: [title], PORTFOLIO_HEALTH: [title], PORTFOLIO_COUNTRIES: [title],
+  AI_SUMMARY: AI_FIELDS, AI_MESSAGES: AI_FIELDS, AI_ASK: AI_FIELDS,
+  TABS: [{ type: "lines", path: "titles", label: "Tabs (one title per line, 2 to 6)" }],
+  REPEATER: [{ type: "select", path: "over", label: "Repeat over", options: [{ value: "PROJECT", label: "Projects" }, { value: "PLACE", label: "Places" }, { value: "SECTOR", label: "Sectors" }] }, { type: "number", path: "limit", label: "How many (1 to 12)", min: 1, max: 12 }],
+  FILTER_BAR: [{ type: "choices", path: "dimensions", label: "Filters to offer", options: FILTER_DIMENSIONS.map((value) => ({ value, label: words(value) })) }],
 };
 
 /** After a setting changes, keep the rest of the block consistent: a chart of one indicator and a chart of several use different data shapes. */

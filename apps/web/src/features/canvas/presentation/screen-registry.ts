@@ -4,6 +4,9 @@ import { BigNumbersScreen, FunnelScreen, ProgressRingsScreen } from "./screens/n
 import { ActivitiesByLocationScreen, LocationComparisonScreen, LocationResultsScreen, ReachScreen } from "./screens/places";
 import { DemographicsScreen, FundingScreen } from "./screens/people-money";
 import { BannerScreen, HeroScreen, DividerScreen, KeyMessagesScreen, LegendNotesScreen, TextScreen } from "./screens/text";
+import { ResultsChainScreen, SmallMultiplesScreen } from "./screens/series";
+import { PortfolioCountriesScreen, PortfolioHealthScreen, PortfolioSummaryScreen, PortfolioTableScreen } from "./screens/portfolio";
+import { AiTextScreen, CalloutScreen, FilterBarScreen, GroupScreen, RepeaterScreen, TabsScreen } from "./screens/structure";
 import { ImageScreen, QuoteScreen, SectorGridScreen, ThreeWScreen, TimelineScreen } from "./screens/stories";
 
 /**
@@ -19,6 +22,10 @@ export const SCREEN_RENDERERS: Readonly<Partial<Record<BlockKind, ScreenRenderer
   DEMOGRAPHICS: as(DemographicsScreen), FUNDING: as(FundingScreen),
   HERO: as(HeroScreen), TEXT: as(TextScreen), DIVIDER: as(DividerScreen), BANNER: as(BannerScreen), KEY_MESSAGES: as(KeyMessagesScreen), LEGEND_NOTES: as(LegendNotesScreen),
   QUOTE: as(QuoteScreen), IMAGE: as(ImageScreen), TIMELINE: as(TimelineScreen), SECTOR_GRID: as(SectorGridScreen), THREE_W: as(ThreeWScreen),
+  SMALL_MULTIPLES: as(SmallMultiplesScreen), RESULTS_CHAIN: as(ResultsChainScreen),
+  PORTFOLIO_SUMMARY: as(PortfolioSummaryScreen), PORTFOLIO_TABLE: as(PortfolioTableScreen), PORTFOLIO_HEALTH: as(PortfolioHealthScreen), PORTFOLIO_COUNTRIES: as(PortfolioCountriesScreen),
+  CALLOUT: as(CalloutScreen), AI_SUMMARY: as(AiTextScreen), AI_MESSAGES: as(AiTextScreen), AI_ASK: as(AiTextScreen),
+  GROUP: as(GroupScreen), TABS: as(TabsScreen), REPEATER: as(RepeaterScreen), FILTER_BAR: as(FilterBarScreen),
 };
 
 export const SCREEN_PENDING: readonly BlockKind[] = BLOCK_KINDS.filter((k) => SCREEN_RENDERERS[k] === undefined);

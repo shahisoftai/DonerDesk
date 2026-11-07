@@ -1692,7 +1692,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     duplicateCanvas: new DuplicateCanvasHandler(ids, canvases, audits, clock),
     convertDashboard: new ConvertDashboardHandler(dashboards, canvases, ids, audits, clock),
     convertInfographic: new ConvertInfographicHandler(infographicRepository, canvases, visibleProjects, ids, audits, clock),
-    resolveCanvas: new ResolveCanvasHandler(canvases, new PreviewDashboardChartsHandler(getProjectDataSheet, visibleProjects, datasetExtras), getProjectDataSheet, getProjectInfographicData, visibleProjects, datasetExtras),
+    resolveCanvas: new ResolveCanvasHandler(canvases, new PreviewDashboardChartsHandler(getProjectDataSheet, visibleProjects, datasetExtras), getProjectDataSheet, getProjectInfographicData, visibleProjects, datasetExtras, getPortfolioInfographicData),
     listSavedReports: new ListSavedReportsHandler(savedReports, visibleProjects),
     saveSavedReport: new SaveSavedReportHandler(ids, savedReports, visibleProjects, audits, clock),
     deleteSavedReport: new DeleteSavedReportHandler(savedReports, visibleProjects, audits),

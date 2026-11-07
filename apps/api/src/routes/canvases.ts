@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
+import { CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
 
 /** Canvases (Phase 45): the merged dashboards and infographics. Thin: validate, call one handler, throw its error. The handlers apply who may see and change which canvas. */
 export async function registerCanvasRoutes(app: FastifyInstance) {
@@ -38,6 +38,13 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
   });
   app.get("/v1/canvases/:id/resolve", async (req) => {
     const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), CanvasResolveQuerySchema.parse(req.query));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/canvases/preview", async (req) => {
+    const { projectId, periodId, title, ...rest } = PreviewCanvasSchema.parse(req.body);
+    const canvas = { id: "preview", title, scope: "MINE", mode: rest.mode ?? "LIVE", revision: 1, ...rest } as never;
+    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, periodId ? { periodId } : {});
     if (!r.ok) throw r.error;
     return r.value;
   });

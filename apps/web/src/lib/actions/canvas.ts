@@ -1,6 +1,6 @@
 "use server";
 
-import { CreateCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
+import { CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { CanvasSchema, ConvertedCanvasSchema, ResolvedCanvasSchema, SavedCanvasSchema, type CanvasView, type ResolvedCanvas } from "@/lib/server/schemas-canvas";
@@ -48,4 +48,12 @@ export async function resolveCanvasAction(id: string, periodId?: string): Promis
 export async function openAsCanvasAction(kind: "dashboard" | "infographic", sourceId: string) {
   const context = await requireSession();
   return gatewayRequest(`/v1/canvases/from-${kind}/${encodeURIComponent(sourceId)}`, ConvertedCanvasSchema, context.token, { method: "POST" });
+}
+
+/** What an edited, unsaved canvas would show: sent as the person edits so the page answers before a save. Nothing is stored. */
+export async function previewCanvasAction(input: unknown): Promise<Result<ResolvedCanvas, AppError>> {
+  const context = await requireSession();
+  const parsed = PreviewCanvasSchema.safeParse(input);
+  if (!parsed.success) return invalid("This canvas cannot be previewed yet: " + (parsed.error.issues[0]?.message ?? "check its blocks."));
+  return gatewayRequest("/v1/canvases/preview", ResolvedCanvasSchema, context.token, { method: "POST", body: parsed.data });
 }

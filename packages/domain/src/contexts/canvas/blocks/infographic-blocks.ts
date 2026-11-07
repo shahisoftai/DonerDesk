@@ -11,7 +11,7 @@ import { INFOGRAPHIC_MODELS } from "../models/index.js";
 
 export type InfographicBlockProps = Omit<InfographicSectionConfig, "kind">;
 
-interface Spec { family: BlockFamily; w: number; h: number; maxH: number; minW?: number; seed?: InfographicBlockProps; needsAlt?: true; headline?: true; bare?: true }
+interface Spec { family: BlockFamily; w: number; h: number; maxH: number; minW?: number; seed?: InfographicBlockProps; needsAlt?: true; headline?: true; bare?: true; portfolio?: true }
 
 const wide = (family: BlockFamily, h: number, maxH = 10, seed?: InfographicBlockProps): Spec => ({ family, w: 12, h, maxH, ...(seed ? { seed } : {}) });
 
@@ -35,10 +35,10 @@ export const INFOGRAPHIC_BLOCK_SPECS = {
   SECTOR_GRID: wide("TABLES", 4, 10),
   TIMELINE: wide("TABLES", 3, 8),
   THREE_W: wide("TABLES", 4, 10),
-  PORTFOLIO_SUMMARY: wide("NUMBERS", 2, 4),
-  PORTFOLIO_TABLE: wide("TABLES", 4, 10),
-  PORTFOLIO_HEALTH: { family: "CHARTS", w: 6, h: 3, maxH: 8 },
-  PORTFOLIO_COUNTRIES: { family: "MAPS", w: 6, h: 4, maxH: 10 },
+  PORTFOLIO_SUMMARY: { ...wide("NUMBERS", 2, 4), portfolio: true },
+  PORTFOLIO_TABLE: { ...wide("TABLES", 4, 10), portfolio: true },
+  PORTFOLIO_HEALTH: { family: "CHARTS", w: 6, h: 3, maxH: 8, portfolio: true },
+  PORTFOLIO_COUNTRIES: { family: "MAPS", w: 6, h: 4, maxH: 10, portfolio: true },
   IMAGE: { family: "MEDIA", w: 6, h: 4, maxH: 10, needsAlt: true },
 } as const satisfies Record<string, Spec>;
 
@@ -51,13 +51,13 @@ function makeBlock(kind: InfographicBlockKind): BlockDefinition<InfographicBlock
     kind,
     family: spec.family,
     labelKey: `canvas.block.${kind}`,
-    reads: "FACTS",
+    reads: spec.portfolio ? "PORTFOLIO" : "FACTS",
     ...(spec.needsAlt ? { needsAlt: true } : {}),
     ...(spec.headline ? { headline: true } : {}),
     ...(spec.bare ? { bare: true } : {}),
     defaults: () => ({ ...(spec.seed ?? {}) }),
     validate: (props) => { const m = sectionProblem({ ...props, kind: kind as InfographicSectionKind }); return m ? [{ message: m }] : []; },
-    slots: [optionalProjectSlot()],
+    slots: spec.portfolio ? [] : [optionalProjectSlot()],
     sizes,
     lint: [],
     // A kind with a model resolves through it (one pure function the screen and the print composer share); the rest (`PENDING_MODEL_KINDS`) still pass their settings through until 45.2.

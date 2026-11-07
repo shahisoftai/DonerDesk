@@ -50,7 +50,7 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
     body = renderer.render({ widget, drawing });
   } else if (isDashboardKind(block.kind)) {
     // A chart-style block is drawn from the records by the server: a block just added or changed has no figures until the canvas is saved.
-    body = <NothingToShow text={screenText(frame)} reason="Save to see this block's figures." authoring />;
+    body = <NothingToShow text={screenText(frame)} reason={editing ? "Reading the figures…" : "Nothing to show yet."} authoring />;
   } else {
     const model = modelOf(block, serverModel, changed);
     const Screen = screenRendererFor(block.kind);
@@ -64,7 +64,7 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
       className={`h-full rounded-xl ${editing ? "cursor-pointer" : ""} ${selected ? "outline outline-2 outline-offset-2 outline-sky-600" : ""} ${hidden ? "opacity-40" : ""}`}>
       {def?.bare === true && !(drawing && widget)
         ? <div className="h-full min-h-0 overflow-auto" aria-label={title}>{body}</div>
-        : <Tile title={title} status="ready" ariaLabel={`${title}`} flush {...(changed && editing ? { subtitle: "Unsaved: figures update when you save" } : {})}><div className="h-full min-h-0 overflow-auto">{body}</div></Tile>}
+        : <Tile title={title} status="ready" ariaLabel={`${title}`} flush {...(changed && editing ? { subtitle: "Updating…" } : {})}><div className="h-full min-h-0 overflow-auto">{body}</div></Tile>}
     </div>
   );
 }

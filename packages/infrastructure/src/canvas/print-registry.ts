@@ -8,6 +8,9 @@ import { paintActivitiesByLocation, paintLocationComparison, paintLocationResult
 import { paintDemographics, paintFunding } from "./painters/people-money.js";
 import { paintBanner, paintHero, paintDivider, paintKeyMessages, paintLegendNotes, paintText } from "./painters/text.js";
 import { paintImage, paintQuote, paintSectorGrid, paintThreeW, paintTimeline } from "./painters/stories.js";
+import { paintPortfolioCountries, paintPortfolioHealth, paintPortfolioSummary, paintPortfolioTable } from "./painters/portfolio.js";
+import { paintResultsChain, paintSmallMultiples } from "./painters/series.js";
+import { paintAiText, paintCallout, paintGroup, paintNothing, paintTabs } from "./painters/structure.js";
 import type { PrintPainter } from "./print-types.js";
 
 /**
@@ -25,6 +28,9 @@ export const PRINT_PAINTERS: Readonly<Partial<Record<BlockKind, PrintPainter<nev
   DEMOGRAPHICS: paintDemographics, FUNDING: paintFunding,
   HERO: paintHero, TEXT: paintText, DIVIDER: paintDivider, BANNER: paintBanner, KEY_MESSAGES: paintKeyMessages, LEGEND_NOTES: paintLegendNotes,
   QUOTE: paintQuote, IMAGE: paintImage, TIMELINE: paintTimeline, SECTOR_GRID: paintSectorGrid, THREE_W: paintThreeW,
+  SMALL_MULTIPLES: paintSmallMultiples, RESULTS_CHAIN: paintResultsChain,
+  PORTFOLIO_SUMMARY: paintPortfolioSummary, PORTFOLIO_TABLE: paintPortfolioTable, PORTFOLIO_HEALTH: paintPortfolioHealth, PORTFOLIO_COUNTRIES: paintPortfolioCountries,
+  CALLOUT: paintCallout, AI_SUMMARY: paintAiText, AI_MESSAGES: paintAiText, AI_ASK: paintAiText, GROUP: paintGroup, TABS: paintTabs, REPEATER: paintNothing, FILTER_BAR: paintNothing,
 };
 
 export const PRINT_PENDING: readonly BlockKind[] = BLOCK_KINDS.filter((k) => PRINT_PAINTERS[k] === undefined);

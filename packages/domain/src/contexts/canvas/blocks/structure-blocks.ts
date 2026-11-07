@@ -8,7 +8,7 @@ import { FILTER_DIMENSIONS, type FilterDimension } from "../filters.js";
 
 export const CALLOUT_TONES = ["info", "good", "warn"] as const;
 export interface CalloutProps { text: string; tone: (typeof CALLOUT_TONES)[number] }
-export interface AiTextProps { instruction?: string | undefined; language?: string | undefined }
+export interface AiTextProps { instruction?: string | undefined; language?: string | undefined; text?: string | undefined; accepted?: boolean | undefined }
 export interface AiData { text?: string | undefined; accepted?: boolean | undefined }
 export interface GroupProps { title?: string | undefined }
 export interface TabsProps { titles: string[] }
@@ -32,7 +32,8 @@ function make<P, M, D>(kind: string, family: BlockFamily, size: Size, seed: () =
 const aiBlock = (kind: string, size: Size) => make<AiTextProps, { text: string; accepted: boolean }, AiData>(kind, "AI", { ...size, minW: 3, maxH: 8 }, () => ({}),
   (p) => ((p.instruction?.length ?? 0) > MAX_INSTRUCTION ? [{ message: `The instruction is at most ${MAX_INSTRUCTION} characters.` }] : []),
   { slots: [{ slot: "text", accepts: ["AI_DRAFT", "MANUAL"], min: 0, max: 1, honours: ["PERIOD"] }],
-    resolve: (_p, d) => (d?.text?.trim() ? { state: "ready", model: { text: d.text, accepted: d.accepted === true }, notes: d.accepted === true ? [] : ["AI-drafted. Not accepted yet."] } : { state: "empty", reason: "No text yet.", authoring: true }) });
+    // The words are the person's: typed, or a draft they pasted or accepted. They live in the block's own settings, so the screen and a file read the same text.
+    resolve: (p, d) => { const text = (typeof p.text === "string" ? p.text : d?.text) ?? ""; const accepted = typeof p.text === "string" ? p.accepted === true : d?.accepted === true; return text.trim() ? { state: "ready", model: { text, accepted }, notes: accepted ? [] : ["AI-drafted. Not accepted yet."] } : { state: "empty", reason: "Write the text, or paste a draft and accept it.", authoring: true }; } });
 
 const plain = <P>(kind: string, family: BlockFamily, size: Size, seed: () => P, validate: (p: P) => BlockProblem[]) =>
   make<P, P, undefined>(kind, family, size, seed, validate, { resolve: (p) => ({ state: "ready", model: p, notes: [] }) });

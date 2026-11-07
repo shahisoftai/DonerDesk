@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { BLOCK_KINDS } from "@donordesk/domain";
 import { contextFor } from "../dist/infographics/composer.js";
 import { heroBlock, bigNumbersBlock, funnelBlock, progressRingsBlock, demographicsBlock, fundingBlock, bannerBlock, dividerBlock, keyMessagesBlock, legendNotesBlock, quoteBlock, imageBlock, timelineBlock, sectorGridBlock } from "../dist/infographics/blocks-new.js";
-import { threeWBlock } from "../dist/infographics/blocks-portfolio.js";
+import { threeWBlock, portfolioSummaryBlock, portfolioTableBlock, portfolioHealthBlock, portfolioCountriesBlock } from "../dist/infographics/blocks-portfolio.js";
+import { resultsChainBlock } from "../dist/infographics/blocks-new.js";
 import { reachBlock, activitiesBlock, locationResultsBlock, locationComparisonBlock, textBlock } from "../dist/infographics/blocks-core.js";
 import { notReported } from "../dist/infographics/kit.js";
 import { titleFor } from "../dist/infographics/blocks-core.js";
@@ -17,7 +18,9 @@ const LEGACY = {
   HERO: (c, section, width) => heroBlock(c, section.assetId || !c.config.coverAssetId ? section : { ...section, assetId: c.config.coverAssetId }, width),
   TEXT: textBlock, DIVIDER: (c, _section, width) => dividerBlock(c, width), BANNER: bannerBlock, KEY_MESSAGES: keyMessagesBlock, LEGEND_NOTES: legendNotesBlock,
   QUOTE: quoteBlock, IMAGE: imageBlock, TIMELINE: timelineBlock, SECTOR_GRID: sectorGridBlock, THREE_W: threeWBlock,
+  RESULTS_CHAIN: resultsChainBlock, PORTFOLIO_SUMMARY: portfolioSummaryBlock, PORTFOLIO_TABLE: portfolioTableBlock, PORTFOLIO_HEALTH: portfolioHealthBlock, PORTFOLIO_COUNTRIES: portfolioCountriesBlock,
 };
+// Small multiples draws its lines from the model (the Studio built a chart from the data sheet again); it is checked on its own below.
 const PNG = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 const assets = { a1: { dataUri: PNG, width: 800, height: 400 }, tall: { dataUri: PNG, width: 400, height: 900 } };
 
@@ -64,7 +67,17 @@ const zeros = { ...rich, reach: { ...rich.reach, bySex: { female: 0 }, byAgeGrou
 
 const provenance = { source: "project-records", periodLabels: ["Jan – Mar 2026"], indicatorCodes: ["#1"], generatedAt: "2026-10-24T12:00:00.000Z", unverifiedCount: 1, notYetReportedCount: 0 };
 const config = (over = {}) => ({ templateId: "CUSTOM", templateVersion: 1, sections: [], ...over });
-const ctxFor = (data, over = {}) => contextFor({ config: config(over.config), data, sheet, provenance, mapPoints: [], organizationName: "Org", templateLabel: "T", preview: over.preview ?? false, assets });
+const portfolio = {
+  asAt: "2026-03-31",
+  totals: { projects: 3, countries: 2, behind: 1, needAttention: 1, openRisks: 4, reportsOverdue: 2, onTrack: 1, noPlan: 0 },
+  rows: [
+    { title: "Water for Kisumu", donorName: "Donor A", country: "Kenya", status: "ACTIVE", band: "ON_TRACK", bandLabel: "On track", lateActivities: 0, valuesOverdue: 0, openRisks: 1, highRisks: 0, reportsOverdue: 0, nextReport: { deadline: "2026-04-30", daysUntil: 30 } },
+    { title: "Schools in Gulu", donorName: "Donor B", country: "Uganda", status: "ACTIVE", band: "OFF_TRACK", bandLabel: "Off track", lateActivities: 3, valuesOverdue: 1, openRisks: 2, highRisks: 1, reportsOverdue: 1, nextReport: { deadline: "2026-03-01", daysUntil: -30 } },
+    { title: "Clinics in Lira", donorName: "Donor B", country: "Uganda", status: "ACTIVE", band: "AT_RISK", bandLabel: "At risk", lateActivities: 1, valuesOverdue: 0, openRisks: 1, highRisks: 0, reportsOverdue: 1 },
+  ],
+  countries: [{ country: "Uganda", projects: 2, offTrack: 1, atRisk: 1, onTrack: 0, noPlan: 0 }, { country: "Kenya", projects: 1, offTrack: 0, atRisk: 0, onTrack: 1, noPlan: 0 }],
+};
+const ctxFor = (data, over = {}) => contextFor({ config: config(over.config), data, sheet, provenance, ...(over.noPortfolio ? {} : { portfolio }), mapPoints: [], organizationName: "Org", templateLabel: "T", preview: over.preview ?? false, assets });
 
 const SECTIONS = {
   BIG_NUMBERS: [
@@ -92,13 +105,15 @@ const SECTIONS = {
   IMAGE: [{ assetId: "a1", caption: "A new borehole", credit: "J. Okello", altText: "A borehole with children" }, { assetId: "tall", fit: "CONTAIN" }, { assetId: "missing" }, {}],
   TIMELINE: [{ events: [{ date: "2026-01-15", label: "Boreholes drilled", detail: "Twelve sites" }, { date: "2026-03-01", label: "Committees trained" }] }, { events: ["a", "b", "c", "d", "e"].map((x, i) => ({ date: `2026-0${i + 1}-01`, label: `Event ${x}`, ...(i % 2 ? { detail: "More" } : {}) })) }, { events: [] }],
   SECTOR_GRID: [{ sectors: [{ label: "Water", indicatorIds: ["i1", "i2"] }, { label: "Sanitation", indicatorIds: ["i3", "i4"], iconId: "water" }, { label: "Empty", indicatorIds: [] }] }, { sectors: [] }],
+  RESULTS_CHAIN: [{}, { title: "Chain" }],
+  PORTFOLIO_SUMMARY: [{}, { title: "Our portfolio" }], PORTFOLIO_TABLE: [{}], PORTFOLIO_HEALTH: [{}], PORTFOLIO_COUNTRIES: [{}],
   THREE_W: [{ presence: [{ who: "Water NGO", what: "Drilling", where: ["Gulu", "Kitgum"] }, { who: "Health NGO", what: "Clinics", where: ["gulu", "Lira ", "Gulu"] }, { who: "Water NGO", what: "Training", where: [] }], caption: "Partner list, March 2026" }, { presence: [{ who: "A", what: "B", where: ["P1"] }] }, { presence: [] }],
 };
 
 test("every ported painter draws exactly what the Studio's own block draws, for rich, empty and gappy data in every language and mode", () => {
   let compared = 0;
   const failures = new Set();
-  const contexts = [{}, { preview: true }, { config: { language: "fr" } }, { config: { language: "ar" }, preview: true }, { config: { themeId: "MONO" } }, { config: { periodFromId: "q2", periodToId: "q3", locationKeys: ["gulu", "lira"] } }, { config: { acknowledgement: "Funded by the European Union", language: "es" } }, { config: { title: "Annual review 2026", subtitle: "Borno State", coverAssetId: "a1" } }];
+  const contexts = [{}, { noPortfolio: true }, { preview: true }, { config: { language: "fr" } }, { config: { language: "ar" }, preview: true }, { config: { themeId: "MONO" } }, { config: { periodFromId: "q2", periodToId: "q3", locationKeys: ["gulu", "lira"] } }, { config: { acknowledgement: "Funded by the European Union", language: "es" } }, { config: { title: "Annual review 2026", subtitle: "Borno State", coverAssetId: "a1" } }];
   for (const [dataName, data] of Object.entries({ rich, nothing, zeros })) {
     for (const over of contexts) {
       for (const [kind, sections] of Object.entries(SECTIONS)) {
@@ -121,17 +136,17 @@ test("every ported painter draws exactly what the Studio's own block draws, for 
 });
 
 test("the painters registry covers exactly the ported kinds, each is a real block, and the pending list only shrinks", () => {
-  assert.deepEqual(Object.keys(PRINT_PAINTERS).sort(), Object.keys(LEGACY).sort());
+  assert.deepEqual(Object.keys(PRINT_PAINTERS).sort(), [...Object.keys(LEGACY), "SMALL_MULTIPLES", "CALLOUT", "AI_SUMMARY", "AI_MESSAGES", "AI_ASK", "GROUP", "TABS", "REPEATER", "FILTER_BAR"].sort());
   for (const k of Object.keys(PRINT_PAINTERS)) assert.ok(BLOCK_KINDS.includes(k), k);
   assert.deepEqual([...PRINT_PENDING, ...Object.keys(PRINT_PAINTERS)].sort(), [...BLOCK_KINDS].sort());
-  const PRINT_PENDING_MAX = 20; // lower this as the rest of the blocks are ported
+  const PRINT_PENDING_MAX = 6; // lower this as the rest of the blocks are ported
   assert.ok(PRINT_PENDING.length <= PRINT_PENDING_MAX);
 });
 
 test("a kind with no painter yet is reported unpaintable, and a ported one is not", () => {
   assert.equal(printPainterFor("NOPE"), undefined);
-  assert.equal(paintSection(ctxFor(rich), { kind: "SMALL_MULTIPLES" }, 640), null, "the caller falls back");
-  assert.deepEqual(unpaintable(["REACH", "SMALL_MULTIPLES", "SMALL_MULTIPLES", "CHART"]), ["CHART", "SMALL_MULTIPLES"]);
+  assert.equal(paintSection(ctxFor(rich), { kind: "CHART" }, 640), null, "the caller falls back");
+  assert.deepEqual(unpaintable(["REACH", "MAP", "MAP", "CHART"]), ["CHART", "MAP"]);
   assert.deepEqual(unpaintable(["REACH", "FUNDING"]), []);
 });
 
@@ -142,4 +157,13 @@ test("painters escape what a person typed: a quote cannot add markup", () => {
   assert.ok(!svg.includes("<b>9"));
   assert.ok(!svg.includes("<i>src"));
   assert.ok(svg.includes("&lt;script&gt;"));
+});
+
+test("small multiples draws one line per indicator from its model, leaves a gap where nothing was recorded, and says so when there is nothing", () => {
+  const drawn = paintSection(ctxFor(rich), { kind: "SMALL_MULTIPLES", title: "Trends", indicatorIds: ["i1"] }, 640);
+  assert.ok(drawn && drawn.svg.includes("<svg"), "a nested chart picture");
+  assert.match(drawn.svg, /trends/i);
+  const none = paintSection(ctxFor(rich), { kind: "SMALL_MULTIPLES", indicatorIds: ["i4"] }, 640);
+  assert.ok(none.svg.includes("Not yet reported") || none.svg.length > 0);
+  assert.equal(JSON.stringify(paintSection(ctxFor(rich), { kind: "SMALL_MULTIPLES", indicatorIds: ["i1"] }, 640)), JSON.stringify(paintSection(ctxFor(rich), { kind: "SMALL_MULTIPLES", indicatorIds: ["i1"] }, 640)), "deterministic");
 });

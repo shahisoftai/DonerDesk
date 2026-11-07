@@ -9,6 +9,17 @@ import type { ActivitiesByLocation, IndicatorLocationView, LocationTargetActualV
 
 export interface FactsIndicator { id: string; code: string; name: string; location: IndicatorLocationView; targetActual: LocationTargetActualView }
 
+export type PortfolioBand = "ON_TRACK" | "AT_RISK" | "OFF_TRACK" | "NO_PLAN";
+export interface PortfolioFactsRow { title: string; donorName: string; country: string; band: string; nextReport?: { deadline: string; daysUntil: number } | undefined }
+export interface PortfolioFactsCountry { country: string; projects: number; onTrack: number; atRisk: number; offTrack: number; noPlan: number }
+/** The portfolio read a portfolio block draws from: every project the person can see, reduced to what a page needs (nothing is combined into a score). */
+export interface PortfolioFacts {
+  asAt?: string | undefined;
+  rows: PortfolioFactsRow[];
+  countries?: PortfolioFactsCountry[] | undefined;
+  totals: { projects: number; countries: number; behind: number; needAttention: number; openRisks: number; reportsOverdue: number; onTrack?: number | undefined; noPlan?: number | undefined };
+}
+
 export interface CanvasFacts {
   sheet: DataSheet;
   /** The design's own period range (absent = every period). */
@@ -28,7 +39,7 @@ export interface CanvasFacts {
   subtitle?: string | undefined;
   coverAssetId?: string | undefined;
   /** Portfolio totals, for portfolio designs; absent for a single project. */
-  portfolio?: { rows: unknown[]; totals: { projects: number; countries: number; behind: number; needAttention: number; openRisks: number; reportsOverdue: number } } | undefined;
+  portfolio?: PortfolioFacts | undefined;
 }
 
 export function designPeriods(f: Pick<CanvasFacts, "sheet" | "range">): string[] {
@@ -127,4 +138,13 @@ export function sortedAgeGroups(entries: Array<[string, number]>): Array<[string
     return /unknown|not/i.test(key) ? 1e6 : 5e5;
   };
   return [...entries].sort((a, b) => rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]));
+}
+
+/** Facts for a block that reads only the portfolio: no project, so the project parts are empty and a block that asks for them says so. */
+export function portfolioOnlyFacts(portfolio: PortfolioFacts): CanvasFacts {
+  return {
+    sheet: { projectId: "", periods: [], indicators: [], cells: [], finance: [] },
+    reach: { overallUnique: 0, registeredTotal: 0, registeredByLocation: [], attendancesByActivityLocation: [], beneficiariesWithoutLocation: 0, attendancesWithoutLocation: 0, bySex: {}, byAgeGroup: {} },
+    activities: { rows: [], unlocated: 0 }, finance: { enabled: false, rows: [] }, indicators: [], portfolio,
+  };
 }

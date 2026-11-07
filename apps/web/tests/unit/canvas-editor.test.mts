@@ -24,7 +24,7 @@ test("an emptied optional setting is removed, not stored as an empty string", ()
 });
 
 test("every field table row belongs to a real block, and every field has a label and a known kind", () => {
-  const types = new Set(["text", "textarea", "number", "boolean", "select", "indicator", "indicators", "lines", "list"]);
+  const types = new Set(["text", "textarea", "number", "boolean", "select", "indicator", "indicators", "lines", "list", "choices"]);
   const walk = (fields: ReadonlyArray<Field>, where: string): void => {
     for (const f of fields) {
       assert.ok(types.has(f.type), `${where} ${f.path}`);
