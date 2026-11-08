@@ -14,10 +14,10 @@ On the first step you can add up to five documents (a proposal, a logframe, a wo
 
 ## The ten steps
 
-1. **Start.** Say who the donor is, the sector and the country. The sector's starting answers (how often to report, the usual report layouts and due dates, how values are checked, when entry opens and closes, usual risks and a starting dashboard) fill only what is empty. They are never chosen by donor: what a donor requires comes from your own documents and report layouts.
+1. **Start.** Say who the donor is, the main sector (and any others) and the country. The sector's assessment questions appear and your answers are saved with the project description. The sector's starting answers (how often to report, the usual report layouts and due dates, how values are checked, when entry opens and closes, usual risks and a starting dashboard) fill only what is empty. They are never chosen by donor: what a donor requires comes from your own documents and report layouts.
 2. **Project and team.** Name, code, dates, currency, a short summary, and the people who will run the project. A person without an account can be named now and invited when the project starts or later.
 3. **Results framework.** The goal, outcomes, outputs and activities, each under the right parent.
-4. **Indicators.** For each: what is measured, the result it belongs to, the kind of number, starting value, target, how often, who is responsible and which way is better.
+4. **Indicators.** You can choose indicators from the sector library (see the Sector Library article); they arrive with no baseline or target, and one that fits none of your results asks you to choose the result it measures. For each: what is measured, the result it belongs to, the kind of number, starting value, target, how often, who is responsible and which way is better.
 5. **Places.** Where the project works, and its project area.
 6. **Work plan.** Each piece of work, its dates, the project activity it belongs to, its place, who leads it and which indicators it feeds. Links are suggested with the reason for each; nothing is linked until you accept it.
 7. **Data entry.** How each indicator's numbers get in (a form, another tool, typed in, or worked out from others), how values are checked, and when entry opens and closes for each period.

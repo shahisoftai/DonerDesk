@@ -12,11 +12,15 @@ An **indicator** is how you measure a result. A **target** is the value you plan
 | **Baseline** | The starting value. |
 | **Target** | The value to reach by the end. |
 | Unit | For example people, %, USD. |
-| Frequency | How often it is measured. |
+| Frequency | How often it is measured: Weekly, Monthly, Quarterly, Semi-annual or Annual, or when something happens (Per survey, Per assessment, Per analysis, Per campaign, Per distribution, Per season, At construction). An event indicator is not asked for in an ordinary month; it is expected where you record a value and in the closing period. |
 | Data source / Means of verification | Optional; where the figure comes from and how it is proven. |
 | Record a breakdown | Optional. Enter results split by sex, age group and disability. On by default for indicators that count people. |
 
 Baseline, target, unit and frequency are required for quantitative indicators before a project is reporting-ready.
+
+## Choosing from the sector library
+
+Instead of writing an indicator yourself you can choose one from the [sector library](/support/getting-started/sector-library). It arrives with no baseline and no target, may show a reference standard beside your target (never instead of it), and is placed under the result it measures; if no result fits, you choose one.
 
 ## Changing an indicator later
 

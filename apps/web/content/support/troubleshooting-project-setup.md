@@ -17,6 +17,18 @@ New projects start as drafts. Click **Activate project** in the banner at the to
 
 The message now names the field and what is expected, for example *acknowledged: Send {"acknowledged": true} to confirm the setup.* Fix the named field and try again.
 
+## "A project with the code … already exists in this workspace"
+
+Project codes are unique in a workspace. Go back to **Project and team**, change the project code, and start the project again. Nothing is created twice: starting is safe to repeat.
+
+## "Choose which result … measures"
+
+The wizard did not put a library indicator under a result because none of your results fits its wording (for example an education indicator in a water project). Open **Indicators** and pick a result in that indicator's **Measures** box. On an existing project, the same indicator is skipped with "Choose where it goes": choose a result when you add it.
+
+## "Use the starting answers" did not fill anything
+
+It fills only what is empty, so it does nothing when everything it offers is already answered. If another save was running at the same moment it tries again by itself. The button waits until the draft is ready (for example while documents are still being read).
+
 ## I lost my wizard answers
 
 Wizard progress is saved as a draft in your browser. Reopen **New project** on the same device and browser.

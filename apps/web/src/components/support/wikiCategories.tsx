@@ -51,6 +51,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "Understanding Projects", description: "What a project is and how to structure one.", href: "/support/getting-started/understanding-projects" },
       { title: "Understanding Logframes", description: "Goal, outcome, output, activity — the hierarchy explained.", href: "/support/getting-started/understanding-logframes" },
       { title: "Understanding Indicators", description: "What indicators are and how to define them.", href: "/support/getting-started/indicators-and-targets" },
+      { title: "The Sector Library", description: "Ready-made results and indicators for each sector, and how to choose from them.", href: "/support/getting-started/sector-library" },
       { title: "Understanding Activities", description: "Field updates that document what your team did.", href: "/support/getting-started/understanding-activities" },
       { title: "Understanding Evidence", description: "Evidence types, verification, and what counts.", href: "/support/getting-started/understanding-evidence" },
       { title: "Understanding Reporting Periods", description: "How to structure your reporting over time.", href: "/support/getting-started/understanding-reporting-periods" },

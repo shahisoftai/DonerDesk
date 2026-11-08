@@ -8,6 +8,7 @@ const FILE_MAP: Record<string, string> = {
   "understanding-projects": "basic-information/understanding-projects.md",
   "understanding-logframes": "basic-information/understanding-logframes.md",
   "indicators-and-targets": "basic-information-indicators-and-targets.md",
+  "sector-library": "basic-information-sector-library.md",
   "understanding-activities": "basic-information-understanding-activities.md",
   "understanding-evidence": "basic-information/understanding-evidence.md",
   "understanding-reporting-periods": "basic-information/understanding-reporting-periods.md",
