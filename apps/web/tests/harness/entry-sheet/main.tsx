@@ -16,7 +16,7 @@ const upd = (id: string, status: string, p: string, c: string, extra: Record<str
 
 const rows = [
   mk("a", "OUT-1", "People trained", { previous: { periodAchievement: "100", cumulativeAchievement: "400", periodEnd: "2026-09-30" }, logframeLevel: "OUTCOME", update: upd("a", "DRAFT", "10", "410") }),
-  mk("b", "OUT-2", "Kits distributed", { target: "200" }),
+  mk("b", "OUT-2", "Kits distributed", { target: "200", reference: { text: "at least 15 per household", standard: { comparator: "GTE", value: 15, unit: "kits", appliesTo: "per household", sourceRef: { sourceId: "SPHERE", standard: "Test 1.1" }, verified: false } } }),
   mk("c", "OUT-3", "Verified row", { update: upd("c", "VERIFIED", "5", "5") }),
   mk("d", "OUT-4", "Satisfaction", { type: "PERCENTAGE", unit: "%", target: "90" }),
   mk("e", "OUT-5", "Calculated ratio", { calculation: "OUT-1 ÷ OUT-2" }),

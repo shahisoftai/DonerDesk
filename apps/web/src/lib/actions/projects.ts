@@ -66,3 +66,10 @@ export async function restoreProjectAction(projectId: string): Promise<ArchivePr
   if (!result.ok) return result;
   return { ok: true, value: undefined };
 }
+
+/** Whether a project code is still free in the workspace (the wizard asks while the code is typed). A failed check answers "free": the launch itself is the real guard. */
+export async function checkProjectCodeAction(code: string): Promise<boolean> {
+  const context = await requireSession();
+  const r = await gatewayRequest(`/v1/projects/code-available?code=${encodeURIComponent(code.slice(0, 60))}`, z.object({ available: z.boolean() }), context.token);
+  return r.ok ? r.value.available : true;
+}

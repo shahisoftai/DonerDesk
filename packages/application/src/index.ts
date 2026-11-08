@@ -72,6 +72,7 @@ export * from "./use-cases/projects/update-project.js";
 export * from "./use-cases/projects/archive-project.js";
 export * from "./use-cases/projects/restore-project.js";
 export * from "./use-cases/projects/list-projects.js";
+export * from "./use-cases/projects/check-project-code.js";
 export * from "./use-cases/projects/get-project.js";
 export * from "./use-cases/project-members/assign-project-member.js";
 export * from "./use-cases/project-members/update-project-member.js";

@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { NotUsedToggle } from "./NotUsedToggle";
+import { useProjectCodeCheck } from "./useProjectCodeCheck";
 import { usePcwCopy } from "./usePcwCopy";
 import { EMPTY_PERSON, FACT_FIELDS, TEAM_ROLES, addPersonOperation, factChanged, factEdit, roleLabel, type FactKey, type PersonForm } from "../domain/team-view";
 
@@ -26,6 +27,7 @@ export function ProjectTeamSlide({ id, view, onView }: { id: string; view: Setup
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const team = view.extras.team;
+  const codeTaken = useProjectCodeCheck(typed.code, view.appliedProjectId === null);
 
   const saveFact = (key: FactKey) => {
     // A value read from a document is only a proposal until it is written by the person: leaving a filled box confirms it, even unchanged.
@@ -69,6 +71,7 @@ export function ProjectTeamSlide({ id, view, onView }: { id: string; view: Setup
                 <Input type={f.kind === "date" ? "date" : "text"} value={typed[f.key]} onChange={(e) => setTyped({ ...typed, [f.key]: e.target.value })} onBlur={() => saveFact(f.key)} />
               )}
             </Field>
+            {f.key === "code" && codeTaken ? <p role="alert" className="mt-1 text-sm text-danger-600" data-testid="code-taken">{PCW_COPY.team.codeTaken(typed.code.trim())}</p> : null}
           </div>
         ))}
       </section>

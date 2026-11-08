@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { CreateProjectSchema, UpdateProjectSchema, AssignProjectMemberSchema, UpdateProjectMemberSchema } from "@donordesk/contracts";
 
@@ -7,6 +8,15 @@ export async function registerProjectRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.listProjects.handle(ctx);
     if (!r.ok) throw r.error;
     return { items: r.value };
+  });
+
+  // Whether a project code is free, asked by the wizard while the code is typed. Yes or no only; registered before ":id" routes.
+  app.get("/v1/projects/code-available", async (req) => {
+    const { code } = z.object({ code: z.string().max(60).default("") }).parse(req.query);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.checkProjectCode.handle(ctx, code);
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.post("/v1/projects", async (req) => {

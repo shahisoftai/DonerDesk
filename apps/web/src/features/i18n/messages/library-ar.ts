@@ -43,6 +43,7 @@ export const libraryAr: Record<keyof typeof libraryEn, string> = {
   "lib.direction.HIGHER": "الأعلى أفضل",
   "lib.direction.LOWER": "الأدنى أفضل",
   "lib.direction.NEUTRAL": "لا أفضلية",
+  "lib.refShort": "مرجع",
   "lib.reference": "المرجع: {text}",
   "lib.referenceUnverified": "لم يُتحقق منه بعد من مصدره",
   "lib.referenceNote": "مرجع للمقارنة. وليس هدفك.",

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import type { LaunchReport, SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { usePcwCopy } from "./usePcwCopy";
+import { useProjectCodeCheck } from "./useProjectCodeCheck";
 import { RISK_KINDS, RISK_KIND_LABEL, SERIOUSNESS, blockerSentences, canSignOff, groupedRisks, isSignedOffNow, isStarted, reportRows, riskKindLabel, signedDay, startedProjectId } from "../domain/launch-view";
 import { NotUsedToggle } from "./NotUsedToggle";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
@@ -32,6 +33,7 @@ export function LaunchSlide({ id, view, onView }: { id: string; view: SetupDraft
   const [pending, startTransition] = useTransition();
   const started = isStarted(view, report);
   const projectId = startedProjectId(view, report);
+  const codeTaken = useProjectCodeCheck(view.facts.code, view.appliedProjectId === null && !started);
   const launch = () =>
     startTransition(async () => {
       const r = await launchProjectAction(id);
@@ -144,7 +146,8 @@ export function LaunchSlide({ id, view, onView }: { id: string; view: SetupDraft
           <>
             <p className="text-sm text-slate-600 dark:text-slate-300">{c.startHelp}</p>
             {report?.status === "PARTIAL" ? <p role="status" className="text-sm font-medium">{c.partial}</p> : null}
-            <button type="button" className="btn" disabled={pending || !view.launch.ok} onClick={launch}>{pending ? c.starting : report?.status === "PARTIAL" || view.status === "PARTIAL" ? c.tryAgain : c.start}</button>
+            {codeTaken ? <p role="alert" className="text-sm text-danger-600" data-testid="code-taken">{PCW_COPY.team.codeTaken((view.facts.code ?? "").trim())}</p> : null}
+            <button type="button" className="btn" disabled={pending || !view.launch.ok || codeTaken} onClick={launch}>{pending ? c.starting : report?.status === "PARTIAL" || view.status === "PARTIAL" ? c.tryAgain : c.start}</button>
           </>
         )}
         {report ? (

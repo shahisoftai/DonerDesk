@@ -30,6 +30,8 @@ export interface IProjectRepository {
   create(p: Project): Promise<Result<Project>>;
   update(p: Project): Promise<Result<Project>>;
   findById(id: string, tenantId: TenantId): Promise<Result<Project | null>>;
+  /** The project holding this exact code in the workspace, archived ones included (the code is unique among all of them). */
+  findByCode(tenantId: TenantId, projectCode: string): Promise<Result<Project | null>>;
   listByTenant(tenantId: TenantId): Promise<Result<Project[]>>;
 }
 

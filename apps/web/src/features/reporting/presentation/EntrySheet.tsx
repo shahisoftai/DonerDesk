@@ -579,7 +579,12 @@ function renderReadOnly(key: string, row: PeriodIndicatorRow, sRow: SheetRow, v:
     case "code": return <span className="font-mono text-xs">{row.code}</span>;
     case "name": return <span className="block truncate font-medium" title={row.name}>{row.name}</span>;
     case "baseline": return <span className="block truncate">{row.baseline || "—"}</span>;
-    case "target": return <span className="block truncate">{cellText(sRow, "target", v) || "—"}</span>;
+    case "target": return (
+      <span className="flex items-center gap-1">
+        <span className="min-w-0 truncate">{cellText(sRow, "target", v) || "—"}</span>
+        {row.reference ? <span className="shrink-0 rounded bg-slate-100 px-1 text-[10px] font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-200" title={`${t("lib.reference", { text: row.reference.text })} · ${t("lib.referenceNote")}`} aria-label={t("lib.reference", { text: row.reference.text })} data-testid="reference-tag">{t("lib.refShort")}</span> : null}
+      </span>
+    );
     case "previous": return <span className="block truncate text-slate-600 dark:text-slate-300">{row.previous?.cumulativeAchievement || "—"}</span>;
     case "percentOfTarget":
       return (

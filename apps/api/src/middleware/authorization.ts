@@ -184,6 +184,7 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/users\/(invite|role)$/, permission: "users.manage" },
   { method: "POST", route: /^\/v1\/users\/[^/]+\/mfa\/reset$/, permission: "users.manage" },
   { method: "POST", route: /^\/v1\/projects$/, permission: "project.create" },
+  { method: "GET", route: /^\/v1\/projects\/code-available$/, permission: "project.create" },
   { method: "POST", route: /^\/v1\/projects\/demo$/, permission: "project.create" },
   { method: "DELETE", route: /^\/v1\/projects\/[^/]+\/demo$/, permission: "project.edit" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/setup$/, permission: "project.view" },

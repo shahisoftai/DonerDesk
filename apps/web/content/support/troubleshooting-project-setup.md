@@ -19,7 +19,7 @@ The message now names the field and what is expected, for example *acknowledged:
 
 ## "A project with the code … already exists in this workspace"
 
-Project codes are unique in a workspace. Go back to **Project and team**, change the project code, and start the project again. Nothing is created twice: starting is safe to repeat.
+Project codes are unique in a workspace. The wizard tells you as soon as you type a taken code on **Project and team** (and again on **Review and launch**, where **Start the project** waits until it is changed). If you still see the message at launch, go back to **Project and team**, change the project code, and start the project again. Nothing is created twice: starting is safe to repeat.
 
 ## "Choose which result … measures"
 

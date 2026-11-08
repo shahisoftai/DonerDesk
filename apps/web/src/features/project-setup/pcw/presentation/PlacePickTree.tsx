@@ -36,8 +36,9 @@ export function PlacePickTree({ rows, selection, activeRef, open, copy, showPath
   const some = useMemo(() => someRefs(selection), [selection]);
   return (
     <ul role="tree" aria-label={copy.areasLabel} className="max-h-[26rem] space-y-0.5 overflow-y-auto pe-1">
-      {rows.map((row) => (
-        <TreeLine key={row.node.ref} row={row} state={tickState(selection, some, row.node, row.ancestors)} lockedBy={row.ancestors.find((a) => selection.has(a.ref))?.name ?? ""} showPath={showPath} active={activeRef === row.node.ref} open={open.has(row.node.ref)} copy={copy}
+      {rows.map((row, at) => (
+        // Two units of one country can share a name when the source gives no P-code (two Mbarara in Uganda): the position keeps each line its own.
+        <TreeLine key={`${row.node.ref}|${at}`} row={row} state={tickState(selection, some, row.node, row.ancestors)} lockedBy={row.ancestors.find((a) => selection.has(a.ref))?.name ?? ""} showPath={showPath} active={activeRef === row.node.ref} open={open.has(row.node.ref)} copy={copy}
           onTick={() => onTick(row.node, row.ancestors)} onOpen={() => onOpen(row)} onActive={() => onActive(row)} />
       ))}
     </ul>

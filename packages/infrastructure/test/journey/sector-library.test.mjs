@@ -158,6 +158,8 @@ test("journey: sectors, library indicators and suggested results through the wiz
   assert.equal(twin.ok, false);
   assert.match(twin.error.message, new RegExp(`A project with the code "LIB-${stamp}" already exists in this workspace`));
   assert.doesNotMatch(twin.error.message, /prisma|invocation|constraint/i);
+  assert.deepEqual(must(await h.checkProjectCode.handle(ctx, `LIB-${stamp}`), "code taken"), { available: false }, "the wizard is told before launch");
+  assert.deepEqual(must(await h.checkProjectCode.handle(ctx, `FREE-${stamp}`), "code free"), { available: true });
 
   // One organisation's own records are invisible to another (row-level security, not only a filter).
   const other = must(await h.signUp.handle({ name: "Other Admin", email: `other-${stamp}@example.org`, password: "Correct-Horse-9-Battery", organization: { name: `Other Org ${stamp}`, organizationType: "LOCAL_NGO", country: "Kenya", primarySector: "HEALTH" } }), "other tenant");

@@ -35,7 +35,7 @@ export const ENTITY_ROUTES: Readonly<Record<string, EntityName>> = {
 };
 
 /** Words that sit where an id would in routes that act on no single record. */
-const NOT_AN_ID = new Set(["import", "upload", "parse-file", "parse-sheet", "bulk", "link-drive", "search", "template", "bulk-verify", "new", "start", "bulk-action", "verify-all", "suggest-links"]);
+const NOT_AN_ID = new Set(["import", "upload", "parse-file", "parse-sheet", "bulk", "link-drive", "search", "template", "bulk-verify", "new", "start", "bulk-action", "verify-all", "suggest-links", "code-available"]);
 
 export function projectScopeOf(rawPath: string): ScopeLookup | null {
   const path = rawPath.split("?", 1)[0] ?? rawPath;

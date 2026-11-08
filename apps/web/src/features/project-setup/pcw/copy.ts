@@ -205,6 +205,7 @@ export const PCW_COPY = {
   nextSlide: "Next",
   prevSlide: "Back",
   team: {
+    codeTaken: (code: string) => `A project with the code "${code}" already exists in this workspace. Choose a different code before you start the project.`,
     details: "Project details", title: "Team", empty: "No one yet. A project needs a project manager and a monitoring and evaluation officer.",
     facts: { name: "Project name", code: "Project code", startDate: "Start date", endDate: "End date", currency: "Currency (for example USD)", summary: "Short summary" } as Record<string, string>,
     roles: { PROJECT_MANAGER: "Project manager", ME_OFFICER: "Monitoring and evaluation officer", GRANTS_OFFICER: "Grants officer", FIELD_OFFICER: "Field officer", COMPLIANCE_OFFICER: "Compliance officer", VIEWER: "Viewer" } as Record<string, string>,

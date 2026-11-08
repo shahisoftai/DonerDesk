@@ -43,6 +43,7 @@ export const libraryFr: Record<keyof typeof libraryEn, string> = {
   "lib.direction.HIGHER": "Plus haut est mieux",
   "lib.direction.LOWER": "Plus bas est mieux",
   "lib.direction.NEUTRAL": "Ni l'un ni l'autre n'est mieux",
+  "lib.refShort": "Réf.",
   "lib.reference": "Référence : {text}",
   "lib.referenceUnverified": "pas encore vérifiée auprès de sa source",
   "lib.referenceNote": "Une référence de comparaison. Ce n'est pas votre cible.",

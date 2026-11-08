@@ -16,10 +16,11 @@ Built and deployed 2026-11-08 (Phase 46, branch `0018-optimisation`, commits `0c
 - **Placement never guesses.** `pickNodeFor`: the sector's suggested result that fits, else a project result sharing two words, else nothing. The wizard raises `indicatorUnplaced` (requirement `indicators.placed`); the project picker skips with "Choose where it goes".
 - **Frequencies are one table** (`FREQUENCY_CHOICES`): cadences and events ("Per survey" …). Event indicators are not due in an ordinary month.
 - **The starting answers retry** on a lost save (3 attempts) and the button waits for a ready draft.
-- **A taken project code** is answered with a sentence about the code (`writeFailure`), never the database's message.
+- **The Sheet shows a `Ref` tag** beside the target of an indicator with a reference (the comparison line stays in the row details and the Form view).
+- **A taken project code is warned about while typing** (`CheckProjectCodeHandler`, `GET /v1/projects/code-available`, slides 2 and 10) and, if it still happens, is answered with a sentence about the code (`writeFailure`), never the database's message.
 
 ## Verification on production (2026-11-08)
 One test project per main sector (30) created through the wizard on the test tenant, all launched with the library-links step Done; Logframe labels, reference tags, the project picker, Settings → Sector library (0 of 278 reviewed) and the Form-view reference line checked; all 30 test projects archived (the product hard-deletes demo projects only).
 
 ## Not built / owed
-All 278 entries need human review; fr/es/ar chrome is draft and entry wording is English; IATI or other registry adapters; chart reference lines; the Sheet view shows no reference tag (Form view does); the wizard does not warn about a taken project code before launch.
+All 278 entries need human review; fr/es/ar chrome is draft and entry wording is English; IATI or other registry adapters; chart reference lines; chart reference lines.

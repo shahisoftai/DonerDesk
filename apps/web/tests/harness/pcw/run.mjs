@@ -39,7 +39,8 @@ const check = async (name, fn) => { try { await fn(); results.push(`ok   ${name}
 async function open(viewport = { width: 1400, height: 1100 }, lang = "") {
   const page = await (await browser.newContext({ viewport })).newPage();
   page.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
-  page.on("console", (m) => { if (m.type() === "error") errors.push(m.text().slice(0, 200)); });
+  // The base map reads self-hosted tiles that this check does not serve; the map still draws its boundaries, so that one complaint is not a failure.
+  page.on("console", (m) => { if (m.type() === "error" && !/PMTiles|\/tiles\/|Byte Serving/i.test(m.text())) errors.push(m.text().slice(0, 200)); if (process.env.PCW_DEBUG && m.type() === "error") console.log("CONSOLE", m.text().slice(0, 900), JSON.stringify(m.location())); });
   page.setDefaultTimeout(4000);
   await page.goto(lang ? `${base}?lang=${lang}` : base, { timeout: 30000 });
   await page.waitForSelector("h1");
@@ -77,7 +78,7 @@ await check("it opens on the first slide with a question to answer, ten slides i
 
 await check("Start: donor, sector and country save as you leave each box, and the sector's starting answers fill only what is empty", async () => {
   await type(page, "Donor", "European Union");
-  await pick(page, "Sector", "WASH");
+  await page.getByTestId("sector-main").selectOption("WASH"); await page.waitForTimeout(80);
   await type(page, "Country", "Uganda");
   assert.match(await railText(page, "Start"), /Complete/);
   await press(page, /use the starting answers/i);
@@ -385,6 +386,19 @@ await check("a project that does not track money says so once and the finance sl
   await p.waitForTimeout(150);
   assert.match(await railText(p, "Budget and finance"), /Complete/);
   assert.match(await text(p.locator("section[aria-roledescription='slide']")), /tracks money in DonorDesk: no/);
+  await p.close();
+});
+
+await check("a project code that is already used is said on the team slide as it is typed, before anything is created", async () => {
+  const p = await open();
+  open_.page = p;
+  await p.evaluate(() => { window.__takenCodes = ["ZZT-TAKEN"]; });
+  await go(p, "Project and team");
+  await type(p, "Project code", "ZZT-TAKEN");
+  await p.getByTestId("code-taken").waitFor({ timeout: 3000 });
+  assert.match(await text(p.getByTestId("code-taken")), /A project with the code "ZZT-TAKEN" already exists in this workspace/);
+  await type(p, "Project code", "ZZT-FREE");
+  await p.getByTestId("code-taken").waitFor({ state: "detached", timeout: 3000 });
   await p.close();
 });
 

@@ -46,6 +46,7 @@ export const libraryEn = {
   "lib.direction.HIGHER": "Higher is better",
   "lib.direction.LOWER": "Lower is better",
   "lib.direction.NEUTRAL": "Neither is better",
+  "lib.refShort": "Ref",
   "lib.reference": "Reference: {text}",
   "lib.referenceUnverified": "not yet checked against its source",
   "lib.referenceNote": "A reference to compare with. It is not your target.",

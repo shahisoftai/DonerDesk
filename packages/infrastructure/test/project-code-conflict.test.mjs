@@ -29,3 +29,12 @@ test("any other failure is answered plainly and leaks nothing", async () => {
     assert.match(r.error.message, /could not be saved/);
   } finally { console.error = original; }
 });
+
+test("a code is looked up by workspace and exact code, archived projects included", async () => {
+  let where;
+  const row = { id: "p1", tenantId: "tenant-1", title: "ZZ test project", projectCode: "ZZT-1", donorName: "Donor", implementingOrganization: "Org", country: "Uganda", sector: "WASH", startDate: new Date("2027-01-01"), endDate: new Date("2027-12-31"), reportingFrequency: "QUARTERLY", status: "ARCHIVED", archivedAt: new Date("2027-02-01"), isDemo: false, showWorkPlanning: true, timeZone: null };
+  const repo = new PrismaProjectRepository({ project: { findFirst: async (q) => { where = q.where; return q.where.projectCode === "ZZT-1" ? row : null; } } });
+  assert.equal((await repo.findByCode(TenantId.create("tenant-1"), "ZZT-1")).value?.projectCode, "ZZT-1");
+  assert.deepEqual(where, { tenantId: "tenant-1", projectCode: "ZZT-1" }, "no status filter: an archived project still holds its code");
+  assert.equal((await repo.findByCode(TenantId.create("tenant-1"), "ZZT-2")).value, null);
+});

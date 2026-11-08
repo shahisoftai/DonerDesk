@@ -43,6 +43,7 @@ export const libraryEs: Record<keyof typeof libraryEn, string> = {
   "lib.direction.HIGHER": "Más alto es mejor",
   "lib.direction.LOWER": "Más bajo es mejor",
   "lib.direction.NEUTRAL": "Ninguno es mejor",
+  "lib.refShort": "Ref.",
   "lib.reference": "Referencia: {text}",
   "lib.referenceUnverified": "aún no comprobada con su fuente",
   "lib.referenceNote": "Una referencia con la que comparar. No es su meta.",

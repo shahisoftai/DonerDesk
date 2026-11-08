@@ -193,6 +193,7 @@ export const PCW_FR: PcwBundle = {
     nextSlide: "Suivant",
     prevSlide: "Retour",
     team: {
+      codeTaken: (code) => `Un projet avec le code « ${code} » existe déjà dans cet espace de travail. Choisissez un autre code avant de démarrer le projet.`,
       details: "Détails du projet", title: "Équipe", empty: "Personne pour l'instant. Un projet a besoin d'un responsable de projet et d'un responsable du suivi et de l'évaluation.",
       facts: { name: "Nom du projet", code: "Code du projet", startDate: "Date de début", endDate: "Date de fin", currency: "Devise (par exemple USD)", summary: "Court résumé" },
       roles: { PROJECT_MANAGER: "Responsable de projet", ME_OFFICER: "Responsable du suivi et de l'évaluation", GRANTS_OFFICER: "Responsable des subventions", FIELD_OFFICER: "Agent de terrain", COMPLIANCE_OFFICER: "Responsable de la conformité", VIEWER: "Lecteur" },

@@ -58,6 +58,14 @@ await check("renders the real grid: 7 rows, frozen code and name, an earlier-per
   assert.equal(await val(2, "Sep"), "—", "no earlier value shows a dash, never 0");
 });
 
+await check("a row whose indicator came from the library carries a Ref tag beside its target, and only that row", async () => {
+  const tags = page.getByTestId("reference-tag");
+  assert.equal(await tags.count(), 1, "one tag, on the row that has a reference");
+  assert.match((await tags.first().getAttribute("aria-label")) ?? "", /at least 15 per household/);
+  assert.match((await tags.first().getAttribute("title")) ?? "", /not your target/i);
+  assert.equal((await tags.first().innerText()).trim(), "Ref");
+});
+
 await check("typing commits on Enter, moves down, and fills the running total of a SUM indicator", async () => {
   await type(0, "This period", "250");
   assert.equal(await val(0, "This period"), "250");

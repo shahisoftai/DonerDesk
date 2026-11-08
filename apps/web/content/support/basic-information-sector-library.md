@@ -12,7 +12,7 @@ Every indicator is marked **Not yet reviewed** until a person in your organisati
 
 ## A standard is a reference, not your target
 
-Some indicators show a **reference standard**, for example "at most 20 people per toilet". It is shown beside your target so you can compare. It never sets your target, and it never changes the colour of your target. When you enter a value, a short line says whether it meets the reference or is below it.
+Some indicators show a **reference standard**, for example "at most 20 people per toilet". It is shown beside your target so you can compare. It never sets your target, and it never changes the colour of your target. When you enter a value, a short line says whether it meets the reference or is below it. In the entry **Sheet** a small **Ref** tag sits beside the target of such an indicator (point at it to read the reference); the line with the comparison is shown for the row you are on, and in the **Form** view under each indicator.
 
 ## In the project wizard
 

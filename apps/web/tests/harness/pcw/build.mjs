@@ -15,6 +15,8 @@ export async function build(outfile) {
     alias: {
       "@/lib/actions/project-setup-draft": join(here, "stubs/actions.ts"),
       "@/lib/actions/project-setup": join(here, "stubs/item-actions.ts"),
+      "@/lib/actions/projects": join(here, "stubs/project-actions.ts"),
+      "@/lib/actions/sector-library": join(here, "stubs/sector-library-actions.ts"),
       "@/lib/actions/org": join(here, "../maps-v2/stubs/actions-org.ts"),
       "next/navigation": join(here, "stubs/navigation.ts"),
       "next/link": join(here, "../entry-sheet/stubs/link.tsx"),

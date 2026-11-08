@@ -114,6 +114,11 @@ export class PrismaProjectRepository implements IProjectRepository {
     return ok(this.toDomain(row));
   }
 
+  async findByCode(tenantId: TenantId, projectCode: string): Promise<Result<Project | null, DomainError>> {
+    const row = await this.prisma.project.findFirst({ where: { tenantId: tenantId.toString(), projectCode } });
+    return ok(row ? this.toDomain(row) : null);
+  }
+
   async listByTenant(tenantId: TenantId): Promise<Result<Project[], DomainError>> {
     const rows = await this.prisma.project.findMany({ where: { tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" } });
     return ok(rows.map((r) => this.toDomain(r)));

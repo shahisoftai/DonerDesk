@@ -195,6 +195,7 @@ export const PCW_AR: PcwBundle = {
     nextSlide: "التالي",
     prevSlide: "السابق",
     team: {
+      codeTaken: (code) => `يوجد مشروع بالرمز «${code}» في مساحة العمل هذه. اختر رمزًا آخر قبل بدء المشروع.`,
       details: "بيانات المشروع", title: "الفريق", empty: "لا أحد بعد. يحتاج المشروع إلى مدير مشروع ومسؤول رصد وتقييم.",
       facts: { name: "اسم المشروع", code: "رمز المشروع", startDate: "تاريخ البدء", endDate: "تاريخ الانتهاء", currency: "العملة (مثل USD)", summary: "ملخص قصير" },
       roles: { PROJECT_MANAGER: "مدير المشروع", ME_OFFICER: "مسؤول الرصد والتقييم", GRANTS_OFFICER: "مسؤول المنح", FIELD_OFFICER: "موظف ميداني", COMPLIANCE_OFFICER: "مسؤول الامتثال", VIEWER: "مطّلع" },
