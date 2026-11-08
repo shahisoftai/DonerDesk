@@ -34,6 +34,10 @@ export interface IndicatorProps {
   countedElsewhere?: boolean;
   /** Set when the value is calculated from other indicators (phase 33.3): nobody types a value for it. */
   formula?: IndicatorFormula | undefined;
+  /** The sector library entry this indicator was copied from (phase 46), its version then, and what the entry said then (`LibraryLink`). */
+  libraryId?: string;
+  libraryVersion?: number;
+  libraryJson?: string;
 }
 
 export class Indicator extends Entity<string> {
@@ -67,6 +71,11 @@ export class Indicator extends Entity<string> {
     targetSchedule?: TargetScheduleEntry[];
     countedElsewhere?: boolean;
     formula?: IndicatorFormula;
+    /** Serialized IndicatorSemantics, when the source states how the indicator is read (a library entry does). */
+    semanticsJson?: string;
+    libraryId?: string;
+    libraryVersion?: number;
+    libraryJson?: string;
   }): Indicator {
     if (!input.code) throw DomainError.validation("Indicator code required");
     if (!input.name) throw DomainError.validation("Indicator name required");
@@ -88,6 +97,8 @@ export class Indicator extends Entity<string> {
       frequency: input.frequency,
       responsibleUserId: input.responsibleUserId,
       disaggregationRequired: input.disaggregationRequired ?? false,
+      ...(input.semanticsJson ? { semanticsJson: input.semanticsJson } : {}),
+      ...(input.libraryId ? { libraryId: input.libraryId, ...(input.libraryVersion !== undefined ? { libraryVersion: input.libraryVersion } : {}), ...(input.libraryJson ? { libraryJson: input.libraryJson } : {}) } : {}),
     });
   }
 
@@ -119,6 +130,9 @@ export class Indicator extends Entity<string> {
   get targetSchedule(): TargetScheduleEntry[] { return this.props.targetSchedule ?? []; }
   get formula(): IndicatorFormula | undefined { return this.props.formula; }
   get countedElsewhere(): boolean { return this.props.countedElsewhere ?? false; }
+  get libraryId(): string | undefined { return this.props.libraryId; }
+  get libraryVersion(): number | undefined { return this.props.libraryVersion; }
+  get libraryJson(): string | undefined { return this.props.libraryJson; }
   get isArchived(): boolean { return this.props.archivedAt !== undefined; }
 
   get semantics(): IndicatorSemantics | undefined {

@@ -7,13 +7,19 @@
 import { proposeCodes } from "../project-codes.js";
 import { addIndicator } from "../review-operations.js";
 import type { IndicatorDef, LogframeNodeDef, ProjectSetupProposal, Proposed, SetupLogLevel } from "../proposal.js";
+import type { LibraryIndicator, LibrarySectorId, LogframeSkeletonNode } from "../../sector-library/index.js";
+import { addFromLibrary, addFromSkeleton } from "./library-results.js";
 
 export type ResultOperation =
   | { kind: "ADD_NODE"; level: SetupLogLevel; title: string; parentCode?: string | null }
   | { kind: "ADD_INDICATOR"; value: Record<string, unknown> }
   | { kind: "EDIT_INDICATOR"; path: string; patch: Partial<Pick<IndicatorDef, "title" | "type" | "unit" | "baseline" | "target" | "frequency" | "logframeCode" | "disaggregation">> }
   | { kind: "EDIT_NODE_TITLE"; path: string; title: string }
-  | { kind: "BULK_INDICATORS"; frequency?: string; disaggregation?: string[]; level?: SetupLogLevel };
+  | { kind: "BULK_INDICATORS"; frequency?: string; disaggregation?: string[]; level?: SetupLogLevel }
+  /** Entries of the sector library, resolved by the caller (the organisation's own wording included); added as the person's own indicators. */
+  | { kind: "ADD_FROM_LIBRARY"; entries: readonly LibraryIndicator[]; logframeCode?: string | null; today: string }
+  /** A sector's suggested results; `nodeKeys` limits which. */
+  | { kind: "ADD_FROM_SKELETON"; sectorId: LibrarySectorId; skeleton: readonly LogframeSkeletonNode[]; nodeKeys?: readonly string[] };
 
 export type ResultOperationResult = { ok: true; proposal: ProjectSetupProposal } | { ok: false; reason: string };
 
@@ -88,6 +94,14 @@ export const RESULT_OPERATIONS: { [K in ResultOperation["kind"]]: Handler<K> } =
     if (!name) return refuse("A result needs a name.");
     const logframe = p.logframe.map((n, i) => (i === at.index ? { ...n, value: { ...n.value!, title: name }, status: "EDITED" as const } : n));
     return done({ ...p, logframe });
+  },
+  ADD_FROM_LIBRARY: (p, { entries, logframeCode, today }) => {
+    const r = addFromLibrary(p, entries, logframeCode, today);
+    return r.ok ? { ok: true, proposal: r.proposal } : refuse(r.reason);
+  },
+  ADD_FROM_SKELETON: (p, { sectorId, skeleton, nodeKeys }) => {
+    const r = addFromSkeleton(p, sectorId, skeleton, nodeKeys);
+    return r.ok ? { ok: true, proposal: r.proposal } : refuse(r.reason);
   },
   // Fill-only, like a pack: an indicator that already has a frequency or a breakdown keeps it.
   BULK_INDICATORS: (p, { frequency, disaggregation, level }) => {

@@ -4,6 +4,9 @@
  * Wording of the risks is plain language for the people who will read it in the project.
  */
 import type { DefaultPack, PackReportRule } from "./packs.js";
+import { MAIN_SECTORS } from "../../sector-library/sectors.js";
+import { BUILT_IN_CONTENT } from "../../sector-library/library.js";
+import { packOf } from "../../sector-library/pack-parts.js";
 
 const QUARTERLY_RULES: readonly PackReportRule[] = [
   { reportType: "QUARTERLY", template: "BUILT_IN", dueDaysAfterEnd: 30 },
@@ -19,7 +22,7 @@ const common = {
   windowRule: { opensDaysBefore: 10, closesDaysAfter: 15 },
 };
 
-export const BUILT_IN_PACKS: readonly DefaultPack[] = [
+const HAND_WRITTEN_PACKS: readonly DefaultPack[] = [
   {
     ...common, id: "builtin:generic", sector: null, label: "General project",
     risks: [
@@ -51,3 +54,22 @@ export const BUILT_IN_PACKS: readonly DefaultPack[] = [
     ],
   },
 ];
+
+/**
+ * A pack for every main sector of the sector library that has no hand-written pack (Phase 46): the usual starting answers, the
+ * sector's own risks, and its dashboard. They fill only what is empty, like any pack, and hold no people or donor.
+ */
+function libraryPacks(): DefaultPack[] {
+  const covered = new Set(HAND_WRITTEN_PACKS.map((p) => p.sector));
+  return MAIN_SECTORS.filter((d) => !covered.has(d.id)).map((d): DefaultPack => {
+    const content = BUILT_IN_CONTENT[d.id];
+    const dashboard = packOf(content).find((p) => p.key === "dashboards")?.items[0] as string | undefined;
+    return {
+      ...common, id: `builtin:library:${d.id.toLowerCase()}`, sector: d.id, label: d.label, fromLibrary: true,
+      risks: content.risks.map((r) => ({ kind: r.kind, title: r.title, seriousness: r.seriousness, mitigation: r.mitigation })),
+      ...(dashboard ? { dashboardTemplate: dashboard } : {}),
+    };
+  });
+}
+
+export const BUILT_IN_PACKS: readonly DefaultPack[] = [...HAND_WRITTEN_PACKS, ...libraryPacks()];

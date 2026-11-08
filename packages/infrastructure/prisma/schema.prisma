@@ -469,6 +469,10 @@ model Indicator {
   /// {op, terms[], percent?}: the value is calculated from other indicators of the project (phase 33.3).
   formulaJson           String?
   countedElsewhere      Boolean  @default(false) // what it counts is also counted by another project: left out of portfolio totals
+  /// The sector library entry this indicator was copied from (phase 46): id, version, and the link that remembers what the entry said then.
+  libraryId             String?
+  libraryVersion        Int?
+  libraryJson           String?
   archivedAt            DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
@@ -2777,4 +2781,22 @@ model SetupDefaultPack {
   updatedAt   DateTime @updatedAt
 
   @@unique([tenantId, sectorKey])
+}
+
+
+/// An organisation's own use of the sector library (phase 46): entries it added, hid or reworded, and its review decisions.
+/// `kind` is ADDED | OVERRIDE | HIDDEN | REVIEW; the payload is checked by the domain before it is stored.
+model OrganisationLibraryEntry {
+  id             String   @id
+  tenantId       String
+  entryId        String
+  kind           String
+  payloadJson    String
+  libraryVersion Int?
+  updatedById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([tenantId, entryId, kind])
+  @@index([tenantId])
 }

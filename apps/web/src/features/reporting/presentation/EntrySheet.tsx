@@ -1,5 +1,6 @@
 "use client";
 
+import { ReferenceVerdictLine } from "@/features/sector-library/presentation/ReferenceVerdictLine";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, type ClipboardEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import type { DisaggregationEntryInput } from "@donordesk/contracts";
@@ -623,6 +624,7 @@ function RowDetails({ row, sRow, values, locked, today, userId, names, canAsk, p
         {row.participantsHint && <p role="status">{row.participantsHint}</p>}
         {row.update?.reviewNote && row.update.verificationStatus !== "VERIFIED" && <p className="text-amber-700 dark:text-amber-300">{row.update.reviewNote}</p>}
         {row.stoplight && <p>{row.stoplight.note}</p>}
+        {row.reference ? <ReferenceVerdictLine text={row.reference.text} standard={row.reference.standard} value={row.aggregation === "SUM" ? row.update?.cumulativeAchievement : row.update?.periodAchievement} unit={row.unit} /> : null}
       </div>
       {(sameAsLast !== null || (!locked && !row.calculation)) && (
         <div className="mt-2 flex flex-wrap items-center gap-3">

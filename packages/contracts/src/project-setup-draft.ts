@@ -72,13 +72,15 @@ export const SetupOperationSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("ACCEPT_BUDGET_SUGGESTIONS"), ids: z.array(text(300).min(1)).min(1).max(500) }),
   z.object({ kind: z.literal("ACCEPT_SUGGESTIONS"), ids: z.array(text(300).min(1)).min(1).max(500) }),
   z.object({ kind: z.literal("SET_DASHBOARD"), templateKey: text(80).min(1).nullable() }),
+  z.object({ kind: z.literal("SET_SECTORS"), sectorIds: z.array(text(60).min(1)).max(12) }),
+  z.object({ kind: z.literal("SET_LIBRARY_ANSWER"), key: text(60).min(1), value: text(600) }),
 ]);
 export type SetupOperationInput = z.infer<typeof SetupOperationSchema>;
 
 /** The kinds of draft edit; mirrors the domain's `DRAFT_OPERATIONS` keys. */
 export const SETUP_OPERATION_KINDS = [
   "SET_START", "ADD_PERSON", "UPDATE_PERSON", "REMOVE_PERSON", "SET_INDICATOR_SETUP", "SET_PLAN_SETUP", "SET_PLACES_SETUP", "SET_COLLECTION",
-  "SET_SCHEDULE", "SET_FINANCE", "CONFIRM_CODES", "ANSWER_NOT_USED", "REOPEN_REQUIREMENT", "REJECT_SUGGESTION", "ACCEPT_SUGGESTIONS", "ACCEPT_METHOD_SUGGESTIONS", "ACCEPT_BUDGET_SUGGESTIONS", "SET_DASHBOARD",
+  "SET_SCHEDULE", "SET_FINANCE", "CONFIRM_CODES", "ANSWER_NOT_USED", "REOPEN_REQUIREMENT", "REJECT_SUGGESTION", "ACCEPT_SUGGESTIONS", "ACCEPT_METHOD_SUGGESTIONS", "ACCEPT_BUDGET_SUGGESTIONS", "SET_DASHBOARD", "SET_SECTORS", "SET_LIBRARY_ANSWER",
 ] as const;
 
 /** Edits to the results framework and its indicators (they change the proposal, not the decisions). */
@@ -103,7 +105,17 @@ export const SetupResultOperationSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("BULK_INDICATORS"), frequency: text(120).optional(), disaggregation: z.array(text(60)).max(20).optional(), level: Level.optional() }),
 ]);
 export type SetupResultOperationInput = z.infer<typeof SetupResultOperationSchema>;
-export const SETUP_RESULT_OPERATION_KINDS = ["ADD_NODE", "ADD_INDICATOR", "EDIT_INDICATOR", "EDIT_NODE_TITLE", "BULK_INDICATORS"] as const;
+export const SETUP_RESULT_OPERATION_KINDS = ["ADD_NODE", "ADD_INDICATOR", "EDIT_INDICATOR", "EDIT_NODE_TITLE", "BULK_INDICATORS", "ADD_FROM_LIBRARY", "ADD_FROM_SKELETON"] as const;
+
+/**
+ * Choosing from the sector library (Phase 46): the request names library entries by id, and the server resolves them (the
+ * organisation's own wording included) into the domain's `ADD_FROM_LIBRARY` / `ADD_FROM_SKELETON` edits.
+ */
+export const SetupLibraryOperationSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("ADD_FROM_LIBRARY"), ids: z.array(text(60).min(1)).min(1).max(100), logframeCode: text(40).nullable().optional() }),
+  z.object({ kind: z.literal("ADD_FROM_SKELETON"), sectorId: text(60).min(1), nodeKeys: z.array(text(60).min(1)).max(60).optional() }),
+]);
+export type SetupLibraryOperationInput = z.infer<typeof SetupLibraryOperationSchema>;
 
 /** Edits to the places list (they change the proposal). */
 export const SetupPlaceOperationSchema = z.discriminatedUnion("kind", [

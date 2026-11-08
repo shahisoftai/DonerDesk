@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, applyPack, resolvePack } from "@donordesk/domain";
+import { DomainError, applyPack, findSector, resolvePack } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock } from "../../ports/core.js";
 import type { IDefaultPackSource, ISetupProposalRepository } from "../../ports/project-setup.js";
@@ -37,7 +37,10 @@ export class ApplyDefaultPackHandler {
     if (stored.value.createdById !== ctx.tenant.userId) return { ok: false, error: DomainError.forbidden("Only the person who started this setup can change it") };
     if (stored.value.status !== "READY") return { ok: false, error: DomainError.validation("Wait until the documents have been read, then apply the starting answers.") };
     const draft = draftOf(stored.value);
-    const pack = resolvePack(await this.packs.list(ctx.tenant.tenantId), draft.extras.start.sector);
+    // The main library sector chosen on the Start slide decides; an older sector word is mapped to its library sector.
+    const start = draft.extras.start;
+    const wanted = start.sectors?.[0] ?? findSector(start.sector)?.id ?? start.sector;
+    const pack = resolvePack(await this.packs.list(ctx.tenant.tenantId), wanted);
     if (!pack) return { ok: false, error: DomainError.validation("There are no starting answers for this sector yet.") };
     const applied = applyPack(draft, pack);
     // Two writes, in this order: the proposal (suggested risks), then the decisions. `update` never writes the decisions, so a running

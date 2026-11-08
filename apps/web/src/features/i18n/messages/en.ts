@@ -4,6 +4,7 @@
  * (a type check and a test enforce it), with the same `{placeholders}`.
  */
 import { recordEn } from "./record-en.ts";
+import { libraryEn } from "./library-en.ts";
 import { canvasEn } from "./canvas-en.ts";
 export const en = {
   "language.label": "Language",
@@ -703,6 +704,7 @@ export const en = {
   "maps.sources.link": "Map sources and licences",
   ...recordEn,
   ...canvasEn,
+  ...libraryEn,
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -10,15 +10,18 @@ import { Select } from "@/components/ui/Select";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { roleLabel } from "../domain/team-view";
 import { usePcwCopy } from "./usePcwCopy";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { BREAKDOWN_SUGGESTIONS, FREQUENCIES, INDICATOR_TYPES, INDICATOR_TYPE_LABEL, indicatorRows, indicatorTargets, parseBreakdown } from "../domain/results-view";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
+import { WizardLibraryPanel } from "@/features/sector-library/presentation/WizardLibraryPanel";
 
 type Patch = Record<string, unknown>;
 
 /** Slide 4: one card per indicator. Facts about the indicator change the proposal; who owns it and which way is better are the person's decisions. */
 export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void }) {
   const pcw = usePcwCopy();
+  const { t } = useI18n();
   const PCW_COPY = pcw.c;
   const c = PCW_COPY.indicators;
   const rows = indicatorRows(view);
@@ -47,6 +50,7 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
 
   return (
     <div className="space-y-6">
+      <WizardLibraryPanel id={id} view={view} onView={onView} />
       <AcceptAllWaiting id={id} area="INDICATORS" items={view.indicators} onView={onView} onError={setError} />
       {rows.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.empty}</p> : null}
       {rows.map(({ item, value, ownerKey, direction, baselineNone }) => (
@@ -54,10 +58,11 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
           <header className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs text-slate-500">{value.code}</span>
             <input key={`n-${value.title}`} aria-label={c.name} defaultValue={value.title ?? ""} className="min-w-[12rem] flex-1 bg-transparent font-medium outline-none focus:underline" onBlur={text(item.path, "title", value.title)} />
-            <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
+            {value.libraryId ? <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-900 dark:bg-brand-900/40 dark:text-brand-100" data-testid="library-badge">{t("lib.badge")}</span> : <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />}
             {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{PCW_COPY.results.accept}</button> : null}
             <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${PCW_COPY.results.remove} ${value.title ?? ""}`}>{PCW_COPY.results.remove}</button>
           </header>
+          {value.referenceText ? <p className="text-xs text-slate-600 dark:text-slate-300" data-testid="reference-tag">{t("lib.reference", { text: value.referenceText })}. {t("lib.referenceNote")}</p> : null}
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label={c.result}>
               <Select value={value.logframeCode ?? ""} onChange={(e) => edit(item.path, { logframeCode: e.target.value || null })}>

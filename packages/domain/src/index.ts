@@ -28,6 +28,7 @@ export * from "./contexts/identity/boundary-layer.js";
 export * from "./contexts/integrations/index.js";
 export * from "./contexts/collection/index.js";
 export * from "./contexts/collection/connector.js";
+export * from "./contexts/sector-library/index.js";
 export * from "./contexts/dashboards/index.js";
 export * from "./contexts/bookmarks/index.js";
 export * from "./contexts/ask/index.js";

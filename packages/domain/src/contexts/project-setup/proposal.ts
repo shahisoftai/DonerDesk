@@ -73,6 +73,12 @@ export interface IndicatorDef {
   codeSource?: "DOCUMENT" | "GENERATED";
   /** SUGGESTED when `linkProposal` chose the result by wording (never shown as the document's own link); absent = the document's. */
   linkSource?: LinkSource;
+  /** The sector library entry this indicator was chosen from (Phase 46), its version, and the link written to the project at launch. */
+  libraryId?: string;
+  libraryVersion?: number;
+  libraryLinkJson?: string;
+  /** The entry's reference standard as a phrase, shown beside the target. It is a reference, never the target. */
+  referenceText?: string;
 }
 
 /** Who tied an item to a result: the document (its code or row), the wording match of `linkProposal`, or a person in the review. */

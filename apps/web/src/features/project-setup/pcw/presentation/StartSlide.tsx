@@ -9,7 +9,9 @@ import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { startSuggestions } from "../domain/start-suggestions";
 import { usePcwCopy } from "./usePcwCopy";
 import { StartDocuments } from "./StartDocuments";
-import { SECTOR_OPTIONS } from "../domain/pcw-view";
+import { SectorChooser } from "@/features/sector-library/presentation/SectorChooser";
+import { AssessmentQuestions } from "@/features/sector-library/presentation/AssessmentQuestions";
+import { libraryBrowser } from "@/features/sector-library/composition";
 
 /**
  * Slide 1: donor, sector and country, then the sector's starting answers. The donor only labels the project: the starting
@@ -60,18 +62,24 @@ export function StartSlide({ id, view, onView }: { id: string; view: SetupDraftV
       <Field label={PCW_COPY.start.donor}>
         <Input value={donor} onChange={(e) => setDonor(e.target.value)} onBlur={() => donor.trim() !== (start.donor ?? "") && save({ donor: donor.trim() })} />
       </Field>
-      <Field label={PCW_COPY.start.sector}>
-        <Select value={start.sector ?? ""} onChange={(e) => save({ sector: e.target.value })}>
-          <option value="" disabled>—</option>
-          {SECTOR_OPTIONS.map((s) => <option key={s} value={s}>{PCW_COPY.common.sectors[s] ?? s}</option>)}
-        </Select>
-      </Field>
       <Field label={PCW_COPY.start.country}>
         <Input value={country} onChange={(e) => setCountry(e.target.value)} onBlur={() => country.trim() !== (start.country ?? "") && save({ country: country.trim() })} />
       </Field>
+      <div className="sm:col-span-3">
+        <SectorChooser browser={libraryBrowser} value={start.sectors ?? []} disabled={pending} onChange={(ids) => startTransition(async () => {
+          const r = await editDraftAction(id, { kind: "SET_SECTORS", sectorIds: ids });
+          if (r.ok) { setError(null); onView(r.value); } else setError(r.error.message);
+        })} />
+      </div>
+      <div className="sm:col-span-3">
+        <AssessmentQuestions sectors={start.sectors ?? []} answers={view.extras.libraryAnswers ?? {}} onSave={(key, value) => startTransition(async () => {
+          const r = await editDraftAction(id, { kind: "SET_LIBRARY_ANSWER", key, value });
+          if (r.ok) { setError(null); onView(r.value); } else setError(r.error.message);
+        })} />
+      </div>
       <div className="sm:col-span-3 space-y-2">
         <p className="text-sm text-slate-600 dark:text-slate-300">{PCW_COPY.start.sectorsHelp}</p>
-        <button type="button" className="btn-secondary" onClick={usePack} disabled={pending || !start.sector}>{PCW_COPY.start.useStarting}</button>
+        <button type="button" className="btn-secondary" onClick={usePack} disabled={pending || !start.sector} data-testid="use-starting">{PCW_COPY.start.useStarting}</button>
         {message ? <p role="status" className="text-sm text-slate-700 dark:text-slate-200">{message}</p> : null}
         {error ? <p role="alert" className="text-sm text-danger-600">{error}</p> : null}
       </div>

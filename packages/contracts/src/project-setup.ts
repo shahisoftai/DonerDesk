@@ -95,6 +95,10 @@ const IndicatorDefSchema = z.object({
   meansOfVerification: z.string().max(300).nullable(),
   codeSource: z.enum(["DOCUMENT", "GENERATED"]).optional(),
   linkSource: z.enum(["DOCUMENT", "SUGGESTED", "PERSON"]).optional(),
+  libraryId: z.string().max(60).optional(),
+  libraryVersion: z.number().int().optional(),
+  libraryLinkJson: z.string().max(8000).optional(),
+  referenceText: z.string().max(200).optional(),
 });
 
 const PeriodDefSchema = z.object({

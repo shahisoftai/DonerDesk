@@ -7,7 +7,9 @@ const org = (sector, extra = {}) => ({ id: `org:${sector}`, sector, source: "ORG
 test("a pack is chosen by sector only: the organisation's own, then the built-in, then the generic", () => {
   assert.equal(resolvePack(BUILT_IN_PACKS, "WASH").id, "builtin:wash");
   assert.equal(resolvePack(BUILT_IN_PACKS, "wash").id, "builtin:wash");
-  assert.equal(resolvePack(BUILT_IN_PACKS, "EDUCATION").id, "builtin:generic");
+  // A sector of the sector library without a hand-written pack has the library pack (Phase 46); an unknown word has the generic one.
+  assert.equal(resolvePack(BUILT_IN_PACKS, "EDUCATION").id, "builtin:library:education");
+  assert.equal(resolvePack(BUILT_IN_PACKS, "NOT_A_SECTOR").id, "builtin:generic");
   assert.equal(resolvePack(BUILT_IN_PACKS, undefined).id, "builtin:generic");
   assert.equal(resolvePack([...BUILT_IN_PACKS, org("WASH")], "WASH").id, "org:WASH");
   assert.equal(resolvePack([...BUILT_IN_PACKS, org(null)], "EDUCATION").id, "org:null");

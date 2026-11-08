@@ -5,11 +5,11 @@
  * when a launch actually runs.
  */
 import {
-  ActivationStep, BudgetLinesStep, DashboardStep, EntryWindowsStep, FormsStep, IndicatorOwnerApplier, InvitationsStep, PlanLeadApplier, PendingMemberResolver, ResponsibilitiesStep, ReviewModeStep,
+  ActivationStep, BudgetLinesStep, LibraryLinksStep, DashboardStep, EntryWindowsStep, FormsStep, IndicatorOwnerApplier, InvitationsStep, PlanLeadApplier, PendingMemberResolver, ResponsibilitiesStep, ReviewModeStep,
   type AddBudgetLineHandler, type UpdateProjectHandler, type ApplyDashboardTemplateHandler, type AssignPlannedActivityHandler, type GetPlanItemBudgetHandler, type ListWorkPlanHandler, type SetupBudgetWriter, type SetupDashboardWriter, type SetupPlanRows, type AssignProjectMemberHandler, type IAuditLogger, type IPendingMemberRepository, type IResponsibilityApplier, type SetIndicatorOwnerHandler,
   type SetupActingContext, type SetupIndicatorOwners, type SetupMemberAssigner, type CreateFormFromIndicatorHandler, type InviteUserHandler, type ISetupLaunchStep, type IUserRepository, type ListIndicatorsHandler,
   type ListPendingInvitationsHandler, type ListReportingPeriodsHandler, type SetPeriodEntryWindowHandler, type SetSimpleReviewHandler,
-  type SetupEntryWindowWriter, type SetupFormWriter, type SetupInviter, type SetupReviewModeWriter, type SetupUserDirectory,
+  type SetupEntryWindowWriter, type SetupFormWriter, type SetupLibraryLinkWriter, type SetupInviter, type SetupReviewModeWriter, type SetupUserDirectory,
 } from "@donordesk/application";
 import type { AuthenticatedContext } from "@donordesk/application";
 import { TenantId, isRateIndicator, ok, type BudgetCostCategory, type Role } from "@donordesk/domain";
@@ -35,6 +35,8 @@ export interface LaunchStepDeps {
 /** What the step that puts the team on the project needs besides handlers: who has an account, where the rest are kept, time and ids. */
 export interface LaunchStepExtras {
   users: SetupUserDirectory;
+  /** Links the indicators the wizard created to the sector library entries they were chosen from. */
+  libraryLinks: SetupLibraryLinkWriter;
   pending: IPendingMemberRepository;
   now: () => Date;
   newId: () => string;
@@ -129,7 +131,7 @@ export function createLaunchSteps(deps: () => LaunchStepDeps, extras: LaunchStep
     apply: (ctx, templateId, input) => d.applyDashboardTemplate.handle(ctx, templateId, { projectId: input.projectId, name: input.name, scope: "PROJECT", mapping: input.mapping }),
   };
   return [
-    new ReviewModeStep(review), new EntryWindowsStep(windows), new FormsStep(forms),
+    new LibraryLinksStep(extras.libraryLinks), new ReviewModeStep(review), new EntryWindowsStep(windows), new FormsStep(forms),
     new ResponsibilitiesStep(extras.users, members, extras.pending, appliers, extras.now, extras.newId),
     new BudgetLinesStep(planRows(d), budget), new DashboardStep(dashboard), new InvitationsStep(inviter),
     new ActivationStep({ activate: async (ctx, projectId) => { const r = await d.updateProject.handle(ctx, projectId, { status: "ACTIVE" }); return r.ok ? ok(undefined) : r; } }),

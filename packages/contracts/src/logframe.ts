@@ -85,6 +85,15 @@ export const CreateIndicatorSchema = z.object({
   targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
   countedElsewhere: z.boolean().optional(),
   formula: IndicatorFormulaSchema.optional(),
+  /** The sector library entry the indicator is copied from (phase 46): its id and version, and the stored link. */
+  library: z.object({ id: z.string().min(1).max(60), version: z.number().int().min(1), linkJson: z.string().max(8000) }).optional(),
+  /** How the indicator is read, when the source says so (a library entry does); a person still confirms it unless the status says otherwise. */
+  semantics: z.object({
+    aggregation: z.enum(["SUM", "AVERAGE", "LATEST"]),
+    direction: z.enum(["HIGHER_IS_BETTER", "LOWER_IS_BETTER", "NEUTRAL"]),
+    reportingBasis: z.enum(["PERIOD", "CUMULATIVE"]),
+    status: z.enum(["INFERRED", "REQUIRES_REVIEW"]),
+  }).optional(),
 });
 export type CreateIndicatorInput = z.infer<typeof CreateIndicatorSchema>;
 

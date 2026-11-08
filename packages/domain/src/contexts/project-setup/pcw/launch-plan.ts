@@ -57,7 +57,7 @@ export function projectInputFromDraft(draft: SetupDraft, ctx: LaunchContext): La
   const idFor = (role: string): string | undefined => { const e = emailOf(role); return e ? ctx.userIdByEmail.get(e) : undefined; };
   const meOfficerId = idFor("ME_OFFICER");
   const currency = draft.extras.finance.reportingCurrency ?? (isLive(f.currency) ? f.currency.value : undefined);
-  const summary = isLive(f.summary) ? f.summary.value : undefined;
+  const summary = withAssessment(isLive(f.summary) ? f.summary.value ?? undefined : undefined, draft);
   return {
     ok: true,
     input: {
@@ -67,6 +67,14 @@ export function projectInputFromDraft(draft: SetupDraft, ctx: LaunchContext): La
       ...(currency ? { budgetCurrency: currency } : {}), ...(summary ? { description: summary.slice(0, 2000) } : {}), ...(meOfficerId ? { meOfficerId } : {}),
     },
   };
+}
+
+/** The chosen sectors' starting assessment answers, added under the summary so they travel with the project. */
+function withAssessment(summary: string | undefined, draft: SetupDraft): string | undefined {
+  const answers = Object.entries(draft.extras.libraryAnswers ?? {});
+  if (answers.length === 0) return summary;
+  const lines = answers.map(([k, v]) => `- ${k.replace(/-/g, " ")}: ${v}`).join("\n");
+  return `${summary ? `${summary}\n\n` : ""}Starting assessment\n${lines}`;
 }
 
 /** The days a period's entry opens and closes, from the rule and the period's last day. */
@@ -80,6 +88,7 @@ export function entryWindowFor(periodEnd: string, rule: WindowRule): { opensOn: 
  * product already treats as "not started"; the last step makes it active, so it is active only when everything before it worked.
  */
 export const LAUNCH_STEPS = [
+  { key: "LIBRARY_LINKS", label: "Link indicators to the sector library" },
   { key: "REVIEW_MODE", label: "How values are checked" },
   { key: "ENTRY_WINDOWS", label: "When values can be entered" },
   { key: "FORMS", label: "Draft forms for field collection" },

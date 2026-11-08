@@ -14,6 +14,14 @@
       "types": "./dist/contexts/finance/register-sheet.d.ts",
       "import": "./dist/contexts/finance/register-sheet.js"
     },
+    "./contexts/sector-library/sectors.js": {
+      "types": "./dist/contexts/sector-library/sectors.d.ts",
+      "import": "./dist/contexts/sector-library/sectors.js"
+    },
+    "./contexts/sector-library/reference-verdict.js": {
+      "types": "./dist/contexts/sector-library/reference-verdict.d.ts",
+      "import": "./dist/contexts/sector-library/reference-verdict.js"
+    },
     "./core/slugify.js": {
       "types": "./dist/core/slugify.d.ts",
       "import": "./dist/core/slugify.js"

@@ -1,5 +1,6 @@
 import type { MessageKey } from "./en.ts";
 import { recordAr } from "./record-ar.ts";
+import { libraryAr } from "./library-ar.ts";
 import { canvasAr } from "./canvas-ar.ts";
 
 /**
@@ -717,4 +718,5 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.sources.link": "مصادر الخرائط وتراخيصها",
   ...recordAr,
   ...canvasAr,
+  ...libraryAr,
 };

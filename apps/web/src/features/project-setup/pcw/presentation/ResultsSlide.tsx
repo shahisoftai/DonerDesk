@@ -13,6 +13,7 @@ import { LEVELS, needsParent, parentChoices, treeRows, unconfirmedCodes } from "
 import { moveParents } from "../domain/parity-view";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
+import { WizardLibraryPanel } from "@/features/sector-library/presentation/WizardLibraryPanel";
 
 /** Slide 3: the results framework as a tree. Anything from a document waits to be accepted; anything typed here is yours already. */
 export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void }) {
@@ -55,6 +56,7 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
 
   return (
     <div className="space-y-6">
+      <WizardLibraryPanel id={id} view={view} onView={onView} />
       <AcceptAllWaiting id={id} area="LOGFRAME" items={view.logframe} onView={onView} onError={setError} />
       {rows.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.empty}</p> : (
         <ul className="space-y-1">

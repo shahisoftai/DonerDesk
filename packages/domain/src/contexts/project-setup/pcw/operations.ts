@@ -14,6 +14,8 @@ import { ALL_REPORT_TYPES } from "../../reporting/default-template.js";
 import { suggestBudgetLinks } from "./suggesters/budget-links.js";
 import { isRateForForm, suggestMethods } from "./suggesters/collection-method.js";
 import { suggestSetupLinks, type SetupLinkSuggestion } from "./suggesters/plan-links.js";
+import { SECTOR_REGISTRY } from "../../sector-library/sectors.js";
+import { LIBRARY_SECTOR_IDS, type LibrarySectorId } from "../../sector-library/model.js";
 
 export type SetupOperation =
   | { kind: "SET_START"; patch: Partial<Pick<SetupStart, "donor" | "sector" | "country" | "packId">> }
@@ -33,7 +35,9 @@ export type SetupOperation =
   | { kind: "ACCEPT_SUGGESTIONS"; ids: string[] }
   | { kind: "ACCEPT_METHOD_SUGGESTIONS"; ids: string[] }
   | { kind: "ACCEPT_BUDGET_SUGGESTIONS"; ids: string[] }
-  | { kind: "SET_DASHBOARD"; templateKey: string | null };
+  | { kind: "SET_DASHBOARD"; templateKey: string | null }
+  | { kind: "SET_SECTORS"; sectorIds: string[] }
+  | { kind: "SET_LIBRARY_ANSWER"; key: string; value: string };
 
 export type OperationResult = { ok: true; draft: SetupDraft } | { ok: false; reason: string };
 
@@ -59,7 +63,26 @@ export function personReferences(draft: SetupDraft, key: string): string[] {
 
 const emailProblem = (email: string | null | undefined): string | null => (email === null || email === undefined || EMAIL.test(email) ? null : "That email address does not look right.");
 
+/** The sectors chosen, as ids the library knows, the first being the main one. The project stores the older sector word of the main one. */
+function chooseSectors(d: SetupDraft, ids: readonly string[]): OperationResult {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return withExtras(d, { start: { ...omitSectors(d.extras.start) } });
+  const unknown = unique.find((i) => !(LIBRARY_SECTOR_IDS as readonly string[]).includes(i));
+  if (unknown) return refuse("One of the sectors is not known.");
+  const main = SECTOR_REGISTRY[unique[0] as LibrarySectorId];
+  if (main.attached) return refuse("Choose a main sector first; protection, accountability and similar packs are added to every project.");
+  return withExtras(d, { start: { ...d.extras.start, sectors: unique, sector: main.projectSector } });
+}
+const omitSectors = (s: SetupStart): SetupStart => { const { sectors: _sectors, ...rest } = s; return rest; };
+
 export const DRAFT_OPERATIONS: { [K in SetupOperation["kind"]]: Handler<K> } = {
+  SET_SECTORS: (d, { sectorIds }) => chooseSectors(d, sectorIds),
+  SET_LIBRARY_ANSWER: (d, { key, value }) => {
+    if (!/^[a-z][a-z0-9-]{0,59}$/.test(key)) return refuse("That question is not known.");
+    const answers = { ...(d.extras.libraryAnswers ?? {}) };
+    if (value.trim()) answers[key] = value.trim().slice(0, 600); else delete answers[key];
+    return withExtras(d, { libraryAnswers: answers });
+  },
   SET_START: (d, op) => withExtras(d, { start: { ...d.extras.start, ...op.patch } }),
   ADD_PERSON: (d, { person }) => {
     if (!person.key.trim() || !person.name.trim()) return refuse("A person needs a name.");

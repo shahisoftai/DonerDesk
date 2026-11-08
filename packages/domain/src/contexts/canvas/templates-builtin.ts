@@ -5,20 +5,13 @@
  * runs live as a dashboard and publishes as an infographic. They are drafts the person edits freely; applying one never fills authored
  * text, so nothing unwritten can be published by accident.
  */
-import type { BlockInstance, CanvasPage } from "./canvas.js";
-import type { CanvasTemplate, TemplateRole } from "./template.js";
-
-type At = [x: number, y: number, w: number, h: number];
-const block = (id: string, kind: string, [x, y, w, h]: At, props: unknown): BlockInstance => ({ id, kind, bounds: { x, y, w, h }, props, bindings: [] });
-const page = (blocks: BlockInstance[], format = "WEB_FLUID"): CanvasPage[] => [{ id: "page-1", title: "Page 1", format, blocks }];
-const role = (key: string, label: string, required = false): TemplateRole => ({ key, label, required, accepts: "INDICATOR" });
-const kpi = (id: string, at: At, key: string) => block(id, "KPI", at, { indicatorId: `{{role:${key}}}`, includeDraft: false });
-const chart = (id: string, at: At, key: string, kind: string, title: string) => block(id, "CHART", at, { spec: { version: 2, kind, title, dataset: { template: "INDICATOR_OVER_TIME", indicatorIds: [`{{role:${key}}}`], measure: "PERIOD", showTarget: true, includeDraft: false } } });
-const fig = (label: string, source: string) => ({ label, source });
+import type { CanvasTemplate } from "./template.js";
+import { block, chart, fig, kpi, page, role } from "./template-kit.js";
+import { LIBRARY_CANVAS_TEMPLATES } from "../sector-library/generated-templates.js";
 
 const base = { origin: "BUILT_IN" as const, revision: 1 };
 
-export const BUILT_IN_CANVAS_TEMPLATES: readonly CanvasTemplate[] = [
+const CORE_CANVAS_TEMPLATES: readonly CanvasTemplate[] = [
   {
     ...base, id: "builtin-flash-update", title: "Flash update", family: "FLASH",
     description: "A one-page update after an event or a period: headline figures, who was reached, what changed, and who is doing what where.",
@@ -112,5 +105,8 @@ export const BUILT_IN_CANVAS_TEMPLATES: readonly CanvasTemplate[] = [
     ]) },
   },
 ];
+
+/** The eight general starters, then one results canvas per sector built from the sector library. */
+export const BUILT_IN_CANVAS_TEMPLATES: readonly CanvasTemplate[] = [...CORE_CANVAS_TEMPLATES, ...LIBRARY_CANVAS_TEMPLATES];
 
 export const builtInCanvasTemplate = (id: string): CanvasTemplate | undefined => BUILT_IN_CANVAS_TEMPLATES.find((t) => t.id === id);

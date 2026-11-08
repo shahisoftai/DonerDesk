@@ -133,6 +133,9 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
         formulaJson: i.formula ? JSON.stringify(i.formula) : null,
         countedElsewhere: i.countedElsewhere,
+        libraryId: i.libraryId ?? null,
+        libraryVersion: i.libraryVersion ?? null,
+        libraryJson: i.libraryJson ?? null,
       },
     });
     return ok(i);
@@ -160,6 +163,9 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
         formulaJson: i.formula ? JSON.stringify(i.formula) : null,
         countedElsewhere: i.countedElsewhere,
+        libraryId: i.libraryId ?? null,
+        libraryVersion: i.libraryVersion ?? null,
+        libraryJson: i.libraryJson ?? null,
       },
     });
     return ok(i);
@@ -205,6 +211,9 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     targetScheduleJson: string | null;
     formulaJson: string | null;
     countedElsewhere: boolean;
+    libraryId: string | null;
+    libraryVersion: number | null;
+    libraryJson: string | null;
     archivedAt: Date | null;
     createdAt: Date;
   }): Indicator {
@@ -231,6 +240,9 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         targetSchedule: parseTargetSchedule(row.targetScheduleJson),
         formula: parseFormula(row.formulaJson),
         countedElsewhere: row.countedElsewhere,
+        ...(row.libraryId ? { libraryId: row.libraryId } : {}),
+        ...(row.libraryVersion !== null ? { libraryVersion: row.libraryVersion } : {}),
+        ...(row.libraryJson ? { libraryJson: row.libraryJson } : {}),
         archivedAt: row.archivedAt ?? undefined,
       },
     });

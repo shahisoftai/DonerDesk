@@ -22,6 +22,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
   if (hasCapability(ctx, "org.manage")) {
     tabs.push({ label: "Finance", href: "/settings/finance" });
     tabs.push({ label: "Starting answers", href: "/settings/setup-packs" });
+    tabs.push({ label: "Sector library", href: "/settings/sector-library" });
     tabs.push({ label: "Integrations", href: "/settings/integrations" });
     tabs.push({ label: "AI usage", href: "/settings/ai-usage" });
   }

@@ -20,6 +20,10 @@ export interface SetupFormWriter {
   /** A draft form from one indicator; refuses one that is calculated or not a running sum, in a sentence. */
   createDraft(ctx: AuthenticatedContext, indicatorId: string): R<{ id: string; notes: string[] }>;
 }
+/** Writes the link between an indicator the wizard created and the sector library entry it was chosen from. */
+export interface SetupLibraryLinkWriter {
+  link(ctx: AuthenticatedContext, projectId: string, items: ReadonlyArray<{ code: string; libraryId: string; libraryVersion: number; linkJson: string }>): R<{ linked: number; notes: string[] }>;
+}
 export interface SetupInviter {
   /** Lower-cased emails with an invitation still waiting, so a repeat never invites twice. */
   pendingEmails(ctx: AuthenticatedContext): R<Set<string>>;

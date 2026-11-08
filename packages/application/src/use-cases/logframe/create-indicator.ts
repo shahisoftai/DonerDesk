@@ -43,6 +43,8 @@ export class CreateIndicatorHandler {
       targetSchedule: sortedTargetSchedule(input.targetSchedule ?? []),
       countedElsewhere: input.countedElsewhere ?? false,
       ...(formula?.ok ? { formula: formula.value } : {}),
+      ...(input.semantics ? { semanticsJson: JSON.stringify(input.semantics) } : {}),
+      ...(input.library ? { libraryId: input.library.id, libraryVersion: input.library.version, libraryJson: input.library.linkJson } : {}),
     });
     const saved = await this.repo.create(ind);
     if (!saved.ok) return saved;

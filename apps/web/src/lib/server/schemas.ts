@@ -363,6 +363,8 @@ export const IndicatorItemSchema = z.object({
   formula: z.object({ op: z.enum(["RATIO", "SUM", "DIFFERENCE"]), terms: z.array(z.string()), percent: z.boolean().optional() }).optional(),
   /** Counted by another project too: left out of the portfolio totals. */
   countedElsewhere: z.boolean().default(false),
+  /** The sector library entry the indicator was copied from, with its reference standard (phase 46). */
+  library: z.object({ id: z.string(), version: z.number(), adoptedOn: z.string(), referenceText: z.string().nullable(), referenceStandard: z.custom<import("@donordesk/domain").ReferenceStandard>().nullable() }).nullable().default(null),
   semantics: z
     .object({
       aggregation: z.string(),
@@ -429,6 +431,8 @@ export const PeriodIndicatorRowSchema = z.object({
   calculation: z.string().optional(),
   /** Target met / below target on the values entered, or why there is no light. */
   stoplight: z.object({ light: z.enum(["MET", "BELOW", "NONE"]), target: z.string().optional(), compared: z.string().optional(), variance: z.string().optional(), note: z.string() }).optional(),
+  /** The reference standard of the library entry the indicator was copied from: a phrase and the standard itself (never the target). */
+  reference: z.object({ text: z.string(), standard: z.custom<import("@donordesk/domain").ReferenceStandard>() }).optional(),
   breakdownMustSum: z.boolean().optional(),
   targetGroups: z.array(z.object({ dimension: z.string(), category: z.string() })).default([]),
   requiresDenominator: z.boolean(),

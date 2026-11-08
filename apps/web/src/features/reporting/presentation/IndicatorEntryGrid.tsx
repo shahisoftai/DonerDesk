@@ -1,5 +1,6 @@
 "use client";
 
+import { ReferenceVerdictLine } from "@/features/sector-library/presentation/ReferenceVerdictLine";
 import Link from "next/link";
 import { collectionText } from "@/features/tasks/domain/collection-view";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -891,6 +892,7 @@ function LevelGroupRows({
                   </span>
                 )}
                 {row.stoplight?.light === "NONE" && <span className="mt-1 block text-[11px] text-slate-500 dark:text-slate-400" title={row.stoplight.note}>Not judged</span>}
+                {row.reference ? <ReferenceVerdictLine text={row.reference.text} standard={row.reference.standard} value={row.aggregation === "SUM" ? row.update?.cumulativeAchievement : row.update?.periodAchievement} unit={row.unit} /> : null}
               </td>
               <td className="min-w-[140px] px-3 py-2">
                 {row.type === "YES_NO" ? (

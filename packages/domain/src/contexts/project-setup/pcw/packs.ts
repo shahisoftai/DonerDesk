@@ -29,13 +29,18 @@ export interface DefaultPack {
   windowRule?: WindowRule;
   risks: readonly RiskDef[];
   dashboardTemplate?: string;
+  /** Made from the sector library (Phase 46), not written by hand: it ranks below an organisation's own general pack. */
+  fromLibrary?: boolean;
 }
 
-/** The organisation's own pack for the sector, else the built-in one, else the organisation's generic, else the built-in generic. */
+/**
+ * The organisation's own pack for the sector, else the hand-written built-in one, else the organisation's generic, else the pack made
+ * from the sector library, else the built-in generic. What an organisation wrote for itself always outranks what was made for it.
+ */
 export function resolvePack(packs: readonly DefaultPack[], sector: string | undefined): DefaultPack | null {
-  const pick = (source: DefaultPack["source"], s: string | null) => packs.find((p) => p.source === source && p.sector === s);
+  const pick = (source: DefaultPack["source"], s: string | null, fromLibrary = false) => packs.find((p) => p.source === source && p.sector === s && Boolean(p.fromLibrary) === fromLibrary);
   const wanted = sector?.trim() ? sector.trim().toUpperCase() : null;
-  return (wanted && (pick("ORGANISATION", wanted) ?? pick("BUILT_IN", wanted))) || pick("ORGANISATION", null) || pick("BUILT_IN", null) || null;
+  return (wanted && (pick("ORGANISATION", wanted) ?? pick("BUILT_IN", wanted))) || pick("ORGANISATION", null) || (wanted && pick("BUILT_IN", wanted, true)) || pick("BUILT_IN", null) || null;
 }
 
 export interface PackApplication {

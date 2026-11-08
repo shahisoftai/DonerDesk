@@ -79,7 +79,10 @@ export interface FinanceExtras {
 
 export interface SetupStart {
   donor?: string;
+  /** The word a project stores (`Project.sector`); set from the first chosen library sector. */
   sector?: string;
+  /** The library sectors chosen (Phase 46), the first being the main one; the others add their indicators and packs. */
+  sectors?: string[];
   country?: string;
   /** The default pack applied (fill-only); absent until one is chosen. */
   packId?: string;
@@ -116,6 +119,8 @@ export interface SetupExtras {
   dashboardTemplate?: string;
   /** Requirement key -> "not used". */
   answers: Record<string, NotUsedAnswer>;
+  /** Answers to the chosen sectors' starting assessment questions (question key -> answer); written into the project description at launch. */
+  libraryAnswers?: Record<string, string>;
   /** Suggestions a person rejected (`suggester:subject:target`); never offered again. */
   rejectedSuggestions: string[];
   signOff: SetupSignOff;

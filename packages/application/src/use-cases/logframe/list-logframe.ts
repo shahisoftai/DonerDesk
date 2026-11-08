@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, compareLogframeItems, summariseActivityDelivery, describeSemantics, effectiveIndicatorSemantics } from "@donordesk/domain";
+import { DomainError, compareLogframeItems, summariseActivityDelivery, describeSemantics, describeStandard, effectiveIndicatorSemantics, parseLink } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
@@ -51,10 +51,19 @@ export class ListLogframeHandler {
           targetSchedule: i.targetSchedule,
           ...(i.formula ? { formula: i.formula } : {}),
           countedElsewhere: i.countedElsewhere,
+          library: libraryInfo(i.libraryJson),
           semantics: i.semantics,
           semanticsDescription: describeSemantics(effectiveIndicatorSemantics(i), i.type),
         })),
       },
     };
   }
+}
+
+/** What the Logframe page shows of an indicator's library link: which entry, and its reference standard as a phrase and as data. */
+function libraryInfo(json: string | undefined) {
+  const link = parseLink(json);
+  if (!link) return null;
+  const std = link.snapshot.referenceStandard;
+  return { id: link.id, version: link.version, adoptedOn: link.adoptedOn, referenceStandard: std, referenceText: std ? describeStandard(std) : null };
 }

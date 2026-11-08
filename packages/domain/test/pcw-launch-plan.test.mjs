@@ -68,7 +68,7 @@ test("an entry window is counted in days from the period's last day, across mont
 });
 
 test("the wizard's steps are listed in order with a plain name", () => {
-  assert.deepEqual(LAUNCH_STEPS.map((s) => s.key), ["REVIEW_MODE", "ENTRY_WINDOWS", "FORMS", "RESPONSIBILITIES", "BUDGET_LINES", "DASHBOARD", "INVITATIONS", "ACTIVATION"]);
+  assert.deepEqual(LAUNCH_STEPS.map((s) => s.key), ["LIBRARY_LINKS", "REVIEW_MODE", "ENTRY_WINDOWS", "FORMS", "RESPONSIBILITIES", "BUDGET_LINES", "DASHBOARD", "INVITATIONS", "ACTIVATION"]);
   assert.ok(LAUNCH_STEPS.every((s) => s.label.length > 5 && !/[_A-Z]{4,}/.test(s.label)));
   assert.equal(LAUNCH_STEPS.at(-1).key, "ACTIVATION", "starting the project is last: it happens only when everything before it worked");
 });

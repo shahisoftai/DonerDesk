@@ -22,7 +22,8 @@ test("every starter template is valid, a draft, and uses only roles it declares"
   }
   assert.equal(TEMPLATE_SECTOR_ORDER.length, 12);
   assert.ok(templatesForSector("WASH").length >= 1);
-  assert.deepEqual(templatesForSector("CLIMATE"), []);
+  // Every template sector has at least one: the hand-written ones, then those built from the sector library (Phase 46).
+  for (const sector of TEMPLATE_SECTOR_ORDER) assert.ok(templatesForSector(sector).length >= 1, sector);
 });
 
 const projectIndicators = [

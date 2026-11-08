@@ -1,6 +1,6 @@
 # Phase 46 — Sector Library: comprehensive indicators and sector packs (plan, 2026-11-07)
 
-Status: PLAN ONLY. Nothing built. Owner decisions are in §2. Companion content notes: `sphere.md` (repo root; Sphere 2018 draft figures, many marked ◐ = not yet verified).
+Status: BUILT 2026-11-08 (see AGENTS.md "Phase 46 invariants"). Decisions taken while building: no `Project.sectorsJson` (the draft keeps `start.sectors`; the project stores the main sector's older word); the review decision is per organisation (`OrganisationLibraryEntry` kind REVIEW) rather than a separate table; the older `SectorTemplatePack` was left in place, not migrated. Owner decisions are in §2. Companion content notes: `sphere.md` (repo root; Sphere 2018 draft figures, many marked ◐ = not yet verified).
 Sources read for this plan: `AGENTS.md` (Phase 38 wizard and packs, Phase 28 logframe, Phase 33 formula/entry, Phase 34 templates, Phase 45 canvas), `packages/domain/src/contexts/project-setup/pcw/packs-built-in.ts`, `…/templates/sector-template-pack.ts`, `…/identity/role.ts` (`SECTORS`), `…/dashboards/dashboard-templates.ts` (`TEMPLATE_SECTORS`).
 
 ---

@@ -16,7 +16,7 @@ function chain() {
 }
 
 test("every result operation kind has a handler", () => {
-  assert.deepEqual(Object.keys(RESULT_OPERATIONS).sort(), ["ADD_INDICATOR", "ADD_NODE", "BULK_INDICATORS", "EDIT_INDICATOR", "EDIT_NODE_TITLE"]);
+  assert.deepEqual(Object.keys(RESULT_OPERATIONS).sort(), ["ADD_FROM_LIBRARY", "ADD_FROM_SKELETON", "ADD_INDICATOR", "ADD_NODE", "BULK_INDICATORS", "EDIT_INDICATOR", "EDIT_NODE_TITLE"]);
 });
 
 test("a typed chain gets codes, belongs to the person, and closes the results requirements", () => {

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { LogframeResponseSchema, OrganizationSchema, ArchivedIndicatorsResponseSchema, ProjectsResponseSchema } from "@/lib/server/schemas";
+import { LogframeResponseSchema, OrganizationSchema, ArchivedIndicatorsResponseSchema, ProjectsResponseSchema, ProjectDetailSchema } from "@/lib/server/schemas";
 import { CopySetupPanel } from "@/features/logframe/presentation/CopySetupPanel";
 import { ArchivedIndicatorsPanel } from "@/features/logframe/presentation/ArchivedIndicatorsPanel";
 import { InlineError } from "@/components/feedback/PageState";
@@ -10,15 +10,19 @@ import { LogframeTreeEditor } from "@/features/logframe/presentation/LogframeTre
 import { SemanticsBadge } from "@/features/logframe/presentation/SemanticsBadge";
 import { ConfirmSemanticsButton } from "@/features/logframe/presentation/ConfirmSemanticsButton";
 import { isLogframeReorderEnabled } from "@/lib/shared/feature-flags";
+import { ProjectLibraryPanel } from "@/features/sector-library/presentation/ProjectLibraryPanel";
+import { ReferenceTag } from "@/features/sector-library/presentation/ReferenceTag";
+import { findSector } from "@donordesk/domain/contexts/sector-library/sectors.js";
 
 export const dynamic = "force-dynamic";
 
 export default async function LogframePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const ctx = await requireSession();
-  const [result, orgResult] = await Promise.all([
+  const [result, orgResult, projectResult] = await Promise.all([
     gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token),
     gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${resolvedParams.id}`, ProjectDetailSchema, ctx.token),
   ]);
   const driveConnected = orgResult.ok && orgResult.value.storageProvider === "GOOGLE_DRIVE";
   if (!result.ok) {
@@ -51,6 +55,9 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
         )
       : [];
   const canReorder = isLogframeReorderEnabled() && ctx.capabilities.has("logframe.edit");
+  // The picker opens on the library sectors the project belongs to: its main sector, and the sectors of indicators it already copied.
+  const main = projectResult.ok ? findSector(projectResult.value.sector) : null;
+  const libraryScope = main ? [main.id] : [];
 
   return (
     <div className="animate-fade-in" data-tour-id="logframe-indicator-list">
@@ -95,6 +102,13 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
             </Link>
           </div>
         </div>
+        {canConfirm ? (
+          <ProjectLibraryPanel
+            projectId={resolvedParams.id}
+            targets={data.items.map((n) => ({ id: n.id, label: `${n.level.toLowerCase()} ${n.code ?? ""} ${n.title}`.replace(/\s+/g, " ").trim() }))}
+            projectSector={libraryScope}
+          />
+        ) : null}
         <div className="table-shell mt-3">
           <table className="w-full text-sm">
             <caption className="sr-only">Project indicators</caption>
@@ -115,7 +129,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
               {data.indicators.map((i) => (
                 <tr key={i.id} className="trow">
                   <td className="px-3 py-2 font-mono">{i.code}</td>
-                  <td className="px-3 py-2"><Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/indicators/${i.id}`}>{i.name}</Link></td>
+                  <td className="px-3 py-2"><Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/indicators/${i.id}`}>{i.name}</Link>{i.library ? <span className="ms-2 rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-900 dark:bg-brand-900/40 dark:text-brand-100" data-testid="library-badge">Sector library</span> : null}{i.library?.referenceText ? <ReferenceTag entry={{ standardText: i.library.referenceText, referenceStandard: i.library.referenceStandard ?? undefined }} /> : null}</td>
                   <td className="px-3 py-2">{i.type?.toLowerCase().replace("_", " ") ?? "—"}</td>
                   <td className="px-3 py-2">{i.baseline || "—"}</td>
                   <td className="px-3 py-2">{i.target}{i.unit ? ` ${i.unit}` : ""}</td>

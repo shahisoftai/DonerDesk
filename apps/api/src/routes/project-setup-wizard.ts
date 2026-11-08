@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { SETUP_AREA_KEYS, type SetupAreaKey, type SetupOperation, type ResultOperation, type PlaceOperation, type PlanOperation, type FinanceOperation, type RiskOperation } from "@donordesk/domain";
 import { MAX_SETUP_DOCUMENTS } from "@donordesk/application";
-import { ApplySetupProposalSchema, EditSetupProposalSchema, SetSetupDocumentKindSchema, SetupAreaSelectionSchema, SetupAssistSettingsSchema, SetupPackSchema, SetupAreaKeySchema, SetupOperationSchema, SetupFinanceOperationSchema, SetupPlaceOperationSchema, SetupPlanOperationSchema, SetupResultOperationSchema, SetupRiskOperationSchema, StartBlankSetupSchema, StartSetupTextSchema } from "@donordesk/contracts";
+import { ApplySetupProposalSchema, EditSetupProposalSchema, SetSetupDocumentKindSchema, SetupAreaSelectionSchema, SetupAssistSettingsSchema, SetupPackSchema, SetupAreaKeySchema, SetupOperationSchema, SetupFinanceOperationSchema, SetupPlaceOperationSchema, SetupPlanOperationSchema, SetupResultOperationSchema, SetupLibraryOperationSchema, SetupRiskOperationSchema, StartBlankSetupSchema, StartSetupTextSchema } from "@donordesk/contracts";
 
 /**
  * The AI project setup wizard's routes (Phase 36). The older `project-setup.ts` file is the setup checklist; these are
@@ -37,6 +37,15 @@ export async function registerProjectSetupWizardRoutes(app: FastifyInstance) {
     const id = (req.params as { id: string }).id;
     const op = SetupResultOperationSchema.parse(req.body) as unknown as ResultOperation;
     const r = await req.container.handlers.changeSetupResults.handle({ tenant: req.tenant, requestId: req.id }, id, op);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // Choosing from the sector library (Phase 46): the request names entries by id, the server resolves them.
+  app.post("/v1/project-setup/drafts/:id/library", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const op = SetupLibraryOperationSchema.parse(req.body);
+    const r = await req.container.handlers.addSetupLibrary.handle({ tenant: req.tenant, requestId: req.id }, id, op);
     if (!r.ok) throw r.error;
     return r.value;
   });

@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DEFAULT_ENTRY_DUE_DAYS, DomainError, describeFormula, summarizePeriodData, describePeriodData, entryStoplight, describeEntryWindow, entryWindowRefusal, Permissions, type Role, type EntryStoplight, type PeriodDataSummary, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
+import { DEFAULT_ENTRY_DUE_DAYS, DomainError, describeStandard, parseLink, describeFormula, summarizePeriodData, describePeriodData, entryStoplight, describeEntryWindow, entryWindowRefusal, Permissions, type Role, type EntryStoplight, type PeriodDataSummary, collectionDue, collectionOwner, toPlainDate, disaggregationMustSum, indicatorParticipantHint, isDueInPeriod, effectiveIndicatorSemantics, latestPreviousValues, type PreviousIndicatorValue } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -44,6 +44,8 @@ export interface PeriodIndicatorRow {
   calculation?: string;
   /** Target met / below target on the values entered (drafts included), or why there is no light. Absent without a value. */
   stoplight?: EntryStoplight;
+  /** The reference standard of the sector library entry this indicator was copied from (phase 46): shown beside the target, never the target. */
+  reference?: { text: string; standard: import("@donordesk/domain").ReferenceStandard };
   /** This indicator's value from the latest earlier period, to repeat or add to; absent when there is none. */
   previous?: PreviousIndicatorValue;
   /** A non-blocking prompt when linked activities record a different head-count than the indicator reports. */
@@ -154,6 +156,7 @@ export class ListPeriodIndicatorsHandler {
         breakdownMustSum: disaggregationMustSum(ind.type),
         targetGroups: (ind.targetBreakdowns ?? []).map((g) => ({ dimension: g.dimension, category: g.category })),
         requiresDenominator,
+        ...referenceOf(ind.libraryJson),
         logframeLevel: item?.level ?? null,
         logframeCode: item?.code ?? null,
         logframeTitle: item?.title ?? null,
@@ -198,4 +201,9 @@ export class ListPeriodIndicatorsHandler {
       },
     };
   }
+}
+
+function referenceOf(json: string | undefined): { reference?: { text: string; standard: import("@donordesk/domain").ReferenceStandard } } {
+  const std = parseLink(json)?.snapshot.referenceStandard;
+  return std ? { reference: { text: describeStandard(std), standard: std } } : {};
 }
