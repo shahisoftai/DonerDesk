@@ -17,6 +17,20 @@ function err<T = never>(e: DomainError): Result<T, DomainError> {
   return { ok: false, error: e };
 }
 
+/**
+ * What a failed project write says. A project code is unique in a workspace, and the person who typed a taken one needs a sentence about
+ * the code, not the database's own message. Anything else is not for the user's eyes: it is answered plainly and the cause goes to the log.
+ */
+function writeFailure(e: unknown, projectCode: string): DomainError {
+  const known = e as { code?: string; meta?: { target?: unknown } };
+  if (known.code === "P2002") {
+    const target = Array.isArray(known.meta?.target) ? (known.meta?.target as unknown[]).map(String) : [];
+    if (target.length === 0 || target.includes("projectCode")) return new DomainError("CONFLICT", `A project with the code "${projectCode}" already exists in this workspace. Use a different project code.`);
+  }
+  console.error("project write failed", e);
+  return new DomainError("CONFLICT", "The project could not be saved. Try again, and if it keeps failing ask for help.");
+}
+
 export class PrismaProjectRepository implements IProjectRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -54,7 +68,7 @@ export class PrismaProjectRepository implements IProjectRepository {
       });
       return ok(p);
     } catch (e) {
-      return err(new DomainError("CONFLICT", String(e)));
+      return err(writeFailure(e, p.projectCode));
     }
   }
 
@@ -90,7 +104,7 @@ export class PrismaProjectRepository implements IProjectRepository {
       });
       return ok(p);
     } catch (e) {
-      return err(new DomainError("CONFLICT", String(e)));
+      return err(writeFailure(e, p.projectCode));
     }
   }
 

@@ -111,6 +111,19 @@ test("an edit on one slide re-opens what it breaks on another", () => {
   assert.equal(openKeys(e).includes("results.chain"), true);
 });
 
+test("an indicator that measures no result of the project is a gap that names it, so it is never launched unplaced", () => {
+  const d = completeDraft();
+  assert.equal(openKeys(d).includes("indicators.placed"), false);
+  d.proposal.indicators[0].value.logframeCode = null;
+  assert.ok(openKeys(d).includes("indicators.placed"));
+  const gap = gapInbox(results(d)).find((r) => r.key === "indicators.placed");
+  assert.equal(gap.code, "indicatorUnplaced");
+  assert.equal(gap.params.first, "I1");
+  const gone = completeDraft();
+  gone.proposal.indicators[0].value.logframeCode = "NOT-A-RESULT";
+  assert.ok(openKeys(gone).includes("indicators.placed"), "a code that is no longer a result of the project is unplaced too");
+});
+
 test("the inbox follows slide order and names the first thing to fix", () => {
   const d = completeDraft();
   d.extras.team = d.extras.team.filter((p) => p.role !== "PROJECT_MANAGER");

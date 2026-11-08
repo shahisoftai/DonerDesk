@@ -39,6 +39,7 @@ export const PCW_AR: PcwBundle = {
     outputWithoutIndicator: (p) => `${first(p)}${more(p)} ليس له مؤشر بعد.`,
     indicatorIncomplete: (p) => `ينقص المؤشر ${first(p)}${more(p)} النوع أو التكرار أو القيمة الأساسية أو المستهدف.`,
     indicatorWithoutOwner: (p) => `اختر المسؤول عن المؤشر ${first(p)}${more(p)}.`,
+    indicatorUnplaced: (p) => `اختر النتيجة التي يقيسها المؤشر ${first(p)}${more(p)}.`,
     directionUnconfirmed: (p) => `أكّد هل الأفضل قيمة أعلى أم أقل للمؤشر ${first(p)}${more(p)}.`,
     placesEmpty: () => "أضف الأماكن التي يعمل فيها المشروع، أو اذكر أنه لا يوجد.",
     placesUndecided: (p) => `أماكن بانتظار تأكيدك أو حذفك: ${p.count}.`,
@@ -86,7 +87,7 @@ export const PCW_AR: PcwBundle = {
     },
     indicators: {
       add: "إضافة مؤشر", name: "ما الذي سيُقاس", result: "يقيس", type: "نوع الرقم", unit: "الوحدة", baseline: "القيمة الأساسية",
-      noBaseline: "بلا قيمة أساسية", target: "المستهدف", frequency: "كم مرة", breakdown: "التقسيم حسب (افصل بفواصل)", owner: "المسؤول",
+      noBaseline: "بلا قيمة أساسية", target: "المستهدف", frequency: "كم مرة", frequencyRegular: "بشكل منتظم", frequencyEvent: "عند حدوثه", breakdown: "التقسيم حسب (افصل بفواصل)", owner: "المسؤول",
       direction: "الأفضل عندما تكون القيمة", higher: "أعلى", lower: "أقل", choose: "— اختر —",
       bulk: "املأ لكل المؤشرات التي ما زالت فارغة", applyFrequency: "كم مرة", applyBreakdown: "التقسيم حسب", apply: "املأ",
       empty: "لا توجد مؤشرات بعد. كل مخرج يحتاج مؤشراً واحداً على الأقل.",

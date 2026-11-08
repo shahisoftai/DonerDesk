@@ -16,7 +16,7 @@ export const REQUIREMENT_CODES = [
   "donorMissing", "sectorMissing", "countryMissing",
   "factsMissing", "datesOrder", "managerMissing", "meMissing", "partnersMissing",
   "resultsUndecided", "resultsEmpty", "resultsBroken", "codesUnconfirmed",
-  "indicatorsUndecided", "indicatorsEmpty", "outputWithoutIndicator", "indicatorIncomplete", "indicatorWithoutOwner", "directionUnconfirmed",
+  "indicatorsUndecided", "indicatorsEmpty", "outputWithoutIndicator", "indicatorIncomplete", "indicatorWithoutOwner", "indicatorUnplaced", "directionUnconfirmed",
   "placesEmpty", "placesUndecided", "projectAreaMissing",
   "planUndecided", "planEmpty", "activityWithoutPlan", "planIncomplete", "planWithoutIndicator", "indicatorNotFed",
   "methodMissing", "reviewModeMissing", "windowRuleMissing",

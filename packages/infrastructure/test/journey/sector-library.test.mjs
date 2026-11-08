@@ -76,6 +76,10 @@ test("journey: sectors, library indicators and suggested results through the wiz
   proposal.funding = [item({ sourceName: "European Union", amount: "400000", currency: "EUR" })];
   proposal.budget = [item({ category: "Boreholes", amount: "400000", currency: "EUR", logframeCode: null, kind: "LINE", key: "b1" })];
   proposal.risks = [item({ kind: "RISK", title: "Flooding delays works", seriousness: "HIGH", mitigation: "Work in the dry season" }), item({ kind: "ASSUMPTION", title: "Roads stay open", seriousness: "LOW", mitigation: null })];
+  // An indicator whose wording fits none of the suggested results is not placed by guess: the person is asked, and here they choose.
+  const outputs = proposal.logframe.filter((n) => n.value.level === "OUTPUT").map((n) => n.value.code);
+  const unplaced = proposal.indicators.filter((i) => !i.value.logframeCode);
+  for (const i of unplaced) i.value.logframeCode = outputs[0];
   for (const i of proposal.indicators) { i.value.baseline = "0"; i.value.target = "100"; }
   const extras = JSON.parse(stored.extrasJson ?? JSON.stringify(emptyExtras(false)));
   extras.team = [person("me", "Library Admin", "ME_OFFICER", adminEmail), person("pm", "Pat Manager", "PROJECT_MANAGER", `pm-${stamp}@example.org`)];
@@ -122,7 +126,11 @@ test("journey: sectors, library indicators and suggested results through the wiz
   const offered = browse.groups.flatMap((g) => g.entries).map((e) => e.id);
   assert.ok(!offered.includes("WASH-W-01"));
   assert.ok(offered.includes("WASH-V-01"));
-  const adopted = must(await h.adoptLibraryIndicators.handle(ctx, { projectId, items: [{ libraryId: "WASH-V-01" }, { libraryId: "WASH-Q-01" }] }), "adopt");
+  const output = await c.prisma.logframeItem.findFirst({ where: { projectId, level: "OUTPUT" }, orderBy: { id: "asc" } });
+  const unchosen = must(await h.adoptLibraryIndicators.handle(ctx, { projectId, items: [{ libraryId: "HLT-R-06" }] }), "adopt unplaced");
+  assert.equal(unchosen.created.length, 0, "an indicator that fits no result is not put under one by guess");
+  assert.match(unchosen.skipped[0].reason, /Choose where it goes/);
+  const adopted = must(await h.adoptLibraryIndicators.handle(ctx, { projectId, items: [{ libraryId: "WASH-V-01", logframeItemId: output.id }, { libraryId: "WASH-Q-01", logframeItemId: output.id }] }), "adopt");
   assert.equal(adopted.created.length, 2);
   const h01 = await c.prisma.indicator.findFirst({ where: { projectId, code: "WASH-V-01" } });
   assert.equal(h01.libraryId, "WASH-V-01");
@@ -144,6 +152,12 @@ test("journey: sectors, library indicators and suggested results through the wiz
   // The skeleton on the project reuses results that exist and adds the missing ones.
   const skeleton = must(await h.adoptLibraryLogframe.handle(ctx, { projectId, sectorId: "WASH" }), "skeleton on project");
   assert.ok(skeleton.reused.length >= 3);
+
+  // A project code that is taken is refused with a sentence about the code, not the database's own message.
+  const twin = await h.createProject.handle(ctx, { title: "Twin", projectCode: `LIB-${stamp}`, donorName: "Donor", implementingOrganization: "Org", country: "Uganda", sector: "WASH", startDate: "2027-01-01T00:00:00.000Z", endDate: "2027-12-31T00:00:00.000Z", reportingFrequency: "MONTHLY" });
+  assert.equal(twin.ok, false);
+  assert.match(twin.error.message, new RegExp(`A project with the code "LIB-${stamp}" already exists in this workspace`));
+  assert.doesNotMatch(twin.error.message, /prisma|invocation|constraint/i);
 
   // One organisation's own records are invisible to another (row-level security, not only a filter).
   const other = must(await h.signUp.handle({ name: "Other Admin", email: `other-${stamp}@example.org`, password: "Correct-Horse-9-Battery", organization: { name: `Other Org ${stamp}`, organizationType: "LOCAL_NGO", country: "Kenya", primarySector: "HEALTH" } }), "other tenant");

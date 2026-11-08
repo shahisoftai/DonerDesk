@@ -12,6 +12,10 @@ import type { LibraryBrowser } from "../ports/library-port";
  */
 export function SectorChooser({ browser, value, onChange, disabled }: { browser: LibraryBrowser; value: readonly string[]; onChange: (ids: LibrarySectorId[]) => void; disabled?: boolean }) {
   const { t } = useI18n();
+  // The choice shows at once and is saved behind it; what the draft answers with replaces it.
+  const [shown, setShown] = useState<readonly string[]>(value);
+  useEffect(() => { setShown(value); }, [value.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
+  const choose = (ids: LibrarySectorId[]) => { setShown(ids); onChange(ids); };
   const [sectors, setSectors] = useState<SectorSummary[]>([]);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -20,9 +24,9 @@ export function SectorChooser({ browser, value, onChange, disabled }: { browser:
     return () => { alive = false; };
   }, [browser]);
   const main = sectors.filter((s) => !s.attached);
-  const [first, ...rest] = value as LibrarySectorId[];
-  const setMain = (id: string) => onChange(id ? [id as LibrarySectorId, ...rest.filter((x) => x !== id)] : []);
-  const toggleOther = (id: LibrarySectorId) => onChange([first as LibrarySectorId, ...(rest.includes(id) ? rest.filter((x) => x !== id) : [...rest, id])]);
+  const [first, ...rest] = shown as LibrarySectorId[];
+  const setMain = (id: string) => choose(id ? [id as LibrarySectorId, ...rest.filter((x) => x !== id)] : []);
+  const toggleOther = (id: LibrarySectorId) => choose([first as LibrarySectorId, ...(rest.includes(id) ? rest.filter((x) => x !== id) : [...rest, id])]);
   if (failed) return <p role="alert" className="text-sm text-danger-600">{t("lib.error")}</p>;
   return (
     <div className="space-y-3" data-testid="sector-chooser">

@@ -37,6 +37,7 @@ export const PCW_ES: PcwBundle = {
     outputWithoutIndicator: (p) => `${first(p)}${more(p)} aún no tiene indicador.`,
     indicatorIncomplete: (p) => `Al indicador ${first(p)}${more(p)} le falta el tipo, la frecuencia, el valor inicial o la meta.`,
     indicatorWithoutOwner: (p) => `Elija quién es responsable del indicador ${first(p)}${more(p)}.`,
+    indicatorUnplaced: (p) => `Elija qué resultado mide el indicador ${first(p)}${more(p)}.`,
     directionUnconfirmed: (p) => `Confirme si es mejor un valor más alto o más bajo para ${first(p)}${more(p)}.`,
     placesEmpty: () => "Añada los lugares donde trabaja el proyecto, o indique que no hay.",
     placesUndecided: (p) => `${p.count} ${s(Number(p.count), "lugar espera", "lugares esperan")} a que lo confirme o lo quite.`,
@@ -84,7 +85,7 @@ export const PCW_ES: PcwBundle = {
     },
     indicators: {
       add: "Añadir un indicador", name: "Qué se medirá", result: "Mide", type: "Tipo de número", unit: "Unidad", baseline: "Valor inicial",
-      noBaseline: "Sin valor inicial", target: "Meta", frequency: "Con qué frecuencia", breakdown: "Desglosar por (separar con comas)", owner: "Responsable",
+      noBaseline: "Sin valor inicial", target: "Meta", frequency: "Con qué frecuencia", frequencyRegular: "De forma regular", frequencyEvent: "Cuando ocurre", breakdown: "Desglosar por (separar con comas)", owner: "Responsable",
       direction: "Es mejor cuando es", higher: "Más alto", lower: "Más bajo", choose: "— elegir —",
       bulk: "Completar todos los indicadores que aún no tienen nada", applyFrequency: "Con qué frecuencia", applyBreakdown: "Desglosar por", apply: "Completar",
       empty: "Aún no hay indicadores. Cada producto necesita al menos uno.",

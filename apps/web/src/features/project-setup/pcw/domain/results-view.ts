@@ -1,5 +1,6 @@
 export type DraftItemOrigin = "DOCUMENT" | "SUGGESTED" | "USER";
 import type { IndicatorDef, LogframeNodeDef, SetupLogLevel } from "@donordesk/domain";
+import { FREQUENCY_CHOICES } from "@donordesk/domain/contexts/reporting/indicator-frequency.js";
 import type { SetupDraftView } from "../../../../lib/server/schemas-project-setup-draft.ts";
 
 type NodeItem = SetupDraftView["logframe"][number];
@@ -69,7 +70,12 @@ export function indicatorTargets(items: readonly NodeItem[]): Array<{ code: stri
 
 export const INDICATOR_TYPE_LABEL = { NUMBER: "Number", PERCENTAGE: "Percentage", RATIO: "Ratio", CURRENCY: "Money" } as const;
 export const INDICATOR_TYPES = Object.keys(INDICATOR_TYPE_LABEL) as Array<keyof typeof INDICATOR_TYPE_LABEL>;
-export const FREQUENCIES = ["Monthly", "Quarterly", "Semi-annual", "Annual"] as const;
+export const FREQUENCIES: readonly string[] = FREQUENCY_CHOICES.map((c) => c.value);
+/** The frequencies a person can pick, grouped: a cadence, or "when it happens" (a survey, a distribution, a campaign). */
+export const FREQUENCY_GROUPS = {
+  periodic: FREQUENCY_CHOICES.filter((c) => c.kind === "PERIODIC").map((c) => c.value),
+  event: FREQUENCY_CHOICES.filter((c) => c.kind === "EVENT").map((c) => c.value),
+} as const;
 export const BREAKDOWN_SUGGESTIONS = ["Sex", "Age group", "Disability", "Location"] as const;
 
 export interface IndicatorRow {

@@ -99,7 +99,7 @@ test("browse: sectors with counts, filters, groups, and what the project already
 
 test("adopt copies an entry into a project through the ordinary create handler, with its link and how it is read, and sets no target", async () => {
   const s = store(); const au = audits();
-  const lf = logframeRepo([node("g1", "GOAL", "Goal"), node("o1", "OUTCOME", "Outcome", "OC1"), node("out1", "OUTPUT", "Output", "OP1")]);
+  const lf = logframeRepo([node("g1", "GOAL", "Goal"), node("o1", "OUTCOME", "People have enough safe water for drinking, cooking and hygiene", "OC1"), node("out1", "OUTPUT", "Output", "OP1")]);
   const repo = indicatorRepo();
   const make = creator(repo);
   const handler = new AdoptLibraryIndicatorsHandler(new EffectiveLibraryService(s), repo, lf, make, au, clock);
@@ -122,12 +122,26 @@ test("adopt copies an entry into a project through the ordinary create handler, 
   const elsewhere = await handler.handle(ctx, { projectId: "p1", items: [{ libraryId: "WASH-H-01", logframeItemId: "other-project-node" }] });
   assert.match(elsewhere.value.skipped[0].reason, /not in this project/);
   const empty = await new AdoptLibraryIndicatorsHandler(new EffectiveLibraryService(s), indicatorRepo(), logframeRepo(), creator(indicatorRepo()), au, clock).handle(ctx, { projectId: "p2", items: [{ libraryId: "WASH-W-01" }] });
-  assert.match(empty.value.skipped[0].reason, /no results/);
+  assert.match(empty.value.skipped[0].reason, /Choose where it goes/);
+});
+
+test("an indicator that fits no result of the project is skipped with a plain sentence, never put under the first result at its level", async () => {
+  const lf = logframeRepo([node("out1", "OUTPUT", "Water supply facilities are built, repaired and kept working", "OP1")]);
+  const repo = indicatorRepo();
+  const make = creator(repo);
+  const handler = new AdoptLibraryIndicatorsHandler(new EffectiveLibraryService(store()), repo, lf, make, audits(), clock);
+  const r = await handler.handle(ctx, { projectId: "p1", items: [{ libraryId: "HLT-R-06" }] });
+  assert.ok(r.ok);
+  assert.equal(r.value.created.length, 0);
+  assert.match(r.value.skipped[0].reason, /Choose where it goes/);
+  assert.equal(make.calls.length, 0);
+  const placed = await handler.handle(ctx, { projectId: "p1", items: [{ libraryId: "HLT-R-06", logframeItemId: "out1" }] });
+  assert.equal(placed.value.created.length, 1, "when the person chooses the result, it is added there");
 });
 
 test("a code the project already uses is never reused", async () => {
   const s = store();
-  const lf = logframeRepo([node("out1", "OUTPUT", "Output", "OP1")]);
+  const lf = logframeRepo([node("out1", "OUTPUT", "Toilets are built, safe and used", "OP1"), node("o1", "OUTCOME", "People use safe, clean toilets and the environment is free of human faeces", "OC1")]);
   const repo = indicatorRepo([Indicator.create({ id: "x", tenantId: "tenant-1", projectId: "p1", logframeItemId: "out1", code: "WASH-S-02", name: "mine", type: "NUMBER", baseline: "", target: "" })]);
   const make = creator(repo);
   const r = await new AdoptLibraryIndicatorsHandler(new EffectiveLibraryService(s), repo, lf, make, audits(), clock).handle(ctx, { projectId: "p1", items: [{ libraryId: "WASH-S-02" }] });

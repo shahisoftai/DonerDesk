@@ -9,7 +9,7 @@ import type { EffectiveLibraryService } from "../../services/effective-library.j
 /** The one way an indicator is created: the ordinary handler (its checks, its audit). The library adds nothing of its own to write. */
 export interface IndicatorCreator { handle(ctx: AuthenticatedContext, input: CreateIndicatorInput): Promise<Result<{ id: string }, DomainError>> }
 
-export interface AdoptItem { libraryId: string; /** Where it goes in the results framework. Without it the first result at the entry's own level is used. */ logframeItemId?: string | undefined }
+export interface AdoptItem { libraryId: string; /** Where it goes in the results framework. Without it the result whose wording fits best is used; none fits, it is skipped. */ logframeItemId?: string | undefined }
 export interface AdoptInput { projectId: string; items: readonly AdoptItem[] }
 export interface AdoptResult {
   created: Array<{ libraryId: string; indicatorId: string; code: string }>;
@@ -18,7 +18,7 @@ export interface AdoptResult {
 
 /**
  * Copies library entries into a project as its own indicators. The entry is copied (never referenced) and a link remembers which
- * entry and version it came from. A person puts each where it belongs; if they do not, the first result at the entry's level is used.
+ * entry and version it came from. A person puts each where it belongs; if they do not, the result whose wording fits best is used, and when none fits the indicator is skipped with a plain sentence rather than put somewhere by guess.
  * Baseline and target are left empty: the library never sets a target.
  */
 export class AdoptLibraryIndicatorsHandler {
@@ -58,7 +58,7 @@ export class AdoptLibraryIndicatorsHandler {
         if (!node || node.projectId !== input.projectId) { skip("That result is not in this project."); continue; }
       } else {
         const node = pickNodeFor(entry, nodes.value, BUILT_IN_CONTENT[entry.sectorId].logframe);
-        if (!node) { skip("The project has no results yet. Add the results first, or choose where this indicator goes."); continue; }
+        if (!node) { skip("No result of this project fits this indicator. Choose where it goes."); continue; }
         nodeId = node.id;
       }
       const code = projectCodeFor(entry, taken);

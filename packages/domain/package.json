@@ -186,6 +186,10 @@
       "types": "./dist/contexts/project-setup/index.d.ts",
       "import": "./dist/contexts/project-setup/index.js"
     },
+    "./contexts/reporting/indicator-frequency.js": {
+      "types": "./dist/contexts/reporting/indicator-frequency.d.ts",
+      "import": "./dist/contexts/reporting/indicator-frequency.js"
+    },
     "./contexts/reporting/chart-spec-v2.js": {
       "types": "./dist/contexts/reporting/chart-spec-v2.d.ts",
       "import": "./dist/contexts/reporting/chart-spec-v2.js"

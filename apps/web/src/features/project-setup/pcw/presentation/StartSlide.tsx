@@ -79,7 +79,7 @@ export function StartSlide({ id, view, onView }: { id: string; view: SetupDraftV
       </div>
       <div className="sm:col-span-3 space-y-2">
         <p className="text-sm text-slate-600 dark:text-slate-300">{PCW_COPY.start.sectorsHelp}</p>
-        <button type="button" className="btn-secondary" onClick={usePack} disabled={pending || !start.sector} data-testid="use-starting">{PCW_COPY.start.useStarting}</button>
+        <button type="button" className="btn-secondary" onClick={usePack} disabled={pending || !start.sector || (view.status !== "READY" && view.status !== "PARTIAL")} data-testid="use-starting">{PCW_COPY.start.useStarting}</button>
         {message ? <p role="status" className="text-sm text-slate-700 dark:text-slate-200">{message}</p> : null}
         {error ? <p role="alert" className="text-sm text-danger-600">{error}</p> : null}
       </div>

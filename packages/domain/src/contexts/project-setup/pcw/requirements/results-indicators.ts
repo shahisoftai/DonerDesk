@@ -55,6 +55,16 @@ export const INDICATOR_REQUIREMENTS: readonly RequirementDef[] = [
     },
   },
   {
+    key: "indicators.placed", slide: "INDICATORS", coversSteps: [8], allowsNotUsed: false,
+    check: (d) => {
+      const nodes = live(d.proposal.logframe);
+      const problems = live(d.proposal.indicators)
+        .filter((i) => i.logframeCode === null || !nodes.some((n) => n.code === i.logframeCode))
+        .map((i) => label(i.code, i.title));
+      return allOf(problems, "indicatorUnplaced");
+    },
+  },
+  {
     key: "indicators.complete", slide: "INDICATORS", coversSteps: [8], allowsNotUsed: false,
     check: (d) => {
       const problems = live(d.proposal.indicators)

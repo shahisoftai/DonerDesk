@@ -37,6 +37,7 @@ export const PCW_FR: PcwBundle = {
     outputWithoutIndicator: (p) => `${first(p)}${more(p)} n'a pas encore d'indicateur.`,
     indicatorIncomplete: (p) => `Il manque à l'indicateur ${first(p)}${more(p)} son type, sa fréquence, sa valeur de départ ou sa cible.`,
     indicatorWithoutOwner: (p) => `Choisissez le responsable de l'indicateur ${first(p)}${more(p)}.`,
+    indicatorUnplaced: (p) => `Choisissez le résultat que mesure l'indicateur ${first(p)}${more(p)}.`,
     directionUnconfirmed: (p) => `Confirmez si une valeur plus haute ou plus basse est meilleure pour ${first(p)}${more(p)}.`,
     placesEmpty: () => "Ajoutez les lieux où le projet travaille, ou indiquez qu'il n'y en a pas.",
     placesUndecided: (p) => `${p.count} ${s(Number(p.count), "lieu attend", "lieux attendent")} que vous le confirmiez ou le retiriez.`,
@@ -84,7 +85,7 @@ export const PCW_FR: PcwBundle = {
     },
     indicators: {
       add: "Ajouter un indicateur", name: "Ce qui sera mesuré", result: "Mesure", type: "Type de nombre", unit: "Unité", baseline: "Valeur de départ",
-      noBaseline: "Pas de valeur de départ", target: "Cible", frequency: "Fréquence", breakdown: "Ventiler par (séparer par des virgules)", owner: "Responsable",
+      noBaseline: "Pas de valeur de départ", target: "Cible", frequency: "Fréquence", frequencyRegular: "À intervalles réguliers", frequencyEvent: "Quand cela a lieu", breakdown: "Ventiler par (séparer par des virgules)", owner: "Responsable",
       direction: "Meilleur quand", higher: "Plus haut", lower: "Plus bas", choose: "— choisir —",
       bulk: "Renseigner tous les indicateurs encore vides", applyFrequency: "Fréquence", applyBreakdown: "Ventiler par", apply: "Renseigner",
       empty: "Aucun indicateur pour l'instant. Chaque produit en a besoin d'au moins un.",

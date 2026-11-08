@@ -43,6 +43,7 @@ export const REQUIREMENT_SENTENCES: PcwSentences = {
   outputWithoutIndicator: (p) => `${first(p)}${more(p)} has no indicator yet.`,
   indicatorIncomplete: (p) => `Indicator ${first(p)}${more(p)} is missing its type, frequency, baseline or target.`,
   indicatorWithoutOwner: (p) => `Choose who is responsible for indicator ${first(p)}${more(p)}.`,
+  indicatorUnplaced: (p) => `Choose which result indicator ${first(p)}${more(p)} measures.`,
   directionUnconfirmed: (p) => `Confirm whether higher or lower is better for ${first(p)}${more(p)}.`,
   placesEmpty: () => "Add the places the project works, or say it has none.",
   placesUndecided: (p) => `${p.count} place${Number(p.count) > 1 ? "s are" : " is"} waiting for you to confirm or remove.`,
@@ -96,7 +97,7 @@ export const PCW_COPY = {
   },
   indicators: {
     add: "Add an indicator", name: "What will be measured", result: "Measures", type: "Kind of number", unit: "Unit", baseline: "Starting value",
-    noBaseline: "No starting value", target: "Target", frequency: "How often", breakdown: "Break down by (separate with commas)", owner: "Responsible",
+    noBaseline: "No starting value", target: "Target", frequency: "How often", frequencyRegular: "Regularly", frequencyEvent: "When it happens", breakdown: "Break down by (separate with commas)", owner: "Responsible",
     direction: "Better when", higher: "Higher", lower: "Lower", choose: "— choose —",
     bulk: "Fill in for all indicators with nothing yet", applyFrequency: "How often", applyBreakdown: "Break down by", apply: "Fill in",
     empty: "No indicators yet. Every output needs at least one.",

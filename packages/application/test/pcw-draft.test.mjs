@@ -143,6 +143,25 @@ test("a pack fills the draft from its sector, saves the risks and the decisions,
   assert.equal(s.proposals.byId.get(value.proposalId).proposal.risks.length, stored.proposal.risks.length);
 });
 
+test("a pack still lands when another save wins the race, and what the other save wrote is kept", async () => {
+  for (const lose of ["update", "updateExtras"]) {
+    const s = setup();
+    const { value } = await s.start.handle(as("u1"), { sector: "WASH", country: "Uganda" });
+    let raced = false;
+    const real = s.proposals[lose].bind(s.proposals);
+    s.proposals[lose] = async (...args) => {
+      if (!raced) { raced = true; const r = await s.edit.handle(as("u1"), value.proposalId, { kind: "SET_START", patch: { donor: "Competing save" } }); assert.equal(r.ok, true); }
+      return real(...args);
+    };
+    const r = await s.pack.handle(as("u1"), value.proposalId);
+    assert.equal(r.ok, true, `${lose}: the pack is applied again instead of failing`);
+    const stored = s.proposals.byId.get(value.proposalId);
+    assert.equal(stored.extras.start.packId, "builtin:wash", lose);
+    assert.equal(stored.extras.start.donor, "Competing save", `${lose}: the other save is not undone`);
+    assert.ok(r.value.view.extras.start.packId, lose);
+  }
+});
+
 test("a pack is refused while documents are still being read", async () => {
   const s = setup();
   const { value } = await s.start.handle(as("u1"), {});

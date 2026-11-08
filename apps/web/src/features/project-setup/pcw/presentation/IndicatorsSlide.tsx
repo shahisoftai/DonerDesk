@@ -11,7 +11,7 @@ import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { roleLabel } from "../domain/team-view";
 import { usePcwCopy } from "./usePcwCopy";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
-import { BREAKDOWN_SUGGESTIONS, FREQUENCIES, INDICATOR_TYPES, INDICATOR_TYPE_LABEL, indicatorRows, indicatorTargets, parseBreakdown } from "../domain/results-view";
+import { BREAKDOWN_SUGGESTIONS, FREQUENCIES, FREQUENCY_GROUPS, INDICATOR_TYPES, INDICATOR_TYPE_LABEL, indicatorRows, indicatorTargets, parseBreakdown } from "../domain/results-view";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
 import { WizardLibraryPanel } from "@/features/sector-library/presentation/WizardLibraryPanel";
@@ -82,8 +82,9 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
             <Field label={c.frequency}>
               <Select value={value.frequency ?? ""} onChange={(e) => edit(item.path, { frequency: e.target.value || null })}>
                 <option value="">{c.choose}</option>
-                {FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}
-                {value.frequency && !(FREQUENCIES as readonly string[]).includes(value.frequency) ? <option value={value.frequency}>{value.frequency}</option> : null}
+                <optgroup label={c.frequencyRegular}>{FREQUENCY_GROUPS.periodic.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup>
+                <optgroup label={c.frequencyEvent}>{FREQUENCY_GROUPS.event.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup>
+                {value.frequency && !FREQUENCIES.includes(value.frequency) ? <option value={value.frequency}>{value.frequency}</option> : null}
               </Select>
             </Field>
             <Field label={c.breakdown}>
@@ -124,7 +125,7 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
         <fieldset className="grid gap-3 rounded-xl border border-slate-200 p-4 sm:grid-cols-3 dark:border-white/10">
           <legend className="px-1 text-sm font-semibold">{c.bulk}</legend>
           <Field label={c.applyFrequency}>
-            <Select value={bulkFrequency} onChange={(e) => setBulkFrequency(e.target.value)}><option value="">{c.choose}</option>{FREQUENCIES.map((f) => <option key={f} value={f}>{f}</option>)}</Select>
+            <Select value={bulkFrequency} onChange={(e) => setBulkFrequency(e.target.value)}><option value="">{c.choose}</option><optgroup label={c.frequencyRegular}>{FREQUENCY_GROUPS.periodic.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup><optgroup label={c.frequencyEvent}>{FREQUENCY_GROUPS.event.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup></Select>
           </Field>
           <Field label={c.applyBreakdown}><Input value={bulkBreakdown} list="pcw-breakdowns" onChange={(e) => setBulkBreakdown(e.target.value)} /></Field>
           <div className="self-end">

@@ -4,6 +4,26 @@
  * always expected there, whatever the frequency says.
  */
 
+/**
+ * The collection frequencies an indicator can be given, in one table (the project wizard's list, the sector library's check and the
+ * due-date rule all read it). A PERIODIC frequency is a cadence; an EVENT one is measured when the work or the survey happens, so it is
+ * never "due" in an ordinary month: it is expected where a value is recorded and in the project's closing period.
+ */
+export type FrequencyKind = "PERIODIC" | "EVENT";
+export interface FrequencyChoice { value: string; kind: FrequencyKind }
+export const FREQUENCY_CHOICES: readonly FrequencyChoice[] = [
+  { value: "Weekly", kind: "PERIODIC" }, { value: "Monthly", kind: "PERIODIC" }, { value: "Quarterly", kind: "PERIODIC" }, { value: "Semi-annual", kind: "PERIODIC" }, { value: "Annual", kind: "PERIODIC" },
+  { value: "Per survey", kind: "EVENT" }, { value: "Per assessment", kind: "EVENT" }, { value: "Per analysis", kind: "EVENT" }, { value: "Per campaign", kind: "EVENT" },
+  { value: "Per distribution", kind: "EVENT" }, { value: "Per season", kind: "EVENT" }, { value: "At construction", kind: "EVENT" },
+];
+
+/** Whether free text names an event ("Per survey", "per round", "at construction") rather than a cadence. Unrecognised text is a cadence of every period, as before. */
+export function frequencyKind(frequency: string | null | undefined): FrequencyKind {
+  const text = (frequency ?? "").trim().toLowerCase();
+  if (FREQUENCY_CHOICES.some((c) => c.kind === "EVENT" && c.value.toLowerCase() === text)) return "EVENT";
+  return /^per\s+[a-z]+|^at (construction|handover|completion)\b|^when (it|the work) happens/.test(text) ? "EVENT" : "PERIODIC";
+}
+
 /** Months between measurements, or 1 when the text names no cadence we recognise. */
 export function frequencyIntervalMonths(frequency: string | null | undefined): number {
   const text = (frequency ?? "").trim().toLowerCase();
@@ -37,8 +57,10 @@ function monthsElapsed(window: FrequencyWindow): number {
  * counted from the project start. The closing period of the project is always due (`isFinalPeriod`).
  */
 export function isDueInPeriod(frequency: string | null | undefined, window: FrequencyWindow, options: { isFinalPeriod?: boolean } = {}): boolean {
+  if (options.isFinalPeriod) return true;
+  if (frequencyKind(frequency) === "EVENT") return false;
   const interval = frequencyIntervalMonths(frequency);
-  if (interval === 1 || options.isFinalPeriod) return true;
+  if (interval === 1) return true;
   return monthsElapsed(window) % interval === 0;
 }
 
