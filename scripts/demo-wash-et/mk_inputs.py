@@ -1,125 +1,117 @@
-"""Demo 13 setup inputs: logframe CSV, indicators CSV, two UNICEF-styled DOCX templates (WASH, Ethiopia).
-All content is fictional/synthetic. Run: python3 scripts/demo-wash-et/mk_inputs.py  (needs python-docx). Writes to /tmp/kilo/dd13."""
-import csv, json, os
+"""Demo 15 inputs (Ethiopia WASH, USAID, Jan-Jul 2026). All names/figures fictional. Usage: python3 mk_inputs.py <outdir>"""
+import sys, csv, os
 from docx import Document
-
-OUT = os.environ.get("OUT", "/tmp/kilo/dd13")
-os.makedirs(OUT, exist_ok=True)
-
-# Depth-first order (parent immediately before its children) - the order demo 12 proved safe for pasting.
-logframe = [
-    ("GOAL", "G", "Waterborne disease is reduced and health and dignity improved for displaced and host communities in six drought-affected woredas of Amhara, Afar and Oromia, Ethiopia"),
-    ("OUTCOME", "OC1", "Displaced and host households in the six woredas use safe, functional drinking water and sanitation services"),
-    ("OUTPUT", "1.1", "Water points are drilled, rehabilitated and solar-powered (boreholes, hand pumps and piped mini-schemes)"),
-    ("ACTIVITY", "A1.1.1", "Survey, drill and construct new boreholes with solar pumping (two schemes)"),
-    ("ACTIVITY", "A1.1.2", "Rehabilitate broken water points and hand pumps (six sites)"),
-    ("ACTIVITY", "A1.1.3", "Extend and chlorinate the Kombolcha piped scheme"),
-    ("OUTPUT", "1.2", "Displaced and host households use gender-sensitive, lockable household latrines with handwashing stations"),
-    ("ACTIVITY", "A1.2.1", "Construct household latrines with displaced and host households (600 latrines)"),
-    ("OUTPUT", "1.3", "Schools and health facilities have WASH blocks with handwashing and menstrual hygiene facilities"),
-    ("ACTIVITY", "A1.3.1", "Construct WASH blocks in schools and health facilities (8 blocks)"),
-    ("OUTPUT", "1.4", "Water is treated and quality is monitored at water points and in households"),
-    ("ACTIVITY", "A1.4.1", "Monthly water quality testing and treatment at water points"),
-    ("ACTIVITY", "A1.4.2", "Distribute household water treatment supplies and test kits"),
-    ("OUTCOME", "OC2", "Communities and institutions in the six woredas sustain hygiene practices and manage their WASH services"),
-    ("OUTPUT", "2.1", "Women, men and children practise key hygiene behaviours reached through promotion and community-led total sanitation"),
-    ("ACTIVITY", "A2.1.1", "Train community hygiene promoters and run hygiene promotion sessions"),
-    ("ACTIVITY", "A2.1.2", "Community-led total sanitation triggering and ODF verification"),
-    ("OUTPUT", "2.2", "Water point committees manage, finance and maintain their schemes"),
-    ("ACTIVITY", "A2.2.1", "Form and train water point committees and set tariffs"),
-    ("ACTIVITY", "A2.2.2", "Support spare-part shops and train maintenance artisans"),
-    ("OUTPUT", "2.3", "Woreda water offices plan and coordinate the WASH response with data"),
-    ("ACTIVITY", "A2.3.1", "Monthly woreda WASH coordination and data review meetings"),
-    ("ACTIVITY", "A2.3.2", "Baseline and endline household WASH survey"),
-    ("ACTIVITY", "A2.3.3", "Hygiene kit distribution for newly displaced households"),
+from openpyxl import Workbook
+out = sys.argv[1]; os.makedirs(out, exist_ok=True)
+LF = [
+("GOAL","G","Morbidity and mortality from water-related disease are reduced among drought-affected communities in Somali Region, Ethiopia"),
+("OUTCOME","OC1","Households have safe and sufficient drinking water"),
+("OUTPUT","1.1","Water points are rehabilitated and new solar-powered water systems are installed"),
+("ACTIVITY","A1.1.1","Rehabilitate boreholes, shallow wells and hand pumps"),
+("ACTIVITY","A1.1.2","Install solar-powered pumping and piped water systems"),
+("OUTPUT","1.2","Water quality is monitored and water committees manage water points"),
+("ACTIVITY","A1.2.1","Water chlorination and routine water quality testing"),
+("ACTIVITY","A1.2.2","Train and support water point management committees and mechanics"),
+("OUTCOME","OC2","Communities use safe, dignified sanitation facilities and stop open defecation"),
+("OUTPUT","2.1","Latrines are constructed and communities are triggered for total sanitation"),
+("ACTIVITY","A2.1.1","Construct household, communal and institutional latrines"),
+("ACTIVITY","A2.1.2","Community-led total sanitation (CLTS) triggering and follow-up"),
+("OUTPUT","2.2","Schools and health facilities have improved WASH facilities"),
+("ACTIVITY","A2.2.1","Rehabilitate WASH facilities in schools and health centres"),
+("OUTCOME","OC3","Households adopt key hygiene practices and are prepared for cholera and acute watery diarrhoea outbreaks"),
+("OUTPUT","3.1","People are reached with hygiene promotion and hygiene supplies"),
+("ACTIVITY","A3.1.1","Hygiene promotion through community hygiene promoters and handwashing stations"),
+("ACTIVITY","A3.1.2","Distribute hygiene and menstrual hygiene kits"),
+("OUTPUT","3.2","Communities and rapid response teams are prepared for cholera and acute watery diarrhoea"),
+("ACTIVITY","A3.2.1","Cholera prevention messaging and pre-positioned WASH rapid response kits"),
 ]
-with open(f"{OUT}/logframe.csv", "w", newline="") as f:
-    w = csv.writer(f); w.writerow(["Level", "Code", "Title"]); w.writerows(logframe)
-print("logframe.csv", len(logframe))
-
-H = ["Code", "Name", "Type", "Baseline", "Target", "Unit", "Frequency", "Disaggregated", "Logframe Code", "Data source"]
-ind = [
-    ("GI-1", "Diarrhoea prevalence in children under five (two-week recall)", "PERCENTAGE", "31", "15", "%", "Survey", "", "G", "Household WASH survey (baseline and endline)"),
-    ("OC1a", "Households using an improved drinking water source", "PERCENTAGE", "42", "75", "%", "Survey", "", "OC1", "Household WASH survey"),
-    ("OC1b", "Households with a functional, unshared household latrine", "PERCENTAGE", "28", "55", "%", "Survey", "", "OC1", "Household WASH survey, latrine inspection checklist"),
-    ("OC1c", "Water points functional at spot check", "PERCENTAGE", "55", "90", "%", "Monthly", "", "OC1", "Water quality and functionality spot-check log"),
-    ("OC2a", "Households with a handwashing facility with soap and water", "PERCENTAGE", "22", "60", "%", "Survey", "", "OC2", "Household WASH survey, spot checks"),
-    ("OP1-1", "Water points constructed or rehabilitated", "NUMBER", "0", "20", "water points", "Monthly", "yes", "1.1", "Drilling logs, completion and handover certificates"),
-    ("OP1-2", "People with new or improved access to safe drinking water", "NUMBER", "0", "30000", "people", "Monthly", "yes", "1.1", "Water point population estimate and handover records"),
-    ("OP1-3", "Household latrines constructed", "NUMBER", "0", "600", "latrines", "Monthly", "yes", "1.2", "Latrine completion register and inspection checklists"),
-    ("OP1-4", "School and health-facility WASH blocks constructed", "NUMBER", "0", "8", "blocks", "Monthly", "yes", "1.3", "Completion certificates"),
-    ("OP1-5", "Handwashing facilities installed at institutions and water points", "NUMBER", "0", "340", "facilities", "Monthly", "yes", "1.3", "Installation register, photographs"),
-    ("OP1-6", "Water quality tests conducted", "NUMBER", "0", "320", "tests", "Monthly", "", "1.4", "Water quality test logs"),
-    ("OP1-7", "Households supplied with household water treatment supplies", "NUMBER", "0", "2500", "households", "Monthly", "yes", "1.4", "Distribution registers"),
-    ("OP2-1", "People reached by hygiene promotion sessions", "NUMBER", "0", "24000", "people", "Monthly", "yes", "2.1", "Session attendance registers"),
-    ("OP2-2", "Hygiene promotion sessions held", "NUMBER", "0", "480", "sessions", "Monthly", "", "2.1", "Session registers, mobiliser daily logs"),
-    ("OP2-3", "Water point committees established and trained", "NUMBER", "0", "16", "committees", "Monthly", "yes", "2.2", "Training attendance sheets, committee minutes"),
-    ("OP2-4", "Hygiene kits distributed to newly displaced households", "NUMBER", "0", "1800", "kits", "Monthly", "yes", "2.3", "Distribution lists"),
-    ("OP2-5", "Woreda WASH coordination meetings held", "NUMBER", "0", "12", "meetings", "Monthly", "", "2.3", "Meeting minutes"),
+# code,name,type,baseline,target,unit,frequency,disagg,result,source
+IND = [
+("GI-1","Prevalence of diarrhoea in children under five in the previous two weeks","PERCENTAGE","28","18","%","Quarterly","","G","Household survey"),
+("OC1a","Households with at least 15 litres of water per person per day","PERCENTAGE","42","75","%","Quarterly","","OC1","Household survey"),
+("OC1b","Households with safe drinking water at the point of consumption","PERCENTAGE","38","70","%","Quarterly","","OC1","Household survey and water tests"),
+("OP1-1a","Water points rehabilitated and functioning","NUMBER","0","40","water points","Monthly","","1.1","Completion certificates"),
+("OP1-1b","People with access to improved water through the project","NUMBER","0","60000","people","Monthly","","1.1","Water point registers"),
+("OP1-1c","Solar-powered water systems installed","NUMBER","0","8","systems","Monthly","","1.1","Commissioning reports"),
+("OP1-2a","Water quality tests conducted","NUMBER","0","600","tests","Monthly","","1.2","Water quality test logs"),
+("OP1-2b","Water quality tests with free residual chlorine of at least 0.2 mg/L","PERCENTAGE","55","90","%","Monthly","","1.2","Water quality test logs"),
+("OP1-2c","Water point management committees trained","NUMBER","0","40","committees","Monthly","","1.2","Training attendance sheets"),
+("OC2a","Households using a functioning latrine shared by no more than 20 people","PERCENTAGE","20","50","%","Quarterly","","OC2","Household survey"),
+("OC2b","Villages verified as free from open defecation","NUMBER","0","25","villages","Monthly","","OC2","ODF verification reports"),
+("OP2-1a","Latrine stances constructed","NUMBER","0","900","stances","Monthly","","2.1","Completion certificates"),
+("OP2-1b","Villages triggered through CLTS","NUMBER","0","60","villages","Monthly","","2.1","CLTS triggering reports"),
+("OP2-1c","People with access to new latrines","NUMBER","0","30000","people","Monthly","","2.1","Latrine registers"),
+("OP2-2a","Schools and health facilities with improved WASH facilities","NUMBER","0","25","facilities","Monthly","","2.2","Handover certificates"),
+("OC3a","Households with a handwashing station with soap and water near the latrine","PERCENTAGE","25","60","%","Quarterly","","OC3","Household survey"),
+("OP3-1a","People reached with hygiene promotion","NUMBER","0","90000","people","Monthly","","3.1","Hygiene session attendance sheets"),
+("OP3-1b","Community hygiene promoters trained","NUMBER","0","240","promoters","Monthly","","3.1","Training attendance sheets"),
+("OP3-1c","Handwashing stations installed","NUMBER","0","800","stations","Monthly","","3.1","Installation records"),
+("OP3-1d","Households receiving hygiene kits","NUMBER","0","5000","households","Monthly","","3.1","Distribution lists"),
+("OP3-1e","Women and girls receiving menstrual hygiene kits","NUMBER","0","3000","women and girls","Monthly","","3.1","Distribution lists"),
+("OP3-2a","People reached with cholera and diarrhoea prevention messages","NUMBER","0","40000","people","Monthly","","3.2","Session attendance sheets"),
+("OP3-2b","WASH rapid response kits pre-positioned","NUMBER","0","10","kits","Monthly","","3.2","Stock records"),
 ]
-with open(f"{OUT}/indicators.csv", "w", newline="") as f:
-    w = csv.writer(f); w.writerow(H); w.writerows(ind)
-print("indicators.csv", len(ind))
-
-# Illustrative square boundaries (about 0.5 degree) around the six woredas. NOT real administrative boundaries.
-SITES = {"Dessie": (39.63, 11.13), "Kombolcha": (39.74, 11.10), "Bati": (40.02, 11.19),
-         "Kemissie": (39.87, 10.72), "Mille": (40.73, 11.93), "Awash": (40.16, 10.17)}
-feats = []
-for name, (x, y) in SITES.items():
-    d = 0.3
-    ring = [[x-d, y-d], [x+d, y-d], [x+d, y+d], [x-d, y+d], [x-d, y-d]]
-    feats.append({"type": "Feature", "properties": {"name": name}, "geometry": {"type": "Polygon", "coordinates": [ring]}})
-with open(f"{OUT}/ethiopia-six-woredas.geojson", "w") as f:
-    json.dump({"type": "FeatureCollection", "features": feats}, f)
-
-def mk(path, title, intro, sections):
-    d = Document(); d.add_heading(title, 0); d.add_paragraph(intro)
-    for lvl, h, ins, qs, ev in sections:
-        d.add_heading(h, lvl); d.add_paragraph(ins)
-        for q in qs: d.add_paragraph(q, style="List Bullet")
-        if ev: d.add_paragraph("Evidence needed: " + "; ".join(ev))
-    d.save(path)
-
-PCA = "PCA/ETCO/2026/0773"
-VIS = ("Quote the UNICEF acknowledgement: This publication was made possible with funding from UNICEF. The views expressed are those of the partner and do not necessarily reflect the views of UNICEF.")
-mk(f"{OUT}/UNICEF-PCA-Monthly-WASH-Progress-Report-RWSH-ET.docx",
-   f"UNICEF Ethiopia Country Office - Monthly WASH Progress Report, Resilient WASH Services in Six Woredas (Programme Cooperation Agreement {PCA})",
-   "The partner submits this report to the UNICEF Ethiopia WASH section within 15 days of the end of each month. Report only verified results against the results framework. Write in plain, factual English in the third person. Disaggregate people-level results by sex and by woreda. Figures that were not measured must be stated as not measured, never as zero.",
-   [
-    (1, "1. Summary of the Month", "Summarise the month in no more than 250 words: the main results, the main problem and the main decision needed.", ["What was the most important result of the month for the communities served?"], ["Monthly summary approved by the project manager"]),
-    (1, "2. Progress Against Expected Results", "Report progress against the indicators of the results framework.", ["Provide a results table: indicator, this month, cumulative, target, percent of target.", "Explain any indicator behind plan and the corrective action."], ["Verified indicator table from the reporting period"]),
-    (1, "3. Activities Implemented by Woreda", "List the activities implemented in each of the six woredas with dates and participants.", ["Which planned activities were not carried out, and why?"], ["Activity records", "Attendance sheets"]),
-    (1, "4. Water Quality and Data Quality", "Comment on water quality monitoring results and on the quality and completeness of the programme data (test logs, construction registers, surveys), including known gaps by woreda.", ["State the source and period of every coverage figure."], ["Water quality test logs", "Supervision notes"]),
-    (1, "5. Access, Risks and Mitigation", "Describe access and security constraints, supply-chain problems and how the programme adapted, in no more than 400 words.", ["Which risk materialised this month and what was done?"], []),
-    (1, "6. Protection, Gender and Accountability to Affected Populations", "Describe how protection from sexual exploitation and abuse, gender equality and accountability to affected populations were applied this month, and report feedback received and resolved.", ["Any safeguarding or protection concern this month? How was it referred?", "Provide sex-disaggregated results where applicable."], ["Feedback log", "Protection referral records (no personal names)"]),
-    (1, "7. Visibility and Communication", "Report UNICEF visibility measures for the month. Use the acknowledgement statement in exactly one section of every report.", ["State where the UNICEF logo and funding acknowledgement appeared this month.", VIS], ["Photos with consent", "Radio log"]),
-    (1, "8. Plan for the Next Month", "State the planned activities and expected results for the coming month.", [], []),
-   ])
-mk(f"{OUT}/UNICEF-PCA-Final-WASH-Programme-Report-RWSH-ET.docx",
-   f"UNICEF Ethiopia Country Office - Final Programme and Financial Report, Resilient WASH Services in Six Woredas (Programme Cooperation Agreement {PCA})",
-   "The final report covers the whole duration of the agreement and is submitted within 60 days of its end date. Assess the programme against its results framework and the OECD-DAC criteria. Use a factual, evidence-based register, report life-of-project figures from verified records, state plainly which targets were not met and why. Disaggregate people-level results by sex and woreda.",
-   [
-    (1, "1. Executive Summary", "Summarise the programme, its main results and overall performance in no more than 400 words.", [], []),
-    (1, "2. Context and Description of the Programme", "Describe the context and the design of the programme.", [], []),
-    (2, "2.1 Context Update", "Describe the situation in the six woredas and any significant change during implementation, including displacement movements.", ["Who were the people reached and how were they identified?"], []),
-    (2, "2.2 Intervention Logic", "Describe how the outputs were expected to lead to the outcomes and impact, and whether the logic held.", [], []),
-    (1, "3. Assessment of Implementation", "Assess the implementation of the programme against the work plan.", [], []),
-    (2, "3.1 Outcome Results", "Report the outcome and impact indicators.", ["Provide an indicator table: baseline, target, achieved, percent of target.", "Explain any target that was not met."], ["Verified indicator table", "Survey tables"]),
-    (2, "3.2 Output Delivery by Woreda", "Report delivery of every output, by woreda and disaggregated by sex where applicable.", ["Provide a table of output indicators: target, achieved, percent of target."], []),
-    (2, "3.3 Activities", "Summarise the activities carried out over the whole programme with dates and reach.", [], ["Activity records"]),
-    (2, "3.4 Deviations from Plan", "Explain deviations from the work plan and any variance in results.", ["What caused each deviation and what was done about it?"], []),
-    (1, "4. Assessment Against Evaluation Criteria", "Assess the programme against the OECD-DAC criteria.", [], []),
-    (2, "4.1 Relevance", "To what extent did the programme address the identified needs?", [], []),
-    (2, "4.2 Effectiveness", "To what extent were the intended results achieved?", [], []),
-    (2, "4.3 Efficiency", "How well were resources used to deliver the results?", [], []),
-    (2, "4.4 Sustainability", "What will continue after the programme, and how?", [], []),
-    (2, "4.5 Impact", "What real difference did the programme make to health and dignity in the six woredas?", [], []),
-    (1, "5. Cross-Cutting Issues: Gender, Protection and Accountability", "Report on gender equality, protection and accountability to affected populations.", ["Provide sex-disaggregated results and explain gender gaps."], []),
-    (1, "6. Risks and Assumptions", "State which risks materialised, how the programme adapted, and any change that needed UNICEF's agreement.", [], []),
-    (1, "7. Visibility and Communication", "Report UNICEF visibility over the whole programme. Keep the acknowledgement statement in exactly one section.", [VIS], ["Radio log", "Photos with consent"]),
-    (1, "8. Lessons Learned", "State the main lessons for future WASH programming in drought-affected Ethiopia.", ["What would the partner do differently?"], []),
-    (1, "9. Sustainability and Exit Strategy", "Describe the handover of water schemes to woreda water offices and communities.", [], []),
-    (1, "10. Financial Report", "Report expenditure against the budget by line. Explain any variance above 10 percent of the line.", ["Provide a table: budget line, budget, expenditure, balance."], ["Statement of expenditure"]),
-    (1, "11. Recommendations", "State the recommendations to UNICEF and to future programming.", [], []),
-   ])
-print("templates written")
+PLAN = [
+("A1.1.1","Rehabilitate boreholes and hand pumps - Gode and Mustahil","2026-01-12","2026-05-29","Gode",""),
+("A1.1.1","Rehabilitate boreholes and shallow wells - Kebri Dahar and Warder","2026-01-19","2026-06-12","Kebri Dahar",""),
+("A1.1.2","Install solar-powered piped water systems - Dolo Ado","2026-02-02","2026-06-26","Dolo Ado",""),
+("A1.2.1","Monthly water quality testing and chlorination - Gode and Mustahil","2026-01-26","2026-01-30","Gode","monthly"),
+("A1.2.1","Monthly water quality testing and chlorination - Kebri Dahar, Warder and Dolo Ado","2026-01-27","2026-01-31","Kebri Dahar","monthly"),
+("A1.2.2","Train water point management committees and mechanics","2026-01-19","2026-05-15","Mustahil",""),
+("A2.1.1","Construct household and communal latrines - Gode and Dolo Ado","2026-01-26","2026-06-19","Dolo Ado",""),
+("A2.1.1","Construct latrines - Kebri Dahar, Warder and Mustahil","2026-02-02","2026-06-26","Warder",""),
+("A2.1.2","CLTS triggering and follow-up","2026-01-12","2026-06-30","Gode","monthly"),
+("A2.2.1","Rehabilitate WASH facilities in schools and health centres","2026-02-16","2026-06-12","Kebri Dahar",""),
+("A3.1.1","Hygiene promotion and handwashing stations - Gode and Mustahil","2026-01-12","2026-01-30","Mustahil","monthly"),
+("A3.1.1","Hygiene promotion and handwashing stations - Kebri Dahar, Warder and Dolo Ado","2026-01-19","2026-01-30","Warder","monthly"),
+("A3.1.2","Distribute hygiene and menstrual hygiene kits","2026-02-02","2026-06-26","Dolo Ado",""),
+("A3.2.1","Cholera prevention messaging and rapid response kits","2026-01-12","2026-07-24","Kebri Dahar",""),
+]
+BUDGET = [("Water point rehabilitation and solar systems",420000),("Water quality, chlorination and committees",95000),("Latrine construction and CLTS",260000),
+("Schools and health facility WASH",110000),("Hygiene promotion and supplies",150000),("Monitoring, evaluation and learning",55000),("Staff and administration",110000)]
+assert sum(b for _,b in BUDGET)==1200000
+for n,rows,h in [("logframe",LF,["Level","Code","Title"]),("indicators",IND,["Code","Name","Type","Baseline","Target","Unit","Frequency","Disaggregated","Logframe Code","Data source"]),("workplan",PLAN,["Logframe Code","Title","Start","End","Location","Repeats"])]:
+    with open(f"{out}/{n}.csv","w",newline="") as f: w=csv.writer(f); w.writerow(h); w.writerows(rows)
+d=Document()
+d.add_heading("Safe Water, Sanitation and Hygiene for Drought-Affected Communities in Somali Region, Ethiopia (SWASH-ET)",0)
+d.add_paragraph("Project proposal to USAID Bureau for Humanitarian Assistance (BHA). Implementing organisation: Horn Water and Sanitation Alliance (HWSA). All organisations, people and figures in this document are fictional.")
+d.add_heading("1. Project summary",1)
+for t in ["Project code: ET-WASH-20260101. Agreement number (fictional): 720BHA26GR00041. Donor: USAID. Sector: Water, sanitation and hygiene. Country: Ethiopia. Duration: 1 January 2026 to 31 July 2026 (seven months). Budget: USD 1,200,000, expressed in US dollars.",
+"HWSA rehabilitates water points, installs solar-powered water systems, constructs latrines, triggers community-led total sanitation and promotes hygiene in five woredas of Somali Region: Gode, Mustahil, Kebri Dahar, Warder and Dolo Ado. Targets follow the Sphere standards (at least 15 litres per person per day, a water point within 500 metres, one toilet for at most 20 people)."]: d.add_paragraph(t)
+d.add_heading("2. Context and needs",1)
+d.add_paragraph("Successive failed rainy seasons have dried up shallow wells and boreholes in Somali Region, forcing households to walk long distances for unsafe water and increasing the risk of acute watery diarrhoea and cholera. Open defecation remains common and few households have a handwashing station. The figures in this scenario are illustrative.")
+d.add_heading("3. Results framework",1)
+t=d.add_table(rows=1,cols=3); t.style="Table Grid"
+for i,h in enumerate(["Level","Code","Result"]): t.rows[0].cells[i].text=h
+for r in LF:
+    c=t.add_row().cells
+    for i,v in enumerate(r): c[i].text=v
+d.add_heading("4. Indicators",1)
+t=d.add_table(rows=1,cols=8); t.style="Table Grid"
+for i,h in enumerate(["Code","Indicator","Baseline","Target","Unit","Frequency","Means of verification","Result"]): t.rows[0].cells[i].text=h
+for r in IND:
+    c=t.add_row().cells
+    for i,v in enumerate([r[0],r[1],r[3],r[4],r[5],r[6],r[9],r[8]]): c[i].text=v
+d.add_heading("5. Risks and assumptions",1)
+for t_ in ["Risk (high): insecurity and inter-communal conflict restrict access to some kebeles. Mitigation: community acceptance, flexible scheduling and remote monitoring.",
+"Risk (high): a cholera or acute watery diarrhoea outbreak overloads water and sanitation services. Mitigation: pre-positioned WASH rapid response kits and chlorination.",
+"Risk (medium): flash floods damage latrines and water points. Mitigation: raised latrine platforms and flood-resistant designs.",
+"Risk (medium): fuel and spare-part shortages delay pumping and borehole work. Mitigation: solar systems and pre-purchased spare parts.",
+"Assumption: woreda water offices continue to support committees and maintenance.",
+"Assumption: communities contribute labour and local materials for latrine construction."]: d.add_paragraph(t_)
+d.add_heading("6. Reporting",1)
+d.add_paragraph("HWSA reports to USAID at the end of the project; this scenario produces the final report only.")
+d.save(f"{out}/ET-Proposal.docx")
+wb=Workbook(); ws=wb.active; ws.title="Summary Budget"
+ws.append(["Budget category","Total (USD)"]); ws.append(["The budget is expressed in US dollars (USD)."])
+for n,a in BUDGET: ws.append([n,a])
+ws.append(["Total",1200000]); wb.save(f"{out}/ET-Budget.xlsx")
+wb=Workbook(); ws=wb.active; ws.title="Work plan"; ws.append(["Logframe Code","Title","Start","End","Location"])
+for r in PLAN: ws.append(list(r[:5]))
+wb.save(f"{out}/ET-WorkPlan.xlsx")
+wb=Workbook(); ws=wb.active; ws.title="Logframe"; ws.append(["Level","Code","Title"])
+for r in LF: ws.append(list(r))
+wb.save(f"{out}/ET-Logframe.xlsx")
+wb=Workbook(); ws=wb.active; ws.title="Indicators"; ws.append(["Indicator","Code","Baseline","Target","Unit","Frequency","Means of verification","Result"])
+for r in IND: ws.append([r[1],r[0],r[3],r[4],r[5],r[6],r[9],r[8]])
+wb.save(f"{out}/ET-Indicators.xlsx"); print("ok", len(IND), len(PLAN))

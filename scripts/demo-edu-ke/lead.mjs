@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("lead"); page.setDefaultTimeout(15000);
+await page.goto(BASE + "/projects/8e20556a-115e-48a7-be9b-bb1bfe14bf70/activities", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+await page.getByRole("button", { name: "List", exact: true }).first().click().catch(()=>{}); await page.waitForTimeout(2000);
+await page.getByLabel("Completed", { exact: true }).check().catch(()=>{}); await page.waitForTimeout(2500);
+const cbs = page.locator("main input[type=checkbox][aria-label^='Select ']"); const n = await cbs.count(); for (let i = 0; i < n; i++) await cbs.nth(i).check();
+const lead = page.locator("#bulk-lead"); console.log(n, await lead.locator("option").allTextContents());
+await lead.selectOption({ index: 2 }); await page.getByRole("button", { name: "Preview lead" }).click(); await page.waitForTimeout(2500);
+console.log(await page.evaluate(() => [...document.querySelectorAll("main button")].map(b=>b.innerText.trim()).filter(x=>x&&!/^(Done|Not started|Under way)$/.test(x)).slice(-8)));
+await browser.close(); process.exit(0);

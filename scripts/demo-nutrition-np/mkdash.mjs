@@ -1,0 +1,13 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("mkdash");
+const sel = page.locator("main select"); const n = await sel.count(); const f = (i) => sel.nth(n - 7 + i);
+const T = (l) => l.evaluate((e) => [...e.options].map((o) => o.textContent.trim()));
+const pick = async (i, starts) => { const o = (await T(f(i))).find((t) => t.includes(starts)); if (!o) throw new Error("no " + starts); await f(i).selectOption({ label: o }); await page.waitForTimeout(700); };
+await pick(0, "Integrated Management");
+await page.locator("main input:not([type=checkbox]):not([type=file])").last().fill("M&E dashboard - Nepal CMAM and IYCF (UNICEF)");
+await f(1).selectOption({ label: "Everyone on the project" });
+await pick(2, "OP1-1a"); await pick(3, "OP1-1b"); await pick(4, "OP2-1a"); await pick(5, "OP1-2a"); await pick(6, "OC1a");
+console.log((await page.locator("main").innerText()).match(/\d charts can be drawn now[^\n]*/)?.[0]);
+await page.getByRole("button", { name: "Create the dashboard" }).click(); await page.waitForTimeout(9000);
+console.log(page.url()); await page.screenshot({ path: process.env.SHOT, fullPage: true });
+await browser.close(); process.exit(0);

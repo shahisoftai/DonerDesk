@@ -1,0 +1,721 @@
+{
+ "2026-01": {
+  "OP1-1a": {
+   "period": 4,
+   "cum": 4,
+   "src": "Completion certificates, 2026-01"
+  },
+  "OP1-1b": {
+   "period": 5000,
+   "cum": 5000,
+   "src": "Water point registers, 2026-01"
+  },
+  "OP1-1c": {
+   "period": 0,
+   "cum": 0,
+   "src": "Commissioning reports, 2026-01"
+  },
+  "OP1-2a": {
+   "period": 60,
+   "cum": 60,
+   "src": "Water quality test logs, 2026-01"
+  },
+  "OP1-2b": {
+   "period": 58,
+   "cum": null,
+   "src": "Water quality test logs, 2026-01"
+  },
+  "OP1-2c": {
+   "period": 4,
+   "cum": 4,
+   "src": "Training attendance sheets, 2026-01"
+  },
+  "OP2-1a": {
+   "period": 60,
+   "cum": 60,
+   "src": "Completion certificates, 2026-01"
+  },
+  "OP2-1b": {
+   "period": 5,
+   "cum": 5,
+   "src": "CLTS triggering reports, 2026-01"
+  },
+  "OP2-1c": {
+   "period": 2000,
+   "cum": 2000,
+   "src": "Latrine registers, 2026-01"
+  },
+  "OC2b": {
+   "period": 0,
+   "cum": 0,
+   "src": "ODF verification reports, 2026-01"
+  },
+  "OP2-2a": {
+   "period": 0,
+   "cum": 0,
+   "src": "Handover certificates, 2026-01"
+  },
+  "OP3-1a": {
+   "period": 8000,
+   "cum": 8000,
+   "src": "Hygiene session attendance sheets, 2026-01"
+  },
+  "OP3-1b": {
+   "period": 60,
+   "cum": 60,
+   "src": "Training attendance sheets, 2026-01"
+  },
+  "OP3-1c": {
+   "period": 50,
+   "cum": 50,
+   "src": "Installation records, 2026-01"
+  },
+  "OP3-1d": {
+   "period": 300,
+   "cum": 300,
+   "src": "Distribution lists, 2026-01"
+  },
+  "OP3-1e": {
+   "period": 150,
+   "cum": 150,
+   "src": "Distribution lists, 2026-01"
+  },
+  "OP3-2a": {
+   "period": 3000,
+   "cum": 3000,
+   "src": "Session attendance sheets, 2026-01"
+  },
+  "OP3-2b": {
+   "period": 1,
+   "cum": 1,
+   "src": "Stock records, 2026-01"
+  }
+ },
+ "2026-02": {
+  "OP1-1a": {
+   "period": 6,
+   "cum": 10,
+   "src": "Completion certificates, 2026-02"
+  },
+  "OP1-1b": {
+   "period": 9000,
+   "cum": 14000,
+   "src": "Water point registers, 2026-02"
+  },
+  "OP1-1c": {
+   "period": 1,
+   "cum": 1,
+   "src": "Commissioning reports, 2026-02"
+  },
+  "OP1-2a": {
+   "period": 85,
+   "cum": 145,
+   "src": "Water quality test logs, 2026-02"
+  },
+  "OP1-2b": {
+   "period": 63,
+   "cum": null,
+   "src": "Water quality test logs, 2026-02"
+  },
+  "OP1-2c": {
+   "period": 6,
+   "cum": 10,
+   "src": "Training attendance sheets, 2026-02"
+  },
+  "OP2-1a": {
+   "period": 110,
+   "cum": 170,
+   "src": "Completion certificates, 2026-02"
+  },
+  "OP2-1b": {
+   "period": 8,
+   "cum": 13,
+   "src": "CLTS triggering reports, 2026-02"
+  },
+  "OP2-1c": {
+   "period": 3600,
+   "cum": 5600,
+   "src": "Latrine registers, 2026-02"
+  },
+  "OC2b": {
+   "period": 0,
+   "cum": 0,
+   "src": "ODF verification reports, 2026-02"
+  },
+  "OP2-2a": {
+   "period": 2,
+   "cum": 2,
+   "src": "Handover certificates, 2026-02"
+  },
+  "OP3-1a": {
+   "period": 12000,
+   "cum": 20000,
+   "src": "Hygiene session attendance sheets, 2026-02"
+  },
+  "OP3-1b": {
+   "period": 70,
+   "cum": 130,
+   "src": "Training attendance sheets, 2026-02"
+  },
+  "OP3-1c": {
+   "period": 100,
+   "cum": 150,
+   "src": "Installation records, 2026-02"
+  },
+  "OP3-1d": {
+   "period": 600,
+   "cum": 900,
+   "src": "Distribution lists, 2026-02"
+  },
+  "OP3-1e": {
+   "period": 350,
+   "cum": 500,
+   "src": "Distribution lists, 2026-02"
+  },
+  "OP3-2a": {
+   "period": 5000,
+   "cum": 8000,
+   "src": "Session attendance sheets, 2026-02"
+  },
+  "OP3-2b": {
+   "period": 2,
+   "cum": 3,
+   "src": "Stock records, 2026-02"
+  }
+ },
+ "2026-03": {
+  "OP1-1a": {
+   "period": 7,
+   "cum": 17,
+   "src": "Completion certificates, 2026-03"
+  },
+  "OP1-1b": {
+   "period": 11000,
+   "cum": 25000,
+   "src": "Water point registers, 2026-03"
+  },
+  "OP1-1c": {
+   "period": 2,
+   "cum": 3,
+   "src": "Commissioning reports, 2026-03"
+  },
+  "OP1-2a": {
+   "period": 95,
+   "cum": 240,
+   "src": "Water quality test logs, 2026-03"
+  },
+  "OP1-2b": {
+   "period": 70,
+   "cum": null,
+   "src": "Water quality test logs, 2026-03"
+  },
+  "OP1-2c": {
+   "period": 7,
+   "cum": 17,
+   "src": "Training attendance sheets, 2026-03"
+  },
+  "OP2-1a": {
+   "period": 150,
+   "cum": 320,
+   "src": "Completion certificates, 2026-03"
+  },
+  "OP2-1b": {
+   "period": 10,
+   "cum": 23,
+   "src": "CLTS triggering reports, 2026-03"
+  },
+  "OP2-1c": {
+   "period": 5000,
+   "cum": 10600,
+   "src": "Latrine registers, 2026-03"
+  },
+  "OC2b": {
+   "period": 2,
+   "cum": 2,
+   "src": "ODF verification reports, 2026-03"
+  },
+  "OP2-2a": {
+   "period": 4,
+   "cum": 6,
+   "src": "Handover certificates, 2026-03"
+  },
+  "OP3-1a": {
+   "period": 14000,
+   "cum": 34000,
+   "src": "Hygiene session attendance sheets, 2026-03"
+  },
+  "OP3-1b": {
+   "period": 50,
+   "cum": 180,
+   "src": "Training attendance sheets, 2026-03"
+  },
+  "OP3-1c": {
+   "period": 140,
+   "cum": 290,
+   "src": "Installation records, 2026-03"
+  },
+  "OP3-1d": {
+   "period": 900,
+   "cum": 1800,
+   "src": "Distribution lists, 2026-03"
+  },
+  "OP3-1e": {
+   "period": 550,
+   "cum": 1050,
+   "src": "Distribution lists, 2026-03"
+  },
+  "OP3-2a": {
+   "period": 6500,
+   "cum": 14500,
+   "src": "Session attendance sheets, 2026-03"
+  },
+  "OP3-2b": {
+   "period": 2,
+   "cum": 5,
+   "src": "Stock records, 2026-03"
+  },
+  "GI-1": {
+   "period": 24,
+   "cum": null,
+   "src": "Household survey, 2026-03"
+  },
+  "OC1a": {
+   "period": 55,
+   "cum": null,
+   "src": "Household survey, 2026-03"
+  },
+  "OC1b": {
+   "period": 50,
+   "cum": null,
+   "src": "Household survey, 2026-03"
+  },
+  "OC2a": {
+   "period": 30,
+   "cum": null,
+   "src": "Household survey, 2026-03"
+  },
+  "OC3a": {
+   "period": 38,
+   "cum": null,
+   "src": "Household survey, 2026-03"
+  }
+ },
+ "2026-04": {
+  "OP1-1a": {
+   "period": 8,
+   "cum": 25,
+   "src": "Completion certificates, 2026-04"
+  },
+  "OP1-1b": {
+   "period": 12500,
+   "cum": 37500,
+   "src": "Water point registers, 2026-04"
+  },
+  "OP1-1c": {
+   "period": 2,
+   "cum": 5,
+   "src": "Commissioning reports, 2026-04"
+  },
+  "OP1-2a": {
+   "period": 100,
+   "cum": 340,
+   "src": "Water quality test logs, 2026-04"
+  },
+  "OP1-2b": {
+   "period": 78,
+   "cum": null,
+   "src": "Water quality test logs, 2026-04"
+  },
+  "OP1-2c": {
+   "period": 8,
+   "cum": 25,
+   "src": "Training attendance sheets, 2026-04"
+  },
+  "OP2-1a": {
+   "period": 190,
+   "cum": 510,
+   "src": "Completion certificates, 2026-04"
+  },
+  "OP2-1b": {
+   "period": 12,
+   "cum": 35,
+   "src": "CLTS triggering reports, 2026-04"
+  },
+  "OP2-1c": {
+   "period": 6300,
+   "cum": 16900,
+   "src": "Latrine registers, 2026-04"
+  },
+  "OC2b": {
+   "period": 4,
+   "cum": 6,
+   "src": "ODF verification reports, 2026-04"
+  },
+  "OP2-2a": {
+   "period": 6,
+   "cum": 12,
+   "src": "Handover certificates, 2026-04"
+  },
+  "OP3-1a": {
+   "period": 15000,
+   "cum": 49000,
+   "src": "Hygiene session attendance sheets, 2026-04"
+  },
+  "OP3-1b": {
+   "period": 40,
+   "cum": 220,
+   "src": "Training attendance sheets, 2026-04"
+  },
+  "OP3-1c": {
+   "period": 170,
+   "cum": 460,
+   "src": "Installation records, 2026-04"
+  },
+  "OP3-1d": {
+   "period": 1100,
+   "cum": 2900,
+   "src": "Distribution lists, 2026-04"
+  },
+  "OP3-1e": {
+   "period": 650,
+   "cum": 1700,
+   "src": "Distribution lists, 2026-04"
+  },
+  "OP3-2a": {
+   "period": 7500,
+   "cum": 22000,
+   "src": "Session attendance sheets, 2026-04"
+  },
+  "OP3-2b": {
+   "period": 2,
+   "cum": 7,
+   "src": "Stock records, 2026-04"
+  }
+ },
+ "2026-05": {
+  "OP1-1a": {
+   "period": 8,
+   "cum": 33,
+   "src": "Completion certificates, 2026-05"
+  },
+  "OP1-1b": {
+   "period": 12000,
+   "cum": 49500,
+   "src": "Water point registers, 2026-05"
+  },
+  "OP1-1c": {
+   "period": 2,
+   "cum": 7,
+   "src": "Commissioning reports, 2026-05"
+  },
+  "OP1-2a": {
+   "period": 100,
+   "cum": 440,
+   "src": "Water quality test logs, 2026-05"
+  },
+  "OP1-2b": {
+   "period": 84,
+   "cum": null,
+   "src": "Water quality test logs, 2026-05"
+  },
+  "OP1-2c": {
+   "period": 8,
+   "cum": 33,
+   "src": "Training attendance sheets, 2026-05"
+  },
+  "OP2-1a": {
+   "period": 200,
+   "cum": 710,
+   "src": "Completion certificates, 2026-05"
+  },
+  "OP2-1b": {
+   "period": 12,
+   "cum": 47,
+   "src": "CLTS triggering reports, 2026-05"
+  },
+  "OP2-1c": {
+   "period": 6800,
+   "cum": 23700,
+   "src": "Latrine registers, 2026-05"
+  },
+  "OC2b": {
+   "period": 6,
+   "cum": 12,
+   "src": "ODF verification reports, 2026-05"
+  },
+  "OP2-2a": {
+   "period": 6,
+   "cum": 18,
+   "src": "Handover certificates, 2026-05"
+  },
+  "OP3-1a": {
+   "period": 15000,
+   "cum": 64000,
+   "src": "Hygiene session attendance sheets, 2026-05"
+  },
+  "OP3-1b": {
+   "period": 20,
+   "cum": 240,
+   "src": "Training attendance sheets, 2026-05"
+  },
+  "OP3-1c": {
+   "period": 170,
+   "cum": 630,
+   "src": "Installation records, 2026-05"
+  },
+  "OP3-1d": {
+   "period": 1100,
+   "cum": 4000,
+   "src": "Distribution lists, 2026-05"
+  },
+  "OP3-1e": {
+   "period": 650,
+   "cum": 2350,
+   "src": "Distribution lists, 2026-05"
+  },
+  "OP3-2a": {
+   "period": 7500,
+   "cum": 29500,
+   "src": "Session attendance sheets, 2026-05"
+  },
+  "OP3-2b": {
+   "period": 2,
+   "cum": 9,
+   "src": "Stock records, 2026-05"
+  }
+ },
+ "2026-06": {
+  "OP1-1a": {
+   "period": 5,
+   "cum": 38,
+   "src": "Completion certificates, 2026-06"
+  },
+  "OP1-1b": {
+   "period": 7500,
+   "cum": 57000,
+   "src": "Water point registers, 2026-06"
+  },
+  "OP1-1c": {
+   "period": 1,
+   "cum": 8,
+   "src": "Commissioning reports, 2026-06"
+  },
+  "OP1-2a": {
+   "period": 90,
+   "cum": 530,
+   "src": "Water quality test logs, 2026-06"
+  },
+  "OP1-2b": {
+   "period": 88,
+   "cum": null,
+   "src": "Water quality test logs, 2026-06"
+  },
+  "OP1-2c": {
+   "period": 5,
+   "cum": 38,
+   "src": "Training attendance sheets, 2026-06"
+  },
+  "OP2-1a": {
+   "period": 140,
+   "cum": 850,
+   "src": "Completion certificates, 2026-06"
+  },
+  "OP2-1b": {
+   "period": 9,
+   "cum": 56,
+   "src": "CLTS triggering reports, 2026-06"
+  },
+  "OP2-1c": {
+   "period": 4500,
+   "cum": 28200,
+   "src": "Latrine registers, 2026-06"
+  },
+  "OC2b": {
+   "period": 8,
+   "cum": 20,
+   "src": "ODF verification reports, 2026-06"
+  },
+  "OP2-2a": {
+   "period": 5,
+   "cum": 23,
+   "src": "Handover certificates, 2026-06"
+  },
+  "OP3-1a": {
+   "period": 14000,
+   "cum": 78000,
+   "src": "Hygiene session attendance sheets, 2026-06"
+  },
+  "OP3-1b": {
+   "period": 0,
+   "cum": 240,
+   "src": "Training attendance sheets, 2026-06"
+  },
+  "OP3-1c": {
+   "period": 120,
+   "cum": 750,
+   "src": "Installation records, 2026-06"
+  },
+  "OP3-1d": {
+   "period": 700,
+   "cum": 4700,
+   "src": "Distribution lists, 2026-06"
+  },
+  "OP3-1e": {
+   "period": 450,
+   "cum": 2800,
+   "src": "Distribution lists, 2026-06"
+  },
+  "OP3-2a": {
+   "period": 6500,
+   "cum": 36000,
+   "src": "Session attendance sheets, 2026-06"
+  },
+  "OP3-2b": {
+   "period": 1,
+   "cum": 10,
+   "src": "Stock records, 2026-06"
+  },
+  "GI-1": {
+   "period": 20,
+   "cum": null,
+   "src": "Household survey, 2026-06"
+  },
+  "OC1a": {
+   "period": 70,
+   "cum": null,
+   "src": "Household survey, 2026-06"
+  },
+  "OC1b": {
+   "period": 65,
+   "cum": null,
+   "src": "Household survey, 2026-06"
+  },
+  "OC2a": {
+   "period": 44,
+   "cum": null,
+   "src": "Household survey, 2026-06"
+  },
+  "OC3a": {
+   "period": 55,
+   "cum": null,
+   "src": "Household survey, 2026-06"
+  }
+ },
+ "2026-07": {
+  "OP1-1a": {
+   "period": 2,
+   "cum": 40,
+   "src": "Completion certificates, 2026-07"
+  },
+  "OP1-1b": {
+   "period": 3000,
+   "cum": 60000,
+   "src": "Water point registers, 2026-07"
+  },
+  "OP1-1c": {
+   "period": 0,
+   "cum": 8,
+   "src": "Commissioning reports, 2026-07"
+  },
+  "OP1-2a": {
+   "period": 70,
+   "cum": 600,
+   "src": "Water quality test logs, 2026-07"
+  },
+  "OP1-2b": {
+   "period": 91,
+   "cum": null,
+   "src": "Water quality test logs, 2026-07"
+  },
+  "OP1-2c": {
+   "period": 2,
+   "cum": 40,
+   "src": "Training attendance sheets, 2026-07"
+  },
+  "OP2-1a": {
+   "period": 50,
+   "cum": 900,
+   "src": "Completion certificates, 2026-07"
+  },
+  "OP2-1b": {
+   "period": 4,
+   "cum": 60,
+   "src": "CLTS triggering reports, 2026-07"
+  },
+  "OP2-1c": {
+   "period": 1800,
+   "cum": 30000,
+   "src": "Latrine registers, 2026-07"
+  },
+  "OC2b": {
+   "period": 5,
+   "cum": 25,
+   "src": "ODF verification reports, 2026-07"
+  },
+  "OP2-2a": {
+   "period": 2,
+   "cum": 25,
+   "src": "Handover certificates, 2026-07"
+  },
+  "OP3-1a": {
+   "period": 12000,
+   "cum": 90000,
+   "src": "Hygiene session attendance sheets, 2026-07"
+  },
+  "OP3-1b": {
+   "period": 0,
+   "cum": 240,
+   "src": "Training attendance sheets, 2026-07"
+  },
+  "OP3-1c": {
+   "period": 50,
+   "cum": 800,
+   "src": "Installation records, 2026-07"
+  },
+  "OP3-1d": {
+   "period": 300,
+   "cum": 5000,
+   "src": "Distribution lists, 2026-07"
+  },
+  "OP3-1e": {
+   "period": 200,
+   "cum": 3000,
+   "src": "Distribution lists, 2026-07"
+  },
+  "OP3-2a": {
+   "period": 4000,
+   "cum": 40000,
+   "src": "Session attendance sheets, 2026-07"
+  },
+  "OP3-2b": {
+   "period": 0,
+   "cum": 10,
+   "src": "Stock records, 2026-07"
+  },
+  "GI-1": {
+   "period": 19,
+   "cum": null,
+   "src": "Household survey, 2026-07"
+  },
+  "OC1a": {
+   "period": 74,
+   "cum": null,
+   "src": "Household survey, 2026-07"
+  },
+  "OC1b": {
+   "period": 69,
+   "cum": null,
+   "src": "Household survey, 2026-07"
+  },
+  "OC2a": {
+   "period": 48,
+   "cum": null,
+   "src": "Household survey, 2026-07"
+  },
+  "OC3a": {
+   "period": 58,
+   "cum": null,
+   "src": "Household survey, 2026-07"
+  }
+ }
+}

@@ -38,6 +38,8 @@ export async function attach(name = "script") {
       try { return await goto(url, options); } catch (error) { if (i === 3) throw error; await new Promise((r) => setTimeout(r, 2500)); }
     }
   };
+  const shot = page.screenshot.bind(page);
+  page.screenshot = async (o) => { try { return await shot({ ...o, timeout: 6000 }); } catch { return undefined; } };
   return { browser, ctx, page };
 }
 

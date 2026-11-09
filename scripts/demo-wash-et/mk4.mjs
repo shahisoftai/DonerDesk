@@ -1,0 +1,12 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("mk4"); page.setDefaultTimeout(15000);
+const sel = page.locator("main select"); const n = await sel.count(); const f = (i) => sel.nth(n - 7 + i);
+const T = (l) => l.evaluate((e) => [...e.options].map((o) => o.textContent.trim()));
+const pick = async (i, starts) => { const o = (await T(f(i))).find((t) => t.includes(starts)); if (!o) throw new Error("no " + starts); await f(i).selectOption({ label: o }); await page.waitForTimeout(700); };
+await pick(0, "Safe Water"); await f(1).selectOption({ label: "Everyone on the project" });
+await pick(2, "OP1-1b"); await pick(3, "OP2-1c"); await pick(4, "OP3-1c"); await pick(5, "OP3-1a"); await pick(6, "OP1-1a");
+await page.locator("main input:not([type=checkbox]):not([type=file])").last().fill("M&E dashboard - Ethiopia WASH (USAID)");
+console.log((await page.locator("main").innerText()).match(/\d charts can be drawn now[^\n]*/)?.[0]);
+const b = page.getByRole("button", { name: "Create the dashboard" }); await b.scrollIntoViewIfNeeded(); await b.click(); await page.waitForTimeout(9000);
+console.log(await page.evaluate(() => [...document.querySelectorAll("a")].filter(a=>/Open it/.test(a.innerText)).map(a=>a.href)));
+await browser.close(); process.exit(0);

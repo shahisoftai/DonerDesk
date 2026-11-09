@@ -1,0 +1,13 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("pl3");
+const row = page.locator("main li, main div").filter({ has: page.locator("input[type=checkbox]") }).filter({ hasText: /^\s*Karnali\s*$/ }).first();
+console.log(await row.count());
+const tog = page.getByRole("button", { name: /expand|Karnali/i });
+console.log(await tog.allInnerTexts().then(a=>a.slice(0,8)));
+await page.locator("main").getByText("Karnali", { exact: true }).first().click(); await page.waitForTimeout(500);
+const tri = page.locator("main button", { hasText: "▸" }); console.log("tri", await tri.count());
+await tri.nth(6).click(); await page.waitForTimeout(1500);
+await page.getByLabel("Search areas").scrollIntoViewIfNeeded();
+await page.screenshot({path:process.env.SHOT});
+console.log((await page.locator("main").innerText()).split("Search areas")[1].slice(0,500));
+await browser.close(); process.exit(0);

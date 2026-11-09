@@ -1,0 +1,16 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("mk2");
+await page.goto(BASE+"/dashboards/templates", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3000);
+await page.getByLabel("Nutrition", { exact: true }).getByRole("button", { name: "Use this template" }).first().click(); await page.waitForTimeout(2500);
+const sel = page.locator("main select"); const n = await sel.count(); const f = (i) => sel.nth(n - 7 + i);
+const T = (l) => l.evaluate((e) => [...e.options].map((o) => o.textContent.trim()));
+const pick = async (i, starts) => { const o = (await T(f(i))).find((t) => t.includes(starts)); await f(i).selectOption({ label: o }); await page.waitForTimeout(800); };
+await pick(0, "Integrated Management"); await f(1).selectOption({ label: "Everyone on the project" });
+await pick(2, "OP1-1a"); await pick(3, "OP1-1b"); await pick(4, "OP2-1a"); await pick(5, "OP1-2a"); await pick(6, "OC1a");
+const inp = page.locator("main input:not([type=checkbox]):not([type=file])").last(); console.log("name field", await inp.evaluate(e=>e.value||e.placeholder||e.name));
+await inp.fill("M&E dashboard - Nepal CMAM and IYCF (UNICEF)");
+const b = page.getByRole("button", { name: "Create the dashboard" }); console.log("enabled", await b.isEnabled());
+await b.scrollIntoViewIfNeeded(); await b.click(); await page.waitForTimeout(12000);
+console.log(page.url()); console.log((await page.locator("main").innerText()).split("Create the dashboard")[1]?.slice(0,400));
+await page.screenshot({ path: process.env.SHOT, fullPage: true });
+await browser.close(); process.exit(0);

@@ -1,0 +1,12 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("f3");
+await page.goto(`${BASE}/projects/8e20556a-115e-48a7-be9b-bb1bfe14bf70/activities/new`, { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3000);
+await page.getByRole("button", { name: "Start fresh" }).click().catch(()=>{});
+await page.locator("input[type=file]").first().setInputFiles([process.env.F]); await page.waitForTimeout(5000); console.log(await page.evaluate(()=>[...document.querySelectorAll("main button")].map(b=>b.innerText.trim().slice(0,25)).join("|")));
+await page.getByRole("button", { name: /File details/ }).first().click(); await page.waitForTimeout(500);
+console.log("pt visible", await page.locator("input[name=participantsTotal]").isVisible());
+await page.getByText("Add detail", { exact: false }).first().click(); await page.waitForTimeout(800);
+console.log("pt visible", await page.locator("input[name=participantsTotal]").isVisible(), await page.locator("select").count());
+console.log(await page.evaluate(() => [...document.querySelectorAll("main select")].map(s=>(s.name||s.getAttribute("aria-label"))+":"+[...s.options].length)));
+await page.screenshot({path:process.env.SHOT, fullPage:true});
+await browser.close(); process.exit(0);

@@ -1,0 +1,614 @@
+{
+ "2026-03": {
+  "OP1-1a": {
+   "period": 300,
+   "cum": 300,
+   "src": "Enrolment registers, 2026-03"
+  },
+  "OP1-1b": {
+   "period": 10,
+   "cum": 10,
+   "src": "Campaign reports, 2026-03"
+  },
+  "OP1-1c": {
+   "period": 4,
+   "cum": 4,
+   "src": "Centre registration records, 2026-03"
+  },
+  "OP1-2a": {
+   "period": 0,
+   "cum": 0,
+   "src": "Completion certificates, 2026-03"
+  },
+  "OP1-2b": {
+   "period": 0,
+   "cum": 0,
+   "src": "Handover certificates, 2026-03"
+  },
+  "OP1-2c": {
+   "period": 0,
+   "cum": 0,
+   "src": "Distribution lists, 2026-03"
+  },
+  "OP2-1a": {
+   "period": 40,
+   "cum": 40,
+   "src": "Training attendance sheets, 2026-03"
+  },
+  "OP2-1b": {
+   "period": 20,
+   "cum": 20,
+   "src": "Coaching visit forms, 2026-03"
+  },
+  "OP2-2a": {
+   "period": 0,
+   "cum": 0,
+   "src": "Club attendance registers, 2026-03"
+  },
+  "OP2-2b": {
+   "period": 10,
+   "cum": 10,
+   "src": "Club registration records, 2026-03"
+  },
+  "OP2-2c": {
+   "period": 0,
+   "cum": 0,
+   "src": "Listener and platform logs, 2026-03"
+  },
+  "OP3-1a": {
+   "period": 60,
+   "cum": 60,
+   "src": "Training attendance sheets, 2026-03"
+  },
+  "OP3-1b": {
+   "period": 8,
+   "cum": 8,
+   "src": "Dialogue reports, 2026-03"
+  },
+  "OP3-1c": {
+   "period": 1000,
+   "cum": 1000,
+   "src": "Dialogue attendance sheets, 2026-03"
+  },
+  "OP3-2a": {
+   "period": 0,
+   "cum": 0,
+   "src": "Bursary registers, 2026-03"
+  },
+  "OP3-2b": {
+   "period": 0,
+   "cum": 0,
+   "src": "Distribution lists, 2026-03"
+  },
+  "OP3-2c": {
+   "period": 20,
+   "cum": 20,
+   "src": "Support registers, 2026-03"
+  },
+  "OP3-2d": {
+   "period": 0,
+   "cum": 0,
+   "src": "Training attendance sheets, 2026-03"
+  }
+ },
+ "2026-04": {
+  "OP1-1a": {
+   "period": 800,
+   "cum": 1100,
+   "src": "Enrolment registers, 2026-04"
+  },
+  "OP1-1b": {
+   "period": 20,
+   "cum": 30,
+   "src": "Campaign reports, 2026-04"
+  },
+  "OP1-1c": {
+   "period": 8,
+   "cum": 12,
+   "src": "Centre registration records, 2026-04"
+  },
+  "OP1-2a": {
+   "period": 4,
+   "cum": 4,
+   "src": "Completion certificates, 2026-04"
+  },
+  "OP1-2b": {
+   "period": 3,
+   "cum": 3,
+   "src": "Handover certificates, 2026-04"
+  },
+  "OP1-2c": {
+   "period": 1500,
+   "cum": 1500,
+   "src": "Distribution lists, 2026-04"
+  },
+  "OP2-1a": {
+   "period": 90,
+   "cum": 130,
+   "src": "Training attendance sheets, 2026-04"
+  },
+  "OP2-1b": {
+   "period": 90,
+   "cum": 110,
+   "src": "Coaching visit forms, 2026-04"
+  },
+  "OP2-2a": {
+   "period": 1500,
+   "cum": 1500,
+   "src": "Club attendance registers, 2026-04"
+  },
+  "OP2-2b": {
+   "period": 30,
+   "cum": 40,
+   "src": "Club registration records, 2026-04"
+  },
+  "OP2-2c": {
+   "period": 2000,
+   "cum": 2000,
+   "src": "Listener and platform logs, 2026-04"
+  },
+  "OP3-1a": {
+   "period": 120,
+   "cum": 180,
+   "src": "Training attendance sheets, 2026-04"
+  },
+  "OP3-1b": {
+   "period": 20,
+   "cum": 28,
+   "src": "Dialogue reports, 2026-04"
+  },
+  "OP3-1c": {
+   "period": 2500,
+   "cum": 3500,
+   "src": "Dialogue attendance sheets, 2026-04"
+  },
+  "OP3-2a": {
+   "period": 300,
+   "cum": 300,
+   "src": "Bursary registers, 2026-04"
+  },
+  "OP3-2b": {
+   "period": 800,
+   "cum": 800,
+   "src": "Distribution lists, 2026-04"
+  },
+  "OP3-2c": {
+   "period": 60,
+   "cum": 80,
+   "src": "Support registers, 2026-04"
+  },
+  "OP3-2d": {
+   "period": 30,
+   "cum": 30,
+   "src": "Training attendance sheets, 2026-04"
+  }
+ },
+ "2026-05": {
+  "OP1-1a": {
+   "period": 1200,
+   "cum": 2300,
+   "src": "Enrolment registers, 2026-05"
+  },
+  "OP1-1b": {
+   "period": 25,
+   "cum": 55,
+   "src": "Campaign reports, 2026-05"
+  },
+  "OP1-1c": {
+   "period": 6,
+   "cum": 18,
+   "src": "Centre registration records, 2026-05"
+  },
+  "OP1-2a": {
+   "period": 8,
+   "cum": 12,
+   "src": "Completion certificates, 2026-05"
+  },
+  "OP1-2b": {
+   "period": 6,
+   "cum": 9,
+   "src": "Handover certificates, 2026-05"
+  },
+  "OP1-2c": {
+   "period": 3000,
+   "cum": 4500,
+   "src": "Distribution lists, 2026-05"
+  },
+  "OP2-1a": {
+   "period": 110,
+   "cum": 240,
+   "src": "Training attendance sheets, 2026-05"
+  },
+  "OP2-1b": {
+   "period": 150,
+   "cum": 260,
+   "src": "Coaching visit forms, 2026-05"
+  },
+  "OP2-2a": {
+   "period": 2500,
+   "cum": 4000,
+   "src": "Club attendance registers, 2026-05"
+  },
+  "OP2-2b": {
+   "period": 40,
+   "cum": 80,
+   "src": "Club registration records, 2026-05"
+  },
+  "OP2-2c": {
+   "period": 4000,
+   "cum": 6000,
+   "src": "Listener and platform logs, 2026-05"
+  },
+  "OP3-1a": {
+   "period": 150,
+   "cum": 330,
+   "src": "Training attendance sheets, 2026-05"
+  },
+  "OP3-1b": {
+   "period": 30,
+   "cum": 58,
+   "src": "Dialogue reports, 2026-05"
+  },
+  "OP3-1c": {
+   "period": 4000,
+   "cum": 7500,
+   "src": "Dialogue attendance sheets, 2026-05"
+  },
+  "OP3-2a": {
+   "period": 500,
+   "cum": 800,
+   "src": "Bursary registers, 2026-05"
+  },
+  "OP3-2b": {
+   "period": 1500,
+   "cum": 2300,
+   "src": "Distribution lists, 2026-05"
+  },
+  "OP3-2c": {
+   "period": 100,
+   "cum": 180,
+   "src": "Support registers, 2026-05"
+  },
+  "OP3-2d": {
+   "period": 60,
+   "cum": 90,
+   "src": "Training attendance sheets, 2026-05"
+  },
+  "GI-1": {
+   "period": 67,
+   "cum": null,
+   "src": "School enrolment registers (NEMIS), 2026-05"
+  },
+  "OC1a": {
+   "period": 76,
+   "cum": null,
+   "src": "School attendance registers, 2026-05"
+  },
+  "OC1b": {
+   "period": 82,
+   "cum": null,
+   "src": "School registers, 2026-05"
+  },
+  "OC2a": {
+   "period": 24,
+   "cum": null,
+   "src": "Early grade reading assessment, 2026-05"
+  },
+  "OC2b": {
+   "period": 27,
+   "cum": null,
+   "src": "Early grade maths assessment, 2026-05"
+  },
+  "OC3a": {
+   "period": 45,
+   "cum": null,
+   "src": "School governance checklist, 2026-05"
+  }
+ },
+ "2026-06": {
+  "OP1-1a": {
+   "period": 1300,
+   "cum": 3600,
+   "src": "Enrolment registers, 2026-06"
+  },
+  "OP1-1b": {
+   "period": 25,
+   "cum": 80,
+   "src": "Campaign reports, 2026-06"
+  },
+  "OP1-1c": {
+   "period": 4,
+   "cum": 22,
+   "src": "Centre registration records, 2026-06"
+  },
+  "OP1-2a": {
+   "period": 10,
+   "cum": 22,
+   "src": "Completion certificates, 2026-06"
+  },
+  "OP1-2b": {
+   "period": 8,
+   "cum": 17,
+   "src": "Handover certificates, 2026-06"
+  },
+  "OP1-2c": {
+   "period": 3500,
+   "cum": 8000,
+   "src": "Distribution lists, 2026-06"
+  },
+  "OP2-1a": {
+   "period": 100,
+   "cum": 340,
+   "src": "Training attendance sheets, 2026-06"
+  },
+  "OP2-1b": {
+   "period": 220,
+   "cum": 480,
+   "src": "Coaching visit forms, 2026-06"
+  },
+  "OP2-2a": {
+   "period": 2300,
+   "cum": 6300,
+   "src": "Club attendance registers, 2026-06"
+  },
+  "OP2-2b": {
+   "period": 25,
+   "cum": 105,
+   "src": "Club registration records, 2026-06"
+  },
+  "OP2-2c": {
+   "period": 4500,
+   "cum": 10500,
+   "src": "Listener and platform logs, 2026-06"
+  },
+  "OP3-1a": {
+   "period": 130,
+   "cum": 460,
+   "src": "Training attendance sheets, 2026-06"
+  },
+  "OP3-1b": {
+   "period": 35,
+   "cum": 93,
+   "src": "Dialogue reports, 2026-06"
+  },
+  "OP3-1c": {
+   "period": 5000,
+   "cum": 12500,
+   "src": "Dialogue attendance sheets, 2026-06"
+  },
+  "OP3-2a": {
+   "period": 400,
+   "cum": 1200,
+   "src": "Bursary registers, 2026-06"
+  },
+  "OP3-2b": {
+   "period": 1500,
+   "cum": 3800,
+   "src": "Distribution lists, 2026-06"
+  },
+  "OP3-2c": {
+   "period": 100,
+   "cum": 280,
+   "src": "Support registers, 2026-06"
+  },
+  "OP3-2d": {
+   "period": 70,
+   "cum": 160,
+   "src": "Training attendance sheets, 2026-06"
+  }
+ },
+ "2026-07": {
+  "OP1-1a": {
+   "period": 1100,
+   "cum": 4700,
+   "src": "Enrolment registers, 2026-07"
+  },
+  "OP1-1b": {
+   "period": 20,
+   "cum": 100,
+   "src": "Campaign reports, 2026-07"
+  },
+  "OP1-1c": {
+   "period": 2,
+   "cum": 24,
+   "src": "Centre registration records, 2026-07"
+  },
+  "OP1-2a": {
+   "period": 10,
+   "cum": 32,
+   "src": "Completion certificates, 2026-07"
+  },
+  "OP1-2b": {
+   "period": 8,
+   "cum": 25,
+   "src": "Handover certificates, 2026-07"
+  },
+  "OP1-2c": {
+   "period": 2500,
+   "cum": 10500,
+   "src": "Distribution lists, 2026-07"
+  },
+  "OP2-1a": {
+   "period": 70,
+   "cum": 410,
+   "src": "Training attendance sheets, 2026-07"
+  },
+  "OP2-1b": {
+   "period": 230,
+   "cum": 710,
+   "src": "Coaching visit forms, 2026-07"
+  },
+  "OP2-2a": {
+   "period": 1700,
+   "cum": 8000,
+   "src": "Club attendance registers, 2026-07"
+  },
+  "OP2-2b": {
+   "period": 15,
+   "cum": 120,
+   "src": "Club registration records, 2026-07"
+  },
+  "OP2-2c": {
+   "period": 3000,
+   "cum": 13500,
+   "src": "Listener and platform logs, 2026-07"
+  },
+  "OP3-1a": {
+   "period": 90,
+   "cum": 550,
+   "src": "Training attendance sheets, 2026-07"
+  },
+  "OP3-1b": {
+   "period": 35,
+   "cum": 128,
+   "src": "Dialogue reports, 2026-07"
+  },
+  "OP3-1c": {
+   "period": 4500,
+   "cum": 17000,
+   "src": "Dialogue attendance sheets, 2026-07"
+  },
+  "OP3-2a": {
+   "period": 200,
+   "cum": 1400,
+   "src": "Bursary registers, 2026-07"
+  },
+  "OP3-2b": {
+   "period": 900,
+   "cum": 4700,
+   "src": "Distribution lists, 2026-07"
+  },
+  "OP3-2c": {
+   "period": 70,
+   "cum": 350,
+   "src": "Support registers, 2026-07"
+  },
+  "OP3-2d": {
+   "period": 50,
+   "cum": 210,
+   "src": "Training attendance sheets, 2026-07"
+  }
+ },
+ "2026-08": {
+  "OP1-1a": {
+   "period": 700,
+   "cum": 5400,
+   "src": "Enrolment registers, 2026-08"
+  },
+  "OP1-1b": {
+   "period": 15,
+   "cum": 115,
+   "src": "Campaign reports, 2026-08"
+  },
+  "OP1-1c": {
+   "period": 0,
+   "cum": 24,
+   "src": "Centre registration records, 2026-08"
+  },
+  "OP1-2a": {
+   "period": 8,
+   "cum": 40,
+   "src": "Completion certificates, 2026-08"
+  },
+  "OP1-2b": {
+   "period": 5,
+   "cum": 30,
+   "src": "Handover certificates, 2026-08"
+  },
+  "OP1-2c": {
+   "period": 1500,
+   "cum": 12000,
+   "src": "Distribution lists, 2026-08"
+  },
+  "OP2-1a": {
+   "period": 40,
+   "cum": 450,
+   "src": "Training attendance sheets, 2026-08"
+  },
+  "OP2-1b": {
+   "period": 190,
+   "cum": 900,
+   "src": "Coaching visit forms, 2026-08"
+  },
+  "OP2-2a": {
+   "period": 1000,
+   "cum": 9000,
+   "src": "Club attendance registers, 2026-08"
+  },
+  "OP2-2b": {
+   "period": 0,
+   "cum": 120,
+   "src": "Club registration records, 2026-08"
+  },
+  "OP2-2c": {
+   "period": 1500,
+   "cum": 15000,
+   "src": "Listener and platform logs, 2026-08"
+  },
+  "OP3-1a": {
+   "period": 50,
+   "cum": 600,
+   "src": "Training attendance sheets, 2026-08"
+  },
+  "OP3-1b": {
+   "period": 22,
+   "cum": 150,
+   "src": "Dialogue reports, 2026-08"
+  },
+  "OP3-1c": {
+   "period": 3000,
+   "cum": 20000,
+   "src": "Dialogue attendance sheets, 2026-08"
+  },
+  "OP3-2a": {
+   "period": 100,
+   "cum": 1500,
+   "src": "Bursary registers, 2026-08"
+  },
+  "OP3-2b": {
+   "period": 300,
+   "cum": 5000,
+   "src": "Distribution lists, 2026-08"
+  },
+  "OP3-2c": {
+   "period": 50,
+   "cum": 400,
+   "src": "Support registers, 2026-08"
+  },
+  "OP3-2d": {
+   "period": 30,
+   "cum": 240,
+   "src": "Training attendance sheets, 2026-08"
+  },
+  "GI-1": {
+   "period": 72,
+   "cum": null,
+   "src": "School enrolment registers (NEMIS), 2026-08"
+  },
+  "OC1a": {
+   "period": 84,
+   "cum": null,
+   "src": "School attendance registers, 2026-08"
+  },
+  "OC1b": {
+   "period": 88,
+   "cum": null,
+   "src": "School registers, 2026-08"
+  },
+  "OC2a": {
+   "period": 35,
+   "cum": null,
+   "src": "Early grade reading assessment, 2026-08"
+  },
+  "OC2b": {
+   "period": 38,
+   "cum": null,
+   "src": "Early grade maths assessment, 2026-08"
+  },
+  "OC3a": {
+   "period": 78,
+   "cum": null,
+   "src": "School governance checklist, 2026-08"
+  }
+ }
+}

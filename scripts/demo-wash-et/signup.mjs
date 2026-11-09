@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("signup");
+await page.goto(BASE + "/signup?plan=starter", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(2500);
+await page.fill("#name", "Najeeb Piracha");
+await page.fill("#email", process.env.DEMO_EMAIL); await page.fill("#password", process.env.DEMO_PASSWORD);
+await page.fill("#orgName", "Global Care Initiative"); await page.selectOption("#orgType", { label: "INGO" }).catch(async()=>console.log(await page.locator("#orgType option").allInnerTexts()));
+await page.fill("#country", "Nepal"); await page.selectOption("#sector", { label: "Nutrition" }).catch(()=>{});
+await page.screenshot({ path: process.env.SHOT });
+await page.getByRole("button", { name: /create|sign|start/i }).last().click();
+await page.waitForTimeout(9000); console.log(page.url()); console.log((await page.locator("main").innerText()).slice(0,800));
+await browser.close(); process.exit(0);
