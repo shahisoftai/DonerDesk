@@ -225,7 +225,7 @@ Batch 33.11 (cost per result, IATI export) is not started. Support articles for 
 
 | # | Feature | Batch | Status |
 |---|---|---|---|
-| 53 | [Chart Studio and saved charts](./53-Chart-Studio.md) | 34.1 | 2026-10-28 (not yet tried signed-in) |
+| 53 | [Chart Studio and saved charts](./53-Chart-Studio.md) | 34.1, 47 | 2026-10-28; Phase 47 (50 kinds, 40 themes, style options) 2026-11-09, verified signed-in |
 | 54 | [The Entry Sheet](./54-Entry-Sheet.md) | 34.2 | 2026-10-28 |
 | 55 | [Dashboards v2, sector templates, tabs, full screen, print](./55-Dashboard-Templates-Tabs-And-Viewing.md) | 34.3 | 2026-10-28 |
 | 56 | [The Maps screen](./56-Maps-Screen.md) | 34.4 (first slice) | 2026-10-28 |

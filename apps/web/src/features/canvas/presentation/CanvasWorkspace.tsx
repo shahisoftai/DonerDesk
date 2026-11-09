@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CANVAS_PROFILES, altPack, definitionFor, canPublish, NO_FILTER, isContainerKind, canvasAsDesign, canvasJson, isFiltered, pickToFilter, type CrossFilter, canvasProblems, canvasToWidgets, checkCanvas, listThemes, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
+import { CANVAS_PROFILES, convertBlock, setFlag, altPack, definitionFor, canPublish, NO_FILTER, isContainerKind, canvasAsDesign, canvasJson, isFiltered, pickToFilter, type CrossFilter, canvasProblems, canvasToWidgets, checkCanvas, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { deleteCanvasAction, duplicateCanvasAction, previewCanvasAction, resolveCanvasAction, saveCanvasAction } from "@/lib/actions/canvas";
 import type { CanvasView, ResolvedCanvas } from "@/lib/server/schemas-canvas";
@@ -14,6 +14,13 @@ import { BlockPalette } from "./editor/BlockPalette";
 import type { IndicatorOption } from "./editor/FieldWidget";
 import { Inspector } from "./editor/Inspector";
 import { PublishPanel } from "./PublishPanel";
+import { CommandPalette } from "./CommandPalette";
+import { ConvertDialog } from "./ConvertDialog";
+import { LayersPanel } from "./LayersPanel";
+import { ShortcutSheet } from "./ShortcutSheet";
+import { ThemePicker } from "./ThemePicker";
+import { useEditorSession } from "./use-editor-session";
+import { selectByRectangle } from "../domain/command-handlers";
 import { VersionsPanel } from "./VersionsPanel";
 import { useCanvasEditor } from "./use-canvas-editor";
 
@@ -38,6 +45,8 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const { t } = useI18n();
   const ed = useCanvasEditor(initial.canvas, initial.projectId, projects[0]?.id);
   const menu = useRef<HTMLDetailsElement>(null);
+  const saveRef = useRef<() => void>(() => undefined);
+  const [convertId, setConvertId] = useState<string | null>(null);
   /** An action chosen from the menu closes it. */
   const choose = (action: () => void) => () => { menu.current?.removeAttribute("open"); action(); };
   const [editing, setEditing] = useState(false);
@@ -85,6 +94,8 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const hasFilterBar = useMemo(() => canvas.pages.some((p) => p.blocks.some((b) => definitionFor(b.kind)?.family === "CONTROLS" && b.style?.hidden !== true)), [canvas]);
   const leftOut = useMemo(() => canvasAsDesign(canvas).skipped, [canvas]);
   const canEdit = initial.canEdit;
+  const projectIds = useMemo(() => new Set(projects.map((p) => p.id)), [projects]);
+  const session = useEditorSession(ed, { enabled: editing, save: () => saveRef.current(), preview: () => setEditing(false), canReachProject: (id) => projectIds.has(id), convert: setConvertId });
 
   useEffect(() => {
     if (!dirty) return;
@@ -108,6 +119,8 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
     setBusy(null);
     setNotice({ tone: "ok", text: r.value.problems.length ? `Saved. ${r.value.problems.length} block${r.value.problems.length === 1 ? " is" : "s are"} not set up yet.` : "Saved." });
   }
+
+  saveRef.current = () => { if (dirty && busy === null) void save(); };
 
   async function copy(): Promise<void> {
     setBusy("copy");
@@ -137,7 +150,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
         </div>
         <div className="flex flex-wrap items-center gap-2 print:hidden">
           {canEdit && <button type="button" className={BTN} aria-pressed={editing} onClick={() => setEditing((v) => !v)}>{editing ? t("canvas.ui.doneEditing") : t("canvas.ui.edit")}</button>}
-          {editing && <><button type="button" className={BTN} onClick={ed.undo} disabled={!ed.canUndo}>{t("canvas.ui.undo")}</button><button type="button" className={BTN} onClick={ed.redo} disabled={!ed.canRedo}>{t("canvas.ui.redo")}</button></>}
+          {editing && <><button type="button" className={BTN} onClick={() => session.setPaletteOpen(true)} aria-keyshortcuts="Control+K Meta+K">{t("editor.palette.title")}</button><button type="button" className={BTN} onClick={() => session.setShortcutsOpen(true)} aria-label={t("editor.shortcuts.title")}>?</button><button type="button" className={BTN} onClick={ed.undo} disabled={!ed.canUndo}>{t("canvas.ui.undo")}</button><button type="button" className={BTN} onClick={ed.redo} disabled={!ed.canRedo}>{t("canvas.ui.redo")}</button></>}
           {canEdit && <button type="button" className={`${BTN} bg-sky-700 text-white hover:bg-sky-800 dark:hover:bg-sky-800`} onClick={() => void save()} disabled={!dirty || busy !== null}>{busy === "save" ? t("canvas.ui.saving") : t("canvas.ui.save")}</button>}
           <details className="relative" ref={menu}>
             <summary className={`${BTN} cursor-pointer list-none`}>{t("canvas.ui.more")}</summary>
@@ -162,8 +175,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
         <section className="flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 p-3 text-sm print:hidden dark:border-slate-700" aria-label="About this canvas">
           <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">What it is for</span>
             <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={canvas.profile} onChange={(e) => ed.setMeta({ profile: e.target.value as Canvas["profile"] })}>{CANVAS_PROFILES.map((p) => <option key={p} value={p}>{PROFILE_LABEL[p]}</option>)}</select></label>
-          <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Look</span>
-            <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={canvas.themeId} onChange={(e) => ed.setMeta({ themeId: e.target.value })}>{listThemes().map((th) => <option key={th.id} value={th.id}>{th.label}</option>)}</select></label>
+          <ThemePicker value={canvas.themeId} onChange={(id) => ed.setMeta({ themeId: id })} />
           <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Language</span>
             <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={canvas.language} onChange={(e) => ed.setMeta({ language: e.target.value })}>{[["en", "English"], ["fr", "Français"], ["es", "Español"], ["ar", "العربية"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
           <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Kind</span>
@@ -198,10 +210,10 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
           {blocks.length === 0 ? (
             <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{editing ? "This page is empty. Add a block from the list on the right." : canEdit ? "This page is empty. Choose Edit to add blocks." : "This page is empty."}</p>
           ) : (
-            <CanvasPageGrid canvas={canvas} blocks={blocks} drawings={drawings} widgets={widgets} models={live?.models} repeats={live?.repeats} editing={editing} selectedId={ed.selected} onSelect={ed.setSelected}
+            <div style={{ zoom: session.view.zoom }} data-testid="zoom" data-zoom={session.view.zoom}><CanvasPageGrid canvas={canvas} blocks={blocks} drawings={drawings} widgets={widgets} models={live?.models} repeats={live?.repeats} editing={editing} selectedIds={new Set(ed.selection.ids)} onSelect={ed.selectBlock} showGrid={session.view.grid} onMarquee={(cells, add) => (cells.w === 0 ? ed.setSelection({ ids: [] }) : selectByRectangle({ canvas, page: ed.page, selection: ed.selection, select: ed.setSelection } as never, cells, add))}
               onPick={live ? (name) => setFilters((f) => pickToFilter(live.choices, f, name)) : undefined}
               isChanged={(b) => !previewCurrent && savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)}
-              frame={(b, node) => <BlockFrame bounds={b.bounds} movable={editing && b.style?.locked !== true} selected={ed.selected === b.id} label={label(b.kind)} onBounds={(c) => ed.bounds(b.id, c)} onSelect={() => ed.setSelected(b.id)}>{node}</BlockFrame>} />
+              frame={(b, node) => <BlockFrame bounds={b.bounds} movable={editing && b.style?.locked !== true} selected={ed.selection.ids.includes(b.id)} label={label(b.kind)} onBounds={(c) => ed.bounds(b.id, c)} onSelect={() => ed.selectBlock(b.id)}>{node}</BlockFrame>} /></div>
           )}
 
           <section className="mt-4 space-y-2 print:hidden" aria-label="Design check">
@@ -231,11 +243,20 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
           <div className="space-y-4 print:hidden">
             {ed.selectedBlock ? <Inspector block={ed.selectedBlock} label={label(ed.selectedBlock.kind)} projects={projects} indicatorsByProject={indicatorsByProject} fallbackProjectId={initial.projectId} problems={selectedProblems} language={canvas.language} containers={containersOnPage} onContainer={(c) => ed.container(ed.selectedBlock!.id, c)}
               onProps={(p) => ed.setProps(ed.selectedBlock!.id, p)} onProject={(pid) => ed.setProject(ed.selectedBlock!.id, pid)} onBounds={(c) => ed.bounds(ed.selectedBlock!.id, c)} onAlt={(a, d) => ed.alt(ed.selectedBlock!.id, a, d)} onAction={(a) => ed.act(ed.selectedBlock!.id, a)} />
-              : <p className="rounded-lg border border-slate-200 p-3 text-sm text-slate-500 dark:border-slate-700">Select a block to change it, or add one below.</p>}
+              : ed.selection.ids.length > 1
+                ? <section aria-label={t("editor.selected", { count: ed.selection.ids.length })} className="space-y-2 rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-700" data-testid="multi-selection">
+                    <p className="font-medium">{t("editor.selected", { count: ed.selection.ids.length })}</p>
+                    <div className="flex flex-wrap gap-1">{["alignLeft", "alignCenter", "alignRight", "alignTop", "alignMiddle", "alignBottom", "distributeH", "distributeV", "matchWidth", "matchHeight", "group", "duplicate", "delete"].map((id) => <button key={id} type="button" className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800" data-command={id} onClick={() => session.run(id)}>{t(`editor.cmd.${id}` as never)}</button>)}</div>
+                  </section>
+                : <p className="rounded-lg border border-slate-200 p-3 text-sm text-slate-500 dark:border-slate-700">Select a block to change it, or add one below.</p>}
+            <LayersPanel page={ed.page} selection={ed.selection} onSelect={ed.selectBlock} onToggle={(id, flag) => { const block = ed.page.blocks.find((b) => b.id === id); if (block) ed.apply(setFlag(canvas, [id], flag, !(block.style?.[flag] === true))); }} />
             <BlockPalette onAdd={ed.add} />
           </div>
         )}
       </div>
+      {convertId && ed.page.blocks.find((b) => b.id === convertId) && <ConvertDialog block={ed.page.blocks.find((b) => b.id === convertId)!} onConvert={(kind, accept) => void ed.apply(convertBlock(canvas, convertId, kind, accept))} onClose={() => setConvertId(null)} />}
+      {session.paletteOpen && <CommandPalette state={session.state} onRun={session.run} onClose={() => session.setPaletteOpen(false)} />}
+      {session.shortcutsOpen && <ShortcutSheet onClose={() => session.setShortcutsOpen(false)} />}
     </div>
   );
 }

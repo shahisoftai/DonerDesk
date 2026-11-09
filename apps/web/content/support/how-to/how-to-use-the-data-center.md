@@ -49,4 +49,4 @@ Every saved value is recorded in the audit trail like any other entry.
 
 ## Build a chart
 
-The **Charts** tab turns the same data into charts. See [How to add a chart to a report](/support/how-to/add-a-chart-to-a-report) for the options and for putting a chart into a report section.
+The **Charts** tab turns the same data into charts. See [Build and style a chart in the Chart Studio](/support/how-to/use-the-chart-studio) for the 50 chart types, themes and style options, and [How to add a chart to a report](/support/how-to/add-a-chart-to-a-report) for putting a chart into a report section.

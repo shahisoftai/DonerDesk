@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   addBlock, addPage, commit, canRedo, canUndo, definitionFor, duplicateBlock, moveBlock, redo, removeBlock, removePage, resizeBlock, setBindings, setBlockAlt, setHidden, setLocked,
-  setContainer, setTitle, startHistory, undo, updateProps, projectOf, type BlockInstance, type Canvas, type EditResult, type History,
+  setContainer, setTitle, startHistory, undo, updateProps, projectOf, EMPTY_SELECTION, extendTo, pruneSelection, selectOne, toggle,
+  type ArrangeResult, type BlockInstance, type Canvas, type EditResult, type History, type Selection,
 } from "@donordesk/domain/contexts/canvas/index.js";
 import { seedProps } from "../domain/block-seeds";
 
@@ -13,15 +14,27 @@ const newId = (prefix: string): string => `${prefix}${Date.now().toString(36)}${
 export function useCanvasEditor(initial: Canvas, defaultProjectId: string | undefined, fallbackProjectId?: string) {
   const [history, setHistory] = useState<History>(() => startHistory(initial));
   const [pageId, setPageId] = useState(initial.pages[0]?.id ?? "");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selection, setSelection] = useState<Selection>(EMPTY_SELECTION);
   const [message, setMessage] = useState<string | null>(null);
   const latest = useRef(history.present);
   latest.current = history.present;
   const canvas = history.present;
 
+  /** A selection never names a block that is gone (an undo can remove one). */
+  const live = useMemo(() => pruneSelection(history.present, selection), [history.present, selection]);
+  const selected: string | null = live.ids.length === 1 ? live.ids[0]! : null;
+  const setSelected = useCallback((id: string | null) => setSelection(id ? selectOne(id) : EMPTY_SELECTION), []);
+  /** A click (replace), Ctrl/⌘-click (toggle) or Shift-click (range) on a block. */
+  const selectBlock = useCallback((id: string, how: { shift?: boolean; mod?: boolean } = {}) => setSelection((s) => (how.shift ? extendTo(latest.current, s, id) : how.mod ? toggle(latest.current, s, id) : selectOne(id))), []);
+
   const run = useCallback((result: EditResult): EditResult => {
     if (result.ok) { setHistory((h) => commit(h, result.canvas)); setMessage(null); } else setMessage(result.reason);
     return result;
+  }, []);
+  /** A multi-block gesture: one undo step; blocks it left alone because they are locked are named. */
+  const apply = useCallback((r: ArrangeResult): boolean => {
+    if (r.ok) { setHistory((h) => commit(h, r.canvas)); setMessage(r.skipped.length > 0 ? `${r.skipped.length} locked block${r.skipped.length === 1 ? " was" : "s were"} left as ${r.skipped.length === 1 ? "it is" : "they are"}.` : null); } else setMessage(r.reason);
+    return r.ok;
   }, []);
   const withBlock = useCallback((id: string, f: (c: Canvas) => EditResult) => run(f(latest.current)), [run]);
 
@@ -29,7 +42,7 @@ export function useCanvasEditor(initial: Canvas, defaultProjectId: string | unde
   const pageOf = (id: string) => latest.current.pages.find((p) => p.blocks.some((b) => b.id === id));
 
   return {
-    canvas, pageId, selected, selectedBlock, message,
+    canvas, pageId, selected, selectedBlock, message, selection: live, selectBlock, setSelection, apply,
     page: canvas.pages.find((p) => p.id === pageId) ?? canvas.pages[0]!,
     canUndo: canUndo(history), canRedo: canRedo(history),
     setPageId, setSelected, clearMessage: () => setMessage(null),

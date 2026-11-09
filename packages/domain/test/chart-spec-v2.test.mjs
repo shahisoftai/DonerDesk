@@ -120,7 +120,7 @@ test("kinds are offered by what the data can honestly be drawn as, and grouped b
   const latest = kindsForTemplate("INDICATORS_PROGRESS");
   for (const k of ["PIE", "DONUT", "TREEMAP", "FUNNEL", "RADAR", "LOLLIPOP", "SCORECARD_TABLE", "SUNBURST", "WAFFLE"]) assert.ok(latest.includes(k), k);
   assert.deepEqual(kindsForTemplate("INDICATOR_VS_TARGET").filter((k) => ["GAUGE", "BULLET", "KPI_NUMBER", "PROGRESS_RING", "WATERFALL"].includes(k)).sort(), ["BULLET", "GAUGE", "KPI_NUMBER", "PROGRESS_RING", "WATERFALL"]);
-  assert.deepEqual(kindsForTemplate("STATUS_DISTRIBUTION").sort(), ["BAR", "BAR_HORIZONTAL", "DONUT", "PIE", "TREEMAP", "WAFFLE"]);
+  assert.deepEqual(kindsForTemplate("STATUS_DISTRIBUTION").sort(), ["BAR", "BAR_HORIZONTAL", "DONUT", "PIE", "ROSE", "TREEMAP", "WAFFLE"]);
   const fin = kindsForTemplate("FINANCE_BURN_RATE");
   for (const k of ["BAR", "LINE", "AREA", "BAR_LINE_COMBO", "PIVOT_TABLE"]) assert.ok(fin.includes(k), k);
   for (const k of ["PIE", "BAR_STACKED", "FUNNEL"]) assert.ok(!fin.includes(k), `${k} would mislead on budget and spend`);

@@ -10,6 +10,7 @@ import {
 import { DATA_CHART_TEMPLATES } from "@donordesk/domain/contexts/reporting/data-charts.js";
 import type { DatasetResult } from "@donordesk/domain/contexts/reporting/dataset-query.js";
 import type { DataChartTemplate } from "@donordesk/domain/contexts/reporting/data-charts.js";
+import { pruneStyleForKind } from "./studio-style.ts";
 
 /** The data templates the studio offers: the finance templates are drawn from the Data Center for now. */
 export const STUDIO_TEMPLATES: readonly DataChartTemplate[] = (Object.keys(DATA_CHART_TEMPLATES) as DataChartTemplate[]).filter((t) => TEMPLATE_SHAPE[t] !== null);
@@ -57,12 +58,12 @@ export function withTemplate(spec: ChartSpecV2, template: DataChartTemplate, all
   const current = spec.dataset.indicatorIds;
   const indicatorIds = info.indicators === "none" ? [] : info.indicators === "one" ? (current.length > 0 ? [current[0]!] : allIndicatorIds.slice(0, 1)) : (current.length > 0 ? current : allIndicatorIds.slice(0, 2));
   const measure = template === "INDICATORS_PROGRESS" && spec.dataset.measure === "PERIOD" ? "PERCENT_OF_TARGET" : spec.dataset.measure;
-  return { ...spec, kind: suitableKind(spec, template), dataset: { ...spec.dataset, template, indicatorIds, measure } };
+  return pruneStyleForKind({ ...spec, kind: suitableKind(spec, template), dataset: { ...spec.dataset, template, indicatorIds, measure } });
 }
 
 /** Chooses the chart type. A planned kind or one the data cannot show is refused (null): the picker does not offer it. */
 export function withKind(spec: ChartSpecV2, kind: ChartKind): ChartSpecV2 | null {
-  return kindsForTemplate(spec.dataset.template).includes(kind) ? { ...spec, kind } : null;
+  return kindsForTemplate(spec.dataset.template).includes(kind) ? pruneStyleForKind({ ...spec, kind }) : null;
 }
 
 /** Adds or removes an indicator; a template that takes one indicator replaces it. */

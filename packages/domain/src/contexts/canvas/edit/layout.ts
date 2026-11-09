@@ -11,15 +11,17 @@ const MAX_ROWS = 400;
 const clamp = (n: number, lo: number, hi: number): number => Math.min(Math.max(n, lo), hi);
 const overlaps = (a: LayoutBox, b: LayoutBox): boolean => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
-export function settleBoxes<T extends LayoutBox>(boxes: ReadonlyArray<T>, pinnedId?: string): T[] {
+/** `pinned` is the block (or blocks) that keep their place; everything else falls around them. */
+export function settleBoxes<T extends LayoutBox>(boxes: ReadonlyArray<T>, pinned?: string | readonly string[]): T[] {
   const fit = (b: T): T => {
     const w = clamp(Math.round(b.w), 1, CANVAS_GRID_COLUMNS);
     return { ...b, w, h: clamp(Math.round(b.h), 1, 60), x: clamp(Math.round(b.x), 0, CANVAS_GRID_COLUMNS - w), y: clamp(Math.round(b.y), 0, MAX_ROWS) };
   };
   const all = boxes.map(fit);
-  const pinned = pinnedId ? all.find((b) => b.id === pinnedId) : undefined;
-  const rest = all.filter((b) => b !== pinned).sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
-  const placed: T[] = pinned ? [pinned] : [];
+  const pins = new Set(pinned === undefined ? [] : typeof pinned === "string" ? [pinned] : pinned);
+  const fixed = all.filter((b) => pins.has(b.id));
+  const rest = all.filter((b) => !pins.has(b.id)).sort((a, b) => a.y - b.y || a.x - b.x || a.id.localeCompare(b.id));
+  const placed: T[] = [...fixed];
   for (const b of rest) {
     let y = b.y;
     for (;;) {

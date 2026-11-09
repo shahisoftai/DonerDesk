@@ -2,16 +2,18 @@
 
 import { useEffect, useRef } from "react";
 import type * as echarts from "echarts";
-import { retheme } from "@donordesk/domain/contexts/reporting/chart-theme-roles.js";
+import { optionForMode } from "@/features/design/domain/chart-mode";
 import { prepareChartMaps } from "@/lib/client/chart-maps";
-import { chartTheme, chartThemeName, rolesFor } from "@/features/design/domain/chart-theme";
+import { chartTheme, chartThemeName } from "@/features/design/domain/chart-theme";
 import { useRenderWhenSeen } from "@/features/design/presentation/render-when-seen";
 import { useColorMode } from "@/features/design/presentation/use-color-mode";
 
 const reducedMotion = (): boolean => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
 /** One chart that fills the box it is given and redraws when the box changes size (a dragged corner, a rotated phone). */
-export function DashboardChart({ option, label, maps, regionNames, onPick, hoverName, onHover }: {
+export function DashboardChart({ option, label, maps, regionNames, onPick, hoverName, onHover, paletteId }: {
+  /** The chart's colour set: a theme's colours are fitted to a dark screen. */
+  paletteId?: string | undefined;
   /** The label being pointed at in another chart; this chart highlights the same one. */
   hoverName?: string | null | undefined;
   /** Reports the label under the pointer (null when it leaves). */
@@ -21,6 +23,8 @@ export function DashboardChart({ option, label, maps, regionNames, onPick, hover
   const seen = useRenderWhenSeen(ref);
   const modeRef = useRef(mode);
   modeRef.current = mode;
+  const paletteRef = useRef(paletteId);
+  paletteRef.current = paletteId;
   const instance = useRef<echarts.ECharts | null>(null);
   const latest = useRef(option);
   latest.current = option;
@@ -51,7 +55,7 @@ export function DashboardChart({ option, label, maps, regionNames, onPick, hover
         if (typeof name === "string" && name !== "") hover.current?.(name);
       });
       chart.on("globalout", () => hover.current?.(null));
-      chart.setOption({ ...retheme(latest.current, rolesFor(modeRef.current)), ...(reducedMotion() ? { animation: false } : {}) }, true);
+      chart.setOption({ ...optionForMode(latest.current, modeRef.current, paletteRef.current), ...(reducedMotion() ? { animation: false } : {}) }, true);
       observer = new ResizeObserver(() => chart.resize());
       observer.observe(ref.current);
     })();
@@ -64,7 +68,7 @@ export function DashboardChart({ option, label, maps, regionNames, onPick, hover
   }, [mode, seen]);
 
   // A change of colour mode needs a new instance (the library fixes a theme at creation), so the chart is rebuilt by the effect above.
-  useEffect(() => { instance.current?.setOption({ ...retheme(option, rolesFor(modeRef.current)), animation: false }, true); }, [option]);
+  useEffect(() => { instance.current?.setOption({ ...optionForMode(option, modeRef.current, paletteRef.current), animation: false }, true); }, [option]);
 
   // Another chart is being pointed at: show the same label here (a category by its position, a named slice or region by name).
   useEffect(() => {

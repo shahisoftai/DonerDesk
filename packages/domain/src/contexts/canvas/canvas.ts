@@ -3,6 +3,8 @@
  * published as a frozen export. It stores composition and words, never data.
  */
 import type { Binding } from "./binding.js";
+import type { BlockAction } from "./actions.js";
+import type { CanvasParameter, ParamBinding } from "./params.js";
 
 export const CANVAS_MODES = ["LIVE", "PUBLISHED_ONLY"] as const;
 export type CanvasMode = (typeof CANVAS_MODES)[number];
@@ -24,7 +26,16 @@ export interface CanvasBlockStyle {
   align?: "start" | "center" | "end" | undefined;
   hidden?: boolean | undefined;
   locked?: boolean | undefined;
+  /** A frame preset id (`theme-kit/frame-styles.ts`); the individual tokens below override its parts. */
+  frame?: string | undefined;
+  border?: "none" | "line" | "accent" | undefined;
+  padding?: "none" | "small" | "medium" | "large" | undefined;
+  radius?: "none" | "small" | "medium" | "large" | undefined;
+  shadow?: "none" | "small" | "medium" | undefined;
 }
+
+/** Marks a block as an instance of a saved component (Phase 48.2): which one, which version it was made from and which of its blocks this is. */
+export interface BlockComponentLink { id: string; version: number; key: string }
 
 /** A block drawn inside a container block (group, tabs, repeater) instead of on the page grid; `tab` is the tab it sits in (0-based). One level only. */
 export interface BlockContainer { id: string; tab?: number | undefined }
@@ -45,11 +56,30 @@ export interface BlockInstance<K extends string = string, P = unknown> {
   /** Accessible name and long description; required before a web export of a chart or map. */
   alt?: string | undefined;
   description?: string | undefined;
+  /** Present when the block belongs to an instance of a saved component. */
+  component?: BlockComponentLink | undefined;
+  /** The block's place on a FREE page (Phase 48.4); `bounds` still holds its grid cells so the page can go back to a grid. */
+  free?: FreeFrame | undefined;
+  /** The parameters this block reads (Phase 48.3); a block with none is never narrowed by a viewer's choice. */
+  paramBindings?: ParamBinding[] | undefined;
+  /** What clicking the block (or a label in it) does. */
+  action?: BlockAction | undefined;
 }
+
+/** A block's place on a FREE page: pixels on the page, a rotation in degrees and a stacking order (Phase 48.4). */
+export interface FreeFrame { x: number; y: number; w: number; h: number; rot?: number | undefined; z?: number | undefined }
 
 export interface CanvasPage {
   id: string;
   title: string;
+  /** GRID (the 12-column dashboard grid, the default) or FREE (pixel positions on a fixed-size page). */
+  mode?: "GRID" | "FREE" | undefined;
+  /** FREE pages and print presets: the page size in px at 96 dpi. */
+  size?: { w: number; h: number } | undefined;
+  /** A page background: a colour role, never raw hex. */
+  background?: "page" | "card" | "tint" | "accent" | undefined;
+  /** A theme for this page only (a cover in a dark tone, say). */
+  themeId?: string | undefined;
   /** Page format id (shared with the print formats); "WEB_FLUID" is the dashboard default. */
   format: string;
   blocks: BlockInstance[];
@@ -74,6 +104,8 @@ export interface Canvas {
   themeId: string;
   pages: CanvasPage[];
   options?: CanvasOptions | undefined;
+  /** The choices a viewer can make (Phase 48.3). */
+  params?: CanvasParameter[] | undefined;
   /** Bumped by every save; a save quotes the one it started from. */
   revision: number;
 }

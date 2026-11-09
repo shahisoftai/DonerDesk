@@ -6,6 +6,8 @@
 import { recordEn } from "./record-en.ts";
 import { libraryEn } from "./library-en.ts";
 import { canvasEn } from "./canvas-en.ts";
+import { studioEn } from "./studio-en.ts";
+import { editorEn } from "./editor-en.ts";
 export const en = {
   "language.label": "Language",
 
@@ -381,6 +383,39 @@ export const en = {
   "kind.BAR_LINE_COMBO": "Bar and line",
   "kind.PIVOT_TABLE": "Pivot table",
   "kind.SCORECARD_TABLE": "Scorecard table",
+  "kind.PICTORIAL_BAR": "Pictorial bar (icons)",
+  "kind.ROSE": "Rose (radius shows the value)",
+  "kind.RADIAL_BAR": "Radial bar",
+  "kind.AREA_RANGE": "Range band (between two indicators)",
+  "kind.RANGE_BAR": "Range bars (between two indicators)",
+  "kind.PARALLEL": "Parallel coordinates",
+  "kind.TREE": "Tree (by logframe level)",
+  "kind.NETWORK": "Network (donors and categories)",
+  "kind.THEME_RIVER": "Stream (theme river)",
+  "kind.FILL_GAUGE": "Fill gauge",
+  "kind.MULTI_RING": "Progress rings",
+  "kind.DUMBBELL": "Dumbbell (first and latest period)",
+  "kind.DIVERGING_BAR": "Diverging bar (above and below zero)",
+  "kind.THERMOMETER": "Thermometer (value against target)",
+  "kind.BUMP": "Bump (rank over periods)",
+  "kind.CONNECTED_SCATTER": "Connected scatter (two indicators over time)",
+  "studio.look": "Look and feel",
+  "studio.look.preset": "Theme",
+  "studio.look.presetNone": "Choose a theme…",
+  "studio.look.reset": "Reset this group",
+  "studio.look.resetAll": "Reset all style",
+  "studio.look.clicked": "You clicked: {name}. Its options are open below.",
+  "studio.look.hint": "Leave a box empty to keep the default.",
+  "studio.look.band.add": "Add a colour band",
+  "studio.look.band.upTo": "Up to (%)",
+  "studio.look.band.remove": "Remove band",
+  "studio.look.tone.NEGATIVE": "Low (red)",
+  "studio.look.tone.NEUTRAL": "Middle (grey)",
+  "studio.look.tone.POSITIVE": "Good (green)",
+  "studio.look.default": "default {value}",
+  "studio.look.screenOnly": "Screen only",
+  "studio.look.on": "On",
+  "studio.look.off": "Off",
   "family.COMPARISON": "Compare",
   "family.TREND": "Trend",
   "family.PART_TO_WHOLE": "Parts of a whole",
@@ -704,6 +739,8 @@ export const en = {
   "maps.sources.link": "Map sources and licences",
   ...recordEn,
   ...canvasEn,
+  ...studioEn,
+  ...editorEn,
   ...libraryEn,
 } as const;
 

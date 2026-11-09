@@ -45,7 +45,7 @@ export function Tile({ title, subtitle, code, status, asOf, unverified, notFilte
   const titleId = useId();
   const view = tileView({ status, unverified, asOf, notFiltered, canRetry: Boolean(onRetry) });
   return (
-    <section {...(ariaLabel ? { "aria-label": ariaLabel } : { "aria-labelledby": titleId })} aria-busy={status === "loading"} className={cn("flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-[var(--tile-bg)] text-[var(--tile-title)] shadow-sm", editing ? "border-brand-400" : "border-[var(--tile-border)]", className)}>
+    <section {...(ariaLabel ? { "aria-label": ariaLabel } : { "aria-labelledby": titleId })} aria-busy={status === "loading"} className={cn("flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-[var(--tile-bg)] text-[var(--tile-title)] shadow-sm transition-shadow duration-200 hover:shadow-md motion-reduce:transition-none", editing ? "border-brand-400" : "border-[var(--tile-border)]", className)}>
       <header {...headerProps} className={cn("flex items-start gap-3 border-b border-[var(--tile-border)] bg-[var(--tile-header-bg)] px-3 py-2", headerProps?.className)}>
         {code ? <span className="mt-0.5 shrink-0 rounded bg-[var(--badge-bg)] px-1.5 py-0.5 text-xs font-semibold text-[var(--badge-text)]">{code}</span> : null}
         <div className="min-w-0 flex-1">

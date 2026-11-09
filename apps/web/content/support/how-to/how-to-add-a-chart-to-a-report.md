@@ -4,6 +4,8 @@ Charts in a report normally appear by themselves, one beside each table. When yo
 
 Who can: anyone who can edit reports (Admin, Project Manager, M&E Officer, Grants Officer). Adding a chart to a report that is not a draft needs an approver to reopen it first (see [How to reopen an approved report](/support/how-to/reopen-an-approved-report)).
 
+> Charts in a report are built here, with the options below. For a chart with more types, themes and style options (for a dashboard or to download), use the [Chart Studio](/support/how-to/use-the-chart-studio).
+
 ## Build the chart
 
 1. Open **Projects → your project → Data → Charts**.

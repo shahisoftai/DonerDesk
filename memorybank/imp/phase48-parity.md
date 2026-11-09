@@ -1,0 +1,113 @@
+# Phase 48 — parity inventory (the gate)
+
+Plan: `phase48-visual-studio.md` §3. Retirement: `phase48-retirement.md`. Test: `apps/web/tests/unit/visual-parity.test.mts` (run `pnpm --filter @donordesk/web test:unit`).
+
+**How this file is used.** Every table row is `| id | source | feature | Visual Studio home | batch | test |`.
+- `source` is a repo-relative path (a file, or a folder ending in `/` that covers everything under it) or `api:<route prefix>` for an API route, or `web:<route>` for a web route. Several sources in a row are separated by a space; each is in backticks.
+- `batch` is the Phase 48 batch that delivers the Studio home (`48.n`), or `keep` when the code stays as it is (a consumer outside the Studio, or a data tool).
+- `test` names the check that will prove the feature works in its new home (an existing harness or unit test, or `new: <name>` for one a batch adds).
+- The test fails when: a row has an empty cell, a path does not exist, a file in the visual feature folders is covered by no row, an API route of the visual route files is covered by no row (here or in the retirement register), or a chart kind, style group, block kind, widget kind, metric, dataset template, theme preset or template id below is not listed in the enumerations.
+- To finish 48.0 for a new feature: add a row here (and, if the old surface retires, a row in the retirement register).
+
+## A. Chart Studio (`features/charts`)
+
+| id | source | feature | Visual Studio home | batch | test |
+|---|---|---|---|---|---|
+| CS01 | `apps/web/src/features/charts/presentation/ChartStudio.tsx` | studio shell: template picker, indicator/period choice, drafts toggle, sort and Top N, live chart, View data, name/scope save | Charts library → chart block editor (side sheet) | 48.5 | test:studio |
+| CS02 | `apps/web/src/features/charts/presentation/StudioChart.tsx` | chart draw with theme, colour mode, alt text, downloads (PNG/SVG) | chart block editor preview | 48.5 | test:studio |
+| CS03 | `apps/web/src/features/charts/presentation/StylePanel.tsx` `apps/web/src/features/charts/presentation/StyleControl.tsx` `apps/web/src/features/charts/domain/studio-style.ts` `apps/web/src/features/charts/domain/style-copy.ts` | style groups, theme presets, option search, translated option names | inspector (Basics/More/Advanced) | 48.11 | chart-studio-style.test.mts |
+| CS04 | `apps/web/src/features/charts/presentation/GaugeBands.tsx` | gauge colour bands | inspector, gauge block | 48.11 | test:studio |
+| CS05 | `apps/web/src/features/charts/domain/studio-state.ts` | one edit = one undo step (50), kind/template fitting, style pruning on kind change | editor history (shared with canvas) | 48.1 | chart-studio-state.test.mts |
+| CS06 | `api:/v1/charts` | saved charts (MINE/PROJECT), expectedUpdatedAt conflicts, last 10 versions + restore | Charts library | 48.5 | new: saved-chart parity |
+| CS07 | `apps/web/src/lib/actions/charts.ts` | add as KPI tile; use in a dashboard (original six kinds only today) | any kind addable as a CHART block | 48.5 | test:studio |
+| CS08 | `apps/web/src/lib/actions/map-widgets.ts` | map-mode studio: KML and GeoJSON downloads, rankings by place | Maps library / map block | 48.5 | test:maps-extras |
+
+## B. Maps (`features/maps`, plan and Home map views)
+
+| id | source | feature | Visual Studio home | batch | test |
+|---|---|---|---|---|---|
+| MP01 | `apps/web/src/features/maps/presentation/MapExplorer.tsx` `apps/web/src/features/maps/presentation/ResultsMap.tsx` `apps/web/src/features/maps/presentation/MapCanvas.tsx` `apps/web/src/features/maps/presentation/MapLibreCanvas.tsx` `apps/web/src/features/maps/presentation/useMapEngine.ts` | results map explorer: drill admin 1–4, legend and bands, hover, click, engine switch (MapLibre / ECharts) | map block editor (hosted explorer) | 48.5 | test:maps |
+| MP02 | `apps/web/src/features/maps/presentation/PeriodSlider.tsx` `apps/web/src/features/maps/domain/period-steps.ts` | period slider, side-by-side periods | map block, parameter control | 48.3 | test:maps |
+| MP03 | `apps/web/src/features/maps/presentation/LayerPanel.tsx` `apps/web/src/features/maps/presentation/OverlayPanel.tsx` `apps/web/src/features/maps/domain/overlay-layer.ts` `apps/web/src/features/maps/domain/kml-to-geojson.ts` `apps/web/src/features/maps/domain/shapefile-to-geojson.ts` `api:/v1/map-overlays` | overlays (GeoJSON, KML/KMZ, shapefile in browser), 20 per organisation | map block layers, Assets → Overlays | 48.5 | test:maps-extras |
+| MP04 | `apps/web/src/features/maps/presentation/AreaDrawer.tsx` `apps/web/src/features/maps/presentation/PinPicker.tsx` `apps/web/src/features/maps/presentation/PlacePanel.tsx` `apps/web/src/features/maps/presentation/PlaceMarker.tsx` `apps/web/src/features/maps/presentation/PlaceTree.tsx` `apps/web/src/features/maps/presentation/useContainingAreas.ts` `apps/web/src/features/maps/domain/marking/` `apps/web/src/features/maps/domain/place-tree.ts` `apps/web/src/features/maps/domain/point-in-area.ts` | pins, drawn outlines, containing-area suggestion, place panel and tree | map block side panel (places stay data in Places) | 48.5 | test:maps |
+| MP05 | `apps/web/src/features/maps/presentation/PhotosMapPanel.tsx` `apps/web/src/features/maps/domain/photo-map.ts` | photos on the map (evidence, confidentiality rules) | map block kind PHOTOS | 48.12 | test:maps-extras |
+| MP06 | `apps/web/src/features/maps/presentation/SiteMap.tsx` `apps/web/src/features/maps/presentation/SitesMap.tsx` `apps/web/src/features/maps/presentation/SitesTable.tsx` `apps/web/src/features/maps/presentation/useSiteContext.ts` `apps/web/src/features/maps/domain/scene/build-site-scene.ts` | sites map and table (planned activities by delivery state) | map block kind ACTIVITIES / SITES | 48.5 | test:maps |
+| MP07 | `apps/web/src/features/maps/presentation/MapDataTable.tsx` `apps/web/src/features/maps/presentation/LowDataResults.tsx` `apps/web/src/features/maps/domain/table/map-table.ts` | every map is also a table; low-data mode loads no tiles | View data, low-data renderer | 48.5 | test:maps |
+| MP08 | `apps/web/src/features/maps/presentation/MapSourcesTable.tsx` `apps/web/src/features/maps/presentation/MapBreadcrumbs.tsx` `apps/web/src/features/maps/presentation/MapServices.tsx` `apps/web/src/features/maps/presentation/results-loader.ts` `apps/web/src/features/maps/presentation/useBoundaryView.ts` `apps/web/src/features/maps/presentation/useMapText.ts` | sources page and credits, breadcrumbs, boundary loading, map copy | Studio help/credits, map block | 48.5 | test:maps |
+| MP09 | `apps/web/src/features/maps/adapters/` `apps/web/src/features/maps/ports/` `apps/web/src/features/maps/composition.ts` | MapLibre, pmtiles, Terra Draw adapters, ports, composition root | kept as the map engine; Studio hosts it | keep | architecture-boundaries.test.mjs |
+| MP10 | `apps/web/src/features/maps/domain/` | scene, drill, boundary join and sources, basemap regions, geometry simplify, humanitarian countries, OCHA COD, map option and explorer model | kept as the map domain | keep | test:maps |
+| MP11 | `api:/v1/organization/map-layer` `web:/api/organization/map-layer/data` | tenant boundary layer (one GeoJSON per organisation) | Assets → Boundaries | 48.5 | test:maps |
+| MP12 | `web:/maps/sources` | public map sources page generated from the manifest | kept (linked from Studio credits) | keep | test:maps |
+| MP13 | `apps/web/src/features/places/` `apps/web/src/features/workplan/presentation/SiteMapFigure.tsx` `apps/web/src/features/workplan/presentation/LocationPickerFigure.tsx` `apps/web/src/features/dashboard/presentation/PortfolioMapPanel.tsx` | Home "where we work", plan Map view, location picker, place shape editor | consumers of the Studio map builder, theme and formats | keep | new: consumer-parity |
+
+## C. Dashboards (`features/dashboards`, `features/dashboard`)
+
+| id | source | feature | Visual Studio home | batch | test |
+|---|---|---|---|---|---|
+| DB01 | `apps/web/src/features/dashboards/presentation/DashboardView.tsx` `apps/web/src/features/dashboards/presentation/DashboardCanvas.tsx` `apps/web/src/features/dashboards/domain/` | dashboard view and edit: drag, resize, save with conflict, project filter | canvas GRID page | 48.5 | test:tiles |
+| DB02 | `apps/web/src/features/dashboards/presentation/DashboardTabs.tsx` | tabs and tab assigner | multi-page canvas / TABS block | 48.4 | test:tiles |
+| DB03 | `apps/web/src/features/dashboards/presentation/use-tv-mode.ts` | full screen / TV mode with auto refresh | present mode, TV playlists | 48.16 | new: tv-mode |
+| DB04 | `apps/web/src/features/dashboards/presentation/DownloadImageButton.tsx` | download image, print | export panel | 48.5 | test:tiles |
+| DB05 | `apps/web/src/features/dashboards/presentation/KpiTileView.tsx` `apps/web/src/features/dashboards/presentation/MetricTileView.tsx` `apps/web/src/features/dashboards/presentation/AddTilePanel.tsx` | KPI tiles (change, status, narrative, sparkline, colour) and number tiles | KPI and METRIC blocks | 48.5 | test:tiles |
+| DB06 | `apps/web/src/features/dashboards/presentation/MapWidget.tsx` `apps/web/src/features/dashboards/presentation/AddMapPanel.tsx` | map widgets (results, activities) with period filter | MAP block | 48.5 | test:tiles |
+| DB07 | `apps/web/src/features/dashboards/presentation/TextBlock.tsx` `apps/web/src/features/dashboards/presentation/AddNotePanel.tsx` `apps/web/src/features/dashboards/presentation/AddProjectListPanel.tsx` | notes, headings, project list widget | TEXT and PROJECT_LIST blocks | 48.5 | test:tiles |
+| DB08 | `apps/web/src/features/dashboards/presentation/EditWidgetPanel.tsx` `apps/web/src/features/dashboards/presentation/AddToDashboardPanel.tsx` | edit in place; add a chart to a dashboard from the studio | inspector; drop a library chart onto a canvas | 48.5 | test:tiles |
+| DB09 | `apps/web/src/features/dashboards/presentation/DashboardChart.tsx` `apps/web/src/features/dashboards/presentation/widgets/` | chart widget, widget registry, forScreen simplification, hover link across charts | CHART block screen renderer | 48.5 | test:visuals |
+| DB10 | `apps/web/src/features/dashboards/presentation/NewDashboardForm.tsx` | new dashboard (scope, project) | New visual flow | 48.18 | test:studio-tasks |
+| DB11 | `apps/web/src/features/dashboards/presentation/TemplateGallery.tsx` `apps/web/src/features/dashboards/presentation/TemplateEditor.tsx` `api:/v1/dashboard-templates` | sector template gallery, apply with role mapping, editor, organisation copies | Templates library | 48.16 | test:templates |
+| DB12 | `apps/web/src/features/dashboards/presentation/PublicDashboard.tsx` `apps/web/src/features/dashboards/presentation/ShareLinkContext.tsx` `web:/shared/dashboard` `web:/embed/dashboard` `api:/public/dashboards` `api:/v1/dashboard-links` | share links and embed (hash only, expiry, revoke) | one share and embed path | 48.9 | new: share-parity |
+| DB13 | `api:/v1/dashboards` `api:/v1/dashboard-preview` `apps/web/src/lib/actions/dashboards.ts` | dashboard CRUD, data, featured, charts, unsaved preview | canvas routes (resolve, preview) | 48.5 | canvas-export.test.mjs |
+| DB14 | `api:/v1/home-pins` `api:/v1/dashboard` `apps/web/src/features/home-pins/` | Home pins and featured dashboards | Home pins accept canvases | 48.5 | new: home-pins-canvas |
+| DB15 | `apps/web/src/features/dashboard/` `api:/v1/home-layout` | Home layout, panels, field/reviewer homes | kept (consumers of the Studio's blocks and theme) | keep | test:home-layout |
+| DB16 | `apps/web/src/features/projects/presentation/overview/` `api:/v1/projects/:id/dashboard` | project Overview sections, pace, calendar | kept (consumers) | keep | new: consumer-parity |
+
+## D. Infographics (`features/infographics`)
+
+| id | source | feature | Visual Studio home | batch | test |
+|---|---|---|---|---|---|
+| IG01 | `apps/web/src/features/infographics/presentation/InfographicsList.tsx` `web:/projects/[id]/infographics` `web:/portfolio/infographics` | project and portfolio design lists | Designs library (project filter) | 48.5 | new: designs-library |
+| IG02 | `apps/web/src/features/infographics/presentation/InfographicStudio.tsx` `apps/web/src/features/infographics/presentation/studio/StudioPreview.tsx` `apps/web/src/features/infographics/presentation/studio/SectionList.tsx` `apps/web/src/features/infographics/presentation/studio/BlockEditor.tsx` `apps/web/src/features/infographics/domain/block-catalog.ts` `apps/web/src/features/infographics/domain/studio-view.ts` `apps/web/src/features/infographics/domain/studio-history.ts` | studio shell: sections, block editor, live preview, undo | canvas editor | 48.5 | canvas-print-parity.test.mjs |
+| IG03 | `apps/web/src/features/infographics/presentation/studio/BrandKitDialog.tsx` `api:/v1/infographic-brand` | brand kit (logo, colours, fonts) | Assets → Brand | 48.13 | new: brand-parity |
+| IG04 | `apps/web/src/features/infographics/presentation/studio/AssetLibrary.tsx` `api:/v1/infographic-assets` | image library | Assets → Images | 48.14 | new: asset-parity |
+| IG05 | `apps/web/src/features/infographics/presentation/studio/SaveTemplateDialog.tsx` `api:/v1/infographic-templates` | saved templates | Templates library | 48.16 | new: template-parity |
+| IG06 | `apps/web/src/features/infographics/presentation/studio/SuggestionsPanel.tsx` `api:/v1/projects/:projectId/infographic-suggestions` `api:/v1/projects/:projectId/infographic-presence` | suggestions from records, AI text (opt-in), presence rows from the plan | suggestions panel, AI blocks | 48.18 | new: suggestions-parity |
+| IG07 | `apps/web/src/features/infographics/presentation/studio/CheckPanel.tsx` | Design check | Ready-to-publish checklist | 48.18 | canvas-contract.test.mjs |
+| IG08 | `apps/web/src/features/infographics/presentation/studio/DesignPanel.tsx` `apps/web/src/features/infographics/domain/geo-shapes.ts` `apps/web/src/features/infographics/domain/infographics-copy.ts` `apps/web/src/features/infographics/domain/studio-copy.ts` `apps/web/src/features/infographics/domain/studio-api.ts` `apps/web/src/features/infographics/presentation/studio/primitives.tsx` | page format, language and RTL, theme, geo shapes, copy | page and theme panels | 48.13 | new: language-parity |
+| IG09 | `apps/web/src/features/infographics/presentation/studio/PublishPanel.tsx` `api:/v1/infographics` `api:/public/infographics` `api:/v1/infographic-share-links` `web:/shared/infographic` `web:/api/infographics` `web:/api/infographic-studio` `web:/api/shared-infographic` `web:/api/projects/[id]/infographics` `web:/api/projects/[id]/infographic-data` `api:/v1/projects/:projectId/infographics` `api:/v1/projects/:projectId/infographic-data` `api:/v1/portfolio/infographic-data` `api:/v1/portfolio/infographics` | immutable exports (PNG, PDF, SVG), share links, portfolio designs | publish panel, one share path | 48.9 | canvas-export.test.mjs |
+| IG10 | `api:/v1/report-sections` | section infographics and charts inserted as report artifacts (snapshots) | insert from the library; snapshot stays a report artifact | 48.5 | new: report-insert-parity |
+
+## E. Data Center, Report Builder, report editor
+
+| id | source | feature | Visual Studio home | batch | test |
+|---|---|---|---|---|---|
+| DC01 | `apps/web/src/features/data-center/presentation/DataCenter.tsx` `apps/web/src/features/data-center/presentation/DataSheetTable.tsx` `apps/web/src/features/data-center/presentation/DataSheetImport.tsx` `apps/web/src/features/data-center/presentation/FinanceSheetTable.tsx` `apps/web/src/features/data-center/presentation/PlaceResultsView.tsx` `apps/web/src/features/data-center/presentation/download.ts` `api:/v1/projects/:projectId/data-sheet` `api:/v1/projects/:projectId/place-results` `api:/api/v1/projects/:projectId/place-results` `web:/projects/[id]/data` | sheet, pivot, import and export, finance sheet, by place | kept as the data tool; feeds the Studio data catalogue | keep | data-center.test.mjs |
+| DC02 | `apps/web/src/features/data-center/presentation/DataChartBuilder.tsx` `apps/web/src/features/data-center/presentation/AddToReportPanel.tsx` `apps/web/src/lib/actions/data-center.ts` | Data Center charts and tables added to a report | "Send to Visual Studio" and insert-from-library | 48.5 | data-center.test.mjs |
+| RB01 | `apps/web/src/features/report-builder/presentation/ReportBuilder.tsx` `api:/v1/saved-reports` `apps/web/src/lib/actions/saved-reports.ts` | saved report query, pivot, breakdown, CSV, report widget | kept as the data tool; "Send to Visual Studio" | keep | test:report-builder |
+| RE01 | `apps/web/src/features/reporting/presentation/ReportChartPanel.tsx` `apps/web/src/features/reporting/presentation/ChartFigure.tsx` `apps/web/src/features/reporting/presentation/document-blocks.tsx` | table-derived charts in a report section | stays a report feature (consumer of the chart builder and theme) | keep | new: consumer-parity |
+| RE02 | `apps/web/src/features/report-editor/presentation/inspector/DataChartsPanel.tsx` `apps/web/src/lib/actions/data-charts.ts` | Data Center chart panel in the report editor | insert from the Studio library | 48.5 | new: report-insert-parity |
+| LF01 | `apps/web/src/features/logframe/presentation/IndicatorResultsPanel.tsx` `apps/web/src/features/logframe/presentation/IndicatorViews.tsx` | logframe indicator charts | consumer of the Studio chart builder | keep | new: consumer-parity |
+| DS01 | `api:/v1/datasets` `api:/v1/bookmarks` `api:/v1/projects/:projectId/offline-pack` | dataset resolve, bookmarks, offline pack | feeds the Studio; bookmarks accept visuals | 48.17 | new: visual-data |
+| DS02 | `api:/v1/visual-data` `packages/domain/src/contexts/visual-data/` `packages/application/src/use-cases/visual-data/` | the data catalogue: sources, fields, query, calculated figures, live versions | Data panel and every block's binding | 48.17 | visual-data.test.mjs |
+
+## F. Canvas (keep and extend)
+
+| id | source | feature | Visual Studio home | batch | test |
+|---|---|---|---|---|---|
+| CV01 | `apps/web/src/features/canvas/` `web:/visuals` `web:/shared/canvas` `web:/api/canvases` `web:/api/shared/canvas` | canvas workspace, editor, inspector, palette, versions, publish, public view, new visual form | the Visual Studio shell | 48.5 | canvas-editor.test.mts |
+| CV02 | `api:/v1/canvases` `api:/public/canvases` `api:/internal/canvas-snapshots` `api:/superadmin/tenants/:id/canvas-ai` | canvas CRUD, resolve, preview, export, publish, review, shares, versions, scheduled snapshots, AI draft | kept and extended | keep | canvas.test.mjs |
+| CV03 | `apps/web/src/features/design/` | tokens, chart theme, number format, tile view, low-data, colour mode | the shared design system (extended by 48.2 and 48.13) | 48.2 | design-tokens.test.mts |
+| CV04 | `packages/domain/src/contexts/canvas/` | block registry, models, edit, containers, cross-filters, review, governance, templates | the canvas domain | keep | canvas-models.test.mjs |
+
+## G. Enumerations (every key must be listed; a new one fails the test until it has a row)
+
+| family | keys |
+|---|---|
+| chart kinds (`CHART_KINDS`) | `BAR` `BAR_HORIZONTAL` `BAR_GROUPED` `BAR_STACKED` `BAR_STACKED_100` `LOLLIPOP` `BULLET` `DOT_PLOT` `LINE` `STEP_LINE` `AREA` `AREA_STACKED` `SPARKLINE` `SLOPE` `CALENDAR_HEATMAP` `PIE` `DONUT` `TREEMAP` `SUNBURST` `WAFFLE` `HISTOGRAM` `BOX_PLOT` `POPULATION_PYRAMID` `SCATTER` `BUBBLE` `HEATMAP` `FUNNEL` `WATERFALL` `SANKEY` `GAUGE` `PROGRESS_RING` `PROGRESS_BAR` `KPI_NUMBER` `RADAR` `GANTT` `CHOROPLETH` `GRADUATED_SYMBOLS` `BAR_LINE_COMBO` `PIVOT_TABLE` `SCORECARD_TABLE` `PICTORIAL_BAR` `ROSE` `RADIAL_BAR` `AREA_RANGE` `RANGE_BAR` `PARALLEL` `TREE` `NETWORK` `THEME_RIVER` `FILL_GAUGE` `MULTI_RING` `DUMBBELL` `DIVERGING_BAR` `THERMOMETER` `BUMP` `CONNECTED_SCATTER` |
+| style field groups (`STYLE_FIELDS`) | `text` `frame` `title` `grid` `axisLabels` `xAxis` `yAxis` `bars` `lines` `area` `pie` `pictorial` `points` `labels` `legend` `tooltip` `marks` `effects` `gauge` `heat` `radar` `funnel` `flow` `map` `interaction` `animation` |
+| chart theme presets (`CHART_STYLE_PRESETS`) | `donordesk` `donordesk-modern` `donordesk-print` `donordesk-quiet` `echarts-azul` `echarts-bee-inspired` `echarts-blue` `echarts-caravan` `echarts-carp` `echarts-cool` `echarts-dark-blue` `echarts-dark-bold` `echarts-dark-digerati` `echarts-dark-fresh-cut` `echarts-dark-mushroom` `echarts-dark` `echarts-eduardo` `echarts-forest` `echarts-fresh-cut` `echarts-fruit` `echarts-gray` `echarts-green` `echarts-helianthus` `echarts-infographic` `echarts-inspired` `echarts-jazz` `echarts-london` `echarts-macarons` `echarts-macarons2` `echarts-mint` `echarts-rainbow` `echarts-red-velvet` `echarts-red` `echarts-roma` `echarts-royal` `echarts-sakura` `echarts-shine` `echarts-tech-blue` `echarts-v5` `echarts-vintage` |
+| canvas block kinds (`BLOCK_KINDS`) | `TEXT` `DIVIDER` `HERO` `BANNER` `KEY_MESSAGES` `QUOTE` `CALLOUT` `LEGEND_NOTES` `KPI` `BIG_NUMBERS` `METRIC` `PROGRESS_RINGS` `CHART` `SMALL_MULTIPLES` `MAP` `LOCATION_RESULTS` `LOCATION_COMPARISON` `ACTIVITIES_BY_LOCATION` `TABLE` `PROJECT_LIST` `FUNNEL` `FUNDING` `RESULTS_CHAIN` `SECTOR_GRID` `TIMELINE` `THREE_W` `DEMOGRAPHICS` `REACH` `PORTFOLIO_SUMMARY` `PORTFOLIO_TABLE` `PORTFOLIO_HEALTH` `PORTFOLIO_COUNTRIES` `IMAGE` `AI_SUMMARY` `AI_MESSAGES` `AI_ASK` `GROUP` `TABS` `REPEATER` `FILTER_BAR` |
+| dashboard widget kinds | `CHART` `TEXT` `KPI` `METRIC` `MAP` `PROJECT_LIST` `REPORT` |
+| number tile metrics (`METRICS`) | `FIN_OBLIGATED` `FIN_RECEIVED` `FIN_SPENT` `FIN_REMAINING` `ACTIVITIES_TOTAL` `ACTIVITIES_IN_PROGRESS` `ACTIVITIES_DONE` `ACTIVITIES_LATE` |
+| dataset templates (`DATA_CHART_TEMPLATES`) | `INDICATOR_OVER_TIME` `INDICATOR_VS_TARGET` `INDICATORS_PROGRESS` `INDICATORS_OVER_TIME` `STATUS_DISTRIBUTION` `FINANCE_BUDGET_VS_SPEND` `PLAN_TIMELINE` `ACTIVITY_DAYS` `RESULTS_BY_PLACE` `BUDGET_FLOW` `FINANCE_BURN_RATE` |
+| infographic templates | `OVERVIEW` `PROGRESS` `RESULTS` `BUDGET` `THEMATIC` `CLOSURE` `SNAPSHOT` `AT_A_GLANCE` `SECTOR_RESULTS` `FUNDING_SNAPSHOT` `COVERAGE_BY_LOCATION` `BENEFICIARY_PROFILE` `FLASH_UPDATE` `DONOR_ONE_PAGER` `ANNUAL_POSTER` `FACTSHEET` `STORY_CARD` `SOCIAL_STORY` `SLIDE_SUMMARY` `RESULTS_CHAIN_PAGE` `SECTOR_DASHBOARD` `PORTFOLIO_OVERVIEW` `OPERATIONAL_PRESENCE` `CUSTOM` |
+| built-in canvas templates (library ones are generated per sector as `lib-canvas-<sector>`) | `builtin-flash-update` `builtin-results-glance` `builtin-people-reached` `builtin-funding-burn` `builtin-3w-coverage` `builtin-field-operations` `builtin-donor-one-pager` `builtin-sector-scorecard` |

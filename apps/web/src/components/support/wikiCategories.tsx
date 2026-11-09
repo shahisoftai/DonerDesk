@@ -149,6 +149,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "How to Collect Answers with a Form", description: "Build a form, share it, review records and turn accepted ones into indicator totals.", href: "/support/how-to/collect-answers-with-a-form" },
       { title: "How to Use the Field App Without a Connection", description: "Download a project, fill forms and take photos offline, then send when connected.", href: "/support/how-to/use-the-field-app-offline" },
       { title: "How to Bring In KoboToolbox or SurveyCTO Submissions", description: "Connect a form so its submissions arrive as records waiting for review.", href: "/support/how-to/bring-in-kobotoolbox-or-surveycto-submissions" },
+      { title: "How to Build and Style a Chart in the Chart Studio", description: "50 chart types, 40 themes, and options for every part of a chart; click a part to edit it.", href: "/support/how-to/use-the-chart-studio" },
       { title: "How to Make and Share a Dashboard", description: "Pin charts to a dashboard, arrange them and share by link or embed.", href: "/support/how-to/make-a-dashboard" },
       { title: "How to Ask a Question About a Project", description: "Ask in plain words; each sentence of the answer cites its records.", href: "/support/how-to/ask-a-question-about-a-project" },
       { title: "How to Connect API Keys, Webhooks and AI Assistants", description: "Read-only API keys, signed webhooks and the MCP server.", href: "/support/how-to/connect-api-keys-webhooks-and-ai-assistants" },

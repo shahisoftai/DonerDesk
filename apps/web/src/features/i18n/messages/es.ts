@@ -2,6 +2,8 @@ import type { MessageKey } from "./en.ts";
 import { recordEs } from "./record-es.ts";
 import { libraryEs } from "./library-es.ts";
 import { canvasEs } from "./canvas-es.ts";
+import { studioEs } from "./studio-es.ts";
+import { editorEs } from "./editor-es.ts";
 
 /** Spanish. Drafted for review by a native speaker of the sector before it is relied on. */
 export const es: Record<MessageKey, string> = {
@@ -379,6 +381,39 @@ export const es: Record<MessageKey, string> = {
   "kind.BAR_LINE_COMBO": "Barras y línea",
   "kind.PIVOT_TABLE": "Tabla dinámica",
   "kind.SCORECARD_TABLE": "Tabla de resultados",
+  "kind.PICTORIAL_BAR": "Barras con iconos",
+  "kind.ROSE": "Rosa (el radio muestra el valor)",
+  "kind.RADIAL_BAR": "Barras radiales",
+  "kind.AREA_RANGE": "Banda de rango (entre dos indicadores)",
+  "kind.RANGE_BAR": "Barras de rango (entre dos indicadores)",
+  "kind.PARALLEL": "Coordenadas paralelas",
+  "kind.TREE": "Árbol (por nivel del marco lógico)",
+  "kind.NETWORK": "Red (donantes y categorías)",
+  "kind.THEME_RIVER": "Flujo (río temático)",
+  "kind.FILL_GAUGE": "Indicador de llenado",
+  "kind.MULTI_RING": "Anillos de progreso",
+  "kind.DUMBBELL": "Mancuerna (primer y último período)",
+  "kind.DIVERGING_BAR": "Barras divergentes (sobre y bajo cero)",
+  "kind.THERMOMETER": "Termómetro (valor frente a la meta)",
+  "kind.BUMP": "Clasificación (rango por período)",
+  "kind.CONNECTED_SCATTER": "Dispersión conectada (dos indicadores en el tiempo)",
+  "studio.look": "Aspecto",
+  "studio.look.preset": "Tema",
+  "studio.look.presetNone": "Elegir un tema…",
+  "studio.look.reset": "Restablecer este grupo",
+  "studio.look.resetAll": "Restablecer todo el estilo",
+  "studio.look.clicked": "Hizo clic en: {name}. Sus opciones están abiertas abajo.",
+  "studio.look.hint": "Déjelo vacío para mantener el valor predeterminado.",
+  "studio.look.band.add": "Añadir una banda de color",
+  "studio.look.band.upTo": "Hasta (%)",
+  "studio.look.band.remove": "Quitar la banda",
+  "studio.look.tone.NEGATIVE": "Bajo (rojo)",
+  "studio.look.tone.NEUTRAL": "Medio (gris)",
+  "studio.look.tone.POSITIVE": "Bueno (verde)",
+  "studio.look.default": "predeterminado {value}",
+  "studio.look.screenOnly": "Solo en pantalla",
+  "studio.look.on": "Sí",
+  "studio.look.off": "No",
   "family.COMPARISON": "Comparar",
   "family.TREND": "Tendencia",
   "family.PART_TO_WHOLE": "Partes de un todo",
@@ -702,5 +737,7 @@ export const es: Record<MessageKey, string> = {
   "maps.sources.link": "Fuentes y licencias de los mapas",
   ...recordEs,
   ...canvasEs,
+  ...studioEs,
+  ...editorEs,
   ...libraryEs,
 };

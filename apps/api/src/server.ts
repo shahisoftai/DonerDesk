@@ -38,6 +38,7 @@ import { registerFinanceRegisterRoutes } from "./routes/finance-register.js";
 import { registerCollectionRoutes, registerPublicCollectionRoutes } from "./routes/collection.js";
 import { registerPublicCanvasRoutes } from "./routes/canvases.js";
 import { registerChartDashboardRoutes, registerPublicDashboardRoutes } from "./routes/chart-dashboards.js";
+import { registerVisualDataRoutes } from "./routes/visual-data.js";
 import { registerHomeLayoutRoutes } from "./routes/home-layout.js";
 import { registerSectorLibraryRoutes } from "./routes/sector-library.js";
 import { registerCanvasRoutes } from "./routes/canvases.js";
@@ -221,6 +222,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerFinanceRegisterRoutes(instance);
     await registerCollectionRoutes(instance);
     await registerChartDashboardRoutes(instance);
+    await registerVisualDataRoutes(instance);
     await registerHomeLayoutRoutes(instance);
     await registerSectorLibraryRoutes(instance);
     await registerCanvasRoutes(instance);

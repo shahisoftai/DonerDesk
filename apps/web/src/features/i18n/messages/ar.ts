@@ -2,6 +2,8 @@ import type { MessageKey } from "./en.ts";
 import { recordAr } from "./record-ar.ts";
 import { libraryAr } from "./library-ar.ts";
 import { canvasAr } from "./canvas-ar.ts";
+import { studioAr } from "./studio-ar.ts";
+import { editorAr } from "./editor-ar.ts";
 
 /**
  * Arabic (read right to left). Drafted for review by a native speaker of the sector before it is relied on.
@@ -395,6 +397,39 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "kind.BAR_LINE_COMBO": "أعمدة وخط",
   "kind.PIVOT_TABLE": "جدول محوري",
   "kind.SCORECARD_TABLE": "جدول نتائج",
+  "kind.PICTORIAL_BAR": "أعمدة برموز",
+  "kind.ROSE": "وردة (نصف القطر يعبّر عن القيمة)",
+  "kind.RADIAL_BAR": "أعمدة شعاعية",
+  "kind.AREA_RANGE": "نطاق (بين مؤشرين)",
+  "kind.RANGE_BAR": "أعمدة نطاق (بين مؤشرين)",
+  "kind.PARALLEL": "إحداثيات متوازية",
+  "kind.TREE": "شجرة (حسب مستوى الإطار المنطقي)",
+  "kind.NETWORK": "شبكة (المانحون والفئات)",
+  "kind.THEME_RIVER": "تدفق (نهر موضوعي)",
+  "kind.FILL_GAUGE": "مقياس تعبئة",
+  "kind.MULTI_RING": "حلقات التقدم",
+  "kind.DUMBBELL": "دمبل (أول فترة وآخر فترة)",
+  "kind.DIVERGING_BAR": "أعمدة متباعدة (فوق الصفر وتحته)",
+  "kind.THERMOMETER": "مقياس حرارة (القيمة مقابل الهدف)",
+  "kind.BUMP": "ترتيب (الرتبة عبر الفترات)",
+  "kind.CONNECTED_SCATTER": "نقاط متصلة (مؤشران عبر الزمن)",
+  "studio.look": "المظهر",
+  "studio.look.preset": "السمة",
+  "studio.look.presetNone": "اختر سمة…",
+  "studio.look.reset": "إعادة ضبط هذه المجموعة",
+  "studio.look.resetAll": "إعادة ضبط كل النمط",
+  "studio.look.clicked": "نقرت على: {name}. خياراتها مفتوحة أدناه.",
+  "studio.look.hint": "اتركه فارغًا للإبقاء على القيمة الافتراضية.",
+  "studio.look.band.add": "إضافة نطاق لوني",
+  "studio.look.band.upTo": "حتى (%)",
+  "studio.look.band.remove": "إزالة النطاق",
+  "studio.look.tone.NEGATIVE": "منخفض (أحمر)",
+  "studio.look.tone.NEUTRAL": "متوسط (رمادي)",
+  "studio.look.tone.POSITIVE": "جيد (أخضر)",
+  "studio.look.default": "الافتراضي {value}",
+  "studio.look.screenOnly": "على الشاشة فقط",
+  "studio.look.on": "نعم",
+  "studio.look.off": "لا",
   "family.COMPARISON": "مقارنة",
   "family.TREND": "اتجاه",
   "family.PART_TO_WHOLE": "أجزاء من كل",
@@ -718,5 +753,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.sources.link": "مصادر الخرائط وتراخيصها",
   ...recordAr,
   ...canvasAr,
+  ...studioAr,
+  ...editorAr,
   ...libraryAr,
 };

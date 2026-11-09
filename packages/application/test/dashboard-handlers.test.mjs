@@ -236,3 +236,27 @@ test("a share link shows maps and activity figures from data read on the server,
   const bare = await new PublicDashboardHandler(w.repo, sheets).handle(tenantId, id);
   assert.match(bare.value.charts.find((c) => c.widgetId === "m1").unavailable, /not shown through a share link/);
 });
+
+test("a chart added to a dashboard that is already open as a canvas is added to the canvas too, below its other blocks", async () => {
+  const w = world();
+  const save = new SaveDashboardHandler(ids, w.repo, w.visible, audit, clock);
+  const id = (await save.handle(amina, { name: "P", scope: "PROJECT", projectId: "p1", widgets: [widget("a")] })).value.id;
+  const stored = { id: "cv1", tenantId, scope: "PROJECT", mode: "LIVE", ownerId: "amina", title: "P", sourceKind: "DASHBOARD", sourceId: id, createdAt: now, updatedAt: now, canvas: { id: "cv1", revision: 3, title: "P", pages: [{ id: "page-1", title: "Overview", format: "WEB_FLUID", blocks: [{ id: "old", kind: "CHART", props: {}, bindings: [], bounds: { x: 0, y: 0, w: 6, h: 5 } }] }] } };
+  const updates = [];
+  const canvases = { findBySource: async (t, kind, source) => ok(kind === "DASHBOARD" && source === id ? stored : null), update: async (c, expected) => (updates.push({ c, expected }), ok(true)) };
+  const add = new AddDashboardWidgetHandler(ids, w.repo, w.visible, clock, audit, canvases);
+  assert.equal((await add.handle(amina, id, { projectId: "p1", spec })).value.chartCount, 2);
+  assert.equal(updates.length, 1);
+  assert.equal(updates[0].expected, 3, "saved against the revision that was read");
+  const blocks = updates[0].c.canvas.pages[0].blocks;
+  assert.equal(blocks.length, 2);
+  assert.equal(blocks[0].id, "old");
+  assert.equal(blocks[1].kind, "CHART");
+  assert.equal(blocks[1].bounds.y, 5, "below the existing block");
+  assert.deepEqual(blocks[1].bindings, [{ type: "PROJECT", slot: "project", projectId: "p1" }]);
+  // a dashboard that was never opened as a canvas, or a canvas saved meanwhile, never stops the add
+  const none = new AddDashboardWidgetHandler(ids, w.repo, w.visible, clock, audit, { findBySource: async () => ok(null), update: async () => { throw new Error("not called"); } });
+  assert.equal((await none.handle(amina, id, { projectId: "p1", spec })).value.chartCount, 3);
+  const raced = new AddDashboardWidgetHandler(ids, w.repo, w.visible, clock, audit, { findBySource: async () => ok(stored), update: async () => ok(false) });
+  assert.equal((await raced.handle(amina, id, { projectId: "p1", spec })).value.chartCount, 4);
+});

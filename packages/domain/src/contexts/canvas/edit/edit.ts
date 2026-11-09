@@ -20,17 +20,20 @@ const mapPage = (c: Canvas, pageId: string, f: (p: CanvasPage) => CanvasPage | s
 };
 
 /** Blocks laid out by their grid cells with the shared rule (a dropped block keeps its place, the rest fall to the highest free row). */
-function settle(all: BlockInstance[], pinnedId?: string): BlockInstance[] {
+function settle(all: BlockInstance[], pinnedId?: string | readonly string[]): BlockInstance[] {
   // Blocks held by a container are laid out by it, not by the page grid, so they are never moved to make room.
   const held = all.filter((b) => b.container);
   const blocks = all.filter((b) => !b.container);
   const laid = settleTop(blocks, pinnedId);
   return all.map((b) => (b.container ? held.find((h) => h.id === b.id)! : laid.find((l) => l.id === b.id)!));
 }
-function settleTop(blocks: BlockInstance[], pinnedId?: string): BlockInstance[] {
+function settleTop(blocks: BlockInstance[], pinnedId?: string | readonly string[]): BlockInstance[] {
   const boxes = blocks.map((b) => ({ id: b.id, ...b.bounds, block: b }));
   return settleBoxes(boxes, pinnedId).map(({ block, x, y, w, h }) => ({ ...block, bounds: { x, y, w, h } }));
 }
+
+/** The page's blocks laid out with the shared rule; held blocks stay with their container. Used by the multi-block gestures. */
+export const settleBlocks = settle;
 
 export function addBlock(c: Canvas, pageId: string, input: { id: string; kind: string; props?: unknown }): EditResult {
   const def = definitionFor(input.kind);

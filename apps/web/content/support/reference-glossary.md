@@ -199,6 +199,12 @@ The offline page at /field where downloaded forms are filled with no signal. See
 **Place**
 A country, area or site in your list of places; results can be rolled up by place.
 
+**Chart Studio**
+The workshop for building and styling a chart from a project's recorded figures: 50 chart types, 40 themes and over 100 style options. See [Build and style a chart in the Chart Studio](/support/how-to/use-the-chart-studio).
+
+**Chart theme**
+A ready-made set of colours (and a few line settings) to start a chart from, such as DonorDesk Modern, DonorDesk Print or a stock ECharts theme. Colours are adjusted so they stay readable in light and dark mode.
+
 **Dashboard**
 A canvas of charts drawn from project data each time it is opened. See [Make and share a dashboard](/support/how-to/make-a-dashboard).
 

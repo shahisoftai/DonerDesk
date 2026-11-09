@@ -4,9 +4,11 @@
  * holds. Each function returns a Slot, or undefined when the block has nothing to show in an export.
  */
 import * as echarts from "echarts";
-import { buildDataChart, DEFAULT_SECTION_LABEL, SECTION_LABEL_KEY, fill, type DataChartSpec, type InfographicSectionConfig } from "@donordesk/domain";
+import { buildDataChart, CHART_PALETTES, DEFAULT_SECTION_LABEL, SECTION_LABEL_KEY, fill, type DataChartSpec, type InfographicSectionConfig } from "@donordesk/domain";
 import { flipBack, fmt, framed, heading, headingHeight, notReported, panelRect, paragraph, r, text, textWidth, wrapText, type RenderCtx, type Slot } from "./kit.js";
 import { chosenIndicators, latestFinance } from "./facts.js";
+
+const sameColours = (a: ReadonlyArray<string>, b: ReadonlyArray<string>): boolean => a.length === b.length && a.every((x, i) => x.toLowerCase() === b[i]!.toLowerCase());
 
 /** The heading a section shows: authored, else the (translated) default label. */
 export function titleFor(c: RenderCtx, section: InfographicSectionConfig): string | undefined {
@@ -21,8 +23,10 @@ export function titleFor(c: RenderCtx, section: InfographicSectionConfig): strin
  */
 export function themedOption(c: RenderCtx, option: Record<string, unknown>): Record<string, unknown> {
   const clone = JSON.parse(JSON.stringify(option)) as Record<string, unknown>;
+  // The brand palette replaces the product's own default colours; a colour set a person chose (their own, a named palette or a theme) is kept.
+  const chosen = Array.isArray(clone.color) && !sameColours(clone.color as string[], CHART_PALETTES[0]!.colors);
   const series = clone.series;
-  if (Array.isArray(series)) {
+  if (Array.isArray(series) && !chosen) {
     for (const item of series as Array<Record<string, unknown>>) {
       for (const key of ["itemStyle", "lineStyle", "areaStyle"] as const) {
         const style = item[key] as Record<string, unknown> | undefined;
@@ -39,7 +43,7 @@ export function themedOption(c: RenderCtx, option: Record<string, unknown>): Rec
       : a && typeof a === "object"
         ? { ...(a as Record<string, unknown>), axisLine: { lineStyle: { color: c.t.line } }, axisTick: { lineStyle: { color: c.t.line } }, axisLabel: { ...((a as { axisLabel?: object }).axisLabel ?? {}), color: c.t.muted }, splitLine: { lineStyle: { color: c.t.line } }, nameTextStyle: { color: c.t.muted } }
         : a;
-  const out: Record<string, unknown> = { ...clone, color: [...c.t.palette], textStyle: { fontFamily: c.font, color: c.t.body } };
+  const out: Record<string, unknown> = { ...clone, color: chosen ? clone.color : [...c.t.palette], textStyle: { fontFamily: c.font, color: c.t.body } };
   if (clone.xAxis !== undefined) out.xAxis = axis(clone.xAxis);
   if (clone.yAxis !== undefined) out.yAxis = axis(clone.yAxis);
   if (clone.legend && typeof clone.legend === "object") out.legend = { ...(clone.legend as object), textStyle: { color: c.t.body } };

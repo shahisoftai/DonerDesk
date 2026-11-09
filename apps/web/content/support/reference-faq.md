@@ -75,6 +75,9 @@ No. Planning is optional. A project with no planned activities works exactly as 
 ### Can I collect data in DonorDesk, including offline?
 Yes. Build a [collection form](/support/how-to/collect-answers-with-a-form), then use the [field app](/support/how-to/use-the-field-app-offline) to fill it with no connection. Records are reviewed by a person before they become indicator values. You can also bring in [KoboToolbox or SurveyCTO submissions](/support/how-to/bring-in-kobotoolbox-or-surveycto-submissions).
 
+### Can I change how a chart looks?
+Yes. In the [Chart Studio](/support/how-to/use-the-chart-studio) you can start from one of 40 themes and change colours, bar and line settings, axes, labels, the legend, hover box, marked values and more; click a part of the chart to open its options. DonorDesk still refuses a chart that would mislead (for example a cut bar axis, or two units on one axis), and a missing value is always a gap, never zero.
+
 ### Can I see my work on a map or a dashboard?
 Yes. Planned work appears on a [map](/support/how-to/see-your-work-on-a-map), and you can pin charts on a [dashboard](/support/how-to/make-a-dashboard) and share it by link. A missing value is always shown as missing, never as zero.
 

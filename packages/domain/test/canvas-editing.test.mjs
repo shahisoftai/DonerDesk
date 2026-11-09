@@ -49,7 +49,7 @@ test("an unknown block kind and a missing page are refused with a sentence", () 
   assert.equal(d.addBlock(base(), "zz", { id: "x", kind: "TEXT" }).ok, false);
 });
 
-test("history: a change is one step, no change is no step, undo and redo walk it, 50 are kept", () => {
+test("history: a change is one step, no change is no step, undo and redo walk it, 200 are kept", () => {
   let h = d.startHistory(base());
   const c1 = ok(d.addBlock(h.present, "p1", { id: "a", kind: "TEXT" }));
   h = d.commit(h, c1);
@@ -60,7 +60,7 @@ test("history: a change is one step, no change is no step, undo and redo walk it
   h = d.undo(d.undo(h)); assert.equal(blocks(h.present).length, 0);
   assert.equal(d.canUndo(h), false);
   let big = d.startHistory(base());
-  for (let i = 0; i < 60; i += 1) big = d.commit(big, ok(d.setTitle(big.present, `t${i}`)));
+  for (let i = 0; i < d.HISTORY_LIMIT + 10; i += 1) big = d.commit(big, ok(d.setTitle(big.present, `t${i}`)));
   assert.equal(big.past.length, d.HISTORY_LIMIT);
 });
 

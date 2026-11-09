@@ -194,6 +194,14 @@
       "types": "./dist/contexts/reporting/chart-spec-v2.d.ts",
       "import": "./dist/contexts/reporting/chart-spec-v2.js"
     },
+    "./contexts/reporting/chart-style.js": {
+      "types": "./dist/contexts/reporting/chart-style.d.ts",
+      "import": "./dist/contexts/reporting/chart-style.js"
+    },
+    "./contexts/reporting/chart-presets.js": {
+      "types": "./dist/contexts/reporting/chart-presets.d.ts",
+      "import": "./dist/contexts/reporting/chart-presets.js"
+    },
     "./contexts/dashboards/dashboard.js": {
       "types": "./dist/contexts/dashboards/dashboard.d.ts",
       "import": "./dist/contexts/dashboards/dashboard.js"
@@ -257,6 +265,10 @@
     "./contexts/canvas/index.js": {
       "types": "./dist/contexts/canvas/index.d.ts",
       "import": "./dist/contexts/canvas/index.js"
+    },
+    "./contexts/visual-data/index.js": {
+      "types": "./dist/contexts/visual-data/index.d.ts",
+      "import": "./dist/contexts/visual-data/index.js"
     }
   },
   "scripts": {

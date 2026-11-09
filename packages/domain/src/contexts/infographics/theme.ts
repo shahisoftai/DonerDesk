@@ -17,7 +17,8 @@ export const INFOGRAPHIC_THEME_IDS: readonly InfographicThemeId[] = ["DEFAULT", 
 
 export interface InfographicTheme {
   /** `BRAND` is derived from an organization's brand kit (see brand.ts); the rest are in the registry. */
-  id: InfographicThemeId | "BRAND";
+  /** A registry id, `BRAND`, or the id of a gallery theme (`OCEAN`, `OCEAN:dark`). */
+  id: string;
   label: string;
   description: string;
   /** CSS font stack; the export machine must have a matching face (bundled fonts arrive in 32.1). */
@@ -201,9 +202,13 @@ export const INFOGRAPHIC_THEMES: Readonly<Record<InfographicThemeId, Infographic
 
 export const INFOGRAPHIC_THEME_ORDER: readonly InfographicThemeId[] = INFOGRAPHIC_THEME_IDS;
 
+const REGISTERED = new Map<string, InfographicTheme>();
+/** The theme gallery registers its themes here when it loads, so one lookup serves the screen and the file composer. */
+export function registerThemes(themes: ReadonlyArray<InfographicTheme>): void { for (const t of themes) REGISTERED.set(t.id, t); }
+
 export function themeById(id: string | undefined): InfographicTheme | undefined {
   if (!id) return undefined;
-  return (INFOGRAPHIC_THEMES as Readonly<Record<string, InfographicTheme | undefined>>)[id];
+  return (INFOGRAPHIC_THEMES as Readonly<Record<string, InfographicTheme | undefined>>)[id] ?? REGISTERED.get(id);
 }
 
 /** The theme a design is drawn with: its own, or `DEFAULT` for a design saved before themes existed. A `BRAND` design needs the organization's derived theme, supplied by the caller. */

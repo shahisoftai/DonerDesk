@@ -9,8 +9,10 @@ A dashboard is a page of charts from the Data Center. It keeps which charts you 
 
 ## Add a chart
 
-1. Open a project's **Data** tab and build a chart in the chart builder (the **Charts** tab).
-2. Under **Add to a dashboard**, choose a dashboard and choose **Add the chart**. The chart is added below the others.
+1. Open a project's **Data** tab and build a chart in the Chart Studio (the **Charts** tab). See [Build and style a chart in the Chart Studio](/support/how-to/use-the-chart-studio) for the 50 chart types, the 40 themes and the style options.
+2. Under **Use in a dashboard**, choose a dashboard and add the chart. It is added at the bottom of the dashboard, with its theme and style. (Before 9 November 2026 a chart added from the Studio to a dashboard that had already been opened in the newer **Dashboards and infographics** view could be missing from it; it now appears.)
+
+A zoom bar or save-as-picture button you turn on in the Studio shows on the dashboard, but never in a printed or downloaded copy.
 
 ## Arrange
 

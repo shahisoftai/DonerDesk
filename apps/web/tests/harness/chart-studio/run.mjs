@@ -8,6 +8,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 import { build } from "./build.mjs";
+import { presetColors } from "@donordesk/domain/contexts/reporting/chart-presets.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const web = resolve(here, "../../..");
@@ -27,6 +28,7 @@ page.on("console", (m) => { if (m.type() === "error") errors.push(`[${current}] 
 
 const results = [];
 const check = async (name, fn) => {
+  if (process.env.STUDIO_ONLY && !new RegExp(process.env.STUDIO_ONLY).test(name)) return;
   current = name.slice(0, 40);
   try { await fn(); results.push(`ok   ${name}`); } catch (e) { results.push(`FAIL ${name} :: ${String(e.message).split("\n").slice(0, 8).join(" | ")}`); }
 };
@@ -380,6 +382,180 @@ await check("results by place: a ranking, graduated symbols and a choropleth on 
   await page.getByRole("combobox", { name: "Places at" }).selectOption("2");
   await settled();
   assert.equal((await H()).queries.at(-1).placeLevel, 2);
+});
+
+
+/* ---------- Phase 47: look and feel, themes, every style option, new chart types ---------- */
+// The chart library numbers its drawing ids per instance, so two downloads of the same picture differ only in those numbers.
+const svgNow = async () => (await downloadOf(() => page.getByRole("button", { name: "Image (SVG)" }).click())).bytes.toString("utf8").replace(/zr(-cls-)?\d+/g, "zr");
+// Two downloads of the same picture differ only in the drawing library's per-instance counters (zr-cls-0, zr-cls-4 …).
+const same = (svg) => svg.replace(/zr(-cls-)?\d+/g, "zr");
+const openLook = async () => { if (!(await page.getByTestId("style-panel").isVisible())) await page.locator("summary", { hasText: /^Look and feel$/ }).click(); };
+const openGroup = async (g) => { await openLook(); const d = page.locator(`details[data-group="${g}"]`); if ((await d.getAttribute("open")) === null) await d.locator("> summary").click(); };
+const control = (label) => page.getByLabel(label, { exact: true });
+
+await check("look and feel: a theme changes the colours of the picture and of its file; resetting returns the product look", async () => {
+  await reset();
+  const before = await svgNow();
+  await openLook();
+  await page.getByLabel("Theme", { exact: true }).selectOption("echarts-vintage");
+  await settled();
+  const themed = await svgNow();
+  const first = presetColors("echarts-vintage", "light")[0];
+  assert.ok(themed.toLowerCase().includes(first), `the first colour of the theme (${first}) is in the file`);
+  assert.notEqual(themed, before);
+  await page.getByRole("button", { name: "Reset all style" }).click();
+  await settled();
+  const after = await svgNow();
+  if (process.env.STUDIO_DEBUG) { writeFileSync("/tmp/claude-1000/svg-before.svg", before); writeFileSync("/tmp/claude-1000/svg-after.svg", after); }
+  assert.equal(same(after), same(before), "back to exactly what it was");
+});
+
+await check("look and feel: a bar's rounded ends, width and title alignment change the picture; the group counts them and resets alone", async () => {
+  await reset();
+  const before = await svgNow();
+  await openGroup("bars");
+  await control("Bars: Rounded ends").fill("10");
+  await control("Bars: Bar width").fill("18");
+  await openGroup("title");
+  await control("Title: Title alignment").selectOption("LEFT");
+  await settled();
+  const styled = await svgNow();
+  assert.notEqual(styled, before);
+  const bars = page.locator('details[data-group="bars"]');
+  assert.equal(await bars.locator("summary span").first().innerText(), "2", "two options are set in the Bars group");
+  await bars.getByRole("button", { name: "Reset this group" }).click();
+  await settled();
+  assert.equal(await page.locator('details[data-group="bars"] summary span').count(), 0);
+  assert.notEqual(await svgNow(), before, "the title setting is still in force");
+});
+
+await check("look and feel: a value outside the allowed range is refused on the page and cannot be saved", async () => {
+  await reset();
+  await openGroup("bars");
+  await control("Bars: Rounded ends").fill("99");
+  await settled();
+  assert.ok((await page.getByRole("alert").filter({ hasText: /whole number from 0 to 24/ }).count()) >= 1, "the range is said in words");
+  assert.equal(await page.getByRole("button", { name: "Save" }).first().isDisabled(), true);
+  await control("Bars: Rounded ends").fill("8");
+  await settled();
+  assert.equal(await page.getByRole("button", { name: "Save" }).first().isDisabled(), false);
+});
+
+await check("clicking a part of the picture opens its options", async () => {
+  await reset();
+  const canvas = page.getByTestId("chart-canvas");
+  const box = await canvas.boundingBox();
+  let opened = false;
+  for (const fy of [0.75, 0.6, 0.85, 0.5, 0.9]) {
+    for (let i = 1; i <= 14 && !opened; i++) {
+      await page.mouse.click(box.x + box.width * (0.12 + 0.76 * (i / 15)), box.y + box.height * fy);
+      opened = (await page.getByTestId("clicked").count()) > 0;
+    }
+    if (opened) break;
+  }
+  assert.ok(opened, "a click on a bar was found");
+  assert.match(await page.getByTestId("clicked").innerText(), /Bars/);
+  assert.equal(await page.locator('details[data-group="bars"]').getAttribute("open"), "");
+});
+
+await check("zoom bars are on screen only: the picture changes, the downloaded file does not", async () => {
+  await reset();
+  const before = await svgNow();
+  const shotBefore = (await page.getByTestId("chart-canvas").screenshot()).length;
+  await openGroup("interaction");
+  await control("Interaction: Zoom bar (screen only)").selectOption("SLIDER");
+  await page.waitForTimeout(1200);
+  assert.equal(same(await svgNow()), same(before), "no zoom bar in a file");
+  const shotAfter = await page.getByTestId("chart-canvas").screenshot();
+  assert.notEqual(shotAfter.length, shotBefore, "the zoom bar is on the screen");
+  const png = await downloadOf(() => page.getByRole("button", { name: "Image (PNG)" }).click());
+  assert.equal(png.bytes.subarray(1, 4).toString(), "PNG");
+});
+
+await check("a gauge's colour bands are added, edited and removed; at most five", async () => {
+  await reset();
+  await page.getByLabel("Data shown").selectOption("INDICATOR_VS_TARGET");
+  await page.getByLabel("Measure").selectOption("CUMULATIVE");
+  await settled();
+  await kind("GAUGE").click();
+  await openGroup("gauge");
+  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Add a colour band" }).click();
+  assert.equal(await page.getByTestId("gauge-bands").locator("input").count(), 3);
+  await page.getByLabel("Up to (%) 1", { exact: true }).fill("30");
+  await settled();
+  assert.match(await alt(), /Gauge chart/);
+  await page.getByRole("button", { name: "Remove band 3" }).click();
+  assert.equal(await page.getByTestId("gauge-bands").locator("input").count(), 2);
+});
+
+const NEW_KINDS = [
+  ["PICTORIAL_BAR", "INDICATORS_PROGRESS", ["Indicator b"], "CUMULATIVE", /Pictorial bar/], ["ROSE", "INDICATORS_PROGRESS", ["Indicator b", "Indicator c"], "CUMULATIVE", /Rose/],
+  ["RADIAL_BAR", "INDICATORS_PROGRESS", ["Indicator b"], "CUMULATIVE", /Radial bar/], ["AREA_RANGE", "INDICATORS_OVER_TIME", ["Indicator b"], "PERIOD", /Range band/],
+  ["RANGE_BAR", "INDICATORS_OVER_TIME", ["Indicator b"], "PERIOD", /Range bars/], ["PARALLEL", "INDICATORS_OVER_TIME", ["Indicator b", "Indicator c"], "PERIOD", /Parallel coordinates/],
+  ["TREE", "INDICATORS_PROGRESS", ["Indicator b", "Indicator c"], "CUMULATIVE", /Tree/], ["THEME_RIVER", "INDICATORS_OVER_TIME", ["Indicator b"], "PERIOD", /Stream/],
+  ["FILL_GAUGE", "INDICATOR_VS_TARGET", [], "CUMULATIVE", /Fill gauge/], ["MULTI_RING", "INDICATORS_PROGRESS", ["Indicator b", "Indicator c"], "CUMULATIVE", /Progress rings/],
+  ["NETWORK", "BUDGET_FLOW", [], null, /Network/],
+];
+for (const [k, template, extra, measure, pattern] of NEW_KINDS) {
+  await check(`new chart type ${k}: offered for its data, drawn, downloadable as a picture, and styled through the panel`, async () => {
+    await reset();
+    await page.getByLabel("Data shown").selectOption(template);
+    for (const label of extra) await page.locator("label", { hasText: label }).locator("input").check();
+    if (measure) await page.getByLabel("Measure").selectOption(measure);
+    await settled();
+    assert.equal(await kind(k).isDisabled(), false, `${k} is offered for ${template}`);
+    await kind(k).click();
+    await page.waitForTimeout(400);
+    assert.equal(await page.getByTestId("refused").count(), 0, `${k} drew: ${await page.getByTestId("refused").innerText().catch(() => "")}`);
+    assert.match(await alt(), pattern);
+    const plain = await svgNow();
+    assert.ok(plain.startsWith("<svg") && plain.length > 1500, "the file holds a drawing");
+    await openGroup("text");
+    await control("Text: Base text size").fill("14");
+    await openGroup("effects");
+    await control("Effects: Patterns as well as colour").selectOption("on");
+    await settled();
+    assert.notEqual(await svgNow(), plain, "styling changes the file");
+  });
+}
+
+await check("pictorial bar: choosing another icon changes the file", async () => {
+  await reset();
+  await page.getByLabel("Data shown").selectOption("INDICATORS_PROGRESS");
+  await page.getByLabel("Measure").selectOption("CUMULATIVE");
+  await settled();
+  await kind("PICTORIAL_BAR").click();
+  const person = await svgNow();
+  await openGroup("pictorial");
+  await control("Icons: Icon").selectOption("HOUSE");
+  await settled();
+  assert.notEqual(await svgNow(), person);
+});
+
+await check("a type that does not apply hides the options that do not apply to it", async () => {
+  await reset();
+  await openLook();
+  assert.equal(await page.locator('details[data-group="bars"]').count(), 1);
+  assert.equal(await page.locator('details[data-group="pie"]').count(), 0);
+  assert.equal(await page.locator('details[data-group="gauge"]').count(), 0);
+  await kind("LINE").click();
+  assert.equal(await page.locator('details[data-group="bars"]').count(), 0);
+  assert.equal(await page.locator('details[data-group="lines"]').count(), 1);
+});
+
+await check("a style and a theme survive save and reopening", async () => {
+  await reset();
+  await openLook();
+  await page.getByLabel("Theme", { exact: true }).selectOption("echarts-macarons");
+  await openGroup("bars");
+  await control("Bars: Rounded ends").fill("6");
+  await page.getByLabel("Chart name", { exact: true }).fill("Styled chart");
+  await page.getByRole("button", { name: "Save" }).first().click();
+  await settled();
+  const saved = (await H()).saved[0]?.spec ?? (await H()).saves.at(-1);
+  const spec = JSON.stringify(saved);
+  assert.ok(spec.includes('"preset:echarts-macarons"') && spec.includes('"radius":6'), "the saved chart holds the theme and the option");
 });
 
 if (process.env.STUDIO_SHOT) {

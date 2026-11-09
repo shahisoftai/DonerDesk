@@ -4,6 +4,8 @@
  */
 import { containerProblems } from "./containers.js";
 import { bindingProblems } from "./binding.js";
+import { actionProblems } from "./actions.js";
+import { paramBindingProblems, parameterProblems } from "./params.js";
 import { definitionFor } from "./blocks/registry.js";
 import { CANVAS_MODES, CANVAS_PROFILES, CANVAS_SCOPES, CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, CANVAS_MAX_TITLE, type BlockInstance, type CanvasBounds, type Canvas } from "./canvas.js";
 
@@ -42,6 +44,8 @@ function blockContent(block: BlockInstance, pageId: string): CanvasProblem[] {
 /** Everything wrong with the canvas's shape: the title, pages, ids, limits, and each block's kind and position. A canvas with any of these is refused when saved. */
 export function canvasStructureProblems(canvas: Canvas): CanvasProblem[] {
   const out: CanvasProblem[] = [];
+  const params = canvas.params ?? [];
+  for (const p of parameterProblems(params, new Set(canvas.pages.map((q) => q.id)))) out.push({ pageId: "", blockId: "", message: p.message });
   const top = (message: string) => out.push({ pageId: "", blockId: "", message });
   if (!canvas.title.trim() || canvas.title.length > CANVAS_MAX_TITLE) top(`A title is 1 to ${CANVAS_MAX_TITLE} characters.`);
   if (!CANVAS_MODES.includes(canvas.mode)) top("Unknown mode.");
@@ -60,6 +64,8 @@ export function canvasStructureProblems(canvas: Canvas): CanvasProblem[] {
       blockIds.add(block.id);
       out.push(...blockStructure(block, page.id));
       for (const message of containerProblems(page, block)) out.push({ pageId: page.id, blockId: block.id, message });
+      for (const message of paramBindingProblems(block.paramBindings ?? [], params)) out.push({ pageId: page.id, blockId: block.id, message });
+      if (block.action) for (const message of actionProblems(block.action, { pageIds: new Set(canvas.pages.map((q) => q.id)), params })) out.push({ pageId: page.id, blockId: block.id, message });
     }
   }
   return out;

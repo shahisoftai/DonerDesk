@@ -58,6 +58,8 @@ export * from "./finding-match.js";
 export * from "./data-sheet.js";
 export * from "./data-charts.js";
 export * from "./chart-spec-v2.js";
+export * from "./chart-style.js";
+export * from "./chart-presets.js";
 export * from "./dataset-query.js";
 export * from "./plan-counts.js";
 export * from "./data-tables.js";

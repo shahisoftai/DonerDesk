@@ -1,6 +1,6 @@
 # DonorDesk Support Documentation Index
 
-Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Data Center, report charts and reopening added 2026-10-15; last full refresh: 2026-10-07; corrected after demo 5 (2026-10-06).
+Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Data Center, report charts and reopening added 2026-10-15; Chart Studio how-to (50 chart types, 40 themes, style options) added 2026-11-09; last full refresh: 2026-10-07; corrected after demo 5 (2026-10-06).
 
 ## Ground truth to check when editing
 
@@ -9,7 +9,7 @@ Source files for the public Support Center at donordesk.online/support. Each fil
 - Labels and statuses: `apps/web/src/lib/labels.ts`
 - Report editor: `apps/web/src/features/report-editor/`
 - Email delivery is not active in production, so invitations are shared as links and notifications are in-app only.
-- Built and documented: work plan, collection forms and field app, maps, dashboards, infographics, Ask DonorDesk (opt-in), read-only API/webhooks/MCP, KoboToolbox/SurveyCTO connectors, two-step sign-in (optional, can be required), interface languages, the sector library (30 sectors, about 280 indicators; all unreviewed until an organisation reviews them). There is no donation/CRM module and no in-app account deletion. Do not document them.
+- Built and documented: work plan, collection forms and field app, maps, dashboards, infographics, Ask DonorDesk (opt-in), read-only API/webhooks/MCP, KoboToolbox/SurveyCTO connectors, two-step sign-in (optional, can be required), interface languages, the sector library (30 sectors, about 280 indicators; all unreviewed until an organisation reviews them), the Chart Studio (50 chart types, 40 themes, over 100 style options; error bars, word clouds and the population pyramid are deliberately not offered). There is no donation/CRM module and no in-app account deletion. Do not document them.
 
 ## Getting Started (`basic-information/` and `basic-information-*.md`)
 what-is-donordesk, getting-started-overview, key-concepts, understanding-projects, understanding-logframes, logframe hierarchy, indicators and targets, understanding-evidence, evidence verification, understanding-activities, reporting periods, compliance checklist, report sections / statuses / readiness / workflow, audit logs, donor templates, storage and file management, AI in DonorDesk, data security, user roles and permissions, pricing plans.
@@ -17,7 +17,7 @@ what-is-donordesk, getting-started-overview, key-concepts, understanding-project
 ## How-To (`how-to/`)
 Accounts: log-in, create-an-account, change-your-password, set-up-new-organisation, change-organisation-profile, invite-team-members, manage-team-roles-permissions, onboard-team-member.
 Projects: create-a-project, archive-a-project, build-logframe, upload-donor-template, connect-google-drive.
-Reporting: project-walkthrough, run-a-reporting-month, create-a-reporting-period, create-the-closing-report, review-and-accept-activities, fix-or-remove-an-indicator, change-a-reports-template, update-indicator-values, use-the-data-center, add-a-chart-to-a-report, reopen-an-approved-report, import-from-google-sheets, log-activities, dictate-instead-of-typing, work-offline-and-take-photos, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
+Reporting: project-walkthrough, run-a-reporting-month, create-a-reporting-period, create-the-closing-report, review-and-accept-activities, fix-or-remove-an-indicator, change-a-reports-template, update-indicator-values, use-the-data-center, use-the-chart-studio, add-a-chart-to-a-report, reopen-an-approved-report, import-from-google-sheets, log-activities, dictate-instead-of-typing, work-offline-and-take-photos, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
 Navigation: use-the-dashboard, search-projects-and-evidence, use-the-notification-system, use-the-academy-tour, manage-billing-subscription.
 
 ## Troubleshooting

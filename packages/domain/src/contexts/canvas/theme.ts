@@ -4,13 +4,14 @@
  * the editor, the brand kit and the tests run.
  */
 import { INFOGRAPHIC_THEME_ORDER, INFOGRAPHIC_THEMES, contrastRatio, resolveTheme, type InfographicTheme } from "../infographics/theme.js";
+import { GALLERY_IDS } from "./theme-kit/gallery.js";
 
 export type CanvasTheme = InfographicTheme;
-export const CANVAS_THEME_IDS: readonly string[] = INFOGRAPHIC_THEME_ORDER;
+export const CANVAS_THEME_IDS: readonly string[] = [...INFOGRAPHIC_THEME_ORDER, ...GALLERY_IDS];
 export const DEFAULT_THEME_ID = "DEFAULT";
 
 export const themeFor = (themeId: string | undefined, brand?: CanvasTheme): CanvasTheme => resolveTheme(themeId, brand);
-export const listThemes = (): CanvasTheme[] => INFOGRAPHIC_THEME_ORDER.map((id) => INFOGRAPHIC_THEMES[id]);
+export const listThemes = (): CanvasTheme[] => [...INFOGRAPHIC_THEME_ORDER.map((id) => INFOGRAPHIC_THEMES[id]), ...GALLERY_IDS.map((id) => resolveTheme(id))];
 
 export interface ContrastProblem { pair: string; ratio: number; needed: number }
 /** Text pairs need 4.5:1; rules and marks 3:1. A brand theme that fails is refused before it is saved. */

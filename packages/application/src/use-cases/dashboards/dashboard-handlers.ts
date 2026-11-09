@@ -1,12 +1,13 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
   restrictSheetToGroup, restrictWidgetToPeriod, buildKpi, computeMetric, MAP_VIEW_LABEL, type KpiTile, type MetricTile,
-  DomainError, Permissions, addWidget, projectListTable, buildChart, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, datasetQueryFor, isSpecV2, resolveDataset, runReport, settleLayout, toDatasetQuery, validateReportQuery, widgetProblems, type ReportQuery,
+  DomainError, Permissions, addWidget, legacyDashboardToPages, projectListTable, buildChart, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, datasetQueryFor, isSpecV2, resolveDataset, runReport, settleLayout, toDatasetQuery, validateReportQuery, widgetProblems, type ReportQuery,
   type ChartSpecV2, type DashboardScope, type DashboardWidget, type DataChartSpec, type DataSheet, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { AddDashboardWidgetInput, CreateDashboardShareInput, SaveDashboardInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
+import type { ICanvasRepository } from "../../ports/canvas.js";
 import type { IDashboardLinkRepository, IDashboardRepository, StoredDashboard, StoredDashboardLink } from "../../ports/dashboards.js";
 import type { VisibleProjects } from "../../services/visible-projects.js";
 import type { GetProjectDataSheetHandler } from "../data-center/data-sheet.js";
@@ -125,7 +126,28 @@ export class SaveDashboardHandler {
 
 /** Adds one chart (from the Data Center) to a dashboard the person can change; it lands below the others. */
 export class AddDashboardWidgetHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly repo: IDashboardRepository, private readonly visible: VisibleProjects, private readonly clock: IClock, private readonly audit: IAuditLogger) {}
+  constructor(private readonly ids: IIdGenerator, private readonly repo: IDashboardRepository, private readonly visible: VisibleProjects, private readonly clock: IClock, private readonly audit: IAuditLogger, private readonly canvases?: ICanvasRepository) {}
+
+  /**
+   * A dashboard that has been opened as a canvas is shown as that canvas, so a chart added to the dashboard is added to the canvas too (at the
+   * bottom of its page). Best effort: the dashboard is already saved, and a canvas someone saved in the meantime is left as it is.
+   */
+  private async mirrorToCanvas(ctx: AuthenticatedContext, dashboardId: string, widget: DashboardWidget): Promise<void> {
+    if (!this.canvases) return;
+    const found = await this.canvases.findBySource(ctx.tenant.tenantId, "DASHBOARD", dashboardId);
+    if (!found.ok || !found.value) return;
+    const stored = found.value;
+    const converted = legacyDashboardToPages([widget]);
+    const incoming = converted.pages[0];
+    if (!incoming || incoming.blocks.length === 0) return;
+    const title = widget.tab ?? "Overview";
+    const pages = stored.canvas.pages.map((p) => ({ ...p, blocks: [...p.blocks] }));
+    const page = pages.find((p) => p.title === title) ?? pages[0];
+    if (!page) return;
+    const bottom = page.blocks.reduce((m, b) => Math.max(m, b.bounds.y + b.bounds.h), 0);
+    for (const b of incoming.blocks) page.blocks.push({ ...b, bounds: { ...b.bounds, y: bottom } });
+    await this.canvases.update({ ...stored, canvas: { ...stored.canvas, pages }, updatedAt: this.clock.now() }, stored.canvas.revision);
+  }
 
   async handle(ctx: AuthenticatedContext, dashboardId: string, input: AddDashboardWidgetInput): Promise<Result<{ chartCount: number }, DomainError>> {
     if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot save dashboards"));
@@ -143,6 +165,8 @@ export class AddDashboardWidgetHandler {
     const saved = await this.repo.update({ ...d.value, widgets, updatedAt: this.clock.now() });
     if (!saved.ok) return saved;
     await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "dashboard.chart_added", entityType: "dashboard", entityId: dashboardId });
+    const added = widgets.find((w) => !d.value.widgets.some((old) => old.id === w.id));
+    if (added) await this.mirrorToCanvas(ctx, dashboardId, added);
     return ok({ chartCount: widgets.length });
   }
 }
@@ -272,7 +296,7 @@ export async function drawCharts(
       const built = buildChart(spec, await dataFor(w, sheet, spec));
       if (!built.ok) return { widgetId: w.id, unavailable: built.reason };
       if (built.render === "TABLE") return { widgetId: w.id, table: { title: built.title, columns: built.columns, rows: built.rows, notes: built.notes } };
-      return { widgetId: w.id, chart: { option: built.option, title: built.title, notes: built.notes, unverified: built.provenance.unverified, points: built.provenance.points, ...(built.maps ? { maps: built.maps } : {}), ...(built.regionNames ? { regionNames: built.regionNames } : {}) } };
+      return { widgetId: w.id, chart: { option: built.option, title: built.title, notes: built.notes, unverified: built.provenance.unverified, points: built.provenance.points, ...(built.maps ? { maps: built.maps } : {}), ...(built.regionNames ? { regionNames: built.regionNames } : {}), ...(spec.paletteId ? { paletteId: spec.paletteId } : {}), ...(spec.style?.interaction || spec.style?.animation?.stagger ? { interaction: { ...(spec.style.interaction ?? {}), ...(spec.style.animation?.stagger ? { stagger: spec.style.animation.stagger } : {}) } } : {}) } };
     }
     if (!w.spec) return { widgetId: w.id, unavailable: "This chart has no settings." };
     const drawn = buildDataChart(sheet, w.spec as DataChartSpec);

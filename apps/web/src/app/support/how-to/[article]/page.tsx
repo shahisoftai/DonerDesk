@@ -75,6 +75,7 @@ const FILE_MAP: Record<string, string> = {
   "collect-answers-with-a-form": "how-to/how-to-collect-answers-with-a-form.md",
   "use-the-field-app-offline": "how-to/how-to-use-the-field-app-offline.md",
   "bring-in-kobotoolbox-or-surveycto-submissions": "how-to/how-to-bring-in-kobotoolbox-or-surveycto-submissions.md",
+  "use-the-chart-studio": "how-to/how-to-use-the-chart-studio.md",
   "make-a-dashboard": "how-to/how-to-make-a-dashboard.md",
   "ask-a-question-about-a-project": "how-to/how-to-ask-a-question-about-a-project.md",
   "connect-api-keys-webhooks-and-ai-assistants": "how-to/how-to-connect-api-keys-webhooks-and-ai-assistants.md",

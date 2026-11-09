@@ -52,6 +52,10 @@ export const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/collection-forms$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/ask$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/datasets\/resolve$/, permission: "project.view" },
+  // Visual Studio data (Phase 48.17): every role holds project.view; the handlers apply the per-source and per-project rules.
+  { method: "GET", route: /^\/v1\/visual-data\/catalogue$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/visual-data\/query$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/visual-data\/version$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/dashboard-templates$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/dashboard-templates$/, permission: "project.edit" },
   { method: "GET", route: /^\/v1\/dashboard-templates\/[^/]+$/, permission: "project.view" },

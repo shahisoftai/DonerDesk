@@ -62,9 +62,13 @@ const CASES = {
   CHOROPLETH: ["RESULTS_BY_PLACE", ["a"]], GRADUATED_SYMBOLS: ["RESULTS_BY_PLACE", ["a"]],
   GANTT: ["PLAN_TIMELINE", []], CALENDAR_HEATMAP: ["ACTIVITY_DAYS", []], SANKEY: ["BUDGET_FLOW", []],
   SUNBURST: ["INDICATORS_PROGRESS", ["a", "b", "c", "n"]], WAFFLE: ["INDICATORS_PROGRESS", ["a", "b"]],
+  PICTORIAL_BAR: ["INDICATORS_PROGRESS", ["a", "b"]], ROSE: ["INDICATORS_PROGRESS", ["a", "b", "c"]], RADIAL_BAR: ["INDICATORS_PROGRESS", ["a", "b"]], AREA_RANGE: ["INDICATORS_OVER_TIME", ["a", "b"]],
+  RANGE_BAR: ["INDICATORS_OVER_TIME", ["a", "b"]], PARALLEL: ["INDICATORS_OVER_TIME", ["a", "b", "c"]], TREE: ["INDICATORS_PROGRESS", ["a", "b", "c"]], NETWORK: ["BUDGET_FLOW", []],
+  DUMBBELL: ["INDICATORS_OVER_TIME", ["a", "b"]], DIVERGING_BAR: ["INDICATORS_PROGRESS", ["n", "w"]], THERMOMETER: ["INDICATOR_VS_TARGET", ["a"]], BUMP: ["INDICATORS_OVER_TIME", ["a", "b"]], CONNECTED_SCATTER: ["INDICATORS_OVER_TIME", ["a", "b"]],
+  THEME_RIVER: ["INDICATORS_OVER_TIME", ["a", "b"]], FILL_GAUGE: ["INDICATOR_VS_TARGET", ["a"]], MULTI_RING: ["INDICATORS_PROGRESS", ["a", "b", "c"]],
   BAR_LINE_COMBO: ["INDICATORS_OVER_TIME", ["a", "b"]], PIVOT_TABLE: ["INDICATORS_OVER_TIME", ["a", "b"]], SCORECARD_TABLE: ["INDICATORS_PROGRESS", ["a", "b", "r"]],
 };
-const measureFor = (kind) => (["GAUGE", "PROGRESS_RING", "PROGRESS_BAR", "KPI_NUMBER", "BULLET"].includes(kind) ? "CUMULATIVE" : ["FUNNEL", "PIE", "DONUT", "TREEMAP", "LOLLIPOP", "DOT_PLOT", "BAR_HORIZONTAL", "RADAR", "SUNBURST", "WAFFLE"].includes(kind) ? "CUMULATIVE" : "PERIOD");
+const measureFor = (kind) => (["GAUGE", "PROGRESS_RING", "PROGRESS_BAR", "KPI_NUMBER", "BULLET", "FILL_GAUGE", "MULTI_RING", "THERMOMETER", "DIVERGING_BAR"].includes(kind) ? "CUMULATIVE" : ["FUNNEL", "PIE", "DONUT", "TREEMAP", "LOLLIPOP", "DOT_PLOT", "BAR_HORIZONTAL", "RADAR", "SUNBURST", "WAFFLE"].includes(kind) ? "CUMULATIVE" : "PERIOD");
 
 test("every drawable kind has a case, and every case draws (a table or a chart option)", () => {
   const built = CHART_KIND_ORDER.filter((k) => CHART_KINDS[k].status === "BUILT");

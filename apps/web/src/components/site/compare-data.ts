@@ -199,7 +199,7 @@ export const SECTIONS: MatrixSection[] = [
       sheet: p("Charts by hand."),
     } },
     { label: "Chart choice and editing", cells: {
-      dd: y("39 chart types in a Chart Studio with full editing; a chart that would mislead is refused with the reason."),
+      dd: y("50 chart types and 40 colour themes in a Chart Studio with over 100 style options; a chart that would mislead is refused with the reason."),
       ai: y("Bar and line charts, pivot tables and notebooks."),
       dr: y("Graphical charts of progress for projects or the whole programme."),
       tola: y("Charts, graphs, narratives and images on dashboards."),

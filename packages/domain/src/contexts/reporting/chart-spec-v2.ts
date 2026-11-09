@@ -3,6 +3,8 @@ import { DATA_CHART_TEMPLATES, HEX_COLOUR, type DataChartSpec, type DataChartTem
 
 const LEGACY_TEMPLATES: ReadonlySet<string> = new Set(["INDICATOR_OVER_TIME", "INDICATOR_VS_TARGET", "INDICATORS_PROGRESS", "INDICATORS_OVER_TIME", "STATUS_DISTRIBUTION", "FINANCE_BUDGET_VS_SPEND", "FINANCE_BURN_RATE"]);
 import { CHART_MEASURES, type ChartMeasure } from "./data-sheet.js";
+import { validateChartStyle, type ChartStyle } from "./chart-style.js";
+import { resolvePaletteColors } from "./chart-presets.js";
 
 /**
  * Chart Spec v2 (Phase 34.0): the one description of a chart, used by the Data Center, dashboards, reports and infographics.
@@ -29,7 +31,9 @@ export type ChartKind =
   | "GANTT"
   | "CHOROPLETH" | "GRADUATED_SYMBOLS"
   | "BAR_LINE_COMBO"
-  | "PIVOT_TABLE" | "SCORECARD_TABLE";
+  | "PIVOT_TABLE" | "SCORECARD_TABLE"
+  | "PICTORIAL_BAR" | "ROSE" | "RADIAL_BAR" | "AREA_RANGE" | "RANGE_BAR" | "PARALLEL" | "TREE" | "NETWORK" | "THEME_RIVER" | "FILL_GAUGE" | "MULTI_RING"
+  | "DUMBBELL" | "DIVERGING_BAR" | "THERMOMETER" | "BUMP" | "CONNECTED_SCATTER";
 
 /**
  * The shape of data a chart is drawn from, decided by its dataset template:
@@ -117,6 +121,7 @@ export const CHART_KINDS: Record<ChartKind, ChartKindRule> = {
   WAFFLE: kind("Waffle (100 squares)", "PART_TO_WHOLE", "BUILT", [LAT, STA], { additiveOnly: true, minPoints: 2 }),
   HISTOGRAM: kind("Histogram", "DISTRIBUTION", "BUILT", [SBP], { minPoints: 5 }),
   BOX_PLOT: kind("Box plot", "DISTRIBUTION", "BUILT", [SBP], { minPoints: 5 }),
+  // Stays planned: a breakdown is recorded one dimension at a time (sex, or age group), not as an age-by-sex table, so a pyramid would need figures nobody recorded.
   POPULATION_PYRAMID: kind("Population pyramid (age and sex)", "DISTRIBUTION", "PLANNED", [], { additiveOnly: true, minPoints: 2 }),
   SCATTER: kind("Scatter", "RELATIONSHIP", "BUILT", [SBP], { minPoints: 3 }),
   BUBBLE: kind("Bubble", "RELATIONSHIP", "BUILT", [SBP], { minPoints: 3 }),
@@ -135,6 +140,24 @@ export const CHART_KINDS: Record<ChartKind, ChartKindRule> = {
   BAR_LINE_COMBO: kind("Bar and line", "COMBINATION", "BUILT", [SBP, FIN], { startsAtZero: true, minPoints: 1 }),
   PIVOT_TABLE: kind("Pivot table", "TABLE", "BUILT", [SBP, LAT, FIN]),
   SCORECARD_TABLE: kind("Scorecard table", "TABLE", "BUILT", [LAT]),
+  // Phase 47: each draws only what is recorded (a gap stays a gap; two indicators for a range are the person's own choice).
+  PICTORIAL_BAR: kind("Pictorial bar (icons)", "COMPARISON", "BUILT", [LAT, TRI], { additiveOnly: true, startsAtZero: true }),
+  ROSE: kind("Rose (radius shows the value)", "PART_TO_WHOLE", "BUILT", [LAT, STA, PLC], { additiveOnly: true, minPoints: 3 }),
+  RADIAL_BAR: kind("Radial bar", "COMPARISON", "BUILT", [LAT], { startsAtZero: true }),
+  AREA_RANGE: kind("Range band (between two indicators)", "TREND", "BUILT", [SBP], { minPoints: 2 }),
+  RANGE_BAR: kind("Range bars (between two indicators)", "COMPARISON", "BUILT", [SBP], { minPoints: 2 }),
+  PARALLEL: kind("Parallel coordinates", "RELATIONSHIP", "BUILT", [SBP], { minPoints: 6 }),
+  TREE: kind("Tree (by logframe level)", "PART_TO_WHOLE", "BUILT", [LAT]),
+  NETWORK: kind("Network (donors and categories)", "FLOW", "BUILT", [BUD], { additiveOnly: true, minPoints: 2 }),
+  THEME_RIVER: kind("Stream (theme river)", "TREND", "BUILT", [SBP], { additiveOnly: true, minPoints: 3 }),
+  FILL_GAUGE: kind("Fill gauge", "PROGRESS", "BUILT", [TRI]),
+  MULTI_RING: kind("Progress rings", "PROGRESS", "BUILT", [LAT], { minPoints: 2 }),
+  // Phase 48.11: each draws only what is recorded; a ranking or a thermometer is refused when the data cannot honestly support it.
+  DUMBBELL: kind("Dumbbell (first and latest period)", "COMPARISON", "BUILT", [SBP], { minPoints: 2 }),
+  DIVERGING_BAR: kind("Diverging bar (above and below zero)", "COMPARISON", "BUILT", [LAT, SBP, PLC], { startsAtZero: true, minPoints: 2 }),
+  THERMOMETER: kind("Thermometer (value against target)", "PROGRESS", "BUILT", [TRI]),
+  BUMP: kind("Bump (rank over periods)", "TREND", "BUILT", [SBP], { minPoints: 2 }),
+  CONNECTED_SCATTER: kind("Connected scatter (two indicators over time)", "RELATIONSHIP", "BUILT", [SBP], { minPoints: 3 }),
 };
 
 export const CHART_KIND_ORDER = Object.keys(CHART_KINDS) as ChartKind[];
@@ -217,6 +240,8 @@ export interface ChartSpecV2 {
   size?: ChartSize | undefined;
   /** What the chart says, for a reader who cannot see it. */
   altText?: string | undefined;
+  /** How the chart looks (Phase 47): optional choices that never touch the data or the honesty rules. Absent = the builder's own look. */
+  style?: ChartStyle | undefined;
 }
 
 export const MAX_CHART_ANNOTATIONS = 12;
@@ -270,7 +295,12 @@ export function toLegacySpec(spec: ChartSpecV2): DataChartSpec | null {
     ...(spec.dataset.toPeriodId !== undefined ? { toPeriodId: spec.dataset.toPeriodId } : {}),
     showTarget: spec.dataset.showTarget,
     ...(spec.title !== undefined ? { title: spec.title } : {}),
-    ...(spec.colors !== undefined ? { colors: [...spec.colors] } : {}),
+    // The colours a person chose, or the set of a named palette or theme they picked, travel with the chart (the product's own default palette does not:
+    // a file then takes the document's brand colours).
+    ...((): { colors?: string[] } => {
+      const chosen = spec.colors ?? (spec.paletteId && spec.paletteId !== "STANDARD" ? resolvePaletteColors(spec.paletteId) : undefined);
+      return chosen && chosen.length > 0 ? { colors: [...chosen] } : {};
+    })(),
   };
 }
 
@@ -284,7 +314,7 @@ export type ChartProblemCode =
   | "NOT_A_SPEC" | "UNKNOWN_KIND" | "KIND_NOT_DRAWN_YET" | "UNKNOWN_TEMPLATE" | "KIND_NOT_FOR_TEMPLATE" | "INDICATOR_COUNT"
   | "UNKNOWN_MEASURE" | "RATE_NOT_ADDITIVE" | "AXIS_RANGE" | "BAR_AXIS_NOT_ZERO" | "LOG_NEEDS_POSITIVE" | "TOP_N_RANGE"
   | "COLOUR_FORMAT" | "TOO_MANY_ANNOTATIONS" | "ANNOTATION_INVALID" | "SECONDARY_AXIS_UNNAMED" | "TEXT_TOO_LONG" | "SERIES_KIND_UNKNOWN"
-  | "UNKNOWN_SETTING";
+  | "UNKNOWN_SETTING" | "STYLE_INVALID" | "STYLE_RANGE" | "STYLE_UNKNOWN" | "STYLE_NOT_FOR_KIND";
 
 export interface ChartProblem {
   code: ChartProblemCode;
@@ -379,6 +409,8 @@ export function validateChartSpec(spec: unknown, options: ValidateChartOptions =
   if (s.labels && !LABEL_FORMATS.includes(s.labels.format)) add("UNKNOWN_SETTING", "labels.format", "This label format is not known.");
   if (s.labels?.numberFormat !== undefined && !NUMBER_FORMATS.includes(s.labels.numberFormat)) add("UNKNOWN_SETTING", "labels.numberFormat", "This number format is not known.");
   if (s.size !== undefined && !CHART_SIZES.includes(s.size)) add("UNKNOWN_SETTING", "size", "This chart size is not known.");
+  if (s.paletteId !== undefined && resolvePaletteColors(s.paletteId) === undefined) add("UNKNOWN_SETTING", "paletteId", "This colour set is not known.");
+  if (rule) problems.push(...validateChartStyle(s.style, s.kind));
   return problems;
 }
 

@@ -79,6 +79,14 @@ const portfolioFixture = (title: string): BlockFixture => ({
 });
 const titled = (title: string) => ({ props: { title } });
 
+/** Props that make a block's own lint rules fire (a rule that can never fail is a stub, so the contract test needs one for each rule that the plain fixture does not trigger). */
+export const LINT_PROBES: Readonly<Partial<Record<BlockKind, ReadonlyArray<unknown>>>> = {
+  CHART: [
+    { spec: { ...chartSpec, dataset: { ...chartSpec.dataset, indicatorIds: ["a", "b", "c", "d", "e"] } } },
+    { spec: { ...chartSpec, colors: ["#ffff99"] } },
+  ],
+};
+
 export const BLOCK_FIXTURES: Readonly<Record<BlockKind, BlockFixture>> = {
   TEXT: { props: { text: "# Water for Kisumu\nBoreholes now serve more homes.", role: "body" } },
   DIVIDER: { props: { line: true } },

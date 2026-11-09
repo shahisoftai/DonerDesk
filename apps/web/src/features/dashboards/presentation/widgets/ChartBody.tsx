@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { forScreen, optionToTable } from "@donordesk/domain/contexts/reporting/chart-screen.js";
+import { applyScreenInteraction } from "@donordesk/domain/contexts/reporting/chart-style.js";
 import { useLowData } from "@/features/design/presentation/use-low-data";
 import type { ChartDrawing } from "@/lib/server/schemas-dashboards";
 import { DashboardChart } from "../DashboardChart";
@@ -19,6 +20,8 @@ export function ChartBody({ chart, onPick, hoverName, onHover }: { chart: Chart;
   // Low-data mode shows the table until the person asks for the picture; a person's own choice on this tile always wins.
   const asTable = chosen ?? lowData;
   const screen = useMemo(() => forScreen(chart.option), [chart.option]);
+  // Zoom bars and the picture button are for a screen only: they are added here, never in what a file or a report is drawn from.
+  const shown = useMemo(() => (chart.interaction ? applyScreenInteraction(screen.option, { style: { interaction: { zoom: chart.interaction.zoom, toolbox: chart.interaction.toolbox }, ...(chart.interaction.stagger ? { animation: { stagger: chart.interaction.stagger } } : {}) } }) : screen.option), [screen.option, chart.interaction]);
   const table = useMemo(() => optionToTable(chart.option), [chart.option]);
   return (
     <div className="relative h-full min-h-0">
@@ -32,7 +35,7 @@ export function ChartBody({ chart, onPick, hoverName, onHover }: { chart: Chart;
           ) : <p className="p-2 text-sm text-[var(--tile-meta)]">This picture is not a table of values. The notes under it say what it shows.</p>}
         </div>
       ) : (
-        <DashboardChart option={screen.option} label={chart.title} maps={chart.maps} regionNames={chart.regionNames} onPick={onPick} hoverName={hoverName} onHover={onHover} />
+        <DashboardChart option={shown} paletteId={chart.paletteId} label={chart.title} maps={chart.maps} regionNames={chart.regionNames} onPick={onPick} hoverName={hoverName} onHover={onHover} />
       )}
       <button type="button" aria-pressed={asTable} onClick={() => setChosen(!asTable)} className="absolute end-1 top-0 z-10 rounded border border-[var(--tile-border)] bg-[var(--tile-bg)] px-2 py-0.5 text-xs text-[var(--tile-meta)] hover:bg-[var(--tile-header-bg)] [@media(pointer:coarse)]:min-h-11">
         {asTable ? "View chart" : "View data"}

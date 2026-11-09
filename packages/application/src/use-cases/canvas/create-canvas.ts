@@ -8,7 +8,7 @@ import { can, dtoOf, fail, ok, viewerOf, type CanvasDto } from "./canvas-shared.
 export interface CreateCanvasInput {
   title: string; scope: CanvasScope; projectId?: string | undefined; mode?: CanvasMode | undefined; profile?: CanvasProfile | undefined; language?: string | undefined; themeId?: string | undefined; format?: string | undefined;
   /** Pages to start from (a template applied, or a copy); absent = one empty page. */
-  pages?: CanvasPage[] | undefined; options?: Canvas["options"];
+  pages?: CanvasPage[] | undefined; options?: Canvas["options"]; params?: Canvas["params"];
 }
 
 export class CreateCanvasHandler {
@@ -26,7 +26,7 @@ export class CreateCanvasHandler {
     }
     const id = this.ids.generate();
     const base = blankCanvas({ id, title: input.title.trim(), scope: input.scope, ...(input.mode ? { mode: input.mode } : {}), ...(input.profile ? { profile: input.profile } : {}), ...(input.language ? { language: input.language } : {}), ...(input.themeId ? { themeId: input.themeId } : {}), ...(input.format ? { format: input.format } : {}) });
-    const canvas: Canvas = { ...base, ...(input.pages?.length ? { pages: input.pages } : {}), ...(input.options ? { options: input.options } : {}) };
+    const canvas: Canvas = { ...base, ...(input.pages?.length ? { pages: input.pages } : {}), ...(input.options ? { options: input.options } : {}), ...(input.params?.length ? { params: input.params } : {}) };
     // A canvas made from pages (a template, a copy) must be sound; an empty one has nothing to check.
     if (input.pages?.length) { const bad = canvasProblems(canvas)[0]; if (bad) return fail(DomainError.validation(bad.message)); }
     const now = this.clock.now();

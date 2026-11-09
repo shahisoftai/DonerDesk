@@ -9,13 +9,40 @@ const Binding = z.discriminatedUnion("type", [
   z.object({ type: z.literal("MANUAL"), slot: z.string().max(40), value: z.string().max(400), sourceNote: z.string().max(300).optional() }),
   z.object({ type: z.literal("AI_DRAFT"), slot: z.string().max(40), text: z.string().max(4000), acceptedAt: z.string().max(40).optional() }),
 ]);
+const ParamValue = z.union([z.string().max(200), z.array(z.string().max(200)).max(100), z.object({ from: z.string().max(80), to: z.string().max(80) }), z.null()]);
+/** What clicking a block does (Phase 48.3); the domain re-checks the destination (links stay inside the product). */
+const BlockAction = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("SET_PARAM"), param: z.string().max(30), value: z.union([ParamValue, z.literal("CLICKED_LABEL")]) }),
+  z.object({ type: z.literal("OPEN_PAGE"), pageId: z.string().max(60) }),
+  z.object({ type: z.literal("OPEN_CANVAS"), canvasId: z.string().max(64), params: z.record(z.string().max(30), ParamValue).optional() }),
+  z.object({ type: z.literal("OPEN_LINK"), href: z.string().max(300) }),
+  z.object({ type: z.literal("OPEN_TABLE") }),
+]);
+const FreeFrame = z.object({ x: z.number().min(-6000).max(6000), y: z.number().min(-6000).max(6000), w: z.number().min(1).max(6000), h: z.number().min(1).max(6000), rot: z.number().min(-360).max(360).optional(), z: z.number().int().min(0).max(1000).optional() });
+const Space = z.enum(["none", "small", "medium", "large"]);
+export const CanvasParameterSchema = z.object({
+  id: z.string().min(1).max(30), label: z.string().min(1).max(60),
+  kind: z.enum(["PERIOD", "PERIOD_RANGE", "PLACE", "GROUP", "STATUS", "INDICATOR", "PROJECT", "TEXT"]),
+  default: ParamValue.optional(), allowed: z.array(z.string().max(200)).max(200).optional(), multiple: z.boolean().optional(), pageId: z.string().max(60).optional(),
+});
 export const CanvasBlockSchema = z.object({
   id: z.string().min(1).max(60), kind: z.string().min(1).max(40), bounds: Bounds, tablet: Bounds.optional(), phone: Bounds.optional(),
   props: z.record(z.string(), z.unknown()), bindings: z.array(Binding).max(8), container: z.object({ id: z.string().min(1).max(60), tab: z.number().int().min(0).max(5).optional() }).optional(),
-  style: z.object({ background: z.enum(["none", "card", "tint", "accent"]).optional(), align: z.enum(["start", "center", "end"]).optional(), hidden: z.boolean().optional(), locked: z.boolean().optional() }).optional(),
+  style: z.object({
+    background: z.enum(["none", "card", "tint", "accent"]).optional(), align: z.enum(["start", "center", "end"]).optional(), hidden: z.boolean().optional(), locked: z.boolean().optional(),
+    frame: z.string().max(30).optional(), border: z.enum(["none", "line", "accent"]).optional(), padding: Space.optional(), radius: Space.optional(), shadow: z.enum(["none", "small", "medium"]).optional(),
+  }).optional(),
   alt: z.string().max(500).optional(), description: z.string().max(2000).optional(),
+  free: FreeFrame.optional(),
+  component: z.object({ id: z.string().max(64), version: z.number().int().min(1), key: z.string().max(60) }).optional(),
+  paramBindings: z.array(z.object({ param: z.string().max(30), target: z.enum(["period", "periodRange", "place", "group", "status", "indicator", "project", "text"]) })).max(8).optional(),
+  action: BlockAction.optional(),
 });
-export const CanvasPageSchema = z.object({ id: z.string().min(1).max(60), title: z.string().max(80), format: z.string().min(1).max(40), blocks: z.array(CanvasBlockSchema).max(60) });
+export const CanvasPageSchema = z.object({
+  id: z.string().min(1).max(60), title: z.string().max(80), format: z.string().min(1).max(40), blocks: z.array(CanvasBlockSchema).max(60),
+  mode: z.enum(["GRID", "FREE"]).optional(), size: z.object({ w: z.number().int().min(100).max(6000), h: z.number().int().min(100).max(6000) }).optional(),
+  background: z.enum(["page", "card", "tint", "accent"]).optional(), themeId: z.string().max(40).optional(),
+});
 const Options = z.object({ periodFromId: z.string().max(80).optional(), periodToId: z.string().max(80).optional(), locationKeys: z.array(z.string().max(80)).max(50).optional(), acknowledgement: z.string().max(300).optional(), subtitle: z.string().max(200).optional() });
 
 const Scope = z.enum(["ORG", "PROJECT", "MINE", "PORTFOLIO"]);
@@ -25,13 +52,13 @@ const Mode = z.enum(["LIVE", "PUBLISHED_ONLY"]);
 export const CreateCanvasSchema = z.object({
   title: z.string().trim().min(1).max(120), scope: Scope, projectId: z.string().max(80).optional(), mode: Mode.optional(), profile: Profile.optional(),
   language: z.string().max(10).optional(), themeId: z.string().max(40).optional(), format: z.string().max(40).optional(),
-  pages: z.array(CanvasPageSchema).min(1).max(12).optional(), options: Options.optional(),
+  pages: z.array(CanvasPageSchema).min(1).max(12).optional(), options: Options.optional(), params: z.array(CanvasParameterSchema).max(20).optional(),
 });
 export type CreateCanvasInput = z.infer<typeof CreateCanvasSchema>;
 
 export const SaveCanvasSchema = z.object({
   expectedRevision: z.number().int().min(1), title: z.string().trim().min(1).max(120), pages: z.array(CanvasPageSchema).min(1).max(12),
-  profile: Profile, mode: Mode.optional(), language: z.string().max(10), themeId: z.string().max(40), options: Options.optional(),
+  profile: Profile, mode: Mode.optional(), language: z.string().max(10), themeId: z.string().max(40), options: Options.optional(), params: z.array(CanvasParameterSchema).max(20).optional(),
 });
 export type SaveCanvasInput = z.infer<typeof SaveCanvasSchema>;
 

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BLOCK_KINDS, PENDING_KINDS, BLOCK_FIXTURES, SAMPLE_FACTS, SAMPLE_SHEET, BLOCK_FAMILIES, RENDER_SURFACES, definitionFor, checkCanvas, canPublish, modelProblems, functionPaths, modelFingerprint, canvasAiEnabledFor, aiGate } from "../dist/index.js";
+import { BLOCK_KINDS, PENDING_KINDS, BLOCK_FIXTURES, LINT_PROBES, SAMPLE_FACTS, SAMPLE_SHEET, BLOCK_FAMILIES, RENDER_SURFACES, definitionFor, checkCanvas, canPublish, modelProblems, functionPaths, modelFingerprint, canvasAiEnabledFor, aiGate } from "../dist/index.js";
 
 const KINDS = [...BLOCK_KINDS];
 const STATES = ["ready", "empty", "unavailable"];
@@ -33,7 +33,7 @@ test("a definition is complete: family, label key, validate, defaults, slots, si
 test("no lint rule is a stub: every rule a block owns can fail", () => {
   // A rule that can never return a message is a rule that was meant to exist; it must be written or removed.
   for (const kind of KINDS) for (const r of definitionFor(kind).lint) {
-    const probes = [BLOCK_FIXTURES[kind].props, {}, { text: "", title: "" }];
+    const probes = [BLOCK_FIXTURES[kind].props, {}, { text: "", title: "" }, ...(LINT_PROBES[kind] ?? [])];
     assert.ok(probes.some((p) => { try { return r.check(p) !== null; } catch { return true; } }), `${kind}.${r.id} never fails`);
   }
 });

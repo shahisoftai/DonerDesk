@@ -3,10 +3,11 @@
  * composed. Read defensively: a document that no longer parses is "no canvas", never a crash, so one bad row cannot take a list down.
  */
 import { CANVAS_MODES, CANVAS_PROFILES, CANVAS_SCOPES, type Canvas, type CanvasMode, type CanvasOptions, type CanvasPage, type CanvasProfile, type CanvasScope } from "./canvas.js";
+import type { CanvasParameter } from "./params.js";
 
-export interface CanvasDocument { profile: CanvasProfile; language: string; themeId: string; pages: CanvasPage[]; options?: CanvasOptions | undefined }
+export interface CanvasDocument { profile: CanvasProfile; language: string; themeId: string; pages: CanvasPage[]; options?: CanvasOptions | undefined; params?: CanvasParameter[] | undefined }
 
-export const documentOf = (c: Canvas): string => JSON.stringify({ profile: c.profile, language: c.language, themeId: c.themeId, pages: c.pages, ...(c.options ? { options: c.options } : {}) } satisfies CanvasDocument);
+export const documentOf = (c: Canvas): string => JSON.stringify({ profile: c.profile, language: c.language, themeId: c.themeId, pages: c.pages, ...(c.options ? { options: c.options } : {}), ...(c.params && c.params.length > 0 ? { params: c.params } : {}) } satisfies CanvasDocument);
 
 export interface CanvasColumns { id: string; scope: string; mode: string; title: string; revision: number; docJson: string }
 
@@ -20,7 +21,7 @@ export function canvasFromColumns(row: CanvasColumns): Canvas | null {
       id: row.id, scope: row.scope as CanvasScope, mode: row.mode as CanvasMode, title: row.title, revision: row.revision,
       profile: (CANVAS_PROFILES as readonly string[]).includes(d.profile ?? "") ? (d.profile as CanvasProfile) : "LIVE_INTERNAL",
       language: typeof d.language === "string" ? d.language : "en", themeId: typeof d.themeId === "string" ? d.themeId : "DEFAULT",
-      pages: d.pages, ...(d.options ? { options: d.options } : {}),
+      pages: d.pages, ...(d.options ? { options: d.options } : {}), ...(Array.isArray(d.params) && d.params.length > 0 ? { params: d.params } : {}),
     };
   } catch {
     return null;

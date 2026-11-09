@@ -1,6 +1,10 @@
 import { LIGHT_ROLES } from "./chart-theme-roles.js";
 import { CHART_PALETTES, DATA_CHART_TEMPLATES, HEX_COLOUR } from "./data-charts.js";
 import { CHART_KINDS, TEMPLATE_SHAPE, type ChartAnnotation, type ChartKind, type ChartShape, type ChartSize, type ChartSpecV2, type NumberFormat, type SeriesStyle } from "./chart-spec-v2.js";
+import { applyChartStyle } from "./chart-style.js";
+import { areaRange, fillGauge, multiRing, network, parallel, pictorialBar, radialBar, rangeBar, themeRiver, tree, type KindBuilt, type RenderKit } from "./chart-render-kinds.js";
+import { bump, connectedScatter, divergingBar, dumbbell, thermometer } from "./chart-render-kinds-more.js";
+import { resolvePaletteColors } from "./chart-presets.js";
 import { planCounts } from "./plan-counts.js";
 import type { DatasetBudgetLine, DatasetDay, DatasetFinanceRow, DatasetPlace, DatasetPlanRow, DatasetPoint, DatasetQuery, DatasetResult, DatasetSource } from "./dataset-query.js";
 import { hasShareOfTarget, type DataSheetIndicator } from "./data-sheet.js";
@@ -27,8 +31,8 @@ export const CHART_ASPECT: Record<ChartSize, number> = { SQUARE: 1, WIDE: 2, TAL
 
 type Num = number | null;
 /** `ix` is the series' place before any were hidden: styling choices are keyed by it. */
-interface NSeries { name: string; data: Num[]; unit: string; isRate: boolean; indicator?: DataSheetIndicator; ix?: number }
-interface Norm {
+export interface NSeries { name: string; data: Num[]; unit: string; isRate: boolean; indicator?: DataSheetIndicator; ix?: number }
+export interface Norm {
   shape: ChartShape;
   categories: string[];
   series: NSeries[];
@@ -165,7 +169,7 @@ function sortAndLimit(norm: Norm, spec: ChartSpecV2, additive: boolean, notes: s
 function palette(spec: ChartSpecV2): string[] {
   const own = (spec.colors ?? []).filter((c) => HEX_COLOUR.test(c));
   if (own.length > 0) return own;
-  return (CHART_PALETTES.find((p) => p.id === spec.paletteId) ?? CHART_PALETTES[0]!).colors;
+  return resolvePaletteColors(spec.paletteId) ?? CHART_PALETTES[0]!.colors;
 }
 
 const seriesColor = (spec: ChartSpecV2, i: number): string | undefined => {
@@ -235,7 +239,12 @@ function baseOption(spec: ChartSpecV2, title: string, color: string[], legendSho
 
 /* ---------- builders ---------- */
 
-type Built = { option: Record<string, unknown>; notes?: string[] } | string;
+type Built = KindBuilt;
+
+/** What the chart types of chart-render-kinds.ts need from this file: the shared option base, the palette and the number format. */
+function kitFor(spec: ChartSpecV2, title: string): RenderKit {
+  return { base: (legend) => baseOption(spec, title, palette(spec), legend, annotationsOf(spec, false, [])), palette: palette(spec), fmt: (n) => formatChartNumber(n, spec.labels?.numberFormat ?? "FULL") };
+}
 
 const CARTESIAN_TYPE: Partial<Record<ChartKind, "bar" | "line">> = {
   BAR: "bar", BAR_HORIZONTAL: "bar", BAR_GROUPED: "bar", BAR_STACKED: "bar", BAR_STACKED_100: "bar", LOLLIPOP: "bar", BULLET: "bar", BAR_LINE_COMBO: "bar",
@@ -512,6 +521,8 @@ function progress(spec: ChartSpecV2, norm: Norm, title: string): Built {
       return { option: { ...common, series: [{ type: "pie", radius: ["62%", "80%"], silent: true, label: { show: false }, data: [{ name: "Done", value: Math.min(pct, 100) }, { name: "Remaining", value: Math.max(0, 100 - pct), itemStyle: { color: R.track } }] }], graphic: [{ type: "text", left: "center", top: "42%", style: { text: `${pct}%`, fontSize: 28, fontWeight: "bold", fill: R.text, textAlign: "center" } }, { type: "text", left: "center", top: "58%", style: { text: caption, fontSize: 12, fill: R.muted, textAlign: "center" } }] } };
     case "PROGRESS_BAR":
       return { option: { ...common, grid: { left: 24, right: 24, top: 70, bottom: 30 }, xAxis: { type: "value", min: 0, max: Math.max(100, pct), axisLabel: { formatter: "{value}%" } }, yAxis: { type: "category", data: [t.indicator.code], show: false }, series: [{ type: "bar", data: [100], barWidth: 22, silent: true, itemStyle: { color: R.track }, barGap: "-100%" }, { type: "bar", data: [pct], barWidth: 22, label: { show: true, position: "right", formatter: `${pct}%` } }] }, notes: [caption] };
+    case "FILL_GAUGE":
+      return fillGauge(spec, pct, caption, kitFor(spec, title));
     case "KPI_NUMBER":
       return { option: { ...common, graphic: [{ type: "text", left: "center", top: "32%", style: { text: formatChartNumber(t.latest, fmt), fontSize: 44, fontWeight: "bold", fill: R.text, textAlign: "center" } }, { type: "text", left: "center", top: "60%", style: { text: `${pct}% of the target (${formatChartNumber(t.target, fmt)})`, fontSize: 14, fill: R.muted, textAlign: "center" } }] } };
     default: {
@@ -664,7 +675,7 @@ function buildExtraShape(spec: ChartSpecV2, data: DatasetResult, shape: ChartSha
   const rule = CHART_KINDS[spec.kind];
   const need = shape === "PLAN" ? data.plan : shape === "DAYS" ? data.activityDays : data.budget;
   if (need === undefined) return { ok: false, reason: "This data is not available here (it is not shown through a share link, and needs permission to see the plan or the budget)." };
-  const built: Built = shape === "PLAN" ? (isStatusPie ? planStatusPie(spec, need as DatasetPlanRow[], title, notes) : gantt(spec, need as DatasetPlanRow[], title, notes)) : shape === "DAYS" ? calendar(spec, need as DatasetDay[], title, notes) : isSpendPie ? spendByResultPie(spec, need as DatasetBudgetLine[], title, notes) : sankey(spec, need as DatasetBudgetLine[], title, notes);
+  const built: Built = shape === "PLAN" ? (isStatusPie ? planStatusPie(spec, need as DatasetPlanRow[], title, notes) : gantt(spec, need as DatasetPlanRow[], title, notes)) : shape === "DAYS" ? calendar(spec, need as DatasetDay[], title, notes) : isSpendPie ? spendByResultPie(spec, need as DatasetBudgetLine[], title, notes) : spec.kind === "NETWORK" ? network(spec, need as DatasetBudgetLine[], kitFor(spec, title), notes) : sankey(spec, need as DatasetBudgetLine[], title, notes);
   if (typeof built === "string") return { ok: false, reason: built };
   const alt = spec.altText?.trim() || `${rule.label} chart: ${title}. ${need.length} ${shape === "PLAN" ? "planned items" : shape === "DAYS" ? "days with completed activities" : "budget lines"}.`;
   return { ok: true, render: "ECHART", option: { ...built.option, aria: { enabled: true, label: { description: alt } } }, title, notes: built.notes ?? notes, alt, aspect: CHART_ASPECT[spec.size ?? "WIDE"], provenance: { points: need.length, unverified: 0 } };
@@ -776,8 +787,17 @@ function describe(kind: ChartKind, norm: Norm, title: string): string {
   return `${rule.label} chart: ${title}. ${norm.series.length} series over ${norm.categories.length} ${norm.shape === "SERIES_BY_PERIOD" ? "periods" : "items"}.${range}`;
 }
 
+/** Applies the spec's style to a drawn ECharts option; every other result (a table, a refusal) and a chart with no style pass through unchanged. */
+function withStyle(spec: ChartSpecV2, built: ChartBuild): ChartBuild {
+  return built.ok && built.render === "ECHART" && spec.style ? { ...built, option: applyChartStyle(built.option, spec) } : built;
+}
+
 /** Draws a chart. Refuses (with a plain sentence) rather than draw something that would mislead. */
 export function buildChart(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
+  return withStyle(spec, buildUnstyled(spec, data));
+}
+
+function buildUnstyled(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   const rule = CHART_KINDS[spec.kind];
   if (!rule) return { ok: false, reason: "This chart type is not offered." };
   if (rule.status !== "BUILT") return { ok: false, reason: `${rule.label} charts are not available yet.` };
@@ -806,7 +826,7 @@ export function buildChart(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   // Different units never share one raw axis.
   const units = [...new Set(norm.series.map((s) => s.unit))];
   const secondary = spec.series?.some((s) => s.axis === "SECONDARY") ?? false;
-  const crossUnit = norm.shape === "SERIES_BY_PERIOD" && units.length > 1 && !["SCATTER", "BUBBLE", "BOX_PLOT", "SLOPE", "PIVOT_TABLE"].includes(spec.kind);
+  const crossUnit = norm.shape === "SERIES_BY_PERIOD" && units.length > 1 && !["SCATTER", "BUBBLE", "BOX_PLOT", "SLOPE", "PIVOT_TABLE", "PARALLEL"].includes(spec.kind);
   if (crossUnit && !(secondary && units.length === 2 && CARTESIAN_TYPE[spec.kind])) return { ok: false, reason: `These indicators use different units (${units.map((u) => u || "no unit").join(", ")}). Show them as % of target, or put one on a second axis.` };
   if (norm.shape === "SERIES_BY_PERIOD" && (spec.kind === "HEATMAP") && units.length > 1) return { ok: false, reason: "A heatmap colours every cell on one scale, so the indicators must share a unit (or be shown as % of target)." };
 
@@ -838,6 +858,24 @@ export function buildChart(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   let built: Built;
   switch (spec.kind) {
     case "PIE": case "DONUT": case "TREEMAP": built = partToWhole(spec, norm, title); break;
+    case "ROSE": {
+      built = partToWhole(spec, norm, title);
+      if (typeof built !== "string") { const s0 = (built.option["series"] as Array<Record<string, unknown>>)[0]; if (s0) { s0["roseType"] = "area"; s0["radius"] = ["12%", "70%"]; } }
+      break;
+    }
+    case "PICTORIAL_BAR": built = pictorialBar(spec, norm, kitFor(spec, title)); break;
+    case "RADIAL_BAR": built = radialBar(spec, norm, kitFor(spec, title)); break;
+    case "AREA_RANGE": built = areaRange(spec, norm, kitFor(spec, title)); break;
+    case "RANGE_BAR": built = rangeBar(spec, norm, kitFor(spec, title)); break;
+    case "PARALLEL": built = parallel(spec, norm, kitFor(spec, title)); break;
+    case "TREE": built = tree(spec, norm, kitFor(spec, title)); break;
+    case "THEME_RIVER": built = themeRiver(spec, norm, data, kitFor(spec, title)); break;
+    case "MULTI_RING": built = multiRing(spec, norm, kitFor(spec, title)); break;
+    case "DUMBBELL": built = dumbbell(spec, norm, kitFor(spec, title)); break;
+    case "DIVERGING_BAR": built = divergingBar(spec, norm, kitFor(spec, title)); break;
+    case "THERMOMETER": built = thermometer(spec, norm, kitFor(spec, title)); break;
+    case "BUMP": built = bump(spec, norm, kitFor(spec, title)); break;
+    case "CONNECTED_SCATTER": built = connectedScatter(spec, norm, kitFor(spec, title)); break;
     case "FUNNEL": built = funnel(spec, norm, title); break;
     case "WAFFLE": built = waffle(spec, norm, title); break;
     case "SUNBURST": built = sunburst(spec, norm, title); break;
@@ -847,7 +885,7 @@ export function buildChart(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
     case "SCATTER": case "BUBBLE": built = relationship(spec, norm, title, rule.minPoints); break;
     case "HEATMAP": built = heatmap(spec, norm, title); break;
     case "SLOPE": built = slope(spec, norm, title); break;
-    case "GAUGE": case "PROGRESS_RING": case "PROGRESS_BAR": case "KPI_NUMBER": built = progress(spec, norm, title); break;
+    case "GAUGE": case "PROGRESS_RING": case "PROGRESS_BAR": case "KPI_NUMBER": case "FILL_GAUGE": built = progress(spec, norm, title); break;
     case "BULLET":
       built = norm.triple ? progress(spec, norm, title) : "A bullet chart needs one indicator with a target.";
       break;

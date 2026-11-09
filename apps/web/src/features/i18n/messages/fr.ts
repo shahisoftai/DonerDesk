@@ -2,6 +2,8 @@ import type { MessageKey } from "./en.ts";
 import { recordFr } from "./record-fr.ts";
 import { libraryFr } from "./library-fr.ts";
 import { canvasFr } from "./canvas-fr.ts";
+import { studioFr } from "./studio-fr.ts";
+import { editorFr } from "./editor-fr.ts";
 
 /** French. Drafted for review by a native speaker of the sector before it is relied on. */
 export const fr: Record<MessageKey, string> = {
@@ -379,6 +381,39 @@ export const fr: Record<MessageKey, string> = {
   "kind.BAR_LINE_COMBO": "Barres et ligne",
   "kind.PIVOT_TABLE": "Tableau croisé",
   "kind.SCORECARD_TABLE": "Tableau de bord chiffré",
+  "kind.PICTORIAL_BAR": "Barres pictographiques",
+  "kind.ROSE": "Rose (le rayon indique la valeur)",
+  "kind.RADIAL_BAR": "Barres radiales",
+  "kind.AREA_RANGE": "Bande d'étendue (entre deux indicateurs)",
+  "kind.RANGE_BAR": "Barres d'étendue (entre deux indicateurs)",
+  "kind.PARALLEL": "Coordonnées parallèles",
+  "kind.TREE": "Arbre (par niveau du cadre logique)",
+  "kind.NETWORK": "Réseau (bailleurs et catégories)",
+  "kind.THEME_RIVER": "Flux (rivière thématique)",
+  "kind.FILL_GAUGE": "Jauge à remplissage",
+  "kind.MULTI_RING": "Anneaux de progression",
+  "kind.DUMBBELL": "Haltère (première et dernière période)",
+  "kind.DIVERGING_BAR": "Barres divergentes (au-dessus et au-dessous de zéro)",
+  "kind.THERMOMETER": "Thermomètre (valeur et cible)",
+  "kind.BUMP": "Classement (rang selon les périodes)",
+  "kind.CONNECTED_SCATTER": "Nuage relié (deux indicateurs dans le temps)",
+  "studio.look": "Apparence",
+  "studio.look.preset": "Thème",
+  "studio.look.presetNone": "Choisir un thème…",
+  "studio.look.reset": "Réinitialiser ce groupe",
+  "studio.look.resetAll": "Tout réinitialiser",
+  "studio.look.clicked": "Vous avez cliqué : {name}. Ses options sont ouvertes ci-dessous.",
+  "studio.look.hint": "Laissez vide pour garder la valeur par défaut.",
+  "studio.look.band.add": "Ajouter une bande de couleur",
+  "studio.look.band.upTo": "Jusqu'à (%)",
+  "studio.look.band.remove": "Retirer la bande",
+  "studio.look.tone.NEGATIVE": "Bas (rouge)",
+  "studio.look.tone.NEUTRAL": "Milieu (gris)",
+  "studio.look.tone.POSITIVE": "Bon (vert)",
+  "studio.look.default": "par défaut {value}",
+  "studio.look.screenOnly": "À l'écran seulement",
+  "studio.look.on": "Oui",
+  "studio.look.off": "Non",
   "family.COMPARISON": "Comparer",
   "family.TREND": "Tendance",
   "family.PART_TO_WHOLE": "Parties d’un tout",
@@ -702,5 +737,7 @@ export const fr: Record<MessageKey, string> = {
   "maps.sources.link": "Sources et licences des cartes",
   ...recordFr,
   ...canvasFr,
+  ...studioFr,
+  ...editorFr,
   ...libraryFr,
 };

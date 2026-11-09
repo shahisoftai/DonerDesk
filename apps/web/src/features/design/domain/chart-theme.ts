@@ -31,7 +31,9 @@ export function chartTheme(mode: ThemeMode): Record<string, unknown> {
     textStyle: { color: roles.text, fontFamily: CHART_FONT_STACK },
     title: { textStyle: { color: roles.text, fontWeight: 600 }, subtextStyle: { color: roles.muted } },
     legend: { textStyle: { color: roles.muted }, pageTextStyle: { color: roles.muted } },
-    tooltip: { backgroundColor: tile("tile-bg"), borderColor: tile("tile-border"), borderWidth: 1, textStyle: { color: roles.text, fontSize: 12 }, extraCssText: "font-variant-numeric: tabular-nums;" },
+    animationEasing: "cubicOut",
+    // The hover box matches the tiles around it: soft corners and shadow, comfortable padding, figures that line up.
+    tooltip: { backgroundColor: tile("tile-bg"), borderColor: tile("tile-border"), borderWidth: 1, padding: [8, 10], textStyle: { color: roles.text, fontSize: 12 }, extraCssText: "font-variant-numeric: tabular-nums; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.14);", axisPointer: { lineStyle: { color: tile("tile-border"), width: 1 }, crossStyle: { color: tile("tile-border") }, shadowStyle: { color: "rgba(120,130,125,0.10)" } } },
     categoryAxis: { ...axis, splitLine: { show: false } },
     valueAxis: axis, logAxis: axis, timeAxis: axis,
     visualMap: { textStyle: { color: roles.muted } },

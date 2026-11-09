@@ -12,6 +12,12 @@ import type { SavedChartDetail, SavedChartView } from "@/lib/server/schemas-char
 import type { DashboardSummary } from "@/lib/server/schemas-dashboards";
 import { cn } from "@/components/ui/cn";
 import { StudioChart, type ChartExport } from "./StudioChart";
+import { StylePanel } from "./StylePanel";
+import { STYLE_GROUPS, applyScreenInteraction, type StyleGroup } from "@donordesk/domain/contexts/reporting/chart-style.js";
+import { optionForMode } from "@/features/design/domain/chart-mode";
+import { useColorMode } from "@/features/design/presentation/use-color-mode";
+import { withClickTargets } from "../domain/studio-style";
+import { styleGroupLabel } from "../domain/style-copy";
 import { placesToGeoJson, placesToKml, splitPinned } from "@donordesk/domain/contexts/reporting/places-export.js";
 import {
   MAP_FAMILIES, STUDIO_TEMPLATES, addAnnotation, initialMapSpec, applyEdit, dataTable, fileNameFor, initialSpec, kindChoices, redo, removeAnnotation, startStudio, suggestedFix, toCsv, toggleIndicator,
@@ -37,12 +43,14 @@ const Section = ({ title, children, open = false }: { title: string; children: R
  * (edits that keep a spec valid, undo and redo) and the domain's `buildChart` (the honest drawing); this only draws the controls.
  */
 export function ChartStudio({ projectId, indicators, periods, initialCharts, canShare, mode = "chart" }: { projectId: string; indicators: StudioIndicator[]; periods: StudioPeriod[]; initialCharts: SavedChartView[]; canShare: boolean; /** "map": the Maps screen (places, maps and rankings by place; KML and GeoJSON downloads). */ mode?: "chart" | "map" }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const allIds = useMemo(() => indicators.map((i) => i.id), [indicators]);
   const startSpec = useCallback(() => (mode === "map" ? initialMapSpec(allIds) : initialSpec(allIds)), [mode, allIds]);
   const [studio, setStudio] = useState<StudioState>(() => startStudio(startSpec()));
   const spec = studio.spec;
   const edit = useCallback((next: ChartSpecV2 | null) => { if (next) setStudio((s) => applyEdit(s, next)); }, []);
+  const [focus, setFocus] = useState<StyleGroup | null>(null);
+  const colorMode = useColorMode();
 
   const [dataset, setDataset] = useState<DatasetResult | null>(null);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -325,7 +333,7 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
               ) : <p className="text-sm">{loading ? t("studio.loading") : dataError}</p>
             ) : dataError ? <p className="text-sm text-red-700 dark:text-red-300">{dataError}</p>
               : !built ? <p className="text-sm text-slate-500">{t("studio.loading")}</p>
-              : built.ok && built.render === "ECHART" ? <StudioChart key={`${spec.kind}|${built.maps?.join(",") ?? ""}`} option={built.option} aspect={built.aspect} label={built.alt} exportRef={exportRef} maps={built.maps} regionNames={built.regionNames} onMissingRegions={setMissingRegions} />
+              : built.ok && built.render === "ECHART" ? <StudioChart key={`${spec.kind}|${built.maps?.join(",") ?? ""}`} option={optionForMode(withClickTargets(applyScreenInteraction(built.option, spec)), colorMode, spec.paletteId)} exportOption={built.option} onElement={(g) => setFocus(g)} aspect={built.aspect} label={built.alt} exportRef={exportRef} maps={built.maps} regionNames={built.regionNames} onMissingRegions={setMissingRegions} />
               : built.ok ? (
                 <div className="overflow-auto" data-testid="chart-table">
                   <h3 className="mb-2 text-sm font-semibold">{built.title}</h3>
@@ -411,6 +419,10 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
               </Field>
             )}
             <Field label={t("studio.altText")}><textarea aria-label={t("studio.altText")} rows={2} className={cn(input, "w-full")} value={spec.altText ?? ""} onChange={(e) => edit(withText(spec, "altText", e.target.value))} /><span className="text-[11px] text-slate-500">{t("studio.altText.hint")}</span></Field>
+          </Section>
+          <Section title={t("studio.look")} open={focus !== null}>
+            {focus && <p role="status" data-testid="clicked" className="text-[11px] text-slate-600 dark:text-slate-300">{t("studio.look.clicked", { name: styleGroupLabel(locale, focus, STYLE_GROUPS.find((g) => g.group === focus)?.label ?? focus) })}</p>}
+            <StylePanel spec={spec} edit={edit} focus={focus} />
           </Section>
           <Section title={t("studio.axes")}>
             {(["y", "x", "y2"] as const).map((axis) => (

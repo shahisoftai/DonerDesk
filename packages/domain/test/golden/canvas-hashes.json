@@ -1,0 +1,238 @@
+{
+  "template:builtin-flash-update": {
+    "canvas": "61d8b63481ec76b1",
+    "design": "40f03ed008d3e842"
+  },
+  "template:builtin-results-glance": {
+    "canvas": "5e33eb29cfb9c19e",
+    "design": "6f2e64008633e858"
+  },
+  "template:builtin-people-reached": {
+    "canvas": "7be5572e9a201394",
+    "design": "b55954031e87f7ac"
+  },
+  "template:builtin-funding-burn": {
+    "canvas": "f213547bf0f50f49",
+    "design": "4b59260e59cf2f95"
+  },
+  "template:builtin-3w-coverage": {
+    "canvas": "1d69bbd980cdfe91",
+    "design": "e734e9b319fb9fa5"
+  },
+  "template:builtin-field-operations": {
+    "canvas": "fa4e9a778aa253be",
+    "design": "261a2e05200c5545"
+  },
+  "template:builtin-donor-one-pager": {
+    "canvas": "be86174e77036c02",
+    "design": "25abed6fca46f47f"
+  },
+  "template:builtin-sector-scorecard": {
+    "canvas": "1a42e539aa43573f",
+    "design": "648dbdfa01da5701"
+  },
+  "template:lib-canvas-wash": {
+    "canvas": "282d2c54b1794ce8",
+    "design": "9246bf260bd1fc6b"
+  },
+  "template:lib-canvas-health": {
+    "canvas": "b03a6ee87ab28d43",
+    "design": "8958d4b106359cc6"
+  },
+  "template:lib-canvas-nutrition": {
+    "canvas": "8270c5f08b7d7e6b",
+    "design": "c7b891db7aaf054f"
+  },
+  "template:lib-canvas-food-security": {
+    "canvas": "3b765e03e0ca6d05",
+    "design": "ba28bca092b117ea"
+  },
+  "template:lib-canvas-shelter-nfi": {
+    "canvas": "0c757b8db5209f84",
+    "design": "5364b5341ceb9703"
+  },
+  "template:lib-canvas-protection": {
+    "canvas": "ac83f4fddd16c65c",
+    "design": "2f6644be70a3d58f"
+  },
+  "template:lib-canvas-mine-action": {
+    "canvas": "21def438e3065831",
+    "design": "22b99b19ce0b2a74"
+  },
+  "template:lib-canvas-education": {
+    "canvas": "303b371de0ddd3cf",
+    "design": "aea7e5ea692ad105"
+  },
+  "template:lib-canvas-early-recovery": {
+    "canvas": "71e051bc25123d78",
+    "design": "79155dee4d5e7476"
+  },
+  "template:lib-canvas-logistics": {
+    "canvas": "d5100d6861228a53",
+    "design": "6054c28423d7fca0"
+  },
+  "template:lib-canvas-telecoms": {
+    "canvas": "be7cfc3fbc4457fc",
+    "design": "894557ec35a1e890"
+  },
+  "template:lib-canvas-coordination": {
+    "canvas": "34be8350e38a3a5a",
+    "design": "c8f4a5815a979100"
+  },
+  "template:lib-canvas-agriculture": {
+    "canvas": "a98f2ba4bc6d4fdf",
+    "design": "26e6f51e04c1a87d"
+  },
+  "template:lib-canvas-economic-development": {
+    "canvas": "4d1f233e36c177bb",
+    "design": "19f981532b6334d4"
+  },
+  "template:lib-canvas-social-protection": {
+    "canvas": "0ae1d507ebdde17d",
+    "design": "625a54c4acdc341c"
+  },
+  "template:lib-canvas-governance": {
+    "canvas": "be79825d851d37c7",
+    "design": "22a2478be43d3a8c"
+  },
+  "template:lib-canvas-climate-drr": {
+    "canvas": "5e57307a05b99ae2",
+    "design": "8f7c71d8fe5a4ada"
+  },
+  "template:lib-canvas-environment-energy": {
+    "canvas": "75ea40d019c68bb5",
+    "design": "6a8c4f0d5aaffaed"
+  },
+  "template:lib-canvas-gender-equality": {
+    "canvas": "84624a1627f4d060",
+    "design": "d9f21fe4c8dceba8"
+  },
+  "template:lib-canvas-disability-inclusion": {
+    "canvas": "0d4a8d904fc8e59e",
+    "design": "8861d087a0591810"
+  },
+  "template:lib-canvas-migration-displacement": {
+    "canvas": "c9f80d314c489cc6",
+    "design": "676f98dd4572f585"
+  },
+  "template:lib-canvas-mhpss": {
+    "canvas": "7ad5d6d8cae6f9de",
+    "design": "5d7d35ff7ae9943e"
+  },
+  "template:lib-canvas-infrastructure": {
+    "canvas": "84e48e16711b1286",
+    "design": "18812dc4e4ce1a4d"
+  },
+  "template:lib-canvas-localisation": {
+    "canvas": "584dad86ddf3d088",
+    "design": "40c9f0e8cdba288c"
+  },
+  "template:lib-canvas-meal": {
+    "canvas": "92e5e20156e130a6",
+    "design": "b40f1067e02fbc61"
+  },
+  "infographic:OVERVIEW": {
+    "canvas": "91a741374c861743",
+    "design": "87fd348d8fe0d370"
+  },
+  "infographic:PROGRESS": {
+    "canvas": "0741b2639e20df83",
+    "design": "e2396b4e6b5e6707"
+  },
+  "infographic:RESULTS": {
+    "canvas": "d898b3d9b9636199",
+    "design": "ed88c133983f2fa3"
+  },
+  "infographic:BUDGET": {
+    "canvas": "052ec0a7f3b62f51",
+    "design": "5e28f0adc2172360"
+  },
+  "infographic:THEMATIC": {
+    "canvas": "d76a21eafba10161",
+    "design": "44dcc60ac8e1b6e6"
+  },
+  "infographic:CLOSURE": {
+    "canvas": "d614b246753a5b62",
+    "design": "1170d1639650ea10"
+  },
+  "infographic:SNAPSHOT": {
+    "canvas": "e68f2db15890006a",
+    "design": "31ad0c7829947017"
+  },
+  "infographic:AT_A_GLANCE": {
+    "canvas": "4d97ea64a4199ece",
+    "design": "dda797429213dafc"
+  },
+  "infographic:SECTOR_RESULTS": {
+    "canvas": "6d7454b0d0cd7601",
+    "design": "2d8ea5a7e3bed903"
+  },
+  "infographic:FUNDING_SNAPSHOT": {
+    "canvas": "7921f1af016ab8f0",
+    "design": "2d7e36346f4ee8bc"
+  },
+  "infographic:COVERAGE_BY_LOCATION": {
+    "canvas": "b33dc4e118e129a5",
+    "design": "7aaa172fd01d7d23"
+  },
+  "infographic:BENEFICIARY_PROFILE": {
+    "canvas": "236faa8e48caecc4",
+    "design": "defdd8a9833c3aab"
+  },
+  "infographic:FLASH_UPDATE": {
+    "canvas": "ae698ef15e1d5351",
+    "design": "659fd2397481f1e9"
+  },
+  "infographic:DONOR_ONE_PAGER": {
+    "canvas": "652e596bb0012c37",
+    "design": "9496aa06060f3f5a"
+  },
+  "infographic:ANNUAL_POSTER": {
+    "canvas": "af9623156ecc30a0",
+    "design": "5bf621ce4ca7b385"
+  },
+  "infographic:FACTSHEET": {
+    "canvas": "8c12f3e2e60db141",
+    "design": "e8976322b92ff3d0"
+  },
+  "infographic:STORY_CARD": {
+    "canvas": "c4557f6c75876ff1",
+    "design": "0fc14898f813c77a"
+  },
+  "infographic:SOCIAL_STORY": {
+    "canvas": "285ccf8a927171e1",
+    "design": "de2b183e3668b2de"
+  },
+  "infographic:SLIDE_SUMMARY": {
+    "canvas": "9e86941f8cc2f017",
+    "design": "96337607051cf4a4"
+  },
+  "infographic:RESULTS_CHAIN_PAGE": {
+    "canvas": "620a4e6d09118a89",
+    "design": "89a3b04cd55b165d"
+  },
+  "infographic:SECTOR_DASHBOARD": {
+    "canvas": "6a6030b27b57629d",
+    "design": "e19e38dd6dcfbedd"
+  },
+  "infographic:PORTFOLIO_OVERVIEW": {
+    "canvas": "b27eb1e3dd3a69bf",
+    "design": "4230f4fa4cf7cabc"
+  },
+  "infographic:OPERATIONAL_PRESENCE": {
+    "canvas": "4f3ad5bb4cb187b7",
+    "design": "936100da73da30d0"
+  },
+  "infographic:CUSTOM": {
+    "canvas": "550d293d67d5b1de",
+    "design": "b4b54d0d1d4b4ff6"
+  },
+  "dashboard:mixed": {
+    "canvas": "a9565b969e2c6772",
+    "design": "11af8c5968e67095"
+  },
+  "canvas:containers": {
+    "canvas": "5a311ed9a2471f2f",
+    "design": "e943b42c094404e4"
+  }
+}
