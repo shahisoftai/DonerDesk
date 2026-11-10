@@ -16,10 +16,15 @@ export class CreateIndicatorHandler {
     const scheduleProblem = targetScheduleProblems(input.targetSchedule ?? [])[0];
     if (scheduleProblem) return { ok: false, error: DomainError.validation(`Target schedule, line ${scheduleProblem.row}: ${scheduleProblem.message}`) };
     const id = this.ids.generate();
+    const siblings = await this.repo.findByProject(input.projectId, ctx.tenant.tenantId);
+    if (!siblings.ok) return siblings;
+    // Two live indicators with one code cannot be told apart by imports, sheets or reports (a repeated save once made three).
+    const code = input.code.trim().toLowerCase();
+    if (code && siblings.value.some((i) => i.code.trim().toLowerCase() === code)) {
+      return { ok: false, error: DomainError.conflict(`This project already has an indicator with the code ${input.code.trim()}. Choose another code.`) };
+    }
     let formula: ReturnType<typeof validateFormula> | undefined;
     if (input.formula) {
-      const siblings = await this.repo.findByProject(input.projectId, ctx.tenant.tenantId);
-      if (!siblings.ok) return siblings;
       formula = validateFormula(id, input.type, input.formula, siblings.value.map((i) => ({ id: i.id, code: i.code, type: i.type, formula: i.formula })));
       if (!formula.ok) return formula;
     }

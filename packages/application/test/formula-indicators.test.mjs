@@ -32,6 +32,13 @@ test("creating a formula indicator validates against the project's indicators an
   assert.match(unknown.error.message, /this project/);
 });
 
+test("a second live indicator with the same code is refused", async () => {
+  const h = new CreateIndicatorHandler(ids, repo([mk("a", "CX-1")]), audit);
+  const r = await h.handle(ctx, { projectId: "p1", logframeItemId: "l1", baseline: "", target: "1", disaggregationRequired: false, code: " cx-1 ", name: "x", type: "NUMBER" });
+  assert.equal(r.ok, false);
+  assert.match(r.error.message, /already has an indicator with the code cx-1/);
+});
+
 test("editing: set, change and remove a formula; refused when typed values exist; type cannot change under a formula", async () => {
   const withValues = mk("t", "T");
   const r = repo([mk("a", "A"), mk("b", "B"), withValues, mk("s", "S")]);
