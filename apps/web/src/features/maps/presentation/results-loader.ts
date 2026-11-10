@@ -17,6 +17,8 @@ export interface ExplorerProps {
   staticData?: boolean | undefined;
   /** Planned activities naming each place directly (place id to count), for the place tree beside the map. */
   activityCounts?: Readonly<Record<string, number>> | undefined;
+  /** The organisation's map context settings when the page read them on the server (Phase 49.6): shown at once, not after a later call. */
+  mapContext?: import("@/lib/server/schemas-map-context").MapContextDto | null | undefined;
   /** Show only this indicator (the indicator's own page): the indicator list is not offered. */
   lockedIndicatorId?: string | undefined;
   /** The period is held by the page around the map (so a chart beside it can follow). Omit both to let the map keep its own. */

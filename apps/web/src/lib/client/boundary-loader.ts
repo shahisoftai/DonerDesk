@@ -32,8 +32,12 @@ const provinces = new Map<string, Promise<NamedGeoCollection | null>>();
 export function loadAdmin1File(key: string): Promise<NamedGeoCollection | null> {
   let hit = provinces.get(key);
   if (!hit) {
+    // Stamped with the catalogue's build like the finer files: a province file replaced by a newer source (OCHA's Kenya counties over
+    // Natural Earth's old provinces) must never be read from a browser's day-old copy.
     hit = key
-      ? fetch(`/geo/ADM1/${encodeURIComponent(key)}.json`).then((r) => (r.ok ? (r.json() as Promise<NamedGeoCollection>) : null)).catch(() => null)
+      ? loadBoundaryManifest()
+        .then((m) => fetch(`/geo/ADM1/${encodeURIComponent(key)}.json${m?.generatedAt ? `?v=${encodeURIComponent(m.generatedAt)}` : ""}`))
+        .then((r) => (r.ok ? (r.json() as Promise<NamedGeoCollection>) : null)).catch(() => null)
       : Promise.resolve(null);
     provinces.set(key, hit);
   }

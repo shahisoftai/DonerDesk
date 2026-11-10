@@ -28,7 +28,6 @@ import { PlacePanel } from "./PlacePanel";
 import { PlaceTree } from "./PlaceTree";
 import { pathForPlace } from "../domain/drill/place-path";
 import { useBoundaryView } from "./useBoundaryView";
-import { preloadCountryOutlines } from "./preload-country";
 import { useMapContext } from "./useMapContext";
 import { AnalysisPanel } from "./AnalysisPanel";
 import { ContextLayerToggles } from "./ContextLayerToggles";
@@ -45,7 +44,7 @@ interface Selection { ref: string | null; placeId: string | null; name: string }
  * The interactive results map on the new engine: a real basemap, smooth zoom, clustering, and drilling from the world down to
  * admin 4 wherever boundary files exist. It composes the pieces; the rules are in `domain/` and the drawing is behind a port.
  */
-export function ResultsMap({ projectId, places, initial, periods, compact = false, loadResults, staticData = false, activityCounts, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable }: ExplorerProps & { onUnavailable: () => void }) {
+export function ResultsMap({ projectId, places, initial, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable }: ExplorerProps & { onUnavailable: () => void }) {
   const services = useMapServices();
   const { t, lang, levelPlural } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
@@ -75,7 +74,6 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
   const [credit, setCredit] = useState<BoundaryOrigin | null>(null);
   const steps = useMemo(() => periodSteps(periods), [periods]);
   const view = useBoundaryView(path, services.viewBoundaries);
-  preloadCountryOutlines(places.find((p) => !p.archived && p.adminLevel === 0)?.name);
 
   useEffect(() => { void loadBoundaryManifest().then(setManifest); }, []);
 
@@ -135,7 +133,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
   }, [view.units, model, places]);
 
   // Context layers the organisation offers (Phase 49.6): never on a share link (staticData), off until the person switches one on.
-  const mapContext = useMapContext(!staticData);
+  const mapContext = useMapContext(!staticData, staticData ? undefined : serverMapContext);
   const [contextOn, setContextOn] = useState<ReadonlySet<ContextToggle>>(new Set());
   const toggleContext = (key: ContextToggle) => setContextOn((on) => { const next = new Set(on); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   const scene = useMemo(() => {
