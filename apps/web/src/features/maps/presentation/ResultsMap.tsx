@@ -34,6 +34,7 @@ import { ContextLayerToggles } from "./ContextLayerToggles";
 import { contextLayers, offeredContext, type ContextToggle } from "../domain/scene/context-layers";
 import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
+import { firstIndicator } from "./results-loader";
 
 const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], regions: [], unmapped: [], bands: [], isRate: false };
 const ADDRESS_KEY = "map";
@@ -44,7 +45,7 @@ interface Selection { ref: string | null; placeId: string | null; name: string }
  * The interactive results map on the new engine: a real basemap, smooth zoom, clustering, and drilling from the world down to
  * admin 4 wherever boundary files exist. It composes the pieces; the rules are in `domain/` and the drawing is behind a port.
  */
-export function ResultsMap({ projectId, places, initial, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable }: ExplorerProps & { onUnavailable: () => void }) {
+export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable }: ExplorerProps & { onUnavailable: () => void }) {
   const services = useMapServices();
   const { t, lang, levelPlural } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
@@ -53,7 +54,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
 
   const [path, setPath] = useState<DrillPath>(WORLD_PATH);
   const [results, setResults] = useState<PlaceResults | null>(initial);
-  const [chosenIndicator, setIndicatorId] = useState(initial?.indicators[0]?.id ?? "");
+  const [chosenIndicator, setIndicatorId] = useState(firstIndicator(initial, initialIndicatorId));
   const indicatorId = lockedIndicatorId ?? chosenIndicator;
   const [layers, setLayers] = useState(DEFAULT_LAYERS);
   const [selected, setSelected] = useState<Selection | null>(null);
@@ -110,7 +111,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
       if (!out.ok) { setError(out.error.message); return; }
       setError(null);
       setResults(out.value);
-      setIndicatorId((current) => (out.value.indicators.some((i) => i.id === current) ? current : (out.value.indicators[0]?.id ?? "")));
+      setIndicatorId((current) => (out.value.indicators.some((i) => i.id === current) ? current : firstIndicator(out.value, initialIndicatorId)));
     });
     return () => { live = false; };
     // Asked again when the drawn level or the period changes; the levels available do not change what is asked.

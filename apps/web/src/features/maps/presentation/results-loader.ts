@@ -11,6 +11,8 @@ export interface ExplorerProps {
   periods: ReadonlyArray<{ id: string; label: string }>;
   /** The dashboard card: one column, no layer panel, no file layer and no side-by-side periods. */
   compact?: boolean;
+  /** The indicator the map opens on (a dashboard map's own setting); absent or unknown = the first one with figures by place. */
+  initialIndicatorId?: string | undefined;
   /** Read results some other way than the signed-in action. */
   loadResults?: PlaceResultsLoader | undefined;
   /** The data is a fixed snapshot (a share link): no drilling and no side-by-side periods. */
@@ -24,4 +26,10 @@ export interface ExplorerProps {
   /** The period is held by the page around the map (so a chart beside it can follow). Omit both to let the map keep its own. */
   periodId?: string | null | undefined;
   onPeriodChange?: ((periodId: string | null) => void) | undefined;
+}
+
+/** The indicator a map opens on: the one asked for when the results carry it, else the first. */
+export function firstIndicator(results: PlaceResults | null, wanted: string | undefined): string {
+  if (wanted && results?.indicators.some((i) => i.id === wanted)) return wanted;
+  return results?.indicators[0]?.id ?? "";
 }

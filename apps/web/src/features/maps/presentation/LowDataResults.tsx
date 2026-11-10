@@ -11,16 +11,17 @@ import { PeriodSlider } from "./PeriodSlider";
 import { PlacePanel } from "./PlacePanel";
 import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
+import { firstIndicator } from "./results-loader";
 
 /**
  * Results by place for a slow connection (low-data mode): the same figures as the map, as a table, with no map library, no tiles and no boundary
  * files. Everything that is a choice stays: the indicator, the level, the period, and a place's details. "Show the map anyway" is one click.
  */
-export function LowDataResults({ projectId, places, initial, periods, loadResults, onShowMap }: ExplorerProps & { /** Absent when this device cannot draw a map at all (no WebGL): the table is then the only view. */ onShowMap?: (() => void) | undefined }) {
+export function LowDataResults({ projectId, places, initial, initialIndicatorId, periods, loadResults, onShowMap }: ExplorerProps & { /** Absent when this device cannot draw a map at all (no WebGL): the table is then the only view. */ onShowMap?: (() => void) | undefined }) {
   const { t, levelSingular } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
   const [results, setResults] = useState<PlaceResults | null>(initial);
-  const [indicatorId, setIndicatorId] = useState(initial?.indicators[0]?.id ?? "");
+  const [indicatorId, setIndicatorId] = useState(firstIndicator(initial, initialIndicatorId));
   const [level, setLevel] = useState<number | null>(initial?.level ?? null);
   const [periodId, setPeriodId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -35,7 +36,7 @@ export function LowDataResults({ projectId, places, initial, periods, loadResult
       if (!out.ok) { setError(out.error.message); return; }
       setError(null);
       setResults(out.value);
-      setIndicatorId((current) => (out.value.indicators.some((i) => i.id === current) ? current : (out.value.indicators[0]?.id ?? "")));
+      setIndicatorId((current) => (out.value.indicators.some((i) => i.id === current) ? current : firstIndicator(out.value, initialIndicatorId)));
     });
     return () => { live = false; };
     // Asked again when the level or the period changes.

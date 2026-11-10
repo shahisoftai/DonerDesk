@@ -25,14 +25,14 @@ export const ReportQuerySchema = z.object({
   includeDraft: z.boolean(),
   breakdown: z.enum(["SEX", "AGE_GROUP", "DISABILITY", "LOCATION", "OTHER"]).optional(),
 });
-export const MapWidgetSchema = z.object({ view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string().max(60).optional(), measure: z.enum(["PERIOD", "CUMULATIVE"]).optional() });
+export const MapWidgetSchema = z.object({ view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string().max(60).optional(), indicatorId: z.string().max(64).optional() });
 export const MetricQuerySchema = z.object({
   metric: z.enum(["FIN_OBLIGATED", "FIN_RECEIVED", "FIN_SPENT", "FIN_REMAINING", "ACTIVITIES_TOTAL", "ACTIVITIES_IN_PROGRESS", "ACTIVITIES_DONE", "ACTIVITIES_LATE"]),
   color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).optional(),
   currency: z.string().length(3).optional(),
   title: z.string().max(60).optional(),
 });
-export const KpiQuerySchema = z.object({ indicatorId: z.string().min(1), includeDraft: z.boolean(), toPeriodId: z.string().optional(), color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).optional(), title: z.string().max(60).optional() });
+export const KpiQuerySchema = z.object({ indicatorId: z.string().min(1), includeDraft: z.boolean(), toPeriodId: z.string().optional(), color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).optional(), title: z.string().max(60).optional(), measure: z.enum(["PERIOD", "CUMULATIVE"]).optional() });
 export const ProjectListSchema = z.object({ status: z.string().max(30).optional(), sector: z.string().max(60).optional(), affiliation: z.enum(["ALL", "ASSIGNED", "BOOKMARKED"]), title: z.string().max(60).optional() });
 export const DashboardWidgetSchema = z.object({
   id: z.string().min(1).max(64),

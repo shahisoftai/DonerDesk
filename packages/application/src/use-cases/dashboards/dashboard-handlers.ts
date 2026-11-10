@@ -266,13 +266,13 @@ export async function drawCharts(
         if (w.map.view === "RESULTS") {
           const [places, results] = await Promise.all([share.maps.places(gx), share.maps.results(gx, w.projectId)]);
           if (places === undefined || results === undefined) return { widgetId: w.id, unavailable: "This map could not be read just now." };
-          return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, preloaded: { places, results } } };
+          return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}), preloaded: { places, results } } };
         }
         const activities = await share.maps.activities(gx, w.projectId);
         if (!activities) return { widgetId: w.id, unavailable: "This map could not be read just now." };
-        return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, preloaded: activities as unknown as Record<string, unknown> } };
+        return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}), preloaded: activities as unknown as Record<string, unknown> } };
       }
-      return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId } };
+      return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}) } };
     }
     if (w.kind === "METRIC") {
       if (!w.metric) return { widgetId: w.id, unavailable: "This tile has no figure." };

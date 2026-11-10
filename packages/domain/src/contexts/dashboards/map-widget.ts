@@ -22,11 +22,14 @@ export interface MapWidgetQuery {
   placeKeys?: string[] | undefined;
   /** A name for the map; absent = the view's own. */
   title?: string | undefined;
+  /** RESULTS: the indicator the map opens on; absent = the first with figures by place. The viewer can still switch. */
+  indicatorId?: string | undefined;
 }
 
 export function validateMapWidget(q: MapWidgetQuery): string | null {
   if (!MAP_VIEWS.includes(q.view)) return "That map is not one a dashboard can show.";
   if (q.title !== undefined && q.title.length > 60) return "A map's name is at most 60 characters.";
+  if (q.indicatorId !== undefined && (q.view !== "RESULTS" || !q.indicatorId.trim() || q.indicatorId.length > 64)) return "Only a results map opens on a chosen indicator.";
   if (q.shading !== undefined && !MAP_SHADINGS.includes(q.shading)) return "Choose one of the offered map shadings.";
   if (q.placeKeys !== undefined && (q.placeKeys.length > MAP_MAX_PLACE_KEYS || q.placeKeys.some((k) => !k.trim() || k.length > 80))) return `A map shows at most ${MAP_MAX_PLACE_KEYS} chosen places.`;
   return null;

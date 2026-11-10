@@ -115,3 +115,9 @@ test("a KPI tile may be coloured and named, and is checked", () => {
   assert.deepEqual([t.title, t.color], ["Reached", "GREEN"]);
   assert.deepEqual([buildKpi(sheet, { indicatorId: "a", includeDraft: true }).tile.title, buildKpi(sheet, { indicatorId: "a", includeDraft: true }).tile.color], ["A People", null]);
 });
+
+test("a results map may open on a chosen indicator; an activities map may not", async () => {
+  const { validateMapWidget } = await import("../dist/index.js");
+  assert.equal(validateMapWidget({ view: "RESULTS", indicatorId: "i1" }), null);
+  assert.match(validateMapWidget({ view: "ACTIVITIES", indicatorId: "i1" }), /Only a results map/);
+});
