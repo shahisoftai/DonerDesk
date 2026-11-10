@@ -4,6 +4,7 @@ import { CHART_KINDS, TEMPLATE_SHAPE, type ChartAnnotation, type ChartKind, type
 import { applyChartStyle } from "./chart-style.js";
 import { areaRange, fillGauge, multiRing, network, parallel, pictorialBar, radialBar, rangeBar, themeRiver, tree, type KindBuilt, type RenderKit } from "./chart-render-kinds.js";
 import { bump, connectedScatter, divergingBar, dumbbell, thermometer } from "./chart-render-kinds-more.js";
+import { apportion, parliament, proportionBar, smallMultiples } from "./chart-render-kinds-shares.js";
 import { resolvePaletteColors } from "./chart-presets.js";
 import { planCounts } from "./plan-counts.js";
 import type { DatasetBudgetLine, DatasetDay, DatasetFinanceRow, DatasetPlace, DatasetPlanRow, DatasetPoint, DatasetQuery, DatasetResult, DatasetSource } from "./dataset-query.js";
@@ -344,15 +345,7 @@ function partToWhole(spec: ChartSpecV2, norm: Norm, title: string): Built {
 }
 
 /** 100 squares shared between the parts by the largest-remainder method, so the squares always add to 100 and no part is lost or invented. */
-export function waffleCells(values: ReadonlyArray<number>): number[] {
-  const total = sum(values);
-  if (total <= 0) return values.map(() => 0);
-  const exact = values.map((v) => (v / total) * 100);
-  const cells = exact.map(Math.floor);
-  let left = 100 - sum(cells);
-  [...exact.keys()].sort((a, b) => (exact[b]! - cells[b]!) - (exact[a]! - cells[a]!) || a - b).forEach((i) => { if (left > 0) { cells[i]! += 1; left -= 1; } });
-  return cells;
-}
+export const waffleCells = (values: ReadonlyArray<number>): number[] => apportion(values, 100);
 
 function waffle(spec: ChartSpecV2, norm: Norm, title: string): Built {
   const s = norm.series[0]!;
@@ -826,7 +819,7 @@ function buildUnstyled(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   // Different units never share one raw axis.
   const units = [...new Set(norm.series.map((s) => s.unit))];
   const secondary = spec.series?.some((s) => s.axis === "SECONDARY") ?? false;
-  const crossUnit = norm.shape === "SERIES_BY_PERIOD" && units.length > 1 && !["SCATTER", "BUBBLE", "BOX_PLOT", "SLOPE", "PIVOT_TABLE", "PARALLEL"].includes(spec.kind);
+  const crossUnit = norm.shape === "SERIES_BY_PERIOD" && units.length > 1 && !["SCATTER", "BUBBLE", "BOX_PLOT", "SLOPE", "PIVOT_TABLE", "PARALLEL", "SMALL_MULTIPLES"].includes(spec.kind);
   if (crossUnit && !(secondary && units.length === 2 && CARTESIAN_TYPE[spec.kind])) return { ok: false, reason: `These indicators use different units (${units.map((u) => u || "no unit").join(", ")}). Show them as % of target, or put one on a second axis.` };
   if (norm.shape === "SERIES_BY_PERIOD" && (spec.kind === "HEATMAP") && units.length > 1) return { ok: false, reason: "A heatmap colours every cell on one scale, so the indicators must share a unit (or be shown as % of target)." };
 
@@ -874,6 +867,9 @@ function buildUnstyled(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
     case "DUMBBELL": built = dumbbell(spec, norm, kitFor(spec, title)); break;
     case "DIVERGING_BAR": built = divergingBar(spec, norm, kitFor(spec, title)); break;
     case "THERMOMETER": built = thermometer(spec, norm, kitFor(spec, title)); break;
+    case "PARLIAMENT": built = parliament(spec, norm, kitFor(spec, title)); break;
+    case "PROPORTION_BAR": built = proportionBar(spec, norm, kitFor(spec, title)); break;
+    case "SMALL_MULTIPLES": built = smallMultiples(spec, norm, kitFor(spec, title)); break;
     case "BUMP": built = bump(spec, norm, kitFor(spec, title)); break;
     case "CONNECTED_SCATTER": built = connectedScatter(spec, norm, kitFor(spec, title)); break;
     case "FUNNEL": built = funnel(spec, norm, title); break;

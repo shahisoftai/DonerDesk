@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BUILT_IN_CANVAS_TEMPLATES, applyCanvasTemplate, type CanvasScope } from "@donordesk/domain/contexts/canvas/index.js";
 import { createCanvasAction } from "@/lib/actions/canvas";
 import { getDataSheetAction } from "@/lib/actions/data-charts";
+import { GOALS, suggestRoles } from "../domain/guided";
 import type { ProjectOption } from "./CanvasWorkspace";
 import type { IndicatorOption } from "./editor/FieldWidget";
 
@@ -28,7 +29,16 @@ export function NewVisualForm({ projects, canShare }: { projects: ReadonlyArray<
     setProjectId(id); setRoles({});
     if (!id) { setIndicators([]); return; }
     const r = await getDataSheetAction(id);
-    setIndicators(r.ok ? r.value.indicators.map((i) => ({ id: i.id, code: i.code, name: i.name })) : []);
+    const list = r.ok ? r.value.indicators.map((i) => ({ id: i.id, code: i.code, name: i.name })) : [];
+    setIndicators(list);
+    // Offered, never forced: a role is filled only where a word says the indicator fits, and the person can change it.
+    if (template) setRoles(suggestRoles(template.roles, list));
+  }
+
+  function chooseTemplate(id: string): void {
+    setTemplateId(id);
+    const t = BUILT_IN_CANVAS_TEMPLATES.find((x) => x.id === id);
+    setRoles(t ? suggestRoles(t.roles, indicators) : {});
   }
 
   async function create(e: React.FormEvent): Promise<void> {
@@ -52,11 +62,19 @@ export function NewVisualForm({ projects, canShare }: { projects: ReadonlyArray<
   return (
     <form onSubmit={(e) => void create(e)} className="grid gap-6 lg:grid-cols-[1fr_22rem]" data-testid="new-visual">
       <fieldset className="space-y-3">
-        <legend className="mb-1 text-sm font-semibold">Start from</legend>
+        <legend className="mb-1 text-sm font-semibold">What do you want to do?</legend>
+        <div className="flex flex-wrap gap-2" data-testid="goals">
+          {GOALS.map((g) => (
+            <button key={g.key} type="button" title={g.help} aria-pressed={templateId === g.templateId} onClick={() => chooseTemplate(g.templateId)}
+              className={`rounded-full border px-3 py-1 text-sm ${templateId === g.templateId ? "border-sky-600 bg-sky-50 font-medium dark:bg-sky-950" : "border-slate-300 hover:border-slate-500 dark:border-slate-600"}`}>{g.label}</button>
+          ))}
+        </div>
+        <p className="text-xs text-slate-500">Or choose a starter below, or a blank page.</p>
+        <p className="mb-1 mt-2 text-sm font-semibold">Start from</p>
         <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Template">
           {[...BUILT_IN_CANVAS_TEMPLATES.map((t) => ({ id: t.id, title: t.title, description: t.description })), { id: BLANK, title: "A blank page", description: "Add blocks one at a time." }].map((t) => (
             <label key={t.id} className={`cursor-pointer rounded-lg border p-3 text-sm ${templateId === t.id ? "border-sky-600 bg-sky-50 dark:bg-sky-950" : "border-slate-200 hover:border-slate-400 dark:border-slate-700"}`}>
-              <input type="radio" name="template" className="sr-only" checked={templateId === t.id} onChange={() => { setTemplateId(t.id); setRoles({}); }} />
+              <input type="radio" name="template" className="sr-only" checked={templateId === t.id} onChange={() => chooseTemplate(t.id)} />
               <span className="block font-semibold">{t.title}</span><span className="mt-1 block text-xs text-slate-600 dark:text-slate-400">{t.description}</span>
             </label>
           ))}

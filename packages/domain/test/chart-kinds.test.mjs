@@ -146,3 +146,20 @@ test("Phase 48.11 kinds: each refuses what it cannot honestly draw, with a sente
   assert.ok(dumb.notes.some((n) => /first to the latest period that has a figure/.test(n)));
   assert.equal(CHART_KINDS.BUMP.status, "BUILT");
 });
+
+test("parliament and proportion bar: counts only, 100 dots exactly, a gap is named; small multiples keep each panel's own scale", () => {
+  const p = build(spec("PARLIAMENT", "INDICATORS_PROGRESS", ["a", "b", "c"], cum));
+  assert.equal(p.ok, true, p.reason);
+  assert.equal(p.option.series.reduce((t, s) => t + s.data.length, 0), 100, "the dots always add to 100");
+  assert.equal(build(spec("PARLIAMENT", "INDICATORS_PROGRESS", ["a", "r"], cum)).ok, false, "a rate is not a part of a whole");
+  const bar = build(spec("PROPORTION_BAR", "INDICATORS_PROGRESS", ["a", "b", "c"], cum));
+  assert.equal(bar.ok, true, bar.reason);
+  assert.equal(bar.option.series.length, 3);
+  assert.equal(build(spec("PROPORTION_BAR", "INDICATORS_PROGRESS", ["a", "r"], cum)).ok, false);
+  const sm = build(spec("SMALL_MULTIPLES", "INDICATORS_OVER_TIME", ["a", "b", "c"], { dataset: { measure: "PERIOD" } }));
+  assert.equal(sm.ok, true, sm.reason);
+  assert.equal(sm.option.series.length, 3);
+  assert.equal(sm.option.grid.length, 3, "one panel, one grid, one scale each");
+  assert.match(sm.notes.join(" "), /own scale/);
+  assert.equal(build(spec("SMALL_MULTIPLES", "INDICATORS_OVER_TIME", ["a"], { dataset: { measure: "PERIOD" } })).ok, false);
+});

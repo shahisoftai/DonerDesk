@@ -33,7 +33,8 @@ export type ChartKind =
   | "BAR_LINE_COMBO"
   | "PIVOT_TABLE" | "SCORECARD_TABLE"
   | "PICTORIAL_BAR" | "ROSE" | "RADIAL_BAR" | "AREA_RANGE" | "RANGE_BAR" | "PARALLEL" | "TREE" | "NETWORK" | "THEME_RIVER" | "FILL_GAUGE" | "MULTI_RING"
-  | "DUMBBELL" | "DIVERGING_BAR" | "THERMOMETER" | "BUMP" | "CONNECTED_SCATTER";
+  | "DUMBBELL" | "DIVERGING_BAR" | "THERMOMETER" | "BUMP" | "CONNECTED_SCATTER"
+  | "PARLIAMENT" | "PROPORTION_BAR" | "SMALL_MULTIPLES";
 
 /**
  * The shape of data a chart is drawn from, decided by its dataset template:
@@ -156,6 +157,9 @@ export const CHART_KINDS: Record<ChartKind, ChartKindRule> = {
   DUMBBELL: kind("Dumbbell (first and latest period)", "COMPARISON", "BUILT", [SBP], { minPoints: 2 }),
   DIVERGING_BAR: kind("Diverging bar (above and below zero)", "COMPARISON", "BUILT", [LAT, SBP, PLC], { startsAtZero: true, minPoints: 2 }),
   THERMOMETER: kind("Thermometer (value against target)", "PROGRESS", "BUILT", [TRI]),
+  PARLIAMENT: kind("Parliament (100 dots)", "PART_TO_WHOLE", "BUILT", [LAT, STA], { additiveOnly: true, minPoints: 2 }),
+  PROPORTION_BAR: kind("Proportion bar", "PART_TO_WHOLE", "BUILT", [LAT, STA], { additiveOnly: true, minPoints: 2 }),
+  SMALL_MULTIPLES: kind("Small multiples (one chart per indicator)", "TREND", "BUILT", [SBP], { minPoints: 2 }),
   BUMP: kind("Bump (rank over periods)", "TREND", "BUILT", [SBP], { minPoints: 2 }),
   CONNECTED_SCATTER: kind("Connected scatter (two indicators over time)", "RELATIONSHIP", "BUILT", [SBP], { minPoints: 3 }),
 };
