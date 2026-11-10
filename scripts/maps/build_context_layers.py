@@ -3,13 +3,13 @@
     <python with rasterio, pyogrio, numpy, rio-pmtiles> scripts/maps/build_context_layers.py KEN NGA ...
 
 Writes under apps/web/public/tiles/context/:
-  population.pmtiles          WorldPop 2020 constrained 100 m counts (CC BY 4.0), coloured, z0-11 (`rio pmtiles`)
+  population.pmtiles          WorldPop 2020 1 km counts (100 m with WORLDPOP_RES=100m), CC BY 4.0, coloured, z0-9 (`rio pmtiles`)
   population-grid/<ISO>.bin   the same counts summed to ~1 km cells, Float32 little-endian, -1 = no data, + <ISO>.json header
   health-facilities.pmtiles   healthsites.io per country (ODbL; share-alike), layer "facilities" (tippecanoe)
   settlements.pmtiles         HOT OpenStreetMap populated places (ODbL; share-alike), layer "settlements" (tippecanoe)
 Downloads go to .context-work/ (kept, so a re-run resumes). Nothing here is project data.
 """
-import json, os, subprocess, sys, urllib.request
+import json, os, subprocess, sys
 from pathlib import Path
 
 import numpy as np
@@ -38,10 +38,11 @@ def fetch(url: str, dest: Path) -> bool:
 
 
 def hdx_geojson(dataset: str) -> str | None:
+    # HDX answers some clients (Python's urllib, Node's fetch) with an empty 202; curl is served.
+    r = subprocess.run(["curl", "-sSL", "--fail", "--retry", "3", "--max-time", "60", f"https://data.humdata.org/api/3/action/package_show?id={dataset}"], capture_output=True, text=True)
     try:
-        with urllib.request.urlopen(f"https://data.humdata.org/api/3/action/package_show?id={dataset}", timeout=60) as r:
-            pkg = json.load(r)
-    except Exception:
+        pkg = json.loads(r.stdout)
+    except ValueError:
         return None
     if not pkg.get("success"):
         return None
@@ -52,7 +53,15 @@ def hdx_geojson(dataset: str) -> str | None:
 
 
 def worldpop(iso: str) -> Path | None:
+    """WorldPop's 1 km counts by default (a few MB; WorldPop serves slowly, ~50 KB/s); WORLDPOP_RES=100m takes the 100 m constrained
+    counts instead (tens of MB per country, finer colours, the same ~1 km grid)."""
     lower = iso.lower()
+    if os.environ.get("WORLDPOP_RES") != "100m":
+        dest = WORK / f"{lower}_ppp_{YEAR}_1km.tif"
+        if fetch(f"https://data.worldpop.org/GIS/Population/Global_2000_2020_1km_UNadj/{YEAR}/{iso}/{lower}_ppp_{YEAR}_1km_Aggregated_UNadj.tif", dest):
+            return dest
+        print(f"{iso}: no WorldPop 1 km raster")
+        return None
     dest = WORK / f"{lower}_ppp_{YEAR}.tif"
     for flavour in ("maxar_v1", "BSGM"):
         if fetch(f"https://data.worldpop.org/GIS/Population/Global_2000_2020_Constrained/{YEAR}/{flavour}/{iso}/{lower}_ppp_{YEAR}_UNadj_constrained.tif", dest):
@@ -77,8 +86,9 @@ def grid(iso: str, tif: Path) -> None:
     print(f"{iso}: grid {cols}x{rows}, {float(out[out > 0].sum()):,.0f} people")
 
 
-# People per 100 m cell -> colour (none is transparent, never drawn as 0).
-RAMP = [(0.5, (255, 247, 236, 0)), (1, (254, 232, 200, 140)), (10, (253, 187, 132, 170)), (50, (239, 101, 72, 200)), (200, (179, 0, 0, 220)), (1000, (127, 0, 0, 235))]
+# People per cell -> colour (none is transparent, never drawn as 0). The steps are per km²; a 100 m cell is 1/100 of that.
+SCALE = 0.01 if os.environ.get("WORLDPOP_RES") == "100m" else 1.0
+RAMP = [(5 * SCALE, (254, 232, 200, 120)), (50 * SCALE, (253, 187, 132, 160)), (250 * SCALE, (239, 101, 72, 190)), (1000 * SCALE, (179, 0, 0, 215)), (5000 * SCALE, (127, 0, 0, 235))]
 
 
 def colour(tifs: list[Path]) -> Path:
@@ -132,7 +142,7 @@ def main(isos: list[str]) -> None:
             grid(iso, t)
     if tifs:
         rgba = colour(tifs)
-        subprocess.run([str(BIN / "rio"), "pmtiles", str(rgba), str(OUT / "population.pmtiles"), "--format", "PNG", "--zoom-levels", "0..11", "--resampling", "average", "-j", "4"], check=True)
+        subprocess.run([str(BIN / "rio"), "pmtiles", str(rgba), str(OUT / "population.pmtiles"), "--format", "PNG", "--zoom-levels", "0..9", "--resampling", "average", "-j", "4"], check=True)
     names = {"KEN": "kenya", "NGA": "nigeria", "ETH": "ethiopia", "SDN": "sudan", "NPL": "nepal", "GHA": "ghana"}
     points("health-facilities", [f"{names.get(i, i.lower())}-healthsites" for i in isos], "facilities")
     points("settlements", [f"hotosm_{i.lower()}_populated_places" for i in isos], "settlements")
