@@ -234,3 +234,4 @@ Batch 33.11 (cost per result, IATI export) is not started. Support articles for 
 
 Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project workspace (34.7), document templates (34.8), partner portal (34.9), polish (34.10) — see `../imp/phase34-devresults-parity-plan.md` "What is left". Support articles are drafts in `../docs/support/_unpublished-phase34/`.
 - [61 — The sector library](61-Sector-Library.md): 30 sectors, about 280 indicators, wizard and Logframe pickers, reference standards, review, generated templates (Phase 46, deployed 2026-11-08).
+- [62 — Visual Studio](62-Visual-Studio.md): one shell for designs, charts, maps, templates, alerts; new chart and map kinds, drill, motion, subscriptions, presence (Phase 48, deployed 2026-11-10).

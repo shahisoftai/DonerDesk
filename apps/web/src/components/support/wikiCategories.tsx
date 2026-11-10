@@ -144,6 +144,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "How to Make an Infographic", description: "Start a one-page design from a template; it stores layout, never data.", href: "/support/how-to/make-an-infographic" },
       { title: "How to Check an Infographic Before You Publish It", description: "The Design check: what blocks publishing and what only warns.", href: "/support/how-to/check-an-infographic" },
       { title: "How to Approve and Publish an Infographic", description: "Publish an immutable export as PNG, PDF or SVG.", href: "/support/how-to/approve-and-publish-an-infographic" },
+      { title: "How to Use the Visual Studio", description: "One place for designs, charts, maps, templates and alerts, with drill, motion and email updates.", href: "/support/how-to/use-the-visual-studio" },
       { title: "How to Share an Infographic With a Link", description: "Share one published export with a link that expires and can be revoked.", href: "/support/how-to/share-an-infographic" },
       { title: "How to Get Headline and Key-Message Suggestions", description: "Suggestions from your own records; optional AI wording is labelled and never saved by itself.", href: "/support/how-to/get-wording-suggestions" },
       { title: "How to Collect Answers with a Form", description: "Build a form, share it, review records and turn accepted ones into indicator totals.", href: "/support/how-to/collect-answers-with-a-form" },
