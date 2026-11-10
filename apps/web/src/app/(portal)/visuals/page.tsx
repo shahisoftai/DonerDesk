@@ -5,6 +5,7 @@ import { DashboardListSchema } from "@/lib/server/schemas-dashboards";
 import { CanvasListSchema } from "@/lib/server/schemas-canvas";
 import { InlineError } from "@/components/feedback/PageState";
 import { z } from "zod";
+import { ShellTabs } from "@/features/visual-studio/presentation/ShellTabs";
 import { OpenAsCanvasButton } from "@/features/canvas/presentation/OpenAsCanvasButton";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +44,8 @@ export default async function VisualsPage({ searchParams }: { searchParams: Prom
         </div>
         <div className="flex items-center gap-3"><a className="text-sm underline" href="/dashboards/templates">Start from a sector template</a><a className="rounded bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-800" href="/visuals/new">New</a></div>
       </header>
+
+      <ShellTabs active="designs" />
 
       <section aria-label="Your canvases">
         {canvases.value.length === 0 ? <p className="text-sm text-slate-500">Nothing here yet. Start from a template, or open one of the older pages below.</p> : (
