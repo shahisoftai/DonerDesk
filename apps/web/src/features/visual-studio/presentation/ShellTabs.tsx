@@ -6,6 +6,7 @@ export const SHELL_TABS = [
   { key: "charts", label: "Charts", href: "/visuals/charts" },
   { key: "maps", label: "Maps", href: "/visuals/maps" },
   { key: "templates", label: "Templates", href: "/visuals/templates" },
+  { key: "alerts", label: "Alerts", href: "/visuals/alerts" },
 ] as const;
 export type ShellTabKey = (typeof SHELL_TABS)[number]["key"];
 

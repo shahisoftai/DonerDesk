@@ -440,3 +440,5 @@ export * from "./services/data-versioning.js";
 export * from "./use-cases/visual-data/source-readers.js";
 export * from "./use-cases/visual-data/visual-data-service.js";
 export * from "./use-cases/visual-data/handlers.js";
+export * from "./use-cases/visual-data/alert-handlers.js";
+export * from "./ports/data-alerts.js";

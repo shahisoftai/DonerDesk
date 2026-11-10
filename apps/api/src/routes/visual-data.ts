@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { QueryVisualDataSchema, VisualDataCatalogueQuerySchema, VisualDataVersionQuerySchema } from "@donordesk/contracts";
+import { AddDataAlertSchema, QueryVisualDataSchema, VisualDataCatalogueQuerySchema, VisualDataVersionQuerySchema } from "@donordesk/contracts";
 
 /**
  * The Visual Studio's data (Phase 48.17). Thin: validate, call one handler, throw its error. Which projects and sources a person may
@@ -28,5 +28,22 @@ export async function registerVisualDataRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.getVisualDataVersion.handle(ctx(req), projects.split(",").map((p) => p.trim()).filter(Boolean));
     if (!r.ok) throw r.error;
     return r.value;
+  });
+
+  // A person's own threshold alerts; the hourly run (/internal/data-alerts/run) tells them once when a figure crosses.
+  app.get("/v1/visual-data/alerts", async (req) => {
+    const r = await req.container.handlers.listMyAlerts.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/visual-data/alerts", async (req, reply) => {
+    const r = await req.container.handlers.addAlert.handle(ctx(req), AddDataAlertSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+  app.delete("/v1/visual-data/alerts/:alertId", async (req) => {
+    const r = await req.container.handlers.removeAlert.handle(ctx(req), (req.params as { alertId: string }).alertId);
+    if (!r.ok) throw r.error;
+    return { ok: true };
   });
 }

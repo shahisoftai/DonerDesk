@@ -1,5 +1,5 @@
-import { TenantId, ok, type DashboardTemplate, type DashboardWidget, type Result } from "@donordesk/domain";
-import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, StoredBookmark, IHomePinRepository, StoredHomePin, IHomeLayoutRepository, StoredHomeLayout, IMapOverlayRepository, StoredMapOverlay, IFeaturedDashboardRepository, StoredFeaturedDashboard, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
+import { TenantId, ok, type AlertRuleKind, type AlertState, type DashboardTemplate, type DashboardWidget, type Result } from "@donordesk/domain";
+import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, IDataAlertRepository, StoredDataAlert, StoredBookmark, IHomePinRepository, StoredHomePin, IHomeLayoutRepository, StoredHomeLayout, IMapOverlayRepository, StoredMapOverlay, IFeaturedDashboardRepository, StoredFeaturedDashboard, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
 
 type DashboardRow = NonNullable<Awaited<ReturnType<PrismaClient["dashboard"]["findFirst"]>>>;
@@ -319,3 +319,33 @@ export class PrismaFeaturedDashboardRepository implements IFeaturedDashboardRepo
     return ok(undefined);
   }
 }
+
+export class PrismaDataAlertRepository implements IDataAlertRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async create(a: StoredDataAlert): Promise<Result<void>> {
+    await this.prisma.dataAlert.create({ data: { id: a.id, tenantId: a.tenantId.toString(), userId: a.userId, role: a.role, projectId: a.projectId, indicatorId: a.indicatorId, ruleKind: a.ruleKind, ruleValue: a.ruleValue, lastState: a.lastState } });
+    return ok(undefined);
+  }
+
+  async delete(id: string, tenantId: TenantId, userId: string): Promise<Result<void>> {
+    await this.prisma.dataAlert.deleteMany({ where: { id, tenantId: tenantId.toString(), userId } });
+    return ok(undefined);
+  }
+
+  async listForUser(tenantId: TenantId, userId: string): Promise<Result<StoredDataAlert[]>> {
+    return ok((await this.prisma.dataAlert.findMany({ where: { tenantId: tenantId.toString(), userId }, orderBy: { createdAt: "asc" } })).map(alertFrom));
+  }
+
+  async listAll(tenantId: TenantId): Promise<Result<StoredDataAlert[]>> {
+    return ok((await this.prisma.dataAlert.findMany({ where: { tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" }, take: 2000 })).map(alertFrom));
+  }
+
+  async setState(id: string, tenantId: TenantId, state: AlertState): Promise<Result<void>> {
+    await this.prisma.dataAlert.updateMany({ where: { id, tenantId: tenantId.toString() }, data: { lastState: state } });
+    return ok(undefined);
+  }
+}
+
+type AlertRow = NonNullable<Awaited<ReturnType<PrismaClient["dataAlert"]["findFirst"]>>>;
+const alertFrom = (r: AlertRow): StoredDataAlert => ({ id: r.id, tenantId: TenantId.create(r.tenantId), userId: r.userId, role: r.role, projectId: r.projectId, indicatorId: r.indicatorId, ruleKind: r.ruleKind as AlertRuleKind, ruleValue: r.ruleValue, lastState: r.lastState as AlertState, createdAt: r.createdAt });

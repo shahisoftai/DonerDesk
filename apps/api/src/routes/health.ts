@@ -23,6 +23,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Organization", field: "canvasAiEnabled" },
   { model: "SavedChart", field: "specJson" },
   { model: "Bookmark", field: "href" },
+  { model: "DataAlert", field: "ruleKind" },
   { model: "HomePin", field: "ref" },
   { model: "HomeLayout", field: "layoutJson" },
   { model: "Canvas", field: "docJson" },

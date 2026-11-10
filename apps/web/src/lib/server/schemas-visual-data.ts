@@ -26,3 +26,7 @@ export type CatalogueView = z.infer<typeof CatalogueSchema>;
 
 export const VersionsSchema = z.object({ projects: z.array(z.object({ projectId: z.string(), epoch: z.string(), versions: z.record(z.number()) })) });
 export type VersionsView = z.infer<typeof VersionsSchema>;
+
+export const DataAlertSchema = z.object({ id: z.string(), projectId: z.string(), indicatorId: z.string(), kind: z.enum(["BELOW", "ABOVE", "NO_VALUE", "BELOW_PERCENT_OF_TARGET", "WORSE_THAN_PREVIOUS"]), value: z.number().nullable(), state: z.enum(["OK", "FIRING", "NO_DATA"]) });
+export const DataAlertListSchema = z.object({ alerts: z.array(DataAlertSchema) });
+export type DataAlertView = z.infer<typeof DataAlertSchema>;

@@ -29,6 +29,13 @@ export const VisualQuerySchema = z.object({
   limit: z.number().int().min(1).max(5000).optional(),
 });
 
+export const AddDataAlertSchema = z.object({
+  projectId: z.string().min(1).max(64), indicatorId: z.string().min(1).max(64),
+  kind: z.enum(["BELOW", "ABOVE", "NO_VALUE", "BELOW_PERCENT_OF_TARGET", "WORSE_THAN_PREVIOUS"]),
+  value: z.number().finite().optional(),
+});
+export type AddDataAlertInput = z.infer<typeof AddDataAlertSchema>;
+
 export const QueryVisualDataSchema = z.object({ projectId: z.string().min(1).max(64), query: VisualQuerySchema });
 export type QueryVisualDataInput = z.infer<typeof QueryVisualDataSchema>;
 

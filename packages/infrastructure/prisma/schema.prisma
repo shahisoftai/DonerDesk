@@ -2800,3 +2800,20 @@ model OrganisationLibraryEntry {
   @@unique([tenantId, entryId, kind])
   @@index([tenantId])
 }
+
+/// A person's own threshold alert on one indicator (Phase 48.16): a rule, the state it was last seen in, and who to tell. Ids and a rule, never figures or text.
+model DataAlert {
+  id          String   @id
+  tenantId    String
+  userId      String
+  /// The subscriber's role when the alert was made: the hourly run reads the project as that person.
+  role        String
+  projectId   String
+  indicatorId String
+  ruleKind    String
+  ruleValue   Float?
+  lastState   String   @default("OK")
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, userId])
+}

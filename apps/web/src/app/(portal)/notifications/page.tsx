@@ -18,6 +18,7 @@ const TYPE_LABEL: Record<string, string> = {
   CHECKLIST_ASSIGNED: "Compliance",
   REPORT_APPROVED: "Report approved",
   REPORT_RETURNED: "Report returned",
+  DATA_ALERT: "Data alert",
   EXPORT_COMPLETED: "Export",
   INVITATION: "Invitation",
   PASSWORD_RESET: "Password",

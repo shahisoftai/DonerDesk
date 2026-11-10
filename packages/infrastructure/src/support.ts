@@ -15,7 +15,7 @@ export class LoggingNotificationAdapter implements INotificationPort {
   async notify(input: {
     tenantId: TenantId;
     recipientId: string;
-    type: "ASSIGNMENT" | "EVIDENCE_REVIEW" | "DEADLINE_REMINDER" | "COMMENT_MENTION" | "CHECKLIST_ASSIGNED" | "REPORT_APPROVED" | "REPORT_RETURNED" | "EXPORT_COMPLETED" | "INVITATION" | "PASSWORD_RESET";
+    type: "ASSIGNMENT" | "EVIDENCE_REVIEW" | "DEADLINE_REMINDER" | "COMMENT_MENTION" | "CHECKLIST_ASSIGNED" | "REPORT_APPROVED" | "REPORT_RETURNED" | "DATA_ALERT" | "EXPORT_COMPLETED" | "INVITATION" | "PASSWORD_RESET";
     title: string;
     message: string;
     relatedEntityType?: string;
