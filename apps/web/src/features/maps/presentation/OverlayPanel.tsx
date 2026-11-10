@@ -5,6 +5,7 @@ import { addMapOverlayAction, listMapOverlaysAction, readMapOverlayAction, remov
 import type { MapOverlayItem } from "@/lib/server/schemas-map-overlays";
 import { parseOverlay, type Overlay } from "../domain/overlay-layer";
 import { KML_MAX_BYTES, overlayFileToGeoJson } from "../domain/kml-to-geojson";
+import { useMapText } from "./useMapText";
 
 const merge = (name: string, parts: Overlay[]): Overlay | null =>
   parts.length === 0 ? null : { name, points: parts.flatMap((p) => p.points), lines: parts.flatMap((p) => p.lines) };
@@ -15,6 +16,7 @@ const merge = (name: string, parts: Overlay[]): Overlay | null =>
  * against it and it never replaces a boundary. The ticked ones are handed up as one overlay for the map to draw.
  */
 export function OverlayPanel({ onOverlay }: { onOverlay: (overlay: Overlay | null) => void }) {
+  const { t: mt } = useMapText();
   const [stored, setStored] = useState<MapOverlayItem[]>([]);
   const [canEdit, setCanEdit] = useState(false);
   const [ticked, setTicked] = useState<Set<string>>(new Set());
@@ -36,7 +38,7 @@ export function OverlayPanel({ onOverlay }: { onOverlay: (overlay: Overlay | nul
       const r = await readMapOverlayAction(o.id);
       const parsed = r.ok ? parseOverlay(r.value, o.name) : null;
       if (!r.ok || !parsed || !parsed.ok) {
-        setError(r.ok && parsed && !parsed.ok ? parsed.reason : "That overlay could not be opened.");
+        setError(r.ok && parsed && !parsed.ok ? parsed.reason : mt("maps.overlay.couldNotOpen"));
         setTicked((t) => { const n = new Set(t); n.delete(o.id); return n; });
         return;
       }
@@ -47,7 +49,7 @@ export function OverlayPanel({ onOverlay }: { onOverlay: (overlay: Overlay | nul
   async function choose(file: File | undefined) {
     if (!file) return;
     setError(null);
-    if (file.size > KML_MAX_BYTES * 2) { setError("That file is larger than 3 MB. Simplify it in Google Earth first."); return; }
+    if (file.size > KML_MAX_BYTES * 2) { setError(mt("maps.overlay.tooLarge")); return; }
     const converted = await overlayFileToGeoJson(file.name, new Uint8Array(await file.arrayBuffer()));
     if (!converted.ok) { setError(converted.reason); return; }
     const parsed = parseOverlay(converted.geojson, file.name);
@@ -78,27 +80,27 @@ export function OverlayPanel({ onOverlay }: { onOverlay: (overlay: Overlay | nul
 
   return (
     <div className="space-y-2 text-sm">
-      <h3 className="font-medium">Overlays</h3>
-      <p className="text-xs text-slate-500">Rivers, roads, a camp outline: context only. Nothing is reported against an overlay.</p>
-      {stored.length === 0 ? <p className="text-xs text-slate-500">None kept yet.</p> : (
+      <h3 className="font-medium">{mt("maps.overlay.title")}</h3>
+      <p className="text-xs text-slate-500">{mt("maps.overlay.intro")}</p>
+      {stored.length === 0 ? <p className="text-xs text-slate-500">{mt("maps.overlay.none")}</p> : (
         <ul className="space-y-1">
           {stored.map((o) => (
             <li key={o.id} className="flex items-center gap-2">
               <label className="flex min-w-0 flex-1 items-center gap-1"><input type="checkbox" checked={ticked.has(o.id)} onChange={(e) => void tick(o, e.target.checked)} /><span className="truncate">{o.name}</span></label>
-              {canEdit && <button type="button" className="text-xs underline disabled:opacity-50" disabled={busy} aria-label={`Remove the overlay ${o.name}`} onClick={() => void remove(o)}>Remove</button>}
+              {canEdit && <button type="button" className="text-xs underline disabled:opacity-50" disabled={busy} aria-label={mt("maps.overlay.removeNamed", { name: o.name })} onClick={() => void remove(o)}>{mt("maps.overlay.remove")}</button>}
             </li>
           ))}
         </ul>
       )}
-      <label className="block font-medium">Look at a file
+      <label className="block font-medium">{mt("maps.overlay.file")}
         <input type="file" accept=".kml,.kmz,.geojson,.json,.zip,.shp,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/geo+json" className="mt-1 block w-full text-xs" onChange={(e) => void choose(e.target.files?.[0])} />
       </label>
-      <p className="text-xs text-slate-500">KML, KMZ, GeoJSON or a shapefile (.zip with the .shp, .dbf and .prj), up to 3 MB. Drawn for this visit unless you keep it.</p>
+      <p className="text-xs text-slate-500">{mt("maps.overlay.fileHint")}</p>
       {session && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span>Showing “{session.name}”.</span>
-          {canEdit && <button type="button" className="font-medium underline disabled:opacity-50" disabled={busy} onClick={() => void keep()}>Keep for everyone</button>}
-          <button type="button" className="underline" onClick={() => setSession(null)}>Remove from this map</button>
+          <span>{mt("maps.overlay.showing", { name: session.name })}</span>
+          {canEdit && <button type="button" className="font-medium underline disabled:opacity-50" disabled={busy} onClick={() => void keep()}>{mt("maps.overlay.keep")}</button>}
+          <button type="button" className="underline" onClick={() => setSession(null)}>{mt("maps.overlay.removeSession")}</button>
         </div>
       )}
       {error && <p role="alert" className="text-xs text-danger-600">{error}</p>}

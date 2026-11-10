@@ -138,6 +138,11 @@ export default function SecurityPage() {
           </Link>
           . No subprocessor is engaged for your content unless your configuration selects it.
         </p>
+        <p>
+          Maps are drawn from files on our own servers: opening a map sends no location to an outside map service. The one exception is
+          imagery, which an administrator may add from a provider of their choice; that provider then sees which map area is viewed (never
+          project data). It is off unless set, and never shown through a share link.
+        </p>
       </Section>
 
       <Section title="Data export and deletion">

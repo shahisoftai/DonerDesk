@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { SiteMap } from "./SiteMap";
 import { protectedFileDownloadHref, isByteStoredEvidence } from "@/lib/shared/downloads";
-import { photoMapData, photoMapSummary, photoPoints, type PhotoInput, type PlaceWithPin } from "../domain/photo-map";
+import { photoMapData, photoPoints, type PhotoInput, type PlaceWithPin } from "../domain/photo-map";
+import { useMapText } from "./useMapText";
 
 const THUMBS_SHOWN = 8;
 
@@ -17,10 +18,18 @@ export function PhotosMapPanel({ projectId, photos, places, country }: { project
   const data = useMemo(() => photoMapData(photos, places, country), [photos, places, country]);
   const points = useMemo(() => photoPoints(data), [data]);
   const [open, setOpen] = useState<string | null>(null);
+  const { t } = useMapText();
+  const placed = data.sites.reduce((n, s) => n + s.photos.length, 0);
+  // Number-neutral sentences ("Photos on the map: 12 of 20"), so no language needs plural tables.
+  const summary = data.total === 0 ? t("maps.photos.none") : [
+    t("maps.photos.placed", { placed: String(placed), total: String(data.total), places: String(data.sites.length) }),
+    ...(data.unplaced.length > 0 ? [t("maps.photos.unmatched", { count: String(data.unplaced.length) })] : []),
+    ...(data.withoutLocation > 0 ? [t("maps.photos.noLocation", { count: String(data.withoutLocation) })] : []),
+  ].join(" ");
   return (
     <section aria-labelledby="photos-map" className="space-y-3">
-      <h2 id="photos-map" className="text-lg font-semibold">Photos on the map</h2>
-      <p className="text-sm text-slate-600 dark:text-slate-300">{photoMapSummary(data)}</p>
+      <h2 id="photos-map" className="text-lg font-semibold">{t("maps.photos.title")}</h2>
+      <p className="text-sm text-slate-600 dark:text-slate-300">{summary}</p>
       {points.length > 0 && <SiteMap points={points} {...(country ? { country } : {})} />}
       <ul className="space-y-4">
         {data.sites.map((s) => {
@@ -28,7 +37,7 @@ export function PhotosMapPanel({ projectId, photos, places, country }: { project
           const shown = all ? s.photos : s.photos.slice(0, THUMBS_SHOWN);
           return (
             <li key={`${s.lat}|${s.lng}`}>
-              <h3 className="text-sm font-medium">{s.name} <span className="font-normal text-slate-500">· {s.photos.length} {s.photos.length === 1 ? "photo" : "photos"}</span></h3>
+              <h3 className="text-sm font-medium">{s.name} <span className="font-normal text-slate-500">· {t("maps.photos.count", { count: String(s.photos.length) })}</span></h3>
               <ul className="mt-2 flex flex-wrap gap-2">
                 {shown.map((p) => {
                   const href = `/projects/${projectId}/evidence/${p.id}`;
@@ -46,18 +55,18 @@ export function PhotosMapPanel({ projectId, photos, places, country }: { project
                   );
                 })}
               </ul>
-              {s.photos.length > THUMBS_SHOWN && <button type="button" className="mt-1 text-xs underline" onClick={() => setOpen(all ? null : s.name)}>{all ? "Show fewer" : `Show all ${s.photos.length}`}</button>}
+              {s.photos.length > THUMBS_SHOWN && <button type="button" className="mt-1 text-xs underline" onClick={() => setOpen(all ? null : s.name)}>{all ? t("maps.photos.fewer") : t("maps.photos.all", { count: String(s.photos.length) })}</button>}
             </li>
           );
         })}
       </ul>
       {data.unplaced.length > 0 && (
         <details className="text-sm">
-          <summary className="cursor-pointer font-medium">Photos whose location matches no place ({data.unplaced.length})</summary>
+          <summary className="cursor-pointer font-medium">{t("maps.photos.unplacedTitle", { count: String(data.unplaced.length) })}</summary>
           <ul className="mt-2 list-disc space-y-1 pl-5">
             {data.unplaced.map((p) => <li key={p.id}><Link className="hover:underline" href={`/projects/${projectId}/evidence/${p.id}`}>{p.title || p.fileName}</Link> — “{p.location}”</li>)}
           </ul>
-          <p className="mt-1 text-xs text-slate-500">Add the place in <Link className="underline" href="/settings/places">Places</Link> with a pin, or write the location the way a known place is spelled.</p>
+          <p className="mt-1 text-xs text-slate-500">{t("maps.photos.fixHint")} <Link className="underline" href="/settings/places">{t("maps.photos.placesLink")}</Link></p>
         </details>
       )}
     </section>

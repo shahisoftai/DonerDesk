@@ -69,6 +69,7 @@ export default function SubprocessorsPage() {
           head={["Provider", "Purpose", "Data"]}
           rows={[
             ["OpenStreetMap (Nominatim)", "Recognising place names read from documents in the project setup wizard", "A place name and its country only; never the document or project"],
+            ["The imagery provider your administrator names", "Satellite or aerial imagery under your maps, if an administrator sets an imagery address", "The map area being viewed (tile requests); never project data, and never through a share link"],
             ["Cloudflare (R2)", "Managed file storage if you choose DonorDesk-managed uploads", "Uploaded evidence files"],
             ["Slack, Microsoft Teams, WhatsApp", "Notifications you configure", "Notification text and recipients"],
           ]}
