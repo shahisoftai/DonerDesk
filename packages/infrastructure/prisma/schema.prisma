@@ -2463,6 +2463,16 @@ model HomePin {
 }
 
 /// How a person has arranged the panels of their Home (Phase 40): order, width and hidden flags only, never data. One row per person per Home variant.
+/// An organisation's map context settings (Phase 49.6): which context layers its maps offer and its own imagery address. One row per organisation.
+model TenantMapSettings {
+  id           String   @id
+  tenantId     String   @unique
+  settingsJson String
+  updatedById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model HomeLayout {
   id         String   @id
   tenantId   String

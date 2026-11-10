@@ -29,6 +29,9 @@ import { PlaceTree } from "./PlaceTree";
 import { pathForPlace } from "../domain/drill/place-path";
 import { useBoundaryView } from "./useBoundaryView";
 import { preloadCountryOutlines } from "./preload-country";
+import { useMapContext } from "./useMapContext";
+import { ContextLayerToggles } from "./ContextLayerToggles";
+import { contextLayers, offeredContext, type ContextToggle } from "../domain/scene/context-layers";
 import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
 
@@ -130,11 +133,19 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
     return joinUnits(view.units, places.filter((p) => ids.has(p.id)), places);
   }, [view.units, model, places]);
 
-  const scene = useMemo(() => buildResultsScene({
-    model: model ?? EMPTY_MODEL, layers, joined, unit: indicator?.unit ?? null, selectedRef: selected?.ref ?? null,
-    selectedPlaceId: selected?.placeId ?? null, overlay, basemap: ground === "plain" ? "plain" : dark ? "dark" : "light", lang,
-    label: t("maps.summary", { ...summaryCounts(model ?? EMPTY_MODEL) }),
-  }), [model, layers, joined, indicator, selected, overlay, ground, dark, lang, t]);
+  // Context layers the organisation offers (Phase 49.6): never on a share link (staticData), off until the person switches one on.
+  const mapContext = useMapContext(!staticData);
+  const [contextOn, setContextOn] = useState<ReadonlySet<ContextToggle>>(new Set());
+  const toggleContext = (key: ContextToggle) => setContextOn((on) => { const next = new Set(on); if (next.has(key)) next.delete(key); else next.add(key); return next; });
+  const scene = useMemo(() => {
+    const built = buildResultsScene({
+      model: model ?? EMPTY_MODEL, layers, joined, unit: indicator?.unit ?? null, selectedRef: selected?.ref ?? null,
+      selectedPlaceId: selected?.placeId ?? null, overlay, basemap: ground === "plain" ? "plain" : dark ? "dark" : "light", lang,
+      label: t("maps.summary", { ...summaryCounts(model ?? EMPTY_MODEL) }),
+    });
+    const context = contextLayers(mapContext, contextOn, typeof location === "undefined" ? "" : location.origin);
+    return context.length > 0 ? { ...built, layers: [...context, ...built.layers] } : built;
+  }, [model, layers, joined, indicator, selected, overlay, ground, dark, lang, t, mapContext, contextOn]);
 
   // Side-by-side periods: one small map per period on one shared scale.
   const latest = useMemo(() => panelPeriods(periods), [periods]);
@@ -275,6 +286,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
         <div className="space-y-3" data-no-print>
           {!compact && <PlaceTree places={places} activityCounts={activityCounts ?? {}} figurePlaceIds={figureIds} selectedId={selected?.placeId ?? null} onSelect={focusPlace} />}
           {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
+          {!compact && <ContextLayerToggles offered={offeredContext(mapContext)} on={contextOn} onToggle={toggleContext} />}
           {!compact && <OverlayPanel onOverlay={showOverlay} />}
           {selected && <PlacePanel panel={panel} name={selected.name} canDrill={openLevel !== null} drillLabel={openLevel !== null ? t("maps.open", { level: levelPlural(openLevel) }) : undefined} onDrill={() => void openSelected()} onSelect={(id) => { const p = places.find((x) => x.id === id); if (p) setSelected({ ref: null, placeId: p.id, name: p.name }); }} onClose={() => setSelected(null)} />}
         </div>

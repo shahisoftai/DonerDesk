@@ -32,7 +32,21 @@ export interface OverlayLayerSpec {
   lines: ReadonlyArray<{ name: string; coords: ReadonlyArray<readonly [number, number]> }>;
   opacity: number;
 }
-export type LayerSpec = FillLayerSpec | PinsLayerSpec | OverlayLayerSpec;
+/**
+ * A context layer under the results (Phase 49.6): population cells, facility or settlement points, or the organisation's own imagery.
+ * Context only: it carries no figure of the project and is never pickable.
+ */
+export interface ContextLayerSpec {
+  kind: "CONTEXT";
+  id: string;
+  type: "raster" | "points" | "imagery";
+  /** A PMTiles address (raster, points) or a tile template (imagery). */
+  url: string;
+  sourceLayer?: string;
+  opacity: number;
+  attribution: string;
+}
+export type LayerSpec = ContextLayerSpec | FillLayerSpec | PinsLayerSpec | OverlayLayerSpec;
 
 /** Text shown when pointing at a feature. Plain text: the renderer never treats it as markup. */
 export interface Tip { title: string; lines: readonly string[] }

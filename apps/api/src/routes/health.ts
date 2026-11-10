@@ -28,6 +28,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "CanvasSubscription", field: "every" },
   { model: "HomePin", field: "ref" },
   { model: "HomeLayout", field: "layoutJson" },
+  { model: "TenantMapSettings", field: "settingsJson" },
   { model: "Canvas", field: "docJson" },
   { model: "SetupDefaultPack", field: "packJson" },
   { model: "MapOverlay", field: "storageKey" },

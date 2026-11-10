@@ -113,10 +113,9 @@ export class MapLibreRenderer implements MapRenderer {
 
   /** Replaces the basemap's sources and layers, leaving ours where they are, and puts the new ground beneath them. */
   private swapGround(style: ML.StyleSpecification): void {
-    const ourSources = new Set<string>(Object.values(SOURCES));
     const ours = (id: string): boolean => id.startsWith("dd-") && id !== "dd-ground";
     for (const layer of this.map.getStyle().layers ?? []) if (!ours(layer.id)) this.map.removeLayer(layer.id);
-    for (const id of Object.keys(this.map.getStyle().sources ?? {})) if (!ourSources.has(id)) this.map.removeSource(id);
+    for (const id of Object.keys(this.map.getStyle().sources ?? {})) if (!ours(id)) this.map.removeSource(id);
     for (const [id, source] of Object.entries(style.sources ?? {})) this.map.addSource(id, source);
     const below = (this.map.getStyle().layers ?? [])[0]?.id;
     for (const layer of style.layers ?? []) this.map.addLayer(layer, below);
@@ -125,9 +124,10 @@ export class MapLibreRenderer implements MapRenderer {
   /** New data: put every one of our sources and layers back. */
   private rebuild(next: Built): void {
     for (const layer of this.map.getStyle().layers ?? []) if (layer.id.startsWith("dd-") && layer.id !== "dd-ground") this.map.removeLayer(layer.id);
-    for (const id of Object.values(SOURCES)) if (this.map.getSource(id)) this.map.removeSource(id);
+    for (const id of Object.keys(this.map.getStyle().sources ?? {})) if (id.startsWith("dd-") && this.map.getSource(id)) this.map.removeSource(id);
     for (const s of next.sources) {
-      if (s.url) { this.map.addSource(s.id, { type: "vector", url: s.url, promoteId: "ref" }); continue; }
+      if (s.raster) { this.map.addSource(s.id, { type: "raster", tileSize: 256, attribution: s.raster.attribution, ...(s.raster.tiles ? { tiles: s.raster.tiles } : { url: s.url! }) }); continue; }
+      if (s.url) { this.map.addSource(s.id, { type: "vector", url: s.url, ...(s.attribution ? { attribution: s.attribution } : { promoteId: "ref" }) }); continue; }
       this.map.addSource(s.id, { type: "geojson", data: s.data as never, ...(s.cluster ? { cluster: true, clusterRadius: 50, clusterMaxZoom: 13, clusterProperties: CLUSTER_PROPERTIES as never } : {}), ...(s.id === SOURCES.fill ? { tolerance: 0.5 } : {}) });
     }
     for (const l of next.layers) this.map.addLayer(l as unknown as ML.LayerSpecification);

@@ -2,10 +2,15 @@
  * Scene -> MapLibre sources and layers. Pure data (no map instance), so it is unit-tested without a browser.
  * Every id starts with `dd-`, so the renderer can remove its own layers and never touch the basemap's.
  */
-import type { FillLayerSpec, MapScene, OverlayLayerSpec, PinsLayerSpec } from "../../domain/model/scene.ts";
+import type { ContextLayerSpec, FillLayerSpec, MapScene, OverlayLayerSpec, PinsLayerSpec } from "../../domain/model/scene.ts";
 
 export type GeoJson = { type: "FeatureCollection"; features: unknown[] };
-export interface SourceDef { id: string; data?: GeoJson; cluster?: boolean; /** A vector-tile source (boundary tiles, Phase 49.3) instead of GeoJSON. */ url?: string }
+export interface SourceDef {
+  id: string; data?: GeoJson; cluster?: boolean;
+  /** A vector-tile source (boundary tiles, Phase 49.3; context points, 49.6) instead of GeoJSON. */ url?: string;
+  /** A raster source (population cells or imagery, Phase 49.6): a PMTiles address in `url`, or tile templates here. */ raster?: { tiles?: string[]; attribution: string };
+  attribution?: string;
+}
 export interface LayerDef { id: string; type: string; source: string; "source-layer"?: string; filter?: unknown[]; paint: Record<string, unknown>; layout?: Record<string, unknown> }
 export interface Built { sources: SourceDef[]; layers: LayerDef[]; /** Same key = same data, so only filters and paints need updating. */ dataKey: string }
 
@@ -86,9 +91,29 @@ function overlay(spec: OverlayLayerSpec): { sources: SourceDef[]; layers: LayerD
   };
 }
 
+/** A context layer (Phase 49.6). Its ids carry the layer's own id so several can be shown; they start with `dd-ctx-` and are never pickable. */
+function context(spec: ContextLayerSpec): { sources: SourceDef[]; layers: LayerDef[]; key: string } {
+  const source = `dd-ctx-${spec.id}-src`, layer = `dd-ctx-${spec.id}`;
+  if (spec.type === "points") {
+    return {
+      sources: [{ id: source, url: `pmtiles://${spec.url}`, attribution: spec.attribution }],
+      layers: [{ id: layer, type: "circle", source, "source-layer": spec.sourceLayer ?? spec.id, paint: { "circle-color": "#475569", "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 1.5, 10, 4], "circle-stroke-color": "#ffffff", "circle-stroke-width": 0.8, "circle-opacity": spec.opacity } }],
+      key: `ctx:${spec.id}:${spec.url}`,
+    };
+  }
+  const raster = spec.type === "imagery" ? { tiles: [spec.url], attribution: spec.attribution } : { attribution: spec.attribution };
+  return {
+    sources: [{ id: source, ...(spec.type === "imagery" ? {} : { url: `pmtiles://${spec.url}` }), raster }],
+    layers: [{ id: layer, type: "raster", source, paint: { "raster-opacity": spec.opacity } }],
+    key: `ctx:${spec.id}:${spec.url}`,
+  };
+}
+
 /** `overStreets`: a street basemap is under the boundaries, so the fill lets it show through. */
 export function buildMapLibreLayers(scene: MapScene, overStreets = false): Built {
-  const parts = scene.layers.map((l) => (l.kind === "FILL" ? fill(l, overStreets) : l.kind === "PINS" ? pins(l) : overlay(l)));
+  // Context first, so it is drawn under the results.
+  const ordered = [...scene.layers.filter((l) => l.kind === "CONTEXT"), ...scene.layers.filter((l) => l.kind !== "CONTEXT")];
+  const parts = ordered.map((l) => (l.kind === "CONTEXT" ? context(l) : l.kind === "FILL" ? fill(l, overStreets) : l.kind === "PINS" ? pins(l) : overlay(l)));
   return { sources: parts.flatMap((p) => p.sources), layers: parts.flatMap((p) => p.layers), dataKey: parts.map((p) => p.key).join("#") };
 }
 

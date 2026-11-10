@@ -1,5 +1,5 @@
 import { TenantId, ok, type AlertRuleKind, type AlertState, type DashboardTemplate, type DashboardWidget, type Result } from "@donordesk/domain";
-import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, IDataAlertRepository, StoredDataAlert, StoredBookmark, IHomePinRepository, StoredHomePin, IHomeLayoutRepository, StoredHomeLayout, IMapOverlayRepository, StoredMapOverlay, IFeaturedDashboardRepository, StoredFeaturedDashboard, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
+import type { IDashboardLinkRepository, IDashboardRepository, IDashboardTemplateRepository, ISavedChartRepository, IBookmarkRepository, IDataAlertRepository, StoredDataAlert, StoredBookmark, IHomePinRepository, StoredHomePin, IHomeLayoutRepository, StoredHomeLayout, IMapOverlayRepository, StoredMapOverlay, IMapContextRepository, IFeaturedDashboardRepository, StoredFeaturedDashboard, ISavedReportRepository, StoredReport, StoredChart, StoredDashboard, StoredDashboardLink, StoredDashboardTemplate } from "@donordesk/application";
 import type { PrismaClient } from "@prisma/client";
 
 type DashboardRow = NonNullable<Awaited<ReturnType<PrismaClient["dashboard"]["findFirst"]>>>;
@@ -349,3 +349,20 @@ export class PrismaDataAlertRepository implements IDataAlertRepository {
 
 type AlertRow = NonNullable<Awaited<ReturnType<PrismaClient["dataAlert"]["findFirst"]>>>;
 const alertFrom = (r: AlertRow): StoredDataAlert => ({ id: r.id, tenantId: TenantId.create(r.tenantId), userId: r.userId, role: r.role, projectId: r.projectId, indicatorId: r.indicatorId, ruleKind: r.ruleKind as AlertRuleKind, ruleValue: r.ruleValue, lastState: r.lastState as AlertState, createdAt: r.createdAt });
+
+/** Map context settings (Phase 49.6): one row per organisation, written whole. */
+export class PrismaMapContextRepository implements IMapContextRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+  async find(tenantId: TenantId): Promise<Result<{ settingsJson: string; updatedAt: Date } | null>> {
+    const r = await this.prisma.tenantMapSettings.findUnique({ where: { tenantId: tenantId.toString() } });
+    return ok(r ? { settingsJson: r.settingsJson, updatedAt: r.updatedAt } : null);
+  }
+  async save(tenantId: TenantId, settingsJson: string, updatedById: string): Promise<Result<void>> {
+    await this.prisma.tenantMapSettings.upsert({
+      where: { tenantId: tenantId.toString() },
+      create: { id: `map-settings-${tenantId.toString()}`, tenantId: tenantId.toString(), settingsJson, updatedById },
+      update: { settingsJson, updatedById },
+    });
+    return ok(undefined);
+  }
+}

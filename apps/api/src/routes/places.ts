@@ -136,6 +136,19 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
     return reply.send(createReadStream(r.value.path));
   });
 
+  // Context layers and imagery for the organisation's maps (Phase 49.6). Reading is for every member; changing is an administrator's.
+  app.get("/v1/organization/map-context", async (req) => {
+    const r = await req.container.handlers.getMapContext.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.put("/v1/organization/map-context", async (req) => {
+    const body = z.object({ layers: z.array(z.string()).max(10).default([]), imageryUrl: z.string().max(500).nullable().default(null), imageryCredit: z.string().max(200).nullable().default(null) }).parse(req.body);
+    const r = await req.container.handlers.updateMapContext.handle(ctx(req), body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   // Movements between the project's places (Phase 48.12): what moved from one place to another, and how much.
   app.get("/v1/projects/:projectId/place-flows", async (req) => {
     const r = await req.container.handlers.listPlaceFlows.handle(ctx(req), param(req, "projectId"));
