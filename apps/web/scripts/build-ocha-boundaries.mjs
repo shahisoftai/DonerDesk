@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Downloads OCHA COD-AB boundaries (Humanitarian Data Exchange, datasets "cod-ab-<iso3>") and writes them next to the geoBoundaries ones.
-// Run with: node --experimental-strip-types apps/web/scripts/build-ocha-boundaries.mjs [--countries SDN,ETH] [--levels 2,3] [--epsilon 0.01] [--out apps/web/public/geo]
+// Run with: node --experimental-strip-types apps/web/scripts/build-ocha-boundaries.mjs [--countries SDN,ETH] [--skip IDN,THA] [--levels 2,3] [--epsilon 0.01] [--out apps/web/public/geo]
 //
 // For every country OCHA publishes, the latest COD-AB dataset is read; a unit whose `valid_to` is in the past is left out (the newer one
 // stands). A level present in OCHA's file REPLACES the geoBoundaries file for that country and level; the manifest records the origin, source,
@@ -19,6 +19,8 @@ const args = new Map();
 for (let i = 2; i < process.argv.length; i += 2) args.set(process.argv[i].replace(/^--/, ""), process.argv[i + 1]);
 const levels = (args.get("levels") ?? "2,3").split(",").map(Number).filter((n) => [2, 3, 4].includes(n));
 const only = args.get("countries") ? new Set(args.get("countries").split(",").map((s) => s.trim().toUpperCase())) : null;
+// --skip IDN,THA: countries to leave out (HDX sometimes stalls a large file; fetch those again later).
+const skip = new Set((args.get("skip") ?? "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean));
 const epsilonArg = args.get("epsilon") ? Number(args.get("epsilon")) : null; // overrides the per-level tolerance
 const OUT = args.get("out") ?? join(dirname(fileURLToPath(import.meta.url)), "../public/geo");
 const HDX = "https://data.humdata.org/api/3/action";
@@ -54,7 +56,7 @@ let held = manifest.held;
 // Every COD-AB dataset OCHA lists (names look like cod-ab-sdn).
 const search = await getJson(`${HDX}/package_search?q=name:cod-ab-*&fl=name&rows=500`);
 const names = (search.result.results ?? []).map((r) => r.name).filter((n) => /^cod-ab-[a-z]{3}$/.test(n));
-const isos = names.map((n) => n.slice(7).toUpperCase()).filter((iso) => !only || only.has(iso));
+const isos = names.map((n) => n.slice(7).toUpperCase()).filter((iso) => (!only || only.has(iso)) && !skip.has(iso));
 console.log(`${isos.length} COD-AB datasets to read`);
 
 function save() {
