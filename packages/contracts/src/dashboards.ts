@@ -25,7 +25,7 @@ export const ReportQuerySchema = z.object({
   includeDraft: z.boolean(),
   breakdown: z.enum(["SEX", "AGE_GROUP", "DISABILITY", "LOCATION", "OTHER"]).optional(),
 });
-export const MapWidgetSchema = z.object({ view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string().max(60).optional() });
+export const MapWidgetSchema = z.object({ view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string().max(60).optional(), measure: z.enum(["PERIOD", "CUMULATIVE"]).optional() });
 export const MetricQuerySchema = z.object({
   metric: z.enum(["FIN_OBLIGATED", "FIN_RECEIVED", "FIN_SPENT", "FIN_REMAINING", "ACTIVITIES_TOTAL", "ACTIVITIES_IN_PROGRESS", "ACTIVITIES_DONE", "ACTIVITIES_LATE"]),
   color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).optional(),

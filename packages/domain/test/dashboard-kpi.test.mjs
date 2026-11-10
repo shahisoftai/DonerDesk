@@ -58,3 +58,11 @@ test("status: nothing recorded, not judged (rate or no target), target met, in p
   assert.deepEqual(KPI_STATUS_RULES.map((r) => r.status).sort(), [...KPI_STATUSES].sort());
   assert.equal(buildKpi(sheet, { indicatorId: "r", includeDraft: true }).tile.status, "NOT_JUDGED");
 });
+
+test("a KPI can show the total to date; its share of target is unchanged and it says what the figure is", () => {
+  const r = buildKpi(sheet, { indicatorId: "a", includeDraft: true, measure: "CUMULATIVE" });
+  assert.equal(r.tile.value, 30);
+  assert.equal(r.tile.percentOfTarget, 30);
+  assert.deepEqual(r.tile.spark.map((s) => s.value), [10, 30, null]);
+  assert.match(r.tile.notes[0], /Total to date, to the end of Feb/);
+});

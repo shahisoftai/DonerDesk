@@ -73,6 +73,12 @@ export function useEditorSession(ed: Editor, options: { enabled: boolean; save: 
     const onKey = (e: KeyboardEvent): void => {
       if (e.defaultPrevented) return;
       const inField = typing(e.target);
+      // Paste reads the system clipboard too, so it is offered even before anything was copied in this editor.
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "v" && !inField) {
+        e.preventDefault();
+        void pasteFromSystem();
+        return;
+      }
       const cmd = commandForKey(e, state);
       // While typing in a field the browser keeps its own undo, copy, paste and delete; only the palette, save and the sheet are ours.
       if (inField && !(cmd && ["openPalette", "save"].includes(cmd.id))) return;

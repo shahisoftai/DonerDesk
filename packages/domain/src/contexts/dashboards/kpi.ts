@@ -16,12 +16,15 @@ export interface KpiQuery {
   color?: TileColor | undefined;
   /** A name for the tile; absent = the indicator's code and name. */
   title?: string | undefined;
+  /** What the headline figure is: the latest period's own value (default) or the total to date (the cumulative figure). */
+  measure?: "PERIOD" | "CUMULATIVE" | undefined;
 }
 
 export function validateKpiQuery(q: KpiQuery): string | null {
   if (!q.indicatorId) return "A KPI tile needs an indicator.";
   if (q.color !== undefined && !TILE_COLORS.includes(q.color)) return "That colour is not available.";
   if (q.title !== undefined && q.title.length > 60) return "A tile's name is at most 60 characters.";
+  if (q.measure !== undefined && q.measure !== "PERIOD" && q.measure !== "CUMULATIVE") return "Show this period's value or the total to date.";
   return null;
 }
 
@@ -98,7 +101,7 @@ export function buildKpi(sheet: DataSheet, query: KpiQuery): KpiResult {
   const indicator = sheet.indicators.find((i) => i.id === query.indicatorId);
   if (!indicator) return { ok: false, reason: "This indicator is no longer part of the project." };
   const base = { indicatorIds: [query.indicatorId], includeDraft: query.includeDraft, ...(query.toPeriodId ? { toPeriodId: query.toPeriodId } : {}) };
-  const period = resolveDataset(sheet, { ...base, measure: "PERIOD" });
+  const period = resolveDataset(sheet, { ...base, measure: query.measure === "CUMULATIVE" ? "CUMULATIVE" : "PERIOD" });
   const share = resolveDataset(sheet, { ...base, measure: "PERCENT_OF_TARGET" });
   const points: DatasetPoint[] = period.points.filter((p) => p.indicatorId === query.indicatorId);
   const latest = [...points].reverse().find((p) => p.value !== null) ?? null;
@@ -119,7 +122,7 @@ export function buildKpi(sheet: DataSheet, query: KpiQuery): KpiResult {
       status: kpiStatusOf({ value: latest?.value ?? null, percentOfTarget }),
       spark: points.map((p) => ({ label: p.periodLabel, value: p.value })),
       unverified: latest ? !latest.verified : false,
-      notes: period.notes,
+      notes: query.measure === "CUMULATIVE" && latest ? [`Total to date, to the end of ${latest.periodLabel}.`, ...period.notes] : period.notes,
     },
   };
 }
