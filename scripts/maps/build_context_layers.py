@@ -9,7 +9,7 @@ Writes under apps/web/public/tiles/context/:
   settlements.pmtiles         HOT OpenStreetMap populated places (ODbL; share-alike), layer "settlements" (tippecanoe)
 Downloads go to .context-work/ (kept, so a re-run resumes). Nothing here is project data.
 """
-import json, os, subprocess, sys
+import json, os, subprocess, sys, zipfile
 from pathlib import Path
 
 import numpy as np
@@ -118,6 +118,18 @@ def points(kind: str, datasets: list[str], layer: str) -> None:
             if not fetch(url, src):
                 print(f"{ds}: download failed")
                 continue
+            # Some HDX "GeoJSON" downloads (the HOT exports) are a zip holding the GeoJSON: it is unpacked first.
+            with open(src, "rb") as head:
+                zipped = head.read(2) == b"PK"
+            if zipped:
+                with zipfile.ZipFile(src) as z:
+                    inner = next((n for n in z.namelist() if n.lower().endswith((".geojson", ".json"))), None)
+                    if not inner:
+                        print(f"{ds}: no GeoJSON inside the zip")
+                        continue
+                    unpacked = WORK / f"{ds}.unzipped.geojson"
+                    unpacked.write_bytes(z.read(inner))
+                src = unpacked
             gdf = pyogrio.read_dataframe(src)
             gdf = gdf[gdf.geometry.notna()]
             gdf["geometry"] = gdf.geometry.representative_point()
