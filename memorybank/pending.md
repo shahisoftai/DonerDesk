@@ -4,6 +4,14 @@
 
 Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-22 (audited and host-verified; latest release 20261022115803; see the priority board below).
 
+## Maps hardening (Phase 49) — deployed 2026-11-10; what is left
+- Fetch OCHA boundaries for Indonesia, Thailand, the Philippines and Chile (HDX stalls their zips; `build-ocha-boundaries.mjs --countries IDN,THA,PHL,CHL --levels 1,2,3,4`), then tile and sync.
+- Live checks still owed: dashboard share-link maps, boundary upload, drawing outlines, the no-WebGL table path; run `test:maps`, `test:maps-budget` (`BASELINE=1` writes `imp/phase49-baseline.json`), `test:maps-extras`, `test:tiles`.
+- Install the monthly OCHA release check (`donordesk-cod-check` timer).
+- Not built: canvas analysis block, server-side picture for devices without WebGL, place-name list behind a server route, browser use of `/map-points`, OGC API (declined).
+- Native review of the fr/es/ar map labels.
+- The Visual Studio tabs and "All periods" are still English in Arabic (Phase 48 surfaces).
+
 ## Priority board (audited 2026-10-22)
 
 Each open item was checked against the code, docs or git history where possible. Ticked items are complete, and each tick carries its evidence. Items are named here by title, so the board does not depend on line numbers. Items marked *unverified* need a host or live-site check that this audit could not run.

@@ -400,3 +400,7 @@ memorybank/
 - Deployed over several releases on 2026-10-31 (first `20261031102836`; final release recorded in `pending.md`). Migration `20261102100000_project_setup_proposals` (RLS applied to `ProjectSetupProposal` and `ProjectSetupRun`); no migration after it.
 - Operations note for the superadmin portal (it had been left stopped since 2026-10-27): `SUPERADMIN-PORTAL.md` §15.
 - Not yet done: a real-model quality run (the Anthropic account has no credit), a native review of the French, Spanish and Arabic wording, and the removal of the `ZZ TEST` data left on production.
+
+## 2026-11-10: Phase 49 — maps hardening (Version 3.007)
+- Feature: [`Features/63-Maps-Hardening.md`](Features/63-Maps-Hardening.md). Plan and progress: [`imp/phase49-maps-hardening.md`](imp/phase49-maps-hardening.md). Live check: [`demo/verification-phase49-maps.md`](demo/verification-phase49-maps.md).
+- Deployed 2026-11-10 (`20261110133250` and fixes); migration `20261114090000_tenant_map_settings`; map data under `/opt/donordesk/shared/{geo,tiles}` (see `contabo-ops.md`).

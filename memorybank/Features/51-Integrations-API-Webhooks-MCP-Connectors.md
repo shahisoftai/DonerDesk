@@ -29,3 +29,6 @@ Six events, announced from the audit trail after the change is recorded: indicat
 ## Not built
 
 KoboToolbox form-structure import (mapping is typed by hand); scheduled syncs; per-key limits that survive a restart; public API pagination; the other webhook receivers' examples.
+
+## Phase 49 (2026-11-10): geographic files
+`GET /api/v1/places` (GeoJSON, `?format=csv`) and `format=geojson|csv&indicatorId=` on `/api/v1/projects/:id/place-results` (scope `places:read`); MCP `get_results_by_place` accepts `format: "geojson"`. Checked live with a temporary key (switched off afterwards).

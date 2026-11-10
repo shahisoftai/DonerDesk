@@ -68,3 +68,6 @@ Domain (`map-layer.test.mjs`: layer validation — valid file, wrong type, broke
 - Editing an existing activity's pin from the item page (the PUT route and the picker support it; only the editor UI is missing).
 - Province choropleth (coloring provinces by status); beneficiary counts per site (same resolver, additive).
 - Shapefile conversion (upload GeoJSON today); caching the geo chunks in an offline service worker.
+
+## Phase 49 (2026-11-10)
+Site maps draw on MapLibre only (the ECharts `SiteMapFigure` and `LocationPickerFigure` are removed); a device without WebGL sees the sites table. Clusters take the colour of their worst activity. See [63-Maps-Hardening.md](./63-Maps-Hardening.md).

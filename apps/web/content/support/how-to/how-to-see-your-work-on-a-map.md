@@ -36,3 +36,13 @@ To place it, either retype the location using a nearby town the map suggests, or
 By default the map draws the country and its provinces. An administrator can upload the workspace's own boundaries — districts, sub-districts, project zones — and every map then draws those instead. See [Upload your own map boundaries](./how-to-upload-your-own-map-boundaries.md).
 
 The map works offline once it has loaded, and your locations are never sent anywhere: everything is drawn from data stored inside DonerDesk.
+
+
+## Since November 2026
+
+- **Every country has a map underneath.** Detailed streets are available for Africa, South Asia, the Middle East, Eastern Europe, the Caribbean, the Andes and Southeast Asia; elsewhere a low-detail world map is shown and the map says so.
+- **Open a country down to its districts.** Official boundaries (OCHA, where published) are used, so counties and districts match the codes humanitarian partners use.
+- **Groups of activities show their worst state.** When many pins are grouped into one circle, it takes the colour of the latest-running activity in it.
+- **Context layers** (population, health facilities, settlements) can be switched on: see [Use context layers on a map](./how-to-use-context-layers-on-a-map.md).
+- **Analyse** distances and the people living nearby: see [Analyse places on a map](./how-to-analyse-places-on-a-map.md).
+- A device that cannot draw maps shows the same places as a table.

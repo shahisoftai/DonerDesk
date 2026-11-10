@@ -20,3 +20,6 @@
 ## Not built (the rest of 34.4)
 
 Layer panel (several layers, order, opacity); time slider and small multiples by period (need period-aware place results); upload of KML, GeoJSON or shapefile layers; photo layer; a place panel listing the projects working there; print layout; boundaries for every country and level (the licence check is open); the online-tile opt-in; choropleth below country level.
+
+## Phase 49 (2026-11-10)
+The explorer now runs on one engine (MapLibre), with a world basemap, OCHA boundaries to district level and below, context layers, an Analyse panel and GeoJSON/CSV downloads of the results shown. See [63-Maps-Hardening.md](./63-Maps-Hardening.md).

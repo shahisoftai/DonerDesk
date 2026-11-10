@@ -13,6 +13,17 @@ You can drag the map to move around and zoom in for a closer spot, then click ag
 
 5. Save the activity as usual. The pin saves with it, and the activity appears on the map exactly where you put it.
 
+## Pin a place in your places list
+
+Places in **Settings → Places** can be pinned too, which they need for distances, rings and the nearest-facility list:
+
+1. Find the place in **Your places** and choose **Pin** (or **Change pin**).
+2. Click the map where the place is, or type its latitude and longitude and choose **Set**.
+3. Tick **This place is a facility** if it is a clinic, school, water point or other service site.
+4. Choose **Save**.
+
+If your device cannot draw maps, you type the coordinates instead; they are saved the same way.
+
 ## Good to know
 
 - **The Location text still matters.** If you type a name as well, the map shows the activity under that name at your pinned spot. With no text, it shows as *Pinned place*.

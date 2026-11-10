@@ -18,6 +18,7 @@ what-is-donordesk, getting-started-overview, key-concepts, understanding-project
 Accounts: log-in, create-an-account, change-your-password, set-up-new-organisation, change-organisation-profile, invite-team-members, manage-team-roles-permissions, onboard-team-member.
 Projects: create-a-project, archive-a-project, build-logframe, upload-donor-template, connect-google-drive.
 Reporting: project-walkthrough, run-a-reporting-month, create-a-reporting-period, create-the-closing-report, review-and-accept-activities, fix-or-remove-an-indicator, change-a-reports-template, update-indicator-values, use-the-data-center, use-the-chart-studio, add-a-chart-to-a-report, reopen-an-approved-report, import-from-google-sheets, log-activities, dictate-instead-of-typing, work-offline-and-take-photos, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
+Maps (updated 2026-11-10, Phase 49): see-your-work-on-a-map, pin-a-place-on-the-map (now also pins existing places and marks facilities), upload-your-own-map-boundaries, analyse-places-on-a-map, use-context-layers-on-a-map, download-places-and-map-results, keep-a-map-for-offline-use.
 Navigation: use-the-dashboard, search-projects-and-evidence, use-the-notification-system, use-the-academy-tour, manage-billing-subscription.
 
 ## Troubleshooting

@@ -489,3 +489,10 @@ Recorded as they were left on the host after each release. The operator runbook 
 - **Migrations:** `20261030090000_saved_charts`, `20261030100000_dashboard_templates`, `20261030110000_bookmarks`, `20261030120000_saved_reports` (all additive).
 - **No new environment setting, no new systemd unit, no nginx change.** The new pages sit behind the session like the rest of the app.
 - **Disk:** `/` was 83% full (79 of 96 GB) before this release; old `app.failed-*` trees are the first thing to remove.
+
+## Phase 49 host facts (2026-11-10, maps hardening)
+- **Map data** (outside every release; shipped by `scripts/sync-geo.sh` / `scripts/sync-tiles.sh`): `/opt/donordesk/shared/geo` (~251 MB: OCHA levels 1–4, 88 levels as `<ISO>/ADM<n>.pmtiles` + `.index.json`, `manifest.json`) and `/opt/donordesk/shared/tiles` (~4.2 GB: `basemap-world.pmtiles` z0–6, africa, southasia, mena, easteurope, caribbean, andes, southeastasia; `fonts/`; `context/` population, health facilities, settlements and `population-grid/<ISO>.bin|.json`; `basemap-regions.json`; `offline/` cuts made on demand). Disk ~75% after the sync.
+- **nginx**: `$dd_map_cache` map in `/etc/nginx/conf.d/donordesk-api-limit.conf` (a versioned `?v=` address is cached a year, an unversioned one a day); `nginx.ssl.conf_geo` (manifest `no-cache` + ETag, pmtiles byte ranges) and `nginx.ssl.conf_tiles`. Backups in `/root/nginx-backups/<stamp>/` (never beside the include files).
+- **Offline cuts**: `/opt/donordesk/shared/bin/pmtiles` (go-pmtiles 1.28.0), `PMTILES_BIN` in `/opt/donordesk/shared/api.env` (dated backup beside it).
+- **Database**: migration `20261114090000_tenant_map_settings`; `TenantMapSettings` RLS forced, policy `tenant_isolation`.
+- **Not installed yet**: `infra/systemd/donordesk-cod-check.{service,timer}` (monthly OCHA release check; needs `check-cod-updates.mjs` in `/opt/donordesk/shared/bin/`).

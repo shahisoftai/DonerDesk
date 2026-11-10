@@ -35,3 +35,6 @@ Anyone with a link answers the form without signing in, at `/collect/<token>`. O
 ## Not built
 
 Offline indicator-value entry; offline review; background sync while the app is closed; opening any other page offline; a service worker that works for every page.
+
+## Phase 49 (2026-11-10): map for offline use
+The field app can keep a street map of the project's country (`OfflineMapCard`): size first (`GET /v1/projects/:id/offline-basemap?check=1`), cut on the host with `pmtiles extract`, kept in the Cache API per person, served by the service worker with byte ranges, wiped on sign-out. Public map data only.

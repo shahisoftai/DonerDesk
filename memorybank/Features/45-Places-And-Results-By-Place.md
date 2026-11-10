@@ -34,3 +34,9 @@ Reading places and results: any member who can see the project (`project.view`).
 ## Not built
 
 Place targets; choropleth and map of the roll-up in reports; report tables and infographic blocks that read the roll-up; per-place assignment to a project ("Where we work"); entry-time suggestions in the indicator grid; a bigger bundled gazetteer.
+
+## Phase 49 (2026-11-10)
+- **Pin an existing place** from the Places list (`PlacePinEditor`: map click or typed coordinates, plus the facility flag).
+- **Places as files**: CSV in the import's columns (export → import gives the same places; existing places are skipped, not updated) and GeoJSON; results by place as GeoJSON/CSV (`ExportPlacesHandler`, `ExportPlaceResultsHandler`, audited counts only).
+- **Boundary releases**: `diffBoundaryVersions` / `placesAffectedByDiff`; "Places affected by a boundary update" card. Stored places are never rewritten.
+- **Codes**: places may carry ISO 3166-2 codes (KE-TUR) while boundaries carry OCHA P-codes (KE023); colouring and drill match by unique name in that case. See [63-Maps-Hardening.md](./63-Maps-Hardening.md).
