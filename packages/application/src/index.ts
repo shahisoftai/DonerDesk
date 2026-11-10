@@ -351,6 +351,7 @@ export * from "./services/entry-window-guard.js";
 export * from "./services/auto-review.js";
 export * from "./use-cases/logframe/quick-enter-indicator-value.js";
 export * from "./use-cases/places/place-results.js";
+export * from "./use-cases/places/place-export.js";
 export * from "./ports/portfolio.js";
 export * from "./use-cases/funding/funding-handlers.js";
 export * from "./use-cases/organization/map-layer-handlers.js";

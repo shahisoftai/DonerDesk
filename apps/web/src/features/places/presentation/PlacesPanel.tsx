@@ -243,6 +243,11 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
       <section className="card" aria-labelledby="list-title">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 id="list-title" className="text-sm font-semibold">{C.listTitle}</h2>
+          <p className="text-xs text-slate-600 dark:text-slate-300" title={mt("maps.download.placesHint")}>
+            {mt("maps.download.places")}{" "}
+            <a className="me-2 underline" download href="/api/places/export?format=csv">{mt("maps.download.csv")}</a>
+            <a className="underline" download href="/api/places/export?format=geojson">{mt("maps.download.geojson")}</a>
+          </p>
           {retiredCount > 0 && (
             <label className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
               <input type="checkbox" checked={showRetired} onChange={(e) => setShowRetired(e.target.checked)} />

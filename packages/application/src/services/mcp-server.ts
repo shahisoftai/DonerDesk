@@ -31,8 +31,8 @@ export const MCP_TOOLS: ReadonlyArray<McpTool> = [
   },
   {
     name: "get_results_by_place", scope: "places:read", needsProject: true,
-    description: "Indicator results rolled up by place for one project, at an administrative level (0 country, 1 region, 2 district, 3 sub-district, 4 site). Rates are shown for the place that recorded them and never added up.",
-    inputSchema: { type: "object", properties: { projectId: { type: "string" }, level: { type: "integer", minimum: 0, maximum: 4, description: "Default 1" } }, required: ["projectId"], additionalProperties: false },
+    description: "Indicator results rolled up by place for one project, at an administrative level (0 country, 1 region, 2 district, 3 sub-district, 4 site). Rates are shown for the place that recorded them and never added up. With format \"geojson\" and an indicatorId, answers one indicator as a GeoJSON FeatureCollection (places with a pin).",
+    inputSchema: { type: "object", properties: { projectId: { type: "string" }, level: { type: "integer", minimum: 0, maximum: 4, description: "Default 1" }, format: { type: "string", enum: ["json", "geojson"], description: "Default json" }, indicatorId: { type: "string", description: "Needed for geojson" } }, required: ["projectId"], additionalProperties: false },
   },
 ];
 

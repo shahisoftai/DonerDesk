@@ -92,6 +92,29 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // Files other tools open (Phase 49.5): the places list as GeoJSON or CSV (the CSV is the places import's own columns), and one indicator's
+  // results by place. Only what the person can already read; the handlers audit counts only.
+  const Format = z.enum(["geojson", "csv"]).default("geojson");
+  const send = (reply: { header(k: string, v: string): unknown; send(b: string): unknown }, file: { fileName: string; contentType: string; body: string; unpinned: number }) => {
+    reply.header("content-type", file.contentType);
+    reply.header("content-disposition", `attachment; filename="${file.fileName}"`);
+    reply.header("x-unpinned", String(file.unpinned));
+    reply.header("x-content-type-options", "nosniff");
+    return reply.send(file.body);
+  };
+  app.get("/v1/places/export", async (req, reply) => {
+    const { format } = z.object({ format: Format }).parse(req.query);
+    const r = await req.container.handlers.exportPlaces.handle(ctx(req), format);
+    if (!r.ok) throw r.error;
+    return send(reply, r.value);
+  });
+  app.get("/v1/projects/:projectId/place-results/export", async (req, reply) => {
+    const q = z.object({ format: Format, level: z.coerce.number().int().min(0).max(4).default(1), indicatorId: z.string().min(1), periodId: z.string().min(1).optional() }).parse(req.query);
+    const r = await req.container.handlers.exportPlaceResults.handle(ctx(req), param(req, "projectId"), { level: q.level as never, indicatorId: q.indicatorId, format: q.format, ...(q.periodId ? { periodId: q.periodId } : {}) });
+    if (!r.ok) throw r.error;
+    return send(reply, r.value);
+  });
+
   // Movements between the project's places (Phase 48.12): what moved from one place to another, and how much.
   app.get("/v1/projects/:projectId/place-flows", async (req) => {
     const r = await req.container.handlers.listPlaceFlows.handle(ctx(req), param(req, "projectId"));

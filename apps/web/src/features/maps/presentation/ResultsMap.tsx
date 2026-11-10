@@ -262,6 +262,14 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
           <div data-no-print>
             <button type="button" className="text-sm font-medium underline" aria-expanded={showTable} aria-controls="map-as-table" onClick={() => setShowTable((v) => !v)}>{showTable ? t("maps.table.hide") : t("maps.table.show")}</button>
             {showTable && <div id="map-as-table" className="mt-2"><MapDataTable rows={tableRows} unit={indicator?.unit ?? null} selectedPlaceId={selected?.placeId ?? null} onSelect={(row) => setSelected({ ref: row.ref, placeId: row.placeId, name: row.name })} /></div>}
+            {!staticData && indicator && results && (
+              <p className="mt-2 text-xs text-slate-500">
+                {t("maps.download.label")}{" "}
+                {(["geojson", "csv"] as const).map((format) => (
+                  <a key={format} className="me-2 underline" download href={`/api/projects/${encodeURIComponent(projectId)}/place-results/export?${new URLSearchParams({ format, level: String(results.level), indicatorId: indicator.id, ...(periodId ? { periodId } : {}) })}`}>{t(`maps.download.${format}`)}</a>
+                ))}
+              </p>
+            )}
           </div>
         </div>
         <div className="space-y-3" data-no-print>

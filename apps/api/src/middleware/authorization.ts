@@ -177,6 +177,8 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/places\/seed-boundaries$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/places\/resolve$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/places\/unconfirmed$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/places\/export$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/place-results\/export$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/funding$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/programmes$/, permission: "project.create" },
   { method: "PUT", route: /^\/v1\/programmes\/[^/]+$/, permission: "project.create" },

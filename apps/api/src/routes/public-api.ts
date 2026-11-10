@@ -60,10 +60,27 @@ export async function registerPublicApiRoutes(app: FastifyInstance, admin: Conta
       const projectId = (req.params as { projectId: string }).projectId;
       const a = await run(req, reply as never, { scope: "places:read", projectId });
       if (!a) return;
-      const { level } = z.object({ level: z.coerce.number().int().min(0).max(4).default(1) }).parse(req.query);
-      const r = await a.container.handlers.getProjectPlaceResults.handle(a.ctx as never, projectId, level as never);
+      const q = z.object({ level: z.coerce.number().int().min(0).max(4).default(1), periodId: z.string().min(1).optional(), format: z.enum(["json", "geojson", "csv"]).default("json"), indicatorId: z.string().min(1).optional() }).parse(req.query);
+      // Phase 49.5: one indicator as GeoJSON or CSV for GIS tools (pins from the places list; a gap is empty, never 0).
+      if (q.format !== "json") {
+        if (!q.indicatorId) return reply.status(400).send({ type: "https://donordesk/problems/validation", title: "Name the indicator (indicatorId) for a GeoJSON or CSV answer", status: 400 });
+        const f = await a.container.handlers.exportPlaceResults.handle(a.ctx as never, projectId, { level: q.level as never, indicatorId: q.indicatorId, format: q.format, ...(q.periodId ? { periodId: q.periodId } : {}) });
+        if (!f.ok) throw f.error;
+        return (reply as unknown as { header(k: string, v: string): { send(b: string): unknown } }).header("content-type", f.value.contentType).send(f.value.body);
+      }
+      const r = await a.container.handlers.getProjectPlaceResults.handle(a.ctx as never, projectId, q.level as never, q.periodId ? { periodId: q.periodId } : {});
       if (!r.ok) throw r.error;
       return r.value;
+    });
+
+    // Phase 49.5: the organisation's places (names, levels, codes and pins; no figures) as GeoJSON, or CSV with ?format=csv.
+    api.get("/api/v1/places", async (req, reply) => {
+      const a = await run(req, reply as never, { scope: "places:read" });
+      if (!a) return;
+      const { format } = z.object({ format: z.enum(["geojson", "csv"]).default("geojson") }).parse(req.query);
+      const f = await a.container.handlers.exportPlaces.handle(a.ctx as never, format);
+      if (!f.ok) throw f.error;
+      return (reply as unknown as { header(k: string, v: string): { send(b: string): unknown } }).header("content-type", f.value.contentType).send(f.value.body);
     });
 
     // The same read-only API as tools for an AI assistant (Model Context Protocol, JSON-RPC over POST). Same keys, scopes and project limits.
@@ -102,6 +119,11 @@ export async function registerPublicApiRoutes(app: FastifyInstance, admin: Conta
             };
           }
           const level = Number.isInteger(args.level) && (args.level as number) >= 0 && (args.level as number) <= 4 ? (args.level as number) : 1;
+          // Phase 49.5: `format: "geojson"` with an `indicatorId` answers a FeatureCollection a GIS tool can open.
+          if (args.format === "geojson" && typeof args.indicatorId === "string") {
+            const f = await container.handlers.exportPlaceResults.handle(ctx as never, projectId!, { level: level as never, indicatorId: args.indicatorId, format: "geojson" });
+            return f.ok ? { ok: true, data: JSON.parse(f.value.body) } : { ok: false, message: "That indicator has no results by place." };
+          }
           const r = await container.handlers.getProjectPlaceResults.handle(ctx as never, projectId!, level as never);
           return r.ok ? { ok: true, data: r.value } : { ok: false, message: "That project was not found." };
         },
