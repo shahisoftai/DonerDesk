@@ -45,3 +45,13 @@ test("drill: a crumb finds its unit by P-code, else by a unique name (another co
   assert.equal(unitForCrumb(units, { ref: "KE-TUR", name: "Turkana County" })?.ref, "KE023");
   assert.equal(unitForCrumb(units, { ref: "C9", name: "Central" }), undefined);
 });
+
+test("a results map opens on the country its results sit in, even when the organisation works in several", async () => {
+  const { homeCountry } = await import("../../src/features/maps/domain/drill/home-country.ts");
+  const places = ["Kenya", "Nepal", "Ethiopia"].map((name) => ({ name, adminLevel: 0, archived: false }));
+  const rows = (...paths: string[]) => ({ indicators: [{ rollup: { rows: paths.map((path) => ({ path })) } }] });
+  assert.equal(homeCountry(places, rows("Turkana County › Kenya", "Wajir County › Kenya")), "Kenya");
+  assert.equal(homeCountry(places, rows("Turkana County › Kenya", "Karnali › Nepal")), null);
+  assert.equal(homeCountry(places, null), null);
+  assert.equal(homeCountry([{ name: "Kenya", adminLevel: 0, archived: false }], null), "Kenya");
+});

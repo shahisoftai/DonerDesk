@@ -35,6 +35,7 @@ import { contextLayers, offeredContext, type ContextToggle } from "../domain/sce
 import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
 import { firstIndicator } from "./results-loader";
+import { homeCountry } from "../domain/drill/home-country";
 
 const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], regions: [], unmapped: [], bands: [], isRate: false };
 const ADDRESS_KEY = "map";
@@ -82,8 +83,8 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
   useEffect(() => {
     const fromAddress = addressed ? decodePath(new URLSearchParams(window.location.search).get(ADDRESS_KEY)) : [];
     if (fromAddress.length > 0) { setPath(fromAddress.map((c) => ({ level: c.level, ref: c.ref, name: c.ref.replace(/^name:/, "").replace(/_/g, " ") }))); return; }
-    const countries = places.filter((p) => !p.archived && p.adminLevel === 0);
-    if (countries.length === 1) setPath([{ level: 0, name: countries[0]!.name, ref: nameRef(countries[0]!.name) }]);
+    const home = homeCountry(places, initial);
+    if (home) setPath([{ level: 0, name: home, ref: nameRef(home) }]);
     // Once, on opening.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
