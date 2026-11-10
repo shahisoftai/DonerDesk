@@ -7,17 +7,20 @@ import { ShellTabs } from "@/features/visual-studio/presentation/ShellTabs";
 import { ProjectFilter } from "@/features/visual-studio/presentation/ProjectFilter";
 
 export const dynamic = "force-dynamic";
+const MAX_PROJECTS_SCANNED = 25;
 
 /** Every saved chart across the projects the person can see, with a way into the Chart Studio of each (the Studio itself is unchanged). */
 export default async function VisualChartsPage({ searchParams }: { searchParams: Promise<{ project?: string }> }) {
   const { project } = await searchParams;
   const ctx = await requireSession();
-  const [projects, charts] = await Promise.all([
-    gatewayRequest("/v1/projects", ProjectsResponseSchema, ctx.token),
-    gatewayRequest(`/v1/charts${project ? `?projectId=${encodeURIComponent(project)}` : ""}`, SavedChartListSchema, ctx.token),
-  ]);
-  if (!charts.ok) return <InlineError title={charts.error.message} referenceId={charts.error.referenceId} />;
+  const projects = await gatewayRequest("/v1/projects", ProjectsResponseSchema, ctx.token);
   const items = projects.ok ? projects.value.items : [];
+  // The api lists charts one project at a time, so "All projects" asks for each (the first MAX_PROJECTS_SCANNED).
+  const scanned = project ? items.filter((p) => p.id === project) : items.slice(0, MAX_PROJECTS_SCANNED);
+  const lists = await Promise.all(scanned.map((p) => gatewayRequest(`/v1/charts?projectId=${encodeURIComponent(p.id)}`, SavedChartListSchema, ctx.token)));
+  const failed = lists.find((l) => !l.ok);
+  if (failed && !failed.ok) return <InlineError title={failed.error.message} referenceId={failed.error.referenceId} />;
+  const charts = { value: { charts: lists.flatMap((l) => (l.ok ? l.value.charts : [])) } };
   const names = new Map(items.map((p) => [p.id, p.title]));
   return (
     <div className="animate-fade-in space-y-4">

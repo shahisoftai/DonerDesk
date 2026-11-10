@@ -8,6 +8,7 @@ import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import type { ChartDrawing } from "@/lib/server/schemas-dashboards";
 import { rendererFor } from "@/features/dashboards/presentation/widgets/registry";
 import { blockLabelKey } from "../domain/canvas-copy";
+import { themeChartOption } from "../domain/theme-chart";
 import { screenRendererFor } from "./screen-registry";
 import { NothingToShow, screenText } from "./screens/screen-text";
 
@@ -47,9 +48,11 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
   let body: React.ReactNode;
   let title = heading || label;
   if (drawing && widget) {
-    const renderer = rendererFor(drawing);
-    title = renderer.title({ widget, drawing }) ?? label;
-    body = renderer.render({ widget, drawing, onPick: editing ? undefined : onPick });
+    // The page's look reaches the chart on screen as it does in a file.
+    const themed: ChartDrawing = drawing.chart ? { ...drawing, chart: { ...drawing.chart, option: themeChartOption(drawing.chart.option, frame.theme) } } : drawing;
+    const renderer = rendererFor(themed);
+    title = renderer.title({ widget, drawing: themed }) ?? label;
+    body = renderer.render({ widget, drawing: themed, onPick: editing ? undefined : onPick });
   } else if (isDashboardKind(block.kind)) {
     // A chart-style block is drawn from the records by the server: a block just added or changed has no figures until the canvas is saved.
     body = <NothingToShow text={screenText(frame)} reason={editing ? "Reading the figures…" : "Nothing to show yet."} authoring />;
