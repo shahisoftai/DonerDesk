@@ -15,16 +15,18 @@ export interface PopulationGrid {
 }
 
 export type PopulationAnswer =
-  | { ok: true; people: number; cellsCounted: number; cellsWithoutData: number; cellKm: number; source: string; year: string }
+  | { ok: true; people: number; cellsCounted: number; cellsWithoutData: number; cellKm: number; source: string; year: string; /** Part of a ring lies outside this grid (a border): only the part inside is counted. */ partial: boolean }
   | { ok: false; reason: RingProblem | "NO_GRID" | "OUTSIDE_GRID" };
 
 export function populationWithin(grid: PopulationGrid | null, rings: ReadonlyArray<{ centre: LngLat; km: number }>): PopulationAnswer {
   if (!grid) return { ok: false, reason: "NO_GRID" };
   for (const r of rings) { const p = ringProblem(r.centre, r.km); if (p) return { ok: false, reason: p }; }
   const seen = new Set<number>();
-  let people = 0, counted = 0, missing = 0, touched = false;
+  let people = 0, counted = 0, missing = 0, touched = false, partial = false;
+  const east = grid.west + grid.cols * grid.cellDeg, south = grid.north - grid.rows * grid.cellDeg;
   for (const ring of rings) {
     const [w, s, e, n] = ringBox(ring.centre, ring.km);
+    if (w < grid.west || e > east || s < south || n > grid.north) partial = true;
     const c0 = Math.max(0, Math.floor((w - grid.west) / grid.cellDeg)), c1 = Math.min(grid.cols - 1, Math.floor((e - grid.west) / grid.cellDeg));
     const r0 = Math.max(0, Math.floor((grid.north - n) / grid.cellDeg)), r1 = Math.min(grid.rows - 1, Math.floor((grid.north - s) / grid.cellDeg));
     for (let row = r0; row <= r1; row++) {
@@ -42,7 +44,7 @@ export function populationWithin(grid: PopulationGrid | null, rings: ReadonlyArr
   }
   if (!touched) return { ok: false, reason: "OUTSIDE_GRID" };
   const cellKm = Math.round(grid.cellDeg * 111.32 * 10) / 10;
-  return { ok: true, people: Math.round(people), cellsCounted: counted, cellsWithoutData: missing, cellKm, source: grid.source, year: grid.year };
+  return { ok: true, people: Math.round(people), cellsCounted: counted, cellsWithoutData: missing, cellKm, source: grid.source, year: grid.year, partial };
 }
 
 /**

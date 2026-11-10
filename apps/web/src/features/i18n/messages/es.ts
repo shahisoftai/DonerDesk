@@ -616,6 +616,7 @@ export const es: Record<MessageKey, string> = {
   "maps.printTitle": "Resultados por lugar",
   "maps.printLine": "{indicator} · {where} · impreso el {date}. Elaborado con las cifras registradas en DonorDesk; un lugar sin cifra aparece en gris, no en cero.",
   "maps.noBasemap": "Las calles y el relieve aún no están disponibles para esta zona; los límites se dibujan sobre un fondo liso.",
+  "maps.analysis.partial": "Parte de los círculos cruza una frontera: solo se cuentan las personas del país cuyas cifras están disponibles.",
   "maps.places.addPin": "Fijar",
   "maps.places.changePin": "Cambiar pin",
   "maps.places.pinFor": "Pin de {name}",

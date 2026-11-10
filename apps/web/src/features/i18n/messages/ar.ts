@@ -632,6 +632,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.printTitle": "النتائج حسب المكان",
   "maps.printLine": "{indicator} · {where} · طُبعت في {date}. مرسومة من الأرقام المسجلة في DonorDesk؛ المكان بلا رقم رمادي لا صفر.",
   "maps.noBasemap": "الشوارع والتضاريس غير متاحة لهذه المنطقة بعد؛ تُرسم الحدود على خلفية سادة.",
+  "maps.analysis.partial": "يعبر جزء من الدوائر حدوداً: لا يُحتسب إلا السكان داخل البلد الذي تتوفر أرقامه.",
   "maps.places.addPin": "تثبيت دبوس",
   "maps.places.changePin": "تغيير الدبوس",
   "maps.places.pinFor": "دبوس {name}",

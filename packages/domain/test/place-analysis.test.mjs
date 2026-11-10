@@ -45,6 +45,9 @@ test("population: cells whose centre is in the ring; two rings count a cell once
   assert.equal(twice.people, one.people);
   assert.equal(one.cellsWithoutData, 1);
   assert.equal(one.source, "WorldPop");
+  assert.equal(one.partial, false);
+  const edge = populationWithin(grid, [{ centre: { lng: 30.005, lat: 10.5 }, km: 5 }]);
+  assert.ok(edge.ok && edge.partial, "a ring past the grid's edge is counted for the part inside, and says so");
 });
 
 test("population: no grid, or a ring outside it, says so", () => {

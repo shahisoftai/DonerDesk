@@ -53,7 +53,7 @@ export function AnalysisPanel({ projectId, places, siteIds, onRings }: { project
       </div>
       {shown && (
         <div className="space-y-2">
-          {population?.ok === true && <p>{t("maps.analysis.population", { people: formatFullNumber(population.people, lang), km: String(km), cell: String(population.cellKm), source: population.source, year: population.year })}</p>}
+          {population?.ok === true && <p>{t("maps.analysis.population", { people: formatFullNumber(population.people, lang), km: String(km), cell: String(population.cellKm), source: population.source, year: population.year })}{population.partial ? ` ${t("maps.analysis.partial")}` : ""}</p>}
           {population?.ok === false && <p className="text-xs text-slate-500">{t(population.reason === "NO_GRID" || population.reason === "OUTSIDE_GRID" ? "maps.analysis.noPopulation" : "maps.analysis.populationFailed")}</p>}
           {inside?.ok && <p>{t("maps.analysis.inside", { count: String(inside.inside.length), km: String(km) })}{inside.inside.length > 0 && `: ${inside.inside.slice(0, 12).map((x) => x.name).join(", ")}${inside.inside.length > 12 ? "…" : ""}`}</p>}
           <div>

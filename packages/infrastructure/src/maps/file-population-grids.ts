@@ -15,11 +15,18 @@ export class FilePopulationGrids implements IPopulationGrids {
 
   async covering(box: readonly [number, number, number, number]): Promise<PopulationGrid | null> {
     if (!existsSync(this.dir)) return null;
+    // The grid that shares the most area with the rings: rings near a border reach past one country's grid, and the part inside is still
+    // worth counting (the answer says when it is partial).
+    let best: { key: string; h: Header; overlap: number } | null = null;
     for (const file of readdirSync(this.dir).filter((f) => f.endsWith(".json")).sort()) {
       const h = JSON.parse(readFileSync(join(this.dir, file), "utf8")) as Header;
       const east = h.west + h.cols * h.cellDeg, south = h.north - h.rows * h.cellDeg;
-      if (box[0] < h.west || box[2] > east || box[1] < south || box[3] > h.north) continue;
-      const key = file.replace(/\.json$/, "");
+      const w = Math.min(box[2], east) - Math.max(box[0], h.west), t = Math.min(box[3], h.north) - Math.max(box[1], south);
+      const overlap = w > 0 && t > 0 ? w * t : 0;
+      if (overlap > (best?.overlap ?? 0)) best = { key: file.replace(/\.json$/, ""), h, overlap };
+    }
+    if (best) {
+      const { key, h } = best;
       let grid = this.cache.get(key);
       if (!grid) {
         const buf = readFileSync(join(this.dir, `${key}.bin`));

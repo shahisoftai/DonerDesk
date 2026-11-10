@@ -618,6 +618,7 @@ export const en = {
   "maps.printTitle": "Results by place",
   "maps.printLine": "{indicator} · {where} · printed {date}. Drawn from the figures recorded in DonorDesk; a place with no figure is grey, not zero.",
   "maps.noBasemap": "Streets and terrain are not available for this area yet; boundaries are drawn on a plain ground.",
+  "maps.analysis.partial": "Part of the rings lies across a border: only people inside the country whose population figures are held are counted.",
   "maps.places.addPin": "Pin",
   "maps.places.changePin": "Change pin",
   "maps.places.pinFor": "Pin for {name}",
