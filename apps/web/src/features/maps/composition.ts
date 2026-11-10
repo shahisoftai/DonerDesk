@@ -9,6 +9,8 @@ import { loadBoundaryLayerFile, loadBoundaryLayerList } from "@/lib/client/tenan
 import { findCountry } from "./domain/boundary-sources";
 import { ProtomapsBasemap } from "./adapters/basemap/protomaps-basemap";
 import { PmtilesPrefetch } from "./adapters/basemap/prefetch";
+import { currentOfflineMap } from "../offline/infrastructure/offline-maps";
+import { BASEMAP_REGIONS, WORLD_BASEMAP } from "./domain/basemap/regions";
 import type { MapPrefetch } from "./ports/map-prefetch";
 import { FilesBoundarySource } from "./adapters/boundaries/files-boundary-source";
 import { TenantLayerBoundarySource } from "./adapters/boundaries/tenant-layer-boundary-source";
@@ -48,7 +50,7 @@ function webGl(): boolean {
 }
 
 export function createMapServices(): MapServices {
-  const basemap = new ProtomapsBasemap("/tiles");
+  const basemap = new ProtomapsBasemap("/tiles", undefined, BASEMAP_REGIONS, WORLD_BASEMAP, currentOfflineMap);
   const origin = () => (typeof location === "undefined" ? "" : location.origin);
   // The organisation's own boundary files first; the shipped ones for everything else.
   const boundaries = new TenantLayerBoundarySource(

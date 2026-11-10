@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { createReadStream } from "node:fs";
 import { z } from "zod";
 import { AddPlaceFlowSchema, CreatePlaceSchema, ImportPlacesSchema, SeedPlacesFromBoundariesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, SetPlaceGeometrySchema, UpdatePlaceSchema } from "@donordesk/contracts";
 
@@ -113,6 +114,26 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.exportPlaceResults.handle(ctx(req), param(req, "projectId"), { level: q.level as never, indicatorId: q.indicatorId, format: q.format, ...(q.periodId ? { periodId: q.periodId } : {}) });
     if (!r.ok) throw r.error;
     return send(reply, r.value);
+  });
+
+  // The project's planned work as map points, grouped into counts per cell when there are many (Phase 49.4).
+  app.get("/v1/projects/:projectId/map-points", async (req) => {
+    const q = z.object({ bbox: z.string().regex(/^-?[\d.]+(,-?[\d.]+){3}$/), zoom: z.coerce.number().min(0).max(22) }).parse(req.query);
+    const r = await req.container.handlers.getProjectMapPoints.handle(ctx(req), param(req, "projectId"), { bbox: q.bbox.split(",").map(Number), zoom: q.zoom });
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // A piece of the street map a phone keeps for working without a signal (Phase 49.4). `?check=1` answers the size first; then the file.
+  app.get("/v1/projects/:projectId/offline-basemap", async (req, reply) => {
+    const q = z.object({ bbox: z.string().regex(/^-?[\d.]+(,-?[\d.]+){3}$/), check: z.coerce.boolean().default(false) }).parse(req.query);
+    const r = await req.container.handlers.getOfflineBasemap.handle(ctx(req), q.bbox.split(",").map(Number));
+    if (!r.ok) throw r.error;
+    if (q.check) return { bytes: r.value.bytes, maxzoom: r.value.maxzoom };
+    reply.header("content-type", "application/octet-stream");
+    reply.header("content-length", String(r.value.bytes));
+    reply.header("cache-control", "private, no-store");
+    return reply.send(createReadStream(r.value.path));
   });
 
   // Movements between the project's places (Phase 48.12): what moved from one place to another, and how much.

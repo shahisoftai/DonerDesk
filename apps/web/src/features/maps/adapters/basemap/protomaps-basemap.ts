@@ -31,18 +31,31 @@ export class ProtomapsBasemap implements BasemapSource {
   private readonly origin: () => string;
   private readonly regions: readonly BasemapRegion[];
   private readonly world: BasemapRegion | null;
+  private readonly offline: () => { url: string; bbox: Bounds } | null;
 
-  constructor(base = "/tiles", origin: () => string = () => (typeof location === "undefined" ? "" : location.origin), regions: readonly BasemapRegion[] = [], world: BasemapRegion | null = WORLD_BASEMAP) {
+  /** `offline`: the street map kept on this device (Phase 49.4), drawn instead of the host's files when there is no network. */
+  constructor(base = "/tiles", origin: () => string = () => (typeof location === "undefined" ? "" : location.origin), regions: readonly BasemapRegion[] = [], world: BasemapRegion | null = WORLD_BASEMAP, offline: () => { url: string; bbox: Bounds } | null = () => null) {
     this.base = base;
     this.origin = origin;
     this.regions = regions;
     this.world = world;
+    this.offline = offline;
+  }
+
+  private keptFor(view: Bounds | null): string | null {
+    if (typeof navigator === "undefined" || navigator.onLine !== false) return null;
+    const kept = this.offline();
+    if (!kept) return null;
+    const b = kept.bbox;
+    const inside = !view || (view[0] >= b[0] - 1 && view[1] >= b[1] - 1 && view[2] <= b[2] + 1 && view[3] <= b[3] + 1);
+    return inside ? `${this.origin()}${kept.url}` : null;
   }
 
   styleFor(mode: BasemapMode, view: Bounds | null, language?: string): BasemapStyle {
     const lang = LABEL_LANGUAGES.includes(language ?? "") ? (language as string) : "en";
     const tone = mode === "dark" ? "dark" : "light";
-    const region = mode === "plain" ? null : basemapFileFor(view, this.regions.length > 0 ? this.regions : BASEMAP_REGIONS, this.world);
+    const kept = mode === "plain" ? null : this.keptFor(view);
+    const region = mode === "plain" ? null : kept ? { ...(this.world ?? WORLD_BASEMAP), id: "offline", maxzoom: 14 } : basemapFileFor(view, this.regions.length > 0 ? this.regions : BASEMAP_REGIONS, this.world);
     const glyphs = `${this.origin()}${this.base}/fonts/{fontstack}/{range}.pbf`;
     if (!region) {
       return {
@@ -62,7 +75,7 @@ export class ProtomapsBasemap implements BasemapSource {
       style: {
         version: 8,
         glyphs,
-        sources: { protomaps: { type: "vector", url: `pmtiles://${fileUrl(this.origin(), this.base, region)}`, attribution: ATTRIBUTION, maxzoom: region.maxzoom } },
+        sources: { protomaps: { type: "vector", url: `pmtiles://${kept ?? fileUrl(this.origin(), this.base, region)}`, attribution: ATTRIBUTION, maxzoom: region.maxzoom } },
         layers: drawn,
       },
     };

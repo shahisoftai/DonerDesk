@@ -21,12 +21,12 @@ const PackSchema = z.object({
 });
 
 /** The projects whose forms the signed-in person can fill, for the "download for offline" list. */
-export async function listFieldProjectsAction(): Promise<Result<{ userId: string; userName: string; projects: Array<{ id: string; name: string }> }, AppError>> {
+export async function listFieldProjectsAction(): Promise<Result<{ userId: string; userName: string; projects: Array<{ id: string; name: string; country: string }> }, AppError>> {
   const context = await requireSession();
   const payload = decodeSessionPayload(context.token);
   const result = await gatewayRequest("/v1/projects", ProjectsResponseSchema, context.token);
   if (!result.ok) return result;
-  return { ok: true, value: { userId: payload?.sub ?? "", userName: payload?.name ?? "", projects: result.value.items.map((p) => ({ id: p.id, name: p.title })) } };
+  return { ok: true, value: { userId: payload?.sub ?? "", userName: payload?.name ?? "", projects: result.value.items.map((p) => ({ id: p.id, name: p.title, country: p.country })) } };
 }
 
 /** Makes the pack for one project: its open forms and the places list. Nothing else leaves the server. */

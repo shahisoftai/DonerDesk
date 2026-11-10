@@ -2,6 +2,7 @@
 
 import { useRef, type ReactNode } from "react";
 import { wipeOfflinePacks } from "../infrastructure/indexeddb-pack-store";
+import { wipeOfflineMaps } from "../infrastructure/offline-maps";
 
 /** Signing out removes the offline packs from this phone first, so the next person to use it finds none of the last person's. */
 export function SignOutForm({ action, children, className }: { action: () => Promise<void>; children: ReactNode; className?: string }) {
@@ -15,6 +16,7 @@ export function SignOutForm({ action, children, className }: { action: () => Pro
         e.preventDefault();
         const form = e.currentTarget;
         await wipeOfflinePacks();
+        await wipeOfflineMaps().catch(() => undefined);
         wiped.current = true;
         form.requestSubmit();
       }}

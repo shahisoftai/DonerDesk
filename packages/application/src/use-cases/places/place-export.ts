@@ -34,7 +34,7 @@ export class ExportPlaceResultsHandler {
     if (!r.ok) return r;
     if (!places.ok) return places;
     const indicator = r.value.indicators.find((i) => i.id === input.indicatorId);
-    if (!indicator) return err(DomainError.notFound("That indicator has no results by place in this project"));
+    if (!indicator) return err(DomainError.notFound("Indicator", input.indicatorId));
     const byId = new Map(places.value.places.map((p) => [p.id, p]));
     const period = input.periodId ? r.value.periods.find((p) => p.id === input.periodId)?.label ?? "" : "Life of the project";
     const rows: PlaceResultRow[] = indicator.rollup.rows.map((row) => {

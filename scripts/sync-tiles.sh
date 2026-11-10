@@ -32,6 +32,8 @@ FLAGS=(-a --no-owner --no-group --exclude='*.partial' --exclude='*.tmp')
 [[ "${DRY_RUN:-0}" == "1" ]] || ssh ${SSH_OPTS} contabo "mkdir -p ${DEST}"
 # The fonts first (small), then the basemap files: a reader never meets a style whose fonts are not there. A file is written under a temporary
 # name and renamed when whole (rsync's default), so nginx never serves half a basemap.
+# The regions table the API reads to cut offline maps (Phase 49.4).
+rsync "${FLAGS[@]}" -e "ssh ${SSH_OPTS}" "${ROOT}/scripts/maps/basemap-regions.json" "contabo:${DEST}basemap-regions.json"
 rsync "${FLAGS[@]}" --delete --include='fonts/***' --exclude='*' -e "ssh ${SSH_OPTS}" "${SRC}" "contabo:${DEST}"
 # Only the files basemap-regions.json keeps (the world file always).
 mapfile -t KEEP < <(node -e 'const c=require(process.argv[1]);for(const r of [c.world,...c.regions]) if(r.keep!==false) console.log(r.file)' "${ROOT}/scripts/maps/basemap-regions.json")

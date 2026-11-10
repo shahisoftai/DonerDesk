@@ -19,6 +19,7 @@ import { WaitingList } from "@/features/record/presentation/WaitingList";
 import type { RecordKind } from "@/features/record/domain/record-kinds";
 import type { Capability } from "@/lib/shared/capabilities";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { OfflineMapCard } from "./OfflineMapCard";
 import { LocaleSwitcher } from "@/features/i18n/presentation/LocaleSwitcher";
 
 const IDENTITY_KEY = "donordesk-field-user";
@@ -67,7 +68,7 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
   const outbox = useOutbox();
   const [packs, setPacks] = useState<OfflinePack[] | null>(null);
   const [active, setActive] = useState<{ pack: OfflinePack; formId: string } | null>(null);
-  const [projects, setProjects] = useState<Array<{ id: string; name: string }> | null>(null);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; country: string }> | null>(null);
   const [projectId, setProjectId] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -157,6 +158,7 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
               <>
                 <Field label={t("field.project")}><Select value={projectId} onChange={(e) => setProjectId(e.target.value)}><option value="">{t("field.chooseProject")}</option>{projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</Select></Field>
                 <Button onClick={() => void download()} pending={busy} disabled={!projectId || busy}>{t("field.downloadButton")}</Button>
+                {(() => { const chosen = projects.find((p) => p.id === projectId); return chosen?.country ? <OfflineMapCard userId={userId} projectId={chosen.id} country={chosen.country} /> : null; })()}
               </>
             )}
             {message && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">{message}</p>}

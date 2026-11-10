@@ -4,7 +4,7 @@
  * storage), so keeping it is safe. It never stores signed-in pages, API responses or anything under /v1, /api or /internal,
  * so no project data is kept by the worker; the offline packs live in the page's own IndexedDB and are removed on sign-out.
  */
-const VERSION = "donordesk-shell-v3";
+const VERSION = "donordesk-shell-v4";
 const FIELD_PAGE = "/field";
 const SHELL = ["/offline.html"];
 const NEVER_CACHE = ["/api", "/v1", "/internal"];
@@ -16,7 +16,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== VERSION).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => key !== VERSION && !key.startsWith("donordesk-offline-maps-")).map((key) => caches.delete(key))))
       .then(() => self.clients.claim()),
   );
 });
@@ -50,6 +50,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Phase 49.4: maps kept for offline work. The kept street map is served from the device (answering the byte ranges the map reads); the
+  // country outlines and label fonts are fetched fresh and fall back to a kept copy only with no network. Public map data only.
+  if (url.pathname.startsWith("/offline-maps/")) {
+    event.respondWith(fromKeptMaps(request));
+    return;
+  }
+  if (url.pathname.startsWith("/geo/ADM1/") || url.pathname.startsWith("/tiles/fonts/")) {
+    event.respondWith(fetch(request).catch(async () => (await keptMatch(request)) || Response.error()));
+    return;
+  }
+
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/brand/") || url.pathname.startsWith("/icons/")) {
     event.respondWith(
       caches.open(VERSION).then(async (cache) => {
@@ -62,3 +73,27 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
+
+async function keptMatch(request) {
+  const names = (await caches.keys()).filter((k) => k.startsWith("donordesk-offline-maps-"));
+  for (const name of names) {
+    const hit = await (await caches.open(name)).match(request, { ignoreSearch: true });
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+/** A kept map file, cut to the byte range asked for (a map reads its file in small ranges). */
+async function fromKeptMaps(request) {
+  const hit = await keptMatch(new Request(new URL(request.url).pathname));
+  if (!hit) return new Response("Not kept on this device", { status: 404 });
+  const range = /bytes=(\d*)-(\d*)/.exec(request.headers.get("range") || "");
+  if (!range) return hit;
+  const body = await hit.arrayBuffer();
+  const start = Number(range[1] || 0);
+  const end = Math.min(body.byteLength - 1, range[2] ? Number(range[2]) : body.byteLength - 1);
+  return new Response(body.slice(start, end + 1), {
+    status: 206,
+    headers: { "content-type": "application/octet-stream", "content-range": `bytes ${start}-${end}/${body.byteLength}`, "content-length": String(end - start + 1), "accept-ranges": "bytes" },
+  });
+}
