@@ -69,7 +69,13 @@ export class MapLibreRenderer implements MapRenderer {
     this.map.once("idle", () => frame.setAttribute("data-map-ready", "true"));
     const ground = this.basemap.styleFor(scene.basemap, scene.bounds, scene.lang);
     this.note = ground.note;
-    if (ground.key !== this.groundKey) {
+    if (ground.key !== this.groundKey && (this.ready || this.map.isStyleLoaded())) {
+      // Phase 49.1: the data is already on screen; slide the new ground in beneath it instead of reloading the whole style (which dropped our
+      // layers and drew nothing until the basemap's own sources answered).
+      this.groundKey = ground.key;
+      this.swapGround(ground.style as ML.StyleSpecification);
+      this.paint(true);
+    } else if (ground.key !== this.groundKey) {
       this.groundKey = ground.key;
       this.ready = false;
       this.built = null; // setStyle drops our layers; they are put back on style.load
@@ -103,6 +109,17 @@ export class MapLibreRenderer implements MapRenderer {
     this.built = next;
     const key = JSON.stringify(scene.bounds);
     if (scene.bounds && key !== this.fitKey) { this.fitKey = key; this.fit(scene.bounds); }
+  }
+
+  /** Replaces the basemap's sources and layers, leaving ours where they are, and puts the new ground beneath them. */
+  private swapGround(style: ML.StyleSpecification): void {
+    const ourSources = new Set<string>(Object.values(SOURCES));
+    const ours = (id: string): boolean => id.startsWith("dd-") && id !== "dd-ground";
+    for (const layer of this.map.getStyle().layers ?? []) if (!ours(layer.id)) this.map.removeLayer(layer.id);
+    for (const id of Object.keys(this.map.getStyle().sources ?? {})) if (!ourSources.has(id)) this.map.removeSource(id);
+    for (const [id, source] of Object.entries(style.sources ?? {})) this.map.addSource(id, source);
+    const below = (this.map.getStyle().layers ?? [])[0]?.id;
+    for (const layer of style.layers ?? []) this.map.addLayer(layer, below);
   }
 
   /** New data: put every one of our sources and layers back. */

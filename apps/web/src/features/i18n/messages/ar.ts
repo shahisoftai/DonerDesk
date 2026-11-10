@@ -623,6 +623,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.printTitle": "النتائج حسب المكان",
   "maps.printLine": "{indicator} · {where} · طُبعت في {date}. مرسومة من الأرقام المسجلة في DonorDesk؛ المكان بلا رقم رمادي لا صفر.",
   "maps.noBasemap": "الشوارع والتضاريس غير متاحة لهذه المنطقة بعد؛ تُرسم الحدود على خلفية سادة.",
+  "maps.lowDetailBasemap": "تتوفر لهذه المنطقة خريطة قليلة التفاصيل فقط؛ تظهر المدن والطرق عند إضافة خريطة مفصّلة.",
   "maps.shared.fixed": "عرض ثابت لهذا الرابط؛ الأرقام كما كانت عند فتح الصفحة.",
   "maps.shared.live": "فتح مكان وتحريك شريط الزمن يقرآن الأرقام المسجلة كما هي الآن.",
   "maps.shared.failed": "تعذّرت قراءة هذه الخريطة الآن.",

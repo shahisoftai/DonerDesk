@@ -7,6 +7,7 @@ import { useColorMode } from "../../design/presentation/use-color-mode";
 import { buildSiteScene } from "../domain/scene/build-site-scene";
 import { MapLibreCanvas } from "./MapLibreCanvas";
 import { useMapServices } from "./MapServices";
+import { preloadCountryOutlines } from "./preload-country";
 import { useSiteContext } from "./useSiteContext";
 import { useMapText } from "./useMapText";
 
@@ -26,6 +27,7 @@ export function SitesMap({ points, country, caption, customLayerUrl, label, onFa
   const services = useMapServices();
   const { lang } = useMapText();
   const dark = useColorMode() === "dark";
+  preloadCountryOutlines(country);
   const context = useSiteContext(country, customLayerUrl, services.boundaries);
   const scene = useMemo(() => buildSiteScene({ points, context, basemap: dark ? "dark" : "light", lang, label }), [points, context, dark, lang, label]);
   return (

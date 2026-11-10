@@ -607,6 +607,7 @@ export const es: Record<MessageKey, string> = {
   "maps.printTitle": "Resultados por lugar",
   "maps.printLine": "{indicator} · {where} · impreso el {date}. Elaborado con las cifras registradas en DonorDesk; un lugar sin cifra aparece en gris, no en cero.",
   "maps.noBasemap": "Las calles y el relieve aún no están disponibles para esta zona; los límites se dibujan sobre un fondo liso.",
+  "maps.lowDetailBasemap": "Solo hay un mapa poco detallado para esta zona; las ciudades y carreteras aparecerán cuando se añada un mapa detallado.",
   "maps.shared.fixed": "Vista fija para este enlace; las cifras son las del momento en que se abrió la página.",
   "maps.shared.live": "Abrir un lugar y mover el control de tiempo leen las cifras registradas tal como están ahora.",
   "maps.shared.failed": "No se pudo leer este mapa ahora mismo.",

@@ -8,6 +8,8 @@ import type { NamedGeoCollection } from "../workplan/domain/geo/geo-types";
 import { loadBoundaryLayerFile, loadBoundaryLayerList } from "@/lib/client/tenant-boundary-layers";
 import { findCountry } from "./domain/boundary-sources";
 import { ProtomapsBasemap } from "./adapters/basemap/protomaps-basemap";
+import { PmtilesPrefetch } from "./adapters/basemap/prefetch";
+import type { MapPrefetch } from "./ports/map-prefetch";
 import { FilesBoundarySource } from "./adapters/boundaries/files-boundary-source";
 import { TenantLayerBoundarySource } from "./adapters/boundaries/tenant-layer-boundary-source";
 import { MapLibreAreaTool } from "./adapters/maplibre/area-tool";
@@ -23,6 +25,8 @@ export interface MapServices {
   createPinPlacer: PinPlacerFactory;
   createDrawingTool: DrawingToolFactory;
   boundaries: BoundarySource;
+  /** Starts the map library, the basemap header and the boundary catalogue before the map exists (Phase 49.1). */
+  prefetch: MapPrefetch;
   /** False on a machine with no WebGL: the screen then keeps the ECharts map. */
   canUseWebGL(): boolean;
 }
@@ -53,6 +57,7 @@ export function createMapServices(): MapServices {
       loadBoundaryLayerFile,
       async (country) => { const manifest = await loadBoundaryManifest(); return (manifest ? findCountry(manifest, country.name)?.iso : undefined) ?? null; },
     ),
+    prefetch: new PmtilesPrefetch("/tiles", () => (typeof location === "undefined" ? "" : location.origin), undefined, () => { void loadBoundaryManifest(); }),
     canUseWebGL: webGl,
   };
 }

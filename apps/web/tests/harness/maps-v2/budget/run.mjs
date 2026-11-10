@@ -19,7 +19,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const web = resolve(here, "../../../..");
 // `targets` are what the plan hoped for; a miss is reported, never hidden. `ceilings` are what fails the run: where it stands today, with room, so it cannot quietly get worse.
 const BUDGET = { mapCodeGzipKB: 350, bangladeshHeapMB: 150 };
-const TARGET = { firstMapSeconds: 2.5 };
+const TARGET = { firstMapSeconds: 2.5, firstMapCodeGzipKB: 220 };
 // Measured on a development machine with software graphics, often with other jobs running: the same profile varied by about 50% between runs (Slow 4G: 8.0, 10.7 and 12.2 s).
 // So these are regression ceilings with room, not claims about a phone. What they catch is a change that makes the first map much slower (more bytes before the map exists, or one more
 // step in the chain: script, map library, tile header, directory, tiles, fonts).
@@ -66,6 +66,7 @@ const results = [];
 const check = (name, ok, detail) => { results.push(`${ok ? "ok  " : "OVER"} ${name}: ${detail}`); console.log(results.at(-1)); };
 const note = (name, detail) => { results.push(`note ${name}: ${detail}`); console.log(results.at(-1)); };
 check("the map code, gzipped", kb(sum(code)) <= BUDGET.mapCodeGzipKB, `${kb(sum(code))} KB of ${BUDGET.mapCodeGzipKB} KB`);
+if (kb(sum(code)) > TARGET.firstMapCodeGzipKB) note(`the Phase 49 target for the map code (${TARGET.firstMapCodeGzipKB} KB)`, `MISSED at ${kb(sum(code))} KB`);
 check("the drawing library is not in what a read-only map downloads", drawing.length > 0 && drawing.every((n) => !staticSet.includes(n)), drawing.length === 0 ? "no drawing chunk found (the check cannot run)" : `${drawing.length} chunk(s), on demand only`);
 
 // ---- a server like production: text is gzipped, tiles are read by byte range -------------------------------------------------------------------
@@ -134,7 +135,36 @@ for (const [label, profile, ceiling] of [["Fast 3G (562.5 ms round trip)", FAST_
   await context.close();
 }
 
+// ---- 4. panning with many pins (Phase 49.0/49.4) ----------------------------------------------------------------------------------------------
+const panning = {};
+for (const n of [1000, 10000, 50000]) {
+  const context = await browser.newContext({ viewport: { width: 1300, height: 900 } });
+  const page = await context.newPage();
+  await page.goto(`${base}?page=pins&n=${n}`);
+  await page.waitForSelector('[data-map-ready="true"]', { state: "attached", timeout: 180000 });
+  const box = await page.locator(".maplibregl-canvas").boundingBox();
+  const frames = await page.evaluate(() => new Promise((done) => { let f = 0; const t0 = performance.now(); const tick = () => { f++; if (performance.now() - t0 < 3000) requestAnimationFrame(tick); else done(f / 3); }; requestAnimationFrame(tick); }).then((x) => x));
+  const during = page.evaluate(() => new Promise((done) => { let f = 0; const t0 = performance.now(); const tick = () => { f++; if (performance.now() - t0 < 3000) requestAnimationFrame(tick); else done(f / 3); }; requestAnimationFrame(tick); }));
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  for (let i = 0; i < 60; i++) await page.mouse.move(box.x + box.width / 2 + Math.sin(i / 6) * 300, box.y + box.height / 2 + Math.cos(i / 6) * 150, { steps: 2 });
+  await page.mouse.up();
+  const fps = await during;
+  panning[n] = Math.round(fps);
+  console.log(`panning with ${n} pins: ${Math.round(fps)} frames a second (idle ${Math.round(frames)})`);
+  if (n === 50000) check("panning with 50,000 pins (target 30 fps; software graphics read low)", fps >= (Number(process.env.PAN_FPS_FLOOR) || 10), `${Math.round(fps)} fps`);
+  await context.close();
+}
+
 await browser.close();
 server.close();
+
+// ---- the baseline file every Phase 49 batch compares against (BASELINE=1 writes it) -------------------------------------------------------------
+if (process.env.BASELINE) {
+  const file = resolve(web, "../../memorybank/imp/phase49-baseline.json");
+  const record = { measuredAt: new Date().toISOString(), note: "development machine, software graphics: compare runs from the same machine only", results, panningFps: panning };
+  writeFileSync(file, JSON.stringify(record, null, 2) + "\n");
+  console.log(`baseline written to ${file}`);
+}
 console.log("\n" + results.join("\n"));
 if (results.some((r) => r.startsWith("OVER"))) process.exit(1);

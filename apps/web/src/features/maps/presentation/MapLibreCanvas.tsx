@@ -27,6 +27,8 @@ export function MapLibreCanvas({ scene, onSelect, onNote, onFailed, height = "h-
 
   useEffect(() => {
     let disposed = false;
+    // The library, the basemap header and the catalogue start together, not one after another (Phase 49.1).
+    services.prefetch.warm(latest.current.scene.bounds);
     services.createRenderer(box.current!)
       .then((r) => {
         if (disposed) { r.dispose(); return; }

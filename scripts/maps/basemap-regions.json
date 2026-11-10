@@ -1,0 +1,14 @@
+{
+  "_comment": "Basemap files cut from a Protomaps planet build (Phase 49.2). Boxes match apps/web/src/features/maps/domain/basemap/regions.ts (tests/unit/basemap-regions.test.mts keeps them in step). `keep: false` = not needed by any live project; sync-tiles.sh --prune removes it from the host.",
+  "build": "20261110",
+  "world": { "id": "world", "file": "basemap-world.pmtiles", "bbox": [-180, -85, 180, 85], "maxzoom": 6, "keep": true },
+  "regions": [
+    { "id": "africa", "file": "basemap-africa.pmtiles", "bbox": [-18, -12, 52, 24], "maxzoom": 12, "keep": true },
+    { "id": "southasia", "file": "basemap-southasia.pmtiles", "bbox": [60, 5, 98, 38], "maxzoom": 12, "keep": true },
+    { "id": "mena", "file": "basemap-mena.pmtiles", "bbox": [25, 12, 63, 42], "maxzoom": 12, "keep": true },
+    { "id": "easteurope", "file": "basemap-easteurope.pmtiles", "bbox": [20, 43, 42, 53], "maxzoom": 12, "keep": true },
+    { "id": "caribbean", "file": "basemap-caribbean.pmtiles", "bbox": [-86, 9, -59, 24], "maxzoom": 12, "keep": true },
+    { "id": "andes", "file": "basemap-andes.pmtiles", "bbox": [-82, -19, -59, 13], "maxzoom": 12, "keep": true },
+    { "id": "southeastasia", "file": "basemap-southeastasia.pmtiles", "bbox": [92, -11, 128, 29], "maxzoom": 12, "keep": true }
+  ]
+}

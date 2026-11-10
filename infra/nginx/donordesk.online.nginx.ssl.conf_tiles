@@ -10,7 +10,8 @@ location ^~ /tiles/ {
 	limit_req zone=dd_tiles burst=300 nodelay;
 	limit_req_status 429;
 	add_header Accept-Ranges bytes;
-	add_header Cache-Control "public, max-age=604800, immutable";
+	# Region files are addressed as basemap-<id>.pmtiles?v=<build> (Phase 49.1); fonts are unstamped (a day).
+	add_header Cache-Control $dd_map_cache;
 	types { application/octet-stream pmtiles; application/x-protobuf pbf; }
 	default_type application/octet-stream;
 	try_files $uri =404;

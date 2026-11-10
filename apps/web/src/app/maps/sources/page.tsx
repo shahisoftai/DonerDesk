@@ -3,6 +3,9 @@ import { LegalLayout } from "@/components/legal/LegalLayout";
 import { Section, A } from "@/components/legal/LegalBits";
 import { LEGAL } from "@/lib/legal-entity";
 import { MapSourcesTable } from "@/features/maps/presentation/MapSourcesTable";
+import { BASEMAP_REGIONS, WORLD_BASEMAP } from "@/features/maps/domain/basemap/regions";
+
+const built = (stamp: string): string => `${stamp.slice(0, 4)}-${stamp.slice(4, 6)}-${stamp.slice(6, 8)}`;
 
 export const metadata: Metadata = {
   alternates: { canonical: "/maps/sources" },
@@ -33,6 +36,13 @@ export default function MapSourcesPage() {
           The map labels use the Noto Sans typeface (SIL Open Font Licence) and, for Arabic, MapLibre&apos;s right-to-left text plugin by Mapbox (BSD 2-clause licence),
           which we also host ourselves.
         </P>
+        <P>
+          Every country has a low-detail world map. Towns and roads are shown in the regions below, each cut from the Protomaps build of the date given; elsewhere the
+          map says that only low detail is available.
+        </P>
+        <ul className="mb-3 list-disc ps-5 text-sm text-slate-300">
+          {[WORLD_BASEMAP, ...BASEMAP_REGIONS].map((r) => <li key={r.id}>{r.label}: build of {built(r.built)}</li>)}
+        </ul>
       </Section>
       <Section id="boundaries" title="2. Boundaries">
         <P>

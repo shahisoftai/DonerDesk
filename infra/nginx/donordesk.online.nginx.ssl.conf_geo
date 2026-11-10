@@ -2,10 +2,11 @@
 # Install on the host (Hestia includes nginx.ssl.conf_*), then `nginx -t && systemctl reload nginx`:
 #   cp infra/nginx/donordesk.online.nginx.ssl.conf_geo /home/shahisoft/conf/web/donordesk.online/nginx.ssl.conf_geo
 # The files live in /opt/donordesk/shared/geo (filled by scripts/sync-geo.sh), outside any release, so a deploy never carries them.
-# The manifest is short-lived so a new boundary set is seen soon; the country files are replaced only by a regenerated set.
+# The manifest is revalidated on every read (ETag), so a new boundary set is seen at once; the country files are addressed by its build stamp.
 location = /geo/manifest.json {
 	alias /opt/donordesk/shared/geo/manifest.json;
-	add_header Cache-Control "public, max-age=300";
+	add_header Cache-Control "no-cache";
+	etag on;
 	default_type application/json;
 }
 location ^~ /geo/ {
@@ -14,7 +15,9 @@ location ^~ /geo/ {
 	gzip_comp_level 6;
 	gzip_types application/json;
 	gzip_min_length 1024;
-	add_header Cache-Control "public, max-age=604800";
+	# Country files are fetched as /geo/<file>?v=<manifest.generatedAt> (Phase 49.1): a year, immutable. $dd_map_cache is in donordesk-api-limit.conf.
+	add_header Cache-Control $dd_map_cache;
+	gzip_static on;
 	default_type application/json;
 	try_files $uri =404;
 }

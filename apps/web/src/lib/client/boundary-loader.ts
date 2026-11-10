@@ -15,7 +15,9 @@ const files = new Map<string, Promise<NamedGeoCollection | null>>();
 export function loadBoundaryFile(entry: BoundaryFileEntry): Promise<NamedGeoCollection | null> {
   let hit = files.get(entry.file);
   if (!hit) {
-    hit = fetch(`/geo/${entry.file}`)
+    // The catalogue's build stamp names the version (Phase 49.1): the file is cached for a year and a new boundary set is a new address.
+    hit = loadBoundaryManifest()
+      .then((m) => fetch(`/geo/${entry.file}${m?.generatedAt ? `?v=${encodeURIComponent(m.generatedAt)}` : ""}`))
       .then((r) => (r.ok ? (r.json() as Promise<NamedGeoCollection>) : null))
       .catch(() => null);
     files.set(entry.file, hit);

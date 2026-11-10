@@ -9,7 +9,7 @@ import { useColorMode } from "../../design/presentation/use-color-mode";
 import { attributionLine, fileFor, findCountry, type BoundaryManifest } from "../domain/boundary-sources";
 import { joinUnits, matchedByNameOnly, nameRef } from "../domain/boundaries/join";
 import { WORLD_PATH, decodePath, encodePath, levelBelow, open, resultsLevelFor, shownLevel, toCrumb, type DrillPath } from "../domain/drill/drill-path";
-import { NO_BASEMAP, type BasemapNote } from "../domain/basemap/regions";
+import { LOW_DETAIL_BASEMAP, NO_BASEMAP, type BasemapNote } from "../domain/basemap/regions";
 import type { BoundaryOrigin } from "../ports/boundary-source";
 import { buildMapTable } from "../domain/table/map-table";
 import { DEFAULT_LAYERS, OVERLAY_LAYER, buildExplorerModel, summaryCounts, moveLayer, panelPeriods, placePanel, setLayerOpacity, sharedBands, toggleLayer, withBands, type ExplorerModel } from "../domain/map-explorer";
@@ -28,6 +28,7 @@ import { PlacePanel } from "./PlacePanel";
 import { PlaceTree } from "./PlaceTree";
 import { pathForPlace } from "../domain/drill/place-path";
 import { useBoundaryView } from "./useBoundaryView";
+import { preloadCountryOutlines } from "./preload-country";
 import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
 
@@ -70,6 +71,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
   const [credit, setCredit] = useState<BoundaryOrigin | null>(null);
   const steps = useMemo(() => periodSteps(periods), [periods]);
   const view = useBoundaryView(path, services.boundaries);
+  preloadCountryOutlines(places.find((p) => !p.archived && p.adminLevel === 0)?.name);
 
   useEffect(() => { void loadBoundaryManifest().then(setManifest); }, []);
 
@@ -251,6 +253,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
           )}
           {model && <p className="text-sm text-slate-600">{t("maps.summary", { ...summaryCounts(model) })}</p>}
           {note === NO_BASEMAP && <p className="text-xs text-slate-500">{t("maps.noBasemap")}</p>}
+          {note === LOW_DETAIL_BASEMAP && <p className="text-xs text-slate-500">{t("maps.lowDetailBasemap")}</p>}
           {path.length === 1 && view.status === "ready" && finest !== undefined && finest < 4 && <p className="text-xs text-slate-500">{t("maps.finest", { country: path[0]!.name, level: levelPlural(finest) })}</p>}
           {byName > 0 && <p className="text-xs text-slate-500">{t("maps.byNameOnly", { count: byName })}</p>}
           {credit ? <p className="text-xs text-slate-500" data-testid="boundary-credit">{t("maps.credit.uploaded", { country: credit.countryName, name: credit.layerName })}</p> : country && fileEntry && <p className="text-xs text-slate-500">{attributionLine(country, view.shown as 2 | 3 | 4)}</p>}

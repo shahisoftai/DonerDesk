@@ -609,6 +609,7 @@ export const en = {
   "maps.printTitle": "Results by place",
   "maps.printLine": "{indicator} · {where} · printed {date}. Drawn from the figures recorded in DonorDesk; a place with no figure is grey, not zero.",
   "maps.noBasemap": "Streets and terrain are not available for this area yet; boundaries are drawn on a plain ground.",
+  "maps.lowDetailBasemap": "Only a low-detail map is available for this area; towns and roads appear when a detailed map is added.",
   "maps.shared.fixed": "A fixed view for this link; the figures are as they stood when the page opened.",
   "maps.shared.live": "Opening a place and moving the time slider read the recorded figures as they stand now.",
   "maps.shared.failed": "This map could not be read just now.",
