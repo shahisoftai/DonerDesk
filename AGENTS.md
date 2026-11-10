@@ -865,3 +865,4 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - **Map kinds that sum (`HEX_GRID`) never add a place to the area it sits in** when they can be told apart (deepest level with two pins), and say so when they cannot. `DOT_DENSITY` states what one dot stands for.
 - **Starter layouts are generated per sector** (`generated-variants.ts`: donor, flash, monitoring) from the headline indicators; golden hashes for them are refreshed with `UPDATE_GOLDEN=1` after review.
 - Deploy: no migration, no env. Apply the nginx file by hand. `SCOPE=both`.
+- **Never leave a backup beside an nginx include file.** Hestia includes `nginx.ssl.conf_*`, so `nginx.ssl.conf_apiv1.bak-…` in the same folder duplicates every location and `nginx -t` fails (a `| tail` after `nginx -t` hides the failure: check its exit status). Back up to `/root/nginx-backups/`.
