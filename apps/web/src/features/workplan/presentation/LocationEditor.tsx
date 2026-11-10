@@ -8,7 +8,6 @@ import { useActionState } from "@/lib/client/action-state";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PinPicker } from "../../maps/presentation/PinPicker";
-import { LocationPickerFigure } from "./LocationPickerFigure";
 
 /**
  * Where a planned activity happens, editable after it was created: the typed place (with the map's own spellings suggested)
@@ -64,8 +63,7 @@ export function LocationEditor({ itemId, location, latitude, longitude, country,
           )}
           {(pinOpen || pin) && (
             <div className="max-w-xl space-y-2">
-              <PinPicker value={pin} country={country} onChange={(next) => { setPin(next); if (next) setPinOpen(true); }}
-                legacy={({ value, onChange }) => <LocationPickerFigure value={value} country={country} customLayerUrl={customLayerUrl} onChange={onChange} />} />
+              <PinPicker value={pin} country={country} onChange={(next) => { setPin(next); if (next) setPinOpen(true); }} />
             </div>
           )}
           <Button size="sm" onClick={save} pending={state.busy} disabled={unchanged}>Save place</Button>

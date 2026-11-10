@@ -34,7 +34,7 @@ const result = await esbuild.build({
   entryPoints: { entry: join(here, "entry.ts"), main: join(here, "main.tsx") },
   bundle: true, splitting: true, format: "esm", outdir: out, minify: true, metafile: true, jsx: "automatic", platform: "browser", absWorkingDir: web,
   nodePaths: [join(web, "node_modules")], loader: { ".css": "css", ".pbf": "empty" }, alias: harnessAlias(),
-  define: { "process.env.NODE_ENV": '"production"', "process.env.NEXT_PUBLIC_MAP_ENGINE": '"maplibre"' }, logLevel: "error",
+  define: { "process.env.NODE_ENV": '"production"' }, logLevel: "error",
 });
 writeFileSync(join(out, "index.html"), '<!doctype html><html><head><meta charset="utf-8"><style>.w-full{width:100%}.h-56{height:14rem}.h-\\[600px\\]{height:600px}.h-\\[26rem\\]{height:26rem}.h-\\[28rem\\]{height:28rem}.overflow-hidden{overflow:hidden}</style><link rel="stylesheet" href="main.css"></head><body><div id="root"></div><script type="module" src="main.js"></script></body></html>');
 if (!existsSync(join(out, "main.css"))) writeFileSync(join(out, "main.css"), "");

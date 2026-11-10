@@ -12,7 +12,6 @@ import { goTo, isFinished, pendingCount, placeCurrent, placedItems, sheetFor, sk
 import { suggestParent, type ContainingArea } from "@/features/maps/domain/marking/snap";
 import { PinPicker } from "@/features/maps/presentation/PinPicker";
 import { useMapText } from "@/features/maps/presentation/useMapText";
-import { LocationPickerFigure } from "@/features/workplan/presentation/LocationPickerFigure";
 
 /**
  * Put the words nobody has placed yet on the map, one after another. Each is pinned or skipped; nothing is saved until the end, and
@@ -50,8 +49,7 @@ export function BulkPlaceWalk({ texts, places, onClose }: { texts: readonly stri
         <p className="text-sm" aria-live="polite"><strong>{current.text}</strong> <span className="text-slate-500">· {t("maps.walk.progress", { placed: placed.length, skipped: walk.items.filter((i) => i.status === "SKIPPED").length, pending: pendingCount(walk) })}</span></p>
         <Button type="button" variant="secondary" size="sm" onClick={onClose}>{t("maps.close")}</Button>
       </div>
-      <PinPicker value={pin} country={country} onAreas={setAreas} onChange={(next) => setPin(next)}
-        legacy={({ value, onChange }) => <LocationPickerFigure value={value} {...(country ? { country } : {})} onChange={onChange} />} />
+      <PinPicker value={pin} country={country} onAreas={setAreas} onChange={(next) => setPin(next)} />
       <div className="flex flex-wrap items-end gap-3">
         <label className="text-xs">{t("maps.walk.kind")}
           <Select className="block" value={level} onChange={(e) => setLevel(e.target.value)}>

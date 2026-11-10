@@ -103,7 +103,7 @@ test("the retirement register is complete and only uses known kinds and statuses
     assert.ok(item && kind && home && status && removedIn, `retirement row "${item}" has an empty cell`);
     assert.ok(["route", "nav", "feature", "api", "table", "test", "doc"].includes(kind!), `${item}: unknown kind ${kind}`);
     assert.ok(["live", "redirected", "removed", "kept"].includes(status!), `${item}: unknown status ${status}`);
-    assert.match(removedIn!, /^(-|48\.\d{1,2})$/, `${item}: "removed in" must be a batch or -`);
+    assert.match(removedIn!, /^(-|4[89]\.\d{1,2})$/, `${item}: "removed in" must be a batch or -`);
     if (status === "kept") assert.equal(removedIn, "-", `${item}: a kept row has no removal batch`);
   }
 });

@@ -19,7 +19,6 @@ import { PinPicker } from "@/features/maps/presentation/PinPicker";
 import { parsePin } from "@/features/maps/domain/marking/pin";
 import { describeAreas, suggestParent, type ContainingArea } from "@/features/maps/domain/marking/snap";
 import { useMapText } from "@/features/maps/presentation/useMapText";
-import { LocationPickerFigure } from "@/features/workplan/presentation/LocationPickerFigure";
 import { useMapEngine } from "@/features/maps/presentation/useMapEngine";
 import { PlaceShapeEditor } from "./PlaceShapeEditor";
 import { BulkPlaceWalk } from "./BulkPlaceWalk";
@@ -222,8 +221,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
                 return (
                   <>
                     <PinPicker value={pin} country={countryName} onAreas={setAreas}
-                      onChange={(next) => setDraft((d) => ({ ...d, latitude: next ? String(next.latitude) : "", longitude: next ? String(next.longitude) : "" }))}
-                      legacy={({ value, onChange }) => <LocationPickerFigure value={value} {...(countryName ? { country: countryName } : {})} onChange={onChange} />} />
+                      onChange={(next) => setDraft((d) => ({ ...d, latitude: next ? String(next.latitude) : "", longitude: next ? String(next.longitude) : "" }))} />
                     {parent && <p className="text-sm text-slate-600 dark:text-slate-300">{mt("maps.places.fallsInside", { areas: describeAreas(areas, levelSingular) })} <button type="button" className="font-medium underline" onClick={() => set("parentId", parent.id)}>{mt("maps.places.addUnder", { name: parent.name })}</button></p>}
                   </>
                 );

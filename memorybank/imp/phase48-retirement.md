@@ -67,6 +67,7 @@ Rows are `| item | kind | replaced by | status | removed in |`.
 | `apps/web/src/features/data-center/presentation/DataChartBuilder.tsx` | feature | Send to Visual Studio | live | 48.10 |
 | `apps/web/src/features/report-editor/presentation/inspector/DataChartsPanel.tsx` | feature | insert from the Studio library | live | 48.10 |
 | `apps/web/src/lib/actions/dashboards.ts` `apps/web/src/lib/actions/data-charts.ts` `apps/web/src/lib/actions/map-widgets.ts` | feature | canvas actions | live | 48.10 |
+| The ECharts map engine: SiteMapFigure, LocationPickerFigure, the ECharts MapCanvas, map-option.ts and the NEXT_PUBLIC_MAP_ENGINE switch | feature | MapLibre for every map; a device with no WebGL gets the table (results, sites) or typed coordinates (a pin). ECharts geo charts (Chart Studio, infographics) keep map-assets. | removed | 49.9 |
 
 ## API routes and handlers
 

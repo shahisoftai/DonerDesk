@@ -19,7 +19,7 @@ export function harnessAlias() {
     "@": join(web, "src"),
   };
 }
-export const HARNESS_DEFINE = { "process.env.NODE_ENV": '"development"', "process.env.NEXT_PUBLIC_MAP_ENGINE": '"maplibre"' };
+export const HARNESS_DEFINE = { "process.env.NODE_ENV": '"development"' };
 
 export async function build(outfile) {
   const esbuild = await loadEsbuild();

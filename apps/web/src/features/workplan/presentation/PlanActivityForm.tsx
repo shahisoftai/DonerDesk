@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { PinPicker } from "../../maps/presentation/PinPicker";
-import { LocationPickerFigure } from "./LocationPickerFigure";
 
 export interface PlanFormOption { id: string; label: string }
 
@@ -145,7 +144,6 @@ export function PlanActivityForm({ projectId, leads, activities, country, custom
                       setPin(next);
                       if (next) setPinOpen(true);
                     }}
-                    legacy={({ value, onChange }) => <LocationPickerFigure value={value} country={country} customLayerUrl={customLayerUrl} onChange={onChange} />}
                   />
                 </div>
               )}

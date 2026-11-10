@@ -16,7 +16,7 @@ import type { ExplorerProps } from "./results-loader";
  * Results by place for a slow connection (low-data mode): the same figures as the map, as a table, with no map library, no tiles and no boundary
  * files. Everything that is a choice stays: the indicator, the level, the period, and a place's details. "Show the map anyway" is one click.
  */
-export function LowDataResults({ projectId, places, initial, periods, loadResults, onShowMap }: ExplorerProps & { onShowMap: () => void }) {
+export function LowDataResults({ projectId, places, initial, periods, loadResults, onShowMap }: ExplorerProps & { /** Absent when this device cannot draw a map at all (no WebGL): the table is then the only view. */ onShowMap?: (() => void) | undefined }) {
   const { t, levelSingular } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
   const [results, setResults] = useState<PlaceResults | null>(initial);
@@ -51,8 +51,8 @@ export function LowDataResults({ projectId, places, initial, periods, loadResult
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3 text-sm" role="note">
-        <p>{t("maps.lowData.note")}</p>
-        <button type="button" className="font-medium underline" onClick={onShowMap}>{t("maps.lowData.show")}</button>
+        <p>{t(onShowMap ? "maps.lowData.note" : "maps.noWebGl")}</p>
+        {onShowMap && <button type="button" className="font-medium underline" onClick={onShowMap}>{t("maps.lowData.show")}</button>}
       </div>
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-1">{t("maps.indicator")}

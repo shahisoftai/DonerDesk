@@ -1,10 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  DEFAULT_LAYERS, buildExplorerModel, colorFor, drillInto, drillUp, levelForView, mapSummary, moveLayer, withDepth, NO_DATA_COLOR,
+  DEFAULT_LAYERS, buildExplorerModel, colorFor, drillInto, levelForView, mapSummary, moveLayer, withDepth, NO_DATA_COLOR,
   numericValue, placeForRegion, placePanel, scaleBands, setLayerOpacity, toggleLayer,
 } from "../../src/features/maps/domain/map-explorer.ts";
-import { explorerOption } from "../../src/features/maps/domain/map-option.ts";
 
 const place = (id: string, name: string, adminLevel: number, extra: Record<string, unknown> = {}) => ({
   id, name, kind: "AREA" as const, adminLevel, path: name, aliases: [], archived: false, childCount: 0, ...extra,
@@ -44,18 +43,6 @@ test("the model pins what has a pin, lists a pointless point apart and keeps gap
   assert.equal(model.regions.find((r) => r.name === "Gezira")!.value, null);
   assert.match(mapSummary(model), /2 of 3 places have a figure/);
   assert.equal(buildExplorerModel(results, places, "nope"), null);
-});
-
-test("the option colours a boundary from the model and greys one nobody reported", () => {
-  const model = buildExplorerModel(results, places, "i1")!;
-  const option = explorerOption({ model, layers: DEFAULT_LAYERS, view: drillInto("Sudan"), featureNames: ["White Nile", "Gezira", "Unknown"], unit: "people", selectedPlaceId: null }) as any;
-  const byName = Object.fromEntries(option.geo.regions.map((r: any) => [r.name, r.itemStyle.areaColor]));
-  assert.notEqual(byName["White Nile"], NO_DATA_COLOR);
-  assert.equal(byName["Gezira"], NO_DATA_COLOR);
-  assert.equal(byName["Unknown"], NO_DATA_COLOR);
-  assert.equal(option.geo.map, "donordesk-drill");
-  const hidden = explorerOption({ model, layers: toggleLayer(DEFAULT_LAYERS, "SYMBOLS"), view: drillUp(drillInto("Sudan")), featureNames: [], unit: null, selectedPlaceId: null }) as any;
-  assert.equal(hidden.series.length, 0);
 });
 
 test("layers toggle, clamp opacity and reorder without touching the others", () => {
