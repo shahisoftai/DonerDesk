@@ -127,7 +127,7 @@ export function SECTION_LABELS_FOR_ALT(kind: string, language: string | undefine
     PORTFOLIO_SUMMARY: "portfolioSummary", PORTFOLIO_TABLE: "portfolioTable", PORTFOLIO_HEALTH: "portfolioHealth", PORTFOLIO_COUNTRIES: "portfolioCountries", THREE_W: "threeW",
   };
   const key = map[kind];
-  return key ? l[key] : kind === "HERO" || kind === "IMAGE" || kind === "BANNER" || kind === "DIVIDER" ? "" : fallback;
+  return key ? l[key] : kind === "HERO" || kind === "IMAGE" || kind === "BANNER" || kind === "DIVIDER" || kind === "SHAPE" || kind === "ICON" ? "" : fallback;
 }
 
 // ------------------------------------------------------------- template-seeded captions

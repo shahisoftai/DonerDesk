@@ -7,6 +7,7 @@
 import type { BlockDefinition } from "../block-definition.js";
 import { textBlock } from "./text.js";
 import { dividerBlock } from "./divider.js";
+import { iconBlock, shapeBlock } from "./shape-blocks.js";
 import { kpiBlock } from "./kpi.js";
 import { metricBlock } from "./metric.js";
 import { mapBlock } from "./map.js";
@@ -26,7 +27,7 @@ export const BLOCK_KINDS = [
   "MAP", "LOCATION_RESULTS", "LOCATION_COMPARISON", "ACTIVITIES_BY_LOCATION",
   "TABLE", "PROJECT_LIST", "FUNNEL", "FUNDING", "RESULTS_CHAIN", "SECTOR_GRID", "TIMELINE", "THREE_W", "DEMOGRAPHICS", "REACH",
   "PORTFOLIO_SUMMARY", "PORTFOLIO_TABLE", "PORTFOLIO_HEALTH", "PORTFOLIO_COUNTRIES",
-  "IMAGE",
+  "IMAGE", "SHAPE", "ICON",
   "AI_SUMMARY", "AI_MESSAGES", "AI_ASK",
   "GROUP", "TABS", "REPEATER",
   "FILTER_BAR",
@@ -36,6 +37,8 @@ export type BlockKind = (typeof BLOCK_KINDS)[number];
 export const BLOCK_REGISTRY: Readonly<Partial<Record<BlockKind, BlockDefinition<never, unknown, never>>>> = {
   TEXT: any(textBlock),
   DIVIDER: any(dividerBlock),
+  SHAPE: any(shapeBlock),
+  ICON: any(iconBlock),
   KPI: any(kpiBlock),
   METRIC: any(metricBlock),
   MAP: any(mapBlock),

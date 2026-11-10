@@ -17,7 +17,7 @@ export const INFOGRAPHIC_TEMPLATE_IDS = [
 export const INFOGRAPHIC_SECTION_KINDS = [
   "KPIS", "CHART", "LOCATION_RESULTS", "LOCATION_COMPARISON", "REACH", "ACTIVITIES_BY_LOCATION", "MAP", "TEXT",
   "HERO", "BIG_NUMBERS", "FUNNEL", "PROGRESS_RINGS", "DEMOGRAPHICS", "SECTOR_GRID", "TIMELINE", "KEY_MESSAGES", "QUOTE", "IMAGE",
-  "LEGEND_NOTES", "BANNER", "FUNDING", "SMALL_MULTIPLES", "TABLE", "RESULTS_CHAIN", "DIVIDER",
+  "LEGEND_NOTES", "BANNER", "FUNDING", "SMALL_MULTIPLES", "TABLE", "RESULTS_CHAIN", "DIVIDER", "SHAPE", "ICON",
   "PORTFOLIO_SUMMARY", "PORTFOLIO_TABLE", "PORTFOLIO_HEALTH", "PORTFOLIO_COUNTRIES", "THREE_W",
 ] as const;
 
@@ -49,6 +49,8 @@ export const InfographicSectionSchema = z
     hidden: z.boolean().optional(),
     pageBreakBefore: z.boolean().optional(),
     iconId: iconId.optional(),
+    shape: z.enum(["RECTANGLE", "ROUNDED", "ELLIPSE", "LINE", "ARROW"]).optional(),
+    tone: z.enum(["ACCENT", "ACCENT2", "MUTED", "WARN", "INK", "NONE"]).optional(),
     numbers: z
       .array(
         z

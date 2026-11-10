@@ -41,6 +41,8 @@ export type InfographicSectionKind =
   | "IMAGE"
   | "LEGEND_NOTES"
   | "BANNER"
+  | "SHAPE"
+  | "ICON"
   | "FUNDING"
   | "SMALL_MULTIPLES"
   | "TABLE"
@@ -80,6 +82,8 @@ export const INFOGRAPHIC_SECTION_KINDS: readonly InfographicSectionKind[] = [
   "TABLE",
   "RESULTS_CHAIN",
   "DIVIDER",
+  "SHAPE",
+  "ICON",
   "PORTFOLIO_SUMMARY",
   "PORTFOLIO_TABLE",
   "PORTFOLIO_HEALTH",
@@ -170,7 +174,17 @@ export interface InfographicChartSpec {
 
 export type SectionSize = "THIRD" | "HALF" | "FULL";
 
+/** Plain shapes and the theme colours they may take (never a free colour: contrast is the theme's job). */
+export const SHAPE_NAMES = ["RECTANGLE", "ROUNDED", "ELLIPSE", "LINE", "ARROW"] as const;
+export type ShapeName = (typeof SHAPE_NAMES)[number];
+export const TONE_NAMES = ["ACCENT", "ACCENT2", "MUTED", "WARN", "INK", "NONE"] as const;
+export type ToneName = (typeof TONE_NAMES)[number];
+
 export interface InfographicSectionConfig {
+  /** SHAPE only. */
+  shape?: ShapeName;
+  /** SHAPE and ICON: which theme colour. */
+  tone?: ToneName;
   kind: InfographicSectionKind;
   /** Authored heading; absent = the section's default label. */
   title?: string;
@@ -311,6 +325,9 @@ function cleanSection(section: InfographicSectionConfig): { ok: true; value: Inf
   if (section.indicatorIds && section.indicatorIds.length > MAX_INDICATORS_PER_SECTION) return fail(`A section takes at most ${MAX_INDICATORS_PER_SECTION} indicators`);
   if (section.span !== undefined && !(GRID_SPANS as readonly number[]).includes(section.span)) return fail("Choose a width of 3, 4, 6, 8, 9 or 12 columns");
   if (section.iconId && !iconById(section.iconId)) return fail("Choose one of the offered icons");
+  if (section.kind === "ICON" && !section.iconId) return fail("Choose an icon");
+  if (section.shape && !(SHAPE_NAMES as readonly string[]).includes(section.shape)) return fail("Choose one of the offered shapes");
+  if (section.tone && !(TONE_NAMES as readonly string[]).includes(section.tone)) return fail("Choose one of the offered colours");
   if (section.rounding && !INFOGRAPHIC_ROUNDINGS.includes(section.rounding)) return fail("Choose one of the offered rounding rules");
   if (section.fit && section.fit !== "COVER" && section.fit !== "CONTAIN") return fail("Choose how the image fits");
   if (section.mapMetric && !MAP_METRICS.includes(section.mapMetric)) return fail("Choose one of the offered map shadings");
@@ -444,6 +461,8 @@ function cleanSection(section: InfographicSectionConfig): { ok: true; value: Inf
       ...(presence?.length ? { presence } : {}),
       ...(section.rounding && section.rounding !== "NONE" ? { rounding: section.rounding } : {}),
       ...(section.mapMetric && section.mapMetric !== "NONE" ? { mapMetric: section.mapMetric } : {}),
+      ...(section.shape ? { shape: section.shape } : {}),
+      ...(section.tone ? { tone: section.tone } : {}),
     },
   };
 }

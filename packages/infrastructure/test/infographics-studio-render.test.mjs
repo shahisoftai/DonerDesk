@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { configFromTemplate, INFOGRAPHIC_TEMPLATE_IDS, INFOGRAPHIC_FORMAT_IDS, INFOGRAPHIC_FORMATS, INFOGRAPHIC_SECTION_KINDS, INFOGRAPHIC_THEME_IDS, validateConfig, knownTemplates, INFOGRAPHIC_LANGUAGES } from "@donordesk/domain";
+import { configFromTemplate, INFOGRAPHIC_TEMPLATE_IDS, INFOGRAPHIC_FORMAT_IDS, INFOGRAPHIC_FORMATS, INFOGRAPHIC_SECTION_KINDS, INFOGRAPHIC_THEME_IDS, validateConfig, sectionProblem, knownTemplates, INFOGRAPHIC_LANGUAGES } from "@donordesk/domain";
 import { composeInfographicDocument, rasterizePage } from "../dist/infographics/composer.js";
 import { InfographicComposerRenderer } from "../dist/infographics/renderer.js";
 import { sheet, data, provenance, pins, richConfig, fakePhoto, gulu } from "./fixtures/infographic-fixtures.mjs";
@@ -198,6 +198,8 @@ test("section kinds: every one is composed by some template or by the rich desig
   used.add("CHART");
   used.add("BANNER");
   used.add("DIVIDER");
+  used.add("SHAPE");
+  used.add("ICON");
   for (const kind of INFOGRAPHIC_SECTION_KINDS) assert.ok(used.has(kind), kind);
 });
 
@@ -206,6 +208,15 @@ test("banner and divider draw; a chart honours the theme palette", async () => {
   assert.match(all, /Thank you to our partners/);
   assert.match(all, /<line /);
   assert.match(all, /<svg x="[\d.]+" y="[\d.]+" width="[\d.]+" height="[\d.]+" viewBox=/, "the chart is drawn as a vector picture");
+});
+
+test("shapes and icons draw in the theme's colours, an outline shape is not filled, and a missing icon is refused", async () => {
+  const all = await svgs(richConfig({ sections: [{ kind: "SHAPE", shape: "ELLIPSE", tone: "ACCENT" }, { kind: "SHAPE", shape: "ROUNDED", tone: "NONE" }, { kind: "SHAPE", shape: "ARROW", tone: "WARN" }, { kind: "ICON", iconId: "people", tone: "ACCENT2" }] }));
+  assert.match(all, /<ellipse /);
+  assert.match(all, /<rect [^>]*fill="none"/, "a shape with no colour is an outline");
+  assert.match(all, /<path d="M[^"]*" transform="translate/, "the icon is one glyph from the icon set");
+  assert.equal(sectionProblem({ kind: "ICON" }), "Choose an icon");
+  assert.equal(sectionProblem({ kind: "SHAPE", shape: "BLOB" }), "Choose one of the offered shapes");
 });
 
 test("the renderer: PNG at 1x/2x/3x, SVG pages, multi-page PNG, PDF with page sizes and real text, PPTX is a zip", async () => {

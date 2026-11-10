@@ -122,7 +122,7 @@ export const DESIGN_RULES: readonly Rule[] = [
     severity: "WARN",
     profiles: ["SNAPSHOT"],
     run: ({ config }) => {
-      const sections = visible(config).filter(({ section }) => !["HERO", "DIVIDER", "BANNER", "LEGEND_NOTES", "TEXT"].includes(section.kind));
+      const sections = visible(config).filter(({ section }) => !["HERO", "DIVIDER", "SHAPE", "ICON", "BANNER", "LEGEND_NOTES", "TEXT"].includes(section.kind));
       return sections.length > 7 ? [{ message: `This snapshot has ${sections.length} blocks.`, fix: "A snapshot tells one story with at most three themes. Remove what does not support the headline." }] : [];
     },
   },

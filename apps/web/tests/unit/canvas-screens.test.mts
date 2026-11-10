@@ -30,6 +30,7 @@ before(async () => {
 
 const PAINTED = ["BIG_NUMBERS", "PROGRESS_RINGS", "FUNNEL", "REACH", "ACTIVITIES_BY_LOCATION", "LOCATION_RESULTS", "LOCATION_COMPARISON", "DEMOGRAPHICS", "FUNDING", "HERO", "TEXT", "DIVIDER", "BANNER", "KEY_MESSAGES", "LEGEND_NOTES", "QUOTE", "IMAGE", "TIMELINE", "SECTOR_GRID", "THREE_W", "SMALL_MULTIPLES", "RESULTS_CHAIN", "PORTFOLIO_SUMMARY", "PORTFOLIO_TABLE", "PORTFOLIO_HEALTH", "PORTFOLIO_COUNTRIES"] as const;
 // Structure blocks are drawn on screen and (where a file can hold them) in print.
+const GRAPHIC = ["SHAPE", "ICON"] as const; // pictures with no words of their own: drawn from their settings, described only when a person wrote a description
 const STRUCTURE = ["CALLOUT", "AI_SUMMARY", "AI_MESSAGES", "AI_ASK", "GROUP", "TABS", "REPEATER", "FILTER_BAR"] as const;
 // Blocks with nothing authored are blank rather than worded (a divider has nothing to say, text is blank until written).
 const QUIET_WHEN_EMPTY: readonly string[] = ["TEXT", "DIVIDER"];
@@ -50,7 +51,7 @@ const textOf = (markup: string) => markup.replace(/<[^>]+>/g, " ").replace(/&amp
 test("the screen renderers are a registry: only known kinds, and the missing list can only shrink", () => {
   for (const kind of Object.keys(registry.SCREEN_RENDERERS)) assert.ok((BLOCK_KINDS as readonly string[]).includes(kind), kind);
   assert.deepEqual([...registry.SCREEN_PENDING, ...Object.keys(registry.SCREEN_RENDERERS)].sort(), [...BLOCK_KINDS].sort());
-  assert.deepEqual(Object.keys(registry.SCREEN_RENDERERS).sort(), [...PAINTED, ...STRUCTURE].sort(), "the same kinds the print side paints");
+  assert.deepEqual(Object.keys(registry.SCREEN_RENDERERS).sort(), [...PAINTED, ...GRAPHIC, ...STRUCTURE].sort(), "the same kinds the print side paints");
   const SCREEN_PENDING_MAX = 6; // lower this as the rest are ported
   assert.ok(registry.SCREEN_PENDING.length <= SCREEN_PENDING_MAX);
 });
@@ -143,4 +144,18 @@ test("the cover shows who funds it, the title and the subtitle, over its picture
   assert.ok(!/background-image/.test(plain));
   const withPicture = render(React.createElement(Screen as never, { model, frame: frame(), assetUrl: (id: string) => `/files/${id}` }));
   assert.match(withPicture, /background-image:linear-gradient\(rgba\(0,0,0,.5\), rgba\(0,0,0,.5\)\), url\(\/files\/cover\)/);
+});
+
+test("shapes and icons draw in the page's theme and are hidden from a screen reader unless described", () => {
+  const shape = html("SHAPE", modelOf("SHAPE"));
+  assert.match(shape, /<rect /);
+  assert.match(shape, /aria-hidden="true"/, "a decorative shape says nothing to a screen reader");
+  assert.match(html("SHAPE", modelOf("SHAPE", { shape: "ARROW", tone: "WARN" })), /<path d="M100 25/);
+  const outline = html("SHAPE", modelOf("SHAPE", { shape: "ELLIPSE", tone: "NONE", label: "Boundary" }));
+  assert.match(outline, /fill="none"/);
+  assert.match(outline, /role="img" aria-label="Boundary"/);
+  const icon = html("ICON", modelOf("ICON"));
+  assert.match(icon, /<path d="M/);
+  assert.match(icon, /role="img" aria-label="People reached"/);
+  assert.equal(html("ICON", modelOf("ICON", { iconId: "nope", tone: "ACCENT" })), "", "an unknown icon draws nothing, never a placeholder");
 });

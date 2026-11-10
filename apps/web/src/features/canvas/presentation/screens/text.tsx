@@ -12,6 +12,37 @@ export function TextScreen({ model }: { model: BlockModel<{ text?: string; role?
   );
 }
 
+import { iconById } from "@donordesk/domain/contexts/infographics/index.js";
+import type { ToneName } from "@donordesk/domain/contexts/infographics/index.js";
+
+const toneColour = (frame: PaintFrame, tone: ToneName): string => ({ ACCENT: frame.theme.accent, ACCENT2: frame.theme.accent2, MUTED: frame.theme.muted, WARN: frame.theme.warn, INK: frame.theme.ink, NONE: frame.theme.line })[tone];
+
+/** A plain shape in a theme colour; decorative, so it is hidden from a screen reader unless it has a description. */
+export function ShapeScreen({ model, frame }: { model: BlockModel<{ shape: string; tone: ToneName; label?: string }>; frame: PaintFrame }) {
+  if (model.state !== "ready") return null;
+  const { shape, tone, label } = model.model;
+  const colour = toneColour(frame, tone);
+  const fill = tone === "NONE" ? "none" : colour;
+  const a11y = label ? { role: "img" as const, "aria-label": label } : { "aria-hidden": true };
+  return (
+    <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full" {...a11y}>
+      {shape === "LINE" && <line x1="0" y1="25" x2="100" y2="25" stroke={colour} strokeWidth="3" strokeLinecap="round" vectorEffect="non-scaling-stroke" />}
+      {shape === "ARROW" && <><line x1="0" y1="25" x2="90" y2="25" stroke={colour} strokeWidth="3" strokeLinecap="round" vectorEffect="non-scaling-stroke" /><path d="M100 25 L88 17 L88 33 Z" fill={colour} /></>}
+      {shape === "ELLIPSE" && <ellipse cx="50" cy="25" rx="49" ry="24" fill={fill} stroke={tone === "NONE" ? colour : "none"} strokeWidth="2" vectorEffect="non-scaling-stroke" />}
+      {(shape === "RECTANGLE" || shape === "ROUNDED") && <rect x="1" y="1" width="98" height="48" rx={shape === "ROUNDED" ? 4 : 0} fill={fill} stroke={tone === "NONE" ? colour : "none"} strokeWidth="2" vectorEffect="non-scaling-stroke" />}
+    </svg>
+  );
+}
+
+/** One glyph from the product's icon set, in a theme colour. */
+export function IconScreen({ model, frame }: { model: BlockModel<{ iconId: string; tone: ToneName; label?: string }>; frame: PaintFrame }) {
+  if (model.state !== "ready") return null;
+  const glyph = iconById(model.model.iconId);
+  if (!glyph) return null;
+  const a11y = model.model.label ? { role: "img" as const, "aria-label": model.model.label } : { "aria-hidden": true };
+  return <svg viewBox="0 0 24 24" className="mx-auto h-full max-h-full w-full max-w-full" {...a11y}><path d={glyph.path} fill={toneColour(frame, model.model.tone === "NONE" ? "INK" : model.model.tone)} fillRule="evenodd" /></svg>;
+}
+
 export const DividerScreen = () => <hr className="my-3 border-slate-300 dark:border-slate-700" />;
 
 export function BannerScreen(props: ScreenRendererPropsOf<typeof bannerModel>) {

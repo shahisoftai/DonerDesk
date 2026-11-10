@@ -4,6 +4,8 @@ import type { canvasEn } from "./canvas-en.ts";
 export const canvasFr: Record<keyof typeof canvasEn, string> = {
   "canvas.block.TEXT": "Texte",
   "canvas.block.DIVIDER": "Séparateur",
+  "canvas.block.SHAPE": "Forme",
+  "canvas.block.ICON": "Icône",
   "canvas.block.HERO": "Couverture",
   "canvas.block.BANNER": "Bandeau",
   "canvas.block.KEY_MESSAGES": "Messages clés",

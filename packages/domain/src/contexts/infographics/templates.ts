@@ -308,6 +308,8 @@ export const DEFAULT_SECTION_LABEL: Readonly<Record<InfographicSectionConfig["ki
   TABLE: "Indicators",
   RESULTS_CHAIN: "Results chain",
   DIVIDER: "Divider",
+  SHAPE: "Shape",
+  ICON: "Icon",
   PORTFOLIO_SUMMARY: "Portfolio at a glance",
   PORTFOLIO_TABLE: "Projects",
   PORTFOLIO_HEALTH: "Delivery health",
@@ -321,7 +323,7 @@ export const SECTION_LABEL_KEY: Readonly<Record<InfographicSectionConfig["kind"]
   ACTIVITIES_BY_LOCATION: "activitiesByLocation", MAP: "whereWeWork", TEXT: "notes", HERO: null, BIG_NUMBERS: "keyFigures", FUNNEL: "reachAgainstNeed",
   PROGRESS_RINGS: "progressAgainstTargets", DEMOGRAPHICS: "whoWeReached", SECTOR_GRID: "resultsBySector", TIMELINE: "timeline", KEY_MESSAGES: "keyMessages",
   QUOTE: "inTheirWords", IMAGE: null, LEGEND_NOTES: "notesAndSources", BANNER: null, FUNDING: "funding", SMALL_MULTIPLES: "trends", TABLE: "indicatorsTable",
-  RESULTS_CHAIN: "resultsChain", DIVIDER: null,
+  RESULTS_CHAIN: "resultsChain", DIVIDER: null, SHAPE: null, ICON: null,
   PORTFOLIO_SUMMARY: "portfolioSummary", PORTFOLIO_TABLE: "portfolioTable", PORTFOLIO_HEALTH: "portfolioHealth", PORTFOLIO_COUNTRIES: "portfolioCountries", THREE_W: "threeW",
 };
 

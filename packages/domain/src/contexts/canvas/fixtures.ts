@@ -90,6 +90,8 @@ export const LINT_PROBES: Readonly<Partial<Record<BlockKind, ReadonlyArray<unkno
 export const BLOCK_FIXTURES: Readonly<Record<BlockKind, BlockFixture>> = {
   TEXT: { props: { text: "# Water for Kisumu\nBoreholes now serve more homes.", role: "body" } },
   DIVIDER: { props: { line: true } },
+  SHAPE: { props: { shape: "ROUNDED", tone: "ACCENT2" } },
+  ICON: { props: { iconId: "people", tone: "ACCENT", label: "People reached" } },
   HERO: titled("Water for Kisumu"),
   BANNER: { props: { title: "Quarterly update" } },
   KEY_MESSAGES: { props: { messages: [{ text: "Boreholes now serve more homes." }, { text: "  " }] } },

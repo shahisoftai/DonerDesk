@@ -1,6 +1,6 @@
 import { CHART_KINDS, kindsForTemplate } from "@donordesk/domain/contexts/reporting/chart-spec-v2.js";
 import { METRICS, TILE_COLORS, MAP_SHADINGS, MAP_VIEWS, PROJECT_LIST_AFFILIATIONS } from "@donordesk/domain/contexts/dashboards/index.js";
-import { BIG_NUMBER_SOURCES } from "@donordesk/domain/contexts/infographics/index.js";
+import { BIG_NUMBER_SOURCES, INFOGRAPHIC_ICONS, SHAPE_NAMES, TONE_NAMES } from "@donordesk/domain/contexts/infographics/index.js";
 import { FILTER_DIMENSIONS } from "@donordesk/domain/contexts/canvas/index.js";
 import { setAt } from "./path.ts";
 
@@ -34,6 +34,8 @@ const AI_FIELDS: ReadonlyArray<Field> = [
 export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
   TEXT: [{ type: "textarea", path: "text", label: "Text", hint: "A line starting with # is a heading." }],
   BANNER: [{ type: "text", path: "text", label: "Words on the banner" }],
+  SHAPE: [{ type: "select", path: "shape", label: "Shape", options: opts(SHAPE_NAMES, words) }, { type: "select", path: "tone", label: "Colour", options: opts(TONE_NAMES, words) }, { type: "text", path: "label", label: "Description (leave empty if it only decorates)" }],
+  ICON: [{ type: "select", path: "iconId", label: "Icon", options: INFOGRAPHIC_ICONS.map((i) => ({ value: i.id, label: i.label })) }, { type: "select", path: "tone", label: "Colour", options: opts(TONE_NAMES, words) }, { type: "text", path: "label", label: "Description (leave empty if it only decorates)" }],
   CALLOUT: [{ type: "textarea", path: "text", label: "Text" }, { type: "select", path: "tone", label: "Look", options: [{ value: "info", label: "Information" }, { value: "good", label: "Good news" }, { value: "warn", label: "Warning" }] }],
   HERO: [title, { type: "text", path: "text", label: "Subtitle" }, { type: "text", path: "assetId", label: "Cover picture id", hint: "The id of an image in the infographic library." }],
   KEY_MESSAGES: [title, { type: "list", path: "messages", label: "Messages", add: "Add a message", blank: { text: "" }, item: [{ type: "textarea", path: "text", label: "Message" }] }],

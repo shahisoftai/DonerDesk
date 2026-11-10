@@ -4,6 +4,8 @@ import type { canvasEn } from "./canvas-en.ts";
 export const canvasAr: Record<keyof typeof canvasEn, string> = {
   "canvas.block.TEXT": "نص",
   "canvas.block.DIVIDER": "فاصل",
+  "canvas.block.SHAPE": "شكل",
+  "canvas.block.ICON": "أيقونة",
   "canvas.block.HERO": "غلاف",
   "canvas.block.BANNER": "شريط العنوان",
   "canvas.block.KEY_MESSAGES": "رسائل رئيسية",

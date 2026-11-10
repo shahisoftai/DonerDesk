@@ -76,6 +76,8 @@ export const BLOCK_CATALOG: Readonly<Record<InfographicSectionKind, BlockInfo>> 
   PORTFOLIO_HEALTH: info("Delivery health", "How many projects are on track, need attention, are behind or have no plan yet.", "PORTFOLIO", 4, true, () => ({ kind: "PORTFOLIO_HEALTH", span: 6 })),
   PORTFOLIO_COUNTRIES: info("Projects by country", "Projects in each country, coloured by how delivery is going.", "PORTFOLIO", 4, true, () => ({ kind: "PORTFOLIO_COUNTRIES", span: 6 })),
   PORTFOLIO_TABLE: info("Projects", "Every project with its country, donor, delivery and next report.", "PORTFOLIO", 8, true, () => ({ kind: "PORTFOLIO_TABLE", span: 12 })),
+  SHAPE: info("Shape", "A plain shape or arrow in a theme colour. Change its look in the dashboard and infographic editor.", "STRUCTURE", 3, false, () => ({ kind: "SHAPE", shape: "ROUNDED", tone: "ACCENT2", span: 4 })),
+  ICON: info("Icon", "One icon from the icon set, in a theme colour.", "STRUCTURE", 3, false, () => ({ kind: "ICON", iconId: "people", tone: "ACCENT", span: 3 })),
   DIVIDER: info("Divider", "A thin line between parts of the page.", "STRUCTURE", 12, false, () => ({ kind: "DIVIDER", span: 12 })),
 };
 

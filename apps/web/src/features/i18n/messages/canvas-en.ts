@@ -6,6 +6,8 @@
 export const canvasEn = {
   "canvas.block.TEXT": "Text",
   "canvas.block.DIVIDER": "Divider",
+  "canvas.block.SHAPE": "Shape",
+  "canvas.block.ICON": "Icon",
   "canvas.block.HERO": "Cover",
   "canvas.block.BANNER": "Banner",
   "canvas.block.KEY_MESSAGES": "Key messages",

@@ -398,7 +398,7 @@ export function BlockEditor(props: Props) {
   return (
     <div className="space-y-3 text-sm">
       <p className="text-xs text-slate-500">{info.description}</p>
-      {kind !== "DIVIDER" && (
+      {kind !== "DIVIDER" && kind !== "SHAPE" && kind !== "ICON" && (
         <Field label={kind === "HERO" ? "Headline" : "Heading"} hint={kind === "HERO" ? "Leave empty to use the design's title." : undefined}>
           <Input value={section.title ?? ""} maxLength={120} disabled={!canEdit} placeholder={kind === "HERO" ? "The design's title" : info.label} onChange={(event) => patch({ title: event.target.value })} />
         </Field>

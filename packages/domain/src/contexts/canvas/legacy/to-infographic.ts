@@ -25,6 +25,8 @@ const FILE_KINDS = new Set<string>(Object.keys(INFOGRAPHIC_BLOCK_SPECS));
 const MAPPERS: Readonly<Record<string, (b: BlockInstance, p: Props) => Mapped>> = {
   TEXT: (_b, p) => ({ kind: "TEXT", ...(str(p.text) ? { text: str(p.text) } : {}) }),
   DIVIDER: () => ({ kind: "DIVIDER" }),
+  SHAPE: (_b, p) => ({ kind: "SHAPE", ...(str(p.shape) ? { shape: p.shape as never } : {}), ...(str(p.tone) ? { tone: p.tone as never } : {}) }),
+  ICON: (_b, p) => (str(p.iconId) ? { kind: "ICON", iconId: str(p.iconId) as string, ...(str(p.tone) ? { tone: p.tone as never } : {}), ...(str(p.label) ? { altText: str(p.label) as string } : {}) } : "No icon is chosen."),
   CALLOUT: (_b, p) => (str(p.text) ? { kind: "TEXT", text: str(p.text) as string } : "The callout has no words."),
   KPI: (_b, p) => (str(p.indicatorId) ? { kind: "BIG_NUMBERS", numbers: [{ label: str(p.title) ?? "", source: "INDICATOR", indicatorId: str(p.indicatorId) as string }] } : "No indicator is chosen."),
   CHART: (_b, p) => {
