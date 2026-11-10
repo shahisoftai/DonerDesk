@@ -56,7 +56,7 @@ export function PlaceShapeEditor({ place, parent, country, onClose }: { place: P
   }
 
   if (engine === "pending") return <p className="text-sm text-slate-500">{t("maps.loading")}</p>;
-  if (engine === "echarts" || failed) return <p role="alert" className="card text-sm">{failed ? t("maps.draw.unavailable") : t("maps.draw.noWebGl")}</p>;
+  if (engine === "none" || failed) return <p role="alert" className="card text-sm">{failed ? t("maps.draw.unavailable") : t("maps.draw.noWebGl")}</p>;
   return (
     <section className="card space-y-3" aria-label={t("maps.shape.aria", { name: place.name })}>
       <h3 className="text-sm font-semibold">{t(place.geometryKind ? "maps.shape.titleChange" : "maps.shape.titleDraw", { name: place.name })}</h3>

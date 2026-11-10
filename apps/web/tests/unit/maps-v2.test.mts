@@ -174,18 +174,23 @@ test("maplibre layers: ids are ours, clusters appear only when asked, selection 
   assert.equal(street.paint["fill-opacity"], 0.8 * 0.62);
 });
 
-test("basemap: a covered view gets our own tiles and fonts and no icons; elsewhere a plain ground with a sentence; plain mode says nothing", () => {
+test("basemap: a covered view gets our own tiles and fonts and no icons; elsewhere the low-detail world file; plain mode says nothing", () => {
   const bm = new ProtomapsBasemap("/tiles", () => "https://app.test");
   const covered = bm.styleFor("light", [29, -2, 35, 4]);
   const s = covered.style as { glyphs: string; sources: Record<string, { url: string }>; layers: Array<{ layout?: Record<string, unknown> }> };
   assert.equal(covered.regionId, "africa");
-  assert.equal(s.sources.protomaps!.url, "pmtiles://https://app.test/tiles/basemap-africa.pmtiles");
+  assert.equal(s.sources.protomaps!.url, "pmtiles://https://app.test/tiles/basemap-africa.pmtiles?v=20261103");
   assert.equal(s.glyphs, "https://app.test/tiles/fonts/{fontstack}/{range}.pbf");
   assert.ok(s.layers.length > 20);
   assert.ok(s.layers.every((l) => !l.layout || !("icon-image" in l.layout)));
   assert.notEqual(bm.styleFor("dark", [29, -2, 35, 4]).key, covered.key);
   const world = bm.styleFor("light", [-180, -80, 180, 80]);
-  assert.deepEqual([world.regionId, !!world.note], [null, true]);
+  assert.deepEqual([world.regionId, world.note], ["world", null]);
+  // A country-sized view outside every detailed region: the world file, and a sentence that only low detail is shown.
+  assert.deepEqual([bm.styleFor("light", [-10, 50, 2, 59]).regionId, bm.styleFor("light", [-10, 50, 2, 59]).note], ["world", "LOW_DETAIL_BASEMAP"]);
+  // With no world file configured, the plain ground and its sentence (the behaviour before Phase 49.2).
+  const noWorld = new ProtomapsBasemap("/tiles", () => "https://app.test", [], null).styleFor("light", [-180, -80, 180, 80]);
+  assert.deepEqual([noWorld.regionId, noWorld.note], [null, "NO_BASEMAP"]);
   assert.equal(bm.styleFor("plain", [29, -2, 35, 4]).note, null);
   assert.ok(JSON.stringify(covered.style).indexOf("https://") === JSON.stringify(covered.style).indexOf("https://app.test") || true);
 });

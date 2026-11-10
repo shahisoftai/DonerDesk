@@ -616,6 +616,8 @@ export const es: Record<MessageKey, string> = {
   "maps.printTitle": "Resultados por lugar",
   "maps.printLine": "{indicator} · {where} · impreso el {date}. Elaborado con las cifras registradas en DonorDesk; un lugar sin cifra aparece en gris, no en cero.",
   "maps.noBasemap": "Las calles y el relieve aún no están disponibles para esta zona; los límites se dibujan sobre un fondo liso.",
+  "maps.noWebGl": "Este dispositivo no puede dibujar mapas; las mismas cifras se muestran en una tabla.",
+  "maps.noWebGlPin": "Este dispositivo no puede dibujar mapas. Escriba las coordenadas (por ejemplo, del GPS de un teléfono).",
   "maps.panel.details": "Detalles del lugar",
   "maps.panel.facility": "Un centro",
   "maps.panel.close": "Cerrar detalles del lugar",

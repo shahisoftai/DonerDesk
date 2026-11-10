@@ -24,7 +24,7 @@ export class UpdateMapContextHandler {
   async handle(ctx: AuthenticatedContext, input: { layers?: string[]; imageryUrl?: string | null; imageryCredit?: string | null }): Promise<Result<MapContextSettings, DomainError>> {
     if (!Permissions.can(ctx.tenant.role as Role, "org.manage")) return err(DomainError.forbidden("Only an administrator can change the map settings"));
     const checked = checkMapContext(input);
-    if (!checked.ok) return err(DomainError.validation(PROBLEM_TEXT[checked.problem], { code: checked.problem }));
+    if (!checked.ok) return err(DomainError.validation(PROBLEM_TEXT[checked.problem] ?? "The map settings could not be saved", { code: checked.problem }));
     const before = await this.repo.find(ctx.tenant.tenantId);
     if (!before.ok) return before;
     const saved = await this.repo.save(ctx.tenant.tenantId, JSON.stringify(checked.value), ctx.tenant.userId);

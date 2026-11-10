@@ -618,6 +618,8 @@ export const en = {
   "maps.printTitle": "Results by place",
   "maps.printLine": "{indicator} · {where} · printed {date}. Drawn from the figures recorded in DonorDesk; a place with no figure is grey, not zero.",
   "maps.noBasemap": "Streets and terrain are not available for this area yet; boundaries are drawn on a plain ground.",
+  "maps.noWebGl": "This device cannot draw maps, so the same figures are shown as a table.",
+  "maps.noWebGlPin": "This device cannot draw maps. Type the coordinates instead (for example from a phone's GPS).",
   "maps.panel.details": "Place details",
   "maps.panel.facility": "A facility",
   "maps.panel.close": "Close place details",

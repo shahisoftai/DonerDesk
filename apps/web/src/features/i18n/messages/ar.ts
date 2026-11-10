@@ -632,6 +632,8 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.printTitle": "النتائج حسب المكان",
   "maps.printLine": "{indicator} · {where} · طُبعت في {date}. مرسومة من الأرقام المسجلة في DonorDesk؛ المكان بلا رقم رمادي لا صفر.",
   "maps.noBasemap": "الشوارع والتضاريس غير متاحة لهذه المنطقة بعد؛ تُرسم الحدود على خلفية سادة.",
+  "maps.noWebGl": "لا يستطيع هذا الجهاز رسم الخرائط، لذا تُعرض الأرقام نفسها في جدول.",
+  "maps.noWebGlPin": "لا يستطيع هذا الجهاز رسم الخرائط. اكتب الإحداثيات بدلاً من ذلك (مثلاً من GPS الهاتف).",
   "maps.panel.details": "تفاصيل المكان",
   "maps.panel.facility": "مرفق",
   "maps.panel.close": "إغلاق تفاصيل المكان",
