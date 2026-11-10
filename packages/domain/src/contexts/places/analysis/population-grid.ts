@@ -1,6 +1,6 @@
 /**
  * Population inside rings, from a grid of people per cell (Phase 49.7). Pure. The grid is WorldPop's 100 m counts summed to about 1 km
- * (`scripts/maps/build-population-grid.sh`); a cell counts when its centre lies inside a ring, and a cell inside two rings counts once.
+ * (`scripts/maps/build_context_layers.py`); a cell counts when its centre lies inside a ring, and a cell inside two rings counts once.
  * No data is null with a reason, never 0; the answer always names its source and year and how coarse the cells are.
  */
 import { distanceKm, ringBox, ringProblem, type LngLat, type RingProblem } from "./distance.js";

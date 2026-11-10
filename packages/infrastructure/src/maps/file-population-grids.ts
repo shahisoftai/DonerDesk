@@ -7,7 +7,7 @@ interface Header { west: number; north: number; cellDeg: number; cols: number; r
 
 /**
  * Population grids as files beside the tiles (Phase 49.7): `<dir>/<ISO>.json` (the header) and `<dir>/<ISO>.bin` (Float32, little-endian,
- * row-major from the north-west, -1 for no data), written by `scripts/maps/build-population-grid.sh`. A grid is read once and kept.
+ * row-major from the north-west, -1 for no data), written by `scripts/maps/build_context_layers.py`. A grid is read once and kept.
  */
 export class FilePopulationGrids implements IPopulationGrids {
   private readonly cache = new Map<string, PopulationGrid>();

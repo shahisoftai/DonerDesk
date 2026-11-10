@@ -20,3 +20,4 @@ storage/
 .freebuff/
 apps/web/public/geo/
 apps/web/public/tiles/
+.context-work/

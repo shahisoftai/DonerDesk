@@ -28,7 +28,7 @@ export interface ContextLayerDef {
 export const CONTEXT_LAYERS: Readonly<Record<ContextLayerKey, ContextLayerDef>> = {
   POPULATION: { key: "POPULATION", label: "Where people live (population per 100 m)", kind: "raster", file: "context/population.pmtiles", maker: "WorldPop, University of Southampton", licence: "CC BY 4.0", verdict: "SHIP", year: "2020" },
   HEALTH_FACILITIES: { key: "HEALTH_FACILITIES", label: "Health facilities", kind: "points", file: "context/health-facilities.pmtiles", sourceLayer: "facilities", maker: "Healthsites.io and OpenStreetMap contributors", licence: "ODbL 1.0", verdict: "SHARE_ALIKE", year: "2026" },
-  SETTLEMENTS: { key: "SETTLEMENTS", label: "Settlements and towns", kind: "points", file: "context/settlements.pmtiles", sourceLayer: "settlements", maker: "OCHA common operational datasets (populated places)", licence: "CC BY-IGO", verdict: "SHIP", year: "2025" },
+  SETTLEMENTS: { key: "SETTLEMENTS", label: "Settlements and towns", kind: "points", file: "context/settlements.pmtiles", sourceLayer: "settlements", maker: "Humanitarian OpenStreetMap Team and OpenStreetMap contributors", licence: "ODbL 1.0", verdict: "SHARE_ALIKE", year: "2026" },
 };
 
 export interface MapContextSettings {
