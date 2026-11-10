@@ -7,3 +7,4 @@ export * from "./boundary-diff.js";
 export * from "./place-list-export.js";
 export * from "./point-bins.js";
 export * from "./context-layers.js";
+export * from "./analysis/index.js";

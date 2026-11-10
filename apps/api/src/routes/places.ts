@@ -149,6 +149,14 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // People living within rings around chosen points, from the population grid (Phase 49.7). Public population data only; nothing stored.
+  app.post("/v1/projects/:projectId/analysis/population", async (req) => {
+    const body = z.object({ rings: z.array(z.object({ lng: z.number().min(-180).max(180), lat: z.number().min(-90).max(90), km: z.number().min(0.1).max(100) })).min(1).max(50) }).parse(req.body);
+    const r = await req.container.handlers.analysePopulation.handle(ctx(req), body.rings);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   // Movements between the project's places (Phase 48.12): what moved from one place to another, and how much.
   app.get("/v1/projects/:projectId/place-flows", async (req) => {
     const r = await req.container.handlers.listPlaceFlows.handle(ctx(req), param(req, "projectId"));

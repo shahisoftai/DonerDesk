@@ -182,6 +182,7 @@ export const RULES: ReadonlyArray<{
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/map-points$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/offline-basemap$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/organization\/map-context$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/analysis\/population$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/organization\/map-context$/, permission: "org.manage" },
   { method: "GET", route: /^\/v1\/funding$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/programmes$/, permission: "project.create" },

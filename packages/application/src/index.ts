@@ -355,6 +355,7 @@ export * from "./use-cases/places/place-export.js";
 export * from "./use-cases/places/map-points.js";
 export * from "./use-cases/places/offline-basemap.js";
 export * from "./use-cases/places/map-context.js";
+export * from "./use-cases/places/population-analysis.js";
 export * from "./ports/map-context.js";
 export * from "./ports/offline-maps.js";
 export * from "./ports/portfolio.js";

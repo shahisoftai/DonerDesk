@@ -30,6 +30,7 @@ import { pathForPlace } from "../domain/drill/place-path";
 import { useBoundaryView } from "./useBoundaryView";
 import { preloadCountryOutlines } from "./preload-country";
 import { useMapContext } from "./useMapContext";
+import { AnalysisPanel } from "./AnalysisPanel";
 import { ContextLayerToggles } from "./ContextLayerToggles";
 import { contextLayers, offeredContext, type ContextToggle } from "../domain/scene/context-layers";
 import { useMapText } from "./useMapText";
@@ -287,6 +288,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
           {!compact && <PlaceTree places={places} activityCounts={activityCounts ?? {}} figurePlaceIds={figureIds} selectedId={selected?.placeId ?? null} onSelect={focusPlace} />}
           {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
           {!compact && <ContextLayerToggles offered={offeredContext(mapContext)} on={contextOn} onToggle={toggleContext} />}
+          {!compact && !staticData && <AnalysisPanel projectId={projectId} places={places} siteIds={figureIds} onRings={showOverlay} />}
           {!compact && <OverlayPanel onOverlay={showOverlay} />}
           {selected && <PlacePanel panel={panel} name={selected.name} canDrill={openLevel !== null} drillLabel={openLevel !== null ? t("maps.open", { level: levelPlural(openLevel) }) : undefined} onDrill={() => void openSelected()} onSelect={(id) => { const p = places.find((x) => x.id === id); if (p) setSelected({ ref: null, placeId: p.id, name: p.name }); }} onClose={() => setSelected(null)} />}
         </div>

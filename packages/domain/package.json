@@ -277,6 +277,10 @@
     "./contexts/places/context-layers.js": {
       "types": "./dist/contexts/places/context-layers.d.ts",
       "import": "./dist/contexts/places/context-layers.js"
+    },
+    "./contexts/places/analysis/index.js": {
+      "types": "./dist/contexts/places/analysis/index.d.ts",
+      "import": "./dist/contexts/places/analysis/index.js"
     }
   },
   "scripts": {
