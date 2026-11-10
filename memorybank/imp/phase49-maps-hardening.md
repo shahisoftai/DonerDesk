@@ -226,3 +226,23 @@ Each uses `deploy-fast.sh` with the smallest `SCOPE` that covers the change.
 - Buffers, the nearest facility and population covered work with credited sources.
 - Live checks are recorded; side panels translated; one map engine on screen.
 - AGENTS.md gains a "Phase 49 invariants — maps hardening" section, and `/maps/sources` and the support articles are updated.
+
+## 6. Progress (2026-11-10)
+
+All batches built on `0019-maps-hardening`, one commit per batch. Type-checked (domain, application, infrastructure, api, web) and the new
+unit tests pass (domain: boundary diff, places export, point bins, context layers, analysis; web: basemap regions, maps-v2, maps-phase49,
+map-explorer, visual-parity, i18n). **Not deployed, not checked in a browser, harnesses not run** (the owner asked for no build/test/deploy).
+The repository's architecture test still fails on six rows that predate this phase (project-setup and canvas files); the maps rows pass.
+
+| Batch | State | Notes and deviations |
+|---|---|---|
+| 49.0 | built | `test:maps-budget` measures panning at 1k/10k/50k pins and writes `phase49-baseline.json` with `BASELINE=1`; the map-code target (220 KB) is reported as a note. Not run yet, so there is no baseline file. Host disk inventory not done (no SSH in this run). |
+| 49.1 | built | Prefetch port + shared PMTiles protocol; admin-1 preload during render; ground slid under the data; versioned /geo and /tiles addresses with year-long caching. **Not done:** a custom MapLibre build (no measured saving without the harness) and glyph subsetting (MapLibre already fetches glyph ranges on demand). |
+| 49.2 | built, data not made | World + five new detailed regions (MENA, Eastern Europe, Caribbean, Andes, Southeast Asia) in code and `basemap-regions.json`; extract/keep/prune scripts. **The `pmtiles` tool could not be installed here** (download blocked), so no new basemap file exists yet: run `scripts/maps/extract-basemap.sh world mena easteurope caribbean andes southeastasia` on a machine with go-pmtiles. Until the world file is on the host, views outside Africa/South Asia ask for a file that is not there (the map shows its own background colour). |
+| 49.3 | built, tiles not made | Tiled source + index, diff, update check/update scripts, timer, Places card. tippecanoe is not installed here, so no tile files exist yet; maps keep the GeoJSON path until `build-boundary-tiles.mjs` runs. The OCHA download for levels 2–4 was restarted in the background in this session (see the log in the session's scratchpad). Host disk target not measured. |
+| 49.4 | built | Server grid route (not yet called by the browser: client clustering at 50k is to be measured first); cluster worst-colour; offline street map (field app, size first, service worker, wipe). Offline cut needs `pmtiles` on the host. |
+| 49.5 | built | Places + results-by-place export, public API, MCP option, download links. **Not built:** OGC API Features (owner's decision: skip). |
+| 49.6 | built, data not made | `TenantMapSettings` + settings card on Settings → Places; layer toggles; build script for population/facilities/settlements (needs GDAL, tippecanoe, pmtiles). Facilities are ODbL (share-alike verdict). |
+| 49.7 | built | Analysis rules, population endpoint over a grid file, Analyse panel. **Not built:** the `MAP_ANALYSIS` canvas block (needs facility pins in the canvas data path; a registry row, model, painter, screen renderer and parity rows); grids not made (needs GDAL). |
+| 49.8 | partly | Side panels translated (drafts, no native reviewer); `/security` and `/subprocessors` state the imagery exception. **Not done:** the production live checks and the native review (both need people and a deploy). |
+| 49.9 | built (owner chose to remove now) | ECharts map figures, picker, explorer branch, `map-option.ts` and the engine flag removed; no-WebGL path is tables and typed coordinates. **Not done:** the server-side static PNG for no-WebGL (tables carry the same facts) and moving the 3.1 MB gazetteer behind a server route (it is used client-side by the site map's name resolution, so it needs its own change). |
