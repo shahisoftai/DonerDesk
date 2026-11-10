@@ -235,6 +235,11 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
                 {(["PERIOD", "CUMULATIVE", "PERCENT_OF_TARGET"] as const).map((m) => <option key={m} value={m}>{t(`studio.measure.${m}`)}</option>)}
               </select>
             </Field>}
+            {["SERIES_BY_PERIOD", "LATEST"].includes(TEMPLATE_SHAPE[spec.dataset.template] ?? "") && spec.dataset.indicatorIds.length === 1 && <Field label={t("studio.splitBy")}>
+              <select aria-label={t("studio.splitBy")} className={cn(input, "w-full")} value={spec.dataset.splitBy === "PLACE" ? "PLACE" : spec.dataset.splitBy === "GROUP" ? (spec.dataset.splitDimension ?? "SEX") : "NONE"} onChange={(e) => { const v = e.target.value; edit({ ...spec, dataset: { ...spec.dataset, splitBy: v === "NONE" ? undefined : v === "PLACE" ? "PLACE" : "GROUP", splitDimension: v === "NONE" || v === "PLACE" ? undefined : v, measure: v === "NONE" ? spec.dataset.measure : "PERIOD" } }); }}>
+                {(["NONE", "SEX", "AGE_GROUP", "DISABILITY", "OTHER", "PLACE"] as const).map((m) => <option key={m} value={m}>{t(`studio.splitBy.${m}`)}</option>)}
+              </select>
+            </Field>}
             {TEMPLATE_SHAPE[spec.dataset.template] === "PLACES" && spec.dataset.template !== "FLOWS_BETWEEN_PLACES" && (
               <Field label={t("studio.placeLevel")}>
                 <select aria-label={t("studio.placeLevel")} className={cn(input, "w-full")} value={spec.dataset.placeLevel ?? 1} onChange={(e) => edit({ ...spec, dataset: { ...spec.dataset, placeLevel: Number(e.target.value) } })}>

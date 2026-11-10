@@ -525,3 +525,25 @@ test("spent by result: a donut of approved spending grouped by the result each l
   assert.match(build(spec("DONUT", "BUDGET_FLOW", []), { ...base, budget: [{ ...line(undefined, 9), resultUnknown: true }] }).reason, /could not be read just now/);
   assert.equal(build(spec("SANKEY", "BUDGET_FLOW", []), { ...base, budget: [line("A", 5), line("B", 6)] }).ok, true, "the budget flow is unchanged");
 });
+
+test("split by group or place: one series per recorded category; a gap stays a gap; refusals say why", async () => {
+  const { validateChartSpec } = await import("../dist/index.js");
+  const bd = (f, m, t, g) => [{ dimension: "SEX", category: "Female", value: String(f) }, { dimension: "SEX", category: "Male", value: String(m) }, { dimension: "LOCATION", category: "Turkana", value: String(t) }, { dimension: "LOCATION", category: "Garissa", value: String(g) }];
+  const s2 = { ...sheet, cells: sheet.cells.map((c) => (c.indicatorId === "a" && c.periodId === "p1" ? { ...c, breakdown: bd(6, 4, 7, 3) } : c.indicatorId === "a" && c.periodId === "p2" ? { ...c, breakdown: bd(12, 8, 15, 5) } : c)) };
+  const data = (s) => resolveDataset(s2, datasetQueryFor(s, ALL));
+  const line = spec("LINE", "INDICATOR_OVER_TIME", ["a"], { dataset: { splitBy: "GROUP", splitDimension: "SEX" } });
+  assert.deepEqual(validateChartSpec(line), []);
+  const r = buildChart(line, data(line));
+  assert.ok(r.ok, r.reason);
+  const series = r.option.series;
+  assert.deepEqual(series.map((x) => x.name), ["Female", "Male"]);
+  assert.deepEqual(series[0].data.slice(0, 3).map((d) => (typeof d === "object" && d !== null ? d.value : d)), [6, 12, null]);
+  const pie = spec("PIE", "INDICATORS_PROGRESS", ["a"], { dataset: { splitBy: "PLACE" } });
+  const p = buildChart(pie, data(pie));
+  assert.ok(p.ok, p.reason);
+  assert.deepEqual(p.option.series[0].data.map((d) => [d.name, d.value]), [["Turkana", 15], ["Garissa", 5]]);
+  const nob = spec("LINE", "INDICATOR_OVER_TIME", ["b"], { dataset: { splitBy: "GROUP" } });
+  assert.match(buildChart(nob, data(nob)).reason, /No breakdown by group is recorded for B/);
+  assert.ok(validateChartSpec(spec("LINE", "INDICATORS_OVER_TIME", ["a", "b"], { dataset: { splitBy: "GROUP" } })).some((x) => x.code === "SPLIT_INVALID"));
+  assert.ok(validateChartSpec(spec("LINE", "INDICATOR_OVER_TIME", ["a"], { dataset: { splitBy: "GROUP", measure: "CUMULATIVE" } })).some((x) => x.code === "SPLIT_INVALID"));
+});

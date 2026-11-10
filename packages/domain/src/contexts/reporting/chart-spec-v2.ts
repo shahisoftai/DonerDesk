@@ -233,7 +233,10 @@ export interface ChartDatasetQuery {
   fromPeriodId?: string | undefined;
   toPeriodId?: string | undefined;
   showTarget: boolean;
+  /** GROUP / PLACE: one indicator drawn as one series per recorded category of its breakdown (chart-split.ts). */
   splitBy?: ChartSplit | undefined;
+  /** GROUP: which recorded breakdown to split by (SEX, AGE_GROUP, DISABILITY, OTHER); PLACE always reads LOCATION. */
+  splitDimension?: string | undefined;
   sort?: ChartSort | undefined;
   /** Keep the largest N and group the rest as "Other". */
   topN?: number | undefined;
@@ -335,7 +338,7 @@ export type ChartProblemCode =
   | "NOT_A_SPEC" | "UNKNOWN_KIND" | "KIND_NOT_DRAWN_YET" | "UNKNOWN_TEMPLATE" | "KIND_NOT_FOR_TEMPLATE" | "INDICATOR_COUNT"
   | "UNKNOWN_MEASURE" | "RATE_NOT_ADDITIVE" | "AXIS_RANGE" | "BAR_AXIS_NOT_ZERO" | "LOG_NEEDS_POSITIVE" | "TOP_N_RANGE"
   | "COLOUR_FORMAT" | "TOO_MANY_ANNOTATIONS" | "ANNOTATION_INVALID" | "SECONDARY_AXIS_UNNAMED" | "TEXT_TOO_LONG" | "SERIES_KIND_UNKNOWN"
-  | "UNKNOWN_SETTING" | "STYLE_INVALID" | "STYLE_RANGE" | "STYLE_UNKNOWN" | "STYLE_NOT_FOR_KIND";
+  | "UNKNOWN_SETTING" | "STYLE_INVALID" | "STYLE_RANGE" | "STYLE_UNKNOWN" | "STYLE_NOT_FOR_KIND" | "SPLIT_INVALID";
 
 export interface ChartProblem {
   code: ChartProblemCode;
@@ -381,6 +384,14 @@ export function validateChartSpec(spec: unknown, options: ValidateChartOptions =
     if (ds && ds.template === "RESULTS_BY_PLACE_PAIR" && n !== 2) add("INDICATOR_COUNT", "dataset.indicatorIds", "Choose exactly two indicators for this map.");
     if (info.indicators === "none" && n !== 0) add("INDICATOR_COUNT", "dataset.indicatorIds", "This chart takes no indicators.");
   }
+  if (ds && (ds.splitBy === "GROUP" || ds.splitBy === "PLACE")) {
+    const shape = TEMPLATE_SHAPE[ds.template];
+    if (shape !== "SERIES_BY_PERIOD" && shape !== "LATEST") add("SPLIT_INVALID", "dataset.splitBy", "Only a chart over time or a chart of the latest figures can be split by group or place.");
+    if ((ds.indicatorIds?.length ?? 0) !== 1) add("SPLIT_INVALID", "dataset.indicatorIds", "Choose exactly one indicator to split.");
+    if (ds.measure !== "PERIOD") add("SPLIT_INVALID", "dataset.measure", "A split shows how each period's value was recorded, so it reads the period value.");
+    if (ds.splitBy === "GROUP" && ds.splitDimension !== undefined && !["SEX", "AGE_GROUP", "DISABILITY", "OTHER"].includes(ds.splitDimension)) add("SPLIT_INVALID", "dataset.splitDimension", "Split by sex, age group, disability or another recorded group.");
+  }
+  if (ds?.splitBy === "PROJECT") add("SPLIT_INVALID", "dataset.splitBy", "Splitting by project is not available yet.");
   if (ds && !CHART_MEASURES.includes(ds.measure)) add("UNKNOWN_MEASURE", "dataset.measure", "What to measure is not known.");
   if (ds?.topN !== undefined && !(Number.isInteger(ds.topN) && ds.topN >= 1 && ds.topN <= MAX_TOP_N)) add("TOP_N_RANGE", "dataset.topN", `Show between 1 and ${MAX_TOP_N} items.`);
 

@@ -11,6 +11,7 @@ import { barRace } from "./chart-render-kinds-race.js";
 import { apportion, parliament, proportionBar, smallMultiples } from "./chart-render-kinds-shares.js";
 import { resolvePaletteColors } from "./chart-presets.js";
 import { planCounts } from "./plan-counts.js";
+import { splitDataset, splitDimensionOf } from "./chart-split.js";
 import type { DatasetBudgetLine, DatasetDay, DatasetFinanceRow, DatasetPlace, DatasetPlanRow, DatasetPoint, DatasetQuery, DatasetResult, DatasetSource } from "./dataset-query.js";
 import { hasShareOfTarget, type DataSheetIndicator } from "./data-sheet.js";
 
@@ -828,6 +829,13 @@ function buildUnstyled(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   if (shape === "PLAN" || shape === "DAYS" || shape === "BUDGET") return buildExtraShape(spec, data, shape);
   if (spec.kind === "FLOW_MAP") return buildFlowMap(spec, data);
   if (spec.kind === "CHOROPLETH" || spec.kind === "GRADUATED_SYMBOLS" || spec.kind === "DOT_DENSITY" || spec.kind === "HEX_GRID" || spec.kind === "BIVARIATE_MAP") return buildMapKind(spec, data);
+  const split = splitDimensionOf(spec.dataset.splitBy, spec.dataset.splitDimension);
+  if (split) {
+    if (shape !== "SERIES_BY_PERIOD" && shape !== "LATEST") return { ok: false, reason: "Only a chart over time or a chart of the latest figures can be split by group or place." };
+    const splitData = splitDataset(data, split);
+    if (typeof splitData === "string") return { ok: false, reason: splitData };
+    data = splitData;
+  }
   const base = normalise(shape, spec, data);
   if (typeof base === "string") return { ok: false, reason: base };
   const notes = [...data.notes];
