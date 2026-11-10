@@ -79,7 +79,7 @@ await check("creating the dashboard sends the project, the name, the scope and e
   assert.equal(a.input.name, "Our WASH view");
   assert.equal(a.input.scope, "MINE");
   assert.equal(a.input.mapping.people_basic_water, "i1");
-  assert.equal(await page.getByRole("link", { name: "Open it" }).getAttribute("href"), "/dashboards/dash1");
+  assert.equal(await page.getByRole("link", { name: "Open it" }).getAttribute("href"), "/visuals/open/dashboard/dash1");
 });
 
 await check("'Copy and edit' makes the organisation's own copy of a built-in (never the built-in itself) and opens it", async () => {
@@ -89,7 +89,7 @@ await check("'Copy and edit' makes the organisation's own copy of a built-in (ne
   const h = await H();
   assert.equal(h.saves[0].body.basedOn, "tpl-health-mnch");
   assert.equal(h.saves[0].id, undefined);
-  assert.match(h.pushed[0], /^\/dashboards\/templates\/own\d+$/);
+  assert.match(h.pushed[0], /^\/visuals\/templates\/sector\/own\d+$/);
 });
 
 await open("editor-builtin");

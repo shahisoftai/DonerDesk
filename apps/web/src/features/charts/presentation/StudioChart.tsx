@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type MutableRefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import type { StyleGroup } from "@donordesk/domain/contexts/reporting/chart-style.js";
 import { prepareChartMaps } from "@/lib/client/chart-maps";
 import { chartTheme, chartThemeName } from "@/features/design/domain/chart-theme";
@@ -86,5 +86,28 @@ export function StudioChart({ option, exportOption, aspect, label, exportRef, ma
 
   useEffect(() => { instance.current?.setOption(option, true); }, [option]);
 
-  return <div ref={box} role="img" aria-label={label} data-testid="chart-canvas" style={{ aspectRatio: String(aspect), maxHeight: 560 }} className="w-full" />;
+  // A bar race carries a frame for every period; Play steps through them and names each one (the stored picture is the latest period).
+  const frames = useMemo(() => (Array.isArray((option as { raceFrames?: unknown }).raceFrames) ? (option as { raceFrames: Array<{ label: string; names: string[]; values: number[] }> }).raceFrames.filter((f) => f.values.length > 0) : []), [option]);
+  const [at, setAt] = useState<number | null>(null);
+  const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+  useEffect(() => {
+    if (at === null) return;
+    if (at >= frames.length) { setAt(null); instance.current?.setOption(option, true); return; }
+    const frame = frames[at]!;
+    instance.current?.setOption({ yAxis: { data: frame.names }, series: [{ data: frame.values }] });
+    const timer = window.setTimeout(() => setAt(at + 1), 1100);
+    return () => window.clearTimeout(timer);
+  }, [at, frames, option]);
+
+  return (
+    <div className="w-full">
+      <div ref={box} role="img" aria-label={label} data-testid="chart-canvas" style={{ aspectRatio: String(aspect), maxHeight: 560 }} className="w-full" />
+      {frames.length > 1 && !reduced && (
+        <div className="mt-1 flex items-center gap-2 text-xs">
+          <button type="button" className="rounded border border-slate-300 px-2 py-0.5 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-800" aria-pressed={at !== null} onClick={() => { if (at === null) setAt(0); else { setAt(null); instance.current?.setOption(option, true); } }}>{at === null ? "Play" : "Stop"}</button>
+          <span aria-live="polite" className="text-slate-500">{at !== null && frames[at] ? frames[at]!.label : ""}</span>
+        </div>
+      )}
+    </div>
+  );
 }
