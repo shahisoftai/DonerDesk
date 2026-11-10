@@ -51,7 +51,8 @@ function ShapeGlyph({ format }: { format: string | undefined }) {
 
 /** The project's saved designs, and the gallery of starting points: ready-made templates, the organization's own layouts and suggestions from the records. */
 export function InfographicsList({ projectId, canEdit, canExport, canManageBrand, scope = "PROJECT" }: { projectId: string; canEdit: boolean; canExport: boolean; canManageBrand: boolean; scope?: "PROJECT" | "PORTFOLIO" }) {
-  const base = scope === "PORTFOLIO" ? "/portfolio/infographics" : `/projects/${projectId}/infographics`;
+  // A design opens as a canvas: this address converts it once and goes there (the original is never changed).
+  const base = "/visuals/open/infographic";
   const [designs, setDesigns] = useState<SavedDesign[] | null>(null);
   const [error, setError] = useState<string | undefined>();
   const [galleryOpen, setGalleryOpen] = useState(false);

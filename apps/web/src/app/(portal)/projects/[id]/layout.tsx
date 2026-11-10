@@ -32,8 +32,8 @@ export default async function ProjectLayout({ params, children }: { params: Prom
     { label: "Data", href: `/projects/${project.id}/data` },
     { label: "Finance", href: `/projects/${project.id}/finance` },
     { label: "Ask", href: `/projects/${project.id}/ask`, secondary: true },
-    { label: "Dashboards", href: `/dashboards?project=${project.id}`, secondary: true },
-    { label: "Infographics", href: `/projects/${project.id}/infographics`, secondary: true },
+    { label: "Dashboards", href: "/visuals", secondary: true },
+    { label: "Infographics", href: `/visuals/assets?project=${project.id}`, secondary: true },
     { label: "Evidence", href: `/projects/${project.id}/evidence`, secondary: true },
     { label: "Bring in data", href: `/projects/${project.id}/import`, secondary: true },
     // One-time setup; placed last so it reads as configuration, not a workflow.

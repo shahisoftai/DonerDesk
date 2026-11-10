@@ -9,6 +9,7 @@ export const kpiBlock = defineBlock<KpiQuery, KpiTile, { sheet: DataSheet }>({
   family: "NUMBERS",
   labelKey: "canvas.block.KPI",
   requiresSetup: true,
+  picture: "NUMBER",
   defaults: () => ({ indicatorId: "", includeDraft: false }),
   validate: (q) => { const m = validateKpiQuery(q); return m ? [{ message: m }] : []; },
   slots: [projectSlot(["PERIOD", "DRAFTS"])],

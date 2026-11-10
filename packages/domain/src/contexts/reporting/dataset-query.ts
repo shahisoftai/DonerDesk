@@ -8,7 +8,7 @@ import { indexCells, type ChartMeasure, type DataSheet, type DataSheetIndicator,
  */
 
 /** Data that is not in the data sheet and is attached by the server when a chart asks for it. */
-export type DatasetSource = "PLAN" | "ACTIVITY_DAYS" | "BUDGET" | "PLACES";
+export type DatasetSource = "PLAN" | "ACTIVITY_DAYS" | "BUDGET" | "PLACES" | "FLOWS";
 
 export interface DatasetPlanRow { id: string; title: string; kind: "ACTIVITY" | "MILESTONE"; start: string; end: string; status: string; signal: string; signalLabel: string }
 /** One day and how many activities were completed on it (a record spanning days counts on its first day). */
@@ -35,9 +35,17 @@ export interface DatasetPlace {
   longitude?: number | undefined;
 }
 
+/** One recorded movement between two places of the project (people, supplies, referrals), with where each end is when its place has a pin. */
+export interface DatasetFlow {
+  from: string; to: string; what: string; quantity: number; unit: string;
+  fromLatitude?: number | undefined; fromLongitude?: number | undefined; toLatitude?: number | undefined; toLongitude?: number | undefined;
+}
+
 export interface DatasetQuery {
   /** PLACES: how deep in the place tree to read (0 country, 1 first-level area …); the first indicator is the one read. */
   placeLevel?: number | undefined;
+  /** PLACES: also read the second indicator at the same level (a two-indicator map), matched to the first by each place's path. */
+  placesPair?: boolean | undefined;
   /** Extra data to attach (the plan, activity days, the budget); the sheet's own figures are always there. */
   sources?: DatasetSource[] | undefined;
   indicatorIds: string[];
@@ -85,6 +93,10 @@ export interface DatasetResult {
   activityDays?: DatasetDay[] | undefined;
   budget?: DatasetBudgetLine[] | undefined;
   places?: DatasetPlace[] | undefined;
+  /** BIVARIATE: the second indicator's value in each place at the same level (matched to `places` by path). */
+  placesSecond?: DatasetPlace[] | undefined;
+  /** Movements between places (attached when asked for through the FLOWS source). */
+  flows?: DatasetFlow[] | undefined;
   /** Finance figures for the periods in range (only periods that have some); verified ones only when drafts are not asked for. */
   finance: DatasetFinanceRow[];
   /** Values that exist but were left out because they are not verified and drafts were not asked for. */

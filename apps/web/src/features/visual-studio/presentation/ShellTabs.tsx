@@ -6,6 +6,7 @@ export const SHELL_TABS = [
   { key: "charts", label: "Charts", href: "/visuals/charts" },
   { key: "maps", label: "Maps", href: "/visuals/maps" },
   { key: "templates", label: "Templates", href: "/visuals/templates" },
+  { key: "assets", label: "Assets", href: "/visuals/assets" },
   { key: "alerts", label: "Alerts", href: "/visuals/alerts" },
   { key: "tv", label: "TV", href: "/visuals/tv" },
 ] as const;

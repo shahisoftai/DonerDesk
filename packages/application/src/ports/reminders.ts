@@ -43,7 +43,7 @@ export interface ITrialStatus {
 export interface PersonNotification {
   tenantId: TenantId;
   recipientId: string;
-  type: "ASSIGNMENT" | "DEADLINE_REMINDER" | "CHECKLIST_ASSIGNED" | "COMMENT_MENTION" | "REPORT_APPROVED" | "REPORT_RETURNED" | "DATA_ALERT";
+  type: "ASSIGNMENT" | "DEADLINE_REMINDER" | "CHECKLIST_ASSIGNED" | "COMMENT_MENTION" | "REPORT_APPROVED" | "REPORT_RETURNED" | "DATA_ALERT" | "CANVAS_DIGEST";
   title: string;
   message: string;
   relatedEntityType?: string;

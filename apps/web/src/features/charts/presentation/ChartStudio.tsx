@@ -57,7 +57,7 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState<"chart" | "table">("chart");
   const [search, setSearch] = useState("");
-  const isMapView = (c: SavedChartView): boolean => mode !== "map" || (c.spec as { dataset?: { template?: string } }).dataset?.template === "RESULTS_BY_PLACE";
+  const isMapView = (c: SavedChartView): boolean => mode !== "map" || ["RESULTS_BY_PLACE", "RESULTS_BY_PLACE_PAIR", "FLOWS_BETWEEN_PLACES"].includes((c.spec as { dataset?: { template?: string } }).dataset?.template ?? "");
   const [charts, setCharts] = useState<SavedChartView[]>(initialCharts.filter(isMapView));
   const [current, setCurrent] = useState<{ id: string; updatedAt: string } | null>(null);
   const [name, setName] = useState("");
@@ -211,7 +211,7 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
           <Section title={t("studio.data")} open>
             <Field label={t("studio.template")}>
               <select aria-label={t("studio.template")} className={cn(input, "w-full")} value={spec.dataset.template} onChange={(e) => edit(withTemplate(spec, e.target.value as DataChartTemplate, allIds))}>
-                {STUDIO_TEMPLATES.filter((tp) => mode !== "map" || tp === "RESULTS_BY_PLACE").map((tp) => <option key={tp} value={tp}>{DATA_CHART_TEMPLATES[tp].label}</option>)}
+                {STUDIO_TEMPLATES.filter((tp) => mode !== "map" || TEMPLATE_SHAPE[tp] === "PLACES").map((tp) => <option key={tp} value={tp}>{DATA_CHART_TEMPLATES[tp].label}</option>)}
               </select>
             </Field>
             {DATA_CHART_TEMPLATES[spec.dataset.template].indicators !== "none" && (
@@ -235,7 +235,7 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
                 {(["PERIOD", "CUMULATIVE", "PERCENT_OF_TARGET"] as const).map((m) => <option key={m} value={m}>{t(`studio.measure.${m}`)}</option>)}
               </select>
             </Field>}
-            {TEMPLATE_SHAPE[spec.dataset.template] === "PLACES" && (
+            {TEMPLATE_SHAPE[spec.dataset.template] === "PLACES" && spec.dataset.template !== "FLOWS_BETWEEN_PLACES" && (
               <Field label={t("studio.placeLevel")}>
                 <select aria-label={t("studio.placeLevel")} className={cn(input, "w-full")} value={spec.dataset.placeLevel ?? 1} onChange={(e) => edit({ ...spec, dataset: { ...spec.dataset, placeLevel: Number(e.target.value) } })}>
                   {[0, 1, 2, 3, 4].map((n) => <option key={n} value={n}>{t(`studio.placeLevel.${n}`)}</option>)}

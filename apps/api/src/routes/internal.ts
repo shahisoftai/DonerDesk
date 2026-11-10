@@ -210,6 +210,13 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       return r.value;
     });
 
+    // Called by the same hourly timer: tells each subscriber, once per schedule, that a canvas they follow is ready to open.
+    instance.post("/internal/canvas-subscriptions/run", async (req) => {
+      const r = await req.container.handlers.runCanvasSubscriptions.handle(req.tenant.tenantId);
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
+
     // Called by the same hourly timer: evaluates people's threshold alerts and tells each owner once when a figure crosses.
     instance.post("/internal/data-alerts/run", async (req) => {
       const r = await req.container.handlers.runDataAlerts.handle(req.tenant.tenantId);

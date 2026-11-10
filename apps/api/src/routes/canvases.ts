@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { createContainer, type Container } from "@donordesk/infrastructure";
-import { CanvasDataWorkbookSchema, CanvasExportQuerySchema, CanvasSnapshotsSchema, CreateCanvasShareSchema, DraftCanvasTextSchema, PublishCanvasSchema, ReviewCanvasSchema, placeKeysOf, CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
+import { PresenceUpdateSchema, SubscribeCanvasSchema, CanvasDataWorkbookSchema, CanvasExportQuerySchema, CanvasSnapshotsSchema, CreateCanvasShareSchema, DraftCanvasTextSchema, PublishCanvasSchema, ReviewCanvasSchema, placeKeysOf, CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
 
 /** Canvases (Phase 45): the merged dashboards and infographics. Thin: validate, call one handler, throw its error. The handlers apply who may see and change which canvas. */
 export async function registerCanvasRoutes(app: FastifyInstance) {
@@ -39,7 +39,7 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
   });
   app.get("/v1/canvases/:id/resolve", async (req) => {
     const q = CanvasResolveQuerySchema.parse(req.query);
-    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), { ...(q.periodId ? { periodId: q.periodId } : {}), placeKeys: placeKeysOf(q.places), ...(q.group ? { group: q.group } : {}), ...(q.status ? { status: q.status } : {}) });
+    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), { ...(q.periodId ? { periodId: q.periodId } : {}), placeKeys: placeKeysOf(q.places), ...(q.group ? { group: q.group } : {}), ...(q.status ? { status: q.status } : {}), ...(q.level ? { level: q.level } : {}), ...(q.indicator ? { indicator: q.indicator } : {}) });
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -62,10 +62,48 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
     reply.header("cache-control", "private, no-store");
     return r.value.bytes;
   });
+  // The caller's own email subscriptions: told weekly or monthly that a canvas is ready to open (a title and a link, never a figure).
+  app.get("/v1/canvases/subscriptions", async (req) => {
+    const r = await req.container.handlers.listMyCanvasSubscriptions.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.put("/v1/canvases/:id/subscription", async (req) => {
+    const r = await req.container.handlers.subscribeToCanvas.handle(ctx(req), idOf(req), SubscribeCanvasSchema.parse(req.body).every);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.delete("/v1/canvases/:id/subscription", async (req) => {
+    const r = await req.container.handlers.unsubscribeFromCanvas.handle(ctx(req), idOf(req));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+  // Who else has this canvas open (Phase 48.8), as a stream of server-sent events. The stream carries names and what each person has selected,
+  // never a figure or an edit; it ends when the page closes, and the person is gone from everyone else's list at once.
+  app.get("/v1/canvases/:id/presence", async (req, reply) => {
+    const r = await req.container.handlers.canvasPresence.open(ctx(req), idOf(req));
+    if (!r.ok) throw r.error;
+    const session = r.value;
+    reply.hijack();
+    const raw = reply.raw;
+    raw.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform", connection: "keep-alive", "x-accel-buffering": "no" });
+    const send = () => { if (!raw.writableEnded) raw.write(`event: presence\ndata: ${JSON.stringify(session.others())}\n\n`); };
+    const stop = session.subscribe(send);
+    send();
+    // A comment line now and then keeps proxies from closing a quiet stream, and refreshes this person's own entry.
+    const beat = setInterval(() => { session.touch(); if (!raw.writableEnded) raw.write(": keep-alive\n\n"); }, 20_000);
+    req.raw.on("close", () => { clearInterval(beat); stop(); session.close(); });
+  });
+  app.post("/v1/canvases/:id/presence", async (req) => {
+    const body = PresenceUpdateSchema.parse(req.body);
+    const r = await req.container.handlers.canvasPresence.update(ctx(req), idOf(req), body);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
   app.post("/v1/canvases/preview", async (req) => {
-    const { projectId, periodId, placeKeys, group, status, title, ...rest } = PreviewCanvasSchema.parse(req.body);
+    const { projectId, periodId, placeKeys, group, status, level, indicator, title, ...rest } = PreviewCanvasSchema.parse(req.body);
     const canvas = { id: "preview", title, scope: "MINE", mode: rest.mode ?? "LIVE", revision: 1, ...rest } as never;
-    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, { ...(periodId ? { periodId } : {}), ...(placeKeys?.length ? { placeKeys } : {}), ...(group ? { group } : {}), ...(status ? { status } : {}) });
+    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, { ...(periodId ? { periodId } : {}), ...(placeKeys?.length ? { placeKeys } : {}), ...(group ? { group } : {}), ...(status ? { status } : {}), ...(level ? { level } : {}), ...(indicator ? { indicator } : {}) });
     if (!r.ok) throw r.error;
     return r.value;
   });

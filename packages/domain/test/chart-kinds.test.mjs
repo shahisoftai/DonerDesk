@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildChart, resolveDataset, datasetQueryFor, validateChartSpec, CHART_KINDS } from "../dist/index.js";
+import { buildChart, resolveDataset, datasetQueryFor, validateChartSpec, kindsForTemplate, CHART_KINDS } from "../dist/index.js";
 import { niceUnit } from "../dist/contexts/reporting/chart-render-kinds.js";
 import { ICON_PATHS } from "../dist/contexts/reporting/chart-icons.js";
 import { ALL, EXTRA, build, sheet, spec } from "./support/chart-fixtures.mjs";
@@ -179,4 +179,80 @@ test("dot density and the hexagon grid: only pinned places, a stated unit, nothi
   const total = hex.option.series[0].data.reduce((t, d) => t + d.value[2], 0);
   assert.equal(total, 620, "every pinned place's value is in exactly one hexagon");
   assert.equal(build(spec("HEX_GRID", "RESULTS_BY_PLACE", ["r"])).ok, false);
+});
+
+test("beeswarm, violin, ridgeline and bar race draw only recorded figures, on one scale, with a gap left as a gap", () => {
+  const swarm = build(spec("BEESWARM", "INDICATORS_OVER_TIME", ["a", "b"], { dataset: { measure: "PERIOD" } }));
+  assert.equal(swarm.ok, true, swarm.reason);
+  assert.equal(swarm.option.series.reduce((t, s) => t + s.data.length, 0), 12, "every recorded period figure is one dot");
+  const vio = build(spec("VIOLIN", "INDICATORS_OVER_TIME", ["a", "b"], { dataset: { measure: "PERIOD" } }));
+  assert.equal(vio.ok, true, vio.reason);
+  assert.equal(vio.option.grid.length, 2, "one shape for each indicator");
+  assert.match(vio.notes.join(" "), /estimate/);
+  assert.equal(build(spec("VIOLIN", "INDICATORS_OVER_TIME", ["n"], { dataset: { measure: "PERIOD" } })).ok, false, "an indicator with only three recorded periods has no spread to estimate");
+  const ridge = build(spec("RIDGELINE", "INDICATORS_OVER_TIME", ["a", "b"], { dataset: { measure: "PERIOD" } }));
+  assert.equal(ridge.ok, true, ridge.reason);
+  assert.equal(ridge.option.yAxis[0].max, ridge.option.yAxis[1].max, "every ridge has the same scale");
+  assert.equal(build(spec("RIDGELINE", "INDICATOR_OVER_TIME", ["a"], { dataset: { measure: "PERIOD" } })).ok, false);
+  const race = build(spec("BAR_RACE", "INDICATORS_OVER_TIME", ["a", "b"], { dataset: { measure: "PERIOD" } }));
+  assert.equal(race.ok, true, race.reason);
+  assert.equal(race.option.raceFrames.length, 6, "a frame for every period, each named");
+  assert.deepEqual(race.option.raceFrames[0].names, ["A", "B"]);
+  assert.equal(race.option.raceFrames.every((f) => typeof f.label === "string" && f.label !== ""), true);
+});
+
+test("marimekko needs a recorded split and one indicator; its widths are the recorded totals and a gap is not drawn", () => {
+  const d = { ...resolveDataset(sheet, datasetQueryFor(spec("MARIMEKKO", "INDICATOR_OVER_TIME", ["a"]), ALL)), ...EXTRA };
+  const split = (v) => [{ dimension: "Sex", category: "Female", value: String(Math.round(v * 0.6)) }, { dimension: "Sex", category: "Male", value: String(Math.round(v * 0.4)) }];
+  const s = spec("MARIMEKKO", "INDICATOR_OVER_TIME", ["a"], { dataset: { measure: "PERIOD" } });
+  const none = build(s, d);
+  assert.equal(none.ok, false);
+  assert.match(none.reason, /No split by group is recorded/);
+  const withSplit = build(s, { ...d, points: d.points.map((p, i) => (i === 2 ? p : { ...p, breakdown: split(p.value ?? 0) })) });
+  assert.equal(withSplit.ok, true, withSplit.reason);
+  assert.equal(withSplit.option.xAxis.length, 5, "the period with no split is not drawn");
+  assert.equal(withSplit.option.noTable, true);
+  assert.match(withSplit.notes.join(" "), /1 period has no usable split/);
+  const rateSpec = spec("MARIMEKKO", "INDICATOR_OVER_TIME", ["r"], { dataset: { measure: "PERIOD" } });
+  const rateData = { ...resolveDataset(sheet, datasetQueryFor(rateSpec, ALL)), ...EXTRA };
+  assert.equal(build(rateSpec, { ...rateData, points: rateData.points.map((p) => ({ ...p, breakdown: split(p.value ?? 0) })) }).ok, false, "a rate is not split into shares");
+});
+
+test("alluvial and chord follow spent money, refuse two currencies and never call an unread result 'not linked'", () => {
+  const d = { ...resolveDataset(sheet, datasetQueryFor(spec("ALLUVIAL", "BUDGET_FLOW", []), ALL)), ...EXTRA };
+  const lines = [
+    { donor: "USAID", category: "Equipment", currency: "USD", budgeted: 1000, spent: 400, result: "R1" },
+    { donor: "EU", category: "Training", currency: "USD", budgeted: 500, spent: 300, result: "R2" },
+    { donor: "EU", category: "Equipment", currency: "USD", budgeted: 500, spent: 100, resultUnknown: true },
+  ];
+  const al = build(spec("ALLUVIAL", "BUDGET_FLOW", []), { ...d, budget: lines });
+  assert.equal(al.ok, true, al.reason);
+  assert.equal(al.option.series[0].links.reduce((t, l) => t + l.value, 0), 2 * (400 + 300), "each unit of money passes both stages");
+  assert.match(al.notes.join(" "), /1 line is left out because its result could not be read/);
+  const ch = build(spec("CHORD", "BUDGET_FLOW", []), { ...d, budget: lines });
+  assert.equal(ch.ok, true, ch.reason);
+  assert.equal(build(spec("ALLUVIAL", "BUDGET_FLOW", []), { ...d, budget: lines.map((l, i) => (i === 0 ? { ...l, currency: "EUR" } : l)) }).ok, false);
+  assert.equal(build(spec("CHORD", "BUDGET_FLOW", []), { ...d, budget: lines.slice(0, 1) }).ok, false);
+});
+
+test("a bivariate map needs both values and a pin; a flow map draws arrows only between pinned places in one unit", () => {
+  const d = { ...resolveDataset(sheet, datasetQueryFor(spec("BIVARIATE_MAP", "RESULTS_BY_PLACE_PAIR", ["a", "b"]), ALL)), ...EXTRA };
+  const pins = [["Gulu", 2.7, 32.3, 100, 30], ["Kitgum", 3.3, 32.9, 80, 60], ["Lira", 2.2, 32.9, 60, 90], ["Arua", 3.0, 30.9, 40, null]].map(([name, latitude, longitude, value, second]) => ({ place: { name, path: name, level: 1, value, partly: false, latitude, longitude }, second }));
+  const places = pins.map((p) => p.place);
+  const placesSecond = pins.map((p) => ({ ...p.place, value: p.second }));
+  const bi = build(spec("BIVARIATE_MAP", "RESULTS_BY_PLACE_PAIR", ["a", "b"]), { ...d, places, placesSecond });
+  assert.equal(bi.ok, true, bi.reason);
+  assert.equal(bi.option.series[0].data.length, 3, "Arua has no second value, so it is not coloured as if it had one");
+  assert.equal(bi.option.visualMap.pieces.length, 9);
+  assert.match(bi.notes.join(" "), /1 place has a value for only one indicator/);
+  assert.equal(build(spec("BIVARIATE_MAP", "RESULTS_BY_PLACE_PAIR", ["a", "b"]), { ...d, places: places.slice(0, 2), placesSecond: placesSecond.slice(0, 2) }).ok, false);
+  assert.equal(build(spec("BIVARIATE_MAP", "RESULTS_BY_PLACE_PAIR", ["a", "b"]), { ...d, places }).ok, false, "without the second indicator it cannot be drawn");
+  const flows = [{ from: "Gulu", to: "Kitgum", what: "People", quantity: 300, unit: "households", fromLatitude: 2.7, fromLongitude: 32.3, toLatitude: 3.3, toLongitude: 32.9 }, { from: "Lira", to: "Arua", what: "Tents", quantity: 50, unit: "households" }];
+  const fm = build(spec("FLOW_MAP", "FLOWS_BETWEEN_PLACES", []), { ...d, flows });
+  assert.equal(fm.ok, true, fm.reason);
+  assert.equal(fm.option.series.filter((s) => s.type === "lines").reduce((t, s) => t + s.data.length, 0), 1, "the movement with no pin at an end is not drawn");
+  assert.match(fm.notes.join(" "), /1 movement has an end with no pin/);
+  assert.equal(build(spec("FLOW_MAP", "FLOWS_BETWEEN_PLACES", []), { ...d, flows: [flows[0], { ...flows[0], unit: "tents" }] }).ok, false, "two units cannot share widths");
+  assert.equal(build(spec("FLOW_MAP", "FLOWS_BETWEEN_PLACES", []), { ...d, flows: undefined }).ok, false);
+  assert.ok(!kindsForTemplate("RESULTS_BY_PLACE").includes("BIVARIATE_MAP") && kindsForTemplate("RESULTS_BY_PLACE_PAIR").join() === "BIVARIATE_MAP", "each special template offers only its own kind");
 });

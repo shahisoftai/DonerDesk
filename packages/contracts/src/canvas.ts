@@ -37,6 +37,7 @@ export const CanvasBlockSchema = z.object({
   component: z.object({ id: z.string().max(64), version: z.number().int().min(1), key: z.string().max(60) }).optional(),
   paramBindings: z.array(z.object({ param: z.string().max(30), target: z.enum(["period", "periodRange", "place", "group", "status", "indicator", "project", "text"]) })).max(8).optional(),
   action: BlockAction.optional(),
+  motion: z.object({ animation: z.enum(["NONE", "FADE", "RISE", "GROW", "COUNT_UP", "DRAW"]), durationMs: z.number().int().min(100).max(3000), delayMs: z.number().int().min(0).max(5000), easing: z.enum(["LINEAR", "EASE_OUT", "EASE_IN_OUT"]) }).optional(),
 });
 export const CanvasPageSchema = z.object({
   id: z.string().min(1).max(60), title: z.string().max(80), format: z.string().min(1).max(40), blocks: z.array(CanvasBlockSchema).max(60),
@@ -63,12 +64,12 @@ export const SaveCanvasSchema = z.object({
 export type SaveCanvasInput = z.infer<typeof SaveCanvasSchema>;
 
 export const CanvasListQuerySchema = z.object({ projectId: z.string().max(80).optional() });
-export const CanvasResolveQuerySchema = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional() });
+export const CanvasResolveQuerySchema = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional(), level: z.string().max(80).optional(), indicator: z.string().max(80).optional() });
 /** Places arrive as one comma-separated query value. */
 export const placeKeysOf = (places: string | undefined): string[] => (places ?? "").split(",").map((p) => p.trim()).filter(Boolean).slice(0, 20);
 
 /** An edited canvas that has not been saved, sent so the screen can show what it would say. Nothing is stored. */
-export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional(), placeKeys: z.array(z.string().max(80)).max(20).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional() });
+export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional(), placeKeys: z.array(z.string().max(80)).max(20).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional(), level: z.string().max(80).optional(), indicator: z.string().max(80).optional() });
 export type PreviewCanvasInput = z.infer<typeof PreviewCanvasSchema>;
 
 export const CanvasExportQuerySchema = z.object({ format: z.enum(["PNG", "PDF", "SVG", "PPTX", "PACK"]), scale: z.coerce.number().int().min(1).max(3).optional() });
@@ -92,3 +93,11 @@ export const CanvasDataWorkbookSchema = z.object({
   })).min(1).max(30),
 });
 export type CanvasDataWorkbookInput = z.infer<typeof CanvasDataWorkbookSchema>;
+
+/** How often a person wants to be told a canvas is ready to open (Phase 48.16). */
+export const SubscribeCanvasSchema = z.object({ every: z.enum(["WEEKLY", "MONTHLY"]) });
+export type SubscribeCanvasInput = z.infer<typeof SubscribeCanvasSchema>;
+
+/** What a person tells the others they are doing on a canvas (Phase 48.8): the block they have selected and whether they are editing. */
+export const PresenceUpdateSchema = z.object({ blockId: z.string().max(60).nullable(), editing: z.boolean() });
+export type PresenceUpdateInput = z.infer<typeof PresenceUpdateSchema>;

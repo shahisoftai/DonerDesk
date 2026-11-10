@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  restrictSheetToGroup, restrictWidgetToPeriod, buildKpi, computeMetric, MAP_VIEW_LABEL, type KpiTile, type MetricTile,
+  restrictSheet, restrictWidgetToPeriod, buildKpi, computeMetric, MAP_VIEW_LABEL, type KpiTile, type MetricTile,
   DomainError, Permissions, addWidget, legacyDashboardToPages, projectListTable, buildChart, buildDataChart, canEditDashboard, canSeeDashboard, dashboardScopeProblem, datasetQueryFor, isSpecV2, resolveDataset, runReport, settleLayout, toDatasetQuery, validateReportQuery, widgetProblems, type ReportQuery,
   type ChartSpecV2, type DashboardScope, type DashboardWidget, type DataChartSpec, type DataSheet, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
@@ -236,7 +236,10 @@ export async function drawCharts(
         const indicatorId = spec.dataset.indicatorIds[0] ?? "";
         const level = spec.dataset.placeLevel ?? 1;
         data.places = await extra(`${w.projectId}|places|${indicatorId}|${level}`, () => service.places(ctx, w.projectId, indicatorId, level));
+        const second = spec.dataset.template === "RESULTS_BY_PLACE_PAIR" ? spec.dataset.indicatorIds[1] : undefined;
+        if (second) data.placesSecond = await extra(`${w.projectId}|places|${second}|${level}`, () => service.places(ctx, w.projectId, second, level));
       }
+      if (source === "FLOWS") data.flows = await extra(`${w.projectId}|flows`, () => (service.flows ? service.flows(ctx, w.projectId) : Promise.resolve(undefined)));
     }
     return data;
   };
@@ -341,7 +344,7 @@ export class GetDashboardDataHandler {
 export class PreviewDashboardChartsHandler {
   constructor(private readonly sheets: GetProjectDataSheetHandler, private readonly visible: VisibleProjects, private readonly extras?: IDatasetExtras) {}
 
-  async handle(ctx: AuthenticatedContext, widgets: ReadonlyArray<DashboardWidget>, options: { periodId?: string; group?: string; status?: string } = {}): Promise<Result<{ charts: DashboardChartDto[] }, DomainError>> {
+  async handle(ctx: AuthenticatedContext, widgets: ReadonlyArray<DashboardWidget>, options: { periodId?: string; group?: string; status?: string; level?: string; indicator?: string } = {}): Promise<Result<{ charts: DashboardChartDto[] }, DomainError>> {
     if (!can(ctx, "project.view")) return fail(DomainError.forbidden("You cannot see dashboards"));
     // A size outside the grid is fitted, not refused, exactly as a save does it; then the rest is checked.
     const fitted = settleLayout([...widgets]);
@@ -351,7 +354,8 @@ export class PreviewDashboardChartsHandler {
     if (!mine.ok) return mine;
     // A viewer's group narrows every indicator figure to what was recorded for that group; a status narrows what is built from the plan.
     const read = viewerSheetReader(ctx, this.sheets, new Set(mine.value.map((p) => p.id)), []);
-    const reader = options.group ? async (projectId: string) => { const sheet = await read(projectId); return sheet ? restrictSheetToGroup(sheet, options.group as string) : sheet; } : read;
+    const narrowed = Boolean(options.group || options.level || options.indicator);
+    const reader = narrowed ? async (projectId: string) => { const sheet = await read(projectId); return sheet ? restrictSheet(sheet, options) : sheet; } : read;
     const extras = this.extras ? { ctx, service: options.status ? new StatusFilteredExtras(this.extras, options.status) : this.extras } : undefined;
     const charts = await drawCharts(fitted, reader, extras, options.periodId);
     return ok({ charts });

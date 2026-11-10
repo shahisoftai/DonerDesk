@@ -51,7 +51,12 @@ export class ResolveDatasetsHandler {
           if (wanted.has("PLAN")) dataset.plan = await this.extras.plan(ctx, group.projectId);
           if (wanted.has("ACTIVITY_DAYS")) dataset.activityDays = await this.extras.activityDays(ctx, group.projectId);
           if (wanted.has("BUDGET")) dataset.budget = await this.extras.budget(ctx, group.projectId);
-          if (wanted.has("PLACES")) dataset.places = await this.extras.places(ctx, group.projectId, r.query.indicatorIds[0] ?? "", r.query.placeLevel ?? 1);
+          if (wanted.has("PLACES")) {
+            dataset.places = await this.extras.places(ctx, group.projectId, r.query.indicatorIds[0] ?? "", r.query.placeLevel ?? 1);
+            // A two-indicator map reads the second indicator at the same level; it is matched to the first by each place's path.
+            if (r.query.placesPair && r.query.indicatorIds[1]) dataset.placesSecond = await this.extras.places(ctx, group.projectId, r.query.indicatorIds[1], r.query.placeLevel ?? 1);
+          }
+          if (wanted.has("FLOWS")) dataset.flows = await this.extras.flows?.(ctx, group.projectId);
         }
         answers.set(r.key, { key: r.key, dataset });
       }

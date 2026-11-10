@@ -47,7 +47,7 @@ export function TemplateEditor({ template: initial, updatedAt, canEdit }: { temp
     if (!window.confirm(`Delete “${t.title}”?`)) return;
     const r = await deleteDashboardTemplateAction(t.id);
     if (!r.ok) { setMessage({ tone: "error", text: r.error.message }); return; }
-    router.push("/dashboards/templates");
+    router.push("/visuals/templates");
   }
   async function copy() {
     setBusy(true);
@@ -55,7 +55,7 @@ export function TemplateEditor({ template: initial, updatedAt, canEdit }: { temp
     const r = await saveDashboardTemplateAction({ title: c.title, description: c.description, sector: c.sector, audience: c.audience, roles: c.roles, widgets: c.widgets, basedOn: t.id });
     setBusy(false);
     if (!r.ok) { setMessage({ tone: "error", text: r.error.message }); return; }
-    router.push(`/dashboards/templates/${r.value.id}`);
+    router.push(`/visuals/templates/sector/${r.value.id}`);
   }
   const widget = (w: TemplateWidget) => {
     const c = w.chart;

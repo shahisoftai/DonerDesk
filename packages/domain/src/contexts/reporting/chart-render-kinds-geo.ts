@@ -1,4 +1,4 @@
-import type { DatasetPlace } from "./dataset-query.js";
+import type { DatasetFlow, DatasetPlace } from "./dataset-query.js";
 import { niceUnit } from "./chart-render-kinds.js";
 
 /**
@@ -89,5 +89,63 @@ export function hexGrid(places: ReadonlyArray<DatasetPlace>, kit: GeoKit): GeoBu
       series: [{ type: "scatter", coordinateSystem: "geo", symbol: "path://M12 1 22 6.5v11L12 23 2 17.5v-11z", symbolSize: 28, data: drawn.map((c) => ({ name: c.names.join(", "), value: [Number((c.col * size + (c.row % 2 === 0 ? 0 : size / 2)).toFixed(4)), Number((c.row * rowStep).toFixed(4)), c.sum] })) }],
     },
     notes: [`Places are grouped into hexagons about ${km} km across; each shows the sum of the places whose pins fall inside it (${kit.fmt(min)} to ${kit.fmt(max)}${kit.unit ? ` ${kit.unit}` : ""}). A hexagon with no place in it is not drawn.`, ...leftOff(noPin), ...levelNote],
+  };
+}
+
+const WORDS = ["low", "middle", "high"] as const;
+/** Colours of a 3 by 3 two-variable map: grey where both are low, one hue along each indicator, the strongest where both are high (the standard Stevens palette). */
+const BIVARIATE_COLOURS: ReadonlyArray<ReadonlyArray<string>> = [
+  ["#e8e8e8", "#ace4e4", "#5ac8c8"],
+  ["#dfb0d6", "#a5add3", "#5698b9"],
+  ["#be64ac", "#8c62aa", "#3b4994"],
+];
+const thirds = (values: ReadonlyArray<number>): [number, number] => {
+  const sorted = [...values].sort((a, b) => a - b);
+  return [sorted[Math.floor(sorted.length / 3)]!, sorted[Math.floor((2 * sorted.length) / 3)]!];
+};
+const classOf = (v: number, [t1, t2]: [number, number]): 0 | 1 | 2 => (v < t1 ? 0 : v < t2 ? 1 : 2);
+
+/** Two indicators in each pinned place, each split into thirds of the places that have both, so a person sees where both are high or both low. */
+export function bivariate(places: ReadonlyArray<DatasetPlace>, second: ReadonlyArray<DatasetPlace>, names: readonly [string, string], kit: GeoKit): GeoBuilt {
+  const other = new Map(second.map((p) => [p.path, p]));
+  const pinned = places.filter((p): p is DatasetPlace & { value: number; latitude: number; longitude: number } => p.value !== null && p.latitude !== undefined && p.longitude !== undefined);
+  const rows = pinned.flatMap((p) => { const b = other.get(p.path)?.value; return b === null || b === undefined ? [] : [{ p, a: p.value, b }]; });
+  if (rows.length < 3) return "A two-indicator map needs at least three places that have a value for both indicators and a pin on the map. Pin places in the places list, or draw each indicator on its own.";
+  const ta = thirds(rows.map((r) => r.a)), tb = thirds(rows.map((r) => r.b));
+  const data = rows.map((r) => { const ca = classOf(r.a, ta), cb = classOf(r.b, tb); return { name: `${r.p.name}: ${kit.fmt(r.a)} and ${kit.fmt(r.b)}`, value: [r.p.longitude, r.p.latitude, cb * 3 + ca] }; });
+  const pieces = [0, 1, 2].flatMap((cb) => [0, 1, 2].map((ca) => ({ value: cb * 3 + ca, label: `A ${WORDS[ca]} · B ${WORDS[cb]}`, color: BIVARIATE_COLOURS[cb]![ca]! })));
+  const unlabelled = places.filter((p) => p.value !== null).length - rows.length;
+  return {
+    option: {
+      ...kit.base, tooltip: { trigger: "item", formatter: "{b}" }, geo: kit.geo,
+      visualMap: { type: "piecewise", dimension: 2, pieces, orient: "horizontal", left: "center", bottom: 0, itemGap: 6, textStyle: { fontSize: 10 } },
+      series: [{ type: "scatter", coordinateSystem: "geo", symbolSize: 22, itemStyle: { borderColor: "#fff", borderWidth: 1 }, data }],
+    },
+    notes: [`A is ${names[0]} and B is ${names[1]}. Each indicator's places are split into thirds (low, middle, high) among the ${rows.length} places that have both, so a colour says where a place stands against the others, not against a target.`, ...(unlabelled > 0 ? [`${unlabelled} ${unlabelled === 1 ? "place has" : "places have"} a value for only one indicator, or no pin, and ${unlabelled === 1 ? "is" : "are"} not on the map.`] : [])],
+  };
+}
+
+/** What moves between places, as arrows whose width is the quantity, one colour for each kind of thing moved; one unit only, and only flows whose two ends both have a pin. */
+export function flowMap(flows: ReadonlyArray<DatasetFlow>, kit: GeoKit): GeoBuilt {
+  const pinned = flows.filter((f) => f.fromLatitude !== undefined && f.fromLongitude !== undefined && f.toLatitude !== undefined && f.toLongitude !== undefined && f.quantity > 0);
+  if (pinned.length === 0) return flows.length === 0 ? "No movements between places are recorded for this project yet. Add them from the map's Flows list." : "None of the recorded movements has a pin at both ends. Pin the places in the places list.";
+  const units = [...new Set(pinned.map((f) => f.unit.trim()))];
+  if (units.length > 1) return `The movements use more than one unit (${units.map((u) => u || "none").join(", ")}), so their widths cannot be compared on one map.`;
+  const whats = [...new Set(pinned.map((f) => f.what.trim() || "Movement"))];
+  const widest = Math.max(...pinned.map((f) => f.quantity));
+  const ends = new Map<string, { name: string; value: [number, number]; total: number }>();
+  const touch = (name: string, lon: number, lat: number, q: number) => { const e = ends.get(name) ?? { name, value: [lon, lat] as [number, number], total: 0 }; e.total += q; ends.set(name, e); };
+  for (const f of pinned) { touch(f.from, f.fromLongitude!, f.fromLatitude!, f.quantity); touch(f.to, f.toLongitude!, f.toLatitude!, f.quantity); }
+  const biggest = Math.max(...[...ends.values()].map((e) => e.total));
+  const series: unknown[] = whats.map((what, i) => ({
+    type: "lines", name: what, coordinateSystem: "geo", zlevel: 2, effect: { show: true, period: 6, trailLength: 0.1, symbol: "arrow", symbolSize: 6 },
+    lineStyle: { color: kit.palette[i % kit.palette.length], opacity: 0.7, curveness: 0.2 },
+    data: pinned.filter((f) => (f.what.trim() || "Movement") === what).map((f) => ({ name: `${f.from} to ${f.to}: ${kit.fmt(f.quantity)}${units[0] ? ` ${units[0]}` : ""}`, coords: [[f.fromLongitude!, f.fromLatitude!], [f.toLongitude!, f.toLatitude!]], lineStyle: { width: 1 + 9 * (f.quantity / widest) } })),
+  }));
+  series.push({ type: "scatter", name: "Places", coordinateSystem: "geo", zlevel: 3, itemStyle: { color: "#444" }, tooltip: { formatter: "{b}" }, data: [...ends.values()].map((e) => ({ name: e.name, value: e.value, symbolSize: 6 + 12 * Math.sqrt(e.total / biggest) })) });
+  const skipped = flows.length - pinned.length;
+  return {
+    option: { ...kit.base, tooltip: { trigger: "item", formatter: "{b}" }, legend: { show: true, bottom: 0, data: whats }, geo: kit.geo, series },
+    notes: [`Arrow width is the quantity moved${units[0] ? ` (${units[0]})` : ""}; a dot's size is the total through that place. The moving arrows are for the screen: a file shows still arrows.`, ...(skipped > 0 ? [`${skipped} ${skipped === 1 ? "movement has" : "movements have"} an end with no pin, or no quantity, and ${skipped === 1 ? "is" : "are"} not drawn.`] : [])],
   };
 }

@@ -56,7 +56,7 @@ export function TemplateGallery({ templates, projects, canEdit }: { templates: T
     const saved = await saveDashboardTemplateAction({ title: t.title, description: t.description, sector: t.sector, audience: t.audience, roles: t.roles, widgets: t.widgets, basedOn: s.id });
     setBusy(false);
     if (!saved.ok) { setError(saved.error.message); return; }
-    router.push(`/dashboards/templates/${saved.value.id}`);
+    router.push(`/visuals/templates/sector/${saved.value.id}`);
   }
   async function create() {
     if (!open) return;
@@ -88,8 +88,8 @@ export function TemplateGallery({ templates, projects, canEdit }: { templates: T
                 <div className="flex flex-wrap gap-2">
                   <button type="button" className={btn} onClick={() => void use(t)} disabled={busy}>Use this template</button>
                   {canEdit && t.origin === "BUILT_IN" && <button type="button" className={btn} onClick={() => void copy(t)} disabled={busy}>Copy and edit</button>}
-                  {canEdit && t.origin === "ORGANISATION" && <a className={btn} href={`/dashboards/templates/${t.id}`}>Edit</a>}
-                  {t.origin === "BUILT_IN" && <a className="px-1 py-1.5 text-sm underline" href={`/dashboards/templates/${t.id}`}>Look inside</a>}
+                  {canEdit && t.origin === "ORGANISATION" && <a className={btn} href={`/visuals/templates/sector/${t.id}`}>Edit</a>}
+                  {t.origin === "BUILT_IN" && <a className="px-1 py-1.5 text-sm underline" href={`/visuals/templates/sector/${t.id}`}>Look inside</a>}
                 </div>
               </li>
             ))}
@@ -135,7 +135,7 @@ export function TemplateGallery({ templates, projects, canEdit }: { templates: T
 
       {applied && (
         <p role="status" data-testid="applied" className="rounded-lg bg-emerald-50 p-3 text-sm dark:bg-emerald-500/10">
-          Your dashboard is ready. <a className="underline" href={`/dashboards/${applied.dashboardId}`}>Open it</a>.
+          Your dashboard is ready. <a className="underline" href={`/visuals/open/dashboard/${applied.dashboardId}`}>Open it</a>.
           {applied.chartsLeftOut.length > 0 ? ` ${applied.chartsLeftOut.length} chart${applied.chartsLeftOut.length === 1 ? " was" : "s were"} left out because ${applied.chartsLeftOut.length === 1 ? "it needs" : "they need"} an indicator you did not choose.` : ""}
         </p>
       )}

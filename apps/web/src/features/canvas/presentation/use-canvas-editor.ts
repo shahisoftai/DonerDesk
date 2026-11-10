@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
-  addBlock, addPage, commit, canRedo, canUndo, definitionFor, duplicateBlock, moveBlock, redo, removeBlock, removePage, resizeBlock, setBindings, setBlockAlt, setHidden, setLocked,
+  addBlock, addPage, commit, canRedo, canUndo, definitionFor, duplicateBlock, moveBlock, redo, removeBlock, removePage, resizeBlock, setBindings, setBlockAlt, setBlockMotion, type AnimationSpec, setHidden, setLocked,
   setContainer, setTitle, startHistory, undo, updateProps, projectOf, EMPTY_SELECTION, extendTo, pruneSelection, selectOne, toggle,
   type ArrangeResult, type BlockInstance, type Canvas, type EditResult, type History, type Selection,
 } from "@donordesk/domain/contexts/canvas/index.js";
@@ -72,6 +72,7 @@ export function useCanvasEditor(initial: Canvas, defaultProjectId: string | unde
     },
     container: (id: string, container: { id: string; tab?: number } | undefined) => withBlock(id, (c) => setContainer(c, id, container)),
     alt: (id: string, alt: string, description: string) => withBlock(id, (c) => setBlockAlt(c, id, alt || undefined, description || undefined)),
+    motion: (id: string, motion: AnimationSpec | undefined) => withBlock(id, (c) => setBlockMotion(c, id, motion)),
     act(id: string, action: "duplicate" | "remove" | "hide" | "lock") {
       const b = latest.current.pages.flatMap((p) => p.blocks).find((x) => x.id === id);
       if (!b) return;

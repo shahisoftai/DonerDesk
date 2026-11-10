@@ -4,6 +4,7 @@
  * adding a definition and a line in `blocks/registry.ts`.
  */
 import type { SlotDef } from "./binding.js";
+import type { Picture } from "./motion.js";
 
 export const BLOCK_FAMILIES = ["TEXT", "NUMBERS", "CHARTS", "MAPS", "TABLES", "AI", "MEDIA", "CONTAINERS", "CONTROLS"] as const;
 export type BlockFamily = (typeof BLOCK_FAMILIES)[number];
@@ -41,6 +42,8 @@ export interface BlockDefinition<P, M = unknown, D = unknown> {
   requiresSetup?: boolean;
   /** True for a picture (chart, map, image): a public profile asks for a written description. Rules read this, never the kind's name. */
   needsAlt?: boolean;
+  /** What kind of picture the block is, so a motion that does not suit it (a counter on a map) is refused. A function reads the block's own settings (a line chart and a bar chart differ). */
+  picture?: Picture | ((props: P) => Picture);
   /** True for a headline block (hero, banner): a snapshot tells one story, so it counts how many there are. */
   headline?: boolean;
   /** What `resolve` is given as data: the project's facts (infographic-style blocks), the viewer's own list of projects, or nothing. The resolver asks the block; it never names one. */

@@ -2817,3 +2817,34 @@ model DataAlert {
 
   @@index([tenantId, userId])
 }
+
+/// A recorded movement between two places of a project (Phase 48.12): what moved, how much, in what unit. Ids and numbers, never derived.
+model PlaceFlow {
+  id          String   @id
+  tenantId    String
+  projectId   String
+  fromPlaceId String
+  toPlaceId   String
+  what        String
+  quantity    Float
+  unit        String   @default("")
+  note        String?
+  createdById String
+  createdAt   DateTime @default(now())
+
+  @@index([tenantId, projectId])
+}
+
+/// A person's own email subscription to a canvas (Phase 48.16): told on a schedule that it is ready to open. A link and a title, never figures.
+model CanvasSubscription {
+  id         String    @id
+  tenantId   String
+  canvasId   String
+  userId     String
+  every      String
+  lastSentAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@unique([canvasId, userId])
+  @@index([tenantId, userId])
+}

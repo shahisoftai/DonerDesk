@@ -30,7 +30,7 @@ export function IndicatorViews({ projectId, indicatorId }: { projectId: string; 
     <section className="card mt-4" aria-label={t("indicatorViews.title")}>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-medium">{t("indicatorViews.title")}</h3>
-        <Link className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/charts`}>{t("indicatorViews.studio")}</Link>
+        <Link className="text-xs font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/visuals/charts/${projectId}`}>{t("indicatorViews.studio")}</Link>
       </div>
       <div role="tablist" className="mt-3 flex flex-wrap gap-2">
         {INDICATOR_VIEWS.map((v) => (

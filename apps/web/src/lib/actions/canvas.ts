@@ -6,7 +6,10 @@ import { gatewayRequest } from "@/lib/server/api-gateway";
 import { CanvasSchema, ConvertedCanvasSchema, ResolvedCanvasSchema, SavedCanvasSchema, type CanvasView, type ResolvedCanvas } from "@/lib/server/schemas-canvas";
 import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
+import { z } from "zod";
 import { OkResponseSchema } from "./_schemas";
+
+const OkOrSubscriptionSchema = z.object({ canvasId: z.string(), every: z.string() });
 
 const invalid = (message: string): Result<never, AppError> => ({ ok: false, error: { kind: "validation", message, fields: {} } });
 
@@ -38,13 +41,15 @@ export async function duplicateCanvasAction(id: string): Promise<Result<CanvasVi
 }
 
 /** Reads what the canvas shows now, for the signed-in person: used after a save and when the period filter changes. */
-export async function resolveCanvasAction(id: string, filters: { periodId?: string; places?: string[]; group?: string; status?: string } = {}): Promise<Result<ResolvedCanvas, AppError>> {
+export async function resolveCanvasAction(id: string, filters: { periodId?: string; places?: string[]; group?: string; status?: string; level?: string; indicator?: string } = {}): Promise<Result<ResolvedCanvas, AppError>> {
   const context = await requireSession();
   const params = new URLSearchParams();
   if (filters.periodId) params.set("periodId", filters.periodId);
   if (filters.places?.length) params.set("places", filters.places.join(","));
   if (filters.group) params.set("group", filters.group);
   if (filters.status) params.set("status", filters.status);
+  if (filters.level) params.set("level", filters.level);
+  if (filters.indicator) params.set("indicator", filters.indicator);
   const query = params.size ? `?${params}` : "";
   return gatewayRequest(`/v1/canvases/${encodeURIComponent(id)}/resolve${query}`, ResolvedCanvasSchema, context.token);
 }
@@ -61,4 +66,20 @@ export async function previewCanvasAction(input: unknown): Promise<Result<Resolv
   const parsed = PreviewCanvasSchema.safeParse(input);
   if (!parsed.success) return invalid("This canvas cannot be previewed yet: " + (parsed.error.issues[0]?.message ?? "check its blocks."));
   return gatewayRequest("/v1/canvases/preview", ResolvedCanvasSchema, context.token, { method: "POST", body: parsed.data });
+}
+
+/** Be told weekly or monthly that this canvas is ready to open, or stop being told. Only a title and a link are sent. */
+export async function subscribeCanvasAction(id: string, every: "WEEKLY" | "MONTHLY" | "NONE"): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = every === "NONE"
+    ? await gatewayRequest(`/v1/canvases/${encodeURIComponent(id)}/subscription`, OkResponseSchema, context.token, { method: "DELETE" })
+    : await gatewayRequest(`/v1/canvases/${encodeURIComponent(id)}/subscription`, OkOrSubscriptionSchema, context.token, { method: "PUT", body: { every } });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
+/** Tells the others what this person is doing on the canvas (the block selected, whether editing). Nothing is stored. */
+export async function updatePresenceAction(id: string, change: { blockId: string | null; editing: boolean }): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/canvases/${encodeURIComponent(id)}/presence`, OkResponseSchema, context.token, { method: "POST", body: change });
+  return result.ok ? { ok: true, value: undefined } : result;
 }

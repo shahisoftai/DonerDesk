@@ -18,7 +18,7 @@ export type LegacyDataChartTemplate =
   | "FINANCE_BURN_RATE";
 
 /** Every data template: the original seven, and the ones only the Chart Studio draws (data that is not in the data sheet). */
-export type DataChartTemplate = LegacyDataChartTemplate | "PLAN_TIMELINE" | "ACTIVITY_DAYS" | "BUDGET_FLOW" | "RESULTS_BY_PLACE";
+export type DataChartTemplate = LegacyDataChartTemplate | "PLAN_TIMELINE" | "ACTIVITY_DAYS" | "BUDGET_FLOW" | "RESULTS_BY_PLACE" | "RESULTS_BY_PLACE_PAIR" | "FLOWS_BETWEEN_PLACES";
 
 export interface DataChartSpec {
   template: LegacyDataChartTemplate;
@@ -101,6 +101,8 @@ export const DATA_CHART_TEMPLATES: Record<DataChartTemplate, DataChartTemplateIn
   PLAN_TIMELINE: { label: "Work plan timeline", description: "Planned activities and milestones as bars on a timeline, coloured by whether they are on time.", indicators: "none", types: [], usesMeasure: false },
   ACTIVITY_DAYS: { label: "Completed activities by day", description: "How many activities were completed on each day.", indicators: "none", types: [], usesMeasure: false },
   RESULTS_BY_PLACE: { label: "Results by place", description: "One indicator's recorded value in each place, at a chosen level of the places list.", indicators: "one", types: [], usesMeasure: false },
+  RESULTS_BY_PLACE_PAIR: { label: "Two indicators by place", description: "Two indicators' recorded values in each place, at a chosen level of the places list, to see where both are high or low.", indicators: "many", types: [], usesMeasure: false },
+  FLOWS_BETWEEN_PLACES: { label: "Flows between places", description: "What moves from one place to another (people, supplies, referrals), as recorded for the project.", indicators: "none", types: [], usesMeasure: false },
   BUDGET_FLOW: { label: "Budget flow", description: "Budget from each donor to each cost category, and how much of it is spent.", indicators: "none", types: [], usesMeasure: false },
   FINANCE_BURN_RATE: {
     label: "Burn rate over time",

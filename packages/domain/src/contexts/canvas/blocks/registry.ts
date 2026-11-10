@@ -5,6 +5,7 @@
  * `PENDING_KINDS` (the difference) so it can only shrink.
  */
 import type { BlockDefinition } from "../block-definition.js";
+import type { Picture } from "../motion.js";
 import { textBlock } from "./text.js";
 import { dividerBlock } from "./divider.js";
 import { iconBlock, shapeBlock } from "./shape-blocks.js";
@@ -53,4 +54,12 @@ export const PORTED_KINDS = BLOCK_KINDS.filter((k) => BLOCK_REGISTRY[k] !== unde
 export const PENDING_KINDS = BLOCK_KINDS.filter((k) => BLOCK_REGISTRY[k] === undefined);
 
 export const isBlockKind = (k: string): k is BlockKind => (BLOCK_KINDS as readonly string[]).includes(k);
+/** What kind of picture a block is, for motion: its own `picture` trait, else a word for its family. A block that is none of these only fades. */
+export function pictureOfBlock(block: { kind: string; props: unknown }): Picture {
+  const def = definitionFor(block.kind) as unknown as { family: string; picture?: Picture | ((props: unknown) => Picture) } | undefined;
+  if (!def) return "OTHER";
+  if (def.picture) return typeof def.picture === "function" ? def.picture(block.props) : def.picture;
+  return def.family === "TEXT" ? "TEXT" : def.family === "MEDIA" ? "IMAGE" : def.family === "MAPS" ? "MAP" : "OTHER";
+}
+
 export const definitionFor = (k: string): BlockDefinition<never, unknown, never> | undefined => (isBlockKind(k) ? BLOCK_REGISTRY[k] : undefined);

@@ -90,3 +90,14 @@ export const SeedPlacesFromBoundariesSchema = z.object({
   apply: z.boolean().default(false),
 }).strict();
 export type SeedPlacesFromBoundariesInput = z.infer<typeof SeedPlacesFromBoundariesSchema>;
+
+/** One movement between two places of the project (Phase 48.12). The rules (live places, different, quantity above zero) are the domain's `checkPlaceFlow`. */
+export const AddPlaceFlowSchema = z.object({
+  fromPlaceId: z.string().min(1).max(64),
+  toPlaceId: z.string().min(1).max(64),
+  what: z.string().max(200),
+  quantity: z.number().finite(),
+  unit: z.string().max(100),
+  note: z.string().max(500).optional(),
+});
+export type AddPlaceFlowInput = z.infer<typeof AddPlaceFlowSchema>;

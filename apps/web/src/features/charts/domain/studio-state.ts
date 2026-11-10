@@ -56,7 +56,9 @@ function suitableKind(spec: ChartSpecV2, template: DataChartTemplate): ChartKind
 export function withTemplate(spec: ChartSpecV2, template: DataChartTemplate, allIndicatorIds: ReadonlyArray<string>): ChartSpecV2 {
   const info = DATA_CHART_TEMPLATES[template];
   const current = spec.dataset.indicatorIds;
-  const indicatorIds = info.indicators === "none" ? [] : info.indicators === "one" ? (current.length > 0 ? [current[0]!] : allIndicatorIds.slice(0, 1)) : (current.length > 0 ? current : allIndicatorIds.slice(0, 2));
+  // A map of two indicators always has exactly two: the ones already chosen first, then the project's own.
+  const pair = [...new Set([...current, ...allIndicatorIds])].slice(0, 2);
+  const indicatorIds = template === "RESULTS_BY_PLACE_PAIR" ? pair : info.indicators === "none" ? [] : info.indicators === "one" ? (current.length > 0 ? [current[0]!] : allIndicatorIds.slice(0, 1)) : (current.length > 0 ? current : allIndicatorIds.slice(0, 2));
   const measure = template === "INDICATORS_PROGRESS" && spec.dataset.measure === "PERIOD" ? "PERCENT_OF_TARGET" : spec.dataset.measure;
   return pruneStyleForKind({ ...spec, kind: suitableKind(spec, template), dataset: { ...spec.dataset, template, indicatorIds, measure } });
 }

@@ -1,7 +1,7 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ProjectsResponseSchema, DataSheetResponseSchema } from "@/lib/server/schemas";
-import { CanvasSchema, ResolvedCanvasSchema } from "@/lib/server/schemas-canvas";
+import { CanvasSchema, CanvasSubscriptionListSchema, ResolvedCanvasSchema } from "@/lib/server/schemas-canvas";
 import { InlineError } from "@/components/feedback/PageState";
 import { CanvasWorkspace } from "@/features/canvas/presentation/CanvasWorkspace";
 import { projectOf } from "@donordesk/domain/contexts/canvas/index.js";
@@ -13,10 +13,11 @@ const MAX_PROJECTS = 8;
 export default async function VisualPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const ctx = await requireSession();
-  const [canvas, resolved, projects] = await Promise.all([
+  const [canvas, resolved, projects, subscriptions] = await Promise.all([
     gatewayRequest(`/v1/canvases/${encodeURIComponent(id)}`, CanvasSchema, ctx.token),
     gatewayRequest(`/v1/canvases/${encodeURIComponent(id)}/resolve`, ResolvedCanvasSchema, ctx.token),
     gatewayRequest("/v1/projects", ProjectsResponseSchema, ctx.token),
+    gatewayRequest("/v1/canvases/subscriptions", CanvasSubscriptionListSchema, ctx.token),
   ]);
   if (!canvas.ok) return <InlineError title={canvas.error.message} referenceId={canvas.error.referenceId} />;
   const projectList = (projects.ok ? projects.value.items : []).map((p) => ({ id: p.id, name: p.title }));
@@ -29,7 +30,7 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
   return (
     <div className="animate-fade-in space-y-3">
       <p className="text-xs print:hidden"><a className="hover:underline" href="/visuals">Dashboards and infographics</a></p>
-      <CanvasWorkspace initial={canvas.value} resolved={resolved.ok ? resolved.value : null} resolveError={resolved.ok ? null : resolved.error.message} projects={projectList} indicatorsByProject={indicatorsByProject} />
+      <CanvasWorkspace initial={canvas.value} resolved={resolved.ok ? resolved.value : null} resolveError={resolved.ok ? null : resolved.error.message} projects={projectList} indicatorsByProject={indicatorsByProject}  subscription={(subscriptions.ok ? subscriptions.value.subscriptions.find((x) => x.canvasId === id)?.every : undefined) ?? "NONE"} />
     </div>
   );
 }

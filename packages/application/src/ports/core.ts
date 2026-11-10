@@ -79,7 +79,7 @@ export interface INotificationPort {
       | "COMMENT_MENTION"
       | "CHECKLIST_ASSIGNED"
       | "REPORT_APPROVED"
-      | "REPORT_RETURNED" | "DATA_ALERT"
+      | "REPORT_RETURNED" | "DATA_ALERT" | "CANVAS_DIGEST"
       | "EXPORT_COMPLETED"
       | "INVITATION"
       | "PASSWORD_RESET";

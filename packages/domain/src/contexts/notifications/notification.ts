@@ -10,6 +10,7 @@ export type NotificationType =
   | "REPORT_APPROVED"
   | "REPORT_RETURNED"
   | "DATA_ALERT"
+  | "CANVAS_DIGEST"
   | "EXPORT_COMPLETED"
   | "INVITATION"
   | "PASSWORD_RESET";
@@ -23,6 +24,7 @@ export const NOTIFICATION_TYPES: NotificationType[] = [
   "REPORT_APPROVED",
   "REPORT_RETURNED",
   "DATA_ALERT",
+  "CANVAS_DIGEST",
   "EXPORT_COMPLETED",
   "INVITATION",
   "PASSWORD_RESET",

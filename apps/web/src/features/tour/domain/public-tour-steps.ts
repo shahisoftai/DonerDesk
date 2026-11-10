@@ -38,7 +38,7 @@ const EXTRA: Record<string, TourStep> = {
     body: "The Data Center puts every indicator, period, target and recorded value in one table. Import a spreadsheet, export it, or chart any measure. A gap shows as Not measured, never as zero.",
   },
   "infographics": {
-    id: "infographics", route: "/projects/{projectId}/infographics", targetSelector: "",
+    id: "infographics", route: "/visuals/assets?project={projectId}", targetSelector: "",
     title: "Infographics for donors and the public",
     body: "Design a one-page infographic from your verified results in English, French, Spanish or Arabic. Export it as PNG, PDF or SVG, or share a link that expires.",
   },

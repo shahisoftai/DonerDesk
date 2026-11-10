@@ -19,6 +19,7 @@ const TYPE_LABEL: Record<string, string> = {
   REPORT_APPROVED: "Report approved",
   REPORT_RETURNED: "Report returned",
   DATA_ALERT: "Data alert",
+  CANVAS_DIGEST: "Visual ready",
   EXPORT_COMPLETED: "Export",
   INVITATION: "Invitation",
   PASSWORD_RESET: "Password",

@@ -2,11 +2,12 @@
 
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { useState } from "react";
-import { definitionFor, projectOf, type BlockInstance, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
+import { definitionFor, projectOf, type AnimationSpec, type BlockInstance, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
 import type { ProjectOption } from "../CanvasWorkspace";
 import { afterChange, PROP_FIELDS } from "../../domain/prop-fields";
 import { setAt } from "../../domain/path";
 import { AiDraftControl } from "./AiDraftControl";
+import { MotionControl } from "./MotionControl";
 import { FieldWidget, type IndicatorOption } from "./FieldWidget";
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
   onProject: (projectId: string) => void;
   onBounds: (change: { x?: number; y?: number; w?: number; h?: number }) => void;
   onAlt: (alt: string, description: string) => void;
+  onMotion: (motion: AnimationSpec | undefined) => void;
   onAction: (action: "duplicate" | "remove" | "hide" | "lock") => void;
 }
 
@@ -31,7 +33,7 @@ const BTN = "rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50
 const NUM = "w-16 rounded border border-slate-300 bg-white px-1 py-0.5 text-sm dark:border-slate-600 dark:bg-slate-900";
 
 /** The settings of the selected block: where it sits, what it shows, how it is described. Everything a block offers is a row in the field table; "Advanced" edits any block as text. */
-export function Inspector({ block, label, projects, indicatorsByProject, fallbackProjectId, problems, language, containers, onContainer, onProps, onProject, onBounds, onAlt, onAction }: Props) {
+export function Inspector({ block, label, projects, indicatorsByProject, fallbackProjectId, problems, language, containers, onContainer, onProps, onProject, onBounds, onAlt, onMotion, onAction }: Props) {
   const { t } = useI18n();
   const def = definitionFor(block.kind);
   const needsProject = def?.slots.some((s) => s.slot === "project") === true;
@@ -101,6 +103,7 @@ export function Inspector({ block, label, projects, indicatorsByProject, fallbac
         <button type="button" className={`${BTN} text-red-700`} onClick={() => onAction("remove")} disabled={locked}>{t("canvas.ui.remove")}</button>
       </div>
 
+      <MotionControl block={block} disabled={locked} onMotion={onMotion} />
       <details open={advanced} onToggle={(e) => setAdvanced((e.target as HTMLDetailsElement).open)}>
         <summary className="cursor-pointer text-xs font-medium text-slate-600 dark:text-slate-300">Advanced: all settings as text</summary>
         <textarea aria-label="All settings as text" rows={10} spellCheck={false} disabled={locked} className="mt-2 w-full rounded border border-slate-300 bg-white p-2 font-mono text-xs dark:border-slate-600 dark:bg-slate-900" value={jsonText}

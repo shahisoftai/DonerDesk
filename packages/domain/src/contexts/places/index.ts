@@ -2,3 +2,4 @@ export * from "./place.js";
 export * from "./place-import.js";
 export * from "./seed-from-boundaries.js";
 export * from "./geometry.js";
+export * from "./place-flow.js";

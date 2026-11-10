@@ -5,7 +5,7 @@
  */
 import type { ParamValue } from "./params.js";
 
-export type Picture = "TEXT" | "NUMBER" | "CHART_LINE" | "CHART_BAR" | "MAP" | "IMAGE";
+export type Picture = "TEXT" | "NUMBER" | "CHART_LINE" | "CHART_BAR" | "MAP" | "IMAGE" | "OTHER";
 export const ANIMATIONS = ["NONE", "FADE", "RISE", "GROW", "COUNT_UP", "DRAW"] as const;
 export type AnimationId = (typeof ANIMATIONS)[number];
 export const EASINGS = ["LINEAR", "EASE_OUT", "EASE_IN_OUT"] as const;
@@ -18,8 +18,8 @@ export const DEFAULT_ANIMATION: AnimationSpec = { animation: "NONE", durationMs:
 
 /** Which animations suit which kind of picture: COUNT_UP is for a single figure, DRAW for lines and areas, GROW for bars. */
 export const ANIMATION_SUITS: Readonly<Record<AnimationId, readonly Picture[]>> = {
-  NONE: ["TEXT", "NUMBER", "CHART_LINE", "CHART_BAR", "MAP", "IMAGE"],
-  FADE: ["TEXT", "NUMBER", "CHART_LINE", "CHART_BAR", "MAP", "IMAGE"],
+  NONE: ["TEXT", "NUMBER", "CHART_LINE", "CHART_BAR", "MAP", "IMAGE", "OTHER"],
+  FADE: ["TEXT", "NUMBER", "CHART_LINE", "CHART_BAR", "MAP", "IMAGE", "OTHER"],
   RISE: ["TEXT", "NUMBER", "IMAGE"],
   GROW: ["CHART_BAR"],
   COUNT_UP: ["NUMBER"],

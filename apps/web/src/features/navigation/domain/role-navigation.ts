@@ -6,7 +6,7 @@ import type { Capability, Role } from "@/lib/shared/capabilities";
  * point after sign-in; it renders the Home named here, so no role needs its own address.
  */
 export type NavKey =
-  | "HOME" | "MY_WORK" | "PORTFOLIO" | "DASHBOARDS" | "VISUALS" | "PROJECTS" | "REPORTS" | "EVIDENCE" | "COMPLIANCE" | "FUNDING"
+  | "HOME" | "MY_WORK" | "PORTFOLIO" | "VISUALS" | "PROJECTS" | "REPORTS" | "EVIDENCE" | "COMPLIANCE" | "FUNDING"
   | "DOWNLOADS" | "TEAM" | "SETTINGS";
 
 export interface NavEntry {
@@ -21,7 +21,6 @@ export const NAV_ENTRIES: Readonly<Record<NavKey, NavEntry>> = {
   HOME: { href: "/dashboard", label: "Home", group: "Overview" },
   MY_WORK: { href: "/my-work", label: "My Work", group: "Overview" },
   PORTFOLIO: { href: "/portfolio", label: "Portfolio", group: "Overview" },
-  DASHBOARDS: { href: "/dashboards", label: "Older dashboards", group: "Overview" },
   VISUALS: { href: "/visuals", label: "Dashboards and infographics", group: "Overview" },
   PROJECTS: { href: "/projects", label: "Projects", group: "Deliver" },
   REPORTS: { href: "/reports", label: "Reports", group: "Report" },

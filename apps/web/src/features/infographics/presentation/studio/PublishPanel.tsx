@@ -270,7 +270,7 @@ export function PublishPanel({ designId, projectId, status, onStatus, profile, d
             Save this layout for reuse
           </Button>
           <p className="text-xs text-slate-500">
-            <a className="underline" href={scope === "PORTFOLIO" ? "/portfolio/infographics" : `/projects/${projectId}/infographics`}>
+            <a className="underline" href={scope === "PORTFOLIO" ? "/visuals/assets?project=portfolio" : `/visuals/assets?project=${projectId}`}>
               {scope === "PORTFOLIO" ? "All portfolio infographics" : "All infographics in this project"}
             </a>
           </p>

@@ -4,7 +4,10 @@ import { CHART_KINDS, TEMPLATE_SHAPE, type ChartAnnotation, type ChartKind, type
 import { applyChartStyle } from "./chart-style.js";
 import { areaRange, fillGauge, multiRing, network, parallel, pictorialBar, radialBar, rangeBar, themeRiver, tree, type KindBuilt, type RenderKit } from "./chart-render-kinds.js";
 import { bump, connectedScatter, divergingBar, dumbbell, thermometer } from "./chart-render-kinds-more.js";
-import { dotDensity, hexGrid, type GeoBuilt } from "./chart-render-kinds-geo.js";
+import { bivariate, dotDensity, flowMap, hexGrid, type GeoBuilt } from "./chart-render-kinds-geo.js";
+import { beeswarm, marimekko, ridgeline, violin } from "./chart-render-kinds-spread.js";
+import { alluvial, chord } from "./chart-render-kinds-flows.js";
+import { barRace } from "./chart-render-kinds-race.js";
 import { apportion, parliament, proportionBar, smallMultiples } from "./chart-render-kinds-shares.js";
 import { resolvePaletteColors } from "./chart-presets.js";
 import { planCounts } from "./plan-counts.js";
@@ -669,7 +672,7 @@ function buildExtraShape(spec: ChartSpecV2, data: DatasetResult, shape: ChartSha
   const rule = CHART_KINDS[spec.kind];
   const need = shape === "PLAN" ? data.plan : shape === "DAYS" ? data.activityDays : data.budget;
   if (need === undefined) return { ok: false, reason: "This data is not available here (it is not shown through a share link, and needs permission to see the plan or the budget)." };
-  const built: Built = shape === "PLAN" ? (isStatusPie ? planStatusPie(spec, need as DatasetPlanRow[], title, notes) : gantt(spec, need as DatasetPlanRow[], title, notes)) : shape === "DAYS" ? calendar(spec, need as DatasetDay[], title, notes) : isSpendPie ? spendByResultPie(spec, need as DatasetBudgetLine[], title, notes) : spec.kind === "NETWORK" ? network(spec, need as DatasetBudgetLine[], kitFor(spec, title), notes) : sankey(spec, need as DatasetBudgetLine[], title, notes);
+  const built: Built = shape === "PLAN" ? (isStatusPie ? planStatusPie(spec, need as DatasetPlanRow[], title, notes) : gantt(spec, need as DatasetPlanRow[], title, notes)) : shape === "DAYS" ? calendar(spec, need as DatasetDay[], title, notes) : isSpendPie ? spendByResultPie(spec, need as DatasetBudgetLine[], title, notes) : spec.kind === "ALLUVIAL" ? alluvial(need as DatasetBudgetLine[], kitFor(spec, title), notes) : spec.kind === "CHORD" ? chord(need as DatasetBudgetLine[], kitFor(spec, title), notes) : spec.kind === "NETWORK" ? network(spec, need as DatasetBudgetLine[], kitFor(spec, title), notes) : sankey(spec, need as DatasetBudgetLine[], title, notes);
   if (typeof built === "string") return { ok: false, reason: built };
   const alt = spec.altText?.trim() || `${rule.label} chart: ${title}. ${need.length} ${shape === "PLAN" ? "planned items" : shape === "DAYS" ? "days with completed activities" : "budget lines"}.`;
   return { ok: true, render: "ECHART", option: { ...built.option, aria: { enabled: true, label: { description: alt } } }, title, notes: built.notes ?? notes, alt, aspect: CHART_ASPECT[spec.size ?? "WIDE"], provenance: { points: need.length, unverified: 0 } };
@@ -721,6 +724,19 @@ function choropleth(spec: ChartSpecV2, places: ReadonlyArray<DatasetPlace>, titl
   };
 }
 
+/** The movements between places, drawn on the bundled geography; they carry no indicator, so this does not go through `buildMapKind`. */
+function buildFlowMap(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
+  const rule = CHART_KINDS[spec.kind];
+  if (data.flows === undefined) return { ok: false, reason: "This data is not available here (it needs the project's recorded movements and permission to see the project)." };
+  const pins = data.flows.flatMap((f) => [{ latitude: f.fromLatitude, longitude: f.fromLongitude }, { latitude: f.toLatitude, longitude: f.toLongitude }]).filter((p) => p.latitude !== undefined && p.longitude !== undefined);
+  const title = spec.title?.trim() || "Movements between places";
+  const geoKit = { base: baseOption(spec, title, palette(spec), false, annotationsOf(spec, false, [])), geo: { map: WORLD_MAP, roam: true, silent: false, itemStyle: { areaColor: R.mapArea, borderColor: R.surface }, emphasis: { itemStyle: { areaColor: R.mapAreaHover } }, ...(pins.length > 0 ? fitTo(pins) : {}) }, palette: palette(spec), fmt: formatChartNumber, unit: data.flows[0]?.unit ?? "" };
+  const built = flowMap(data.flows, geoKit);
+  if (typeof built === "string") return { ok: false, reason: built };
+  const alt = spec.altText?.trim() || `${rule.label}: ${title}. ${data.flows.length} recorded movements.`;
+  return { ok: true, render: "ECHART", option: { ...built.option, aria: { enabled: true, label: { description: alt } } }, title, notes: [...data.notes, ...built.notes], alt, aspect: CHART_ASPECT[spec.size ?? "WIDE"], provenance: { points: data.flows.length, unverified: 0 }, maps: [WORLD_MAP] };
+}
+
 /** A kind's own notes come after the dataset's. */
 const withNotes = (built: GeoBuilt, notes: string[]): GeoBuilt => (typeof built === "string" ? built : { ...built, notes: [...notes, ...built.notes] });
 
@@ -738,6 +754,7 @@ function buildMapKind(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   const built = spec.kind === "CHOROPLETH" ? choropleth(spec, places, title, notes)
     : spec.kind === "DOT_DENSITY" ? withNotes(dotDensity(places, geoKit), notes)
     : spec.kind === "HEX_GRID" ? withNotes(hexGrid(places, geoKit), notes)
+    : spec.kind === "BIVARIATE_MAP" ? (data.indicators.length < 2 || data.placesSecond === undefined ? "Choose two indicators for this map." : withNotes(bivariate(places, data.placesSecond, [`${data.indicators[0]!.code} ${data.indicators[0]!.name}`, `${data.indicators[1]!.code} ${data.indicators[1]!.name}`], geoKit), notes))
     : graduatedSymbols(spec, places, unitOf(indicator), title, notes);
   if (typeof built === "string") return { ok: false, reason: built };
   const alt = spec.altText?.trim() || `${rule.label}: ${title}. ${places.length} places at level ${spec.dataset.placeLevel ?? 1}.`;
@@ -757,10 +774,11 @@ function buildMapKind(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
 export function datasetQueryFor(spec: ChartSpecV2, allIndicatorIds: ReadonlyArray<string>): DatasetQuery {
   const d = spec.dataset;
   const shape = TEMPLATE_SHAPE[d.template];
-  const source: DatasetSource | undefined = shape === "PLAN" ? "PLAN" : shape === "DAYS" ? "ACTIVITY_DAYS" : shape === "BUDGET" ? "BUDGET" : shape === "PLACES" ? "PLACES" : undefined;
+  const source: DatasetSource | undefined = shape === "PLAN" ? "PLAN" : shape === "DAYS" ? "ACTIVITY_DAYS" : shape === "BUDGET" ? "BUDGET" : shape === "PLACES" ? (d.template === "FLOWS_BETWEEN_PLACES" ? "FLOWS" : "PLACES") : undefined;
   return {
     ...(source ? { sources: [source] } : {}),
-    ...(shape === "PLACES" ? { placeLevel: d.placeLevel ?? 1 } : {}),
+    ...(shape === "PLACES" && d.template !== "FLOWS_BETWEEN_PLACES" ? { placeLevel: d.placeLevel ?? 1 } : {}),
+    ...(d.template === "RESULTS_BY_PLACE_PAIR" ? { placesPair: true } : {}),
     indicatorIds: shape === "STATUS" ? [...allIndicatorIds] : shape === "PLAN" || shape === "DAYS" || shape === "BUDGET" ? [] : [...d.indicatorIds],
     measure: d.measure,
     ...(d.fromPeriodId !== undefined ? { fromPeriodId: d.fromPeriodId } : {}),
@@ -808,7 +826,8 @@ function buildUnstyled(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   if (!rule.shapes.includes(shape)) return { ok: false, reason: `${rule.label} cannot be drawn from this data.` };
 
   if (shape === "PLAN" || shape === "DAYS" || shape === "BUDGET") return buildExtraShape(spec, data, shape);
-  if (spec.kind === "CHOROPLETH" || spec.kind === "GRADUATED_SYMBOLS" || spec.kind === "DOT_DENSITY" || spec.kind === "HEX_GRID") return buildMapKind(spec, data);
+  if (spec.kind === "FLOW_MAP") return buildFlowMap(spec, data);
+  if (spec.kind === "CHOROPLETH" || spec.kind === "GRADUATED_SYMBOLS" || spec.kind === "DOT_DENSITY" || spec.kind === "HEX_GRID" || spec.kind === "BIVARIATE_MAP") return buildMapKind(spec, data);
   const base = normalise(shape, spec, data);
   if (typeof base === "string") return { ok: false, reason: base };
   const notes = [...data.notes];
@@ -876,6 +895,11 @@ function buildUnstyled(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
     case "DUMBBELL": built = dumbbell(spec, norm, kitFor(spec, title)); break;
     case "DIVERGING_BAR": built = divergingBar(spec, norm, kitFor(spec, title)); break;
     case "THERMOMETER": built = thermometer(spec, norm, kitFor(spec, title)); break;
+    case "BAR_RACE": built = barRace(spec, norm, kitFor(spec, title)); break;
+    case "BEESWARM": built = beeswarm(spec, norm, kitFor(spec, title)); break;
+    case "VIOLIN": built = violin(spec, norm, kitFor(spec, title)); break;
+    case "RIDGELINE": built = ridgeline(spec, norm, kitFor(spec, title)); break;
+    case "MARIMEKKO": built = marimekko(spec, norm, data, kitFor(spec, title)); break;
     case "PARLIAMENT": built = parliament(spec, norm, kitFor(spec, title)); break;
     case "PROPORTION_BAR": built = proportionBar(spec, norm, kitFor(spec, title)); break;
     case "SMALL_MULTIPLES": built = smallMultiples(spec, norm, kitFor(spec, title)); break;

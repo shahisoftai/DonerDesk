@@ -202,3 +202,23 @@ test("budget lines say which result their activity serves, named as the logframe
   const none = await new DatasetExtrasService({ handle: async () => ok(planWithOutputs) }, { findByProject: async () => ok([]) }, budgets).budget(ctx, "p1");
   assert.ok(none.every((l) => !("result" in l)), "without the logframe nothing is named");
 });
+
+test("a two-indicator map also reads the second indicator at the same level, and the movements only when asked", async () => {
+  const calls = [];
+  const extras = {
+    plan: async () => [], activityDays: async () => [], budget: async () => [],
+    places: async (_c, _p, indicatorId, level) => (calls.push([indicatorId, level]), [{ name: "Sudan", path: "Sudan", level: 0, value: 1, partly: false }]),
+    flows: async () => [{ from: "A", to: "B", what: "People", quantity: 3, unit: "people" }],
+  };
+  const h = new ResolveDatasetsHandler({ handle: async () => ok(sheet) }, { for: async () => ok([{ id: "p1" }]) }, extras);
+  const r = await h.handle(ctx, [
+    { key: "pair", projectId: "p1", query: { ...q(["PLACES"]), indicatorIds: ["i1", "i2"], placeLevel: 1, placesPair: true } },
+    { key: "move", projectId: "p1", query: { ...q(["FLOWS"]), indicatorIds: [] } },
+    { key: "plain", projectId: "p1", query: { ...q(["PLAN"]), indicatorIds: [] } },
+  ]);
+  const by = Object.fromEntries(r.value.datasets.map((d) => [d.key, d.dataset]));
+  assert.deepEqual(calls, [["i1", 1], ["i2", 1]]);
+  assert.equal(by.pair.placesSecond.length, 1);
+  assert.equal(by.move.flows.length, 1);
+  assert.equal(by.plain.flows, undefined);
+});

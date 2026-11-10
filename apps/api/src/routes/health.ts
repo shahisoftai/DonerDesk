@@ -24,6 +24,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "SavedChart", field: "specJson" },
   { model: "Bookmark", field: "href" },
   { model: "DataAlert", field: "ruleKind" },
+  { model: "PlaceFlow", field: "quantity" },
+  { model: "CanvasSubscription", field: "every" },
   { model: "HomePin", field: "ref" },
   { model: "HomeLayout", field: "layoutJson" },
   { model: "Canvas", field: "docJson" },

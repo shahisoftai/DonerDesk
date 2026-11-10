@@ -20,7 +20,7 @@ test("the first chart is the first indicator over time, valid, with drafts shown
 });
 
 test("the studio offers every data template, finance included", () => {
-  assert.deepEqual([...STUDIO_TEMPLATES].sort(), ["ACTIVITY_DAYS", "BUDGET_FLOW", "FINANCE_BUDGET_VS_SPEND", "FINANCE_BURN_RATE", "INDICATORS_OVER_TIME", "INDICATORS_PROGRESS", "INDICATOR_OVER_TIME", "INDICATOR_VS_TARGET", "PLAN_TIMELINE", "RESULTS_BY_PLACE", "STATUS_DISTRIBUTION"]);
+  assert.deepEqual([...STUDIO_TEMPLATES].sort(), ["ACTIVITY_DAYS", "BUDGET_FLOW", "FINANCE_BUDGET_VS_SPEND", "FINANCE_BURN_RATE", "FLOWS_BETWEEN_PLACES", "INDICATORS_OVER_TIME", "INDICATORS_PROGRESS", "INDICATOR_OVER_TIME", "INDICATOR_VS_TARGET", "PLAN_TIMELINE", "RESULTS_BY_PLACE", "RESULTS_BY_PLACE_PAIR", "STATUS_DISTRIBUTION"]);
   const f = withTemplate(initialSpec(ALL), "FINANCE_BUDGET_VS_SPEND", ALL);
   assert.deepEqual(f.dataset.indicatorIds, [], "finance takes no indicators");
   assert.deepEqual(validateChartSpec(f), []);

@@ -2,6 +2,8 @@
  * Editing a canvas (Phase 45.3): pure functions from a canvas to a new canvas or a reason. The editor, keyboard handlers and
  * the API's patch endpoint all call these, so a gesture means the same everywhere. Nothing mutates its input.
  */
+import { animationProblems, type AnimationSpec } from "../motion.js";
+import { pictureOfBlock } from "../blocks/registry.js";
 import { containerProblems } from "../containers.js";
 import { settleBoxes } from "./layout.js";
 import { CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, type BlockInstance, type Canvas, type CanvasBounds, type CanvasPage } from "../canvas.js";
@@ -78,6 +80,8 @@ export const resizeBlock = (c: Canvas, id: string, w: number, h: number): EditRe
 
 export const updateProps = (c: Canvas, id: string, props: unknown): EditResult => changeBlock(c, id, (b) => ({ ...b, props }));
 export const setBindings = (c: Canvas, id: string, bindings: BlockInstance["bindings"]): EditResult => changeBlock(c, id, (b) => ({ ...b, bindings }));
+/** How a block comes in on a screen; `undefined` takes it away. The animation must suit the block's picture (a counter is for a figure, a draw is for a line). */
+export const setBlockMotion = (c: Canvas, id: string, motion: AnimationSpec | undefined): EditResult => changeBlock(c, id, (b) => { const problems = motion ? animationProblems(motion, pictureOfBlock(b)) : []; return problems.length > 0 ? problems[0]! : { ...b, motion }; });
 export const setBlockAlt = (c: Canvas, id: string, alt: string | undefined, description?: string): EditResult => changeBlock(c, id, (b) => ({ ...b, alt, description }));
 
 /** Lock/unlock is the one change a locked block still accepts. */

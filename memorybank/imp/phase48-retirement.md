@@ -13,19 +13,19 @@ Rows are `| item | kind | replaced by | status | removed in |`.
 
 | item | kind | replaced by | status | removed in |
 |---|---|---|---|---|
-| `web:/dashboards` | route | `/visuals` | live | 48.10 |
-| `web:/dashboards/[id]` | route | `/visuals/[id]` (canvas converted once) | live | 48.10 |
-| `web:/dashboards/templates` | route | Studio → Templates | live | 48.10 |
-| `web:/dashboards/templates/[id]` | route | Studio → Templates | live | 48.10 |
-| `web:/projects/[id]/charts` | route | Studio → Charts (project filter) | live | 48.10 |
-| `web:/projects/[id]/maps` | route | Studio → Maps (project filter) | live | 48.10 |
-| `web:/projects/[id]/infographics` | route | Studio → Designs (project filter) | live | 48.10 |
-| `web:/projects/[id]/infographics/[designId]` | route | `/visuals/[id]` | live | 48.10 |
-| `web:/portfolio/infographics` | route | Studio → Designs (portfolio) | live | 48.10 |
-| `web:/portfolio/infographics/[designId]` | route | `/visuals/[id]` | live | 48.10 |
-| `web:/shared/dashboard/[token]` | route | `/shared/canvas/[token]` (old tokens resolve through an adapter) | live | 48.10 |
-| `web:/shared/infographic/[token]` | route | `/shared/canvas/[token]` | live | 48.10 |
-| `web:/embed/dashboard/[token]` | route | canvas embed | live | 48.10 |
+| `web:/dashboards` | route | `/visuals` | redirected | 48.10 |
+| `web:/dashboards/[id]` | route | `/visuals/[id]` (canvas converted once) | redirected | 48.10 |
+| `web:/dashboards/templates` | route | Studio → Templates | redirected | 48.10 |
+| `web:/dashboards/templates/[id]` | route | Studio → Templates | redirected | 48.10 |
+| `web:/projects/[id]/charts` | route | Studio → Charts (project filter) | redirected | 48.10 |
+| `web:/projects/[id]/maps` | route | Studio → Maps (project filter) | redirected | 48.10 |
+| `web:/projects/[id]/infographics` | route | Studio → Designs (project filter) | redirected | 48.10 |
+| `web:/projects/[id]/infographics/[designId]` | route | `/visuals/[id]` | redirected | 48.10 |
+| `web:/portfolio/infographics` | route | Studio → Designs (portfolio) | redirected | 48.10 |
+| `web:/portfolio/infographics/[designId]` | route | `/visuals/[id]` | redirected | 48.10 |
+| `web:/shared/dashboard/[token]` | route | `/shared/canvas/[token]` (old tokens resolve through an adapter) (kept on purpose: links already sent must keep working) | kept | - |
+| `web:/shared/infographic/[token]` | route | `/shared/canvas/[token]` (kept on purpose: links already sent must keep working) | kept | - |
+| `web:/embed/dashboard/[token]` | route | canvas embed (kept on purpose: links already sent must keep working) | kept | - |
 | `web:/api/infographics` | route | `/api/canvases` | live | 48.10 |
 | `web:/api/infographic-studio` | route | canvas editor routes | live | 48.10 |
 | `web:/api/shared-infographic` | route | `/api/shared/canvas` | live | 48.10 |
@@ -49,12 +49,12 @@ Rows are `| item | kind | replaced by | status | removed in |`.
 
 | item | kind | replaced by | status | removed in |
 |---|---|---|---|---|
-| nav key `DASHBOARDS` ("Older dashboards") | nav | `VISUALS` | live | 48.10 |
-| project tab "Dashboards" | nav | project filter in Studio | live | 48.10 |
-| project tab "Infographics" | nav | project filter in Studio | live | 48.10 |
-| portfolio button "Infographics" | nav | Studio → Designs | live | 48.10 |
-| Data Center / Report Builder links to Chart Studio and Maps | nav | "Send to Visual Studio" | live | 48.10 |
-| `MovedToVisuals` notice and `OpenAsCanvasButton` list on `/visuals` | nav | converted designs only | live | 48.10 |
+| nav key `DASHBOARDS` ("Older dashboards") | nav | `VISUALS` | removed | 48.10 |
+| project tab "Dashboards" | nav | project filter in Studio | redirected | 48.10 |
+| project tab "Infographics" | nav | project filter in Studio | redirected | 48.10 |
+| portfolio button "Infographics" | nav | Studio → Designs | redirected | 48.10 |
+| Data Center / Report Builder links to Chart Studio and Maps | nav | "Send to Visual Studio" | redirected | 48.10 |
+| `MovedToVisuals` notice and `OpenAsCanvasButton` list on `/visuals` | nav | converted designs only | removed | 48.10 |
 
 ## Web features and server actions
 

@@ -325,7 +325,7 @@ export function InfographicStudio({
   return (
     <div className="animate-fade-in">
       <div className="flex flex-wrap items-center gap-2">
-        <Link className="text-sm text-slate-500 hover:text-slate-800" href={scope === "PORTFOLIO" ? "/portfolio/infographics" : `/projects/${projectId}/infographics`}>
+        <Link className="text-sm text-slate-500 hover:text-slate-800" href={scope === "PORTFOLIO" ? "/visuals/assets?project=portfolio" : `/visuals/assets?project=${projectId}`}>
           ← All infographics
         </Link>
         <Badge tone="neutral">{templateLabel}</Badge>

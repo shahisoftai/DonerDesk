@@ -14,8 +14,10 @@ export const DatasetResultSchema = z.object({
   /** Attached only when the chart asked for it and the viewer may see it. */
   plan: z.array(z.object({ id: z.string(), title: z.string(), kind: z.enum(["ACTIVITY", "MILESTONE"]), start: z.string(), end: z.string(), status: z.string(), signal: z.string(), signalLabel: z.string() })).optional(),
   activityDays: z.array(z.object({ date: z.string(), count: z.number() })).optional(),
-  budget: z.array(z.object({ donor: z.string(), category: z.string(), currency: z.string(), budgeted: z.number(), spent: z.number() })).optional(),
+  budget: z.array(z.object({ donor: z.string(), category: z.string(), currency: z.string(), budgeted: z.number(), spent: z.number(), result: z.string().optional(), resultUnknown: z.literal(true).optional() })).optional(),
   places: z.array(z.object({ name: z.string(), path: z.string(), level: z.number(), value: z.number().nullable(), partly: z.boolean(), latitude: z.number().optional(), longitude: z.number().optional() })).optional(),
+  placesSecond: z.array(z.object({ name: z.string(), path: z.string(), level: z.number(), value: z.number().nullable(), partly: z.boolean(), latitude: z.number().optional(), longitude: z.number().optional() })).optional(),
+  flows: z.array(z.object({ from: z.string(), to: z.string(), what: z.string(), quantity: z.number(), unit: z.string(), fromLatitude: z.number().optional(), fromLongitude: z.number().optional(), toLatitude: z.number().optional(), toLongitude: z.number().optional() })).optional(),
   missingIndicatorIds: z.array(z.string()),
   mixedUnits: z.boolean(),
   withheldDrafts: z.number(),

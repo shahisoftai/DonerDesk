@@ -9,6 +9,7 @@ import type { ChartDrawing } from "@/lib/server/schemas-dashboards";
 import { rendererFor } from "@/features/dashboards/presentation/widgets/registry";
 import { blockLabelKey } from "../domain/canvas-copy";
 import { themeChartOption } from "../domain/theme-chart";
+import { motionChartOption, motionStyle } from "../domain/motion-style";
 import { screenRendererFor } from "./screen-registry";
 import { NothingToShow, screenText } from "./screens/screen-text";
 
@@ -49,10 +50,10 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
   let title = heading || label;
   if (drawing && widget) {
     // The page's look reaches the chart on screen as it does in a file.
-    const themed: ChartDrawing = drawing.chart ? { ...drawing, chart: { ...drawing.chart, option: themeChartOption(drawing.chart.option, frame.theme) } } : drawing;
+    const themed: ChartDrawing = drawing.chart ? { ...drawing, chart: { ...drawing.chart, option: motionChartOption(themeChartOption(drawing.chart.option, frame.theme), block.motion) } } : drawing;
     const renderer = rendererFor(themed);
     title = renderer.title({ widget, drawing: themed }) ?? label;
-    body = renderer.render({ widget, drawing: themed, onPick: editing ? undefined : onPick });
+    body = renderer.render({ widget, drawing: themed, onPick: editing ? undefined : onPick, countUp: block.motion?.animation === "COUNT_UP" ? block.motion : undefined });
     // A tile that draws with the product's own series colour takes the page's look through the variable it reads.
     if (canvas.themeId && canvas.themeId !== "DEFAULT") body = <div className="h-full min-h-0" style={{ ["--viz-1" as string]: frame.theme.accent, ["--viz-2" as string]: frame.theme.accent2 }}>{body}</div>;
   } else if (isDashboardKind(block.kind)) {
@@ -66,6 +67,10 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
     if (Screen) body = <Screen model={model} frame={frame} />;
     else body = <PendingPreview text={screenText(frame)} reason={def ? "A preview of this block is not available yet. It is included when you publish." : "This block is not one the product knows."} />;
   }
+
+  // A block that fades or rises in is wrapped; the keyframes are skipped in print and for a viewer who asked for reduced motion (see globals.css).
+  const entrance = motionStyle(block.motion);
+  if (entrance) body = <div className="dd-motion h-full min-h-0" style={entrance}>{body}</div>;
 
   return (
     <div role={editing ? "button" : undefined} tabIndex={editing ? 0 : undefined} onClick={editing ? onSelect : undefined} onKeyDown={keyDown} aria-pressed={editing ? selected : undefined} aria-label={editing ? `${label}${hidden ? " (hidden)" : ""}` : undefined}

@@ -1,4 +1,4 @@
-import { DomainError, EMPTY_CHOICES, childrenOf, repeatKey, groupsOf, restrictSheetToGroup, statusesOf, type FilterChoices, canvasToWidgets, definitionFor, isDashboardKind, portfolioOnlyFacts, projectOf, type BlockModel, type Canvas, type CanvasFacts, type Result } from "@donordesk/domain";
+import { DomainError, EMPTY_CHOICES, childrenOf, repeatKey, groupsOf, restrictSheet, levelsOf, indicatorChoicesOf, statusesOf, type FilterChoices, canvasToWidgets, definitionFor, isDashboardKind, portfolioOnlyFacts, projectOf, type BlockModel, type Canvas, type CanvasFacts, type Result } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ICanvasRepository } from "../../ports/canvas.js";
 import type { IDatasetExtras } from "../../services/dataset-extras.js";
@@ -11,7 +11,7 @@ import { can, fail, loadCanvas, ok } from "./canvas-shared.js";
 import { heldByRepeater, repeatedWidgets, repeaterItems, type RepeatItems } from "./repeat-canvas.js";
 
 /** What a viewer may narrow a canvas by without changing it: a period and/or places. */
-export interface CanvasFilterOptions { periodId?: string | undefined; placeKeys?: string[] | undefined; group?: string | undefined; status?: string | undefined }
+export interface CanvasFilterOptions { periodId?: string | undefined; placeKeys?: string[] | undefined; group?: string | undefined; status?: string | undefined; level?: string | undefined; indicator?: string | undefined }
 
 export interface ResolvedCanvasDto {
   canvasId: string;
@@ -96,7 +96,7 @@ export class ResolveCanvasHandler {
       models[block.id] = def.resolve(block.props, data);
     }
     await this.resolveRepeated(stored.canvas, items, models, factsOf, home);
-    return ok({ canvasId: id, drawings, models, repeats: Object.fromEntries(Object.entries(items).map(([k, v]) => [k, v.map((x) => ({ key: x.key, label: x.label }))])), choices: home ? { ...filterChoices(home), groups: groupsOf(home.sheet), statuses: await this.statuses(ctx, stored, home) } : EMPTY_CHOICES });
+    return ok({ canvasId: id, drawings, models, repeats: Object.fromEntries(Object.entries(items).map(([k, v]) => [k, v.map((x) => ({ key: x.key, label: x.label }))])), choices: home ? { ...filterChoices(home), groups: groupsOf(home.sheet), levels: levelsOf(home.sheet), indicators: indicatorChoicesOf(home.sheet), statuses: await this.statuses(ctx, stored, home) } : EMPTY_CHOICES });
   }
 
   /** Each block a repeater holds, once per item: a project\'s own facts, or the project\'s facts narrowed to one place. Chart-style copies were drawn above. */
@@ -143,7 +143,7 @@ export async function canvasFactsFor(sheets: GetProjectDataSheetHandler, infogra
   if (!sheet.ok || !data.ok) return undefined;
   const o = canvas.options;
   return {
-    sheet: filters.group ? restrictSheetToGroup(sheet.value, filters.group) : sheet.value, reach: data.value.reach, activities: data.value.activities, finance: data.value.finance, indicators: data.value.indicators,
+    sheet: restrictSheet(sheet.value, filters), reach: data.value.reach, activities: data.value.activities, finance: data.value.finance, indicators: data.value.indicators,
     // A viewer's own filter narrows what the design chose: a period ends the range there, places replace the default places.
     range: { fromId: o?.periodFromId, toId: filters.periodId ?? o?.periodToId }, locationKeys: filters.placeKeys?.length ? filters.placeKeys : o?.locationKeys, acknowledgement: o?.acknowledgement, subtitle: o?.subtitle,
     project: { title: data.value.project.title, donorName: data.value.project.donorName, country: data.value.project.country }, designTitle: title,

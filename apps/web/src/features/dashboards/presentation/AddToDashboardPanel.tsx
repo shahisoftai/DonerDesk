@@ -34,7 +34,7 @@ export function AddToDashboardPanel({ projectId, spec, disabledReason }: { proje
     <section className="space-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
       <h3 className="text-sm font-medium">Add to a dashboard</h3>
       {options === null ? <p className="text-sm text-slate-500">Loading…</p> : options.length === 0 ? (
-        <p className="text-sm text-slate-500">You have no dashboard to add to yet. <Link className="underline" href={`/dashboards?project=${projectId}`}>Make one</Link>.</p>
+        <p className="text-sm text-slate-500">You have no dashboard to add to yet. <Link className="underline" href="/visuals">Make one</Link>.</p>
       ) : (
         <div className="flex flex-wrap items-end gap-3">
           <Field label="Dashboard"><Select value={choice} onChange={(e) => setChoice(e.target.value)}>{options.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</Select></Field>
@@ -43,7 +43,7 @@ export function AddToDashboardPanel({ projectId, spec, disabledReason }: { proje
       )}
       {disabledReason && <p className="text-xs text-slate-500">{disabledReason}</p>}
       {act.error && <p role="alert" className="text-sm text-danger-600">{act.error}</p>}
-      {done && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">Added. <Link className="underline" href={`/dashboards/${done.id}`}>Open the dashboard</Link> ({done.count} chart{done.count === 1 ? "" : "s"}).</p>}
+      {done && <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">Added. <Link className="underline" href={`/visuals/open/dashboard/${done.id}`}>Open the dashboard</Link> ({done.count} chart{done.count === 1 ? "" : "s"}).</p>}
     </section>
   );
 }

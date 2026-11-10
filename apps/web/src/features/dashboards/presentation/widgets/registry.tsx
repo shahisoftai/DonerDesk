@@ -24,7 +24,7 @@ function TableBody({ table }: { table: NonNullable<ChartDrawing["table"]> }) {
 export const WIDGET_RENDERERS: ReadonlyArray<WidgetRenderer> = [
   { key: "map", matches: (d) => d.map !== undefined, title: ({ drawing }) => drawing.map?.title, render: ({ drawing }) => <MapWidget view={drawing.map!.view} projectId={drawing.map!.projectId} widgetId={drawing.widgetId} preloaded={drawing.map!.preloaded} /> },
   { key: "metric", matches: (d) => d.metric !== undefined, title: ({ drawing }) => drawing.metric?.title, render: ({ drawing }) => <MetricTileView metric={drawing.metric!} /> },
-  { key: "kpi", matches: (d) => d.kpi !== undefined, title: ({ drawing }) => drawing.kpi?.title, render: ({ drawing }) => <KpiTileView kpi={drawing.kpi!} /> },
+  { key: "kpi", matches: (d) => d.kpi !== undefined, title: ({ drawing }) => drawing.kpi?.title, render: ({ drawing, countUp }) => <KpiTileView kpi={drawing.kpi!} countUp={countUp} /> },
   { key: "text", matches: (d) => d.text !== undefined, title: () => undefined, render: ({ drawing }) => <TextBlock text={drawing.text!} /> },
   { key: "table", matches: (d) => d.table !== undefined, title: ({ drawing }) => drawing.table?.title, render: ({ drawing }) => <TableBody table={drawing.table!} /> },
   {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { forScreen, optionToTable } from "@donordesk/domain/contexts/reporting/chart-screen.js";
 import { applyScreenInteraction } from "@donordesk/domain/contexts/reporting/chart-style.js";
 import { useLowData } from "@/features/design/presentation/use-low-data";
@@ -16,6 +16,17 @@ type Chart = NonNullable<ChartDrawing["chart"]>;
  */
 export function ChartBody({ chart, onPick, hoverName, onHover }: { chart: Chart; onPick?: ((name: string) => void) | undefined; hoverName?: string | null | undefined; onHover?: ((name: string | null) => void) | undefined }) {
   const { lowData } = useLowData();
+  // A bar race carries a frame for every period; Play steps through them and names each. Reduced motion has no Play: the chart is the final picture.
+  const frames = useMemo(() => (Array.isArray((chart.option as { raceFrames?: unknown }).raceFrames) ? ((chart.option as { raceFrames: Array<{ label: string; names: string[]; values: number[] }> }).raceFrames).filter((f) => f.values.length > 0) : []), [chart.option]);
+  const [at, setAt] = useState<number | null>(null);
+  const reduced = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+  useEffect(() => {
+    if (at === null) return;
+    if (at >= frames.length) { setAt(null); return; }
+    const timer = window.setTimeout(() => setAt(at + 1), 1100);
+    return () => window.clearTimeout(timer);
+  }, [at, frames.length]);
+  const shownFrame = at !== null && at < frames.length ? frames[at] : undefined;
   const [chosen, setChosen] = useState<boolean | null>(null);
   // Low-data mode shows the table until the person asks for the picture; a person's own choice on this tile always wins.
   const asTable = chosen ?? lowData;
@@ -35,7 +46,13 @@ export function ChartBody({ chart, onPick, hoverName, onHover }: { chart: Chart;
           ) : <p className="p-2 text-sm text-[var(--tile-meta)]">This picture is not a table of values. The notes under it say what it shows.</p>}
         </div>
       ) : (
-        <DashboardChart option={shown} paletteId={chart.paletteId} label={chart.title} maps={chart.maps} regionNames={chart.regionNames} onPick={onPick} hoverName={hoverName} onHover={onHover} />
+        <DashboardChart option={shown} raceFrame={shownFrame} paletteId={chart.paletteId} label={chart.title} maps={chart.maps} regionNames={chart.regionNames} onPick={onPick} hoverName={hoverName} onHover={onHover} />
+      )}
+      {frames.length > 1 && !reduced && !asTable && (
+        <div className="absolute bottom-1 start-1 z-10 flex items-center gap-2 text-xs">
+          <button type="button" className="rounded border border-[var(--tile-border)] bg-[var(--tile-bg)] px-2 py-0.5 hover:bg-[var(--tile-header-bg)]" aria-pressed={at !== null} onClick={() => setAt(at === null ? 0 : null)}>{at === null ? "Play" : "Stop"}</button>
+          <span aria-live="polite" className="text-[var(--tile-meta)]">{shownFrame ? shownFrame.label : ""}</span>
+        </div>
       )}
       <button type="button" aria-pressed={asTable} onClick={() => setChosen(!asTable)} className="absolute end-1 top-0 z-10 rounded border border-[var(--tile-border)] bg-[var(--tile-bg)] px-2 py-0.5 text-xs text-[var(--tile-meta)] hover:bg-[var(--tile-header-bg)] [@media(pointer:coarse)]:min-h-11">
         {asTable ? "View chart" : "View data"}

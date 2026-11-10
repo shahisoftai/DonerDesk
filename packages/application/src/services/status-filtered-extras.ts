@@ -10,6 +10,7 @@ export class StatusFilteredExtras implements IDatasetExtras {
     return rows ? restrictPlanToStatus(rows, this.status) : rows;
   }
   activityDays(ctx: AuthenticatedContext, projectId: string) { return this.inner.activityDays(ctx, projectId); }
+  flows(ctx: AuthenticatedContext, projectId: string) { return this.inner.flows?.(ctx, projectId) ?? Promise.resolve(undefined); }
   budget(ctx: AuthenticatedContext, projectId: string) { return this.inner.budget(ctx, projectId); }
   places(ctx: AuthenticatedContext, projectId: string, indicatorId: string, level: Parameters<IDatasetExtras["places"]>[3]) { return this.inner.places(ctx, projectId, indicatorId, level); }
   finance(ctx: AuthenticatedContext, projectId: string) { return this.inner.finance(ctx, projectId); }

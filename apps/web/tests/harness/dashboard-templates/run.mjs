@@ -152,7 +152,7 @@ await check("deleting asks first and leaves for the gallery", async () => {
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: "Delete" }).click();
   await page.waitForFunction(() => window.__h.deletes.length === 1);
-  assert.equal((await H()).pushed.at(-1), "/dashboards/templates");
+  assert.equal((await H()).pushed.at(-1), "/visuals/templates");
 });
 
 await open("canvas");

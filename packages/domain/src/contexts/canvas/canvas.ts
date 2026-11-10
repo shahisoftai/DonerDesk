@@ -2,6 +2,7 @@
  * A Canvas (Phase 45): a saved set of pages of blocks. A dashboard is a canvas viewed LIVE; an infographic is the same canvas
  * published as a frozen export. It stores composition and words, never data.
  */
+import type { AnimationSpec } from "./motion.js";
 import type { Binding } from "./binding.js";
 import type { BlockAction } from "./actions.js";
 import type { CanvasParameter, ParamBinding } from "./params.js";
@@ -64,6 +65,8 @@ export interface BlockInstance<K extends string = string, P = unknown> {
   paramBindings?: ParamBinding[] | undefined;
   /** What clicking the block (or a label in it) does. */
   action?: BlockAction | undefined;
+  /** How the block comes in on a screen (Phase 48.15): never in a file, a print or for a viewer who asked for reduced motion. */
+  motion?: AnimationSpec | undefined;
 }
 
 /** A block's place on a FREE page: pixels on the page, a rotation in degrees and a stacking order (Phase 48.4). */

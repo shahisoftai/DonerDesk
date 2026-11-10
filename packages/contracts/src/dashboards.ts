@@ -81,7 +81,8 @@ export const DatasetQuerySchema = z.object({
   fromPeriodId: z.string().optional(),
   toPeriodId: z.string().optional(),
   includeDraft: z.boolean(),
-  sources: z.array(z.enum(["PLAN", "ACTIVITY_DAYS", "BUDGET", "PLACES"])).max(4).optional(),
+  sources: z.array(z.enum(["PLAN", "ACTIVITY_DAYS", "BUDGET", "PLACES", "FLOWS"])).max(5).optional(),
+  placesPair: z.boolean().optional(),
   placeLevel: z.number().int().min(0).max(4).optional(),
 });
 

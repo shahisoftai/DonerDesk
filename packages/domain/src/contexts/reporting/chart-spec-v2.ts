@@ -34,7 +34,9 @@ export type ChartKind =
   | "PIVOT_TABLE" | "SCORECARD_TABLE"
   | "PICTORIAL_BAR" | "ROSE" | "RADIAL_BAR" | "AREA_RANGE" | "RANGE_BAR" | "PARALLEL" | "TREE" | "NETWORK" | "THEME_RIVER" | "FILL_GAUGE" | "MULTI_RING"
   | "DUMBBELL" | "DIVERGING_BAR" | "THERMOMETER" | "BUMP" | "CONNECTED_SCATTER"
-  | "PARLIAMENT" | "PROPORTION_BAR" | "SMALL_MULTIPLES" | "DOT_DENSITY" | "HEX_GRID";
+  | "PARLIAMENT" | "PROPORTION_BAR" | "SMALL_MULTIPLES" | "DOT_DENSITY" | "HEX_GRID"
+  | "BEESWARM" | "VIOLIN" | "RIDGELINE" | "MARIMEKKO" | "ALLUVIAL" | "CHORD"
+  | "BIVARIATE_MAP" | "FLOW_MAP" | "BAR_RACE";
 
 /**
  * The shape of data a chart is drawn from, decided by its dataset template:
@@ -58,6 +60,8 @@ export const TEMPLATE_SHAPE: Record<DataChartTemplate, ChartShape | null> = {
   ACTIVITY_DAYS: "DAYS",
   BUDGET_FLOW: "BUDGET",
   RESULTS_BY_PLACE: "PLACES",
+  RESULTS_BY_PLACE_PAIR: "PLACES",
+  FLOWS_BETWEEN_PLACES: "PLACES",
 };
 
 export interface ChartKindRule {
@@ -75,6 +79,8 @@ export interface ChartKindRule {
   minPoints: number;
   /** The data shapes this kind can honestly be drawn from. */
   shapes: ChartShape[];
+  /** A kind drawn from one specific template (a map of two indicators, a map of movements) is offered for that template only; the others are never offered it. */
+  templates?: DataChartTemplate[];
 }
 
 const SBP: ChartShape = "SERIES_BY_PERIOD";
@@ -87,7 +93,7 @@ const DAY: ChartShape = "DAYS";
 const BUD: ChartShape = "BUDGET";
 const PLC: ChartShape = "PLACES";
 
-const kind = (label: string, family: ChartFamily, status: ChartKindRule["status"], shapes: ChartShape[], o: Partial<Pick<ChartKindRule, "legacyType" | "additiveOnly" | "startsAtZero" | "minPoints">> = {}): ChartKindRule => ({
+const kind = (label: string, family: ChartFamily, status: ChartKindRule["status"], shapes: ChartShape[], o: Partial<Pick<ChartKindRule, "legacyType" | "additiveOnly" | "startsAtZero" | "minPoints" | "templates">> = {}): ChartKindRule => ({
   label,
   family,
   status,
@@ -139,6 +145,15 @@ export const CHART_KINDS: Record<ChartKind, ChartKindRule> = {
   CHOROPLETH: kind("Choropleth map", "GEOGRAPHIC", "BUILT", [PLC], { minPoints: 2 }),
   DOT_DENSITY: kind("Dot density map", "GEOGRAPHIC", "BUILT", [PLC], { additiveOnly: true, minPoints: 2 }),
   HEX_GRID: kind("Hexagon grid map", "GEOGRAPHIC", "BUILT", [PLC], { additiveOnly: true, minPoints: 2 }),
+  BAR_RACE: kind("Bar race (ranking over periods)", "TREND", "BUILT", [SBP], { startsAtZero: true, minPoints: 3 }),
+  BEESWARM: kind("Beeswarm (every recorded value)", "DISTRIBUTION", "BUILT", [SBP], { minPoints: 3 }),
+  VIOLIN: kind("Violin (spread of recorded values)", "DISTRIBUTION", "BUILT", [SBP], { minPoints: 5 }),
+  RIDGELINE: kind("Ridgeline (overlapping trends)", "TREND", "BUILT", [SBP], { minPoints: 3 }),
+  MARIMEKKO: kind("Marimekko (split by group over periods)", "PART_TO_WHOLE", "BUILT", [SBP], { additiveOnly: true, minPoints: 2 }),
+  ALLUVIAL: kind("Alluvial (donor, category, result)", "FLOW", "BUILT", [BUD], { additiveOnly: true, minPoints: 2 }),
+  CHORD: kind("Chord (donors and results)", "FLOW", "BUILT", [BUD], { additiveOnly: true, minPoints: 2 }),
+  BIVARIATE_MAP: kind("Bivariate map (two indicators)", "GEOGRAPHIC", "BUILT", [PLC], { minPoints: 3, templates: ["RESULTS_BY_PLACE_PAIR"] }),
+  FLOW_MAP: kind("Flow map (movements between places)", "GEOGRAPHIC", "BUILT", [PLC], { additiveOnly: true, minPoints: 1, templates: ["FLOWS_BETWEEN_PLACES"] }),
   GRADUATED_SYMBOLS: kind("Graduated symbols map", "GEOGRAPHIC", "BUILT", [PLC], { additiveOnly: true, minPoints: 2 }),
   BAR_LINE_COMBO: kind("Bar and line", "COMBINATION", "BUILT", [SBP, FIN], { startsAtZero: true, minPoints: 1 }),
   PIVOT_TABLE: kind("Pivot table", "TABLE", "BUILT", [SBP, LAT, FIN]),
@@ -358,9 +373,12 @@ export function validateChartSpec(spec: unknown, options: ValidateChartOptions =
     // A kind is drawn only from the data shapes it can honestly show (a funnel needs each indicator's latest value, not a time series).
     const shape = TEMPLATE_SHAPE[ds.template];
     if (rule?.status === "BUILT" && (!shape || !rule.shapes.includes(shape))) add("KIND_NOT_FOR_TEMPLATE", "kind", `${info.label} cannot be drawn as a ${rule.label.toLowerCase()} chart.`);
+    const special = ds.template === "RESULTS_BY_PLACE_PAIR" || ds.template === "FLOWS_BETWEEN_PLACES";
+    if (rule?.status === "BUILT" && ((rule.templates && !rule.templates.includes(ds.template)) || (!rule.templates && special))) add("KIND_NOT_FOR_TEMPLATE", "kind", `${info.label} cannot be drawn as a ${rule.label.toLowerCase()} chart.`);
     const n = ds.indicatorIds?.length ?? 0;
     if (info.indicators === "one" && n !== 1) add("INDICATOR_COUNT", "dataset.indicatorIds", "Choose exactly one indicator for this chart.");
     if (info.indicators === "many" && n < 1) add("INDICATOR_COUNT", "dataset.indicatorIds", "Choose at least one indicator for this chart.");
+    if (ds && ds.template === "RESULTS_BY_PLACE_PAIR" && n !== 2) add("INDICATOR_COUNT", "dataset.indicatorIds", "Choose exactly two indicators for this map.");
     if (info.indicators === "none" && n !== 0) add("INDICATOR_COUNT", "dataset.indicatorIds", "This chart takes no indicators.");
   }
   if (ds && !CHART_MEASURES.includes(ds.measure)) add("UNKNOWN_MEASURE", "dataset.measure", "What to measure is not known.");
@@ -424,7 +442,13 @@ export function validateChartSpec(spec: unknown, options: ValidateChartOptions =
 export function kindsForTemplate(template: DataChartTemplate): ChartKind[] {
   const shape = TEMPLATE_SHAPE[template];
   if (!shape) return [];
-  return CHART_KIND_ORDER.filter((k) => CHART_KINDS[k].status === "BUILT" && CHART_KINDS[k].shapes.includes(shape));
+  return CHART_KIND_ORDER.filter((k) => {
+    const rule = CHART_KINDS[k];
+    if (rule.status !== "BUILT" || !rule.shapes.includes(shape)) return false;
+    // A kind made for one template is offered for it alone; the ordinary place kinds are never offered the two special templates.
+    if (rule.templates) return rule.templates.includes(template);
+    return template !== "RESULTS_BY_PLACE_PAIR" && template !== "FLOWS_BETWEEN_PLACES";
+  });
 }
 
 /** Kinds grouped by family, in catalogue order, for the studio's kind picker. */

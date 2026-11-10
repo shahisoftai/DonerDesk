@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { CreatePlaceSchema, ImportPlacesSchema, SeedPlacesFromBoundariesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, SetPlaceGeometrySchema, UpdatePlaceSchema } from "@donordesk/contracts";
+import { AddPlaceFlowSchema, CreatePlaceSchema, ImportPlacesSchema, SeedPlacesFromBoundariesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, SetPlaceGeometrySchema, UpdatePlaceSchema } from "@donordesk/contracts";
 
 /** The organisation's list of places (Phase 33.1). Thin: validate, call one handler, throw its error; permissions are in the handlers and the authorization table. */
 export async function registerPlaceRoutes(app: FastifyInstance) {
@@ -90,5 +90,22 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.getProjectPlaceResults.handle(ctx(req), param(req, "projectId"), level as never, periodId ? { periodId } : {});
     if (!r.ok) throw r.error;
     return r.value;
+  });
+
+  // Movements between the project's places (Phase 48.12): what moved from one place to another, and how much.
+  app.get("/v1/projects/:projectId/place-flows", async (req) => {
+    const r = await req.container.handlers.listPlaceFlows.handle(ctx(req), param(req, "projectId"));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.post("/v1/projects/:projectId/place-flows", async (req, reply) => {
+    const r = await req.container.handlers.addPlaceFlow.handle(ctx(req), param(req, "projectId"), AddPlaceFlowSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    return reply.status(201).send(r.value);
+  });
+  app.delete("/v1/projects/:projectId/place-flows/:flowId", async (req) => {
+    const r = await req.container.handlers.removePlaceFlow.handle(ctx(req), param(req, "projectId"), param(req, "flowId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
   });
 }

@@ -1,8 +1,9 @@
-import type { AdminLevel, DatasetBudgetLine, DatasetDay, DatasetPlace, DatasetPlanRow, MetricFinanceFigures, Project, ProjectListSource, Result, DomainError } from "@donordesk/domain";
+import type { AdminLevel, DatasetBudgetLine, DatasetDay, DatasetFlow, DatasetPlace, DatasetPlanRow, MetricFinanceFigures, Project, ProjectListSource, Result, DomainError } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 import type { IActivityUpdateRepository } from "../ports/activities.js";
 import type { IBudgetExpenseReader, IBudgetLineReader } from "../ports/workplan.js";
 import type { IPlaceRepository } from "../ports/places.js";
+import type { IPlaceFlowRepository } from "../ports/place-flows.js";
 import type { ILogframeRepository } from "../ports/logframe.js";
 import type { IBookmarkRepository } from "../ports/dashboards.js";
 import type { PlaceResultsDto } from "../use-cases/places/place-results.js";
@@ -19,6 +20,8 @@ export interface IDatasetExtras {
   budget(ctx: AuthenticatedContext, projectId: string): Promise<DatasetBudgetLine[] | undefined>;
   /** One indicator's value in each place at a level of the places list (pins included); undefined when it cannot be read. */
   places(ctx: AuthenticatedContext, projectId: string, indicatorId: string, level: number): Promise<DatasetPlace[] | undefined>;
+  /** The movements recorded between the project's places, with where each end is; undefined when they cannot be read or are not offered (a share link). */
+  flows?(ctx: AuthenticatedContext, projectId: string): Promise<DatasetFlow[] | undefined>;
   /** A project's finance figures (obligated, received, spent), for number tiles; undefined when the caller may not see them. */
   finance(ctx: AuthenticatedContext, projectId: string): Promise<MetricFinanceFigures | undefined>;
   /** The projects the caller can see, for a project-list tile; undefined when they cannot be read. */
@@ -38,7 +41,19 @@ export class DatasetExtrasService implements IDatasetExtras {
     private readonly projectFinance?: { handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<MetricFinanceFigures, DomainError>> },
     private readonly visible?: { for(ctx: AuthenticatedContext): Promise<Result<Project[], DomainError>> },
     private readonly bookmarks?: Pick<IBookmarkRepository, "listForUser">,
+    private readonly placeFlows?: Pick<IPlaceFlowRepository, "listByProject">,
   ) {}
+
+  async flows(ctx: AuthenticatedContext, projectId: string): Promise<DatasetFlow[] | undefined> {
+    if (!this.placeFlows || !this.placeList) return undefined;
+    const [listed, places] = await Promise.all([this.placeFlows.listByProject(ctx.tenant.tenantId, projectId), this.placeList.list(ctx.tenant.tenantId, { includeArchived: true })]);
+    if (!listed.ok || !places.ok) return undefined;
+    const byId = new Map(places.value.map((p) => [p.id, p]));
+    return listed.value.map((f) => {
+      const a = byId.get(f.fromPlaceId), b = byId.get(f.toPlaceId);
+      return { from: a?.name ?? "A place", to: b?.name ?? "A place", what: f.what, quantity: f.quantity, unit: f.unit, ...(a?.latitude !== undefined && a?.longitude !== undefined ? { fromLatitude: a.latitude, fromLongitude: a.longitude } : {}), ...(b?.latitude !== undefined && b?.longitude !== undefined ? { toLatitude: b.latitude, toLongitude: b.longitude } : {}) };
+    });
+  }
 
   async bookmarkedProjectIds(ctx: AuthenticatedContext): Promise<Set<string>> {
     if (!this.bookmarks) return new Set();

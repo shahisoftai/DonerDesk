@@ -67,6 +67,8 @@ const cellText = (v: unknown): string | null => {
  * never 0. Returns null for pictures that are not a table of values (maps, timelines, heatmaps), so the caller can say so.
  */
 export function optionToTable(option: Obj): OptionTable | null {
+  // A picture whose own series are not the recorded figures (a split drawn as shares) says so and offers no table of them.
+  if (option["noTable"] === true) return null;
   const series = Array.isArray(option["series"]) ? (option["series"] as unknown[]).filter(isObj) : [];
   if (series.length === 0) return null;
   const axisData = (key: string): unknown[] | null => {

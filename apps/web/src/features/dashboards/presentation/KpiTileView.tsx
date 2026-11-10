@@ -5,6 +5,8 @@ import type { ChartDrawing } from "@/lib/server/schemas-dashboards";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { formatChangeAmount, formatFullNumber, formatTileNumber } from "@/features/design/domain/number-format";
 import { segmentPath, sparkSegments } from "../domain/sparkline";
+import { useCountUp } from "./use-count-up";
+import type { AnimationSpec } from "@donordesk/domain/contexts/canvas/index.js";
 import { TILE_BACKGROUND } from "../domain/tile-theme";
 
 type Kpi = NonNullable<ChartDrawing["kpi"]>;
@@ -16,8 +18,9 @@ const ARROW = { UP: "▲", DOWN: "▼", FLAT: "▬" } as const;
  * One big figure with its period, change since the period before, progress to target and a sparkline. Nothing recorded says so; it never
  * shows a placeholder figure. A change is a word and an arrow, never colour alone; a plain card judges nothing it cannot back up.
  */
-export function KpiTileView({ kpi }: { kpi: Kpi }) {
+export function KpiTileView({ kpi, countUp }: { kpi: Kpi; countUp?: AnimationSpec | undefined }) {
   const { t, locale } = useI18n();
+  const shownValue = useCountUp(kpi.value, countUp);
   const solid = Boolean(kpi.color);
   const muted = solid ? "" : "text-[var(--tile-meta)]";
   const segments = sparkSegments(kpi.spark.map((s) => s.value), SPARK_W, SPARK_H);
@@ -32,7 +35,7 @@ export function KpiTileView({ kpi }: { kpi: Kpi }) {
       ) : (
         <div className="min-w-0">
           <p className="truncate text-3xl font-semibold tabular-nums" title={formatFullNumber(kpi.value, locale)}>
-            {formatTileNumber(kpi.value, locale)}{kpi.unit ? <span className={`ms-1 text-sm font-normal ${muted}`}>{kpi.unit}</span> : null}
+            {formatTileNumber(shownValue ?? (kpi.value as number), locale)}{kpi.unit ? <span className={`ms-1 text-sm font-normal ${muted}`}>{kpi.unit}</span> : null}
           </p>
           <p className={`text-xs ${muted}`}>
             {kpi.periodLabel}{kpi.unverified ? ` · ${t("tile.unverified.one", { count: 1 }).replace(/^1 /, "")}` : ""}

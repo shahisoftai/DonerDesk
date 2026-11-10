@@ -60,6 +60,8 @@ const CASES = {
   HEATMAP: ["INDICATORS_OVER_TIME", ["a", "b"]], FUNNEL: ["INDICATORS_PROGRESS", ["a", "b"]], WATERFALL: ["INDICATOR_OVER_TIME", ["a"]], GAUGE: ["INDICATOR_VS_TARGET", ["a"]],
   PROGRESS_RING: ["INDICATOR_VS_TARGET", ["a"]], PROGRESS_BAR: ["INDICATOR_VS_TARGET", ["a"]], KPI_NUMBER: ["INDICATOR_VS_TARGET", ["a"]], RADAR: ["INDICATORS_PROGRESS", ["a", "b", "c"]],
   CHOROPLETH: ["RESULTS_BY_PLACE", ["a"]], GRADUATED_SYMBOLS: ["RESULTS_BY_PLACE", ["a"]], DOT_DENSITY: ["RESULTS_BY_PLACE", ["a"]], HEX_GRID: ["RESULTS_BY_PLACE", ["a"]],
+  BEESWARM: ["INDICATORS_OVER_TIME", ["a", "b"]], VIOLIN: ["INDICATORS_OVER_TIME", ["a", "b"]], RIDGELINE: ["INDICATORS_OVER_TIME", ["a", "b"]], BAR_RACE: ["INDICATORS_OVER_TIME", ["a", "b"]],
+  MARIMEKKO: ["INDICATOR_OVER_TIME", ["a"]], ALLUVIAL: ["BUDGET_FLOW", []], CHORD: ["BUDGET_FLOW", []], BIVARIATE_MAP: ["RESULTS_BY_PLACE_PAIR", ["a", "b"]], FLOW_MAP: ["FLOWS_BETWEEN_PLACES", []],
   GANTT: ["PLAN_TIMELINE", []], CALENDAR_HEATMAP: ["ACTIVITY_DAYS", []], SANKEY: ["BUDGET_FLOW", []],
   SUNBURST: ["INDICATORS_PROGRESS", ["a", "b", "c", "n"]], WAFFLE: ["INDICATORS_PROGRESS", ["a", "b"]],
   PICTORIAL_BAR: ["INDICATORS_PROGRESS", ["a", "b"]], ROSE: ["INDICATORS_PROGRESS", ["a", "b", "c"]], RADIAL_BAR: ["INDICATORS_PROGRESS", ["a", "b"]], AREA_RANGE: ["INDICATORS_OVER_TIME", ["a", "b"]],
@@ -71,11 +73,35 @@ const CASES = {
 };
 const measureFor = (kind) => (["GAUGE", "PROGRESS_RING", "PROGRESS_BAR", "KPI_NUMBER", "BULLET", "FILL_GAUGE", "MULTI_RING", "THERMOMETER", "DIVERGING_BAR"].includes(kind) ? "CUMULATIVE" : ["FUNNEL", "PIE", "DONUT", "TREEMAP", "LOLLIPOP", "DOT_PLOT", "BAR_HORIZONTAL", "RADAR", "SUNBURST", "WAFFLE"].includes(kind) ? "CUMULATIVE" : "PERIOD");
 
+/** Data a few kinds need that the shared fixture does not carry: a recorded split, budget lines with results, pinned places at one level, movements between places. */
+const baseData = (s) => ({ ...resolveDataset(sheet, datasetQueryFor(s, ALL)), ...EXTRA });
+const LINKED_BUDGET = [
+  { donor: "USAID", category: "Equipment", currency: "USD", budgeted: 1000, spent: 400, result: "R1 Boreholes" },
+  { donor: "USAID", category: "Training", currency: "USD", budgeted: 500, spent: 600, result: "R2 Training" },
+  { donor: "EU", category: "Equipment", currency: "USD", budgeted: 300, spent: 300, result: "R1 Boreholes" },
+];
+const PINNED = [
+  { name: "Gulu", path: "Gulu", level: 1, value: 100, partly: false, latitude: 2.7, longitude: 32.3 }, { name: "Kitgum", path: "Kitgum", level: 1, value: 80, partly: false, latitude: 3.3, longitude: 32.9 },
+  { name: "Lira", path: "Lira", level: 1, value: 60, partly: false, latitude: 2.2, longitude: 32.9 }, { name: "Arua", path: "Arua", level: 1, value: 40, partly: false, latitude: 3.0, longitude: 30.9 },
+];
+const FLOWS = [
+  { from: "Gulu", to: "Kitgum", what: "People", quantity: 300, unit: "households", fromLatitude: 2.7, fromLongitude: 32.3, toLatitude: 3.3, toLongitude: 32.9 },
+  { from: "Lira", to: "Gulu", what: "Tents", quantity: 50, unit: "households", fromLatitude: 2.2, fromLongitude: 32.9, toLatitude: 2.7, toLongitude: 32.3 },
+];
+const SPECIAL_DATA = {
+  MARIMEKKO: (s) => { const d = baseData(s); return { ...d, points: d.points.map((p) => ({ ...p, breakdown: [{ dimension: "Sex", category: "Female", value: String(Math.round((p.value ?? 0) * 0.6)) }, { dimension: "Sex", category: "Male", value: String(Math.round((p.value ?? 0) * 0.4)) }] })) }; },
+  ALLUVIAL: (s) => ({ ...baseData(s), budget: LINKED_BUDGET }),
+  CHORD: (s) => ({ ...baseData(s), budget: LINKED_BUDGET }),
+  BIVARIATE_MAP: (s) => ({ ...baseData(s), places: PINNED, placesSecond: PINNED.map((p) => ({ ...p, value: p.value * 2 - 70 })) }),
+  FLOW_MAP: (s) => ({ ...baseData(s), flows: FLOWS }),
+};
+
 test("every drawable kind has a case, and every case draws (a table or a chart option)", () => {
   const built = CHART_KIND_ORDER.filter((k) => CHART_KINDS[k].status === "BUILT");
   assert.deepEqual(Object.keys(CASES).sort(), [...built].sort(), "the case table covers exactly the drawable kinds");
   for (const [kind, [template, ids]] of Object.entries(CASES)) {
-    const b = build(spec(kind, template, ids, { dataset: { measure: measureFor(kind) } }));
+    const s = spec(kind, template, ids, { dataset: { measure: measureFor(kind) } });
+    const b = SPECIAL_DATA[kind] ? build(s, SPECIAL_DATA[kind](s)) : build(s);
     assert.equal(b.ok, true, `${kind}: ${b.reason}`);
     assert.ok(b.title.length > 0, kind);
     assert.ok(b.alt.length > 10, kind);

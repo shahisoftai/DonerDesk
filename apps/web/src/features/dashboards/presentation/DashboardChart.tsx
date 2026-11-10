@@ -11,7 +11,9 @@ import { useColorMode } from "@/features/design/presentation/use-color-mode";
 const reducedMotion = (): boolean => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
 /** One chart that fills the box it is given and redraws when the box changes size (a dragged corner, a rotated phone). */
-export function DashboardChart({ option, label, maps, regionNames, onPick, hoverName, onHover, paletteId }: {
+export function DashboardChart({ option, label, maps, regionNames, onPick, hoverName, onHover, paletteId, raceFrame }: {
+  /** A bar race's current frame: the names and values to show now; undefined shows the chart as drawn. */
+  raceFrame?: { names: string[]; values: number[] } | undefined;
   /** The chart's colour set: a theme's colours are fitted to a dark screen. */
   paletteId?: string | undefined;
   /** The label being pointed at in another chart; this chart highlights the same one. */
@@ -69,6 +71,13 @@ export function DashboardChart({ option, label, maps, regionNames, onPick, hover
 
   // A change of colour mode needs a new instance (the library fixes a theme at creation), so the chart is rebuilt by the effect above.
   useEffect(() => { instance.current?.setOption({ ...optionForMode(option, modeRef.current, paletteRef.current), animation: false }, true); }, [option]);
+
+  // A bar race steps through its periods: only the bars' names and values change, and the library animates the move between them.
+  useEffect(() => {
+    const chart = instance.current;
+    if (!chart || !raceFrame) return;
+    chart.setOption({ yAxis: { data: raceFrame.names }, series: [{ data: raceFrame.values }] });
+  }, [raceFrame]);
 
   // Another chart is being pointed at: show the same label here (a category by its position, a named slice or region by name).
   useEffect(() => {
