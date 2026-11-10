@@ -37,6 +37,14 @@ export interface BoundaryFileEntry {
   yearRepresented?: string;
   /** Set when a derived copy must be offered under the same licence (ODbL, CC BY-SA). */
   shareAlike?: boolean;
+  /**
+   * Phase 49.3: the level is also published as vector tiles. `index` is a small file under /geo with each unit's ref, name, P-codes and box
+   * (no outlines); `tiles` names the PMTiles file under /geo and its layer. A browser draws from these when present and from `file` otherwise.
+   */
+  index?: string;
+  tiles?: { file: string; sourceLayer: string };
+  /** Phase 49.3: what the last official update changed (P-codes new, retired, moved), as a file under /geo written by `update-cod.mjs`. */
+  changes?: string;
 }
 
 export interface BoundaryCountry {

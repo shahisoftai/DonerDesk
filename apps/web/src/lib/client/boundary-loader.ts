@@ -2,6 +2,7 @@
 
 import type { NamedGeoCollection } from "../../features/workplan/domain/geo/geo-types";
 import type { BoundaryFileEntry, BoundaryManifest } from "../../features/maps/domain/boundary-sources";
+import type { BoundaryIndex } from "../../features/maps/domain/boundaries/boundary-index";
 
 /** Fetches the boundary manifest and a country's finer files on demand (static files under /geo, never in a first bundle). */
 let manifest: Promise<BoundaryManifest | null> | undefined;
@@ -35,6 +36,21 @@ export function loadAdmin1File(key: string): Promise<NamedGeoCollection | null> 
       ? fetch(`/geo/ADM1/${encodeURIComponent(key)}.json`).then((r) => (r.ok ? (r.json() as Promise<NamedGeoCollection>) : null)).catch(() => null)
       : Promise.resolve(null);
     provinces.set(key, hit);
+  }
+  return hit;
+}
+
+const indexes = new Map<string, Promise<BoundaryIndex | null>>();
+
+/** A level's index (names, P-codes and boxes, no outlines) for the tiled boundaries (Phase 49.3), addressed by the catalogue's build stamp. */
+export function loadBoundaryIndex(entry: BoundaryFileEntry, version: string): Promise<BoundaryIndex | null> {
+  const file = entry.index ?? "";
+  let hit = indexes.get(file);
+  if (!hit) {
+    hit = file
+      ? fetch(`/geo/${file}?v=${encodeURIComponent(version)}`).then((r) => (r.ok ? (r.json() as Promise<BoundaryIndex>) : null)).catch(() => null)
+      : Promise.resolve(null);
+    indexes.set(file, hit);
   }
   return hit;
 }

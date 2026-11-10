@@ -1,0 +1,14 @@
+# Monthly check for newer OCHA boundary releases (Phase 49.3). Reads HDX's catalogue only; replaces nothing.
+# Install by hand (not shipped by deploy-fast.sh):
+#   install -m 0644 scripts/maps/check-cod-updates.mjs /opt/donordesk/shared/bin/
+#   cp infra/systemd/donordesk-cod-check.{service,timer} /etc/systemd/system/ && systemctl daemon-reload && systemctl enable --now donordesk-cod-check.timer
+# Exit 3 = a newer release exists: the report is mailed to the operator; a person runs update-cod.mjs on a workstation and syncs.
+[Unit]
+Description=DonorDesk: check for newer OCHA boundary releases
+
+[Service]
+Type=oneshot
+User=donordesk
+Environment=GEO_DIR=/opt/donordesk/shared/geo
+SuccessExitStatus=3
+ExecStart=/bin/sh -c 'out=$(/usr/bin/node /opt/donordesk/shared/bin/check-cod-updates.mjs 2>&1); code=$?; echo "$out"; if [ $code -eq 3 ]; then echo "$out" | mail -s "DonorDesk: newer OCHA boundaries available" support@donordesk.online; fi; exit $code'

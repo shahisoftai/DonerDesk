@@ -70,7 +70,7 @@ export function ResultsMap({ projectId, places, initial, periods, compact = fals
   /** Set when the drawn level is the organisation's own upload: its credit replaces the shipped files'. */
   const [credit, setCredit] = useState<BoundaryOrigin | null>(null);
   const steps = useMemo(() => periodSteps(periods), [periods]);
-  const view = useBoundaryView(path, services.boundaries);
+  const view = useBoundaryView(path, services.viewBoundaries);
   preloadCountryOutlines(places.find((p) => !p.archived && p.adminLevel === 0)?.name);
 
   useEffect(() => { void loadBoundaryManifest().then(setManifest); }, []);

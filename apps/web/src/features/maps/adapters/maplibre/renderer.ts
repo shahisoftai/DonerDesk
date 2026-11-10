@@ -5,7 +5,7 @@ import type { BasemapNote } from "../../domain/basemap/regions.ts";
 import type { BasemapSource } from "../../ports/basemap-source.ts";
 import type { DrawResult, MapRenderer } from "../../ports/map-renderer.ts";
 import { loadMapLibre } from "./lib.ts";
-import { IDS, PICKABLE, SOURCES, buildMapLibreLayers, type Built } from "./layers.ts";
+import { CLUSTER_PROPERTIES, IDS, PICKABLE, SOURCES, buildMapLibreLayers, type Built } from "./layers.ts";
 
 type Handler = (ref: FeatureRef | null) => void;
 
@@ -126,7 +126,10 @@ export class MapLibreRenderer implements MapRenderer {
   private rebuild(next: Built): void {
     for (const layer of this.map.getStyle().layers ?? []) if (layer.id.startsWith("dd-") && layer.id !== "dd-ground") this.map.removeLayer(layer.id);
     for (const id of Object.values(SOURCES)) if (this.map.getSource(id)) this.map.removeSource(id);
-    for (const s of next.sources) this.map.addSource(s.id, { type: "geojson", data: s.data as never, ...(s.cluster ? { cluster: true, clusterRadius: 44, clusterMaxZoom: 12 } : {}), ...(s.id === SOURCES.fill ? { tolerance: 0.5 } : {}) });
+    for (const s of next.sources) {
+      if (s.url) { this.map.addSource(s.id, { type: "vector", url: s.url, promoteId: "ref" }); continue; }
+      this.map.addSource(s.id, { type: "geojson", data: s.data as never, ...(s.cluster ? { cluster: true, clusterRadius: 50, clusterMaxZoom: 13, clusterProperties: CLUSTER_PROPERTIES as never } : {}), ...(s.id === SOURCES.fill ? { tolerance: 0.5 } : {}) });
+    }
     for (const l of next.layers) this.map.addLayer(l as unknown as ML.LayerSpecification);
   }
 

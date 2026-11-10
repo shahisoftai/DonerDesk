@@ -49,7 +49,7 @@ export function buildResultsScene(input: ResultsSceneInput): MapScene {
       const color = fill.visible ? colorFor(region?.value ?? null, model.bands) : NO_DATA_COLOR;
       const lines = region ? [region.path, figure(region.display, unit, region.verified), ...(j.basis === "NAME" ? ["Matched by name only"] : [])] : ["Not measured"];
       tips[j.unit.ref] = { title: j.unit.name, lines: lines.filter((l) => l && l !== j.unit.name) };
-      return { ref: j.unit.ref, name: j.unit.name, color, geometry: j.unit.geometry };
+      return { ref: j.unit.ref, name: j.unit.name, color, geometry: j.unit.geometry, ...(j.unit.tile ? { tile: j.unit.tile } : {}) };
     }),
   };
   out.push(fillLayer);

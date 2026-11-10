@@ -5,15 +5,39 @@
 import type { FillLayerSpec, MapScene, OverlayLayerSpec, PinsLayerSpec } from "../../domain/model/scene.ts";
 
 export type GeoJson = { type: "FeatureCollection"; features: unknown[] };
-export interface SourceDef { id: string; data: GeoJson; cluster?: boolean }
-export interface LayerDef { id: string; type: string; source: string; filter?: unknown[]; paint: Record<string, unknown>; layout?: Record<string, unknown> }
+export interface SourceDef { id: string; data?: GeoJson; cluster?: boolean; /** A vector-tile source (boundary tiles, Phase 49.3) instead of GeoJSON. */ url?: string }
+export interface LayerDef { id: string; type: string; source: string; "source-layer"?: string; filter?: unknown[]; paint: Record<string, unknown>; layout?: Record<string, unknown> }
 export interface Built { sources: SourceDef[]; layers: LayerDef[]; /** Same key = same data, so only filters and paints need updating. */ dataKey: string }
 
 export const IDS = { fill: "dd-fill", outline: "dd-outline", selected: "dd-selected", selectedHalo: "dd-selected-halo", clusters: "dd-clusters", clusterCount: "dd-cluster-count", pins: "dd-pins", overlayLines: "dd-overlay-lines", overlayPoints: "dd-overlay-points" } as const;
 export const SOURCES = { fill: "dd-fill-src", pins: "dd-pins-src", overlay: "dd-overlay-src" } as const;
 const FONT = ["Noto Sans Medium"];
 
+/** Every cluster carries the worst rank of the pins inside it (Phase 49.4), so it can take the worst pin's colour. */
+export const CLUSTER_PROPERTIES = { rank: ["max", ["coalesce", ["get", "rank"], 0]] } as const;
+
+/**
+ * Boundaries from vector tiles (Phase 49.3): the tile file holds outlines and refs only, never a value. Colours are a `match` on the ref, and
+ * only the refs of this view are drawn, so a neighbouring country's units in the same tile stay hidden.
+ */
+function tiledFill(spec: FillLayerSpec, overStreets: boolean, tile: { url: string; sourceLayer: string }): { sources: SourceDef[]; layers: LayerDef[]; key: string } {
+  const refs = spec.features.map((f) => f.ref);
+  const colour: unknown[] = refs.length > 0 ? ["match", ["get", "ref"], ...spec.features.flatMap((f) => [f.ref, f.color]), "#cbd5e1"] : ["literal", "#cbd5e1"];
+  const shown = ["in", ["get", "ref"], ["literal", refs]];
+  const selected = spec.selectedRef ?? "";
+  const on = (extra: Partial<LayerDef>): Pick<LayerDef, "source" | "source-layer"> & Partial<LayerDef> => ({ source: SOURCES.fill, "source-layer": tile.sourceLayer, ...extra });
+  const layers: LayerDef[] = [{ id: IDS.fill, type: "fill", ...on({ filter: shown }), paint: { "fill-color": colour, "fill-opacity": overStreets ? spec.opacity * 0.62 : spec.opacity } } as LayerDef];
+  if (spec.outline) layers.push({ id: IDS.outline, type: "line", ...on({ filter: shown }), paint: { "line-color": "#475569", "line-width": 0.8, "line-opacity": 0.9 } } as LayerDef);
+  layers.push(
+    { id: IDS.selectedHalo, type: "line", ...on({ filter: ["==", ["get", "ref"], selected] }), paint: { "line-color": "#ffffff", "line-width": 5 } } as LayerDef,
+    { id: IDS.selected, type: "line", ...on({ filter: ["==", ["get", "ref"], selected] }), paint: { "line-color": "#0f172a", "line-width": 2.5 } } as LayerDef,
+  );
+  return { sources: [{ id: SOURCES.fill, url: `pmtiles://${tile.url}` }], layers, key: `tiles:${tile.url}:${spec.outline}:${spec.features.map((f) => `${f.ref}~${f.color}`).join("|")}` };
+}
+
 function fill(spec: FillLayerSpec, overStreets: boolean): { sources: SourceDef[]; layers: LayerDef[]; key: string } {
+  const tile = spec.features[0]?.tile;
+  if (tile && spec.features.every((f) => f.tile?.url === tile.url)) return tiledFill(spec, overStreets, tile);
   const data: GeoJson = { type: "FeatureCollection", features: spec.features.map((f) => ({ type: "Feature", properties: { ref: f.ref, name: f.name, color: f.color }, geometry: f.geometry })) };
   const selected = spec.selectedRef ?? "";
   const layers: LayerDef[] = [{ id: IDS.fill, type: "fill", source: SOURCES.fill, paint: { "fill-color": ["get", "color"], "fill-opacity": overStreets ? spec.opacity * 0.62 : spec.opacity } }];
@@ -26,14 +50,14 @@ function fill(spec: FillLayerSpec, overStreets: boolean): { sources: SourceDef[]
 }
 
 function pins(spec: PinsLayerSpec): { sources: SourceDef[]; layers: LayerDef[]; key: string } {
-  const data: GeoJson = { type: "FeatureCollection", features: spec.pins.map((p) => ({ type: "Feature", properties: { id: p.id, name: p.name, color: p.color, radius: p.radius }, geometry: { type: "Point", coordinates: [p.lng, p.lat] } })) };
+  const data: GeoJson = { type: "FeatureCollection", features: spec.pins.map((p) => ({ type: "Feature", properties: { id: p.id, name: p.name, color: p.color, radius: p.radius, rank: p.rank ?? 0 }, geometry: { type: "Point", coordinates: [p.lng, p.lat] } })) };
   const selected = spec.selectedId ?? "";
   const layers: LayerDef[] = [];
   const unclustered = spec.cluster ? ["!", ["has", "point_count"]] : undefined;
   if (spec.cluster) {
     layers.push(
-      { id: IDS.clusters, type: "circle", source: SOURCES.pins, filter: ["has", "point_count"], paint: { "circle-color": ["step", ["get", "point_count"], "#93c5fd", 20, "#3b82f6", 100, "#1d4ed8"], "circle-radius": ["step", ["get", "point_count"], 14, 20, 20, 100, 28], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-opacity": spec.opacity } },
-      { id: IDS.clusterCount, type: "symbol", source: SOURCES.pins, filter: ["has", "point_count"], layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": FONT, "text-size": 12 }, paint: { "text-color": "#0f172a" } },
+      { id: IDS.clusters, type: "circle", source: SOURCES.pins, filter: ["has", "point_count"], paint: { "circle-color": spec.rankColors && spec.rankColors.length > 0 ? ["match", ["get", "rank"], ...spec.rankColors.flatMap((c, i) => [i, c]), spec.rankColors[0]] : ["step", ["get", "point_count"], "#93c5fd", 20, "#3b82f6", 100, "#1d4ed8"], "circle-radius": ["step", ["get", "point_count"], 14, 20, 20, 100, 28], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2, "circle-opacity": spec.opacity } },
+      { id: IDS.clusterCount, type: "symbol", source: SOURCES.pins, filter: ["has", "point_count"], layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": FONT, "text-size": 12 }, paint: { "text-color": spec.rankColors ? "#ffffff" : "#0f172a" } },
     );
   }
   layers.push({
@@ -44,7 +68,7 @@ function pins(spec: PinsLayerSpec): { sources: SourceDef[]; layers: LayerDef[]; 
       "circle-stroke-width": ["case", ["==", ["get", "id"], selected], 3, 1.5],
     },
   });
-  return { sources: [{ id: SOURCES.pins, data, cluster: spec.cluster }], layers, key: `pins:${spec.cluster}:${spec.pins.map((p) => `${p.id}~${p.color}~${p.radius}~${p.lng}~${p.lat}`).join("|")}` };
+  return { sources: [{ id: SOURCES.pins, data, cluster: spec.cluster }], layers, key: `pins:${spec.cluster}:${spec.rankColors?.join(",") ?? ""}:${spec.pins.map((p) => `${p.id}~${p.color}~${p.radius}~${p.lng}~${p.lat}`).join("|")}` };
 }
 
 function overlay(spec: OverlayLayerSpec): { sources: SourceDef[]; layers: LayerDef[]; key: string } {

@@ -19,5 +19,8 @@ location ^~ /geo/ {
 	add_header Cache-Control $dd_map_cache;
 	gzip_static on;
 	default_type application/json;
+	# Boundary tiles (Phase 49.3) are read by byte range, already compressed inside.
+	types { application/json json; application/octet-stream pmtiles; }
+	add_header Accept-Ranges bytes;
 	try_files $uri =404;
 }

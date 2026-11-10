@@ -142,6 +142,11 @@ export const SITE_SIGNAL_COLOR: Readonly<Record<DeliverySignal, string>> = {
 /** Worst first: a site with anything late shows late. */
 const SIGNAL_PRECEDENCE: readonly DeliverySignal[] = ["LATE", "ON_TIME", "DONE", "CANCELLED"];
 
+/** How bad a signal is (higher = worse): a cluster of pins takes its colour from the worst one inside it (Phase 49.4). */
+export const SITE_SIGNAL_RANK: Readonly<Record<DeliverySignal, number>> = { CANCELLED: 0, DONE: 1, ON_TIME: 2, LATE: 3 };
+/** The colours by rank, for a cluster's `max(rank)`; the same table as `SITE_SIGNAL_COLOR`. */
+export const SITE_RANK_COLORS: readonly string[] = (["CANCELLED", "DONE", "ON_TIME", "LATE"] as const).map((s) => SITE_SIGNAL_COLOR[s]);
+
 const worstOf = (signals: readonly DeliverySignal[]): DeliverySignal =>
   SIGNAL_PRECEDENCE.find((signal) => signals.includes(signal)) ?? "CANCELLED";
 

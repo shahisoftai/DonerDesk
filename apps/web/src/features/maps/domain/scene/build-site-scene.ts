@@ -4,7 +4,7 @@
  * shows "where we work" reads the same on either engine. Context outlines (a country, its provinces) are added by the caller as a fill layer.
  */
 import { DELIVERY_SIGNAL_LABEL } from "@donordesk/domain/contexts/workplan/index.js";
-import { SITE_SIGNAL_COLOR, type SiteMapPoint } from "../../../workplan/domain/site-map.ts";
+import { SITE_RANK_COLORS, SITE_SIGNAL_COLOR, SITE_SIGNAL_RANK, type SiteMapPoint } from "../../../workplan/domain/site-map.ts";
 import type { BasemapMode, FillLayerSpec, LayerSpec, MapScene, PinFeature, RegionFeature, Tip } from "../model/scene.ts";
 import { pinTipKey } from "../model/scene.ts";
 import { pointBounds, unionBounds } from "../model/bounds.ts";
@@ -51,9 +51,9 @@ export function buildSiteScene(input: SiteSceneInput): MapScene {
   }
   const pins: PinFeature[] = input.points.map((p) => {
     tips[pinTipKey(idOf(p))] = siteTip(p);
-    return { id: idOf(p), name: p.name, lng: p.lng, lat: p.lat, color: SITE_SIGNAL_COLOR[p.worst], radius: Math.min(10 + p.items.length * 2, 22) / 2 + 2 };
+    return { id: idOf(p), name: p.name, lng: p.lng, lat: p.lat, color: SITE_SIGNAL_COLOR[p.worst], rank: SITE_SIGNAL_RANK[p.worst], radius: Math.min(10 + p.items.length * 2, 22) / 2 + 2 };
   });
-  if (pins.length > 0) layers.push({ kind: "PINS", pins, opacity: 1, selectedId: null, cluster: pins.length > CLUSTER_AFTER });
+  if (pins.length > 0) layers.push({ kind: "PINS", pins, opacity: 1, selectedId: null, cluster: pins.length > CLUSTER_AFTER, rankColors: SITE_RANK_COLORS });
   // The view follows the dots, not the context: a country outline must not pull the view out to the whole country for one site.
   const box = unionBounds(pins.map((p) => pointBounds(p.lng, p.lat)));
   const m = LONE_SITE_MARGIN_DEGREES;

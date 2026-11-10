@@ -13,7 +13,7 @@ SSH_OPTS="${SSH_OPTS:--o ConnectTimeout=20 -o ServerAliveInterval=15}"
 [[ -f "${SRC}manifest.json" ]] || { echo "No manifest in ${SRC}: build the boundaries first." >&2; exit 1; }
 [[ -d "${SRC}.ocha-tmp" ]] && { echo "A boundary download is still in progress (${SRC}.ocha-tmp exists). Wait for it to finish." >&2; exit 1; }
 
-FLAGS=(-a --delete --no-owner --no-group --exclude='.ocha-tmp')
+FLAGS=(-a --delete --no-owner --no-group --exclude='.ocha-tmp' --exclude='.previous' --exclude='cod-versions.json' --exclude='*.tmp*')
 [[ "${DRY_RUN:-0}" == "1" ]] && FLAGS+=(--dry-run --itemize-changes)
 ssh ${SSH_OPTS} contabo "mkdir -p ${DEST}"
 # The manifest goes last: a reader never sees a manifest that names a file not there yet.

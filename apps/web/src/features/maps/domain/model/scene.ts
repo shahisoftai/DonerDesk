@@ -14,12 +14,18 @@ export interface RegionFeature {
   name: string;
   color: string;
   geometry: unknown;
+  /** Drawn from this tile file instead of `geometry` (which is then only the box). All features of one layer share one file. */
+  tile?: { url: string; sourceLayer: string } | undefined;
 }
 
-export interface PinFeature { id: string; name: string; lng: number; lat: number; color: string; radius: number }
+export interface PinFeature {
+  id: string; name: string; lng: number; lat: number; color: string; radius: number;
+  /** How bad this pin's state is (higher = worse). A cluster is coloured by the worst rank inside it, from `rankColors` on its layer. */
+  rank?: number;
+}
 
 export interface FillLayerSpec { kind: "FILL"; features: readonly RegionFeature[]; opacity: number; outline: boolean; selectedRef: string | null }
-export interface PinsLayerSpec { kind: "PINS"; pins: readonly PinFeature[]; opacity: number; selectedId: string | null; cluster: boolean }
+export interface PinsLayerSpec { kind: "PINS"; pins: readonly PinFeature[]; opacity: number; selectedId: string | null; cluster: boolean; /** Colour per rank, worst last; when set, a cluster shows its worst pin's colour, not a count shade. */ rankColors?: readonly string[] }
 export interface OverlayLayerSpec {
   kind: "OVERLAY";
   points: ReadonlyArray<{ name: string; lng: number; lat: number }>;

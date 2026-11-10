@@ -2,7 +2,7 @@
  * The one place that knows which concrete adapters back the map ports. Presentation receives `MapServices` and never imports an adapter.
  */
 import { provincesOf } from "../workplan/domain/site-map";
-import { loadAdmin1File, loadBoundaryFile, loadBoundaryManifest } from "@/lib/client/boundary-loader";
+import { loadAdmin1File, loadBoundaryFile, loadBoundaryIndex, loadBoundaryManifest } from "@/lib/client/boundary-loader";
 import { admin1FileKey } from "./domain/boundaries/join";
 import type { NamedGeoCollection } from "../workplan/domain/geo/geo-types";
 import { loadBoundaryLayerFile, loadBoundaryLayerList } from "@/lib/client/tenant-boundary-layers";
@@ -12,6 +12,7 @@ import { PmtilesPrefetch } from "./adapters/basemap/prefetch";
 import type { MapPrefetch } from "./ports/map-prefetch";
 import { FilesBoundarySource } from "./adapters/boundaries/files-boundary-source";
 import { TenantLayerBoundarySource } from "./adapters/boundaries/tenant-layer-boundary-source";
+import { TiledBoundarySource } from "./adapters/boundaries/tiled-boundary-source";
 import { MapLibreAreaTool } from "./adapters/maplibre/area-tool";
 import { MapLibrePinPlacer } from "./adapters/maplibre/pin-placer";
 import { MapLibreRenderer } from "./adapters/maplibre/renderer";
@@ -25,6 +26,8 @@ export interface MapServices {
   createPinPlacer: PinPlacerFactory;
   createDrawingTool: DrawingToolFactory;
   boundaries: BoundarySource;
+  /** The same boundaries for a results map: levels 2 to 4 from vector tiles where they exist (Phase 49.3). Outlines are boxes; never test a point against them. */
+  viewBoundaries: BoundarySource;
   /** Starts the map library, the basemap header and the boundary catalogue before the map exists (Phase 49.1). */
   prefetch: MapPrefetch;
   /** False on a machine with no WebGL: the screen then keeps the ECharts map. */
@@ -46,18 +49,21 @@ function webGl(): boolean {
 
 export function createMapServices(): MapServices {
   const basemap = new ProtomapsBasemap("/tiles");
+  const origin = () => (typeof location === "undefined" ? "" : location.origin);
+  // The organisation's own boundary files first; the shipped ones for everything else.
+  const boundaries = new TenantLayerBoundarySource(
+    new FilesBoundarySource(loadWorld, (name) => loadAdmin1File(admin1FileKey(name)), loadBundledAdmin1, loadBoundaryManifest, loadBoundaryFile, provincesOf),
+    loadBoundaryLayerList,
+    loadBoundaryLayerFile,
+    async (country) => { const manifest = await loadBoundaryManifest(); return (manifest ? findCountry(manifest, country.name)?.iso : undefined) ?? null; },
+  );
   return {
     createRenderer: (container) => MapLibreRenderer.create(container, basemap),
     createPinPlacer: (container, options) => MapLibrePinPlacer.create(container, options, basemap),
     createDrawingTool: (container, options) => MapLibreAreaTool.create(container, options, basemap),
-    // The organisation's own boundary files first; the shipped ones for everything else.
-    boundaries: new TenantLayerBoundarySource(
-      new FilesBoundarySource(loadWorld, (name) => loadAdmin1File(admin1FileKey(name)), loadBundledAdmin1, loadBoundaryManifest, loadBoundaryFile, provincesOf),
-      loadBoundaryLayerList,
-      loadBoundaryLayerFile,
-      async (country) => { const manifest = await loadBoundaryManifest(); return (manifest ? findCountry(manifest, country.name)?.iso : undefined) ?? null; },
-    ),
-    prefetch: new PmtilesPrefetch("/tiles", () => (typeof location === "undefined" ? "" : location.origin), undefined, () => { void loadBoundaryManifest(); }),
+    boundaries,
+    viewBoundaries: new TiledBoundarySource(boundaries, loadBoundaryManifest, loadBoundaryIndex, origin),
+    prefetch: new PmtilesPrefetch("/tiles", origin, undefined, () => { void loadBoundaryManifest(); }),
     canUseWebGL: webGl,
   };
 }

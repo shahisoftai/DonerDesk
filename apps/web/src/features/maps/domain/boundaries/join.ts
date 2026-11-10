@@ -16,8 +16,14 @@ export interface BoundaryUnit {
   /** Empty when the source carries none. */
   pcode: string;
   parentPcode: string;
+  /** The outline. For a unit read from vector tiles (Phase 49.3) it is only the unit's box, good for framing the view; the true outline is in `tile`. */
   geometry: unknown;
+  /** Set when the outline is drawn from a boundary tile file rather than from `geometry`. */
+  tile?: BoundaryTile | undefined;
 }
+
+/** Where a unit's real outline is: a PMTiles file, the layer inside it, and the feature property that holds `ref`. */
+export interface BoundaryTile { url: string; sourceLayer: string }
 
 export interface JoinPlace { id: string; name: string; code?: string | undefined; parentId?: string | undefined; aliases?: readonly string[] | undefined }
 

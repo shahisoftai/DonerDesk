@@ -269,6 +269,10 @@
     "./contexts/visual-data/index.js": {
       "types": "./dist/contexts/visual-data/index.d.ts",
       "import": "./dist/contexts/visual-data/index.js"
+    },
+    "./contexts/places/boundary-diff.js": {
+      "types": "./dist/contexts/places/boundary-diff.d.ts",
+      "import": "./dist/contexts/places/boundary-diff.js"
     }
   },
   "scripts": {
