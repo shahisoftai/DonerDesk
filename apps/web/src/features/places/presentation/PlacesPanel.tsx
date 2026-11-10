@@ -23,6 +23,7 @@ import { useMapEngine } from "@/features/maps/presentation/useMapEngine";
 import { PlaceShapeEditor } from "./PlaceShapeEditor";
 import { BulkPlaceWalk } from "./BulkPlaceWalk";
 import { BoundaryChangesCard } from "./BoundaryChangesCard";
+import { PlacePinEditor } from "./PlacePinEditor";
 
 interface Draft {
   name: string;
@@ -60,6 +61,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
   // Drawing an outline or a route needs the new map; with the old one the buttons are not offered.
   const canDraw = useMapEngine().engine === "maplibre";
   const [outlineOf, setOutlineOf] = useState<string | null>(null);
+  const [pinOf, setPinOf] = useState<string | null>(null);
   const [walkOpen, setWalkOpen] = useState(false);
   const { t: mt, levelSingular } = useMapText();
   const [areas, setAreas] = useState<ContainingArea[]>([]);
@@ -292,6 +294,11 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
                         {p.geometryKind === "LINE" ? mt("maps.places.editRoute") : p.geometryKind === "POLYGON" ? mt("maps.places.editOutline") : mt("maps.places.drawOutline")}
                       </button>
                     )}
+                    {!p.archived && (
+                      <button type="button" className="text-xs font-medium text-brand-700 hover:underline dark:text-brand-300" onClick={() => setPinOf(pinOf === p.id ? null : p.id)}>
+                        {p.latitude !== undefined ? mt("maps.places.changePin") : mt("maps.places.addPin")}
+                      </button>
+                    )}
                     <button type="button" className="text-xs font-medium text-brand-700 hover:underline disabled:opacity-50 dark:text-brand-300" disabled={busy} onClick={() => toggle(p)}>
                       {p.archived ? C.restore : C.retire}
                     </button>
@@ -302,6 +309,10 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
           </ul>
         )}
         {retire.error && <p role="alert" className="mt-2 text-sm text-danger-600">{retire.error}</p>}
+        {pinOf && (() => {
+          const target = places.find((x) => x.id === pinOf);
+          return target ? <div className="mt-3"><PlacePinEditor key={target.id} place={target} country={places.find((x) => !x.archived && x.adminLevel === 0)?.name} onClose={() => setPinOf(null)} /></div> : null;
+        })()}
         {outlineOf && (() => {
           const target = places.find((x) => x.id === outlineOf);
           if (!target) return null;
