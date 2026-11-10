@@ -24,3 +24,16 @@ export function pathForPlace(places: readonly PathPlace[], id: string): { path: 
   if (levels.some((l, i) => i > 0 && l <= levels[i - 1]!)) return null;
   return { path: chain.map((p) => ({ level: p.adminLevel, name: p.name, ref: refOfPlace(p) })), ref: refOfPlace(place), level: place.adminLevel };
 }
+
+/**
+ * The boundary unit a crumb stands for: by its ref (P-code or name key), else by name when exactly one unit has that name (Phase 49:
+ * a place may carry another code system, such as ISO 3166-2 "KE-TUR", where the boundaries carry OCHA's "KE023"). Never a guess between
+ * two namesakes.
+ */
+export function unitForCrumb<U extends { ref: string; name: string }>(units: readonly U[], crumb: { ref: string; name: string }): U | undefined {
+  const byRef = units.find((u) => u.ref === crumb.ref);
+  if (byRef) return byRef;
+  const key = nameRef(crumb.name);
+  const named = units.filter((u) => nameRef(u.name) === key);
+  return named.length === 1 ? named[0] : undefined;
+}

@@ -37,3 +37,11 @@ test("clusters: carry the worst rank of their pins and take that rank's colour",
   const clusters = built.layers.find((l) => l.id === "dd-clusters")!;
   assert.deepEqual((clusters.paint["circle-color"] as unknown[]).slice(0, 4), ["match", ["get", "rank"], 0, "#aaa"]);
 });
+
+import { unitForCrumb } from "../../src/features/maps/domain/drill/place-path.ts";
+test("drill: a crumb finds its unit by P-code, else by a unique name (another code system), never between namesakes", () => {
+  const units = [{ ref: "KE023", name: "Turkana" }, { ref: "KE030", name: "Baringo" }, { ref: "X1", name: "Central" }, { ref: "X2", name: "Central" }];
+  assert.equal(unitForCrumb(units, { ref: "KE023", name: "anything" })?.ref, "KE023");
+  assert.equal(unitForCrumb(units, { ref: "KE-TUR", name: "Turkana County" })?.ref, "KE023");
+  assert.equal(unitForCrumb(units, { ref: "C9", name: "Central" }), undefined);
+});

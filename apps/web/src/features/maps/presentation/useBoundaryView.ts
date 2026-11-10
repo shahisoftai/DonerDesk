@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { unitsWithin, type WithinBasis } from "../domain/boundaries/within";
+import { unitForCrumb } from "../domain/drill/place-path";
 import type { BoundaryUnit } from "../domain/boundaries/join";
 import { shownLevel, type DrillPath } from "../domain/drill/drill-path";
 import type { BoundarySource } from "../ports/boundary-source";
@@ -36,7 +37,7 @@ export function useBoundaryView(path: DrillPath, source: BoundarySource): Bounda
       for (const crumb of path) {
         const all = await source.load(country, crumb.level);
         const scoped: readonly BoundaryUnit[] = all && parent ? unitsWithin(all, parent).units : (all ?? []);
-        const hit = scoped.find((u) => u.ref === crumb.ref) ?? (all ?? []).find((u) => u.ref === crumb.ref);
+        const hit = unitForCrumb(scoped, crumb) ?? unitForCrumb(all ?? [], crumb);
         if (!hit) break;
         opened.push(hit);
         parent = hit;
