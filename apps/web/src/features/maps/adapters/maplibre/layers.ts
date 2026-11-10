@@ -111,8 +111,12 @@ function context(spec: ContextLayerSpec): { sources: SourceDef[]; layers: LayerD
 
 /** `overStreets`: a street basemap is under the boundaries, so the fill lets it show through. */
 export function buildMapLibreLayers(scene: MapScene, overStreets = false): Built {
-  // Context first, so it is drawn under the results.
-  const ordered = [...scene.layers.filter((l) => l.kind === "CONTEXT"), ...scene.layers.filter((l) => l.kind !== "CONTEXT")];
+  // Rasters and imagery under the results (a ground to read them against); context points above the shading (or the fill would hide
+  // them) and under the project's own pins, which stay on top.
+  const under = scene.layers.filter((l) => l.kind === "CONTEXT" && l.type !== "points");
+  const points = scene.layers.filter((l) => l.kind === "CONTEXT" && l.type === "points");
+  const rest = scene.layers.filter((l) => l.kind !== "CONTEXT");
+  const ordered = [...under, ...rest.filter((l) => l.kind === "FILL"), ...points, ...rest.filter((l) => l.kind !== "FILL")];
   const parts = ordered.map((l) => (l.kind === "CONTEXT" ? context(l) : l.kind === "FILL" ? fill(l, overStreets) : l.kind === "PINS" ? pins(l) : overlay(l)));
   return { sources: parts.flatMap((p) => p.sources), layers: parts.flatMap((p) => p.layers), dataKey: parts.map((p) => p.key).join("#") };
 }

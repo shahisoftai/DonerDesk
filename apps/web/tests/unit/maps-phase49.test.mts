@@ -25,7 +25,9 @@ test("context layers: drawn under the results, never pickable ids; imagery only 
   assert.deepEqual(ctx.map((c) => c.type), ["imagery", "points"]);
   assert.equal(ctx[0]!.attribution, "Img Co");
   const built = buildMapLibreLayers(scene([{ kind: "PINS", pins: [], opacity: 1, selectedId: null, cluster: false }, ...ctx]));
-  assert.ok(built.layers[0]!.id.startsWith("dd-ctx-"), "context first, so it is under the results");
+  assert.equal(built.layers[0]!.id, "dd-ctx-imagery", "imagery first, under the results");
+  const ids = built.layers.map((l) => l.id);
+  assert.ok(ids.indexOf("dd-ctx-health_facilities") < ids.indexOf("dd-pins"), "context points under the project's pins");
   assert.deepEqual(contextLayers(null, new Set(["POPULATION"] as const), ""), []);
 });
 

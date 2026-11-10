@@ -14,10 +14,11 @@ import { fileURLToPath } from "node:url";
 import { licenceVerdict, requiresShareAlike, roundGeometry, ROUND_DIGITS, SIMPLIFY_EPSILON } from "../src/features/maps/domain/boundary-sources.ts";
 import { codFileName, geojsonZipUrl, readLevel } from "../src/features/maps/domain/ocha-cod.ts";
 import { simplifyGeometry } from "../src/features/maps/domain/simplify-geometry.ts";
+import { admin1FileKey } from "../src/features/maps/domain/boundaries/join.ts";
 
 const args = new Map();
 for (let i = 2; i < process.argv.length; i += 2) args.set(process.argv[i].replace(/^--/, ""), process.argv[i + 1]);
-const levels = (args.get("levels") ?? "2,3").split(",").map(Number).filter((n) => [2, 3, 4].includes(n));
+const levels = (args.get("levels") ?? "2,3").split(",").map(Number).filter((n) => [1, 2, 3, 4].includes(n));
 const only = args.get("countries") ? new Set(args.get("countries").split(",").map((s) => s.trim().toUpperCase())) : null;
 // --skip IDN,THA: countries to leave out (HDX sometimes stalls a large file; fetch those again later).
 const skip = new Set((args.get("skip") ?? "").split(",").map((s) => s.trim().toUpperCase()).filter(Boolean));
@@ -90,12 +91,15 @@ async function worker() {
         const read = readLevel(JSON.parse(text).features ?? [], level, today);
         if (read.features.length === 0) continue;
         const features = read.features.map((f) => ({ ...f, geometry: roundGeometry(simplifyGeometry(f.geometry, epsilonArg ?? SIMPLIFY_EPSILON[level]), ROUND_DIGITS[level]) })).filter((f) => f.geometry);
-        const body = JSON.stringify({ type: "FeatureCollection", features });
-        mkdirSync(join(OUT, iso), { recursive: true });
-        writeFileSync(join(OUT, iso, `ADM${level}.json`), body);
         const country = countries.get(iso) ?? { iso, name: (pkg.title ?? iso).replace(/ - Subnational Administrative Boundaries$/i, ""), source: "OCHA COD-AB", licence, yearRepresented: read.version.slice(0, 4), files: [] };
+        // Level 1 (provinces, states, counties) replaces the country's Natural Earth file under /geo/ADM1/<key>.json, the one the map reads for
+        // provinces; Natural Earth's is out of date for some countries (Kenya's 8 pre-2013 provinces instead of 47 counties).
+        const file = level === 1 ? `ADM1/${admin1FileKey(country.name)}.json` : `${iso}/ADM${level}.json`;
+        const body = JSON.stringify({ type: "FeatureCollection", features: level === 1 ? features.map((f) => ({ ...f, properties: { ...f.properties, country: country.name } })) : features });
+        mkdirSync(join(OUT, level === 1 ? "ADM1" : iso), { recursive: true });
+        writeFileSync(join(OUT, file), body);
         if (country.files.some((f) => f.level === level && f.origin !== "OCHA COD-AB")) report.replaced++;
-        country.files = country.files.filter((f) => f.level !== level).concat({ level, file: `${iso}/ADM${level}.json`, units: features.length, bytes: Buffer.byteLength(body), origin: "OCHA COD-AB", source: "OCHA COD-AB", licence, yearRepresented: read.version.slice(0, 4) || "", ...(requiresShareAlike(licence) ? { shareAlike: true } : {}) }).sort((a, b) => a.level - b.level);
+        country.files = country.files.filter((f) => f.level !== level).concat({ level, file, units: features.length, bytes: Buffer.byteLength(body), origin: "OCHA COD-AB", source: "OCHA COD-AB", licence, yearRepresented: read.version.slice(0, 4) || "", ...(requiresShareAlike(licence) ? { shareAlike: true } : {}) }).sort((a, b) => a.level - b.level);
         countries.set(iso, country);
         held = held.filter((h) => !(h.iso === iso && h.level === level)); // OCHA fills a level geoBoundaries had to hold
         report.written++;
