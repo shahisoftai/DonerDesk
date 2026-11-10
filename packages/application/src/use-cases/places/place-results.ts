@@ -1,5 +1,5 @@
 import {
-  DomainError, PlaceRegistry, periodSheetLabel, ok, indicatorLocationRows, isRateIndicator, rollupByPlace, type AdminLevel, type PlaceRecord, type PlaceRollup, type Result,
+  DomainError, PlaceRegistry, effectiveIndicatorSemantics, periodSheetLabel, ok, indicatorLocationRows, isRateIndicator, rollupByPlace, type AdminLevel, type PlaceRecord, type PlaceRollup, type Result,
 } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IProjectRepository } from "../../ports/projects.js";
@@ -76,7 +76,11 @@ export class GetProjectPlaceResultsHandler {
 
     const out: PlaceResultsDto = { level, levelsAvailable, periods: periods.map((p) => ({ id: p.id, label: periodSheetLabel(p.duration.start.toISOString().slice(0, 10), p.duration.end.toISOString().slice(0, 10)) })), noPlaces: registry.size === 0, indicators: [], withoutLocation: [] };
     for (const indicator of indicatorsResult.value) {
-      const updates = [...(byIndicator.get(indicator.id) ?? [])].sort((a, b) => periodOrder.indexOf(a.reportingPeriodId) - periodOrder.indexOf(b.reportingPeriodId));
+      const sorted = [...(byIndicator.get(indicator.id) ?? [])].sort((a, b) => periodOrder.indexOf(a.reportingPeriodId) - periodOrder.indexOf(b.reportingPeriodId));
+      // A figure reported as it stands (schools closed, people in need) is not added across months: the latest month with a split by place is read.
+      const asItStands = effectiveIndicatorSemantics(indicator).aggregation === "LATEST";
+      const latestPlaced = [...sorted].reverse().find((u) => u.disaggregation?.some((d) => d.dimension === "LOCATION"));
+      const updates = !asItStands || options.periodId !== undefined || !latestPlaced ? sorted : [latestPlaced];
       const view = indicatorLocationRows(
         { id: indicator.id, code: indicator.code, name: indicator.name, type: indicator.type },
         updates.map((u) => ({

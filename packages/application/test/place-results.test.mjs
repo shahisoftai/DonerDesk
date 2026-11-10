@@ -18,6 +18,7 @@ function handler({ places, updates }) {
       { id: "i1", code: "OC1", name: "Children vaccinated", type: "NUMBER", unit: "children" },
       { id: "i2", code: "OC2", name: "Coverage", type: "PERCENTAGE", unit: "%" },
       { id: "i3", code: "OC3", name: "No breakdown", type: "NUMBER", unit: null },
+      { id: "i4", code: "CX2", name: "Schools closed", type: "NUMBER", unit: "schools", semantics: { aggregation: "LATEST", direction: "LOWER_IS_BETTER", targetBasis: "FINAL_TARGET" } },
     ]) },
     { findByReportingPeriods: async (ids) => ok(updates.filter((u) => ids.includes(u.reportingPeriodId))) },
     { list: async () => ok(places) },
@@ -40,7 +41,12 @@ test("each indicator is read at the chosen level; indicators with no location br
   const i2 = r.value.indicators.find((i) => i.code === "OC2");
   assert.equal(i2.isRate, true);
   assert.equal(i2.rollup.additive, false);
-  assert.deepEqual(r.value.withoutLocation.map((i) => i.code), ["OC3"]);
+  assert.deepEqual(r.value.withoutLocation.map((i) => i.code), ["OC3", "CX2"]);
+});
+
+test("a figure reported as it stands is read from the latest month, never added across months", async () => {
+  const r = await handler({ places: PLACES, updates: [upd("i4", "p1", [entry("Rabak", "62")]), upd("i4", "p2", [entry("Rabak", "78")])] }).handle(ctx, "proj", 2);
+  assert.equal(r.value.indicators.find((i) => i.code === "CX2").rollup.rows.find((x) => x.name === "Rabak").value, "78");
 });
 
 test("an organisation with no places is told so, and typed locations stay unplaced", async () => {
