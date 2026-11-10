@@ -304,6 +304,8 @@ export interface DataSheetImportRow {
   /** What is stored now, for the preview. */
   previousPeriodValue?: string;
   previousCumulativeValue?: string;
+  /** The breakdown the row's "Dimension: Category" columns carry (only cells that hold a figure). */
+  breakdown?: Array<{ dimension: string; category: string; value: string }>;
 }
 
 export interface DataSheetImportPreview {
@@ -329,6 +331,19 @@ const COLUMN_ALIASES = {
   comments: ["comments", "comment", "notes"],
 } as const;
 
+/** A breakdown column is headed "<dimension>: <category>", e.g. "Location: Turkana County" or "Sex: Female". */
+const BREAKDOWN_DIMENSIONS: Record<string, string> = { sex: "SEX", gender: "SEX", age: "AGE_GROUP", "age group": "AGE_GROUP", disability: "DISABILITY", location: "LOCATION", place: "LOCATION", county: "LOCATION", other: "OTHER" };
+
+function breakdownColumns(header: ReadonlyArray<string>): Array<{ col: number; dimension: string; category: string }> {
+  const out: Array<{ col: number; dimension: string; category: string }> = [];
+  header.forEach((raw, col) => {
+    const m = /^([^:]+):(.+)$/.exec(raw.trim());
+    const dimension = m ? BREAKDOWN_DIMENSIONS[norm(m[1]!)] : undefined;
+    if (dimension && m![2]!.trim()) out.push({ col, dimension, category: m![2]!.trim() });
+  });
+  return out;
+}
+
 /**
  * Compares an uploaded table with the stored sheet. Rows are matched on indicator code plus period (start and end dates,
  * or the period label). Only the period value, cumulative value, data source and comments are read; an empty cell never
@@ -348,6 +363,7 @@ export function previewDataSheetImport(sheet: DataSheet, table: ReadonlyArray<Re
     comments: find(COLUMN_ALIASES.comments),
   };
 
+  const breakdownCols = breakdownColumns(table[0] ?? []);
   const missingColumns: string[] = [];
   if (idx.code < 0) missingColumns.push("Indicator code");
   if (idx.period < 0 && (idx.start < 0 || idx.end < 0)) missingColumns.push("Period (or Period start and Period end)");
@@ -394,7 +410,8 @@ export function previewDataSheetImport(sheet: DataSheet, table: ReadonlyArray<Re
     }
     const value = at(row, idx.value);
     const cumulative = at(row, idx.cumulative);
-    const bad = [value, cumulative].find((v) => v !== "" && !NUMBERISH.test(v));
+    const breakdown = breakdownCols.map((b) => ({ dimension: b.dimension, category: b.category, value: at(row, b.col) })).filter((b) => b.value !== "");
+    const bad = [value, cumulative, ...breakdown.map((b) => b.value)].find((v) => v !== "" && !NUMBERISH.test(v));
     if (bad !== undefined) {
       fail(`"${bad}" is not a number.`);
       continue;
@@ -404,7 +421,9 @@ export function previewDataSheetImport(sheet: DataSheet, table: ReadonlyArray<Re
     const nextCumulative = cumulative !== "" ? cumulative : (current?.cumulativeValue ?? "");
     const nextSource = at(row, idx.source) || current?.dataSource || "";
     const nextComments = at(row, idx.comments) || current?.comments || "";
+    const sameBreakdown = breakdown.length === 0 || JSON.stringify(breakdown) === JSON.stringify(current?.breakdown ?? []);
     const same =
+      sameBreakdown &&
       nextValue === (current?.periodValue ?? "") &&
       nextCumulative === (current?.cumulativeValue ?? "") &&
       nextSource === (current?.dataSource ?? "") &&
@@ -424,6 +443,7 @@ export function previewDataSheetImport(sheet: DataSheet, table: ReadonlyArray<Re
       cumulativeValue: nextCumulative,
       ...(nextSource ? { dataSource: nextSource } : {}),
       ...(nextComments ? { comments: nextComments } : {}),
+      ...(breakdown.length > 0 ? { breakdown } : {}),
       previousPeriodValue: current?.periodValue ?? "",
       previousCumulativeValue: current?.cumulativeValue ?? "",
     });

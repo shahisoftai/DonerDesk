@@ -184,6 +184,16 @@ test("import: a verified value is reported as left as it is, not promised as a c
   assert.equal(same.skipped, 0, "an unchanged verified value is just 'already the same'");
 });
 
+test("import: 'Dimension: Category' columns carry a breakdown; a non-number in one is refused", () => {
+  const preview = previewDataSheetImport(sheet, parseCsv("Indicator code,Period,Period value,Location: Turkana,Location: Garissa,Sex: Female,Sex: Male\nOUT-1,Feb 2026,16,10,6,9,7"));
+  assert.equal(preview.changed, 1);
+  assert.deepEqual(preview.rows[0].breakdown, [
+    { dimension: "LOCATION", category: "Turkana", value: "10" }, { dimension: "LOCATION", category: "Garissa", value: "6" },
+    { dimension: "SEX", category: "Female", value: "9" }, { dimension: "SEX", category: "Male", value: "7" },
+  ]);
+  assert.equal(previewDataSheetImport(sheet, parseCsv("Indicator code,Period,Period value,Sex: Female\nOUT-1,Feb 2026,16,many")).errors, 1);
+});
+
 test("a data table: summary gives the latest value and % of target, a gap is Not measured, a rate has no %", async () => {
   const { buildDataTable } = await import("../dist/index.js");
   const r = buildDataTable(sheet, { layout: "SUMMARY", indicatorIds: ["i1", "i2", "i3"], measure: "PERIOD" });

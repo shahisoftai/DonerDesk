@@ -1,5 +1,6 @@
 import type { Result, DataSheet, DataSheetImportPreview } from "@donordesk/domain";
 import { DomainError, deriveFormulaCells, describeFormula, effectiveIndicatorSemantics, isPeriodLocked, isRateIndicator, periodSheetLabel, previewDataSheetImport, financeAppliesTo } from "@donordesk/domain";
+import type { DisaggregationDimension } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -158,6 +159,7 @@ export class ImportDataSheetHandler {
           cumulativeAchievement: r.cumulativeValue ?? "",
           ...(r.dataSource ? { dataSource: r.dataSource } : {}),
           ...(r.comments ? { comments: r.comments } : {}),
+          ...(r.breakdown ? { disaggregation: r.breakdown as Array<{ dimension: DisaggregationDimension; category: string; value: string }> } : {}),
         })),
       });
       if (!result.ok) return result;

@@ -50,7 +50,7 @@ export function DataSheetImport({ projectId }: { projectId: string }) {
       <h3 id="import-heading" className="font-medium">Import a data sheet</h3>
       <p className="mt-1 text-sm text-slate-500">
         Download the Excel file, change the shaded columns (period value, cumulative value, data source, comments) and upload it here (.xlsx or .csv).
-        Rows are matched on indicator code and period. An empty cell leaves the stored value as it is, and a verified value is never overwritten. You see what will change before anything is saved.
+        Rows are matched on indicator code and period. An empty cell leaves the stored value as it is, and a verified value is never overwritten. To bring in a breakdown, add columns headed "Location: Turkana", "Sex: Female" or "Age group: 6-13"; each must add up to the period value. You see what will change before anything is saved.
       </p>
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input ref={input} type="file" accept=".csv,.xlsx" aria-label="Data sheet file" className="text-sm" onChange={(e) => { setFile(e.target.files?.[0] ?? null); setPreview(null); setMessage(null); }} />
