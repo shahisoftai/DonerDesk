@@ -4,6 +4,7 @@ import { CHART_KINDS, TEMPLATE_SHAPE, type ChartAnnotation, type ChartKind, type
 import { applyChartStyle } from "./chart-style.js";
 import { areaRange, fillGauge, multiRing, network, parallel, pictorialBar, radialBar, rangeBar, themeRiver, tree, type KindBuilt, type RenderKit } from "./chart-render-kinds.js";
 import { bump, connectedScatter, divergingBar, dumbbell, thermometer } from "./chart-render-kinds-more.js";
+import { dotDensity, hexGrid, type GeoBuilt } from "./chart-render-kinds-geo.js";
 import { apportion, parliament, proportionBar, smallMultiples } from "./chart-render-kinds-shares.js";
 import { resolvePaletteColors } from "./chart-presets.js";
 import { planCounts } from "./plan-counts.js";
@@ -720,6 +721,9 @@ function choropleth(spec: ChartSpecV2, places: ReadonlyArray<DatasetPlace>, titl
   };
 }
 
+/** A kind's own notes come after the dataset's. */
+const withNotes = (built: GeoBuilt, notes: string[]): GeoBuilt => (typeof built === "string" ? built : { ...built, notes: [...notes, ...built.notes] });
+
 function buildMapKind(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   const rule = CHART_KINDS[spec.kind];
   const places = data.places;
@@ -729,7 +733,12 @@ function buildMapKind(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   if (rule.additiveOnly && indicator.isRate) return { ok: false, reason: `${rule.label} charts add values up, so they cannot show a rate (a percentage or ratio).` };
   const title = spec.title?.trim() || `${indicator.code} ${indicator.name} by place`;
   const notes = [...data.notes];
-  const built = spec.kind === "CHOROPLETH" ? choropleth(spec, places, title, notes) : graduatedSymbols(spec, places, unitOf(indicator), title, notes);
+  const pinned = places.filter((p) => p.latitude !== undefined && p.longitude !== undefined);
+  const geoKit = { base: baseOption(spec, title, palette(spec), false, annotationsOf(spec, false, [])), geo: { map: WORLD_MAP, roam: true, silent: false, itemStyle: { areaColor: R.mapArea, borderColor: R.surface }, emphasis: { itemStyle: { areaColor: R.mapAreaHover } }, ...(pinned.length > 0 ? fitTo(pinned) : {}) }, palette: palette(spec), fmt: formatChartNumber, unit: unitOf(indicator) };
+  const built = spec.kind === "CHOROPLETH" ? choropleth(spec, places, title, notes)
+    : spec.kind === "DOT_DENSITY" ? withNotes(dotDensity(places, geoKit), notes)
+    : spec.kind === "HEX_GRID" ? withNotes(hexGrid(places, geoKit), notes)
+    : graduatedSymbols(spec, places, unitOf(indicator), title, notes);
   if (typeof built === "string") return { ok: false, reason: built };
   const alt = spec.altText?.trim() || `${rule.label}: ${title}. ${places.length} places at level ${spec.dataset.placeLevel ?? 1}.`;
   return {
@@ -799,7 +808,7 @@ function buildUnstyled(spec: ChartSpecV2, data: DatasetResult): ChartBuild {
   if (!rule.shapes.includes(shape)) return { ok: false, reason: `${rule.label} cannot be drawn from this data.` };
 
   if (shape === "PLAN" || shape === "DAYS" || shape === "BUDGET") return buildExtraShape(spec, data, shape);
-  if (spec.kind === "CHOROPLETH" || spec.kind === "GRADUATED_SYMBOLS") return buildMapKind(spec, data);
+  if (spec.kind === "CHOROPLETH" || spec.kind === "GRADUATED_SYMBOLS" || spec.kind === "DOT_DENSITY" || spec.kind === "HEX_GRID") return buildMapKind(spec, data);
   const base = normalise(shape, spec, data);
   if (typeof base === "string") return { ok: false, reason: base };
   const notes = [...data.notes];

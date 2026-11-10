@@ -78,3 +78,17 @@ export const CreateCanvasShareSchema = z.object({ kind: z.enum(["LIVE", "FROZEN"
 export const ReviewCanvasSchema = z.object({ action: z.enum(["SUBMIT", "APPROVE", "REQUEST_CHANGES", "REOPEN"]), note: z.string().trim().max(500).optional() });
 export const CanvasSnapshotsSchema = z.object({ every: z.enum(["NONE", "WEEKLY", "MONTHLY"]) });
 export const DraftCanvasTextSchema = z.object({ style: z.enum(["SUMMARY", "MESSAGES", "QUESTION"]), projectId: z.string().min(1).max(80), instruction: z.string().max(300).optional(), language: z.string().max(10).optional() });
+
+/**
+ * The tables a person is looking at, sent back to be made into a workbook (Phase 48.9). The workbook holds only what the sender already
+ * sees; the limits keep one request small. A gap is `null` (an empty cell), never 0.
+ */
+export const CanvasDataWorkbookSchema = z.object({
+  title: z.string().trim().min(1).max(120),
+  tables: z.array(z.object({
+    name: z.string().min(1).max(120),
+    columns: z.array(z.string().max(160)).min(1).max(60),
+    rows: z.array(z.array(z.union([z.string().max(1000), z.number(), z.null()])).max(60)).max(5000),
+  })).min(1).max(30),
+});
+export type CanvasDataWorkbookInput = z.infer<typeof CanvasDataWorkbookSchema>;

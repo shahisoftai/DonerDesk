@@ -11,6 +11,7 @@ import { SECTOR_REGISTRY } from "./sectors.js";
 import { BUILT_IN_CONTENT } from "./library.js";
 import { canvasTemplateIdFor, dashboardTemplateIdFor, headlineIndicators } from "./headline.js";
 import { LIBRARY_SECTOR_IDS } from "./model.js";
+import { variantsOf } from "./generated-variants.js";
 import type { LibraryIndicator, SectorContent } from "./model.js";
 
 const TYPES: Readonly<Record<LibraryIndicator["kind"], RoleIndicatorType[]>> = { COUNT: ["COUNT"], RATE: ["PERCENTAGE"], RATIO: ["RATIO"], INDEX: ["RATIO"], BINARY: ["ANY"], QUALITATIVE: ["ANY"] };
@@ -59,4 +60,7 @@ export const LIBRARY_DASHBOARD_TEMPLATES: readonly DashboardTemplate[] = LIBRARY
   .map(libraryDashboardTemplate)
   .filter(present);
 
-export const LIBRARY_CANVAS_TEMPLATES: readonly CanvasTemplate[] = LIBRARY_SECTOR_IDS.map((id) => libraryCanvasTemplate(BUILT_IN_CONTENT[id])).filter(present);
+export const LIBRARY_CANVAS_TEMPLATES: readonly CanvasTemplate[] = LIBRARY_SECTOR_IDS.flatMap((id) => {
+  const results = libraryCanvasTemplate(BUILT_IN_CONTENT[id]);
+  return results ? [results, ...variantsOf(BUILT_IN_CONTENT[id])] : [];
+});

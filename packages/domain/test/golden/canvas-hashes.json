@@ -35,101 +35,601 @@
     "canvas": "282d2c54b1794ce8",
     "design": "9246bf260bd1fc6b"
   },
+  "template:lib-canvas-wash-donor": {
+    "canvas": "1ad4b8699adfff88",
+    "design": "4d2037fc742e5c3b"
+  },
+  "template:lib-canvas-wash-flash": {
+    "canvas": "dce71544e4096d13",
+    "design": "efc1d5dcaf4375c6"
+  },
+  "template:lib-canvas-wash-monitoring": {
+    "canvas": "42953f6ab0bb0aaf",
+    "design": "66fad73e6c2e8679"
+  },
+  "template:lib-canvas-wash-people": {
+    "canvas": "306087ce50c653cf",
+    "design": "e6a3992365a17449"
+  },
+  "template:lib-canvas-wash-where": {
+    "canvas": "d0cc1d7e5a8dd6f3",
+    "design": "a394ccd907ad7eb6"
+  },
   "template:lib-canvas-health": {
     "canvas": "b03a6ee87ab28d43",
     "design": "8958d4b106359cc6"
+  },
+  "template:lib-canvas-health-donor": {
+    "canvas": "b2c441ffaa21bb2a",
+    "design": "f179d54f50cfd2c0"
+  },
+  "template:lib-canvas-health-flash": {
+    "canvas": "3fe7e804b362c597",
+    "design": "b05fe70cc82e31e6"
+  },
+  "template:lib-canvas-health-monitoring": {
+    "canvas": "4a8e95c7d00d008b",
+    "design": "9ef50c4512496fb4"
+  },
+  "template:lib-canvas-health-people": {
+    "canvas": "c670d2eba560dc06",
+    "design": "f53b2a5fb7d83cdf"
+  },
+  "template:lib-canvas-health-where": {
+    "canvas": "a5bd917fa0aeef9d",
+    "design": "127f0a08a7bd5695"
   },
   "template:lib-canvas-nutrition": {
     "canvas": "8270c5f08b7d7e6b",
     "design": "c7b891db7aaf054f"
   },
+  "template:lib-canvas-nutrition-donor": {
+    "canvas": "b1aef6a5d1e66ff9",
+    "design": "dd757efc5cf248a0"
+  },
+  "template:lib-canvas-nutrition-flash": {
+    "canvas": "973285ceefc43cc4",
+    "design": "978d54ef4653a8ec"
+  },
+  "template:lib-canvas-nutrition-monitoring": {
+    "canvas": "438a39d824b3ca0b",
+    "design": "aa69d2bbfcb74a38"
+  },
+  "template:lib-canvas-nutrition-people": {
+    "canvas": "9d9561b5e979a298",
+    "design": "59181f649e42ce9a"
+  },
+  "template:lib-canvas-nutrition-where": {
+    "canvas": "14ef14ec802e38c3",
+    "design": "e258dfe5d7686cd1"
+  },
   "template:lib-canvas-food-security": {
     "canvas": "3b765e03e0ca6d05",
     "design": "ba28bca092b117ea"
+  },
+  "template:lib-canvas-food-security-donor": {
+    "canvas": "a09d0eec180aceb5",
+    "design": "af854d9e87b1af4c"
+  },
+  "template:lib-canvas-food-security-flash": {
+    "canvas": "0e255e45401280de",
+    "design": "8f2c9b55e1ed0956"
+  },
+  "template:lib-canvas-food-security-monitoring": {
+    "canvas": "9e5ddcaecc785a87",
+    "design": "3be280338b8670d7"
+  },
+  "template:lib-canvas-food-security-people": {
+    "canvas": "a61260efdde6355a",
+    "design": "110435defb6fd361"
+  },
+  "template:lib-canvas-food-security-where": {
+    "canvas": "45fb8b066631917b",
+    "design": "c3bc2da4a19de068"
   },
   "template:lib-canvas-shelter-nfi": {
     "canvas": "0c757b8db5209f84",
     "design": "5364b5341ceb9703"
   },
+  "template:lib-canvas-shelter-nfi-donor": {
+    "canvas": "b392f10d2617e83f",
+    "design": "00e0345560e759cd"
+  },
+  "template:lib-canvas-shelter-nfi-flash": {
+    "canvas": "4df3987db6aefd68",
+    "design": "7854450c46d0ed9f"
+  },
+  "template:lib-canvas-shelter-nfi-monitoring": {
+    "canvas": "7f7c0bfeef4ab477",
+    "design": "4032a06d081d127f"
+  },
+  "template:lib-canvas-shelter-nfi-people": {
+    "canvas": "bdd7b3c163e88b92",
+    "design": "8d1b8187b5edb26a"
+  },
+  "template:lib-canvas-shelter-nfi-where": {
+    "canvas": "54a35c14f86028e2",
+    "design": "13fd16e83fbaf09b"
+  },
   "template:lib-canvas-protection": {
     "canvas": "ac83f4fddd16c65c",
     "design": "2f6644be70a3d58f"
+  },
+  "template:lib-canvas-protection-donor": {
+    "canvas": "88fd03c58f5ec8ee",
+    "design": "e382be6fd47223a5"
+  },
+  "template:lib-canvas-protection-flash": {
+    "canvas": "7adb469fbd181603",
+    "design": "1454413ad4828adb"
+  },
+  "template:lib-canvas-protection-monitoring": {
+    "canvas": "ed8486e1506b7654",
+    "design": "54242abe65ebf19c"
+  },
+  "template:lib-canvas-protection-people": {
+    "canvas": "e3acc8e9f9953174",
+    "design": "399cadb77090c0ce"
+  },
+  "template:lib-canvas-protection-where": {
+    "canvas": "6c8e0c491fe3b3f2",
+    "design": "232703b8a35ad773"
   },
   "template:lib-canvas-mine-action": {
     "canvas": "21def438e3065831",
     "design": "22b99b19ce0b2a74"
   },
+  "template:lib-canvas-mine-action-donor": {
+    "canvas": "e07cef00a55e4855",
+    "design": "d0580ca053275112"
+  },
+  "template:lib-canvas-mine-action-flash": {
+    "canvas": "651057eddc7889e1",
+    "design": "5fb0f866e268389f"
+  },
+  "template:lib-canvas-mine-action-monitoring": {
+    "canvas": "181ac8f9c7aada65",
+    "design": "fa0afe8263394f5f"
+  },
+  "template:lib-canvas-mine-action-people": {
+    "canvas": "7ce0ab4672dac8f3",
+    "design": "4b3e14501fd15d43"
+  },
+  "template:lib-canvas-mine-action-where": {
+    "canvas": "b0faa293966cae3f",
+    "design": "40fc684a19c27150"
+  },
   "template:lib-canvas-education": {
     "canvas": "303b371de0ddd3cf",
     "design": "aea7e5ea692ad105"
+  },
+  "template:lib-canvas-education-donor": {
+    "canvas": "631c7d5b0c922dc3",
+    "design": "7eb8ca7126d76021"
+  },
+  "template:lib-canvas-education-flash": {
+    "canvas": "e46d507d96541cda",
+    "design": "69409b8ac132008b"
+  },
+  "template:lib-canvas-education-monitoring": {
+    "canvas": "80c128bc73712d85",
+    "design": "a8c92cd49a115626"
+  },
+  "template:lib-canvas-education-people": {
+    "canvas": "faa4f3119386e799",
+    "design": "d094747af7db3d66"
+  },
+  "template:lib-canvas-education-where": {
+    "canvas": "74c245bed40ffeaa",
+    "design": "7d16fc8205e3e201"
   },
   "template:lib-canvas-early-recovery": {
     "canvas": "71e051bc25123d78",
     "design": "79155dee4d5e7476"
   },
+  "template:lib-canvas-early-recovery-donor": {
+    "canvas": "b7192abb0b769ee2",
+    "design": "77dd0ed8448a52d5"
+  },
+  "template:lib-canvas-early-recovery-flash": {
+    "canvas": "4a5b4354d0b4a2c8",
+    "design": "6e2f4a932936c339"
+  },
+  "template:lib-canvas-early-recovery-monitoring": {
+    "canvas": "78d690b1e5761a34",
+    "design": "cb1e86d4476f639d"
+  },
+  "template:lib-canvas-early-recovery-people": {
+    "canvas": "596675c8ad99e46b",
+    "design": "1f0e17cf60c84dfb"
+  },
+  "template:lib-canvas-early-recovery-where": {
+    "canvas": "9975adc1718db28b",
+    "design": "9eaea10d6b28fd25"
+  },
   "template:lib-canvas-logistics": {
     "canvas": "d5100d6861228a53",
     "design": "6054c28423d7fca0"
+  },
+  "template:lib-canvas-logistics-donor": {
+    "canvas": "08dc0703a49e89ae",
+    "design": "45c6b0eee3944e81"
+  },
+  "template:lib-canvas-logistics-flash": {
+    "canvas": "bd9cabdc797b6623",
+    "design": "f518f8f2a5fd51a0"
+  },
+  "template:lib-canvas-logistics-monitoring": {
+    "canvas": "5f0ac8dcb7f54f6a",
+    "design": "a16656e196777723"
+  },
+  "template:lib-canvas-logistics-people": {
+    "canvas": "6d8c790f9664fd95",
+    "design": "92185b25acce6620"
+  },
+  "template:lib-canvas-logistics-where": {
+    "canvas": "c8c4e72867a1d7d3",
+    "design": "4f2ffe3b076192ce"
   },
   "template:lib-canvas-telecoms": {
     "canvas": "be7cfc3fbc4457fc",
     "design": "894557ec35a1e890"
   },
+  "template:lib-canvas-telecoms-donor": {
+    "canvas": "098398469551861b",
+    "design": "aab116da095137a7"
+  },
+  "template:lib-canvas-telecoms-flash": {
+    "canvas": "0d60ab518cc8bffb",
+    "design": "3e29f3d39a86aa43"
+  },
+  "template:lib-canvas-telecoms-monitoring": {
+    "canvas": "a51e52352ef7c746",
+    "design": "88ea7a5246cfbffc"
+  },
+  "template:lib-canvas-telecoms-people": {
+    "canvas": "cda3d85839318598",
+    "design": "5e582dc9d1548c82"
+  },
+  "template:lib-canvas-telecoms-where": {
+    "canvas": "6db05c0b5ab4577a",
+    "design": "64bbaad5c29896eb"
+  },
   "template:lib-canvas-coordination": {
     "canvas": "34be8350e38a3a5a",
     "design": "c8f4a5815a979100"
+  },
+  "template:lib-canvas-coordination-donor": {
+    "canvas": "92a32e1e1681008d",
+    "design": "999a01ee17200cbf"
+  },
+  "template:lib-canvas-coordination-flash": {
+    "canvas": "34d986a13a11b2ff",
+    "design": "433226fda81eca71"
+  },
+  "template:lib-canvas-coordination-monitoring": {
+    "canvas": "b8ace9a5a82b0ae2",
+    "design": "3109fdc3c1347bb8"
+  },
+  "template:lib-canvas-coordination-people": {
+    "canvas": "3be0c588a4ffffdd",
+    "design": "98de6a21b6487547"
+  },
+  "template:lib-canvas-coordination-where": {
+    "canvas": "a6b77c53730ed517",
+    "design": "7b75962b9ab6d374"
   },
   "template:lib-canvas-agriculture": {
     "canvas": "a98f2ba4bc6d4fdf",
     "design": "26e6f51e04c1a87d"
   },
+  "template:lib-canvas-agriculture-donor": {
+    "canvas": "c5cf931ddd9dd501",
+    "design": "708d5ceb97d7d8c2"
+  },
+  "template:lib-canvas-agriculture-flash": {
+    "canvas": "72d894173e053a34",
+    "design": "e4748188ae3dbe4b"
+  },
+  "template:lib-canvas-agriculture-monitoring": {
+    "canvas": "08694f87f9e1a0a3",
+    "design": "395f0735f2ea8980"
+  },
+  "template:lib-canvas-agriculture-people": {
+    "canvas": "ce496f2d242cc1e9",
+    "design": "dca569fd6eb5c2a5"
+  },
+  "template:lib-canvas-agriculture-where": {
+    "canvas": "bf3f0a37728f2854",
+    "design": "ef3302d86845be5d"
+  },
   "template:lib-canvas-economic-development": {
     "canvas": "4d1f233e36c177bb",
     "design": "19f981532b6334d4"
+  },
+  "template:lib-canvas-economic-development-donor": {
+    "canvas": "c1030741a5faa5a8",
+    "design": "e25a5e6f915fbfef"
+  },
+  "template:lib-canvas-economic-development-flash": {
+    "canvas": "e64a2ba2dfc1d3fe",
+    "design": "a46f53f8a9dab2e9"
+  },
+  "template:lib-canvas-economic-development-monitoring": {
+    "canvas": "19a6d70f63b59f53",
+    "design": "520a35cdb6cdfe8e"
+  },
+  "template:lib-canvas-economic-development-people": {
+    "canvas": "6ca71f759a83a428",
+    "design": "0d041fa812023764"
+  },
+  "template:lib-canvas-economic-development-where": {
+    "canvas": "48baec6e482aaaed",
+    "design": "a4267eda550b411f"
   },
   "template:lib-canvas-social-protection": {
     "canvas": "0ae1d507ebdde17d",
     "design": "625a54c4acdc341c"
   },
+  "template:lib-canvas-social-protection-donor": {
+    "canvas": "183e4da907419bf4",
+    "design": "49ab195281529d30"
+  },
+  "template:lib-canvas-social-protection-flash": {
+    "canvas": "9e3ce8373489e2bc",
+    "design": "37b1ab0086932380"
+  },
+  "template:lib-canvas-social-protection-monitoring": {
+    "canvas": "9f70edf906565a02",
+    "design": "0486997db71899c2"
+  },
+  "template:lib-canvas-social-protection-people": {
+    "canvas": "550199d0a8570713",
+    "design": "aea5d11f8756e500"
+  },
+  "template:lib-canvas-social-protection-where": {
+    "canvas": "1dd6a6978eab8250",
+    "design": "a8ddcd8a186ec155"
+  },
   "template:lib-canvas-governance": {
     "canvas": "be79825d851d37c7",
     "design": "22a2478be43d3a8c"
+  },
+  "template:lib-canvas-governance-donor": {
+    "canvas": "9bf8d502b88bca68",
+    "design": "c8465322368facd6"
+  },
+  "template:lib-canvas-governance-flash": {
+    "canvas": "e1ae77b88b6f3094",
+    "design": "69b6aeac1ab97c99"
+  },
+  "template:lib-canvas-governance-monitoring": {
+    "canvas": "ad7cd5d5e4673b87",
+    "design": "5de7e484c7f261e4"
+  },
+  "template:lib-canvas-governance-people": {
+    "canvas": "176cafc1b5024721",
+    "design": "33a0c81b190de387"
+  },
+  "template:lib-canvas-governance-where": {
+    "canvas": "ae93c34df9b04776",
+    "design": "f6d4d6342753d6fb"
   },
   "template:lib-canvas-climate-drr": {
     "canvas": "5e57307a05b99ae2",
     "design": "8f7c71d8fe5a4ada"
   },
+  "template:lib-canvas-climate-drr-donor": {
+    "canvas": "866285eb91e46d40",
+    "design": "513bfcddde8efd9d"
+  },
+  "template:lib-canvas-climate-drr-flash": {
+    "canvas": "259a05728e508330",
+    "design": "90221e9032890725"
+  },
+  "template:lib-canvas-climate-drr-monitoring": {
+    "canvas": "f7ac01ae4e3fbe2b",
+    "design": "f8a715df3b448882"
+  },
+  "template:lib-canvas-climate-drr-people": {
+    "canvas": "5e293c5d9d6aec3f",
+    "design": "71c2aced1cce24cc"
+  },
+  "template:lib-canvas-climate-drr-where": {
+    "canvas": "40c5f74bbbb81195",
+    "design": "c2f9c3ab9cf35c65"
+  },
   "template:lib-canvas-environment-energy": {
     "canvas": "75ea40d019c68bb5",
     "design": "6a8c4f0d5aaffaed"
+  },
+  "template:lib-canvas-environment-energy-donor": {
+    "canvas": "ad2423e3f52c28be",
+    "design": "934e9d374eac9bb2"
+  },
+  "template:lib-canvas-environment-energy-flash": {
+    "canvas": "d8106c4ef51ec08d",
+    "design": "d1e7324516b5c1d2"
+  },
+  "template:lib-canvas-environment-energy-monitoring": {
+    "canvas": "c03b1d89a9247aff",
+    "design": "5285ffb0f74a1a12"
+  },
+  "template:lib-canvas-environment-energy-people": {
+    "canvas": "019bca229297fd7f",
+    "design": "265e99f627d6ab8c"
+  },
+  "template:lib-canvas-environment-energy-where": {
+    "canvas": "22751fb03db1c6b9",
+    "design": "951a71bcbf79daeb"
   },
   "template:lib-canvas-gender-equality": {
     "canvas": "84624a1627f4d060",
     "design": "d9f21fe4c8dceba8"
   },
+  "template:lib-canvas-gender-equality-donor": {
+    "canvas": "ed94bf610fced5ad",
+    "design": "f3f4c9776ade6f00"
+  },
+  "template:lib-canvas-gender-equality-flash": {
+    "canvas": "2cd8f08d0ab22343",
+    "design": "b8ad0dd67c17c24b"
+  },
+  "template:lib-canvas-gender-equality-monitoring": {
+    "canvas": "de9b9d33575e0311",
+    "design": "f00ba385db241c7d"
+  },
+  "template:lib-canvas-gender-equality-people": {
+    "canvas": "c61795e2cf34a97c",
+    "design": "ca4a11292fce94e6"
+  },
+  "template:lib-canvas-gender-equality-where": {
+    "canvas": "91ba2621698c2020",
+    "design": "b045f63058210e8a"
+  },
   "template:lib-canvas-disability-inclusion": {
     "canvas": "0d4a8d904fc8e59e",
     "design": "8861d087a0591810"
+  },
+  "template:lib-canvas-disability-inclusion-donor": {
+    "canvas": "a6277f856fe5f899",
+    "design": "d0c5209fd3db7d5c"
+  },
+  "template:lib-canvas-disability-inclusion-flash": {
+    "canvas": "179d77249bb428c1",
+    "design": "f645432ead3019d2"
+  },
+  "template:lib-canvas-disability-inclusion-monitoring": {
+    "canvas": "e98a916d33717edd",
+    "design": "dc0a5e500e0ef22a"
+  },
+  "template:lib-canvas-disability-inclusion-people": {
+    "canvas": "11161407f7920b77",
+    "design": "89cc1b0db29b8095"
+  },
+  "template:lib-canvas-disability-inclusion-where": {
+    "canvas": "e1928acd0ee79d23",
+    "design": "2d6bd9a276bca278"
   },
   "template:lib-canvas-migration-displacement": {
     "canvas": "c9f80d314c489cc6",
     "design": "676f98dd4572f585"
   },
+  "template:lib-canvas-migration-displacement-donor": {
+    "canvas": "1000f2a3bd52cda2",
+    "design": "0628c5e08ff8a890"
+  },
+  "template:lib-canvas-migration-displacement-flash": {
+    "canvas": "ca9878d13ef4a14b",
+    "design": "a21ee8472f62af9d"
+  },
+  "template:lib-canvas-migration-displacement-monitoring": {
+    "canvas": "8e0be18e41a7b1cd",
+    "design": "3432807a56c0f75d"
+  },
+  "template:lib-canvas-migration-displacement-people": {
+    "canvas": "7aa34c5284b5ff3d",
+    "design": "b84ff3e35f9bcf7d"
+  },
+  "template:lib-canvas-migration-displacement-where": {
+    "canvas": "338d1ed8ff6543e9",
+    "design": "6935f8dcfa7026b6"
+  },
   "template:lib-canvas-mhpss": {
     "canvas": "7ad5d6d8cae6f9de",
     "design": "5d7d35ff7ae9943e"
+  },
+  "template:lib-canvas-mhpss-donor": {
+    "canvas": "fc20fd243761da72",
+    "design": "60827ff24a98d617"
+  },
+  "template:lib-canvas-mhpss-flash": {
+    "canvas": "41753bb580c1b5c5",
+    "design": "f4fb530c0560c677"
+  },
+  "template:lib-canvas-mhpss-monitoring": {
+    "canvas": "f8ee105d9ecdc5eb",
+    "design": "7b9c4355a7ea05fc"
+  },
+  "template:lib-canvas-mhpss-people": {
+    "canvas": "ed61341071c8d638",
+    "design": "aab1d559998ac7b4"
+  },
+  "template:lib-canvas-mhpss-where": {
+    "canvas": "2f97490799d1a466",
+    "design": "288cb84d5db7ab1c"
   },
   "template:lib-canvas-infrastructure": {
     "canvas": "84e48e16711b1286",
     "design": "18812dc4e4ce1a4d"
   },
+  "template:lib-canvas-infrastructure-donor": {
+    "canvas": "58d2de786fbb9025",
+    "design": "c9a4a93eb2318c05"
+  },
+  "template:lib-canvas-infrastructure-flash": {
+    "canvas": "dd5ded9aa09f0494",
+    "design": "2dbba4ac483eb2d1"
+  },
+  "template:lib-canvas-infrastructure-monitoring": {
+    "canvas": "8be358102414d2a0",
+    "design": "b736e1096de32b5f"
+  },
+  "template:lib-canvas-infrastructure-people": {
+    "canvas": "5a06344eb8ae27c9",
+    "design": "14f06dd3c99b5f4c"
+  },
+  "template:lib-canvas-infrastructure-where": {
+    "canvas": "1a14993801078d55",
+    "design": "9c648f96a06153d7"
+  },
   "template:lib-canvas-localisation": {
     "canvas": "584dad86ddf3d088",
     "design": "40c9f0e8cdba288c"
   },
+  "template:lib-canvas-localisation-donor": {
+    "canvas": "b08821f635259dce",
+    "design": "1d6a3c91e80faa4b"
+  },
+  "template:lib-canvas-localisation-flash": {
+    "canvas": "82e92795fa1d3649",
+    "design": "fb57329e2d3ce354"
+  },
+  "template:lib-canvas-localisation-monitoring": {
+    "canvas": "2b719329f3433c96",
+    "design": "a0366ad7903e16f6"
+  },
+  "template:lib-canvas-localisation-people": {
+    "canvas": "b7c40d983ad0894b",
+    "design": "00bda90278c308ef"
+  },
+  "template:lib-canvas-localisation-where": {
+    "canvas": "8ccec6a1e830ba30",
+    "design": "06e5c7201bb4a1f9"
+  },
   "template:lib-canvas-meal": {
     "canvas": "92e5e20156e130a6",
     "design": "b40f1067e02fbc61"
+  },
+  "template:lib-canvas-meal-donor": {
+    "canvas": "0c552965aeea9e6f",
+    "design": "2b5b04e14a048e4f"
+  },
+  "template:lib-canvas-meal-flash": {
+    "canvas": "10d87460a5588847",
+    "design": "4b0a6915b3a35e3c"
+  },
+  "template:lib-canvas-meal-monitoring": {
+    "canvas": "b3d37907b0dcc7b4",
+    "design": "5d863b88a3793ca9"
+  },
+  "template:lib-canvas-meal-people": {
+    "canvas": "6077f8b645dfbd4b",
+    "design": "d995d5368c089798"
+  },
+  "template:lib-canvas-meal-where": {
+    "canvas": "8428c6ec5d07509c",
+    "design": "2670d9bbf86b7c70"
   },
   "infographic:OVERVIEW": {
     "canvas": "91a741374c861743",

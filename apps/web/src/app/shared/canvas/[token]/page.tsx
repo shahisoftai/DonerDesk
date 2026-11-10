@@ -1,27 +1,14 @@
 import type { Metadata } from "next";
-import { apiBaseUrl } from "@/lib/server/api-gateway";
-import { PublicCanvasSchema } from "@/lib/server/schemas-canvas";
+import { readPublicCanvas } from "@/lib/server/public-canvas";
 import { PublicCanvasView } from "@/features/canvas/presentation/PublicCanvasView";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Shared canvas", robots: { index: false, follow: false } };
 
-async function read(token: string) {
-  if (!/^[A-Za-z0-9_-]{20,100}$/.test(token)) return null;
-  try {
-    const response = await fetch(`${apiBaseUrl()}/public/canvases/${encodeURIComponent(token)}`, { cache: "no-store" });
-    if (!response.ok) return null;
-    const parsed = PublicCanvasSchema.safeParse(await response.json());
-    return parsed.success ? parsed.data : null;
-  } catch {
-    return null;
-  }
-}
-
 /** What a person with a canvas link sees. No sign-in; the link is the credential. A live link is drawn when it opens; a kept copy is a file. */
 export default async function SharedCanvasPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const shared = await read(token);
+  const shared = await readPublicCanvas(token);
   if (!shared) {
     return (
       <main className="mx-auto max-w-xl px-4 py-16 text-center">

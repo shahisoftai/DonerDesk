@@ -28,14 +28,14 @@ export default async function VisualChartsPage({ searchParams }: { searchParams:
       <ShellTabs active="charts" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ProjectFilter projects={items} selected={project} action="/visuals/charts" />
-        {project && <a className="rounded bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-800" href={`/projects/${project}/charts`}>New chart in this project</a>}
+        {project && <a className="rounded bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-800" href={`/visuals/charts/${project}`}>New chart in this project</a>}
       </div>
       {!project && <p className="text-sm text-slate-500">Choose a project to start a new chart. A chart is drawn from that project&apos;s records.</p>}
       {charts.value.charts.length === 0 ? <p className="text-sm text-slate-500">No saved charts{project ? " in this project" : ""} yet.</p> : (
         <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700" data-testid="chart-list">
           {charts.value.charts.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 p-3">
-              <div><a className="font-medium hover:underline" href={`/projects/${c.projectId}/charts`}>{c.name}</a>
+              <div><a className="font-medium hover:underline" href={`/visuals/charts/${c.projectId}`}>{c.name}</a>
                 <p className="text-xs text-slate-500">{names.get(c.projectId) ?? "A project"} · {c.scope === "MINE" ? "Only me" : "Shared in the project"}</p></div>
               <span className="text-xs text-slate-500">{c.mine ? "Made by you" : ""}</span>
             </li>

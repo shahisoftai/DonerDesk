@@ -394,6 +394,8 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "kind.GANTT": "غانت",
   "kind.CHOROPLETH": "خريطة تدرّج لوني",
   "kind.GRADUATED_SYMBOLS": "خريطة رموز متدرجة",
+  "kind.DOT_DENSITY": "خريطة كثافة النقاط",
+  "kind.HEX_GRID": "خريطة شبكة سداسية",
   "kind.BAR_LINE_COMBO": "أعمدة وخط",
   "kind.PIVOT_TABLE": "جدول محوري",
   "kind.SCORECARD_TABLE": "جدول نتائج",

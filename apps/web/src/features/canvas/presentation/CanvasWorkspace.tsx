@@ -23,6 +23,9 @@ import { useEditorSession } from "./use-editor-session";
 import { selectByRectangle } from "../domain/command-handlers";
 import { VersionsPanel } from "./VersionsPanel";
 import { useCanvasEditor } from "./use-canvas-editor";
+import { usePresent } from "./use-present";
+import { EditorTour } from "./EditorTour";
+import { tablesCsv, tablesOfDrawings } from "../domain/data-tables";
 
 export interface ProjectOption { id: string; name: string }
 interface Props { initial: CanvasView; resolved: ResolvedCanvas | null; resolveError: string | null; projects: ReadonlyArray<ProjectOption>; indicatorsByProject: Readonly<Record<string, ReadonlyArray<IndicatorOption>>> }
@@ -55,12 +58,15 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(resolveError ? { tone: "error", text: resolveError } : null);
   const [reviewNow, setReviewNow] = useState(initial.reviewStatus);
   const [filters, setFilters] = useState<CrossFilter>(NO_FILTER);
+  const [paneOpen, setPaneOpen] = useState(false);
   const [serverProblems, setServerProblems] = useState<CanvasProblem[]>([]);
   const base = useRef({ revision: initial.canvas.revision, json: "" });
   const snapshot = useCallback((c: Canvas) => JSON.stringify({ t: c.title, p: c.profile, th: c.themeId, l: c.language, m: c.mode, pages: c.pages }), []);
   if (base.current.json === "") base.current.json = snapshot(initial.canvas);
 
   const canvas = ed.canvas;
+  const stage = useRef<HTMLDivElement>(null);
+  const present = usePresent(stage, canvas.pages.map((pg) => pg.id), ed.page.id, (id) => { ed.setPageId(id); ed.setSelected(null); });
   const dirty = snapshot(canvas) !== base.current.json;
   const savedBlocks = useRef(new Map(initial.canvas.pages.flatMap((p) => p.blocks).map((b) => [b.id, JSON.stringify(b.props) + JSON.stringify(b.bindings)])));
   // An edited, unsaved canvas is read again as the person works (after a short pause), so each change shows its real figures at once.
@@ -89,6 +95,15 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const previewCurrent = !dirty || preview?.sig === sig;
   const widgets = useMemo(() => new Map(canvasToWidgets(canvas, initial.projectId).widgets.map((w) => [w.id, w])), [canvas, initial.projectId]);
   const drawings = useMemo(() => new Map((live?.drawings ?? []).map((d) => [d.widgetId, d])), [live]);
+  /** What the page shows as tables, ready to download (a picture that is not a table, such as a map, is left out). */
+  const dataTables = useMemo(() => tablesOfDrawings(live?.drawings ?? []), [live]);
+  async function downloadWorkbook(): Promise<void> {
+    const response = await fetch("/api/canvases/data-workbook", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ title: ed.canvas.title || "visual", tables: dataTables }) });
+    if (!response.ok) { setNotice({ tone: "error", text: "The workbook could not be made. Try again." }); return; }
+    const url = URL.createObjectURL(await response.blob());
+    const a = Object.assign(document.createElement("a"), { href: url, download: `${ed.canvas.title || "visual"}-data.xlsx` });
+    document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
   const problems = useMemo(() => canvasProblems(canvas), [canvas]);
   const findings = useMemo(() => checkCanvas(canvas), [canvas]);
   const hasFilterBar = useMemo(() => canvas.pages.some((p) => p.blocks.some((b) => definitionFor(b.kind)?.family === "CONTROLS" && b.style?.hidden !== true)), [canvas]);
@@ -142,13 +157,15 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
   const selectedProblems = [...problems, ...serverProblems.filter((s) => !problems.some((p) => p.blockId === s.blockId && p.message === s.message))];
 
   return (
-    <div className="space-y-4" data-testid="canvas-workspace" data-editing={editing || undefined}>
+    <div ref={stage} className="space-y-4 [&:fullscreen]:overflow-auto [&:fullscreen]:bg-white [&:fullscreen]:p-6 dark:[&:fullscreen]:bg-slate-950" data-testid="canvas-workspace" data-editing={editing || undefined} data-presenting={present.presenting || undefined}>
       <header className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           {editing ? <input aria-label="Name" className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xl font-semibold dark:border-slate-600 dark:bg-slate-900" value={canvas.title} onChange={(e) => ed.rename(e.target.value)} /> : <h1 className="truncate text-xl font-semibold tracking-tight">{canvas.title}</h1>}
           <p className="text-xs text-slate-500">{SCOPE_LABEL[initial.scope]} · {canvas.mode === "LIVE" ? "Live: figures are read when you open it" : "Published: a design to share"}{initial.sourceKind ? ` · from an older ${initial.sourceKind.toLowerCase()}` : ""}{dirty ? ` · ${t("canvas.ui.unsaved")}` : ""}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 print:hidden">
+          {!editing && live && (live.choices.periods.length > 0 || live.choices.places.length > 0 || live.choices.groups.length > 0 || live.choices.statuses.length > 0) && <button type="button" className={BTN} aria-pressed={paneOpen || hasFilterBar} aria-controls="canvas-filter-pane" onClick={() => setPaneOpen((v) => !v)}>{t("canvas.ui.filtersOpen")}</button>}
+          {!editing && present.available && <button type="button" className={BTN} onClick={present.start}>{t("canvas.ui.present")}</button>}
           {canEdit && <button type="button" className={BTN} aria-pressed={editing} onClick={() => setEditing((v) => !v)}>{editing ? t("canvas.ui.doneEditing") : t("canvas.ui.edit")}</button>}
           {editing && <><button type="button" className={BTN} onClick={() => session.setPaletteOpen(true)} aria-keyshortcuts="Control+K Meta+K">{t("editor.palette.title")}</button><button type="button" className={BTN} onClick={() => session.setShortcutsOpen(true)} aria-label={t("editor.shortcuts.title")}>?</button><button type="button" className={BTN} onClick={ed.undo} disabled={!ed.canUndo}>{t("canvas.ui.undo")}</button><button type="button" className={BTN} onClick={ed.redo} disabled={!ed.canRedo}>{t("canvas.ui.redo")}</button></>}
           {canEdit && <button type="button" className={`${BTN} bg-sky-700 text-white hover:bg-sky-800 dark:hover:bg-sky-800`} onClick={() => void save()} disabled={!dirty || busy !== null}>{busy === "save" ? t("canvas.ui.saving") : t("canvas.ui.save")}</button>}
@@ -159,6 +176,8 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
               <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => window.print())}>{t("canvas.ui.print")}</button></li>
               {FILE_FORMATS.map(([format, name]) => <li key={format}><a className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" data-export={format} href={dirty ? undefined : `/api/canvases/${encodeURIComponent(initial.id)}/export?format=${format}`} aria-disabled={dirty || undefined} onClick={dirty ? (e) => { e.preventDefault(); menu.current?.removeAttribute("open"); setNotice({ tone: "error", text: "Save your changes first: a file is made from the saved canvas." }); } : () => menu.current?.removeAttribute("open")}>{t(`canvas.ui.${name}` as never)}</a></li>)}
               <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => download(`${canvas.title}.canvas.json`, "application/json", canvasJson(canvas)))}>{t("canvas.ui.downloadFile")}</button></li>
+              {dataTables.length > 0 && <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => void downloadWorkbook())}>{t("canvas.ui.dataXlsx")}</button></li>}
+              {dataTables.length > 0 && <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => download(`${canvas.title}-data.csv`, "text/csv", tablesCsv(dataTables)))}>{t("canvas.ui.dataCsv")}</button></li>}
               <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => download(`${canvas.title}-descriptions.txt`, "text/plain", altPack(canvas)))}>{t("canvas.ui.downloadAlt")}</button></li>
               <li><button type="button" className="block w-full px-3 py-1.5 text-start hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => void copy())} disabled={busy !== null}>{t("canvas.ui.makeCopy")}</button></li>
               {canEdit && <li><button type="button" className="block w-full px-3 py-1.5 text-start text-red-700 hover:bg-slate-50 dark:hover:bg-slate-800" onClick={choose(() => void remove())} disabled={busy !== null}>{t("canvas.ui.delete")}</button></li>}
@@ -190,8 +209,8 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
         {editing && canvas.pages.length > 1 && <button type="button" className="ms-2 text-xs text-red-700 underline" onClick={() => ed.removePage(ed.page.id)}>{t("canvas.ui.removePage")}</button>}
       </nav>
 
-      {live && (hasFilterBar || isFiltered(filters)) && (live.choices.periods.length > 0 || live.choices.places.length > 0 || live.choices.groups.length > 0 || live.choices.statuses.length > 0) && (
-        <section aria-label="Filters" className="flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 p-3 text-sm print:hidden dark:bg-slate-900" data-testid="canvas-filters">
+      {live && (hasFilterBar || isFiltered(filters) || paneOpen) && (live.choices.periods.length > 0 || live.choices.places.length > 0 || live.choices.groups.length > 0 || live.choices.statuses.length > 0) && (
+        <section id="canvas-filter-pane" aria-label="Filters" className="flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 p-3 text-sm print:hidden dark:bg-slate-900" data-testid="canvas-filters">
           {live.choices.periods.length > 0 && <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">{t("canvas.ui.filtersPeriod")}</span>
             <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={filters.periodId} onChange={(e) => setFilters((f) => ({ ...f, periodId: e.target.value }))}><option value="">{t("canvas.ui.filtersLatest")}</option>{live.choices.periods.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>}
           {live.choices.places.length > 0 && <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">{t("canvas.ui.filtersPlace")}</span>
@@ -256,6 +275,7 @@ export function CanvasWorkspace({ initial, resolved: first, resolveError, projec
       </div>
       {convertId && ed.page.blocks.find((b) => b.id === convertId) && <ConvertDialog block={ed.page.blocks.find((b) => b.id === convertId)!} onConvert={(kind, accept) => void ed.apply(convertBlock(canvas, convertId, kind, accept))} onClose={() => setConvertId(null)} />}
       {session.paletteOpen && <CommandPalette state={session.state} onRun={session.run} onClose={() => session.setPaletteOpen(false)} />}
+      {editing && <EditorTour />}
       {session.shortcutsOpen && <ShortcutSheet onClose={() => session.setShortcutsOpen(false)} />}
     </div>
   );

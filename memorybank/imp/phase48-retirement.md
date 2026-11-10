@@ -36,6 +36,7 @@ Rows are `| item | kind | replaced by | status | removed in |`.
 | `web:/visuals/new` | route | the Visual Studio (New flow) | kept | - |
 | `web:/visuals/[id]` | route | the Visual Studio | kept | - |
 | `web:/shared/canvas` | route | the one public path | kept | - |
+| `web:/embed/canvas` | route | the one embed path | kept | - |
 | `web:/api/canvases` | route | the canvas API proxy | kept | - |
 | `web:/api/shared/canvas` | route | the one public path | kept | - |
 | `web:/projects/[id]/data` | route | Data Center stays the data tool | kept | - |

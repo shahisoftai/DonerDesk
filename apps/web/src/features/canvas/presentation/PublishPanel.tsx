@@ -102,6 +102,8 @@ export function PublishPanel({ canvasId, canEdit, dirty, reviewStatus, reviewNot
           </div>
         )}
         {fresh && <p className="break-all rounded bg-slate-100 p-2 font-mono text-xs dark:bg-slate-800" data-testid="fresh-link">{fresh}</p>}
+        {fresh && <div className="space-y-1"><p className="text-xs text-slate-500">To place it inside another page, use this embed code (the page it is placed on must allow frames):</p>
+          <p className="break-all rounded bg-slate-100 p-2 font-mono text-xs dark:bg-slate-800" data-testid="embed-code">{`<iframe src="${fresh.replace("/shared/canvas/", "/embed/canvas/")}" title="Visual" width="100%" height="640" style="border:0" loading="lazy"></iframe>`}</p></div>}
         <p className="text-xs text-slate-500">Anyone with a link can open it without signing in. A live link shows the planned work, results by place and indicator figures; money, budgets and people are never shown.</p>
         {links.length > 0 && (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">

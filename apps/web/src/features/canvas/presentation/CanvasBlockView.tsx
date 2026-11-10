@@ -53,6 +53,8 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
     const renderer = rendererFor(themed);
     title = renderer.title({ widget, drawing: themed }) ?? label;
     body = renderer.render({ widget, drawing: themed, onPick: editing ? undefined : onPick });
+    // A tile that draws with the product's own series colour takes the page's look through the variable it reads.
+    if (canvas.themeId && canvas.themeId !== "DEFAULT") body = <div className="h-full min-h-0" style={{ ["--viz-1" as string]: frame.theme.accent, ["--viz-2" as string]: frame.theme.accent2 }}>{body}</div>;
   } else if (isDashboardKind(block.kind)) {
     // A chart-style block is drawn from the records by the server: a block just added or changed has no figures until the canvas is saved.
     body = <NothingToShow text={screenText(frame)} reason={editing ? "Reading the figures…" : "Nothing to show yet."} authoring />;

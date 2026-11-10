@@ -13,6 +13,7 @@ import { Resvg } from "@resvg/resvg-js";
 import PDFDocument from "pdfkit";
 import SVGtoPDF from "svg-to-pdfkit";
 import { fileURLToPath } from "node:url";
+import { EXTRA_FONTS, extraFontFiles, extraFontFor, pdfFaceName, FONT_DIR as EXTRA_FONT_DIR } from "./bundled-fonts.js";
 
 const FONT_DIR = fileURLToPath(new URL("../../assets/fonts/", import.meta.url));
 const FONT_FILES = {
@@ -38,7 +39,7 @@ export function withRenderSlot<T>(job: () => Promise<T>): Promise<T> {
 export function svgToPng(svg: string, scale = 1): Buffer {
   const resvg = new Resvg(svg, {
     font: {
-      fontFiles: Object.values(FONT_FILES),
+      fontFiles: [...Object.values(FONT_FILES), ...extraFontFiles()],
       loadSystemFonts: false,
       defaultFontFamily: FAMILY,
       sansSerifFamily: FAMILY,
@@ -68,6 +69,7 @@ export function newPdf(info: { Title: string; Author: string; Subject?: string; 
   doc.registerFont("LS-Bold", FONT_FILES.bold);
   doc.registerFont("LS-Italic", FONT_FILES.italic);
   doc.registerFont("LS-BoldItalic", FONT_FILES.boldItalic);
+  for (const f of EXTRA_FONTS) { doc.registerFont(pdfFaceName(f, false), `${EXTRA_FONT_DIR}${f.regular}`); doc.registerFont(pdfFaceName(f, true), `${EXTRA_FONT_DIR}${f.bold}`); }
   return doc;
 }
 
@@ -106,7 +108,8 @@ export function drawSvg(doc: PdfDoc, svg: string, page: { width: number; height:
     height: page.height,
     preserveAspectRatio: "xMinYMin meet",
     assumePt: false,
-    fontCallback: (_family: string, bold: boolean, italic: boolean) => faceFor(bold, italic),
+    // A bundled family is drawn with its own faces (italic uses the regular one); anything else is the default face, never a host font.
+    fontCallback: (family: string, bold: boolean, italic: boolean) => { const extra = extraFontFor(family); return extra ? pdfFaceName(extra, bold) : faceFor(bold, italic); },
     useCSS: false,
   });
 }

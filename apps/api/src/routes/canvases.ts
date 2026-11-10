@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { createContainer, type Container } from "@donordesk/infrastructure";
-import { CanvasExportQuerySchema, CanvasSnapshotsSchema, CreateCanvasShareSchema, DraftCanvasTextSchema, PublishCanvasSchema, ReviewCanvasSchema, placeKeysOf, CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
+import { CanvasDataWorkbookSchema, CanvasExportQuerySchema, CanvasSnapshotsSchema, CreateCanvasShareSchema, DraftCanvasTextSchema, PublishCanvasSchema, ReviewCanvasSchema, placeKeysOf, CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
 
 /** Canvases (Phase 45): the merged dashboards and infographics. Thin: validate, call one handler, throw its error. The handlers apply who may see and change which canvas. */
 export async function registerCanvasRoutes(app: FastifyInstance) {
@@ -50,6 +50,15 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
     reply.header("content-type", r.value.contentType);
     reply.header("content-disposition", `attachment; filename="${r.value.fileName}"`);
     reply.header("x-canvas-skipped", encodeURIComponent(JSON.stringify(r.value.skipped.map((s) => ({ kind: s.kind, reason: s.reason })))));
+    reply.header("cache-control", "private, no-store");
+    return r.value.bytes;
+  });
+  // The tables the person is looking at, as a spreadsheet. Nothing is read from the records: the sender already holds these figures.
+  app.post("/v1/canvases/data-workbook", async (req, reply) => {
+    const r = await req.container.handlers.buildDataWorkbook.handle(ctx(req), CanvasDataWorkbookSchema.parse(req.body));
+    if (!r.ok) throw r.error;
+    reply.header("content-type", r.value.contentType);
+    reply.header("content-disposition", `attachment; filename="${r.value.fileName}"`);
     reply.header("cache-control", "private, no-store");
     return r.value.bytes;
   });

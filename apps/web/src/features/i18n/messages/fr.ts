@@ -378,6 +378,8 @@ export const fr: Record<MessageKey, string> = {
   "kind.GANTT": "Gantt",
   "kind.CHOROPLETH": "Carte choroplèthe",
   "kind.GRADUATED_SYMBOLS": "Carte à symboles proportionnels",
+  "kind.DOT_DENSITY": "Carte de densité de points",
+  "kind.HEX_GRID": "Carte en grille hexagonale",
   "kind.BAR_LINE_COMBO": "Barres et ligne",
   "kind.PIVOT_TABLE": "Tableau croisé",
   "kind.SCORECARD_TABLE": "Tableau de bord chiffré",

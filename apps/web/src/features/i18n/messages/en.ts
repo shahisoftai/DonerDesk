@@ -380,6 +380,8 @@ export const en = {
   "kind.GANTT": "Gantt",
   "kind.CHOROPLETH": "Choropleth map",
   "kind.GRADUATED_SYMBOLS": "Graduated symbols map",
+  "kind.DOT_DENSITY": "Dot density map",
+  "kind.HEX_GRID": "Hexagon grid map",
   "kind.BAR_LINE_COMBO": "Bar and line",
   "kind.PIVOT_TABLE": "Pivot table",
   "kind.SCORECARD_TABLE": "Scorecard table",

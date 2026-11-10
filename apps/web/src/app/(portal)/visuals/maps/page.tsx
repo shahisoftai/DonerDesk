@@ -17,7 +17,7 @@ export default async function VisualMapsPage() {
       <ShellTabs active="maps" />
       <p className="max-w-3xl text-sm text-slate-500">A map reads one project&apos;s results by place. Choose a project to open its map, or add a map block to a design from Designs.</p>
       <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700" data-testid="map-list">
-        {projects.value.items.map((p) => <li key={p.id} className="flex items-center justify-between p-3"><span className="font-medium">{p.title}</span><a className="text-sm underline" href={`/projects/${p.id}/maps`}>Open the map</a></li>)}
+        {projects.value.items.map((p) => <li key={p.id} className="flex items-center justify-between p-3"><span className="font-medium">{p.title}</span><a className="text-sm underline" href={`/visuals/maps/${p.id}`}>Open the map</a></li>)}
       </ul>
     </div>
   );

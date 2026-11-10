@@ -34,7 +34,7 @@ export type ChartKind =
   | "PIVOT_TABLE" | "SCORECARD_TABLE"
   | "PICTORIAL_BAR" | "ROSE" | "RADIAL_BAR" | "AREA_RANGE" | "RANGE_BAR" | "PARALLEL" | "TREE" | "NETWORK" | "THEME_RIVER" | "FILL_GAUGE" | "MULTI_RING"
   | "DUMBBELL" | "DIVERGING_BAR" | "THERMOMETER" | "BUMP" | "CONNECTED_SCATTER"
-  | "PARLIAMENT" | "PROPORTION_BAR" | "SMALL_MULTIPLES";
+  | "PARLIAMENT" | "PROPORTION_BAR" | "SMALL_MULTIPLES" | "DOT_DENSITY" | "HEX_GRID";
 
 /**
  * The shape of data a chart is drawn from, decided by its dataset template:
@@ -137,6 +137,8 @@ export const CHART_KINDS: Record<ChartKind, ChartKindRule> = {
   RADAR: kind("Radar", "PROGRESS", "BUILT", [LAT], { legacyType: "RADAR", minPoints: 3 }),
   GANTT: kind("Gantt", "SCHEDULE", "BUILT", [PLN], { minPoints: 1 }),
   CHOROPLETH: kind("Choropleth map", "GEOGRAPHIC", "BUILT", [PLC], { minPoints: 2 }),
+  DOT_DENSITY: kind("Dot density map", "GEOGRAPHIC", "BUILT", [PLC], { additiveOnly: true, minPoints: 2 }),
+  HEX_GRID: kind("Hexagon grid map", "GEOGRAPHIC", "BUILT", [PLC], { additiveOnly: true, minPoints: 2 }),
   GRADUATED_SYMBOLS: kind("Graduated symbols map", "GEOGRAPHIC", "BUILT", [PLC], { additiveOnly: true, minPoints: 2 }),
   BAR_LINE_COMBO: kind("Bar and line", "COMBINATION", "BUILT", [SBP, FIN], { startsAtZero: true, minPoints: 1 }),
   PIVOT_TABLE: kind("Pivot table", "TABLE", "BUILT", [SBP, LAT, FIN]),

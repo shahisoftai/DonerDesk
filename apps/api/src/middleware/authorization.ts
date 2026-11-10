@@ -98,6 +98,7 @@ export const RULES: ReadonlyArray<{
   { method: "DELETE", route: /^\/v1\/canvases\/[^/]+$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/canvases\/[^/]+\/duplicate$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/canvases\/preview$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/canvases\/data-workbook$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/canvases\/draft-text$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/canvases\/[^/]+\/publish$/, permission: "report.export" },
   { method: "GET", route: /^\/v1\/canvases\/[^/]+\/exports$/, permission: "project.view" },

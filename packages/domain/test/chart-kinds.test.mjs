@@ -163,3 +163,20 @@ test("parliament and proportion bar: counts only, 100 dots exactly, a gap is nam
   assert.match(sm.notes.join(" "), /own scale/);
   assert.equal(build(spec("SMALL_MULTIPLES", "INDICATORS_OVER_TIME", ["a"], { dataset: { measure: "PERIOD" } })).ok, false);
 });
+
+test("dot density and the hexagon grid: only pinned places, a stated unit, nothing added across levels, and a rate is refused", () => {
+  const dots = build(spec("DOT_DENSITY", "RESULTS_BY_PLACE", ["a"]));
+  assert.equal(dots.ok, true, dots.reason);
+  assert.deepEqual(dots.maps, ["donordesk-world"]);
+  assert.ok(dots.option.series[0].data.length >= 2, "every pinned place has at least one dot");
+  assert.ok(dots.notes.some((n) => /One dot stands for/.test(n)));
+  assert.ok(dots.notes.some((n) => /1 place has a value but no pin/.test(n)), "the place with no pin is named, not placed");
+  assert.equal(build(spec("DOT_DENSITY", "RESULTS_BY_PLACE", ["r"])).ok, false);
+  const hex = build(spec("HEX_GRID", "RESULTS_BY_PLACE", ["a"]));
+  assert.equal(hex.ok, true, hex.reason);
+  assert.ok(hex.notes.some((n) => /hexagons about \d+ km across/.test(n)));
+  assert.ok(hex.notes.some((n) => /different levels/.test(n)), "mixed levels are said plainly when they cannot be told apart");
+  const total = hex.option.series[0].data.reduce((t, d) => t + d.value[2], 0);
+  assert.equal(total, 620, "every pinned place's value is in exactly one hexagon");
+  assert.equal(build(spec("HEX_GRID", "RESULTS_BY_PLACE", ["r"])).ok, false);
+});
