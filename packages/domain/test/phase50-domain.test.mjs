@@ -135,6 +135,7 @@ test("a card a person dropped stays exactly there; the others go around it; far 
   const a = boxes.find((b) => b.key === "a"), b = boxes.find((x) => x.key === "b");
   assert.deepEqual([a.x, a.y, a.fixed], [310, 100, true]);
   assert.ok(!(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h), "the auto card avoids the fixed one");
+  assert.deepEqual(placeCallouts([{ key: "e", x: 10, y: 10, fixed: { dx: -500, dy: -500 } }], view, card).map((b) => [b.x, b.y]), [[0, 0]], "a dropped card is kept inside the view");
   // An anchor in a corner whose near ring is off the map is placed on a wider ring, not in the side column.
   const corner = placeCallouts([{ key: "k", x: 590, y: 10 }], view, card);
   assert.equal(corner[0].inColumn, false);

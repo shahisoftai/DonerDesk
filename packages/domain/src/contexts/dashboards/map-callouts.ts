@@ -23,7 +23,9 @@ export function placeCallouts(anchors: readonly CalloutAnchor[], view: { w: numb
   // A card a person placed stays exactly where it was dropped (relative to its place); everything else is placed around it.
   const placed: CalloutBox[] = list.filter((a) => a.fixed).map((a) => {
     const size = a.size ?? card;
-    return { key: a.key, x: Math.round(a.x + a.fixed!.dx), y: Math.round(a.y + a.fixed!.dy), w: size.w, h: size.h, anchorX: a.x, anchorY: a.y, inColumn: false, fixed: true };
+    // Kept inside the view, so a card dropped at the edge (or left behind by panning) is never lost off the map.
+    const x = Math.min(Math.max(0, Math.round(a.x + a.fixed!.dx)), Math.max(0, view.w - size.w)), y = Math.min(Math.max(0, Math.round(a.y + a.fixed!.dy)), Math.max(0, view.h - size.h));
+    return { key: a.key, x, y, w: size.w, h: size.h, anchorX: a.x, anchorY: a.y, inColumn: false, fixed: true };
   });
   const spill: CalloutAnchor[] = [];
   // Top to bottom, then left to right, so a change elsewhere on the map does not reshuffle every card.
