@@ -1,4 +1,4 @@
-import { DomainError, canvasToWidgets, definitionFor, isDashboardKind, projectOf, type BlockModel, type Canvas, type DataSheet, type Result, type TenantId } from "@donordesk/domain";
+import { DomainError, canvasToWidgets, definitionFor, isDashboardKind, projectOf, type BlockModel, type Canvas, type CanvasFacts, type DataSheet, type FilterChoices, type Result, type TenantId } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ICanvasRepository } from "../../ports/canvas.js";
 import { ShareLinkExtras, type IShareMapReader } from "../../services/share-link-extras.js";
@@ -7,9 +7,12 @@ import { drawCharts, type DashboardChartDto } from "../dashboards/dashboard-hand
 import type { GetProjectDataSheetHandler } from "../data-center/data-sheet.js";
 import type { GetProjectInfographicDataHandler } from "../infographics/infographic-data.js";
 import { fail, ok } from "./canvas-shared.js";
-import { canvasFactsFor } from "./resolve-canvas.js";
+import { attachMapCallouts, canvasFactsFor, filterChoices, needsCounts, type CanvasFilterOptions } from "./resolve-canvas.js";
+import type { ICountFactsReader, IPlaceTreeReader } from "../../services/count-facts-service.js";
 
-export interface PublicCanvasDto { title: string; canvas: Canvas; drawings: DashboardChartDto[]; models: Record<string, BlockModel<unknown>> }
+/** What a link holder may narrow the page by: a period and places. Donors, partners and money are never offered through a link. */
+export type PublicFilterChoices = Pick<FilterChoices, "periods" | "places" | "placeTree">;
+export interface PublicCanvasDto { title: string; canvas: Canvas; drawings: DashboardChartDto[]; models: Record<string, BlockModel<unknown>>; choices: PublicFilterChoices }
 const unavailable = (reason: string): BlockModel<unknown> => ({ state: "unavailable", reason });
 
 /**
@@ -17,18 +20,18 @@ const unavailable = (reason: string): BlockModel<unknown> => ({ state: "unavaila
  * organisation's projects and the portfolio are not shown, and nothing names a person. Only the projects the canvas itself names are read.
  */
 export class PublicCanvasHandler {
-  constructor(private readonly repo: ICanvasRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly info: GetProjectInfographicDataHandler, private readonly extras?: IDatasetExtras, private readonly maps?: IShareMapReader) {}
+  constructor(private readonly repo: ICanvasRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly info: GetProjectInfographicDataHandler, private readonly extras?: IDatasetExtras, private readonly maps?: IShareMapReader, private readonly counts?: ICountFactsReader & Partial<IPlaceTreeReader>) {}
 
-  async handle(tenantId: TenantId, canvasId: string): Promise<Result<PublicCanvasDto, DomainError>> {
+  async handle(tenantId: TenantId, canvasId: string, filters: Pick<CanvasFilterOptions, "periodId" | "placeKeys"> = {}): Promise<Result<PublicCanvasDto, DomainError>> {
     const found = await this.repo.findById(canvasId, tenantId);
     if (!found.ok || !found.value) return fail(DomainError.notFound("Canvas", "unavailable"));
     const stored = found.value;
     const guest: AuthenticatedContext = { tenant: { tenantId, userId: "share-link", role: "VIEWER", external: true } as never, requestId: "share-link" };
     const { widgets, withoutProject } = canvasToWidgets(stored.canvas, stored.projectId);
-    const drawings = await drawCharts(widgets, async (projectId) => {
+    let drawings = await drawCharts(widgets, async (projectId) => {
       const sheet = await this.sheets.handle(guest, projectId);
       return sheet.ok ? ({ ...sheet.value, finance: [], registerFinance: undefined, financeEnabled: false } as DataSheet) : null;
-    }, this.extras ? { ctx: guest, service: new ShareLinkExtras(this.extras) } : undefined, undefined, this.maps ? { maps: this.maps } : undefined);
+    }, this.extras ? { ctx: guest, service: new ShareLinkExtras(this.extras) } : undefined, filters.periodId, this.maps ? { maps: this.maps } : undefined);
     const models: Record<string, BlockModel<unknown>> = {};
     for (const id of withoutProject) models[id] = unavailable("This block has no project.");
     const facts = new Map<string, ReturnType<typeof canvasFactsFor>>();
@@ -42,12 +45,38 @@ export class PublicCanvasHandler {
       if (def.reads === "FACTS") {
         const pid = projectOf(block.bindings) ?? stored.projectId;
         if (!pid) { models[block.id] = unavailable("This block has no project."); continue; }
-        if (!facts.has(pid)) facts.set(pid, canvasFactsFor(this.sheets, this.info, guest, pid, stored.canvas, stored.title));
+        if (!facts.has(pid)) facts.set(pid, canvasFactsFor(this.sheets, this.info, guest, pid, stored.canvas, stored.title, filters, needsCounts(stored.canvas) ? this.counts : undefined, { shareLink: true }));
         const f = await facts.get(pid);
         data = f ? { ...f, finance: { enabled: false, rows: [] }, sheet: { ...f.sheet, finance: [], registerFinance: undefined } } : undefined;
       }
       models[block.id] = def.resolve(block.props, data);
     }
-    return ok({ title: stored.title, canvas: { ...stored.canvas, id: stored.id, title: stored.title }, drawings, models });
+    // Cards on a map, and the choices the page's filters offer: both read as the guest, from what the canvas names.
+    const homeId = stored.projectId ?? stored.canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean);
+    const factsOf = async (id: string | undefined): Promise<CanvasFacts | undefined> => {
+      if (!id) return undefined;
+      if (!facts.has(id)) facts.set(id, canvasFactsFor(this.sheets, this.info, guest, id, stored.canvas, stored.title, filters, needsCounts(stored.canvas) ? this.counts : undefined, { shareLink: true }));
+      const f = await facts.get(id);
+      return f ? { ...f, finance: { enabled: false, rows: [] }, sheet: { ...f.sheet, finance: [], registerFinance: undefined } } : undefined;
+    };
+    const tree = this.counts?.tree ? await this.counts.tree(guest) : undefined;
+    drawings = await attachMapCallouts(stored.canvas, stored.projectId, drawings, factsOf, tree);
+    const home = await factsOf(homeId);
+    const choices: PublicFilterChoices = home ? { ...filterChoices(home), ...(tree ? { placeTree: ownPlaces(tree, filterChoices(home).places) } : {}) } : { periods: [], places: [] };
+    return ok({ title: stored.title, canvas: { ...stored.canvas, id: stored.id, title: stored.title }, drawings, models, choices });
   }
+}
+
+/**
+ * The part of the organisation's places a link may show: the places this project's own records name, and the areas above them (so a
+ * province can be chosen before its districts). Other projects' places, in other countries, are never listed through a link.
+ */
+export function ownPlaces<T extends { key: string; parentKey: string | null }>(tree: readonly T[], used: ReadonlyArray<{ key: string }>): T[] {
+  const byKey = new Map(tree.map((p) => [p.key, p] as const));
+  const keep = new Set<string>();
+  for (const u of used) {
+    let cur = byKey.get(u.key);
+    for (let i = 0; cur && i < 6 && !keep.has(cur.key); i++) { keep.add(cur.key); cur = cur.parentKey ? byKey.get(cur.parentKey) : undefined; }
+  }
+  return tree.filter((p) => keep.has(p.key));
 }

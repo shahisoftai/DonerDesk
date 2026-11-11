@@ -88,7 +88,7 @@ export class ResolveCanvasHandler {
       drawings = drawn.value.charts;
     }
 
-    drawings = await this.withCallouts(ctx, stored.canvas, stored.projectId, drawings, factsOf);
+    drawings = await attachMapCallouts(stored.canvas, stored.projectId, drawings, factsOf, this.counts?.tree ? await this.counts.tree(ctx) : undefined);
     const list = await this.projectList(ctx);
     const portfolio = await this.portfolioFacts(ctx, stored.canvas);
 
@@ -122,34 +122,6 @@ export class ResolveCanvasHandler {
         models[key] = def.resolve(child.props, facts);
       }
     }
-  }
-
-  /**
-   * Figure cards beside areas of a results map (Phase 50.3d): each chosen area's figures, worked out from the project's facts narrowed to
-   * that one place, by the same rule as a figure card. Read under the viewer's own access; a project they cannot see gives no cards.
-   */
-  private async withCallouts(ctx: AuthenticatedContext, canvas: Canvas, homeId: string | undefined, drawings: DashboardChartDto[], factsOf: (id: string | undefined) => Promise<CanvasFacts | undefined>): Promise<DashboardChartDto[]> {
-    const byId = new Map(canvas.pages.flatMap((p) => p.blocks).map((b) => [b.id, b] as const));
-    const out: DashboardChartDto[] = [];
-    for (const d of drawings) {
-      const block = byId.get(d.widgetId);
-      const callouts = (block?.props as { callouts?: { placeKeys: string[]; items: CardItem[]; columns: number; offsets?: Record<string, { dx: number; dy: number }>; texts?: Array<{ id: string; placeKey: string; text: string }> } } | undefined)?.callouts;
-      if (!d.map || !block || !callouts || (callouts.placeKeys.length === 0 && !(callouts.texts?.length))) { out.push(d); continue; }
-      const facts = await factsOf(projectOf(block.bindings) ?? homeId);
-      if (!facts) { out.push(d); continue; }
-      // A card is headed by the place's own name: the places list first, then the names the records use, else the key.
-      const tree = this.counts?.tree ? await this.counts.tree(ctx) : undefined;
-      const names = new Map([...filterChoices(facts).places.map((p) => [p.key, p.label] as const), ...(tree ?? []).map((p) => [p.key, p.label] as const)]);
-      const cards: Array<{ key: string; name: string; figures: ReturnType<typeof resolveMultiCard>["items"]; text?: string; placeKey?: string }> = callouts.placeKeys.map((k) => normalizeLocationKey(k)).filter(Boolean).slice(0, 30).map((key) => {
-        const name = names.get(key) ?? key;
-        const model = resolveMultiCard({ items: callouts.items, layout: "GRID", columns: callouts.columns, includeDraft: false }, { sheet: facts.sheet, counts: facts.counts, place: { key, name } });
-        return { key, name, figures: model.items };
-      });
-      // A text card is the person's own words, tied to a place; it carries no figure.
-      for (const t of (callouts.texts ?? []).slice(0, 20)) { const key = normalizeLocationKey(t.placeKey); cards.push({ key: `text:${t.id}`, name: names.get(key) ?? t.placeKey, figures: [], text: t.text, placeKey: key }); }
-      out.push({ ...d, map: { ...d.map, callouts: cards, calloutColumns: callouts.columns, ...(callouts.offsets ? { calloutOffsets: callouts.offsets } : {}) } });
-    }
-    return out;
   }
 
   /** The places tree and the donors and partners of the viewer's projects, for the filter bar. */
@@ -209,4 +181,32 @@ export function filterChoices(f: CanvasFacts): Pick<FilterChoices, "periods" | "
   for (const r of f.activities.rows) places.set(r.key, r.location);
   for (const i of f.indicators) if (i.location.kind === "ADDITIVE" || i.location.kind === "RECORDED") for (const r of i.location.rows) places.set(r.key, r.location);
   return { periods: f.sheet.periods.map((p) => ({ id: p.id, label: p.label })), places: [...places.entries()].slice(0, MAX_PLACES).map(([key, label]) => ({ key, label })).sort((a, b) => a.label.localeCompare(b.label)) };
+}
+
+/**
+ * Cards on a results map (Phase 50.3d): each chosen place's figures, worked out from the project's facts narrowed to that one place by the
+ * same rule as a figure card, and a person's own text cards tied to a place. Read under the viewer's own access (or a link's, which never
+ * sees more); a project the viewer cannot see gives no cards. Shared by the signed-in canvas and the public link.
+ */
+export async function attachMapCallouts(canvas: Canvas, homeId: string | undefined, drawings: DashboardChartDto[], factsOf: (id: string | undefined) => Promise<CanvasFacts | undefined>, tree: Array<{ key: string; label: string }> | undefined): Promise<DashboardChartDto[]> {
+  const byId = new Map(canvas.pages.flatMap((p) => p.blocks).map((b) => [b.id, b] as const));
+  const out: DashboardChartDto[] = [];
+  for (const d of drawings) {
+    const block = byId.get(d.widgetId);
+    const callouts = (block?.props as { callouts?: { placeKeys: string[]; items: CardItem[]; columns: number; offsets?: Record<string, { dx: number; dy: number }>; texts?: Array<{ id: string; placeKey: string; text: string }> } } | undefined)?.callouts;
+    if (!d.map || !block || !callouts || (callouts.placeKeys.length === 0 && !(callouts.texts?.length))) { out.push(d); continue; }
+    const facts = await factsOf(projectOf(block.bindings) ?? homeId);
+    if (!facts) { out.push(d); continue; }
+    // A card is headed by the place's own name: the places list first, then the names the records use, else the key.
+    const names = new Map([...filterChoices(facts).places.map((p) => [p.key, p.label] as const), ...(tree ?? []).map((p) => [p.key, p.label] as const)]);
+    const cards: Array<{ key: string; name: string; figures: ReturnType<typeof resolveMultiCard>["items"]; text?: string; placeKey?: string }> = callouts.placeKeys.map((k) => normalizeLocationKey(k)).filter(Boolean).slice(0, 30).map((key) => {
+      const name = names.get(key) ?? key;
+      const model = resolveMultiCard({ items: callouts.items, layout: "GRID", columns: callouts.columns, includeDraft: false }, { sheet: facts.sheet, counts: facts.counts, place: { key, name } });
+      return { key, name, figures: model.items };
+    });
+    // A text card is the person's own words, tied to a place; it carries no figure.
+    for (const t of (callouts.texts ?? []).slice(0, 20)) { const key = normalizeLocationKey(t.placeKey); cards.push({ key: `text:${t.id}`, name: names.get(key) ?? t.placeKey, figures: [], text: t.text, placeKey: key }); }
+    out.push({ ...d, map: { ...d.map, callouts: cards, calloutColumns: callouts.columns, ...(callouts.offsets ? { calloutOffsets: callouts.offsets } : {}) } });
+  }
+  return out;
 }

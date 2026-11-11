@@ -16,7 +16,8 @@ export interface IPlaceTreeReader {
 /**
  * The counts are gathered under the viewer's own access, from the ordinary readers: the places list, the projects the viewer can see,
  * and, only when the viewer may see the project's finance (the same check the number tiles use), the funding sources it has money
- * from (the donor named on a project is on its page for anyone who can see it). Through a share link, donors and partners are never read: they belong with the money, which a link never carries.
+ * from (the donor named on a project is on its page for anyone who can see it). Through a share link the funding sources are read for their
+ * names only, to be counted: a link carries the number of donors and partners, never their names or any amount.
  */
 export class CountFactsService implements ICountFactsReader, IPlaceTreeReader {
   constructor(
@@ -40,9 +41,9 @@ export class CountFactsService implements ICountFactsReader, IPlaceTreeReader {
     const [placeList, projectRows] = await Promise.all([this.places.list(tenantId), Promise.all(projectIds.map((id) => this.projects.findById(id, tenantId)))]);
     const projects = projectRows.flatMap((r) => (r.ok && r.value ? [r.value] : []));
     let fundingSourceNames: string[] = [];
-    const people = !options.shareLink;
-    if (people && this.funding && this.sources) {
-      const gates = await Promise.all(projectIds.map((id) => this.financeGate.finance(ctx, id)));
+    // A link names its projects itself, so there is no finance gate to ask: only the names of the funding sources are read, and counted.
+    if (this.funding && this.sources) {
+      const gates = options.shareLink ? projectIds.map(() => true) : await Promise.all(projectIds.map((id) => this.financeGate.finance(ctx, id)));
       const allowed = projectIds.filter((_, i) => gates[i] !== undefined);
       if (allowed.length > 0) {
         const [rows, list] = await Promise.all([this.funding.listForProjects(allowed, tenantId), this.sources.list(tenantId)]);
@@ -57,7 +58,7 @@ export class CountFactsService implements ICountFactsReader, IPlaceTreeReader {
     });
     return {
       ...(placeList.ok ? { placesWithValues: facts.placesWithValues, facilities: facts.facilities } : {}),
-      ...(people ? { donors: facts.donors, partners: facts.partners } : {}),
+      donors: facts.donors, partners: facts.partners,
     };
   }
 }

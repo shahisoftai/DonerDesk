@@ -31,7 +31,7 @@ export default async function SharedCanvasPage({ params }: { params: Promise<{ t
     <main className="mx-auto max-w-6xl px-4 py-6">
       <h1 className="text-2xl font-bold tracking-tight">{shared.title}</h1>
       <p className="mt-1 text-xs text-slate-500">Read-only. The figures are drawn from the records each time this page opens. Money, budgets, people and lists of projects are not shown.</p>
-      <div className="mt-4"><PublicCanvasView canvas={shared.canvas} drawings={shared.drawings} models={shared.models} /></div>
+      <div className="mt-4"><PublicCanvasView canvas={shared.canvas} drawings={shared.drawings} models={shared.models} choices={shared.choices} token={token} /></div>
     </main>
   );
 }

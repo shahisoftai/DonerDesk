@@ -39,9 +39,11 @@ export const ReviewResultSchema = z.object({ status: z.string(), note: z.string(
 export const SnapshotResultSchema = z.object({ every: z.string() });
 export const DraftTextSchema = z.union([z.object({ available: z.literal(false), reason: z.string() }), z.object({ available: z.literal(true), text: z.string(), dropped: z.number(), note: z.string() })]);
 export type DraftTextView = z.infer<typeof DraftTextSchema>;
+/** What a link holder may narrow the page by: a period and places (never donors, partners or money). */
+export const PublicChoicesSchema = z.object({ periods: z.array(z.object({ id: z.string(), label: z.string() })), places: z.array(z.object({ key: z.string(), label: z.string() })), placeTree: z.array(z.object({ key: z.string(), label: z.string(), level: z.number(), parentKey: z.string().nullable() })).optional() });
 export const PublicCanvasSchema = z.union([
   z.object({ kind: z.literal("FROZEN"), title: z.string() }),
-  z.object({ kind: z.literal("LIVE"), title: z.string(), canvas: CanvasDoc, drawings: z.array(ChartDrawingSchema), models: z.record(Model) }),
+  z.object({ kind: z.literal("LIVE"), title: z.string(), canvas: CanvasDoc, drawings: z.array(ChartDrawingSchema), models: z.record(Model), choices: PublicChoicesSchema.default({ periods: [], places: [] }) }),
 ]);
 
 export const CanvasSubscriptionListSchema = z.object({ subscriptions: z.array(z.object({ canvasId: z.string(), every: z.enum(["WEEKLY", "MONTHLY"]) })) });

@@ -37,7 +37,7 @@ type State<T> = { kind: "loading" } | { kind: "error"; message: string } | { kin
  * click, drill, detail, indicator, time slider); "Where activities are" is the plan's site map.
  */
 export function MapWidget({ view, projectId, widgetId, preloaded, indicatorId, look }: { look?: MapLook | undefined; view: "RESULTS" | "ACTIVITIES"; projectId: string; widgetId: string; /** The indicator a results map opens on. */ indicatorId?: string | undefined; /** A share link: the data was read on the server and comes with the drawing (there is no session to read it with). */ preloaded?: Record<string, unknown> | undefined }) {
-  if (preloaded) return view === "RESULTS" ? <SharedResultsMap projectId={projectId} widgetId={widgetId} data={preloaded} indicatorId={indicatorId} /> : <SharedActivityMap projectId={projectId} data={preloaded} />;
+  if (preloaded) return view === "RESULTS" ? <SharedResultsMap projectId={projectId} widgetId={widgetId} data={preloaded} indicatorId={indicatorId} look={look} /> : <SharedActivityMap projectId={projectId} data={preloaded} />;
   return view === "RESULTS" ? <ResultsMap projectId={projectId} indicatorId={indicatorId} look={look} /> : <ActivityMap projectId={projectId} />;
 }
 
@@ -57,7 +57,7 @@ function sharedLoader(token: string, widgetId: string, failed: string): PlaceRes
   };
 }
 
-function SharedResultsMap({ projectId, widgetId, data, indicatorId }: { projectId: string; widgetId: string; data: Record<string, unknown>; indicatorId?: string | undefined }) {
+function SharedResultsMap({ projectId, widgetId, data, indicatorId, look }: { projectId: string; widgetId: string; data: Record<string, unknown>; indicatorId?: string | undefined; look?: MapLook | undefined }) {
   const link = useShareLink();
   const { t } = useMapText();
   const parsed = useMemo(() => ({ places: PlaceListSchema.safeParse(data["places"]), results: PlaceResultsSchema.safeParse(data["results"]) }), [data]);
@@ -71,7 +71,7 @@ function SharedResultsMap({ projectId, widgetId, data, indicatorId }: { projectI
   // With the link's token the map opens districts and moves through periods like a signed-in one; without it, it stays the fixed view it was sent as.
   return (
     <div className="h-full overflow-auto p-2">
-      <MapExplorer compact initialIndicatorId={indicatorId} staticData={!link} projectId={projectId} places={parsed.places.data.places} initial={fixed} periods={link ? fixed.periods : []} loadResults={loader} />
+      <MapExplorer compact initialIndicatorId={indicatorId} staticData={!link} projectId={projectId} places={parsed.places.data.places} initial={fixed} periods={link ? fixed.periods : []} loadResults={loader} {...lookProps(look)} />
       <p className="px-1 pt-1 text-xs text-slate-500">{link ? t("maps.shared.live") : t("maps.shared.fixed")}</p>
     </div>
   );

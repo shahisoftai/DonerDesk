@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { createContainer, type Container } from "@donordesk/infrastructure";
 import { PresenceUpdateSchema, SubscribeCanvasSchema, CanvasDataWorkbookSchema, CanvasExportQuerySchema, CanvasSnapshotsSchema, CreateCanvasShareSchema, DraftCanvasTextSchema, PublishCanvasSchema, ReviewCanvasSchema, placeKeysOf, CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
@@ -196,7 +197,10 @@ export async function registerPublicCanvasRoutes(app: FastifyInstance, admin: Co
     const found = await resolve((req.params as { token: string }).token);
     if (!found) { reply.code(404); return { title: "This link is not available" }; }
     if (found.link.kind === "FROZEN") return { kind: "FROZEN", title: "A published copy" };
-    const r = await found.tenant.handlers.publicCanvas.handle(found.link.tenantId, found.link.canvasId);
+    // A link holder may narrow the page by a period and by places; nothing else (never donors, partners or money).
+    const q = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional() }).safeParse(req.query ?? {});
+    const filters = q.success ? { ...(q.data.periodId ? { periodId: q.data.periodId } : {}), placeKeys: placeKeysOf(q.data.places) } : {};
+    const r = await found.tenant.handlers.publicCanvas.handle(found.link.tenantId, found.link.canvasId, filters);
     if (!r.ok) { reply.code(404); return { title: "This link is not available" }; }
     return { kind: "LIVE", ...r.value };
   });

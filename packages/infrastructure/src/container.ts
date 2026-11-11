@@ -1791,7 +1791,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createCanvasShare: new CreateCanvasShareHandler(canvases, canvasExports, canvasLinks, ids, audits, clock),
     listCanvasShares: new ListCanvasSharesHandler(canvases, canvasLinks, clock),
     revokeCanvasShare: new RevokeCanvasShareHandler(canvases, canvasLinks, audits, clock),
-    publicCanvas: new PublicCanvasHandler(canvases, getProjectDataSheet, getProjectInfographicData, datasetExtras, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects)),
+    publicCanvas: new PublicCanvasHandler(canvases, getProjectDataSheet, getProjectInfographicData, datasetExtras, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects), countFacts),
     getCanvasShareFile: new GetCanvasShareFileHandler(canvasExports, storage),
     reviewCanvas: new ReviewCanvasHandler(canvases, audits, infographicNotifier),
     listCanvasVersions: new ListCanvasVersionsHandler(canvases, canvasVersions),
