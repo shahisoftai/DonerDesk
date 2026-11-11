@@ -8,7 +8,8 @@ import { useMapText } from "./useMapText";
 
 export interface CalloutCard { key: string; name: string; figures: readonly CardFigure[]; lng: number; lat: number }
 
-const CARD = { w: 172, h: 92 };
+/** A card is sized to its figures: a row of figures per `columns`, so nothing is cut off. */
+const cardSize = (figures: number, columns: number) => ({ w: 64 * Math.max(1, columns) + 12, h: 28 + Math.ceil(figures / Math.max(1, columns)) * 30 });
 
 /**
  * Figure cards beside chosen areas of a map, each joined to its area by a line (Phase 50.3d). Positions come from the pure
@@ -21,7 +22,8 @@ export function CalloutLayer({ projection, cards, columns, numbers, accent }: { 
   useEffect(() => projection.onView(() => setTick((n) => n + 1)), [projection]);
   void tick;
   const anchors = cards.flatMap((c) => { const p = projection.project(c.lng, c.lat); return p ? [{ key: c.key, x: p.x, y: p.y }] : []; });
-  const boxes = placeCallouts(anchors, projection.size(), CARD);
+  const card = cardSize(Math.max(0, ...cards.map((c) => c.figures.length)), columns);
+  const boxes = placeCallouts(anchors, projection.size(), card, { distance: 16, gap: 4 });
   const byKey = new Map(cards.map((c) => [c.key, c]));
   return (
     <div className="pointer-events-none absolute inset-0" data-testid="map-callouts">
