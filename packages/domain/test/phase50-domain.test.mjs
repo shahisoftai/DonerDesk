@@ -86,7 +86,11 @@ test("callouts: deterministic, never overlapping, inside the view, spill to a si
   const crowded = Array.from({ length: 12 }, (_, i) => ({ key: `k${i}`, x: 300, y: 200 }));
   const placed = placeCallouts(crowded, view, card);
   assert.equal(placed.length, 12);
-  assert.ok(placed.some((b) => b.inColumn));
+  for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) { const a = placed[i], b = placed[j]; assert.ok(!(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h), `${a.key}/${b.key}`); }
+  assert.ok(placed.every((b) => !b.inColumn), "there is room, so each card is placed near its place");
+  // A view with no free spot left sends the rest to a side column, still joined to their places.
+  const tight = placeCallouts(Array.from({ length: 6 }, (_, i) => ({ key: `t${i}`, x: 100, y: 100 })), { w: 260, h: 130 }, card);
+  assert.ok(tight.some((b) => b.inColumn));
 });
 
 test("map styling: category needs a level, rules need ordered bands, a gap has no band", () => {

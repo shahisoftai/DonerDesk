@@ -31,19 +31,23 @@ export function placeCallouts(anchors: readonly CalloutAnchor[], view: { w: numb
   for (const a of order) {
     const size = a.size ?? card;
     let done = false;
-    // Beside the place first, then on wider rings around it, before giving up to the side column.
-    for (const d of [distance, distance * 3, distance * 6]) {
-      for (const [dx, dy] of OFFSETS) {
-        const x = dx === 0 ? a.x - size.w / 2 : dx > 0 ? a.x + d : a.x - d - size.w;
-        const y = dy === 0 ? a.y - size.h / 2 : dy > 0 ? a.y + d : a.y - d - size.h;
-        const box = { x: Math.round(x), y: Math.round(y), w: size.w, h: size.h };
-        if (box.x < 0 || box.y < 0 || box.x + box.w > view.w || box.y + box.h > view.h) continue;
-        if (placed.some((p) => overlaps(p, box, gap))) continue;
-        placed.push({ key: a.key, ...box, anchorX: a.x, anchorY: a.y, inColumn: false, fixed: false });
-        done = true;
-        break;
-      }
-      if (done) break;
+    // The nearest free spot to the place: the eight places beside it first (shortest line), then every spot on a 12 px grid, nearest first.
+    const candidates: Array<{ x: number; y: number }> = [];
+    for (const [dx, dy] of OFFSETS) candidates.push({ x: dx === 0 ? a.x - size.w / 2 : dx > 0 ? a.x + distance : a.x - distance - size.w, y: dy === 0 ? a.y - size.h / 2 : dy > 0 ? a.y + distance : a.y - distance - size.h });
+    const step = 12;
+    const grid: Array<{ x: number; y: number; d: number }> = [];
+    for (let gx = 0; gx + size.w <= view.w; gx += step) for (let gy = 0; gy + size.h <= view.h; gy += step) {
+      const cx = gx + size.w / 2, cy = gy + size.h / 2;
+      grid.push({ x: gx, y: gy, d: (cx - a.x) ** 2 + (cy - a.y) ** 2 });
+    }
+    grid.sort((p, q) => p.d - q.d || p.y - q.y || p.x - q.x);
+    for (const c of [...candidates, ...grid]) {
+      const box = { x: Math.round(c.x), y: Math.round(c.y), w: size.w, h: size.h };
+      if (box.x < 0 || box.y < 0 || box.x + box.w > view.w || box.y + box.h > view.h) continue;
+      if (placed.some((p) => overlaps(p, box, gap))) continue;
+      placed.push({ key: a.key, ...box, anchorX: a.x, anchorY: a.y, inColumn: false, fixed: false });
+      done = true;
+      break;
     }
     if (!done) spill.push(a);
   }
