@@ -1,0 +1,12 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("slicer");
+const prov = page.locator('[data-filter="Province"]');
+await prov.locator("summary").click();
+await prov.getByLabel("Karnali", { exact: true }).check();
+await page.waitForTimeout(7000);
+console.log("url:", page.url());
+const r = await page.evaluate(() => [...document.querySelectorAll('[data-testid="multi-card"]')].map((c) => c.innerText.replace(/\s+/g, " ")));
+console.log(r.join("\n"));
+const dist = page.locator('[data-filter="District"]'); await dist.locator("summary").click();
+console.log("district options:", (await dist.locator("label").allInnerTexts()).join(", "));
+await browser.close(); process.exit(0);

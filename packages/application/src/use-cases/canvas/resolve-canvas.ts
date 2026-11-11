@@ -61,7 +61,13 @@ export class ResolveCanvasHandler {
     const factsByProject = new Map<string, Promise<CanvasFacts | undefined>>();
     const factsOf = (projectId: string | undefined): Promise<CanvasFacts | undefined> => {
       if (!projectId || !allowed.has(projectId)) return Promise.resolve(undefined);
-      if (!factsByProject.has(projectId)) factsByProject.set(projectId, canvasFactsFor(this.sheets, this.infographicData, ctx, projectId, stored.canvas, stored.title, options, needsCounts(stored.canvas) ? this.counts : undefined));
+      if (!factsByProject.has(projectId)) factsByProject.set(projectId, canvasFactsFor(this.sheets, this.infographicData, ctx, projectId, stored.canvas, stored.title, options, needsCounts(stored.canvas) ? this.counts : undefined).then(async (f) => {
+        // A viewer's one-place filter heads a figure card with the place's own name, from the places list.
+        if (!f || options.placeKeys?.length !== 1 || !this.counts?.tree) return f;
+        const tree = await this.counts.tree(ctx);
+        const hit = tree?.find((p) => p.key === normalizeLocationKey(options.placeKeys![0]!));
+        return hit ? { ...f, placeName: hit.label } : f;
+      }));
       return factsByProject.get(projectId)!;
     };
     // The filters offer the periods and places of the canvas's project, else of the first project a block reads.
