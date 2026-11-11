@@ -23,7 +23,7 @@ const THEME = themeFor("DEFAULT");
 export function lookProps(look: MapLook | undefined, onMove?: ((key: string, offset: { dx: number; dy: number } | null) => void) | null): Pick<ExplorerProps, "areaStyle" | "callouts"> {
   if (!look) return {};
   const style = look.colorBy || look.areaLabels ? { areaStyle: { colorBy: look.colorBy ?? "VALUE", bands: look.bands, byParent: false, palette: THEME.palette, labels: look.areaLabels } } : {};
-  const callouts = look.callouts?.length ? { callouts: { cards: look.callouts, columns: look.calloutColumns ?? 3, accent: "#d4a106", offsets: look.calloutOffsets ?? {}, ...(onMove ? { onMove } : {}) } } : {};
+  const callouts = look.callouts?.length ? { callouts: { cards: look.callouts, columns: look.calloutColumns ?? 3, accent: "#d4a106", offsets: look.calloutOffsets ?? {}, ...(onMove ? { onMove } : { viewerMovable: true }) } } : {};
   return { ...style, ...callouts };
 }
 

@@ -6,6 +6,7 @@ import type { ChartDrawing } from "@/lib/server/schemas-dashboards";
 import { DashboardCanvas } from "./DashboardCanvas";
 import { DashboardTabBar, useDashboardTabs } from "./DashboardTabs";
 import { ShareLinkProvider } from "./ShareLinkContext";
+import { MapServicesProvider, publicMapServices } from "@/features/maps/presentation/MapServices";
 
 /** The read-only dashboard a link holder sees: the same tabs and grid, never editable. */
 export function PublicDashboard({ widgets, charts, token }: { widgets: DashboardWidget[]; charts: ChartDrawing[]; /** The link this page was opened with: results maps use it to read other levels and periods. */ token: string }) {
@@ -13,10 +14,12 @@ export function PublicDashboard({ widgets, charts, token }: { widgets: Dashboard
   const tabbed = useDashboardTabs(widgets);
   return (
     <ShareLinkProvider value={{ token }}>
+    <MapServicesProvider value={publicMapServices()}>
     <div className="space-y-3">
       <DashboardTabBar tabs={tabbed.tabs} active={tabbed.active} onSelect={tabbed.setActive} overviewLabel="Overview" />
       <DashboardCanvas widgets={tabbed.visible} charts={byId} editing={false} labels={{}} onChange={() => undefined} />
     </div>
+    </MapServicesProvider>
     </ShareLinkProvider>
   );
 }

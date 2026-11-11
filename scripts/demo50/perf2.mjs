@@ -1,0 +1,21 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("perf2");
+await page.context().clearCookies().catch(() => {});
+const t0 = Date.now();
+await page.goto(process.argv[2], { waitUntil: "load" });
+const loaded = Date.now() - t0;
+await page.locator("canvas.maplibregl-canvas").first().waitFor({ timeout: 90000 });
+const canvasAt = Date.now() - t0;
+await page.locator('[data-map-ready="true"]').first().waitFor({ timeout: 90000 }).catch(() => {});
+const ready = Date.now() - t0;
+await page.waitForTimeout(3000);
+const r = await page.evaluate(() => {
+  const res = performance.getEntriesByType("resource").map((e) => ({ n: e.name.replace(location.origin, "").slice(0, 90), kb: Math.round((e.transferSize || e.encodedBodySize || 0) / 1024), decoded: Math.round(e.decodedBodySize / 1024), ms: Math.round(e.duration) }));
+  const js = res.filter((x) => /\.js(\?|$)/.test(x.n));
+  const maps = document.querySelectorAll("canvas.maplibregl-canvas").length;
+  const gl = [...document.querySelectorAll("canvas")].map((c) => `${c.width}x${c.height}`);
+  return { totalKB: res.reduce((a, b) => a + b.kb, 0), jsKB: js.reduce((a, b) => a + b.kb, 0), jsDecodedKB: js.reduce((a, b) => a + b.decoded, 0), jsFiles: js.length, top: [...res].sort((a, b) => b.decoded - a.decoded).slice(0, 6), maps, gl };
+});
+console.log(`load ${loaded} ms, first map canvas ${canvasAt} ms, map idle ${ready} ms`);
+console.log(JSON.stringify(r, null, 1));
+await browser.close(); process.exit(0);

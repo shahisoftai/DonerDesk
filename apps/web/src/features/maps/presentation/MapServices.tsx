@@ -12,3 +12,7 @@ let shared: MapServices | undefined;
 export function useMapServices(): MapServices {
   return useContext(MapServicesContext) ?? (shared ??= createMapServices());
 }
+
+let publicShared: MapServices | undefined;
+/** The services for a page a visitor with no account sees (a share link or an embed): nothing in them asks for a session. Built once. */
+export const publicMapServices = (): MapServices => (publicShared ??= createMapServices({ signedIn: false }));

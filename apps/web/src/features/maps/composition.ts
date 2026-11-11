@@ -34,6 +34,8 @@ export interface MapServices {
   prefetch: MapPrefetch;
   /** False on a machine with no WebGL: the screen then keeps the ECharts map. */
   canUseWebGL(): boolean;
+  /** False for a public page (a share link or an embed): nothing there may call a server action that needs a session. */
+  signedIn: boolean;
 }
 
 // The world's countries are a small module; every country's provinces together are a big one, loaded only as the fallback (see FilesBoundarySource).
@@ -49,12 +51,18 @@ function webGl(): boolean {
   } catch { return false; }
 }
 
-export function createMapServices(): MapServices {
+/**
+ * `signedIn: false` builds the services for a public page (a share link, an embed): no call that needs a session is ever made. A server action
+ * that needs one answers a visitor with a redirect to the login page, which cannot be caught and throws the whole page away, so the
+ * organisation's own uploaded boundaries (read through such an action) are simply not offered there; the shipped boundaries are.
+ */
+export function createMapServices(options: { signedIn?: boolean } = {}): MapServices {
   const basemap = new ProtomapsBasemap("/tiles", undefined, BASEMAP_REGIONS, WORLD_BASEMAP, currentOfflineMap);
   const origin = () => (typeof location === "undefined" ? "" : location.origin);
   // The organisation's own boundary files first; the shipped ones for everything else.
-  const boundaries = new TenantLayerBoundarySource(
-    new FilesBoundarySource(loadWorld, (name) => loadAdmin1File(admin1FileKey(name)), loadBundledAdmin1, loadBoundaryManifest, loadBoundaryFile, provincesOf),
+  const shipped = new FilesBoundarySource(loadWorld, (name) => loadAdmin1File(admin1FileKey(name)), loadBundledAdmin1, loadBoundaryManifest, loadBoundaryFile, provincesOf);
+  const boundaries: BoundarySource = options.signedIn === false ? shipped : new TenantLayerBoundarySource(
+    shipped,
     loadBoundaryLayerList,
     loadBoundaryLayerFile,
     async (country) => { const manifest = await loadBoundaryManifest(); return (manifest ? findCountry(manifest, country.name)?.iso : undefined) ?? null; },
@@ -67,5 +75,6 @@ export function createMapServices(): MapServices {
     viewBoundaries: new TiledBoundarySource(boundaries, loadBoundaryManifest, loadBoundaryIndex, origin),
     prefetch: new PmtilesPrefetch("/tiles", origin, undefined, () => { void loadBoundaryManifest(); }),
     canUseWebGL: webGl,
+    signedIn: options.signedIn !== false,
   };
 }

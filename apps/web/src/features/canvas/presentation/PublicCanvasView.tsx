@@ -9,6 +9,7 @@ import { CanvasPageGrid } from "./CanvasPageGrid";
 import { FilterPane, type FilterBarProps } from "../filters/FilterPane";
 import { FilterSlotProvider } from "../filters/filter-slot";
 import { useFilterAddress } from "../filters/use-filter-address";
+import { MapServicesProvider, publicMapServices } from "@/features/maps/presentation/MapServices";
 
 const NO_SELECTION: ReadonlySet<string> = new Set();
 type Choices = z.infer<typeof PublicChoicesSchema>;
@@ -53,6 +54,7 @@ export function PublicCanvasView({ canvas, drawings: first, models: firstModels,
 
   const slot = bar ? <FilterPane bar={bar} choices={{ ...choices, groups: [], statuses: [], levels: [], indicators: [] }} filters={filters} tone={{ strip: theme.accentSoft, ink: theme.accent, on: theme.accent }} onChange={setFilters} onClear={() => setFilters(NO_FILTER)} /> : null;
   return (
+    <MapServicesProvider value={publicMapServices()}>
     <div className="space-y-6" dir={canvas.language === "ar" ? "rtl" : "ltr"}>
       {failed && <p role="status" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-900">The page could not be refreshed for that choice just now. What you see is the last page that loaded.</p>}
       <FilterSlotProvider value={slot}>
@@ -64,5 +66,6 @@ export function PublicCanvasView({ canvas, drawings: first, models: firstModels,
         ))}
       </FilterSlotProvider>
     </div>
+    </MapServicesProvider>
   );
 }

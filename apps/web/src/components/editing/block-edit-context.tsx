@@ -17,3 +17,6 @@ export function useBlockEdit(): ((change: (props: unknown) => unknown) => void) 
   const update = useContext(EditorUpdate), id = useContext(BlockId);
   return update && id ? (change) => update(id, change) : null;
 }
+
+/** The id of the block this is drawn in, or null outside a canvas block. Lets a read-only view remember something per block (for example where a visitor put a card). */
+export const useBlockId = (): string | null => useContext(BlockId);

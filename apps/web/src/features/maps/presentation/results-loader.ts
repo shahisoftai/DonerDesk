@@ -29,7 +29,7 @@ export interface ExplorerProps {
   /** How areas are coloured and labelled (a dashboard map's own setting, Phase 50.3d). */
   areaStyle?: import("../domain/scene/area-style").AreaStyle | undefined;
   /** Figure cards beside chosen areas, already resolved for the person looking. */
-  callouts?: { cards: ReadonlyArray<{ key: string; name: string; text?: string | undefined; placeKey?: string | undefined; figures: ReadonlyArray<import("@donordesk/domain/contexts/dashboards/index.js").CardFigure> }>; columns: number; accent: string; offsets?: Readonly<Record<string, { dx: number; dy: number }>> | undefined; onMove?: ((key: string, offset: { dx: number; dy: number } | null) => void) | undefined } | undefined;
+  callouts?: { cards: ReadonlyArray<{ key: string; name: string; text?: string | undefined; placeKey?: string | undefined; figures: ReadonlyArray<import("@donordesk/domain/contexts/dashboards/index.js").CardFigure> }>; columns: number; accent: string; offsets?: Readonly<Record<string, { dx: number; dy: number }>> | undefined; onMove?: ((key: string, offset: { dx: number; dy: number } | null) => void) | undefined; /** Read-only view: a visitor may move cards for themself (not saved). */ viewerMovable?: boolean | undefined } | undefined;
 }
 
 /** The indicator a map opens on: the one asked for when the results carry it, else the first. */

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import { formatFigure, type NumbersFormat } from "@donordesk/domain/contexts/canvas/index.js";
 import { placeCallouts, type CardFigure } from "@donordesk/domain/contexts/dashboards/index.js";
 import type { MapProjection } from "../ports/map-projection";
+import { useBlockId } from "@/components/editing/block-edit-context";
 import { useMapText } from "./useMapText";
 
 export interface CalloutCard { key: string; name: string; figures: readonly CardFigure[]; text?: string | undefined; lng: number; lat: number }
@@ -15,7 +16,7 @@ function sizeOf(c: CalloutCard, columns: number): { w: number; h: number } {
   return { w: 64 * Math.max(1, columns) + 12, h: 28 + Math.ceil(c.figures.length / Math.max(1, columns)) * 30 };
 }
 
-interface Props { projection: MapProjection; cards: readonly CalloutCard[]; columns: number; numbers?: NumbersFormat | undefined; accent: string; offsets?: Readonly<Record<string, Offset>> | undefined; /** Cards whose place has no pin, area or pinned places inside it: said, never placed at a guess. */ unplaced?: number | undefined; onMove?: ((key: string, offset: Offset | null) => void) | undefined }
+interface Props { projection: MapProjection; cards: readonly CalloutCard[]; columns: number; numbers?: NumbersFormat | undefined; accent: string; offsets?: Readonly<Record<string, Offset>> | undefined; /** Cards whose place has no pin, area or pinned places inside it: said, never placed at a guess. */ unplaced?: number | undefined; onMove?: ((key: string, offset: Offset | null) => void) | undefined; /** A read-only view (a share link, a dashboard being read): a visitor may still move cards for themself; nothing is saved to the page. */ viewerMovable?: boolean | undefined }
 
 /**
  * Cards on a map, each joined to its place by a line (Phase 50.3d): figure cards and a person's own text cards. Positions come from the
@@ -23,7 +24,7 @@ interface Props { projection: MapProjection; cards: readonly CalloutCard[]; colu
  * the others are placed around it. While the canvas is edited, a card is dragged with the pointer or moved with the arrow keys
  * (Shift = 10 px); a double-click or Delete puts it back to automatic. A figure nobody recorded reads "Not measured", never 0.
  */
-export function CalloutLayer({ projection, cards, columns, numbers, accent, offsets = {}, unplaced = 0, onMove }: Props) {
+export function CalloutLayer({ projection, cards, columns, numbers, accent, offsets = {}, unplaced = 0, onMove, viewerMovable = false }: Props) {
   const { t, lang } = useMapText();
   const [, setTick] = useState(0);
   const [drag, setDrag] = useState<{ key: string; dx: number; dy: number } | null>(null);
@@ -31,17 +32,32 @@ export function CalloutLayer({ projection, cards, columns, numbers, accent, offs
   // The last drop is kept here until the saved settings come back with it, so a card never jumps back for a moment.
   const [pending, setPending] = useState<Record<string, Offset | null>>({});
   useEffect(() => setPending({}), [offsets]);
-  const place = (key: string, offset: Offset | null) => { setPending((p) => ({ ...p, [key]: offset })); onMove?.(key, offset); };
+  // A visitor's own arrangement of a read-only page: kept for this browser tab only (never sent anywhere), per block.
+  const blockId = useBlockId();
+  const storeKey = typeof location === "undefined" ? null : `dd-cards:${location.pathname}:${blockId ?? "map"}`;
+  const [mine, setMine] = useState<Record<string, Offset>>({});
+  useEffect(() => {
+    if (onMove || !viewerMovable || !storeKey) return;
+    try { const raw = window.sessionStorage.getItem(storeKey); if (raw) { const o = JSON.parse(raw) as Record<string, Offset>; if (o && typeof o === "object") setMine(o); } } catch { /* storage blocked: moves last until the page closes */ }
+  }, [onMove, viewerMovable, storeKey]);
+  const place = (key: string, offset: Offset | null) => {
+    if (onMove) { setPending((p) => ({ ...p, [key]: offset })); onMove(key, offset); return; }
+    setMine((m) => {
+      const next = { ...m }; if (offset) next[key] = { dx: Math.round(offset.dx), dy: Math.round(offset.dy) }; else delete next[key];
+      try { if (storeKey) window.sessionStorage.setItem(storeKey, JSON.stringify(next)); } catch { /* not kept; still works */ }
+      return next;
+    });
+  };
   useEffect(() => projection.onView(() => setTick((n) => n + 1)), [projection]);
   const anchors = cards.flatMap((c) => {
     const p = projection.project(c.lng, c.lat);
     if (!p) return [];
-    const fixed = drag?.key === c.key ? { dx: drag.dx, dy: drag.dy } : c.key in pending ? pending[c.key] ?? undefined : offsets[c.key];
+    const fixed = drag?.key === c.key ? { dx: drag.dx, dy: drag.dy } : !onMove && viewerMovable && c.key in mine ? mine[c.key] : c.key in pending ? pending[c.key] ?? undefined : offsets[c.key];
     return [{ key: c.key, x: p.x, y: p.y, size: sizeOf(c, columns), ...(fixed ? { fixed } : {}) }];
   });
   const boxes = placeCallouts(anchors, projection.size(), { w: 180, h: 100 }, { distance: 16, gap: 4 });
   const byKey = new Map(cards.map((c) => [c.key, c]));
-  const editable = Boolean(onMove);
+  const editable = Boolean(onMove) || viewerMovable;
 
   const down = (key: string, box: { x: number; y: number; anchorX: number; anchorY: number }) => (e: ReactPointerEvent<HTMLElement>) => {
     if (!editable || e.button !== 0) return;
@@ -74,7 +90,7 @@ export function CalloutLayer({ projection, cards, columns, numbers, accent, offs
         const c = byKey.get(b.key)!;
         return (
           <section key={b.key} aria-label={c.name} data-card={b.key} data-fixed={b.fixed || undefined} tabIndex={editable ? 0 : undefined}
-            title={editable ? "Drag to place this card; double-click to put it back" : undefined}
+            title={editable ? (onMove ? "Drag to place this card; double-click to put it back" : "Drag to move this card for yourself; double-click to put it back") : undefined}
             onPointerDown={down(b.key, b)} onPointerMove={move} onPointerUp={up}
             onDoubleClick={editable ? (e) => { e.stopPropagation(); place(b.key, null); } : undefined}
             onKeyDown={editable ? (e) => {
