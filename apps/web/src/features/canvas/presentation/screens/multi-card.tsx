@@ -37,6 +37,7 @@ export function MultiCardScreen(props: Props) {
                 ? <p className="text-sm italic text-[var(--tile-meta)]">{text.l.notYetReported}</p>
                 : <p className="tabular-nums leading-tight" style={{ fontSize: i === 0 || m.layout !== "GRID" ? size : Math.max(16, size * 0.6), fontWeight: weight, color: colour }}>{shown}{it.unverified ? <span className="ms-1 align-super text-[10px] text-amber-700">*</span> : null}</p>}
               {labelPos !== "above" && label}
+              {shown === null && it.reason && it.reason !== "Not reported" && <p className="text-[10px] leading-tight text-[var(--tile-meta)]">{it.reason}</p>}
             </li>
           );
         })}

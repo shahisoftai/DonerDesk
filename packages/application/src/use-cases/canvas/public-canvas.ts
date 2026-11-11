@@ -1,4 +1,4 @@
-import { DomainError, canvasToWidgets, definitionFor, isDashboardKind, projectOf, type BlockModel, type Canvas, type CanvasFacts, type DataSheet, type FilterChoices, type Result, type TenantId } from "@donordesk/domain";
+import { DomainError, normalizeLocationKey, canvasToWidgets, definitionFor, isDashboardKind, projectOf, type BlockModel, type Canvas, type CanvasFacts, type DataSheet, type FilterChoices, type Result, type TenantId } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ICanvasRepository } from "../../ports/canvas.js";
 import { ShareLinkExtras, type IShareMapReader } from "../../services/share-link-extras.js";
@@ -53,13 +53,15 @@ export class PublicCanvasHandler {
     }
     // Cards on a map, and the choices the page's filters offer: both read as the guest, from what the canvas names.
     const homeId = stored.projectId ?? stored.canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean);
+    const tree = this.counts?.tree ? await this.counts.tree(guest) : undefined;
     const factsOf = async (id: string | undefined): Promise<CanvasFacts | undefined> => {
       if (!id) return undefined;
       if (!facts.has(id)) facts.set(id, canvasFactsFor(this.sheets, this.info, guest, id, stored.canvas, stored.title, filters, needsCounts(stored.canvas) ? this.counts : undefined, { shareLink: true }));
       const f = await facts.get(id);
-      return f ? { ...f, finance: { enabled: false, rows: [] }, sheet: { ...f.sheet, finance: [], registerFinance: undefined } } : undefined;
+      // One place chosen: figure cards are headed by that place's own name, as for a signed-in viewer.
+      const named = f && filters.placeKeys?.length === 1 ? tree?.find((p) => p.key === normalizeLocationKey(filters.placeKeys![0]!)) : undefined;
+      return f ? { ...f, ...(named ? { placeName: named.label } : {}), finance: { enabled: false, rows: [] }, sheet: { ...f.sheet, finance: [], registerFinance: undefined } } : undefined;
     };
-    const tree = this.counts?.tree ? await this.counts.tree(guest) : undefined;
     drawings = await attachMapCallouts(stored.canvas, stored.projectId, drawings, factsOf, tree);
     const home = await factsOf(homeId);
     const choices: PublicFilterChoices = home ? { ...filterChoices(home), ...(tree ? { placeTree: ownPlaces(tree, filterChoices(home).places) } : {}) } : { periods: [], places: [] };

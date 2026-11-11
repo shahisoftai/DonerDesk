@@ -11,5 +11,5 @@ export default async function EmbeddedCanvasPage({ params }: { params: Promise<{
   const shared = await readPublicCanvas(token);
   if (!shared) return <p className="p-4 text-center text-sm text-slate-500">This link is not available.</p>;
   if (shared.kind === "FROZEN") return <p className="p-4 text-center text-sm"><a className="underline" href={`/api/shared/canvas/${encodeURIComponent(token)}/file`}>Open {shared.title}</a></p>;
-  return <div className="p-2"><PublicCanvasView canvas={shared.canvas} drawings={shared.drawings} models={shared.models} /></div>;
+  return <div className="p-2"><PublicCanvasView canvas={shared.canvas} drawings={shared.drawings} models={shared.models} choices={shared.choices} token={token} /></div>;
 }

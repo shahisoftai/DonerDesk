@@ -24,7 +24,8 @@ export const multiCardBlock = defineBlock<MultiCardProps, MultiCardModel, Canvas
     if (!facts) return { state: "unavailable", reason: "The figures are read when this is opened." };
     const one = facts.locationKeys?.length === 1 ? facts.locationKeys[0]! : undefined;
     const model = resolveMultiCard(p, { sheet: facts.sheet, counts: facts.counts, ...(one ? { place: { key: one, name: facts.placeName ?? one } } : {}) });
-    if (model.items.length > 0 && model.items.every((i) => i.value === null)) return { state: "empty", reason: "Nothing recorded yet for these figures." };
+    // With one place chosen the card stays, saying per figure why it has none ("a total to date is not recorded by place"), instead of disappearing.
+    if (!one && model.items.length > 0 && model.items.every((i) => i.value === null)) return { state: "empty", reason: "Nothing recorded yet for these figures." };
     return { state: "ready", model, notes: model.unverifiedCount > 0 ? [`${model.unverifiedCount} of ${model.items.length} figures are not verified yet.`] : [] };
   },
 });
