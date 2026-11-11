@@ -150,3 +150,9 @@ test("text cards and dropped offsets are checked", () => {
   assert.match(validateMapWidget({ ...base, callouts: { ...base.callouts, offsets: { t1: { dx: 9000, dy: 0 } } } }), /too far/);
   assert.match(validateMapWidget({ view: "RESULTS", callouts: { placeKeys: [], items: [], columns: 3 } }), /text card/);
 });
+
+test("a map's ground (Phase 51): four choices, nothing else, and a map with none keeps its street map", () => {
+  for (const ground of ["STREETS", "SIMPLE", "COUNTRY", "NONE"]) assert.equal(validateMapWidget({ view: "RESULTS", ground }), null, ground);
+  assert.match(validateMapWidget({ view: "RESULTS", ground: "SATELLITE" }), /drawn on/);
+  assert.equal(validateMapWidget({ view: "RESULTS" }), null, "no choice is valid (a map saved earlier)");
+});

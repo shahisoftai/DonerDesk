@@ -2,7 +2,7 @@
  * Scene -> MapLibre sources and layers. Pure data (no map instance), so it is unit-tested without a browser.
  * Every id starts with `dd-`, so the renderer can remove its own layers and never touch the basemap's.
  */
-import type { ContextLayerSpec, FillLayerSpec, MapScene, OverlayLayerSpec, PinsLayerSpec } from "../../domain/model/scene.ts";
+import type { ContextLayerSpec, FillLayerSpec, MapScene, MaskLayerSpec, OverlayLayerSpec, PinsLayerSpec } from "../../domain/model/scene.ts";
 
 export type GeoJson = { type: "FeatureCollection"; features: unknown[] };
 export interface SourceDef {
@@ -14,8 +14,8 @@ export interface SourceDef {
 export interface LayerDef { id: string; type: string; source: string; "source-layer"?: string; filter?: unknown[]; paint: Record<string, unknown>; layout?: Record<string, unknown> }
 export interface Built { sources: SourceDef[]; layers: LayerDef[]; /** Same key = same data, so only filters and paints need updating. */ dataKey: string }
 
-export const IDS = { fill: "dd-fill", outline: "dd-outline", selected: "dd-selected", selectedHalo: "dd-selected-halo", clusters: "dd-clusters", clusterCount: "dd-cluster-count", pins: "dd-pins", overlayLines: "dd-overlay-lines", overlayPoints: "dd-overlay-points", areaLabels: "dd-area-labels" } as const;
-export const SOURCES = { fill: "dd-fill-src", pins: "dd-pins-src", overlay: "dd-overlay-src" } as const;
+export const IDS = { fill: "dd-fill", outline: "dd-outline", selected: "dd-selected", selectedHalo: "dd-selected-halo", clusters: "dd-clusters", clusterCount: "dd-cluster-count", pins: "dd-pins", overlayLines: "dd-overlay-lines", overlayPoints: "dd-overlay-points", areaLabels: "dd-area-labels", mask: "dd-mask" } as const;
+export const SOURCES = { fill: "dd-fill-src", pins: "dd-pins-src", overlay: "dd-overlay-src", mask: "dd-mask-src" } as const;
 const FONT = ["Noto Sans Medium"];
 
 /** Every cluster carries the worst rank of the pins inside it (Phase 49.4), so it can take the worst pin's colour. */
@@ -53,6 +53,12 @@ function fill(spec: FillLayerSpec, overStreets: boolean): { sources: SourceDef[]
   );
   if (spec.labels) layers.push({ id: IDS.areaLabels, type: "symbol", source: SOURCES.fill, filter: ["has", "label"], layout: { "text-field": ["get", "label"], "text-font": FONT, "text-size": 11, "text-allow-overlap": false }, paint: { "text-color": "#0f172a", "text-halo-color": "#ffffff", "text-halo-width": 1.5 } });
   return { sources: [{ id: SOURCES.fill, data }], layers, key: `fill:${spec.outline}:${spec.labels ? "L" : ""}:${spec.features.map((f) => `${f.ref}~${f.color}~${f.label ?? ""}`).join("|")}` };
+}
+
+/** Everything outside the country covered with the ground's colour (Phase 51): one polygon, drawn above the street map and below the data. */
+function mask(spec: MaskLayerSpec): { sources: SourceDef[]; layers: LayerDef[]; key: string } {
+  const data: GeoJson = { type: "FeatureCollection", features: [{ type: "Feature", properties: {}, geometry: spec.geometry }] };
+  return { sources: [{ id: SOURCES.mask, data }], layers: [{ id: IDS.mask, type: "fill", source: SOURCES.mask, paint: { "fill-color": spec.color, "fill-opacity": 1 } }], key: `mask:${spec.color}:${JSON.stringify(spec.geometry.coordinates).length}` };
 }
 
 function pins(spec: PinsLayerSpec): { sources: SourceDef[]; layers: LayerDef[]; key: string } {
@@ -117,8 +123,9 @@ export function buildMapLibreLayers(scene: MapScene, overStreets = false): Built
   const under = scene.layers.filter((l) => l.kind === "CONTEXT" && l.type !== "points");
   const points = scene.layers.filter((l) => l.kind === "CONTEXT" && l.type === "points");
   const rest = scene.layers.filter((l) => l.kind !== "CONTEXT");
-  const ordered = [...under, ...rest.filter((l) => l.kind === "FILL"), ...points, ...rest.filter((l) => l.kind !== "FILL")];
-  const parts = ordered.map((l) => (l.kind === "CONTEXT" ? context(l) : l.kind === "FILL" ? fill(l, overStreets) : l.kind === "PINS" ? pins(l) : overlay(l)));
+  // The mask goes first (it covers the street map); the data is drawn over it.
+  const ordered = [...rest.filter((l) => l.kind === "MASK"), ...under, ...rest.filter((l) => l.kind === "FILL"), ...points, ...rest.filter((l) => l.kind !== "FILL" && l.kind !== "MASK")];
+  const parts = ordered.map((l) => (l.kind === "CONTEXT" ? context(l) : l.kind === "FILL" ? fill(l, overStreets) : l.kind === "PINS" ? pins(l) : l.kind === "MASK" ? mask(l) : overlay(l)));
   return { sources: parts.flatMap((p) => p.sources), layers: parts.flatMap((p) => p.layers), dataKey: parts.map((p) => p.key).join("#") };
 }
 

@@ -1,7 +1,6 @@
 /**
  * The one place that knows which concrete adapters back the map ports. Presentation receives `MapServices` and never imports an adapter.
  */
-import { provincesOf } from "../workplan/domain/site-map";
 import { loadAdmin1File, loadBoundaryFile, loadBoundaryIndex, loadBoundaryManifest } from "@/lib/client/boundary-loader";
 import { admin1FileKey } from "./domain/boundaries/join";
 import type { NamedGeoCollection } from "../workplan/domain/geo/geo-types";
@@ -15,7 +14,6 @@ import type { MapPrefetch } from "./ports/map-prefetch";
 import { FilesBoundarySource } from "./adapters/boundaries/files-boundary-source";
 import { TenantLayerBoundarySource } from "./adapters/boundaries/tenant-layer-boundary-source";
 import { TiledBoundarySource } from "./adapters/boundaries/tiled-boundary-source";
-import { MapLibreAreaTool } from "./adapters/maplibre/area-tool";
 import { MapLibrePinPlacer } from "./adapters/maplibre/pin-placer";
 import { MapLibreRenderer } from "./adapters/maplibre/renderer";
 import type { BoundarySource } from "./ports/boundary-source";
@@ -44,6 +42,9 @@ let bundledAdmin1: Promise<NamedGeoCollection> | undefined;
 const loadWorld = () => (world ??= import("../workplan/domain/geo/world-geo").then((m) => m.WORLD_GEO));
 const loadBundledAdmin1 = () => (bundledAdmin1 ??= import("../workplan/domain/geo/admin1-geo").then((m) => m.ADMIN1_GEO));
 
+/** The province filter lives beside a 650 KB word list of places; a page that only draws a map must not download it, so it is fetched when first needed (a country with no small province file of its own). */
+const lazyProvincesOf = (admin1: NamedGeoCollection, country: string) => import("../workplan/domain/site-map").then((m) => m.provincesOf(admin1, country));
+
 function webGl(): boolean {
   try {
     const canvas = document.createElement("canvas");
@@ -60,7 +61,7 @@ export function createMapServices(options: { signedIn?: boolean } = {}): MapServ
   const basemap = new ProtomapsBasemap("/tiles", undefined, BASEMAP_REGIONS, WORLD_BASEMAP, currentOfflineMap);
   const origin = () => (typeof location === "undefined" ? "" : location.origin);
   // The organisation's own boundary files first; the shipped ones for everything else.
-  const shipped = new FilesBoundarySource(loadWorld, (name) => loadAdmin1File(admin1FileKey(name)), loadBundledAdmin1, loadBoundaryManifest, loadBoundaryFile, provincesOf);
+  const shipped = new FilesBoundarySource(loadWorld, (name) => loadAdmin1File(admin1FileKey(name)), loadBundledAdmin1, loadBoundaryManifest, loadBoundaryFile, lazyProvincesOf);
   const boundaries: BoundarySource = options.signedIn === false ? shipped : new TenantLayerBoundarySource(
     shipped,
     loadBoundaryLayerList,
@@ -70,7 +71,8 @@ export function createMapServices(options: { signedIn?: boolean } = {}): MapServ
   return {
     createRenderer: (container) => MapLibreRenderer.create(container, basemap),
     createPinPlacer: (container, options) => MapLibrePinPlacer.create(container, options, basemap),
-    createDrawingTool: (container, options) => MapLibreAreaTool.create(container, options, basemap),
+    // The drawing tool (and the library behind it) is only fetched when someone starts drawing an outline.
+    createDrawingTool: async (container, options) => (await import("./adapters/maplibre/area-tool")).MapLibreAreaTool.create(container, options, basemap),
     boundaries,
     viewBoundaries: new TiledBoundarySource(boundaries, loadBoundaryManifest, loadBoundaryIndex, origin),
     prefetch: new PmtilesPrefetch("/tiles", origin, undefined, () => { void loadBoundaryManifest(); }),

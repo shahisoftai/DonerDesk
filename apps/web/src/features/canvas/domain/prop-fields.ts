@@ -1,5 +1,5 @@
 import { CHART_KINDS, kindsForTemplate } from "@donordesk/domain/contexts/reporting/chart-spec-v2.js";
-import { METRICS, TILE_COLORS, MAP_SHADINGS, MAP_VIEWS, MAP_COLOR_MODES, MAP_AREA_LABELS, PROJECT_LIST_AFFILIATIONS, COUNT_METRICS, MULTI_CARD_LAYOUTS } from "@donordesk/domain/contexts/dashboards/index.js";
+import { METRICS, TILE_COLORS, MAP_SHADINGS, MAP_VIEWS, MAP_GROUNDS, MAP_COLOR_MODES, MAP_AREA_LABELS, PROJECT_LIST_AFFILIATIONS, COUNT_METRICS, MULTI_CARD_LAYOUTS } from "@donordesk/domain/contexts/dashboards/index.js";
 import { BIG_NUMBER_SOURCES, INFOGRAPHIC_ICONS, SHAPE_NAMES, TONE_NAMES } from "@donordesk/domain/contexts/infographics/index.js";
 import { FILTER_DIMENSIONS, FILTER_CONTROL_STYLES } from "@donordesk/domain/contexts/canvas/index.js";
 import { getAt, setAt } from "./path.ts";
@@ -79,7 +79,8 @@ export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
     { type: "boolean", path: "includeDraft", label: "Include values not yet verified" },
     { type: "list", path: "items", label: "Figures", add: "Add a figure", blank: { source: { kind: "INDICATOR", indicatorId: "", measure: "PERIOD" } }, item: CARD_ITEM },
   ],
-  MAP: [{ type: "select", path: "view", label: "Shows", options: opts(MAP_VIEWS, (v) => (v === "RESULTS" ? "Results by place" : "Where activities are")) }, { type: "select", path: "shading", label: "Shade areas by", empty: "Nothing", options: opts(MAP_SHADINGS.filter((s) => s !== "NONE"), words) }, { type: "text", path: "title", label: "Name of the map" }, { type: "indicator", path: "indicatorId", label: "Indicator it opens on (results map)" },
+  MAP: [{ type: "select", path: "view", label: "Shows", options: opts(MAP_VIEWS, (v) => (v === "RESULTS" ? "Results by place" : "Where activities are")) }, { type: "select", path: "shading", label: "Shade areas by", empty: "Nothing", options: opts(MAP_SHADINGS.filter((s) => s !== "NONE"), words) }, { type: "text", path: "title", label: "Name of the map" },
+    { type: "select", path: "ground", label: "Drawn on", empty: "Streets and terrain (heaviest)", options: opts(MAP_GROUNDS.filter((g) => g !== "STREETS"), (g) => ({ SIMPLE: "Simple: land, water, borders and names", COUNTRY: "This country only", NONE: "Nothing: boundaries only (fastest)" })[g] ?? g) }, { type: "indicator", path: "indicatorId", label: "Indicator it opens on (results map)" },
     { type: "select", path: "colorBy", label: "Colour areas by", empty: "The figure (scale)", options: opts(MAP_COLOR_MODES.filter((m) => m !== "VALUE"), (v) => ({ RULES: "Bands of the figure", CATEGORY: "Area (one colour each)", NONE: "Outlines only" })[v] ?? v) },
     { type: "number", path: "categoryLevel", label: "Areas at level (when coloured by area; 1 = province)", min: 0, max: 4 },
     { type: "list", path: "bands", label: "Bands (when coloured by bands), low to high", add: "Add a band", blank: { from: null, to: null, color: "#2563eb" }, item: [{ type: "number", path: "from", label: "From (empty = lowest)" }, { type: "number", path: "to", label: "Up to (empty = highest)" }, { type: "text", path: "color", label: "Colour (#rrggbb)" }] },

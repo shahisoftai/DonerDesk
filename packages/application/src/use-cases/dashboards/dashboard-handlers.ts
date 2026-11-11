@@ -463,8 +463,9 @@ export class PublicDashboardHandler {
 }
 
 /** The parts of a map's settings that say how it looks (Phase 50.3d), copied into its drawing only when set. */
-function mapStyleOf(q: { colorBy?: string | undefined; categoryLevel?: number | undefined; bands?: unknown; areaLabels?: string | undefined; clickToFilter?: boolean | undefined }): Record<string, unknown> {
+function mapStyleOf(q: { ground?: string | undefined; colorBy?: string | undefined; categoryLevel?: number | undefined; bands?: unknown; areaLabels?: string | undefined; clickToFilter?: boolean | undefined }): Record<string, unknown> {
   const style: Record<string, unknown> = {};
+  if (q.ground) style["ground"] = q.ground;
   if (q.colorBy) style["colorBy"] = q.colorBy;
   if (q.categoryLevel !== undefined) style["categoryLevel"] = q.categoryLevel;
   if (q.bands !== undefined) style["bands"] = q.bands;

@@ -1,3 +1,8 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
@@ -10,6 +15,11 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "100mb",
     },
+  },
+  // The browser gets a chart library with only the series and components we draw (about a third smaller); the server never loads it.
+  webpack(config, { isServer }) {
+    if (!isServer) config.resolve.alias = { ...config.resolve.alias, echarts$: path.join(here, "src/lib/client/echarts-slim.ts") };
+    return config;
   },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000",

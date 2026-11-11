@@ -1,3 +1,4 @@
+import { MESSAGES } from "@/features/i18n/messages";
 import type { ReactNode } from "react";
 import { NOINDEX_METADATA } from "@/lib/seo";
 import { redirect } from "next/navigation";
@@ -66,7 +67,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const navItems = translateNav(navFor({ role: ctx.role, capabilities: ctx.capabilities, external: ctx.external }), translator.t);
 
   return (
-    <I18nProvider initialLocale={locale}>
+    <I18nProvider initialLocale={locale} initialMessages={locale === "en" ? undefined : MESSAGES[locale]}>
     <ToastProvider>
       <OutboxProvider scope={identity?.sub ?? user.email ?? "user"}>
       <RecordHost capabilities={[...ctx.capabilities]}>

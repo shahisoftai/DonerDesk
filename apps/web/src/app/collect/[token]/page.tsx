@@ -1,3 +1,4 @@
+import { MESSAGES } from "@/features/i18n/messages";
 import type { Metadata } from "next";
 import { apiBaseUrl } from "@/lib/server/api-gateway";
 import { PublicCollectForm } from "@/features/collection/presentation/PublicCollectForm";
@@ -30,7 +31,7 @@ export default async function CollectPage({ params }: { params: Promise<{ token:
     );
   }
   return (
-    <I18nProvider initialLocale={locale}>
+    <I18nProvider initialLocale={locale} initialMessages={locale === "en" ? undefined : MESSAGES[locale]}>
     <main className="mx-auto max-w-xl px-4 py-8">
       <h1 className="text-2xl font-bold tracking-tight">{form.name}</h1>
       {form.description && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{form.description}</p>}

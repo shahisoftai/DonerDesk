@@ -32,6 +32,9 @@ import { PlaceTree } from "./PlaceTree";
 import { pathForPlace } from "../domain/drill/place-path";
 import { useBoundaryView } from "./useBoundaryView";
 import { useMapContext } from "./useMapContext";
+import { GROUND_COLOUR, MAP_GROUNDS, groundOf, groundPlan, type MapGround } from "../domain/ground";
+import { countryMask } from "../domain/scene/country-mask";
+import type { MaskLayerSpec } from "../domain/model/scene";
 import { AnalysisPanel } from "./AnalysisPanel";
 import { ContextLayerToggles } from "./ContextLayerToggles";
 import { contextLayers, offeredContext, type ContextToggle } from "../domain/scene/context-layers";
@@ -49,7 +52,7 @@ interface Selection { ref: string | null; placeId: string | null; name: string }
  * The interactive results map on the new engine: a real basemap, smooth zoom, clustering, and drilling from the world down to
  * admin 4 wherever boundary files exist. It composes the pieces; the rules are in `domain/` and the drawing is behind a port.
  */
-export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable, areaStyle, callouts }: ExplorerProps & { onUnavailable: () => void }) {
+export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable, areaStyle, callouts, ground: savedGround }: ExplorerProps & { onUnavailable: () => void }) {
   const services = useMapServices();
   const { t, lang, levelPlural } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
@@ -68,7 +71,17 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
   const periodId = heldPeriod !== undefined ? heldPeriod : ownPeriod;
   const setPeriodId = onPeriodChange ?? setOwnPeriod;
   const [overlay, setOverlay] = useState<Overlay | null>(null);
-  const [ground, setGround] = useState<"auto" | "plain">("auto");
+  const [ground, setGround] = useState<MapGround>(() => groundOf(savedGround));
+  useEffect(() => setGround(groundOf(savedGround)), [savedGround]);
+  // Country only: the country's own provinces, cut out of a world-sized cover. Loaded only when that ground is chosen.
+  const [mask, setMask] = useState<ReturnType<typeof countryMask>>(null);
+  useEffect(() => {
+    const country = path[0];
+    if (ground !== "COUNTRY" || !country) { setMask(null); return; }
+    let live = true;
+    void services.boundaries.load({ name: country.name }, 1).then((units) => { if (live) setMask(units ? countryMask(units) : null); });
+    return () => { live = false; };
+  }, [ground, path[0]?.name, services]);
   const [note, setNote] = useState<BasemapNote | null>(null);
   const [showTable, setShowTable] = useState(false);
   const [manifest, setManifest] = useState<BoundaryManifest | null>(null);
@@ -141,16 +154,18 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
   const mapContext = useMapContext(!staticData && services.signedIn, staticData || !services.signedIn ? undefined : serverMapContext);
   const [contextOn, setContextOn] = useState<ReadonlySet<ContextToggle>>(new Set());
   const toggleContext = (key: ContextToggle) => setContextOn((on) => { const next = new Set(on); if (next.has(key)) next.delete(key); else next.add(key); return next; });
+  const plan = useMemo(() => groundPlan(ground, dark ? "dark" : "light"), [ground, dark]);
   const anchored = useMemo(() => (callouts ? calloutAnchors(callouts.cards, places, joined) : null), [callouts, places, joined]);
   const scene = useMemo(() => {
     const built = buildResultsScene({
       model: model ?? EMPTY_MODEL, layers, joined, unit: indicator?.unit ?? null, selectedRef: selected?.ref ?? null,
-      selectedPlaceId: selected?.placeId ?? null, overlay, basemap: ground === "plain" ? "plain" : dark ? "dark" : "light", lang,
+      selectedPlaceId: selected?.placeId ?? null, overlay, basemap: plan.basemap, lang,
       label: t("maps.summary", { ...summaryCounts(model ?? EMPTY_MODEL) }), areaStyle,
     });
     const context = contextLayers(mapContext, contextOn, typeof location === "undefined" ? "" : location.origin);
-    return context.length > 0 ? { ...built, layers: [...context, ...built.layers] } : built;
-  }, [model, layers, joined, indicator, selected, overlay, ground, dark, lang, t, mapContext, contextOn, areaStyle]);
+    const cover: MaskLayerSpec[] = plan.mask && mask ? [{ kind: "MASK", geometry: mask, color: GROUND_COLOUR[dark ? "dark" : "light"] }] : [];
+    return { ...built, detail: plan.detail, layers: [...cover, ...context, ...built.layers] };
+  }, [model, layers, joined, indicator, selected, overlay, plan, mask, dark, lang, t, mapContext, contextOn, areaStyle]);
 
   // Side-by-side periods: one small map per period on one shared scale.
   const latest = useMemo(() => panelPeriods(periods), [periods]);
@@ -230,9 +245,8 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
         </label>}
         {!compact && (
           <label className="flex items-center gap-1">{t("maps.ground")}
-            <select className="input" value={ground} onChange={(e) => setGround(e.target.value as "auto" | "plain")}>
-              <option value="auto">{t("maps.ground.auto")}</option>
-              <option value="plain">{t("maps.ground.plain")}</option>
+            <select className="input" value={ground} onChange={(e) => setGround(e.target.value as MapGround)}>
+              {MAP_GROUNDS.map((g) => <option key={g} value={g}>{t(`maps.ground.${g}` as never)}</option>)}
             </select>
           </label>
         )}

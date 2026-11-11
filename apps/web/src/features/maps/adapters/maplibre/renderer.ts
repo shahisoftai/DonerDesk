@@ -68,7 +68,7 @@ export class MapLibreRenderer implements MapRenderer, MapProjection {
     const frame = this.map.getContainer();
     frame.setAttribute("data-map-ready", "false");
     this.map.once("idle", () => frame.setAttribute("data-map-ready", "true"));
-    const ground = this.basemap.styleFor(scene.basemap, scene.bounds, scene.lang);
+    const ground = this.basemap.styleFor(scene.basemap, scene.bounds, scene.lang, scene.detail);
     this.note = ground.note;
     if (ground.key !== this.groundKey && (this.ready || this.map.isStyleLoaded())) {
       // Phase 49.1: the data is already on screen; slide the new ground in beneath it instead of reloading the whole style (which dropped our

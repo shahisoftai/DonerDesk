@@ -4,6 +4,7 @@
  */
 export type Bounds = readonly [west: number, south: number, east: number, north: number];
 export type BasemapMode = "light" | "dark" | "plain";
+export type BasemapDetail = "STREETS" | "SIMPLE";
 
 /** What a click or hover landed on: a boundary (by its stable ref) or a pin (by place id). */
 export interface FeatureRef { kind: "REGION" | "PIN"; id: string }
@@ -48,7 +49,9 @@ export interface ContextLayerSpec {
   opacity: number;
   attribution: string;
 }
-export type LayerSpec = ContextLayerSpec | FillLayerSpec | PinsLayerSpec | OverlayLayerSpec;
+/** Hides everything outside one country (Phase 51): the world with the country cut out, drawn over the street map and under the data. */
+export interface MaskLayerSpec { kind: "MASK"; geometry: { type: "Polygon"; coordinates: unknown }; /** The colour of the ground it covers with. */ color: string }
+export type LayerSpec = ContextLayerSpec | FillLayerSpec | PinsLayerSpec | OverlayLayerSpec | MaskLayerSpec;
 
 /** Text shown when pointing at a feature. Plain text: the renderer never treats it as markup. */
 export interface Tip { title: string; lines: readonly string[] }
@@ -57,6 +60,8 @@ export interface MapScene {
   /** The sentence a screen reader gets for the whole map. */
   label: string;
   basemap: BasemapMode;
+  /** How much of the street map to draw: all of it, or land, water, borders and place names only (Phase 51). Absent = all. */
+  detail?: BasemapDetail;
   /** The language of the basemap's own labels ("en", "fr", "es", "ar"); absent = English. */
   lang?: string;
   /** Where to look; null leaves the view alone. */

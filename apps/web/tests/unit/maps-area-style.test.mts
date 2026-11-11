@@ -46,3 +46,25 @@ test("a district with no pin and no drawn area points at the middle of the pinne
   assert.deepEqual(r.placed.map((p) => [p.key, p.lng, p.lat]), [["jumla", 83, 29.5]]);
   assert.equal(r.unplaced, 1);
 });
+
+import { groundPlan, groundOf, NEW_MAP_GROUND, DEFAULT_GROUND, SIMPLE_TILE_LAYERS } from "../../src/features/maps/domain/ground.ts";
+import { countryMask, outerRings } from "../../src/features/maps/domain/scene/country-mask.ts";
+
+test("a map with no saved ground keeps the street map; a new one starts on none; each ground has one plan", () => {
+  assert.equal(groundOf(undefined), DEFAULT_GROUND); assert.equal(DEFAULT_GROUND, "STREETS"); assert.equal(groundOf("nonsense"), "STREETS");
+  assert.equal(NEW_MAP_GROUND, "NONE");
+  assert.deepEqual(groundPlan("NONE", "light"), { basemap: "plain", detail: "SIMPLE", mask: false });
+  assert.deepEqual(groundPlan("SIMPLE", "dark"), { basemap: "dark", detail: "SIMPLE", mask: false });
+  assert.deepEqual(groundPlan("COUNTRY", "light"), { basemap: "light", detail: "SIMPLE", mask: true });
+  assert.deepEqual(groundPlan("STREETS", "light"), { basemap: "light", detail: "STREETS", mask: false });
+  assert.deepEqual([...SIMPLE_TILE_LAYERS], ["earth", "water", "boundaries", "places"]);
+});
+
+test("the country mask is the world with the country's outer rings cut out, never from tile boxes", () => {
+  const poly = (x: number) => ({ type: "Polygon", coordinates: [[[x, 0], [x + 1, 0], [x + 1, 1], [x, 1], [x, 0]], [[x + 0.2, 0.2], [x + 0.4, 0.2], [x + 0.4, 0.4], [x + 0.2, 0.4], [x + 0.2, 0.2]]] });
+  assert.equal(outerRings(poly(0)).length, 1, "a lake inside an area is not cut out");
+  const m = countryMask([{ geometry: poly(0) }, { geometry: { type: "MultiPolygon", coordinates: [poly(3).coordinates, poly(5).coordinates] } }])!;
+  assert.equal(m.coordinates.length, 1 + 3, "the world, then three areas");
+  assert.equal(countryMask([{ geometry: poly(0), tile: { url: "x" } }]), null, "a vector-tile unit is only a box, so no mask");
+  assert.equal(countryMask([]), null);
+});

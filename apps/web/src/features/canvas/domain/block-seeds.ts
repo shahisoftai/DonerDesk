@@ -6,6 +6,8 @@ import { definitionFor } from "@donordesk/domain/contexts/canvas/index.js";
  */
 const SEEDS: Readonly<Record<string, () => unknown>> = {
   CHART: () => ({ spec: { version: 2, kind: "BAR", dataset: { template: "INDICATOR_OVER_TIME", indicatorIds: [], measure: "PERIOD", showTarget: false, includeDraft: false } } }),
+  /** A new map starts with no street map: the fastest ground (Phase 51). A map saved earlier has no choice and keeps the street map. */
+  MAP: () => ({ view: "RESULTS", ground: "NONE" }),
   TABLE: () => ({ query: { indicatorIds: [], measure: "PERIOD", rows: "PERIOD", includeDraft: false } }),
 };
 

@@ -21,6 +21,7 @@ export const MAP_MAX_PLACE_KEYS = 50;
  */
 export const MAP_COLOR_MODES = ["VALUE", "RULES", "CATEGORY", "NONE"] as const;
 export type MapColorMode = (typeof MAP_COLOR_MODES)[number];
+export const MAP_GROUNDS = ["STREETS", "SIMPLE", "COUNTRY", "NONE"] as const;
 export const MAP_AREA_LABELS = ["NONE", "NAME", "VALUE", "NAME_AND_VALUE"] as const;
 export interface MapBand { from: number | null; to: number | null; color: string }
 /**
@@ -41,6 +42,8 @@ export interface MapWidgetQuery {
   title?: string | undefined;
   /** RESULTS: the indicator the map opens on; absent = the first with figures by place. The viewer can still switch. */
   indicatorId?: string | undefined;
+  /** What the map is drawn on (Phase 51): STREETS, SIMPLE, COUNTRY or NONE. Absent = STREETS, so a map saved earlier does not change. */
+  ground?: (typeof MAP_GROUNDS)[number] | undefined;
   colorBy?: MapColorMode | undefined;
   /** CATEGORY: the admin level whose areas each get a colour (1 = provinces). */
   categoryLevel?: number | undefined;
@@ -56,6 +59,7 @@ export interface MapWidgetQuery {
 }
 
 export function mapStyleProblems(q: MapWidgetQuery): string | null {
+  if (q.ground !== undefined && !MAP_GROUNDS.includes(q.ground)) return "Choose what the map is drawn on.";
   if (q.colorBy !== undefined && !MAP_COLOR_MODES.includes(q.colorBy)) return "Choose how the map's areas are coloured.";
   if (q.colorBy === "CATEGORY" && (q.categoryLevel === undefined || !Number.isInteger(q.categoryLevel) || q.categoryLevel < 0 || q.categoryLevel > 4)) return "Choose the level whose areas get their own colour.";
   if (q.colorBy !== "CATEGORY" && q.categoryLevel !== undefined) return "Only a map coloured by area takes a level.";

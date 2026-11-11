@@ -16,15 +16,16 @@ import { useBlockEdit } from "@/components/editing/block-edit-context";
 import type { ExplorerProps } from "@/features/maps/presentation/results-loader";
 
 /** How a dashboard map looks (Phase 50.3d), from its drawing: colour mode, labels and figure cards. */
-export interface MapLook { colorBy?: "VALUE" | "RULES" | "CATEGORY" | "NONE" | undefined; categoryLevel?: number | undefined; bands?: Array<{ from: number | null; to: number | null; color: string }> | undefined; areaLabels?: "NONE" | "NAME" | "VALUE" | "NAME_AND_VALUE" | undefined; callouts?: Array<{ key: string; name: string; text?: string | undefined; placeKey?: string | undefined; figures: Array<{ label: string; value: number | null; unit: string; reason: string | null; unverified: boolean }> }> | undefined; calloutOffsets?: Record<string, { dx: number; dy: number }> | undefined; calloutColumns?: number | undefined }
+export interface MapLook { ground?: "STREETS" | "SIMPLE" | "COUNTRY" | "NONE" | undefined; colorBy?: "VALUE" | "RULES" | "CATEGORY" | "NONE" | undefined; categoryLevel?: number | undefined; bands?: Array<{ from: number | null; to: number | null; color: string }> | undefined; areaLabels?: "NONE" | "NAME" | "VALUE" | "NAME_AND_VALUE" | undefined; callouts?: Array<{ key: string; name: string; text?: string | undefined; placeKey?: string | undefined; figures: Array<{ label: string; value: number | null; unit: string; reason: string | null; unverified: boolean }> }> | undefined; calloutOffsets?: Record<string, { dx: number; dy: number }> | undefined; calloutColumns?: number | undefined }
 
 const THEME = themeFor("DEFAULT");
 /** The map's look as the explorer's props; absent settings leave the explorer as it was. */
-export function lookProps(look: MapLook | undefined, onMove?: ((key: string, offset: { dx: number; dy: number } | null) => void) | null): Pick<ExplorerProps, "areaStyle" | "callouts"> {
+export function lookProps(look: MapLook | undefined, onMove?: ((key: string, offset: { dx: number; dy: number } | null) => void) | null): Pick<ExplorerProps, "areaStyle" | "callouts" | "ground"> {
   if (!look) return {};
+  const ground = look.ground ? { ground: look.ground } : {};
   const style = look.colorBy || look.areaLabels ? { areaStyle: { colorBy: look.colorBy ?? "VALUE", bands: look.bands, byParent: false, palette: THEME.palette, labels: look.areaLabels } } : {};
   const callouts = look.callouts?.length ? { callouts: { cards: look.callouts, columns: look.calloutColumns ?? 3, accent: "#d4a106", offsets: look.calloutOffsets ?? {}, ...(onMove ? { onMove } : { viewerMovable: true }) } } : {};
-  return { ...style, ...callouts };
+  return { ...ground, ...style, ...callouts };
 }
 
 const PlanMapView = lazy(() => import("@/features/workplan/presentation/PlanMapView"));

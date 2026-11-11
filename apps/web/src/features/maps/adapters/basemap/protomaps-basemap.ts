@@ -1,11 +1,12 @@
 import { layers as protomapsLayers, namedFlavor } from "@protomaps/basemaps";
 import { basemapFileFor, BASEMAP_REGIONS, LOW_DETAIL_BASEMAP, NO_BASEMAP, WORLD_BASEMAP, type BasemapRegion } from "../../domain/basemap/regions.ts";
-import type { BasemapMode, Bounds } from "../../domain/model/scene.ts";
+import type { BasemapDetail, BasemapMode, Bounds } from "../../domain/model/scene.ts";
+import { GROUND_COLOUR, SIMPLE_TILE_LAYERS } from "../../domain/ground.ts";
 import type { BasemapSource, BasemapStyle } from "../../ports/basemap-source.ts";
 
 /** The languages the basemap can name places in (it is built for these four). */
 const LABEL_LANGUAGES: readonly string[] = ["en", "fr", "es", "ar"];
-const PLAIN_GROUND: Readonly<Record<"light" | "dark", string>> = { light: "#eef2f6", dark: "#111827" };
+const PLAIN_GROUND = GROUND_COLOUR;
 const ATTRIBUTION = '<a href="https://protomaps.com" target="_blank" rel="noreferrer">Protomaps</a> © <a href="https://openstreetmap.org" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors';
 /** A view smaller than this (square degrees) is "a country or less": on the world file it is worth saying that streets are not shown. */
 const COUNTRY_SIZED = 400;
@@ -51,7 +52,7 @@ export class ProtomapsBasemap implements BasemapSource {
     return inside ? `${this.origin()}${kept.url}` : null;
   }
 
-  styleFor(mode: BasemapMode, view: Bounds | null, language?: string): BasemapStyle {
+  styleFor(mode: BasemapMode, view: Bounds | null, language?: string, detail: BasemapDetail = "STREETS"): BasemapStyle {
     const lang = LABEL_LANGUAGES.includes(language ?? "") ? (language as string) : "en";
     const tone = mode === "dark" ? "dark" : "light";
     const kept = mode === "plain" ? null : this.keptFor(view);
@@ -66,10 +67,13 @@ export class ProtomapsBasemap implements BasemapSource {
       };
     }
     // Icons need a sprite we do not host; place names, roads, water and land stay.
-    const drawn = protomapsLayers("protomaps", namedFlavor(tone), { lang }).filter((l) => !("layout" in l && l.layout && "icon-image" in l.layout));
+    // Icons need a sprite we do not host; place names, roads, water and land stay. SIMPLE keeps only land, water, borders and place names.
+    const drawn = protomapsLayers("protomaps", namedFlavor(tone), { lang })
+      .filter((l) => !("layout" in l && l.layout && "icon-image" in l.layout))
+      .filter((l) => detail === "STREETS" || !("source-layer" in l) || SIMPLE_TILE_LAYERS.includes(l["source-layer"] as string));
     const lowDetail = region.id === this.world?.id && sized(view) < COUNTRY_SIZED;
     return {
-      key: `${region.id}:${tone}:${lang}`,
+      key: `${region.id}:${tone}:${lang}${detail === "SIMPLE" ? ":simple" : ""}`,
       regionId: region.id,
       note: lowDetail ? LOW_DETAIL_BASEMAP : null,
       style: {

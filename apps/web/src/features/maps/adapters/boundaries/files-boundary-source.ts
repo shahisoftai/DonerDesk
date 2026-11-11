@@ -12,7 +12,7 @@ type BundledAdmin1 = () => Promise<NamedGeoCollection>;
 type Admin1File = (country: string) => Promise<NamedGeoCollection | null>;
 type ManifestLoader = () => Promise<BoundaryManifest | null>;
 type FileLoader = (entry: NonNullable<ReturnType<typeof fileFor>>) => Promise<NamedGeoCollection | null>;
-type ProvinceFilter = (admin1: NamedGeoCollection, country: string) => NamedGeoCollection | null;
+type ProvinceFilter = (admin1: NamedGeoCollection, country: string) => NamedGeoCollection | null | Promise<NamedGeoCollection | null>;
 
 /**
  * Boundaries from the files we ship: the bundled world and provinces (levels 0 and 1) and, per country, the static

@@ -2,8 +2,9 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { DEFAULT_LOCALE, LOCALE_COOKIE, isLocale, localeDirection, type Locale } from "../domain/locales";
-import { createTranslator, type Translator } from "../domain/translate";
-import { ENGLISH, MESSAGES } from "../messages";
+import { createTranslator, type Messages, type Translator } from "../domain/translate";
+import { ENGLISH_ONLY as ENGLISH } from "../messages/english";
+import { LOADERS } from "../messages/loaders";
 
 interface I18nValue extends Translator {
   dir: "ltr" | "rtl";
@@ -24,14 +25,24 @@ function cookieLocale(): Locale | null {
 /**
  * Gives every client component the interface language. The server picks the first language from the request; once the page is open
  * the person's own choice (the cookie, which is also there with no connection) wins, so a page the phone kept for offline use still
- * opens in the language it was last used in. All four dictionaries are small and travel together.
+ * opens in the language it was last used in. English is bundled; another language is fetched when it is first used (a page the server
+ * already drew in that language hands it over as `initialMessages`, so its first paint matches and nothing flashes).
  */
-export function I18nProvider({ initialLocale, children }: { initialLocale: Locale; children: ReactNode }) {
+export function I18nProvider({ initialLocale, initialMessages, children }: { initialLocale: Locale; /** The dictionary of `initialLocale` when it is not English: the server has it already. */ initialMessages?: Messages | undefined; children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(initialLocale);
+  const [loaded, setLoaded] = useState<Partial<Record<Locale, Messages>>>(() => ({ en: ENGLISH, ...(initialLocale !== "en" && initialMessages ? { [initialLocale]: initialMessages } : {}) }));
+
+  /** Makes a language ready, then switches to it. A failed fetch leaves the page as it is (English fills any gap). */
+  const switchTo = useCallback(async (next: Locale) => {
+    if (next !== "en" && !loaded[next]) {
+      try { const dict = await LOADERS[next](); setLoaded((l) => ({ ...l, [next]: dict })); } catch { return; }
+    }
+    setLocaleState(next);
+  }, [loaded]);
 
   useEffect(() => {
     const chosen = cookieLocale();
-    if (chosen && chosen !== locale) setLocaleState(chosen);
+    if (chosen && chosen !== locale) void switchTo(chosen);
     // Only on opening: a later change is made through setLocale.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -43,10 +54,10 @@ export function I18nProvider({ initialLocale, children }: { initialLocale: Local
 
   const setLocale = useCallback((next: Locale) => {
     try { document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`; } catch { /* the choice still applies to this visit */ }
-    setLocaleState(next);
-  }, []);
+    void switchTo(next);
+  }, [switchTo]);
 
-  const value = useMemo<I18nValue>(() => ({ ...createTranslator(locale, MESSAGES[locale], ENGLISH), dir: localeDirection(locale), setLocale }), [locale, setLocale]);
+  const value = useMemo<I18nValue>(() => ({ ...createTranslator(locale, loaded[locale] ?? ENGLISH, ENGLISH), dir: localeDirection(locale), setLocale }), [locale, loaded, setLocale]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 

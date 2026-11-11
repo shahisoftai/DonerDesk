@@ -26,6 +26,8 @@ export interface ExplorerProps {
   /** The period is held by the page around the map (so a chart beside it can follow). Omit both to let the map keep its own. */
   periodId?: string | null | undefined;
   onPeriodChange?: ((periodId: string | null) => void) | undefined;
+  /** What the map is drawn on (Phase 51): a dashboard map's own setting; absent = the street map. A person can still switch it on a full explorer. */
+  ground?: import("../domain/ground").MapGround | undefined;
   /** How areas are coloured and labelled (a dashboard map's own setting, Phase 50.3d). */
   areaStyle?: import("../domain/scene/area-style").AreaStyle | undefined;
   /** Figure cards beside chosen areas, already resolved for the person looking. */
