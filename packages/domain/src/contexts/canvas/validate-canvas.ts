@@ -8,6 +8,7 @@ import { actionProblems } from "./actions.js";
 import { paramBindingProblems, parameterProblems } from "./params.js";
 import { definitionFor, pictureOfBlock } from "./blocks/registry.js";
 import { animationProblems } from "./motion.js";
+import { formatProblems } from "./format/capabilities.js";
 import { CANVAS_MODES, CANVAS_PROFILES, CANVAS_SCOPES, CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, CANVAS_MAX_TITLE, type BlockInstance, type CanvasBounds, type Canvas } from "./canvas.js";
 
 export interface CanvasProblem { pageId: string; blockId: string; message: string }
@@ -66,6 +67,7 @@ export function canvasStructureProblems(canvas: Canvas): CanvasProblem[] {
       out.push(...blockStructure(block, page.id));
       for (const message of containerProblems(page, block)) out.push({ pageId: page.id, blockId: block.id, message });
       for (const message of paramBindingProblems(block.paramBindings ?? [], params)) out.push({ pageId: page.id, blockId: block.id, message });
+      for (const message of formatProblems(block.kind, block.format)) out.push({ pageId: page.id, blockId: block.id, message });
       if (block.motion) for (const message of animationProblems(block.motion, pictureOfBlock(block))) out.push({ pageId: page.id, blockId: block.id, message });
       if (block.action) for (const message of actionProblems(block.action, { pageIds: new Set(canvas.pages.map((q) => q.id)), params })) out.push({ pageId: page.id, blockId: block.id, message });
     }

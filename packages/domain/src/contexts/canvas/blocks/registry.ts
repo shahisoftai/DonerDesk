@@ -11,6 +11,7 @@ import { dividerBlock } from "./divider.js";
 import { iconBlock, shapeBlock } from "./shape-blocks.js";
 import { kpiBlock } from "./kpi.js";
 import { metricBlock } from "./metric.js";
+import { multiCardBlock } from "./multi-card.js";
 import { mapBlock } from "./map.js";
 import { chartBlock } from "./chart.js";
 import { tableBlock } from "./table.js";
@@ -23,7 +24,7 @@ const any = (d: unknown): AnyBlock => d as AnyBlock;
 
 export const BLOCK_KINDS = [
   "TEXT", "DIVIDER", "HERO", "BANNER", "KEY_MESSAGES", "QUOTE", "CALLOUT", "LEGEND_NOTES",
-  "KPI", "BIG_NUMBERS", "METRIC", "PROGRESS_RINGS",
+  "KPI", "BIG_NUMBERS", "METRIC", "MULTI_CARD", "PROGRESS_RINGS",
   "CHART", "SMALL_MULTIPLES",
   "MAP", "LOCATION_RESULTS", "LOCATION_COMPARISON", "ACTIVITIES_BY_LOCATION",
   "TABLE", "PROJECT_LIST", "FUNNEL", "FUNDING", "RESULTS_CHAIN", "SECTOR_GRID", "TIMELINE", "THREE_W", "DEMOGRAPHICS", "REACH",
@@ -42,6 +43,7 @@ export const BLOCK_REGISTRY: Readonly<Partial<Record<BlockKind, BlockDefinition<
   ICON: any(iconBlock),
   KPI: any(kpiBlock),
   METRIC: any(metricBlock),
+  MULTI_CARD: any(multiCardBlock),
   MAP: any(mapBlock),
   CHART: any(chartBlock),
   TABLE: any(tableBlock),

@@ -5,6 +5,8 @@ export * from "./saved-chart.js";
 export * from "./viewer-filter.js";
 export * from "./kpi.js";
 export * from "./metric-tile.js";
+export * from "./count-metrics.js";
+export * from "./multi-card.js";
 export * from "./headline-row.js";
 export * from "./narrative.js";
 export * from "./widget-heights.js";

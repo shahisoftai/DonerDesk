@@ -81,6 +81,7 @@ const titled = (title: string) => ({ props: { title } });
 
 /** Props that make a block's own lint rules fire (a rule that can never fail is a stub, so the contract test needs one for each rule that the plain fixture does not trigger). */
 export const LINT_PROBES: Readonly<Partial<Record<BlockKind, ReadonlyArray<unknown>>>> = {
+  MULTI_CARD: [{ items: Array.from({ length: 10 }, (_, i) => ({ source: { kind: "INDICATOR", indicatorId: `i${i}`, measure: "PERIOD" } })), layout: "GRID", columns: 2, includeDraft: false }],
   CHART: [
     { spec: { ...chartSpec, dataset: { ...chartSpec.dataset, indicatorIds: ["a", "b", "c", "d", "e"] } } },
     { spec: { ...chartSpec, colors: ["#ffff99"] } },
@@ -101,6 +102,7 @@ export const BLOCK_FIXTURES: Readonly<Record<BlockKind, BlockFixture>> = {
   KPI: { props: { indicatorId: "a", includeDraft: false }, data: { sheet: SAMPLE_SHEET } },
   BIG_NUMBERS: withFacts({ numbers: [{ label: "People reached", source: "REACH_UNIQUE" }, { label: "Indicator a", source: "INDICATOR", indicatorId: "a" }, { label: "Budget", source: "FINANCE_BUDGET" }, { label: "Not recorded", source: "INDICATOR", indicatorId: "zz" }] }),
   METRIC: { props: { metric: "ACTIVITIES_TOTAL" }, data: { plan: [plan("DONE", "DONE"), plan("IN_PROGRESS", "LATE")] } },
+  MULTI_CARD: { props: { items: [{ source: { kind: "INDICATOR", indicatorId: "a", measure: "CUMULATIVE" }, label: "Children" }, { source: { kind: "COUNT", metric: "DONORS" } }, { source: { kind: "COUNT", metric: "PLACES_REACHED", level: 2 } }], layout: "GRID", columns: 3, includeDraft: false }, data: { sheet: SAMPLE_SHEET, counts: { donors: [{ name: "ECHO" }, { name: "echo " }, { name: "UNICEF" }], placesWithValues: [{ key: "lahore", level: 2, within: ["punjab"] }] } } },
   PROGRESS_RINGS: withFacts({}),
   CHART: { props: { spec: chartSpec }, data: dataset(["a"]) },
   SMALL_MULTIPLES: withFacts({ title: "By indicator" }),

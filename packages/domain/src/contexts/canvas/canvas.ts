@@ -6,6 +6,7 @@ import type { AnimationSpec } from "./motion.js";
 import type { Binding } from "./binding.js";
 import type { BlockAction } from "./actions.js";
 import type { CanvasParameter, ParamBinding } from "./params.js";
+import type { BlockFormat } from "./format/types.js";
 
 export const CANVAS_MODES = ["LIVE", "PUBLISHED_ONLY"] as const;
 export type CanvasMode = (typeof CANVAS_MODES)[number];
@@ -54,6 +55,8 @@ export interface BlockInstance<K extends string = string, P = unknown> {
   /** Present when the block sits inside a container block of the same page. */
   container?: BlockContainer | undefined;
   style?: CanvasBlockStyle | undefined;
+  /** Formatting by capability (Phase 50.2): what the editor's Format tab sets. */
+  format?: BlockFormat | undefined;
   /** Accessible name and long description; required before a web export of a chart or map. */
   alt?: string | undefined;
   description?: string | undefined;

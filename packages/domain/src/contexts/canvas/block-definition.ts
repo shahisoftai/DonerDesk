@@ -5,6 +5,7 @@
  */
 import type { SlotDef } from "./binding.js";
 import type { Picture } from "./motion.js";
+import type { FormatCapability } from "./format/types.js";
 
 export const BLOCK_FAMILIES = ["TEXT", "NUMBERS", "CHARTS", "MAPS", "TABLES", "AI", "MEDIA", "CONTAINERS", "CONTROLS"] as const;
 export type BlockFamily = (typeof BLOCK_FAMILIES)[number];
@@ -53,6 +54,8 @@ export interface BlockDefinition<P, M = unknown, D = unknown> {
   container?: "FRAME" | "TABS" | "REPEAT";
   /** For an AI block: how its words are drafted from the records (a summary, key messages, or an answer to a question). */
   aiDraft?: "SUMMARY" | "MESSAGES" | "QUESTION";
+  /** The formatting sections this block offers (Phase 50.2); absent = its family's set (`FAMILY_FORMATS`). */
+  formats?: readonly FormatCapability[];
   reads?: "FACTS" | "VIEWER_PROJECTS" | "PORTFOLIO";
   defaults(): P;
   validate(props: P): BlockProblem[];

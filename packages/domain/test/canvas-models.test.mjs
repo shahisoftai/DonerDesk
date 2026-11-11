@@ -236,7 +236,7 @@ test("the project list is drawn for the person looking; a bookmarks list with no
 test("a block that reads a project declares the slot: chart-style blocks need one, infographic-style blocks may name one and otherwise use their canvas's", () => {
   const slotOf = (k) => definitionFor(k).slots.find((x) => x.slot === "project");
   const required = BLOCK_KINDS.filter((k) => slotOf(k)?.min === 1);
-  assert.deepEqual(required.sort(), ["CHART", "KPI", "MAP", "METRIC", "TABLE"]);
+  assert.deepEqual(required.sort(), ["CHART", "KPI", "MAP", "METRIC", "MULTI_CARD", "TABLE"]);
   const optional = BLOCK_KINDS.filter((k) => slotOf(k)?.min === 0);
   assert.deepEqual(optional.sort(), BLOCK_KINDS.filter((k) => definitionFor(k).reads === "FACTS").sort(), "every block that reads the project's facts may carry its own project");
   const slots = definitionFor("KPI").slots;

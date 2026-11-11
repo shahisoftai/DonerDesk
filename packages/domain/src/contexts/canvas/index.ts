@@ -25,6 +25,7 @@ export * from "./diff.js";
 export * from "./merge.js";
 export * from "./motion.js";
 export * from "./filters.js";
+export * from "./format/index.js";
 export * from "./theme.js";
 export * from "./export-formats.js";
 export * from "./template.js";
