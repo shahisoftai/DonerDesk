@@ -15,7 +15,7 @@ function sizeOf(c: CalloutCard, columns: number): { w: number; h: number } {
   return { w: 64 * Math.max(1, columns) + 12, h: 28 + Math.ceil(c.figures.length / Math.max(1, columns)) * 30 };
 }
 
-interface Props { projection: MapProjection; cards: readonly CalloutCard[]; columns: number; numbers?: NumbersFormat | undefined; accent: string; offsets?: Readonly<Record<string, Offset>> | undefined; onMove?: ((key: string, offset: Offset | null) => void) | undefined }
+interface Props { projection: MapProjection; cards: readonly CalloutCard[]; columns: number; numbers?: NumbersFormat | undefined; accent: string; offsets?: Readonly<Record<string, Offset>> | undefined; /** Cards whose place has no pin, area or pinned places inside it: said, never placed at a guess. */ unplaced?: number | undefined; onMove?: ((key: string, offset: Offset | null) => void) | undefined }
 
 /**
  * Cards on a map, each joined to its place by a line (Phase 50.3d): figure cards and a person's own text cards. Positions come from the
@@ -23,7 +23,7 @@ interface Props { projection: MapProjection; cards: readonly CalloutCard[]; colu
  * the others are placed around it. While the canvas is edited, a card is dragged with the pointer or moved with the arrow keys
  * (Shift = 10 px); a double-click or Delete puts it back to automatic. A figure nobody recorded reads "Not measured", never 0.
  */
-export function CalloutLayer({ projection, cards, columns, numbers, accent, offsets = {}, onMove }: Props) {
+export function CalloutLayer({ projection, cards, columns, numbers, accent, offsets = {}, unplaced = 0, onMove }: Props) {
   const { t, lang } = useMapText();
   const [, setTick] = useState(0);
   const [drag, setDrag] = useState<{ key: string; dx: number; dy: number } | null>(null);
@@ -66,6 +66,7 @@ export function CalloutLayer({ projection, cards, columns, numbers, accent, offs
 
   return (
     <div className="pointer-events-none absolute inset-0" data-testid="map-callouts">
+      {unplaced > 0 && <p className="absolute bottom-8 start-2 rounded bg-white/90 px-2 py-0.5 text-[11px] text-slate-700 shadow">{unplaced === 1 ? "1 card is not shown: its place has no pin or area on this map." : `${unplaced} cards are not shown: their places have no pin or area on this map.`}</p>}
       <svg className="absolute inset-0 h-full w-full" aria-hidden>
         {boxes.map((b) => { const ex = Math.min(Math.max(b.anchorX, b.x), b.x + b.w); const ey = Math.min(Math.max(b.anchorY, b.y), b.y + b.h); return <g key={b.key}><line x1={b.anchorX} y1={b.anchorY} x2={ex} y2={ey} stroke={accent} strokeWidth={2} /><circle cx={b.anchorX} cy={b.anchorY} r={3} fill={accent} /></g>; })}
       </svg>

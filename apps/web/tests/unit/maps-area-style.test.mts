@@ -39,3 +39,10 @@ test("a figure card points at its place's pin, else the middle of its area, and 
   assert.deepEqual(r.placed.map((p) => [p.key, p.lng, p.lat]), [["humla", 81, 30], ["doti", 2.5, 0.5]]);
   assert.equal(r.unplaced, 1);
 });
+
+test("a district with no pin and no drawn area points at the middle of the pinned sites inside it", () => {
+  const places = [{ id: "j", name: "Jumla" }, { id: "s1", name: "Site A", parentId: "j", latitude: 29, longitude: 82 }, { id: "s2", name: "Site B", parentId: "j", latitude: 30, longitude: 84 }, { id: "x", name: "Empty" }];
+  const r = calloutAnchors([{ key: "jumla" }, { key: "empty" }], places, []);
+  assert.deepEqual(r.placed.map((p) => [p.key, p.lng, p.lat]), [["jumla", 83, 29.5]]);
+  assert.equal(r.unplaced, 1);
+});
