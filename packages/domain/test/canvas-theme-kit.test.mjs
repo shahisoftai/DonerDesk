@@ -1,30 +1,31 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  GALLERY_THEMES, THEME_SPECS, THEME_FAMILIES, THEME_TONES, galleryTheme, themeContrastProblems, buildTheme, paletteProblems, categoricalPalette, distinguishable, sequentialScale, divergingScale,
+  galleryThemes, THEME_SPECS, THEME_FAMILIES, THEME_TONES, galleryTheme, themeContrastProblems, buildTheme, paletteProblems, categoricalPalette, distinguishable, sequentialScale, divergingScale,
   simulate, distance, ensureContrast, mix, parseHex, fromHsl, toHsl, FONTS, FONT_PAIRS, fontById, stackFor, fontsFor, BUNDLED_FONTS, themeById, listThemes, CANVAS_THEME_IDS, contrastRatio,
   FRAME_PRESETS, frameTokens, resolveFrame, frameStyleProblems, blankCanvas, addBlock, componentFromBlocks, addSlot, reviseComponent, instantiate, detach, updateInstances, componentProblems, canvasStructureProblems, getAt, setAt,
 } from "../dist/index.js";
 
+const GALLERY = galleryThemes();
 const ok = (r) => { assert.equal(r.ok, true, r.ok ? "" : r.reason); return r; };
 
 test("the gallery has 60 curated looks in four tones, every id unique and every theme registered for the composer", () => {
   assert.ok(THEME_SPECS.length >= 60, `found ${THEME_SPECS.length}`);
-  assert.equal(GALLERY_THEMES.length, THEME_SPECS.length * THEME_TONES.length);
-  assert.equal(new Set(GALLERY_THEMES.map((t) => t.id)).size, GALLERY_THEMES.length);
+  assert.equal(GALLERY.length, THEME_SPECS.length * THEME_TONES.length);
+  assert.equal(new Set(GALLERY.map((t) => t.id)).size, GALLERY.length);
   for (const f of THEME_FAMILIES) assert.ok(THEME_SPECS.some((s) => s.family === f), `family ${f} is empty`);
-  for (const t of GALLERY_THEMES) assert.equal(themeById(t.id)?.id, t.id);
+  for (const t of GALLERY) assert.equal(themeById(t.id)?.id, t.id);
   assert.equal(galleryTheme("OCHA_BLUE", "DARK").id, "OCHA_BLUE:dark");
   assert.ok(CANVAS_THEME_IDS.includes("OCHA_BLUE") && listThemes().length >= 65);
 });
 
 test("every theme in every tone meets the contrast rules", () => {
-  const bad = GALLERY_THEMES.map((t) => [t.id, themeContrastProblems(t)]).filter(([, p]) => p.length > 0);
+  const bad = GALLERY.map((t) => [t.id, themeContrastProblems(t)]).filter(([, p]) => p.length > 0);
   assert.deepEqual(bad.map(([id, p]) => `${id}: ${p.map((x) => x.pair).join(", ")}`), []);
 });
 
 test("every theme palette is distinguishable for normal vision and each colour-blindness, and has enough colours", () => {
-  for (const t of GALLERY_THEMES) {
+  for (const t of GALLERY) {
     assert.ok(t.palette.length >= 4, `${t.id} has ${t.palette.length} colours`);
     assert.deepEqual(paletteProblems(t.palette, 12), [], `${t.id} has look-alike colours`);
   }

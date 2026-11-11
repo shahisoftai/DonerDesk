@@ -27,5 +27,12 @@ export function contrastProblems(theme: CanvasTheme): ContrastProblem[] {
 /** The id a canvas uses for a theme loaded from a file (Phase 50.5). */
 export const CUSTOM_THEME_ID = "CUSTOM";
 /** A canvas's own theme: the one loaded from a file when it chose it, else the named one. A file theme is rebuilt from its spec, so every contrast rule holds. */
-export const canvasThemeOf = (c: { themeId: string; options?: { themeSpec?: import("./theme-kit/build-theme.js").ThemeSpec | undefined } | undefined }): CanvasTheme =>
-  c.themeId === CUSTOM_THEME_ID && c.options?.themeSpec ? buildTheme(c.options.themeSpec) : themeFor(c.themeId);
+const CUSTOM_BUILT = new WeakMap<object, CanvasTheme>();
+export const canvasThemeOf = (c: { themeId: string; options?: { themeSpec?: import("./theme-kit/build-theme.js").ThemeSpec | undefined } | undefined }): CanvasTheme => {
+  const spec = c.themeId === CUSTOM_THEME_ID ? c.options?.themeSpec : undefined;
+  if (!spec) return themeFor(c.themeId);
+  // Every block asks for the page's theme: build a file's theme once per spec, not once per block and render.
+  let built = CUSTOM_BUILT.get(spec);
+  if (!built) { built = buildTheme(spec); CUSTOM_BUILT.set(spec, built); }
+  return built;
+};

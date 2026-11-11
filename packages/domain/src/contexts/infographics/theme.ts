@@ -206,9 +206,17 @@ const REGISTERED = new Map<string, InfographicTheme>();
 /** The theme gallery registers its themes here when it loads, so one lookup serves the screen and the file composer. */
 export function registerThemes(themes: ReadonlyArray<InfographicTheme>): void { for (const t of themes) REGISTERED.set(t.id, t); }
 
+let loader: ((id: string) => InfographicTheme | undefined) | undefined;
+/** A source of themes built only when asked for (the gallery): a lookup that misses the table asks it, and keeps the answer. */
+export function setThemeLoader(load: (id: string) => InfographicTheme | undefined): void { loader = load; }
+
 export function themeById(id: string | undefined): InfographicTheme | undefined {
   if (!id) return undefined;
-  return (INFOGRAPHIC_THEMES as Readonly<Record<string, InfographicTheme | undefined>>)[id] ?? REGISTERED.get(id);
+  const known = (INFOGRAPHIC_THEMES as Readonly<Record<string, InfographicTheme | undefined>>)[id] ?? REGISTERED.get(id);
+  if (known || !loader) return known;
+  const built = loader(id);
+  if (built) REGISTERED.set(id, built);
+  return built;
 }
 
 /** The theme a design is drawn with: its own, or `DEFAULT` for a design saved before themes existed. A `BRAND` design needs the organization's derived theme, supplied by the caller. */

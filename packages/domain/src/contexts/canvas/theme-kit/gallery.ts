@@ -3,7 +3,7 @@
  * every one meets the contrast rules. A theme id is the spec id (light) or `<id>:dark`, `<id>:print`, `<id>:high_contrast`. The first
  * five legacy infographic themes stay as they were; these are the new ones. A spec is a row: add a look by adding a line.
  */
-import { registerThemes, type InfographicTheme } from "../../infographics/theme.js";
+import { setThemeLoader, type InfographicTheme } from "../../infographics/theme.js";
 import { buildTheme, THEME_TONES, withTone, type Neutral, type ThemeSpec, type ThemeTone } from "./build-theme.js";
 
 export const THEME_FAMILIES = ["HUMANITARIAN", "DONOR", "SECTOR", "BOLD", "SOFT", "EARTH", "EDITORIAL", "PRINT"] as const;
@@ -83,10 +83,27 @@ const toSpec = (x: Row): ThemeSpec => ({ id: x.id, label: x.label, description: 
 
 export const THEME_SPECS: readonly (ThemeSpec & { family: ThemeFamily })[] = ROWS.map((x) => ({ ...toSpec(x), family: x.family }));
 
-/** Every theme in the gallery in every tone. Built once, registered so `themeById` and the file composer find them. */
-export const GALLERY_THEMES: readonly InfographicTheme[] = THEME_SPECS.flatMap((s) => THEME_TONES.map((tone) => (tone === "LIGHT" ? buildTheme(s) : withTone(s, tone))));
-registerThemes(GALLERY_THEMES);
+const SPEC_BY_ID = new Map(THEME_SPECS.map((s) => [s.id, s]));
+const BUILT = new Map<string, InfographicTheme>();
+
+/** One gallery theme, built the first time it is asked for (60 themes x 4 tones cost seconds of colour maths, and a page uses one). `id:tone` names a non-light tone. */
+function buildGalleryTheme(id: string): InfographicTheme | undefined {
+  const cached = BUILT.get(id);
+  if (cached) return cached;
+  const [base, tone] = id.split(":");
+  const spec = base ? SPEC_BY_ID.get(base) : undefined;
+  if (!spec) return undefined;
+  const wanted = THEME_TONES.find((t) => (tone ? t.toLowerCase() === tone : t === "LIGHT"));
+  if (!wanted) return undefined;
+  const theme = wanted === "LIGHT" ? buildTheme(spec) : withTone(spec, wanted);
+  BUILT.set(id, theme);
+  return theme;
+}
+setThemeLoader(buildGalleryTheme);
+
+/** Every theme in the gallery in every tone, built on first call (use `galleryTheme` for one). */
+export const galleryThemes = (): readonly InfographicTheme[] => THEME_SPECS.flatMap((s) => THEME_TONES.map((tone) => buildGalleryTheme(tone === "LIGHT" ? s.id : `${s.id}:${tone.toLowerCase()}`) as InfographicTheme));
 
 export const GALLERY_IDS: readonly string[] = THEME_SPECS.map((s) => s.id);
-export const galleryTheme = (id: string, tone: ThemeTone = "LIGHT"): InfographicTheme | undefined => GALLERY_THEMES.find((t) => t.id === (tone === "LIGHT" ? id : `${id}:${tone.toLowerCase()}`));
+export const galleryTheme = (id: string, tone: ThemeTone = "LIGHT"): InfographicTheme | undefined => buildGalleryTheme(tone === "LIGHT" ? id : `${id}:${tone.toLowerCase()}`);
 export const themesInFamily = (family: ThemeFamily): ThemeSpec[] => THEME_SPECS.filter((s) => s.family === family);

@@ -45,11 +45,15 @@ const loadBundledAdmin1 = () => (bundledAdmin1 ??= import("../workplan/domain/ge
 /** The province filter lives beside a 650 KB word list of places; a page that only draws a map must not download it, so it is fetched when first needed (a country with no small province file of its own). */
 const lazyProvincesOf = (admin1: NamedGeoCollection, country: string) => import("../workplan/domain/site-map").then((m) => m.provincesOf(admin1, country));
 
+let webGlAnswer: boolean | undefined;
+/** Whether WebGL starts here. Opening a context is slow on some machines, and the answer cannot change, so it is asked once per page. */
 function webGl(): boolean {
+  if (webGlAnswer !== undefined) return webGlAnswer;
   try {
     const canvas = document.createElement("canvas");
-    return !!(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
-  } catch { return false; }
+    webGlAnswer = !!(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
+  } catch { webGlAnswer = false; }
+  return webGlAnswer;
 }
 
 /**

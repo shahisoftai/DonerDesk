@@ -16,11 +16,6 @@ const nextConfig = {
       bodySizeLimit: "100mb",
     },
   },
-  // The browser gets a chart library with only the series and components we draw (about a third smaller); the server never loads it.
-  webpack(config, { isServer }) {
-    if (!isServer) config.resolve.alias = { ...config.resolve.alias, echarts$: path.join(here, "src/lib/client/echarts-slim.ts") };
-    return config;
-  },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000",
   },
