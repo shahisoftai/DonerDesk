@@ -3,10 +3,12 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import {
   addBlock, addPage, commit, canRedo, canUndo, definitionFor, duplicateBlock, moveBlock, redo, removeBlock, removePage, resizeBlock, setBindings, setBlockAlt, setBlockMotion, type AnimationSpec, setHidden, setLocked,
-  setContainer, setTitle, startHistory, undo, updateProps, projectOf, EMPTY_SELECTION, extendTo, pruneSelection, selectOne, toggle,
+  setContainer, setTitle, startHistory, undo, updateProps, projectOf, EMPTY_SELECTION, extendTo, pruneSelection, selectOne, toggle, setBlockFormat, setInteraction, pasteFormat,
+  type BlockFormat, type FormatCapability, type InteractionEffect,
   type ArrangeResult, type BlockInstance, type Canvas, type EditResult, type History, type Selection,
 } from "@donordesk/domain/contexts/canvas/index.js";
 import { seedProps } from "../domain/block-seeds";
+import { STARTER_SETS, starterTop } from "../editor/domain/starters";
 
 const newId = (prefix: string): string => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
@@ -53,6 +55,8 @@ export function useCanvasEditor(initial: Canvas, defaultProjectId: string | unde
     restore: (title: string, from: Canvas) => { setHistory((h) => commit(h, { ...h.present, title, pages: from.pages, profile: from.profile, mode: from.mode, language: from.language, themeId: from.themeId, ...(from.options ? { options: from.options } : {}) })); setPageId(from.pages[0]?.id ?? ""); setSelected(null); },
     rename: (title: string) => run(setTitle(latest.current, title)),
     setMeta: (change: Partial<Pick<Canvas, "profile" | "themeId" | "language" | "mode">>) => setHistory((h) => commit(h, { ...h.present, ...change })),
+    /** A theme loaded from a file becomes the canvas's look, as one undo step. */
+    loadTheme: (spec: NonNullable<Canvas["options"]>["themeSpec"]) => setHistory((h) => commit(h, { ...h.present, themeId: "CUSTOM", options: { ...(h.present.options ?? {}), themeSpec: spec } })),
     add(kind: string) {
       const id = newId("b");
       let r = addBlock(latest.current, pageId, { id, kind, props: seedProps(kind) });
@@ -60,6 +64,45 @@ export function useCanvasEditor(initial: Canvas, defaultProjectId: string | unde
       const project = defaultProjectId ?? latest.current.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean) ?? fallbackProjectId;
       if (r.ok && project && definitionFor(kind)?.slots.some((s) => s.slot === "project")) r = setBindings(r.canvas, id, [{ type: "PROJECT", slot: "project", projectId: project }]);
       if (run(r).ok) setSelected(id);
+    },
+    /** Adds a block where it was dropped: the cell under the pointer (moved down by the grid if that space is taken), as one undo step. */
+    addAt(kind: string, cell: { x: number; y: number }) {
+      const id = newId("b");
+      let r = addBlock(latest.current, pageId, { id, kind, props: seedProps(kind) });
+      const project = defaultProjectId ?? latest.current.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean) ?? fallbackProjectId;
+      if (r.ok && project && definitionFor(kind)?.slots.some((s) => s.slot === "project")) r = setBindings(r.canvas, id, [{ type: "PROJECT", slot: "project", projectId: project }]);
+      if (r.ok) { const w = r.canvas.pages.flatMap((p) => p.blocks).find((b) => b.id === id)?.bounds.w ?? 1; const m = moveBlock(r.canvas, id, Math.max(0, Math.min(cell.x, 12 - w)), cell.y); if (m.ok) r = m; }
+      if (run(r).ok) setSelected(id);
+    },
+    /** A starter set: several blocks laid out together below the page's content, as one undo step. */
+    addStarter(setId: string) {
+      const set = STARTER_SETS.find((s) => s.id === setId);
+      if (!set) return;
+      let c = latest.current;
+      const top = starterTop(c.pages.find((p) => p.id === pageId)?.blocks ?? []);
+      const ids: string[] = [];
+      let holder: string | undefined;
+      for (const sb of set.blocks) {
+        const id = newId("b");
+        let r = addBlock(c, pageId, { id, kind: sb.kind, props: sb.props });
+        if (!r.ok) { setMessage(r.reason); return; }
+        r = moveBlock(r.canvas, id, sb.x, top + sb.y); if (r.ok) r = resizeBlock(r.canvas, id, sb.w, sb.h);
+        if (!r.ok) { setMessage(r.reason); return; }
+        c = r.canvas;
+        const project = defaultProjectId ?? fallbackProjectId;
+        if (project && definitionFor(sb.kind)?.slots.some((s) => s.slot === "project")) { const b = setBindings(c, id, [{ type: "PROJECT", slot: "project", projectId: project }]); if (b.ok) c = b.canvas; }
+        if (sb.format) c = { ...c, pages: c.pages.map((p) => ({ ...p, blocks: p.blocks.map((b) => (b.id === id ? { ...b, format: sb.format as BlockFormat } : b)) })) };
+        if (definitionFor(sb.kind)?.container) holder = id; else if (holder) { const h = setContainer(c, id, { id: holder }); if (h.ok) c = h.canvas; }
+        ids.push(id);
+      }
+      setHistory((h) => commit(h, c)); setMessage(null); setSelection({ ids });
+    },
+    /** One formatting section for every selected block: one undo step. */
+    setFormat: (ids: readonly string[], capability: FormatCapability, settings: BlockFormat[FormatCapability] | undefined) => apply(setBlockFormat(latest.current, ids, capability, settings as never)),
+    pasteFormat: (fromId: string, toIds: readonly string[]) => apply(pasteFormat(latest.current, fromId, toIds)),
+    setInteraction(sourceId: string, targetId: string, effect: InteractionEffect) {
+      const next = setInteraction(latest.current, sourceId, targetId, effect);
+      if (next) { setHistory((h) => commit(h, next)); setMessage(null); } else setMessage("That block cannot react that way.");
     },
     setProps: (id: string, props: unknown) => withBlock(id, (c) => updateProps(c, id, props)),
     setProject: (id: string, projectId: string) => withBlock(id, (c) => setBindings(c, id, [{ type: "PROJECT", slot: "project", projectId }])),

@@ -98,6 +98,8 @@ export interface CanvasOptions {
   locationKeys?: string[] | undefined;
   acknowledgement?: string | undefined;
   subtitle?: string | undefined;
+  /** A theme loaded from a file for this canvas (Phase 50.5); used when `themeId` is "CUSTOM". */
+  themeSpec?: import("./theme-kit/build-theme.js").ThemeSpec | undefined;
 }
 
 export interface Canvas {
@@ -112,6 +114,8 @@ export interface Canvas {
   options?: CanvasOptions | undefined;
   /** The choices a viewer can make (Phase 48.3). */
   params?: CanvasParameter[] | undefined;
+  /** How blocks react to clicks in other blocks (Phase 50.4); absent = every block filters every other. */
+  interactions?: Record<string, Record<string, "FILTER" | "HIGHLIGHT" | "NONE">> | undefined;
   /** Bumped by every save; a save quotes the one it started from. */
   revision: number;
 }

@@ -17,6 +17,7 @@ export const canvasEn = {
   "canvas.block.KPI": "Indicator tile",
   "canvas.block.BIG_NUMBERS": "Big numbers",
   "canvas.block.METRIC": "Number tile",
+  "canvas.block.MULTI_CARD": "Figure card",
   "canvas.block.PROGRESS_RINGS": "Progress rings",
   "canvas.block.CHART": "Chart",
   "canvas.block.SMALL_MULTIPLES": "Charts side by side",

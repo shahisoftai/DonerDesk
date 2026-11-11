@@ -10,6 +10,7 @@ export const tableBlock = defineBlock<TableProps, ReportTable, DatasetResult>({
   kind: "TABLE",
   family: "TABLES",
   labelKey: "canvas.block.TABLE",
+  highlightable: true,
   requiresSetup: true,
   defaults: () => ({ query: undefined as unknown as ReportQuery }),
   validate: ({ query }) => (query ? validateReportQuery(query).slice(0, 1).map((p) => ({ message: p.message })) : [{ message: "A table needs its question." }]),

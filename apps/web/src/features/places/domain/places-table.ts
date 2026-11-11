@@ -30,7 +30,7 @@ export function cellFor(p: PlaceItem, column: PlaceColumn, levelLabel: (level: n
     case "level": return levelLabel(p.adminLevel);
     case "aliases": return p.aliases.join("; ");
     case "code": return p.code ?? "";
-    case "facility": return p.facility ? "Yes" : "No";
+    case "facility": return p.facility ? (p.facilityType ?? "Yes") : "No";
     case "pin": return p.latitude !== undefined && p.longitude !== undefined ? "Yes" : "No";
     case "latitude": return p.latitude === undefined ? "" : String(p.latitude);
     case "longitude": return p.longitude === undefined ? "" : String(p.longitude);

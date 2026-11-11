@@ -23,6 +23,7 @@ import { useMapEngine } from "@/features/maps/presentation/useMapEngine";
 import { PlaceShapeEditor } from "./PlaceShapeEditor";
 import { BulkPlaceWalk } from "./BulkPlaceWalk";
 import { BoundaryChangesCard } from "./BoundaryChangesCard";
+import { FacilityTypesCard } from "./FacilityTypesCard";
 import { PlacePinEditor } from "./PlacePinEditor";
 
 interface Draft {
@@ -141,6 +142,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
   return (
     <div className="mt-6 space-y-6">
       <BoundaryChangesCard places={places} />
+      <FacilityTypesCard />
       {unconfirmed && (
         <section className="card" aria-labelledby="confirm-title">
           <h2 id="confirm-title" className="text-sm font-semibold">{C.confirmTitle}</h2>

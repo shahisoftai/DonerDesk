@@ -149,6 +149,19 @@ export async function registerPlaceRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // The organisation's own facility types (Phase 50.3b). Reading is for every member; changing is an administrator's.
+  app.get("/v1/organization/facility-types", async (req) => {
+    const r = await req.container.handlers.getFacilityTypes.handle(ctx(req));
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+  app.put("/v1/organization/facility-types", async (req) => {
+    const body = z.object({ types: z.array(z.object({ key: z.string().trim().min(1).max(40), label: z.string().trim().min(1).max(80), sector: z.string().max(40).optional() })).max(40) }).parse(req.body);
+    const r = await req.container.handlers.saveFacilityTypes.handle(ctx(req), body);
+    if (!r.ok) throw r.error;
+    return { types: r.value };
+  });
+
   // People living within rings around chosen points, from the population grid (Phase 49.7). Public population data only; nothing stored.
   app.post("/v1/projects/:projectId/analysis/population", async (req) => {
     const body = z.object({ rings: z.array(z.object({ lng: z.number().min(-180).max(180), lat: z.number().min(-90).max(90), km: z.number().min(0.1).max(100) })).min(1).max(50) }).parse(req.body);

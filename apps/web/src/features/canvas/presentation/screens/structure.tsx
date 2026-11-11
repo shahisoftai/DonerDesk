@@ -52,7 +52,7 @@ const FILTER_LABEL: Record<string, string> = { PERIOD: "Period", PROJECT: "Proje
 export function FilterBarScreen({ model }: Frame & { model: BlockModel<{ dimensions: string[] }> }) {
   if (model.state !== "ready") return null;
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900" role="group" aria-label="Filters">
+    <div className="hidden flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900 [[data-editing]_&]:flex" role="group" aria-label="Filters">
       {model.model.dimensions.map((d) => <span key={d} className="rounded-full border border-slate-300 bg-white px-3 py-0.5 text-xs dark:border-slate-600 dark:bg-slate-800">{FILTER_LABEL[d] ?? d}: all</span>)}
     </div>
   );

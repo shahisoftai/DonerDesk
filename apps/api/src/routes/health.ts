@@ -29,6 +29,8 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "HomePin", field: "ref" },
   { model: "HomeLayout", field: "layoutJson" },
   { model: "TenantMapSettings", field: "settingsJson" },
+  { model: "Place", field: "facilityType" },
+  { model: "Organization", field: "facilityTypesJson" },
   { model: "Canvas", field: "docJson" },
   { model: "SetupDefaultPack", field: "packJson" },
   { model: "MapOverlay", field: "storageKey" },

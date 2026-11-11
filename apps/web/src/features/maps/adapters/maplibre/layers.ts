@@ -14,7 +14,7 @@ export interface SourceDef {
 export interface LayerDef { id: string; type: string; source: string; "source-layer"?: string; filter?: unknown[]; paint: Record<string, unknown>; layout?: Record<string, unknown> }
 export interface Built { sources: SourceDef[]; layers: LayerDef[]; /** Same key = same data, so only filters and paints need updating. */ dataKey: string }
 
-export const IDS = { fill: "dd-fill", outline: "dd-outline", selected: "dd-selected", selectedHalo: "dd-selected-halo", clusters: "dd-clusters", clusterCount: "dd-cluster-count", pins: "dd-pins", overlayLines: "dd-overlay-lines", overlayPoints: "dd-overlay-points" } as const;
+export const IDS = { fill: "dd-fill", outline: "dd-outline", selected: "dd-selected", selectedHalo: "dd-selected-halo", clusters: "dd-clusters", clusterCount: "dd-cluster-count", pins: "dd-pins", overlayLines: "dd-overlay-lines", overlayPoints: "dd-overlay-points", areaLabels: "dd-area-labels" } as const;
 export const SOURCES = { fill: "dd-fill-src", pins: "dd-pins-src", overlay: "dd-overlay-src" } as const;
 const FONT = ["Noto Sans Medium"];
 
@@ -43,7 +43,7 @@ function tiledFill(spec: FillLayerSpec, overStreets: boolean, tile: { url: strin
 function fill(spec: FillLayerSpec, overStreets: boolean): { sources: SourceDef[]; layers: LayerDef[]; key: string } {
   const tile = spec.features[0]?.tile;
   if (tile && spec.features.every((f) => f.tile?.url === tile.url)) return tiledFill(spec, overStreets, tile);
-  const data: GeoJson = { type: "FeatureCollection", features: spec.features.map((f) => ({ type: "Feature", properties: { ref: f.ref, name: f.name, color: f.color }, geometry: f.geometry })) };
+  const data: GeoJson = { type: "FeatureCollection", features: spec.features.map((f) => ({ type: "Feature", properties: { ref: f.ref, name: f.name, color: f.color, ...(f.label ? { label: f.label } : {}) }, geometry: f.geometry })) };
   const selected = spec.selectedRef ?? "";
   const layers: LayerDef[] = [{ id: IDS.fill, type: "fill", source: SOURCES.fill, paint: { "fill-color": ["get", "color"], "fill-opacity": overStreets ? spec.opacity * 0.62 : spec.opacity } }];
   if (spec.outline) layers.push({ id: IDS.outline, type: "line", source: SOURCES.fill, paint: { "line-color": "#475569", "line-width": 0.8, "line-opacity": 0.9 } });
@@ -51,7 +51,8 @@ function fill(spec: FillLayerSpec, overStreets: boolean): { sources: SourceDef[]
     { id: IDS.selectedHalo, type: "line", source: SOURCES.fill, filter: ["==", ["get", "ref"], selected], paint: { "line-color": "#ffffff", "line-width": 5 } },
     { id: IDS.selected, type: "line", source: SOURCES.fill, filter: ["==", ["get", "ref"], selected], paint: { "line-color": "#0f172a", "line-width": 2.5 } },
   );
-  return { sources: [{ id: SOURCES.fill, data }], layers, key: `fill:${spec.outline}:${spec.features.map((f) => `${f.ref}~${f.color}`).join("|")}` };
+  if (spec.labels) layers.push({ id: IDS.areaLabels, type: "symbol", source: SOURCES.fill, filter: ["has", "label"], layout: { "text-field": ["get", "label"], "text-font": FONT, "text-size": 11, "text-allow-overlap": false }, paint: { "text-color": "#0f172a", "text-halo-color": "#ffffff", "text-halo-width": 1.5 } });
+  return { sources: [{ id: SOURCES.fill, data }], layers, key: `fill:${spec.outline}:${spec.labels ? "L" : ""}:${spec.features.map((f) => `${f.ref}~${f.color}~${f.label ?? ""}`).join("|")}` };
 }
 
 function pins(spec: PinsLayerSpec): { sources: SourceDef[]; layers: LayerDef[]; key: string } {

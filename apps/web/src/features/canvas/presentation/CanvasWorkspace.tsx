@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CANVAS_PROFILES, convertBlock, setFlag, altPack, definitionFor, canPublish, NO_FILTER, drillUp, isContainerKind, canvasAsDesign, canvasJson, isFiltered, pickToFilter, type CrossFilter, canvasProblems, canvasToWidgets, checkCanvas, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
+import { CANVAS_PROFILES, convertBlock, setFlag, altPack, definitionFor, canPublish, NO_FILTER, drillUp, isContainerKind, canvasAsDesign, canvasJson, isFiltered, pickToFilter, canvasThemeOf, type CrossFilter, canvasProblems, canvasToWidgets, checkCanvas, type Canvas, type CanvasProblem } from "@donordesk/domain/contexts/canvas/index.js";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { deleteCanvasAction, duplicateCanvasAction, previewCanvasAction, resolveCanvasAction, saveCanvasAction, subscribeCanvasAction } from "@/lib/actions/canvas";
 import type { CanvasView, ResolvedCanvas } from "@/lib/server/schemas-canvas";
@@ -10,7 +10,6 @@ import { blockLabelKey } from "../domain/canvas-copy";
 import { BlockFrame } from "./BlockFrame";
 import { downloadPicture } from "./download-picture";
 import { CanvasPageGrid } from "./CanvasPageGrid";
-import { BlockPalette } from "./editor/BlockPalette";
 import type { IndicatorOption } from "./editor/FieldWidget";
 import { Inspector } from "./editor/Inspector";
 import { PublishPanel } from "./PublishPanel";
@@ -19,6 +18,7 @@ import { ConvertDialog } from "./ConvertDialog";
 import { LayersPanel } from "./LayersPanel";
 import { ShortcutSheet } from "./ShortcutSheet";
 import { ThemePicker } from "./ThemePicker";
+import { ThemeFileControl } from "./ThemeFileControl";
 import { useEditorSession } from "./use-editor-session";
 import { selectByRectangle } from "../domain/command-handlers";
 import { VersionsPanel } from "./VersionsPanel";
@@ -28,6 +28,13 @@ import { EditorTour } from "./EditorTour";
 import { PresenceChips } from "./PresenceChips";
 import { usePresence } from "./use-presence";
 import { tablesCsv, tablesOfDrawings } from "../domain/data-tables";
+import { EditorDrawers } from "../editor/presentation/EditorDrawers";
+import { useDrawerPrefs } from "../editor/presentation/use-drawer-prefs";
+import { pinnedWidth } from "../editor/domain/drawer-state";
+import { BLOCK_DRAG_TYPE } from "../editor/presentation/AddDrawer";
+import { pointToCell } from "../editor/domain/drop-cell";
+import { FilterPane, type FilterBarProps } from "../filters/FilterPane";
+import { useFilterAddress } from "../filters/use-filter-address";
 
 export interface ProjectOption { id: string; name: string }
 interface Props { /** How often the person is emailed that this is ready to open. */ subscription: "NONE" | "WEEKLY" | "MONTHLY"; initial: CanvasView; resolved: ResolvedCanvas | null; resolveError: string | null; projects: ReadonlyArray<ProjectOption>; indicatorsByProject: Readonly<Record<string, ReadonlyArray<IndicatorOption>>> }
@@ -55,6 +62,8 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
   /** An action chosen from the menu closes it. */
   const choose = (action: () => void) => () => { menu.current?.removeAttribute("open"); action(); };
   const [editing, setEditing] = useState(false);
+  const [drawers, setDrawers] = useDrawerPrefs();
+  const [recent, setRecent] = useState<string[]>([]);
   const [resolved, setResolved] = useState(first);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(resolveError ? { tone: "error", text: resolveError } : null);
@@ -89,12 +98,12 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
     if (!dirty) {
       setPreview(null); setPreviewError(null); savedSig.current = sig;
       // Narrowing a saved canvas reads it again with the viewer's period and places; nothing is saved.
-      if (isFiltered(filters) || filtered.current) { filtered.current = isFiltered(filters); void resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator }).then((r) => { if (r.ok) setResolved(r.value); }); }
+      if (isFiltered(filters) || filtered.current) { filtered.current = isFiltered(filters); void resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator, donors: filters.donors ?? [], partners: filters.partners ?? [] }).then((r) => { if (r.ok) setResolved(r.value); }); }
       return;
     }
     let current = true;
     const timer = setTimeout(async () => {
-      const r = await previewCanvasAction({ title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(initial.projectId ? { projectId: initial.projectId } : {}), ...(filters.periodId ? { periodId: filters.periodId } : {}), ...(filters.places.length ? { placeKeys: filters.places } : {}), ...(filters.group ? { group: filters.group } : {}), ...(filters.status ? { status: filters.status } : {}), ...(filters.level ? { level: filters.level } : {}), ...(filters.indicator ? { indicator: filters.indicator } : {}) });
+      const r = await previewCanvasAction({ title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(initial.projectId ? { projectId: initial.projectId } : {}), ...(filters.periodId ? { periodId: filters.periodId } : {}), ...(filters.places.length ? { placeKeys: filters.places } : {}), ...(filters.group ? { group: filters.group } : {}), ...(filters.status ? { status: filters.status } : {}), ...(filters.level ? { level: filters.level } : {}), ...(filters.indicator ? { indicator: filters.indicator } : {}), ...(filters.donors?.length ? { donors: filters.donors } : {}), ...(filters.partners?.length ? { partners: filters.partners } : {}) });
       if (!current) return;
       if (r.ok) { setPreview({ sig, value: r.value }); setPreviewError(null); } else setPreviewError(r.error.message);
     }, 350);
@@ -116,6 +125,10 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
   }
   const problems = useMemo(() => canvasProblems(canvas), [canvas]);
   const findings = useMemo(() => checkCanvas(canvas), [canvas]);
+  // The page's own filter bar block (Phase 50.3): its settings decide which slicers show and how; the address keeps the choice (?f=).
+  const filterBar = useMemo(() => (ed.page.blocks.find((b) => definitionFor(b.kind)?.family === "CONTROLS" && b.style?.hidden !== true)?.props ?? null) as FilterBarProps | null, [ed.page.blocks]);
+  const pageTheme = useMemo(() => canvasThemeOf(canvas), [canvas]);
+  useFilterAddress(filters, setFilters);
   const hasFilterBar = useMemo(() => canvas.pages.some((p) => p.blocks.some((b) => definitionFor(b.kind)?.family === "CONTROLS" && b.style?.hidden !== true)), [canvas]);
   const leftOut = useMemo(() => canvasAsDesign(canvas).skipped, [canvas]);
   const canEdit = initial.canEdit;
@@ -131,7 +144,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
 
   async function save(): Promise<void> {
     setBusy("save"); setNotice(null);
-    const r = await saveCanvasAction(initial.id, { expectedRevision: base.current.revision, title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}) });
+    const r = await saveCanvasAction(initial.id, { expectedRevision: base.current.revision, title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(canvas.params ? { params: canvas.params } : {}), ...(canvas.interactions ? { interactions: canvas.interactions } : {}) });
     if (!r.ok) { setBusy(null); setNotice({ tone: "error", text: r.error.message }); return; }
     const saved = r.value.canvas.canvas;
     base.current = { revision: saved.revision, json: snapshot(canvas) };
@@ -139,7 +152,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
     ed.adoptRevision(saved.revision);
     setReviewNow("DRAFT");
     setServerProblems(r.value.problems);
-    const fresh = await resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator });
+    const fresh = await resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator, donors: filters.donors ?? [], partners: filters.partners ?? [] });
     if (fresh.ok) setResolved(fresh.value);
     setBusy(null);
     setNotice({ tone: "ok", text: r.value.problems.length ? `Saved. ${r.value.problems.length} block${r.value.problems.length === 1 ? " is" : "s are"} not set up yet.` : "Saved." });
@@ -178,7 +191,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
           {!editing && live && (live.choices.periods.length > 0 || live.choices.places.length > 0 || live.choices.groups.length > 0 || live.choices.statuses.length > 0 || live.choices.levels.length > 0) && <button type="button" className={BTN} aria-pressed={paneOpen || hasFilterBar} aria-controls="canvas-filter-pane" onClick={() => setPaneOpen((v) => !v)}>{t("canvas.ui.filtersOpen")}</button>}
           {!editing && present.available && <button type="button" className={BTN} onClick={present.start}>{t("canvas.ui.present")}</button>}
           {canEdit && <button type="button" className={BTN} aria-pressed={editing} onClick={() => setEditing((v) => !v)}>{editing ? t("canvas.ui.doneEditing") : t("canvas.ui.edit")}</button>}
-          {editing && <><button type="button" className={BTN} onClick={() => session.setPaletteOpen(true)} aria-keyshortcuts="Control+K Meta+K">{t("editor.palette.title")}</button><button type="button" className={BTN} onClick={() => session.setShortcutsOpen(true)} aria-label={t("editor.shortcuts.title")}>?</button><button type="button" className={BTN} onClick={ed.undo} disabled={!ed.canUndo}>{t("canvas.ui.undo")}</button><button type="button" className={BTN} onClick={ed.redo} disabled={!ed.canRedo}>{t("canvas.ui.redo")}</button></>}
+          {editing && <><button type="button" className={BTN} aria-pressed={drawers.addOpen} aria-controls="add-drawer-shell" aria-keyshortcuts="Control+Shift+A Meta+Shift+A" onClick={() => setDrawers({ addOpen: !drawers.addOpen })}>{t("drawer.add")}</button><button type="button" className={BTN} aria-pressed={drawers.editOpen} aria-controls="edit-drawer-shell" aria-keyshortcuts="Control+Shift+E Meta+Shift+E" onClick={() => setDrawers({ editOpen: !drawers.editOpen })}>{t("drawer.edit")}</button><button type="button" className={BTN} onClick={() => session.setPaletteOpen(true)} aria-keyshortcuts="Control+K Meta+K">{t("editor.palette.title")}</button><button type="button" className={BTN} onClick={() => session.setShortcutsOpen(true)} aria-label={t("editor.shortcuts.title")}>?</button><button type="button" className={BTN} onClick={ed.undo} disabled={!ed.canUndo}>{t("canvas.ui.undo")}</button><button type="button" className={BTN} onClick={ed.redo} disabled={!ed.canRedo}>{t("canvas.ui.redo")}</button></>}
           {canEdit && <button type="button" className={`${BTN} bg-sky-700 text-white hover:bg-sky-800 dark:hover:bg-sky-800`} onClick={() => void save()} disabled={!dirty || busy !== null}>{busy === "save" ? t("canvas.ui.saving") : t("canvas.ui.save")}</button>}
           <details className="relative" ref={menu}>
             <summary className={`${BTN} cursor-pointer list-none`}>{t("canvas.ui.more")}</summary>
@@ -209,6 +222,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
           <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">What it is for</span>
             <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={canvas.profile} onChange={(e) => ed.setMeta({ profile: e.target.value as Canvas["profile"] })}>{CANVAS_PROFILES.map((p) => <option key={p} value={p}>{PROFILE_LABEL[p]}</option>)}</select></label>
           <ThemePicker value={canvas.themeId} onChange={(id) => ed.setMeta({ themeId: id })} />
+          <ThemeFileControl canvas={canvas} onLoad={ed.loadTheme} />
           <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Language</span>
             <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={canvas.language} onChange={(e) => ed.setMeta({ language: e.target.value })}>{[["en", "English"], ["fr", "Français"], ["es", "Español"], ["ar", "العربية"]].map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></label>
           <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Kind</span>
@@ -223,7 +237,8 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
         {editing && canvas.pages.length > 1 && <button type="button" className="ms-2 text-xs text-red-700 underline" onClick={() => ed.removePage(ed.page.id)}>{t("canvas.ui.removePage")}</button>}
       </nav>
 
-      {live && (hasFilterBar || isFiltered(filters) || paneOpen) && (live.choices.periods.length > 0 || live.choices.places.length > 0 || live.choices.groups.length > 0 || live.choices.statuses.length > 0 || live.choices.levels.length > 0) && (
+      {live && hasFilterBar && <FilterPane bar={filterBar} choices={live.choices} filters={filters} tone={{ strip: pageTheme.accentSoft, ink: pageTheme.accent, on: pageTheme.accent }} onChange={setFilters} onClear={() => setFilters(NO_FILTER)} />}
+      {live && !hasFilterBar && (isFiltered(filters) || paneOpen) && (live.choices.periods.length > 0 || live.choices.places.length > 0 || live.choices.groups.length > 0 || live.choices.statuses.length > 0 || live.choices.levels.length > 0) && (
         <section id="canvas-filter-pane" aria-label="Filters" className="flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 p-3 text-sm print:hidden dark:bg-slate-900" data-testid="canvas-filters">
           {live.choices.periods.length > 0 && <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">{t("canvas.ui.filtersPeriod")}</span>
             <select className="rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={filters.periodId} onChange={(e) => setFilters((f) => ({ ...f, periodId: e.target.value }))}><option value="">{t("canvas.ui.filtersLatest")}</option>{live.choices.periods.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</select></label>}
@@ -243,8 +258,9 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
         </section>
       )}
 
-      <div className={editing ? "grid gap-4 lg:grid-cols-[1fr_20rem]" : ""}>
-        <div>
+      <div style={editing ? { paddingInlineEnd: pinnedWidth(drawers) } : undefined} className="sm:transition-[padding]">
+        <div onDragOver={editing ? (e) => { if (e.dataTransfer.types.includes(BLOCK_DRAG_TYPE)) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } } : undefined}
+          onDrop={editing ? (e) => { const kind = e.dataTransfer.getData(BLOCK_DRAG_TYPE); const grid = document.querySelector<HTMLElement>('[data-testid="canvas-grid"]'); if (!kind) return; e.preventDefault(); const r = grid?.getBoundingClientRect(); const cell = grid && r ? pointToCell({ x: e.clientX, y: e.clientY }, { left: r.left, top: r.top, width: r.width, offsetWidth: grid.offsetWidth }, parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : { x: 0, y: 0 }; ed.addAt(kind, cell); setRecent((list) => [kind, ...list.filter((k) => k !== kind)].slice(0, 6)); } : undefined}>
           {blocks.length === 0 ? (
             <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{editing ? "This page is empty. Add a block from the list on the right." : canEdit ? "This page is empty. Choose Edit to add blocks." : "This page is empty."}</p>
           ) : (
@@ -277,21 +293,15 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
           ) : null}
         </div>
 
-        {editing && (
-          <div className="space-y-4 print:hidden">
-            {ed.selectedBlock ? <Inspector block={ed.selectedBlock} label={label(ed.selectedBlock.kind)} projects={projects} indicatorsByProject={indicatorsByProject} fallbackProjectId={initial.projectId} problems={selectedProblems} language={canvas.language} containers={containersOnPage} onContainer={(c) => ed.container(ed.selectedBlock!.id, c)}
-              onProps={(p) => ed.setProps(ed.selectedBlock!.id, p)} onProject={(pid) => ed.setProject(ed.selectedBlock!.id, pid)} onBounds={(c) => ed.bounds(ed.selectedBlock!.id, c)} onAlt={(a, d) => ed.alt(ed.selectedBlock!.id, a, d)} onMotion={(m) => ed.motion(ed.selectedBlock!.id, m)} onAction={(a) => ed.act(ed.selectedBlock!.id, a)} />
-              : ed.selection.ids.length > 1
-                ? <section aria-label={t("editor.selected", { count: ed.selection.ids.length })} className="space-y-2 rounded-lg border border-slate-200 p-3 text-sm dark:border-slate-700" data-testid="multi-selection">
-                    <p className="font-medium">{t("editor.selected", { count: ed.selection.ids.length })}</p>
-                    <div className="flex flex-wrap gap-1">{["alignLeft", "alignCenter", "alignRight", "alignTop", "alignMiddle", "alignBottom", "distributeH", "distributeV", "matchWidth", "matchHeight", "group", "duplicate", "delete"].map((id) => <button key={id} type="button" className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800" data-command={id} onClick={() => session.run(id)}>{t(`editor.cmd.${id}` as never)}</button>)}</div>
-                  </section>
-                : <p className="rounded-lg border border-slate-200 p-3 text-sm text-slate-500 dark:border-slate-700">Select a block to change it, or add one below.</p>}
-            <LayersPanel page={ed.page} selection={ed.selection} onSelect={ed.selectBlock} onToggle={(id, flag) => { const block = ed.page.blocks.find((b) => b.id === id); if (block) ed.apply(setFlag(canvas, [id], flag, !(block.style?.[flag] === true))); }} />
-            <BlockPalette onAdd={ed.add} />
-          </div>
-        )}
       </div>
+      {editing && (
+        <EditorDrawers editor={{ canvas, page: ed.page, selectionIds: ed.selection.ids, add: (k) => { ed.add(k); setRecent((list) => [k, ...list.filter((x) => x !== k)].slice(0, 6)); }, addStarter: ed.addStarter, setFormat: ed.setFormat, setInteraction: ed.setInteraction }}
+          prefs={drawers} onPrefs={setDrawers} models={live?.models} drawings={(live?.drawings ?? []) as never} projects={projects} indicatorsByProject={indicatorsByProject} fallbackProjectId={initial.projectId} recent={recent} label={(b) => label(b.kind)}
+          build={ed.selectedBlock ? <Inspector block={ed.selectedBlock} label={label(ed.selectedBlock.kind)} projects={projects} indicatorsByProject={indicatorsByProject} fallbackProjectId={initial.projectId} problems={selectedProblems} language={canvas.language} containers={containersOnPage} onContainer={(c) => ed.container(ed.selectedBlock!.id, c)}
+            onProps={(p) => ed.setProps(ed.selectedBlock!.id, p)} onProject={(pid) => ed.setProject(ed.selectedBlock!.id, pid)} onBounds={(c) => ed.bounds(ed.selectedBlock!.id, c)} onAlt={(a, d) => ed.alt(ed.selectedBlock!.id, a, d)} onMotion={(m) => ed.motion(ed.selectedBlock!.id, m)} onAction={(a) => ed.act(ed.selectedBlock!.id, a)} /> : null}
+          multiActions={<div className="flex flex-wrap gap-1" data-testid="multi-selection">{["alignLeft", "alignCenter", "alignRight", "alignTop", "alignMiddle", "alignBottom", "distributeH", "distributeV", "matchWidth", "matchHeight", "group", "duplicate", "delete"].map((id) => <button key={id} type="button" className="rounded border border-slate-300 px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800" data-command={id} onClick={() => session.run(id)}>{t(`editor.cmd.${id}` as never)}</button>)}</div>}
+          pageSettings={<LayersPanel page={ed.page} selection={ed.selection} onSelect={ed.selectBlock} onToggle={(id, flag) => { const block = ed.page.blocks.find((b) => b.id === id); if (block) ed.apply(setFlag(canvas, [id], flag, !(block.style?.[flag] === true))); }} />} />
+      )}
       {convertId && ed.page.blocks.find((b) => b.id === convertId) && <ConvertDialog block={ed.page.blocks.find((b) => b.id === convertId)!} onConvert={(kind, accept) => void ed.apply(convertBlock(canvas, convertId, kind, accept))} onClose={() => setConvertId(null)} />}
       {session.paletteOpen && <CommandPalette state={session.state} onRun={session.run} onClose={() => session.setPaletteOpen(false)} />}
       {editing && <EditorTour />}

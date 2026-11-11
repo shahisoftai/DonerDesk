@@ -7,6 +7,7 @@ import { BannerScreen, HeroScreen, DividerScreen, IconScreen, ShapeScreen, KeyMe
 import { ResultsChainScreen, SmallMultiplesScreen } from "./screens/series";
 import { PortfolioCountriesScreen, PortfolioHealthScreen, PortfolioSummaryScreen, PortfolioTableScreen } from "./screens/portfolio";
 import { AiTextScreen, CalloutScreen, FilterBarScreen, GroupScreen, RepeaterScreen, TabsScreen } from "./screens/structure";
+import { MultiCardScreen } from "./screens/multi-card";
 import { ImageScreen, QuoteScreen, SectorGridScreen, ThreeWScreen, TimelineScreen } from "./screens/stories";
 
 /**
@@ -17,7 +18,7 @@ import { ImageScreen, QuoteScreen, SectorGridScreen, ThreeWScreen, TimelineScree
 const as = (c: unknown): ScreenRenderer => c as ScreenRenderer;
 
 export const SCREEN_RENDERERS: Readonly<Partial<Record<BlockKind, ScreenRenderer>>> = {
-  BIG_NUMBERS: as(BigNumbersScreen), PROGRESS_RINGS: as(ProgressRingsScreen), FUNNEL: as(FunnelScreen),
+  BIG_NUMBERS: as(BigNumbersScreen), MULTI_CARD: as(MultiCardScreen), PROGRESS_RINGS: as(ProgressRingsScreen), FUNNEL: as(FunnelScreen),
   REACH: as(ReachScreen), ACTIVITIES_BY_LOCATION: as(ActivitiesByLocationScreen), LOCATION_RESULTS: as(LocationResultsScreen), LOCATION_COMPARISON: as(LocationComparisonScreen),
   DEMOGRAPHICS: as(DemographicsScreen), FUNDING: as(FundingScreen),
   HERO: as(HeroScreen), TEXT: as(TextScreen), DIVIDER: as(DividerScreen), SHAPE: as(ShapeScreen), ICON: as(IconScreen), BANNER: as(BannerScreen), KEY_MESSAGES: as(KeyMessagesScreen), LEGEND_NOTES: as(LegendNotesScreen),

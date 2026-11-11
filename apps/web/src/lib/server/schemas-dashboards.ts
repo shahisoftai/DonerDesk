@@ -27,7 +27,12 @@ export const ChartDrawingSchema = z.object({
   table: z.object({ title: z.string(), columns: z.array(z.string()), rows: z.array(z.array(z.string().nullable())), notes: z.array(z.string()) }).optional(),
   kpi: z.object({ title: z.string(), color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]).nullable().default(null), unit: z.string().nullable(), value: z.number().nullable(), periodLabel: z.string().nullable(), target: z.string().nullable(), percentOfTarget: z.number().nullable(), spark: z.array(z.object({ label: z.string(), value: z.number().nullable() })), change: z.object({ direction: z.enum(["UP", "DOWN", "FLAT"]), delta: z.number(), percent: z.number().nullable(), sincePeriod: z.string(), good: z.boolean().nullable() }).nullable().default(null), status: z.enum(["NO_DATA", "NOT_JUDGED", "TARGET_MET", "IN_PROGRESS"]).default("NOT_JUDGED"), unverified: z.boolean(), notes: z.array(z.string()) }).optional(),
   metric: z.object({ title: z.string(), color: z.enum(["ORANGE", "GREEN", "GREY", "PURPLE", "BLUE", "RED"]), value: z.number().nullable(), text: z.string(), unit: z.string(), note: z.string().nullable() }).optional(),
-  map: z.object({ view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string(), projectId: z.string(), indicatorId: z.string().optional(), preloaded: z.record(z.unknown()).optional() }).optional(),
+  map: z.object({
+    view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string(), projectId: z.string(), indicatorId: z.string().optional(), preloaded: z.record(z.unknown()).optional(),
+    colorBy: z.enum(["VALUE", "RULES", "CATEGORY", "NONE"]).optional(), categoryLevel: z.number().int().optional(), bands: z.array(z.object({ from: z.number().nullable(), to: z.number().nullable(), color: z.string() })).optional(),
+    areaLabels: z.enum(["NONE", "NAME", "VALUE", "NAME_AND_VALUE"]).optional(), clickToFilter: z.boolean().optional(),
+    callouts: z.array(z.object({ key: z.string(), name: z.string(), figures: z.array(z.object({ label: z.string(), value: z.number().nullable(), unit: z.string(), reason: z.string().nullable(), unverified: z.boolean() })) })).optional(),
+  }).optional(),
   text: z.string().optional(),
   unavailable: z.string().optional(),
 });

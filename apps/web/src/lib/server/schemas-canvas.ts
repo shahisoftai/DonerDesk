@@ -21,7 +21,7 @@ export type CanvasProblemView = z.infer<typeof CanvasProblemSchema>;
 export const SavedCanvasSchema = z.object({ canvas: CanvasSchema, problems: z.array(CanvasProblemSchema) });
 
 const Model = z.custom<BlockModel<unknown>>((v) => typeof v === "object" && v !== null && "state" in (v as object));
-export const ChoicesSchema = z.object({ periods: z.array(z.object({ id: z.string(), label: z.string() })), places: z.array(z.object({ key: z.string(), label: z.string() })), groups: z.array(z.string()).default([]), statuses: z.array(z.string()).default([]), levels: z.array(z.string()).default([]), indicators: z.array(z.object({ id: z.string(), label: z.string(), name: z.string() })).default([]) });
+export const ChoicesSchema = z.object({ periods: z.array(z.object({ id: z.string(), label: z.string() })), places: z.array(z.object({ key: z.string(), label: z.string() })), groups: z.array(z.string()).default([]), statuses: z.array(z.string()).default([]), levels: z.array(z.string()).default([]), indicators: z.array(z.object({ id: z.string(), label: z.string(), name: z.string() })).default([]), placeTree: z.array(z.object({ key: z.string(), label: z.string(), level: z.number(), parentKey: z.string().nullable() })).optional(), donors: z.array(z.string()).optional(), partners: z.array(z.string()).optional() });
 export const ResolvedCanvasSchema = z.object({ canvasId: z.string(), drawings: z.array(ChartDrawingSchema), models: z.record(Model), choices: ChoicesSchema.default({ periods: [], places: [], groups: [], statuses: [], levels: [], indicators: [] }), repeats: z.record(z.array(z.object({ key: z.string(), label: z.string() }))).default({}) });
 export type ResolvedCanvas = z.infer<typeof ResolvedCanvasSchema>;
 

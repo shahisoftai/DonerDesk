@@ -15,6 +15,7 @@ export const canvasAr: Record<keyof typeof canvasEn, string> = {
   "canvas.block.KPI": "بطاقة مؤشر",
   "canvas.block.BIG_NUMBERS": "أرقام رئيسية",
   "canvas.block.METRIC": "بطاقة رقمية",
+  "canvas.block.MULTI_CARD": "بطاقة أرقام",
   "canvas.block.PROGRESS_RINGS": "حلقات التقدم",
   "canvas.block.CHART": "رسم بياني",
   "canvas.block.SMALL_MULTIPLES": "رسوم بيانية متجاورة",

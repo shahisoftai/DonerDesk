@@ -1,5 +1,5 @@
 import {
-  DomainError, Permissions, PlaceRegistry, err, ok, parsePlaceSheet, planBoundarySeed, planPlaceImport, resolvePlace, validatePlace,
+  DomainError, Permissions, PlaceRegistry, err, normalizeFacilityTypeKey, ok, parsePlaceSheet, planBoundarySeed, planPlaceImport, resolvePlace, validatePlace,
   type PlaceRecord, type PlaceResolution, type Result, type Role, type SeedUnit,
 } from "@donordesk/domain";
 import type { CreatePlaceInput, ImportPlacesInput, ResolvePlacesInput, UpdatePlaceInput } from "@donordesk/contracts";
@@ -27,6 +27,7 @@ export interface PlaceDto {
   longitude?: number;
   aliases: string[];
   facility?: boolean;
+  facilityType?: string;
   code?: string;
   /** "POLYGON" (an outline) or "LINE" (a route) when a shape is stored; the shape itself is read from its own route. */
   geometryKind?: "POLYGON" | "LINE";
@@ -42,7 +43,7 @@ function toDto(p: StoredPlace, registry: PlaceRegistry): PlaceDto {
     id: p.id, name: p.name, kind: p.kind, adminLevel: p.adminLevel, ...(p.parentId ? { parentId: p.parentId } : {}),
     path: live ? registry.pathLabel(p.id) : p.name,
     ...(p.country ? { country: p.country } : {}), ...(p.latitude !== undefined ? { latitude: p.latitude, longitude: p.longitude } : {}),
-    aliases: p.aliases, ...(p.code ? { code: p.code } : {}), ...(p.facility ? { facility: true } : {}), ...(p.geometryKind ? { geometryKind: p.geometryKind } : {}), ...(p.placedBy ? { placedBy: p.placedBy } : {}), archived: !live, childCount: live ? registry.childrenOf(p.id).length : 0,
+    aliases: p.aliases, ...(p.code ? { code: p.code } : {}), ...(p.facility ? { facility: true } : {}), ...(p.facility && p.facilityType ? { facilityType: p.facilityType } : {}), ...(p.geometryKind ? { geometryKind: p.geometryKind } : {}), ...(p.placedBy ? { placedBy: p.placedBy } : {}), archived: !live, childCount: live ? registry.childrenOf(p.id).length : 0,
   };
 }
 
@@ -72,7 +73,7 @@ export class CreatePlaceHandler {
       id: this.ids.generate(), name: input.name, kind, adminLevel: input.adminLevel as PlaceRecord["adminLevel"],
       ...(input.parentId ? { parentId: input.parentId } : {}), ...(input.country ? { country: input.country } : {}),
       ...(input.latitude !== undefined ? { latitude: input.latitude } : {}), ...(input.longitude !== undefined ? { longitude: input.longitude } : {}),
-      aliases: input.aliases, ...(input.code ? { code: input.code } : {}), ...(input.facility ? { facility: true } : {}), ...(input.placedBy ? { placedBy: input.placedBy } : {}), archived: false,
+      aliases: input.aliases, ...(input.code ? { code: input.code } : {}), ...(input.facility ? { facility: true } : {}), ...(input.facility && input.facilityType ? { facilityType: normalizeFacilityTypeKey(input.facilityType) } : {}), ...(input.placedBy ? { placedBy: input.placedBy } : {}), archived: false,
     };
     const valid = validatePlace(record, all.value.stored.map(toRecord));
     if (!valid.ok) return valid;
@@ -97,7 +98,8 @@ export class UpdatePlaceHandler {
     if (input.kind !== undefined) merged.kind = input.kind;
     if (input.adminLevel !== undefined) merged.adminLevel = input.adminLevel as PlaceRecord["adminLevel"];
     if (input.aliases !== undefined) merged.aliases = input.aliases;
-    if (input.facility !== undefined) { if (input.facility) merged.facility = true; else delete merged.facility; }
+    if (input.facility !== undefined) { if (input.facility) merged.facility = true; else { delete merged.facility; delete merged.facilityType; } }
+    if (input.facilityType !== undefined) { if (input.facilityType === null) delete merged.facilityType; else merged.facilityType = normalizeFacilityTypeKey(input.facilityType); }
     for (const key of ["parentId", "country", "latitude", "longitude", "code"] as const) {
       const v = input[key];
       if (v === undefined) continue;

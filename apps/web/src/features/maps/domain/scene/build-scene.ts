@@ -9,6 +9,7 @@ import { geometryBounds, pointBounds, unionBounds } from "../model/bounds.ts";
 import type { JoinedUnit } from "../boundaries/join.ts";
 import { NO_DATA_COLOR, colorFor, layerState, type ExplorerLayer, type ExplorerModel, type MapRegion } from "../map-explorer.ts";
 import type { Overlay } from "../overlay-layer.ts";
+import { areaLabel, bandColour, categoryColours, OUTLINE_ONLY, type AreaStyle } from "./area-style.ts";
 
 export interface ResultsSceneInput {
   model: ExplorerModel;
@@ -24,6 +25,8 @@ export interface ResultsSceneInput {
   /** What a screen reader says for the whole map, already in the person's language. */
   label: string;
   cluster?: boolean;
+  /** How areas are coloured and labelled (Phase 50.3d); absent = the figure's own scale, no labels. */
+  areaStyle?: AreaStyle | undefined;
 }
 
 const figure = (display: string | null, unit: string | null, verified: boolean): string =>
@@ -38,18 +41,28 @@ export function buildResultsScene(input: ResultsSceneInput): MapScene {
   const regionByPlace = new Map<string, MapRegion>(model.regions.map((r) => [r.placeId, r]));
   const tips: Record<string, Tip> = {};
   const out: LayerSpec[] = [];
+  // One colour per area, or per the area above it (a district map coloured by province): the key is the unit's own code or its parent's.
+  const categoryKey = (j: JoinedUnit): string => (input.areaStyle?.byParent ? j.unit.parentPcode || j.unit.ref : j.unit.ref);
+  const categories = input.areaStyle?.colorBy === "CATEGORY" ? categoryColours(joined.map(categoryKey), input.areaStyle.palette) : new Map<string, string>();
 
   const fillLayer: FillLayerSpec = {
     kind: "FILL",
     opacity: fill.visible ? fill.opacity : 0.15,
     outline: outline.visible,
     selectedRef,
+    ...(input.areaStyle?.labels && input.areaStyle.labels !== "NONE" ? { labels: true } : {}),
     features: joined.map((j) => {
       const region = j.placeId ? regionByPlace.get(j.placeId) : undefined;
-      const color = fill.visible ? colorFor(region?.value ?? null, model.bands) : NO_DATA_COLOR;
+      const st = input.areaStyle;
+      const color = !fill.visible ? NO_DATA_COLOR
+        : st?.colorBy === "NONE" ? OUTLINE_ONLY
+        : st?.colorBy === "RULES" ? bandColour(region?.value ?? null, st.bands ?? [], NO_DATA_COLOR)
+        : st?.colorBy === "CATEGORY" ? categories.get(categoryKey(j)) ?? NO_DATA_COLOR
+        : colorFor(region?.value ?? null, model.bands);
+      const label = areaLabel(st?.labels, j.unit.name, region?.display ?? null);
       const lines = region ? [region.path, figure(region.display, unit, region.verified), ...(j.basis === "NAME" ? ["Matched by name only"] : [])] : ["Not measured"];
       tips[j.unit.ref] = { title: j.unit.name, lines: lines.filter((l) => l && l !== j.unit.name) };
-      return { ref: j.unit.ref, name: j.unit.name, color, geometry: j.unit.geometry, ...(j.unit.tile ? { tile: j.unit.tile } : {}) };
+      return { ref: j.unit.ref, name: j.unit.name, color, geometry: j.unit.geometry, ...(label ? { label } : {}), ...(j.unit.tile ? { tile: j.unit.tile } : {}) };
     }),
   };
   out.push(fillLayer);

@@ -1,4 +1,6 @@
-import { DomainError, EMPTY_CHOICES, childrenOf, repeatKey, groupsOf, restrictSheet, levelsOf, indicatorChoicesOf, statusesOf, type FilterChoices, canvasToWidgets, definitionFor, isDashboardKind, portfolioOnlyFacts, projectOf, type BlockModel, type Canvas, type CanvasFacts, type Result } from "@donordesk/domain";
+import { normalizeLocationKey, resolveMultiCard, type CardItem } from "@donordesk/domain";
+import type { ICountFactsReader, IPlaceTreeReader } from "../../services/count-facts-service.js";
+import { DomainError, EMPTY_CHOICES, childrenOf, repeatKey, groupsOf, restrictSheet, levelsOf, indicatorChoicesOf, statusesOf, type FilterChoices, canvasToWidgets, definitionFor, isDashboardKind, portfolioOnlyFacts, projectOf, type BlockModel, type Canvas, type CanvasFacts, type Result, type Project } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ICanvasRepository } from "../../ports/canvas.js";
 import type { IDatasetExtras } from "../../services/dataset-extras.js";
@@ -11,7 +13,7 @@ import { can, fail, loadCanvas, ok } from "./canvas-shared.js";
 import { heldByRepeater, repeatedWidgets, repeaterItems, type RepeatItems } from "./repeat-canvas.js";
 
 /** What a viewer may narrow a canvas by without changing it: a period and/or places. */
-export interface CanvasFilterOptions { periodId?: string | undefined; placeKeys?: string[] | undefined; group?: string | undefined; status?: string | undefined; level?: string | undefined; indicator?: string | undefined }
+export interface CanvasFilterOptions { periodId?: string | undefined; placeKeys?: string[] | undefined; /** Only projects with one of these donors or partners (Phase 50.3). */ donors?: string[] | undefined; partners?: string[] | undefined; group?: string | undefined; status?: string | undefined; level?: string | undefined; indicator?: string | undefined }
 
 export interface ResolvedCanvasDto {
   canvasId: string;
@@ -31,7 +33,7 @@ export class ResolveCanvasHandler {
   constructor(
     private readonly repo: ICanvasRepository, private readonly preview_: PreviewDashboardChartsHandler, private readonly sheets: GetProjectDataSheetHandler,
     private readonly infographicData: GetProjectInfographicDataHandler, private readonly visible: VisibleProjects, private readonly extras?: IDatasetExtras,
-    private readonly portfolio?: GetPortfolioInfographicDataHandler,
+    private readonly portfolio?: GetPortfolioInfographicDataHandler, private readonly counts?: ICountFactsReader & Partial<IPlaceTreeReader>,
   ) {}
 
   /** Reads what a saved canvas shows, for the person looking, under their own access: a project they cannot see yields "unavailable" blocks, never someone else's figures. */
@@ -52,12 +54,14 @@ export class ResolveCanvasHandler {
     const id = stored.id;
     const mine = await this.visible.for(ctx);
     if (!mine.ok) return mine;
-    const allowed = new Set(mine.value.map((p) => p.id));
+    // A donor or partner chosen in the filter bar narrows the projects a block may read: a project with neither reads as "not in this selection".
+    const byPeople = (wanted: string[] | undefined, of: (p: Project) => Array<string | null | undefined>) => (p: Project) => !wanted?.length || of(p).some((n) => n && wanted.some((w) => w.trim().toLowerCase() === n.trim().toLowerCase()));
+    const allowed = new Set(mine.value.filter(byPeople(options.donors, (p) => [p.donorName])).filter(byPeople(options.partners, (p) => [p.partnerOrganization])).map((p) => p.id));
     // Each block reads the project it names, else its canvas's; the facts of a project are read once however many blocks use them.
     const factsByProject = new Map<string, Promise<CanvasFacts | undefined>>();
     const factsOf = (projectId: string | undefined): Promise<CanvasFacts | undefined> => {
       if (!projectId || !allowed.has(projectId)) return Promise.resolve(undefined);
-      if (!factsByProject.has(projectId)) factsByProject.set(projectId, canvasFactsFor(this.sheets, this.infographicData, ctx, projectId, stored.canvas, stored.title, options));
+      if (!factsByProject.has(projectId)) factsByProject.set(projectId, canvasFactsFor(this.sheets, this.infographicData, ctx, projectId, stored.canvas, stored.title, options, needsCounts(stored.canvas) ? this.counts : undefined));
       return factsByProject.get(projectId)!;
     };
     // The filters offer the periods and places of the canvas's project, else of the first project a block reads.
@@ -78,6 +82,7 @@ export class ResolveCanvasHandler {
       drawings = drawn.value.charts;
     }
 
+    drawings = await this.withCallouts(stored.canvas, stored.projectId, drawings, factsOf);
     const list = await this.projectList(ctx);
     const portfolio = await this.portfolioFacts(ctx, stored.canvas);
 
@@ -96,7 +101,7 @@ export class ResolveCanvasHandler {
       models[block.id] = def.resolve(block.props, data);
     }
     await this.resolveRepeated(stored.canvas, items, models, factsOf, home);
-    return ok({ canvasId: id, drawings, models, repeats: Object.fromEntries(Object.entries(items).map(([k, v]) => [k, v.map((x) => ({ key: x.key, label: x.label }))])), choices: home ? { ...filterChoices(home), groups: groupsOf(home.sheet), levels: levelsOf(home.sheet), indicators: indicatorChoicesOf(home.sheet), statuses: await this.statuses(ctx, stored, home) } : EMPTY_CHOICES });
+    return ok({ canvasId: id, drawings, models, repeats: Object.fromEntries(Object.entries(items).map(([k, v]) => [k, v.map((x) => ({ key: x.key, label: x.label }))])), choices: home ? { ...filterChoices(home), groups: groupsOf(home.sheet), levels: levelsOf(home.sheet), indicators: indicatorChoicesOf(home.sheet), statuses: await this.statuses(ctx, stored, home), ...(await this.peopleChoices(ctx, mine.value)) } : EMPTY_CHOICES });
   }
 
   /** Each block a repeater holds, once per item: a project\'s own facts, or the project\'s facts narrowed to one place. Chart-style copies were drawn above. */
@@ -107,10 +112,41 @@ export class ResolveCanvasHandler {
       for (const item of items[holderId] ?? []) {
         const key = repeatKey(child.id, item.key);
         if (!def || def.reads !== "FACTS") { models[key] = unavailable("This block does not change from one item to the next."); continue; }
-        const facts = item.projectId ? await factsOf(item.projectId) : home && item.placeKey ? { ...home, locationKeys: [item.placeKey] } : undefined;
+        const facts = item.projectId ? await factsOf(item.projectId) : home && item.placeKey ? { ...home, locationKeys: [item.placeKey], placeName: item.label } : undefined;
         models[key] = def.resolve(child.props, facts);
       }
     }
+  }
+
+  /**
+   * Figure cards beside areas of a results map (Phase 50.3d): each chosen area's figures, worked out from the project's facts narrowed to
+   * that one place, by the same rule as a figure card. Read under the viewer's own access; a project they cannot see gives no cards.
+   */
+  private async withCallouts(canvas: Canvas, homeId: string | undefined, drawings: DashboardChartDto[], factsOf: (id: string | undefined) => Promise<CanvasFacts | undefined>): Promise<DashboardChartDto[]> {
+    const byId = new Map(canvas.pages.flatMap((p) => p.blocks).map((b) => [b.id, b] as const));
+    const out: DashboardChartDto[] = [];
+    for (const d of drawings) {
+      const block = byId.get(d.widgetId);
+      const callouts = (block?.props as { callouts?: { placeKeys: string[]; items: CardItem[]; columns: number } } | undefined)?.callouts;
+      if (!d.map || !block || !callouts || callouts.placeKeys.length === 0) { out.push(d); continue; }
+      const facts = await factsOf(projectOf(block.bindings) ?? homeId);
+      if (!facts) { out.push(d); continue; }
+      const names = new Map(filterChoices(facts).places.map((p) => [p.key, p.label]));
+      const cards = callouts.placeKeys.map((k) => normalizeLocationKey(k)).filter(Boolean).slice(0, 12).map((key) => {
+        const name = names.get(key) ?? key;
+        const model = resolveMultiCard({ items: callouts.items, layout: "GRID", columns: callouts.columns, includeDraft: false }, { sheet: facts.sheet, counts: facts.counts, place: { key, name } });
+        return { key, name, figures: model.items };
+      });
+      out.push({ ...d, map: { ...d.map, callouts: cards } });
+    }
+    return out;
+  }
+
+  /** The places tree and the donors and partners of the viewer's projects, for the filter bar. */
+  private async peopleChoices(ctx: AuthenticatedContext, projects: ReadonlyArray<{ donorName: string; partnerOrganization?: string | undefined }>): Promise<Pick<FilterChoices, "placeTree" | "donors" | "partners">> {
+    const tree = this.counts?.tree ? await this.counts.tree(ctx) : undefined;
+    const uniq = (xs: Array<string | undefined>) => [...new Set(xs.map((x) => (x ?? "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    return { ...(tree ? { placeTree: tree } : {}), donors: uniq(projects.map((p) => p.donorName)), partners: uniq(projects.map((p) => p.partnerOrganization)) };
   }
 
   /** The plain statuses of the home project's planned work, for the filter. */
@@ -138,17 +174,22 @@ export class ResolveCanvasHandler {
 }
 
 /** The figures an infographic-style block reads, taken from the same records the Data Center and the Studio read. */
-export async function canvasFactsFor(sheets: GetProjectDataSheetHandler, infographicData: GetProjectInfographicDataHandler, ctx: AuthenticatedContext, projectId: string, canvas: Canvas, title: string, filters: CanvasFilterOptions = {}): Promise<CanvasFacts | undefined> {
+export async function canvasFactsFor(sheets: GetProjectDataSheetHandler, infographicData: GetProjectInfographicDataHandler, ctx: AuthenticatedContext, projectId: string, canvas: Canvas, title: string, filters: CanvasFilterOptions = {}, counts?: ICountFactsReader, countOptions: { shareLink?: boolean } = {}): Promise<CanvasFacts | undefined> {
   const [sheet, data] = await Promise.all([sheets.handle(ctx, projectId), infographicData.handle(ctx, projectId)]);
   if (!sheet.ok || !data.ok) return undefined;
+  const countFacts = counts ? await counts.read(ctx, [projectId], [sheet.value], countOptions) : undefined;
   const o = canvas.options;
   return {
     sheet: restrictSheet(sheet.value, filters), reach: data.value.reach, activities: data.value.activities, finance: data.value.finance, indicators: data.value.indicators,
     // A viewer's own filter narrows what the design chose: a period ends the range there, places replace the default places.
     range: { fromId: o?.periodFromId, toId: filters.periodId ?? o?.periodToId }, locationKeys: filters.placeKeys?.length ? filters.placeKeys : o?.locationKeys, acknowledgement: o?.acknowledgement, subtitle: o?.subtitle,
     project: { title: data.value.project.title, donorName: data.value.project.donorName, country: data.value.project.country }, designTitle: title,
+    ...(countFacts ? { counts: countFacts } : {}),
   };
 }
+
+/** Counts are read only when some block on the canvas shows one (a card's count, or figure cards on a map). */
+export const needsCounts = (canvas: Canvas): boolean => canvas.pages.some((p) => p.blocks.some((b) => !b.style?.hidden && JSON.stringify(b.props ?? {}).includes('"kind":"COUNT"')));
 
 const MAX_PLACES = 40;
 /** The periods and places a viewer may filter by: what the project's own records name. */

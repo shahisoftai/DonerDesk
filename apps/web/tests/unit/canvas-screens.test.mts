@@ -28,7 +28,7 @@ before(async () => {
   registry = mod; render = mod.renderToStaticMarkup; React = mod;
 });
 
-const PAINTED = ["BIG_NUMBERS", "PROGRESS_RINGS", "FUNNEL", "REACH", "ACTIVITIES_BY_LOCATION", "LOCATION_RESULTS", "LOCATION_COMPARISON", "DEMOGRAPHICS", "FUNDING", "HERO", "TEXT", "DIVIDER", "BANNER", "KEY_MESSAGES", "LEGEND_NOTES", "QUOTE", "IMAGE", "TIMELINE", "SECTOR_GRID", "THREE_W", "SMALL_MULTIPLES", "RESULTS_CHAIN", "PORTFOLIO_SUMMARY", "PORTFOLIO_TABLE", "PORTFOLIO_HEALTH", "PORTFOLIO_COUNTRIES"] as const;
+const PAINTED = ["BIG_NUMBERS", "MULTI_CARD", "PROGRESS_RINGS", "FUNNEL", "REACH", "ACTIVITIES_BY_LOCATION", "LOCATION_RESULTS", "LOCATION_COMPARISON", "DEMOGRAPHICS", "FUNDING", "HERO", "TEXT", "DIVIDER", "BANNER", "KEY_MESSAGES", "LEGEND_NOTES", "QUOTE", "IMAGE", "TIMELINE", "SECTOR_GRID", "THREE_W", "SMALL_MULTIPLES", "RESULTS_CHAIN", "PORTFOLIO_SUMMARY", "PORTFOLIO_TABLE", "PORTFOLIO_HEALTH", "PORTFOLIO_COUNTRIES"] as const;
 // Structure blocks are drawn on screen and (where a file can hold them) in print.
 const GRAPHIC = ["SHAPE", "ICON"] as const; // pictures with no words of their own: drawn from their settings, described only when a person wrote a description
 const STRUCTURE = ["CALLOUT", "AI_SUMMARY", "AI_MESSAGES", "AI_ASK", "GROUP", "TABS", "REPEATER", "FILTER_BAR"] as const;

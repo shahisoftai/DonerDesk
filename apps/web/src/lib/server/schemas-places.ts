@@ -13,6 +13,7 @@ export const PlaceSchema = z.object({
   aliases: z.array(z.string()),
   code: z.string().optional(),
   facility: z.boolean().optional(),
+  facilityType: z.string().optional(),
   /** An outline ("POLYGON") or a route ("LINE") is stored for this area; read it from its own route. */
   geometryKind: z.enum(["POLYGON", "LINE"]).optional(),
   placedBy: z.string().optional(),

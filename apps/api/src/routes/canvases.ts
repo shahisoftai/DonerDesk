@@ -39,7 +39,7 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
   });
   app.get("/v1/canvases/:id/resolve", async (req) => {
     const q = CanvasResolveQuerySchema.parse(req.query);
-    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), { ...(q.periodId ? { periodId: q.periodId } : {}), placeKeys: placeKeysOf(q.places), ...(q.group ? { group: q.group } : {}), ...(q.status ? { status: q.status } : {}), ...(q.level ? { level: q.level } : {}), ...(q.indicator ? { indicator: q.indicator } : {}) });
+    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), { ...(q.periodId ? { periodId: q.periodId } : {}), placeKeys: placeKeysOf(q.places), ...(q.group ? { group: q.group } : {}), ...(q.status ? { status: q.status } : {}), ...(q.level ? { level: q.level } : {}), ...(q.indicator ? { indicator: q.indicator } : {}), donors: placeKeysOf(q.donors), partners: placeKeysOf(q.partners) });
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -101,9 +101,9 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
     return { ok: true };
   });
   app.post("/v1/canvases/preview", async (req) => {
-    const { projectId, periodId, placeKeys, group, status, level, indicator, title, ...rest } = PreviewCanvasSchema.parse(req.body);
+    const { projectId, periodId, placeKeys, donors, partners, group, status, level, indicator, title, ...rest } = PreviewCanvasSchema.parse(req.body);
     const canvas = { id: "preview", title, scope: "MINE", mode: rest.mode ?? "LIVE", revision: 1, ...rest } as never;
-    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, { ...(periodId ? { periodId } : {}), ...(placeKeys?.length ? { placeKeys } : {}), ...(group ? { group } : {}), ...(status ? { status } : {}), ...(level ? { level } : {}), ...(indicator ? { indicator } : {}) });
+    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, { ...(periodId ? { periodId } : {}), ...(placeKeys?.length ? { placeKeys } : {}), ...(group ? { group } : {}), ...(status ? { status } : {}), ...(level ? { level } : {}), ...(indicator ? { indicator } : {}), ...(donors?.length ? { donors } : {}), ...(partners?.length ? { partners } : {}) });
     if (!r.ok) throw r.error;
     return r.value;
   });

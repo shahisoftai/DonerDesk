@@ -42,7 +42,7 @@ export function formatHints(format: BlockFormat | undefined, theme: ThemeWithSem
   const f = format?.frame;
   return {
     title: { show: t.show ?? true, subtitle: t.subtitle?.trim() || null, sizePx: TITLE_PX[t.size ?? "M"], bold: (t.weight ?? "bold") === "bold", colour: t.color ? colourOf(theme, t.color) : theme.ink, align: t.align ?? "start", rule: t.rule ?? false },
-    accentBar: a?.show ? { side: a.side, px: a.thickness, colour: colourOf(theme, a.color) } : null,
+    accentBar: a?.show ? { side: a.side ?? "start", px: a.thickness ?? 6, colour: colourOf(theme, a.color ?? { role: "accent" }) } : null,
     border: f?.borderSide ? { side: f.borderSide, px: f.borderWidth ?? 1, colour: f.borderColor ? colourOf(theme, f.borderColor) : theme.cardStroke } : null,
     padding: f?.padding ?? null,
   };

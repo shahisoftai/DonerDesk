@@ -18,6 +18,8 @@ export const CreatePlaceSchema = z.object({
   aliases: z.array(z.string().trim().min(1).max(120)).max(12).default([]),
   code: z.string().trim().max(60).optional(),
   facility: z.boolean().optional(),
+  /** Phase 50.3b: one of the organisation's facility types; only on a facility. */
+  facilityType: z.string().trim().min(1).max(40).optional(),
   placedBy: placedBy.optional(),
 });
 export type CreatePlaceInput = z.infer<typeof CreatePlaceSchema>;
@@ -34,6 +36,8 @@ export const UpdatePlaceSchema = z.object({
   aliases: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
   code: z.string().trim().max(60).nullable().optional(),
   facility: z.boolean().optional(),
+  /** `null` clears it. */
+  facilityType: z.string().trim().min(1).max(40).nullable().optional(),
   placedBy: placedBy.optional(),
 });
 export type UpdatePlaceInput = z.infer<typeof UpdatePlaceSchema>;

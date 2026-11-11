@@ -36,6 +36,7 @@ const MAPPERS: Readonly<Record<string, (b: BlockInstance, p: Props) => Mapped>> 
   MAP: (_b, p) => ({ kind: "MAP", ...(str(p.title) ? { title: str(p.title) } : {}), ...(str(p.shading) ? { mapMetric: p.shading as never } : {}) }),
   TABLE: (_b, p) => ({ kind: "TABLE", ...(str(p.title) ? { title: str(p.title) } : {}), indicatorIds: Array.isArray((p.query as { indicatorIds?: unknown } | undefined)?.indicatorIds) ? ((p.query as { indicatorIds: string[] }).indicatorIds) : [] }),
   METRIC: (_b, p) => metricFigure(p),
+  MULTI_CARD: (_b, p) => multiCardFigures(p),
   PROJECT_LIST: () => "PROJECT_LIST_FILE",
   AI_SUMMARY: (_b, p) => aiText(p),
   AI_MESSAGES: (_b, p) => aiText(p),
@@ -48,6 +49,13 @@ const METRIC_SOURCE: Readonly<Record<string, string>> = { ACTIVITIES_TOTAL: "ACT
 const metricFigure = (p: Props): Mapped => {
   const source = METRIC_SOURCE[String(p.metric)];
   return source ? { kind: "BIG_NUMBERS", numbers: [{ label: str(p.title) ?? "", source: source as never }] } : "Money and in-progress counts are shown on screen only.";
+};
+/** A figure card goes into a file as big numbers when every figure is an indicator's; counts and money are shown on screen only, so such a card is named as left out rather than printed with figures missing. */
+const multiCardFigures = (p: Props): Mapped => {
+  const items = Array.isArray(p.items) ? (p.items as Array<{ source?: { kind?: string; indicatorId?: string }; label?: string }>) : [];
+  if (items.length === 0) return "The card has no figures.";
+  if (items.some((i) => i.source?.kind !== "INDICATOR" || !str(i.source.indicatorId))) return "Counts of places, donors, partners and facilities are shown on screen only.";
+  return { kind: "BIG_NUMBERS", ...(str(p.header) ? { title: str(p.header) } : {}), numbers: items.map((i) => ({ label: str(i.label) ?? "", source: "INDICATOR", indicatorId: i.source!.indicatorId as string })) } as Mapped;
 };
 const SCREEN_ONLY: Readonly<Record<string, string>> = {
   GROUP: "A group has no picture of its own.",
@@ -62,7 +70,7 @@ const fileThemeOf = (id: string): string => (id === "BRAND" || themeById(id) ? i
 const fileFormatOf = (format: string | undefined): string => (format && formatById(format) ? format : "A4_PORTRAIT");
 
 /** The section kind a block becomes in a file, where it differs from its own name. */
-const MAP_TO_SECTION: Readonly<Record<string, string>> = { KPI: "BIG_NUMBERS", PROJECT_LIST: "PORTFOLIO_TABLE", CALLOUT: "TEXT", AI_SUMMARY: "TEXT", AI_MESSAGES: "TEXT", AI_ASK: "TEXT" };
+const MAP_TO_SECTION: Readonly<Record<string, string>> = { KPI: "BIG_NUMBERS", MULTI_CARD: "BIG_NUMBERS", PROJECT_LIST: "PORTFOLIO_TABLE", CALLOUT: "TEXT", AI_SUMMARY: "TEXT", AI_MESSAGES: "TEXT", AI_ASK: "TEXT" };
 
 /** The project a file reads: the canvas's own, else the first project a block names. */
 export const fileProjectOf = (canvas: Canvas, own: string | undefined): string | undefined => own ?? canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find((p): p is string => Boolean(p));

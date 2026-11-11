@@ -15,6 +15,7 @@ export const canvasEs: Record<keyof typeof canvasEn, string> = {
   "canvas.block.KPI": "Ficha de indicador",
   "canvas.block.BIG_NUMBERS": "Cifras clave",
   "canvas.block.METRIC": "Ficha numérica",
+  "canvas.block.MULTI_CARD": "Tarjeta de cifras",
   "canvas.block.PROGRESS_RINGS": "Anillos de progreso",
   "canvas.block.CHART": "Gráfico",
   "canvas.block.SMALL_MULTIPLES": "Gráficos en paralelo",

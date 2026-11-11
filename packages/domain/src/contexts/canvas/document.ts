@@ -5,9 +5,9 @@
 import { CANVAS_MODES, CANVAS_PROFILES, CANVAS_SCOPES, type Canvas, type CanvasMode, type CanvasOptions, type CanvasPage, type CanvasProfile, type CanvasScope } from "./canvas.js";
 import type { CanvasParameter } from "./params.js";
 
-export interface CanvasDocument { profile: CanvasProfile; language: string; themeId: string; pages: CanvasPage[]; options?: CanvasOptions | undefined; params?: CanvasParameter[] | undefined }
+export interface CanvasDocument { profile: CanvasProfile; language: string; themeId: string; pages: CanvasPage[]; options?: CanvasOptions | undefined; params?: CanvasParameter[] | undefined; interactions?: Canvas["interactions"] }
 
-export const documentOf = (c: Canvas): string => JSON.stringify({ profile: c.profile, language: c.language, themeId: c.themeId, pages: c.pages, ...(c.options ? { options: c.options } : {}), ...(c.params && c.params.length > 0 ? { params: c.params } : {}) } satisfies CanvasDocument);
+export const documentOf = (c: Canvas): string => JSON.stringify({ profile: c.profile, language: c.language, themeId: c.themeId, pages: c.pages, ...(c.options ? { options: c.options } : {}), ...(c.params && c.params.length > 0 ? { params: c.params } : {}), ...(c.interactions && Object.keys(c.interactions).length > 0 ? { interactions: c.interactions } : {}) } satisfies CanvasDocument);
 
 export interface CanvasColumns { id: string; scope: string; mode: string; title: string; revision: number; docJson: string }
 
@@ -22,6 +22,7 @@ export function canvasFromColumns(row: CanvasColumns): Canvas | null {
       profile: (CANVAS_PROFILES as readonly string[]).includes(d.profile ?? "") ? (d.profile as CanvasProfile) : "LIVE_INTERNAL",
       language: typeof d.language === "string" ? d.language : "en", themeId: typeof d.themeId === "string" ? d.themeId : "DEFAULT",
       pages: d.pages, ...(d.options ? { options: d.options } : {}), ...(Array.isArray(d.params) && d.params.length > 0 ? { params: d.params } : {}),
+      ...(d.interactions && typeof d.interactions === "object" && !Array.isArray(d.interactions) ? { interactions: d.interactions } : {}),
     };
   } catch {
     return null;

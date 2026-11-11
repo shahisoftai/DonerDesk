@@ -7,8 +7,8 @@ import type { DataSheet } from "../reporting/data-sheet.js";
 import type { DatasetPlanRow } from "../reporting/dataset-query.js";
 
 /** `level` and `indicator` are the drill: a logframe level (Outcome, Output…) narrows to its indicators, and one indicator narrows to itself. */
-export interface CrossFilter { periodId: string; places: string[]; group: string; status: string; level: string; indicator: string }
-export const NO_FILTER: CrossFilter = { periodId: "", places: [], group: "", status: "", level: "", indicator: "" };
+export interface CrossFilter { periodId: string; places: string[]; group: string; status: string; level: string; indicator: string; donors?: string[] | undefined; partners?: string[] | undefined }
+export const NO_FILTER: CrossFilter = { periodId: "", places: [], group: "", status: "", level: "", indicator: "", donors: [], partners: [] };
 export interface FilterChoices {
   periods: Array<{ id: string; label: string }>;
   places: Array<{ key: string; label: string }>;
@@ -17,11 +17,16 @@ export interface FilterChoices {
   /** The logframe levels the project's indicators sit at, and the indicators themselves (id and code), for the drill. */
   levels: string[];
   indicators: Array<{ id: string; label: string; name: string }>;
+  /** The places list as a tree, so a filter can offer provinces then districts (Phase 50.3); absent when it could not be read. */
+  placeTree?: Array<{ key: string; label: string; level: number; parentKey: string | null }> | undefined;
+  /** Donors and implementing partners of the projects the canvas reads, for the filter bar; never through a share link. */
+  donors?: string[] | undefined;
+  partners?: string[] | undefined;
 }
 export const EMPTY_CHOICES: FilterChoices = { periods: [], places: [], groups: [], statuses: [], levels: [], indicators: [] };
 
 const fold = (s: string): string => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
-export const isFiltered = (f: CrossFilter): boolean => Boolean(f.periodId || f.places.length || f.group || f.status || f.level || f.indicator);
+export const isFiltered = (f: CrossFilter): boolean => Boolean(f.periodId || f.places.length || f.group || f.status || f.level || f.indicator || f.donors?.length || f.partners?.length);
 
 /** What a clicked label means, in a fixed order (period, place, group, status), and the filter that results. An unknown label changes nothing. */
 export function pickToFilter(choices: FilterChoices, current: CrossFilter, clicked: string): CrossFilter {

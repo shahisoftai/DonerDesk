@@ -12,6 +12,8 @@ export interface RegionFeature {
   /** Stable key of the boundary unit: its P-code, else a name key. */
   ref: string;
   name: string;
+  /** What is written on the area when labels are on (name, figure, or both). */
+  label?: string | undefined;
   color: string;
   geometry: unknown;
   /** Drawn from this tile file instead of `geometry` (which is then only the box). All features of one layer share one file. */
@@ -24,7 +26,7 @@ export interface PinFeature {
   rank?: number;
 }
 
-export interface FillLayerSpec { kind: "FILL"; features: readonly RegionFeature[]; opacity: number; outline: boolean; selectedRef: string | null }
+export interface FillLayerSpec { kind: "FILL"; features: readonly RegionFeature[]; opacity: number; outline: boolean; selectedRef: string | null; /** Text drawn on each area (Phase 50.3d), from the feature's `label`; absent = none. */ labels?: boolean | undefined }
 export interface PinsLayerSpec { kind: "PINS"; pins: readonly PinFeature[]; opacity: number; selectedId: string | null; cluster: boolean; /** Colour per rank, worst last; when set, a cluster shows its worst pin's colour, not a count shade. */ rankColors?: readonly string[] }
 export interface OverlayLayerSpec {
   kind: "OVERLAY";

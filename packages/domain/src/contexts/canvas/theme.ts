@@ -5,6 +5,7 @@
  */
 import { INFOGRAPHIC_THEME_ORDER, INFOGRAPHIC_THEMES, contrastRatio, resolveTheme, type InfographicTheme } from "../infographics/theme.js";
 import { GALLERY_IDS } from "./theme-kit/gallery.js";
+import { buildTheme } from "./theme-kit/build-theme.js";
 
 export type CanvasTheme = InfographicTheme;
 export const CANVAS_THEME_IDS: readonly string[] = [...INFOGRAPHIC_THEME_ORDER, ...GALLERY_IDS];
@@ -22,3 +23,9 @@ export function contrastProblems(theme: CanvasTheme): ContrastProblem[] {
   ];
   return pairs.map(([pair, fg, bg, needed]) => ({ pair, ratio: contrastRatio(fg, bg), needed })).filter((p) => p.ratio < p.needed);
 }
+
+/** The id a canvas uses for a theme loaded from a file (Phase 50.5). */
+export const CUSTOM_THEME_ID = "CUSTOM";
+/** A canvas's own theme: the one loaded from a file when it chose it, else the named one. A file theme is rebuilt from its spec, so every contrast rule holds. */
+export const canvasThemeOf = (c: { themeId: string; options?: { themeSpec?: import("./theme-kit/build-theme.js").ThemeSpec | undefined } | undefined }): CanvasTheme =>
+  c.themeId === CUSTOM_THEME_ID && c.options?.themeSpec ? buildTheme(c.options.themeSpec) : themeFor(c.themeId);

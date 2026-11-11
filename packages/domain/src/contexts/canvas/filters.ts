@@ -6,9 +6,10 @@ import type { DatasetQuery } from "../reporting/dataset-query.js";
 import type { BlockInstance, Canvas } from "./canvas.js";
 import { definitionFor } from "./blocks/registry.js";
 
-export type FilterDimension = "PERIOD" | "PROJECT" | "PLACE" | "SECTOR" | "STATUS" | "DRAFTS";
-export const FILTER_DIMENSIONS: readonly FilterDimension[] = ["PERIOD", "PROJECT", "PLACE", "SECTOR", "STATUS", "DRAFTS"];
-export interface FilterValues { PERIOD?: string; PROJECT?: string; PLACE?: string; SECTOR?: string; STATUS?: string; DRAFTS?: boolean }
+/** Phase 50.3 adds who paid and who delivered: DONOR (the donor named on a project), FUNDING_SOURCE (a finance-register source) and PARTNER (an implementing partner). */
+export type FilterDimension = "PERIOD" | "PROJECT" | "PLACE" | "SECTOR" | "STATUS" | "DRAFTS" | "DONOR" | "FUNDING_SOURCE" | "PARTNER";
+export const FILTER_DIMENSIONS: readonly FilterDimension[] = ["PERIOD", "PROJECT", "PLACE", "SECTOR", "STATUS", "DRAFTS", "DONOR", "FUNDING_SOURCE", "PARTNER"];
+export interface FilterValues { PERIOD?: string; PROJECT?: string; PLACE?: string; SECTOR?: string; STATUS?: string; DRAFTS?: boolean; DONOR?: string; FUNDING_SOURCE?: string; PARTNER?: string }
 
 /** The dimensions a block responds to: what its slots declare, plus the list of projects (which reads the viewer's whole portfolio, so it has no project slot). */
 const LEGACY_HONOURS: Readonly<Record<string, readonly FilterDimension[]>> = { PROJECT_LIST: ["STATUS", "SECTOR"] };

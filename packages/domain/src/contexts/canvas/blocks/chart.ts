@@ -17,6 +17,7 @@ export const chartBlock = defineBlock<ChartProps, Extract<ChartBuild, { ok: true
   needsAlt: true,
   // A bar-like chart grows, a trend draws, anything else (a map, a flow, a ring) only fades.
   picture: ({ spec }) => { const rule = spec ? CHART_KINDS[spec.kind] : undefined; return rule?.startsAtZero ? "CHART_BAR" : rule?.family === "TREND" ? "CHART_LINE" : "OTHER"; },
+  highlightable: ({ spec }) => { const rule = spec ? CHART_KINDS[spec.kind] : undefined; return Boolean(rule) && !["TREND", "GEOGRAPHIC", "SCHEDULE", "RELATIONSHIP"].includes(rule!.family); },
   defaults: () => ({ spec: undefined as unknown as ChartSpecV2 }),
   validate: ({ spec }) => (spec ? validateChartSpec(spec).slice(0, 1).map((p) => ({ message: p.message })) : [{ message: "A chart needs its settings." }]),
   slots: [projectSlot(["PERIOD", "DRAFTS"])],

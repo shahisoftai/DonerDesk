@@ -1,3 +1,4 @@
+import type { MapProjection } from "../../ports/map-projection.ts";
 import type * as ML from "maplibre-gl";
 import type { Bounds, FeatureRef, MapScene, Tip } from "../../domain/model/scene.ts";
 import { pinTipKey } from "../../domain/model/scene.ts";
@@ -24,7 +25,7 @@ function tipNode(tip: Tip): HTMLElement {
  * The MapLibre implementation of `MapRenderer`. It decides nothing about colour, size or meaning: it draws the scene it is given,
  * keeps the ground (basemap) the `BasemapSource` asks for, and reports a click as a boundary ref or a pin's place id.
  */
-export class MapLibreRenderer implements MapRenderer {
+export class MapLibreRenderer implements MapRenderer, MapProjection {
   private scene: MapScene | null = null;
   private built: Built | null = null;
   private groundKey = "";
@@ -92,6 +93,20 @@ export class MapLibreRenderer implements MapRenderer {
   }
 
   onSelect(handler: Handler): void { this.handler = handler; }
+
+  project(lng: number, lat: number): { x: number; y: number } | null {
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null;
+    const p = this.map.project([lng, lat]);
+    return { x: p.x, y: p.y };
+  }
+
+  size(): { w: number; h: number } { const c = this.map.getContainer(); return { w: c.clientWidth, h: c.clientHeight }; }
+
+  onView(handler: () => void): () => void {
+    this.map.on("move", handler);
+    this.map.on("resize", handler);
+    return () => { this.map.off("move", handler); this.map.off("resize", handler); };
+  }
 
   dispose(): void {
     this.popup.remove();

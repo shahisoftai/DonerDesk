@@ -1,7 +1,8 @@
 "use client";
 
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { MapProjection } from "../ports/map-projection";
 import type { BasemapNote } from "../domain/basemap/regions";
 import type { FeatureRef, MapScene } from "../domain/model/scene";
 import type { MapRenderer } from "../ports/map-renderer";
@@ -11,17 +12,20 @@ import { useMapServices } from "./MapServices";
  * Draws a scene through whichever `MapRenderer` the services provide. It decides nothing: it creates the renderer once,
  * hands it each new scene, and forwards what was chosen.
  */
-export function MapLibreCanvas({ scene, onSelect, onNote, onFailed, height = "h-[28rem]" }: {
+export function MapLibreCanvas({ scene, onSelect, onNote, onFailed, height = "h-[28rem]", overlay }: {
   scene: MapScene;
   onSelect: (ref: FeatureRef | null) => void;
   onNote?: (note: BasemapNote | null) => void;
   /** The renderer could not start (no WebGL, tiles blocked): the screen falls back. */
   onFailed: () => void;
   height?: string;
+  /** Something laid over the map that needs to know where places are (figure cards beside areas, Phase 50.3d). */
+  overlay?: ((projection: MapProjection) => ReactNode) | undefined;
 }) {
   const services = useMapServices();
   const box = useRef<HTMLDivElement>(null);
   const renderer = useRef<MapRenderer | null>(null);
+  const [projection, setProjection] = useState<MapProjection | null>(null);
   const latest = useRef({ scene, onSelect, onNote });
   latest.current = { scene, onSelect, onNote };
 
@@ -33,6 +37,7 @@ export function MapLibreCanvas({ scene, onSelect, onNote, onFailed, height = "h-
       .then((r) => {
         if (disposed) { r.dispose(); return; }
         renderer.current = r;
+        if ("project" in r) setProjection(r as unknown as MapProjection);
         r.onSelect((ref) => latest.current.onSelect(ref));
         // Draw first, then tell: `onNote?.(draw())` would not call draw at all when there is no onNote.
         const { note } = r.draw(latest.current.scene);
@@ -52,5 +57,7 @@ export function MapLibreCanvas({ scene, onSelect, onNote, onFailed, height = "h-
   }, [scene]);
 
   // The wrapper is only a frame: the map's own canvas is the one tab stop (MapLibre moves with the arrow keys and zooms with + and -), named by the renderer.
-  return <div ref={box} className={`${height} w-full overflow-hidden rounded-lg`} role="group" aria-label={scene.label} />;
+  const frame = <div ref={box} className={`${height} w-full overflow-hidden rounded-lg`} role="group" aria-label={scene.label} />;
+  if (!overlay) return frame;
+  return <div className="relative">{frame}{projection && overlay(projection)}</div>;
 }

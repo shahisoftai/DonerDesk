@@ -9,6 +9,8 @@ import { paramBindingProblems, parameterProblems } from "./params.js";
 import { definitionFor, pictureOfBlock } from "./blocks/registry.js";
 import { animationProblems } from "./motion.js";
 import { formatProblems } from "./format/capabilities.js";
+import { interactionProblems } from "./interactions.js";
+import { importThemeSpec } from "./theme-kit/theme-json.js";
 import { CANVAS_MODES, CANVAS_PROFILES, CANVAS_SCOPES, CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, CANVAS_MAX_TITLE, type BlockInstance, type CanvasBounds, type Canvas } from "./canvas.js";
 
 export interface CanvasProblem { pageId: string; blockId: string; message: string }
@@ -54,6 +56,8 @@ export function canvasStructureProblems(canvas: Canvas): CanvasProblem[] {
   if (!CANVAS_SCOPES.includes(canvas.scope)) top("Unknown scope.");
   if (!CANVAS_PROFILES.includes(canvas.profile)) top("Unknown profile.");
   if (canvas.pages.length === 0) top("A canvas has at least one page.");
+  for (const m of interactionProblems(canvas)) top(m);
+  if (canvas.options?.themeSpec) { const r = importThemeSpec(JSON.stringify(canvas.options.themeSpec)); if (!r.ok) top(`The loaded theme cannot be used: ${r.problems[0]}`); }
   if (canvas.pages.length > CANVAS_MAX_PAGES) top(`A canvas has at most ${CANVAS_MAX_PAGES} pages.`);
   const pageIds = new Set<string>();
   const blockIds = new Set<string>();

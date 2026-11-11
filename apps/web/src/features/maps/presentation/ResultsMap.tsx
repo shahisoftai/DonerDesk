@@ -21,6 +21,8 @@ import { LayerPanel } from "./LayerPanel";
 import { MapBreadcrumbs } from "./MapBreadcrumbs";
 import { MapDataTable } from "./MapDataTable";
 import { MapLibreCanvas } from "./MapLibreCanvas";
+import { CalloutLayer } from "./CalloutLayer";
+import { calloutAnchors } from "../domain/scene/callout-anchors";
 import { useMapServices } from "./MapServices";
 import { OverlayPanel } from "./OverlayPanel";
 import { PeriodSlider } from "./PeriodSlider";
@@ -46,7 +48,7 @@ interface Selection { ref: string | null; placeId: string | null; name: string }
  * The interactive results map on the new engine: a real basemap, smooth zoom, clustering, and drilling from the world down to
  * admin 4 wherever boundary files exist. It composes the pieces; the rules are in `domain/` and the drawing is behind a port.
  */
-export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable }: ExplorerProps & { onUnavailable: () => void }) {
+export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable, areaStyle, callouts }: ExplorerProps & { onUnavailable: () => void }) {
   const services = useMapServices();
   const { t, lang, levelPlural } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
@@ -142,11 +144,11 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
     const built = buildResultsScene({
       model: model ?? EMPTY_MODEL, layers, joined, unit: indicator?.unit ?? null, selectedRef: selected?.ref ?? null,
       selectedPlaceId: selected?.placeId ?? null, overlay, basemap: ground === "plain" ? "plain" : dark ? "dark" : "light", lang,
-      label: t("maps.summary", { ...summaryCounts(model ?? EMPTY_MODEL) }),
+      label: t("maps.summary", { ...summaryCounts(model ?? EMPTY_MODEL) }), areaStyle,
     });
     const context = contextLayers(mapContext, contextOn, typeof location === "undefined" ? "" : location.origin);
     return context.length > 0 ? { ...built, layers: [...context, ...built.layers] } : built;
-  }, [model, layers, joined, indicator, selected, overlay, ground, dark, lang, t, mapContext, contextOn]);
+  }, [model, layers, joined, indicator, selected, overlay, ground, dark, lang, t, mapContext, contextOn, areaStyle]);
 
   // Side-by-side periods: one small map per period on one shared scale.
   const latest = useMemo(() => panelPeriods(periods), [periods]);
@@ -256,7 +258,7 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
       {view.status === "error" && <p role="alert" className="text-sm text-danger-600">{t("maps.boundariesFailed")}</p>}
       <div className={compact ? "grid gap-3" : "grid gap-3 lg:grid-cols-[1fr_18rem]"}>
         <div className="space-y-2">
-          <MapLibreCanvas scene={scene} height={compact ? "h-[26rem]" : "h-[28rem]"} onSelect={choose} onNote={setNote} onFailed={onUnavailable} />
+          <MapLibreCanvas scene={scene} height={compact ? "h-[26rem]" : "h-[28rem]"} onSelect={choose} onNote={setNote} onFailed={onUnavailable} overlay={callouts ? (p) => <CalloutLayer projection={p} cards={calloutAnchors(callouts.cards, places, joined).placed} columns={callouts.columns} accent={callouts.accent} /> : undefined} />
           {model && (
             <div className="flex flex-wrap items-center gap-2 text-xs" aria-label={t("maps.legend")}>
               {bands.map((b, i) => <span key={i} className="inline-flex items-center gap-1"><span className="inline-block h-3 w-5" style={{ background: b.color }} /><bdi dir="ltr">{Math.round(b.from) === Math.round(b.to) ? Math.round(b.from).toLocaleString() : `${Math.round(b.from).toLocaleString()}–${Math.round(b.to).toLocaleString()}`}</bdi></span>)}

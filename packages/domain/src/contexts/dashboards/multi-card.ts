@@ -58,18 +58,23 @@ function indicatorFigure(src: Extract<CardSource, { kind: "INDICATOR" }>, input:
 }
 
 export function resolveMultiCard(props: MultiCardProps, input: MultiCardInputs): MultiCardModel {
-  const items = props.items.map((item): CardFigure => {
-    const s = item.source;
+  const list = Array.isArray(props?.items) ? props.items.filter((i): i is CardItem => typeof i === "object" && i !== null) : [];
+  const items = list.map((item): CardFigure => {
+    const s = (typeof item.source === "object" && item.source !== null ? item.source : { kind: "NONE" }) as CardSource | { kind: "NONE" };
     let f: CardFigure;
-    if (s.kind === "INDICATOR") f = indicatorFigure(s, input, props.includeDraft);
+    if (s.kind === "COUNT" && !(s.metric in COUNT_METRICS) || s.kind === "TILE" && !(s.metric in METRICS) || !["INDICATOR", "COUNT", "TILE"].includes(s.kind)) f = { label: "", value: null, unit: "", reason: "Choose what this figure shows.", unverified: false };
+    else if (s.kind === "INDICATOR") f = indicatorFigure(s, input, props.includeDraft === true);
     else if (s.kind === "COUNT") {
       if (!input.counts) f = { label: COUNT_METRICS[s.metric].label, value: null, unit: COUNT_METRICS[s.metric].unit, reason: "Not available here", unverified: false };
       else { const c = computeCount({ metric: s.metric, level: s.level, facilityType: s.facilityType, placeKey: input.place?.key }, input.counts); f = { label: COUNT_METRICS[s.metric].label, value: c.value, unit: c.unit, reason: c.note, unverified: false }; }
-    } else if (input.place) f = { label: METRICS[s.metric].label, value: null, unit: "", reason: "Not shown by place.", unverified: false };
+    } else if (s.kind !== "TILE") f = { label: "", value: null, unit: "", reason: "Choose what this figure shows.", unverified: false };
+    else if (input.place) f = { label: METRICS[s.metric].label, value: null, unit: "", reason: "Not shown by place.", unverified: false };
     else { const t = computeMetric({ metric: s.metric }, input.metrics ?? {}); f = { label: t.title, value: t.value, unit: t.unit, reason: t.note, unverified: false }; }
-    return { ...f, label: item.label?.trim() || f.label };
+    return { ...f, label: (typeof item.label === "string" ? item.label.trim() : "") || f.label };
   });
-  return { header: props.header?.trim() || input.place?.name || null, layout: props.layout, columns: props.columns, items, unverifiedCount: items.filter((i) => i.unverified).length };
+  const layout = MULTI_CARD_LAYOUTS.includes(props?.layout) ? props.layout : "GRID";
+  const columns = Number.isInteger(props?.columns) && props.columns >= 1 && props.columns <= 4 ? props.columns : 3;
+  return { header: (typeof props?.header === "string" ? props.header.trim() : "") || input.place?.name || null, layout, columns, items, unverifiedCount: items.filter((i) => i.unverified).length };
 }
 
 export function multiCardProblems(p: MultiCardProps): string[] {

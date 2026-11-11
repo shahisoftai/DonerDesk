@@ -2,6 +2,7 @@ import type { MessageKey } from "./en.ts";
 import { recordEs } from "./record-es.ts";
 import { libraryEs } from "./library-es.ts";
 import { canvasEs } from "./canvas-es.ts";
+import { editor50Es } from "./editor50-es.ts";
 import { studioEs } from "./studio-es.ts";
 import { editorEs } from "./editor-es.ts";
 
@@ -854,6 +855,7 @@ export const es: Record<MessageKey, string> = {
   "maps.sources.link": "Fuentes y licencias de los mapas",
   ...recordEs,
   ...canvasEs,
+  ...editor50Es,
   ...studioEs,
   ...editorEs,
   ...libraryEs,

@@ -23,7 +23,7 @@ export type TextAlignment = (typeof TEXT_ALIGNMENTS)[number];
 
 export interface TitleFormat { show?: boolean; subtitle?: string; size?: "S" | "M" | "L" | "XL"; weight?: "regular" | "bold"; color?: ColourChoice; align?: TextAlignment; rule?: boolean }
 export interface FrameFormat { borderSide?: "all" | Side; borderWidth?: number; borderColor?: ColourChoice; padding?: { top: number; end: number; bottom: number; start: number } }
-export interface AccentBarFormat { show: boolean; side: Side; thickness: number; color: ColourChoice }
+export interface AccentBarFormat { show?: boolean; side?: Side; thickness?: number; color?: ColourChoice }
 export const DISPLAY_UNITS = ["AUTO", "NONE", "K", "M", "B"] as const;
 export type DisplayUnit = (typeof DISPLAY_UNITS)[number];
 export interface NumbersFormat { units?: DisplayUnit; decimals?: number; prefix?: string; suffix?: string; separators?: boolean; negative?: "minus" | "parentheses" }

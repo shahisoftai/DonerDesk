@@ -27,6 +27,8 @@ export interface ThemeSpec {
   font?: string | undefined;
   radius?: number | undefined;
   headingCase?: InfographicTheme["headingCase"] | undefined;
+  /** Colours rules use for good, bad and neutral (Phase 50.5); each is fitted to the card. Absent = green, red and the muted grey. */
+  semantic?: { good?: string | undefined; bad?: string | undefined; neutral?: string | undefined } | undefined;
 }
 
 /** The colour-blind-safe set the older themes use; every colour is fitted to the card before it is offered. */
@@ -40,7 +42,7 @@ function grey(neutral: Neutral, l: number, saturation = 0.12): string {
   return hue === null ? fromHsl(0, 0, l) : fromHsl(hue, saturation, l);
 }
 
-export function buildTheme(spec: ThemeSpec): InfographicTheme {
+export function buildTheme(spec: ThemeSpec): InfographicTheme & { semantic: { good: string; bad: string; neutral: string } } {
   const tone = spec.tone ?? "LIGHT";
   const neutral = spec.neutral ?? "COOL";
   const dark = tone === "DARK";
@@ -74,6 +76,7 @@ export function buildTheme(spec: ThemeSpec): InfographicTheme {
     signals: { ON_TIME: signal("#16a34a"), LATE: signal("#dc2626"), DONE: signal(dark ? "#60a5fa" : "#2563eb"), CANCELLED: signal("#94a3b8") },
     palette,
     radius: spec.radius ?? (print ? 4 : 10), headingCase: spec.headingCase ?? "SENTENCE",
+    semantic: { good: signal(spec.semantic?.good ?? (dark ? "#4ade80" : "#15803d")), bad: signal(spec.semantic?.bad ?? (dark ? "#f87171" : "#b91c1c")), neutral: ensureContrast(spec.semantic?.neutral ?? muted, card, 3) },
   };
 }
 

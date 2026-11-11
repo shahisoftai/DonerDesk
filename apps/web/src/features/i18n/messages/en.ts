@@ -6,6 +6,7 @@
 import { recordEn } from "./record-en.ts";
 import { libraryEn } from "./library-en.ts";
 import { canvasEn } from "./canvas-en.ts";
+import { editor50En } from "./editor50-en.ts";
 import { studioEn } from "./studio-en.ts";
 import { editorEn } from "./editor-en.ts";
 export const en = {
@@ -856,6 +857,7 @@ export const en = {
   "maps.sources.link": "Map sources and licences",
   ...recordEn,
   ...canvasEn,
+  ...editor50En,
   ...studioEn,
   ...editorEn,
   ...libraryEn,

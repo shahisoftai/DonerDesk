@@ -20,6 +20,8 @@ export interface PortfolioFacts {
   totals: { projects: number; countries: number; behind: number; needAttention: number; openRisks: number; reportsOverdue: number; onTrack?: number | undefined; noPlan?: number | undefined };
 }
 
+import type { CountFacts } from "../dashboards/count-metrics.js";
+
 export interface CanvasFacts {
   sheet: DataSheet;
   /** The design's own period range (absent = every period). */
@@ -40,6 +42,10 @@ export interface CanvasFacts {
   coverAssetId?: string | undefined;
   /** Portfolio totals, for portfolio designs; absent for a single project. */
   portfolio?: PortfolioFacts | undefined;
+  /** Counts a card may show (places reached, donors, partners, facilities, Phase 50.3); absent when they could not be read for this viewer. */
+  counts?: CountFacts | undefined;
+  /** The display name of the one place a repeater item or a filter narrows to. */
+  placeName?: string | undefined;
 }
 
 export function designPeriods(f: Pick<CanvasFacts, "sheet" | "range">): string[] {

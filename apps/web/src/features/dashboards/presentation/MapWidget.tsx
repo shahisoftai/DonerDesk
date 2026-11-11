@@ -11,6 +11,20 @@ import { useMapText } from "@/features/maps/presentation/useMapText";
 import { PlaceListSchema, PlaceResultsSchema } from "@/lib/server/schemas-places";
 import { WorkPlanRowSchema } from "@/lib/server/schemas";
 import { z } from "zod";
+import { themeFor } from "@donordesk/domain/contexts/canvas/index.js";
+import type { ExplorerProps } from "@/features/maps/presentation/results-loader";
+
+/** How a dashboard map looks (Phase 50.3d), from its drawing: colour mode, labels and figure cards. */
+export interface MapLook { colorBy?: "VALUE" | "RULES" | "CATEGORY" | "NONE" | undefined; categoryLevel?: number | undefined; bands?: Array<{ from: number | null; to: number | null; color: string }> | undefined; areaLabels?: "NONE" | "NAME" | "VALUE" | "NAME_AND_VALUE" | undefined; callouts?: Array<{ key: string; name: string; figures: Array<{ label: string; value: number | null; unit: string; reason: string | null; unverified: boolean }> }> | undefined }
+
+const THEME = themeFor("DEFAULT");
+/** The map's look as the explorer's props; absent settings leave the explorer as it was. */
+export function lookProps(look: MapLook | undefined): Pick<ExplorerProps, "areaStyle" | "callouts"> {
+  if (!look) return {};
+  const style = look.colorBy || look.areaLabels ? { areaStyle: { colorBy: look.colorBy ?? "VALUE", bands: look.bands, byParent: false, palette: THEME.palette, labels: look.areaLabels } } : {};
+  const callouts = look.callouts?.length ? { callouts: { cards: look.callouts, columns: 3, accent: "#d4a106" } } : {};
+  return { ...style, ...callouts };
+}
 
 const PlanMapView = lazy(() => import("@/features/workplan/presentation/PlanMapView"));
 
@@ -21,9 +35,9 @@ type State<T> = { kind: "loading" } | { kind: "error"; message: string } | { kin
  * own access, so a project they cannot see is refused by the API rather than drawn. "Results by place" is the map page's explorer in a card (hover,
  * click, drill, detail, indicator, time slider); "Where activities are" is the plan's site map.
  */
-export function MapWidget({ view, projectId, widgetId, preloaded, indicatorId }: { view: "RESULTS" | "ACTIVITIES"; projectId: string; widgetId: string; /** The indicator a results map opens on. */ indicatorId?: string | undefined; /** A share link: the data was read on the server and comes with the drawing (there is no session to read it with). */ preloaded?: Record<string, unknown> | undefined }) {
+export function MapWidget({ view, projectId, widgetId, preloaded, indicatorId, look }: { look?: MapLook | undefined; view: "RESULTS" | "ACTIVITIES"; projectId: string; widgetId: string; /** The indicator a results map opens on. */ indicatorId?: string | undefined; /** A share link: the data was read on the server and comes with the drawing (there is no session to read it with). */ preloaded?: Record<string, unknown> | undefined }) {
   if (preloaded) return view === "RESULTS" ? <SharedResultsMap projectId={projectId} widgetId={widgetId} data={preloaded} indicatorId={indicatorId} /> : <SharedActivityMap projectId={projectId} data={preloaded} />;
-  return view === "RESULTS" ? <ResultsMap projectId={projectId} indicatorId={indicatorId} /> : <ActivityMap projectId={projectId} />;
+  return view === "RESULTS" ? <ResultsMap projectId={projectId} indicatorId={indicatorId} look={look} /> : <ActivityMap projectId={projectId} />;
 }
 
 
@@ -78,7 +92,7 @@ function SharedActivityMap({ projectId, data }: { projectId: string; data: Recor
   );
 }
 
-function ResultsMap({ projectId, indicatorId }: { projectId: string; indicatorId?: string | undefined }) {
+function ResultsMap({ projectId, indicatorId, look }: { projectId: string; indicatorId?: string | undefined; look?: MapLook | undefined }) {
   const [state, setState] = useState<State<{ places: PlaceItem[]; results: PlaceResults }>>({ kind: "loading" });
   useEffect(() => {
     let live = true;
@@ -94,7 +108,7 @@ function ResultsMap({ projectId, indicatorId }: { projectId: string; indicatorId
   if (state.kind === "error") return <p role="alert" className="p-3 text-sm text-slate-600">{state.message}</p>;
   return (
     <div className="h-full overflow-auto p-2">
-      <MapExplorer compact initialIndicatorId={indicatorId} projectId={projectId} places={state.value.places} initial={state.value.results} periods={state.value.results.periods} />
+      <MapExplorer compact initialIndicatorId={indicatorId} projectId={projectId} places={state.value.places} initial={state.value.results} periods={state.value.results.periods} {...lookProps(look)} />
     </div>
   );
 }

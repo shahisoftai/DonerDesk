@@ -7,6 +7,7 @@
  *
  * Nothing here guesses: text that names no place, or names several, comes back as such.
  */
+import { facilityTypeProblem } from "./facility-types.js";
 import { normalizeLocationKey } from "../workplan/location-key.js";
 import { DomainError } from "../../core/domain-error.js";
 import { err, ok, type Result } from "../../core/result.js";
@@ -40,6 +41,8 @@ export interface PlaceRecord {
   code?: string;
   /** A place people go to for a service (clinic, school, water point). Optional: absent means not marked. */
   facility?: boolean;
+  /** What kind of facility it is (OTP, SC, a school…), one of the organisation's own facility types (Phase 50.3b); only on a facility. */
+  facilityType?: string;
   /** Set when an outline (a polygon) or a route (a line) is stored for this place; the shape itself is in storage, never in the row. */
   geometryKind?: GeometryKind;
   /** Where the shape's file is kept. Never sent to a browser. */
@@ -87,6 +90,8 @@ export function validatePlace(place: PlaceRecord, existing: readonly PlaceRecord
     return err(DomainError.validation("That pin is outside the map (latitude -90 to 90, longitude -180 to 180)", { field: "latitude" }));
   }
   if (place.geometryKind && place.kind === "POINT") return err(DomainError.validation("A point has a pin, not an outline; use an area for a boundary or a route", { field: "kind" }));
+  const ft = facilityTypeProblem(place);
+  if (ft) return err(DomainError.validation(ft, { field: "facilityType" }));
   if (place.placedBy !== undefined && !isPlacedBy(place.placedBy)) return err(DomainError.validation("That is not a way a place can be located", { field: "placedBy" }));
   if (place.kind === "AREA" && hasLat) return err(DomainError.validation("An area has no pin; use a point for a single site", { field: "kind" }));
 

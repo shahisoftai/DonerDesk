@@ -5,8 +5,10 @@ export function getAt(source: unknown, path: string): unknown {
 
 export function setAt<T>(source: T, path: string, value: unknown): T {
   const [head, ...rest] = path.split(".");
-  const base = (source && typeof source === "object" ? source : {}) as Record<string, unknown>;
-  const next = { ...base };
+  // A numeric step writes into a list ("series.0"), so a list stays a list.
+  const listy = Array.isArray(source) || (source === undefined && /^\d+$/.test(head!));
+  const base = (source && typeof source === "object" ? source : listy ? [] : {}) as Record<string, unknown>;
+  const next = (listy ? [...(base as unknown as unknown[])] : { ...base }) as Record<string, unknown>;
   if (rest.length === 0) {
     // An emptied optional field is removed, so it is stored absent rather than as an empty string.
     if (value === undefined || value === "") delete next[head!]; else next[head!] = value;

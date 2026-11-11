@@ -3,6 +3,7 @@ import type { InfographicSectionConfig } from "@donordesk/domain";
 import { titleFor } from "../infographics/blocks-core.js";
 import type { RenderCtx, Slot } from "../infographics/kit.js";
 import { factsOf } from "./facts-of.js";
+import { paintMultiCard } from "./painters/multi-card.js";
 import { paintBigNumbers, paintFunnel, paintProgressRings } from "./painters/numbers.js";
 import { paintActivitiesByLocation, paintLocationComparison, paintLocationResults, paintReach } from "./painters/places.js";
 import { paintDemographics, paintFunding } from "./painters/people-money.js";
@@ -24,7 +25,7 @@ import type { PrintPainter } from "./print-types.js";
 export type { PrintPainter };
 
 export const PRINT_PAINTERS: Readonly<Partial<Record<BlockKind, PrintPainter<never>>>> = {
-  BIG_NUMBERS: paintBigNumbers, PROGRESS_RINGS: paintProgressRings, FUNNEL: paintFunnel,
+  BIG_NUMBERS: paintBigNumbers, MULTI_CARD: paintMultiCard as PrintPainter<never>, PROGRESS_RINGS: paintProgressRings, FUNNEL: paintFunnel,
   REACH: paintReach, ACTIVITIES_BY_LOCATION: paintActivitiesByLocation, LOCATION_RESULTS: paintLocationResults, LOCATION_COMPARISON: paintLocationComparison,
   DEMOGRAPHICS: paintDemographics, FUNDING: paintFunding,
   HERO: paintHero, TEXT: paintText, DIVIDER: paintDivider, BANNER: paintBanner, KEY_MESSAGES: paintKeyMessages, LEGEND_NOTES: paintLegendNotes,

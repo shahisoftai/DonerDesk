@@ -1,3 +1,4 @@
+import type { CardFigure } from "@donordesk/domain";
 import { createHash, randomBytes } from "node:crypto";
 import {
   restrictSheet, restrictWidgetToPeriod, buildKpi, computeMetric, MAP_VIEW_LABEL, type KpiTile, type MetricTile,
@@ -200,7 +201,11 @@ export interface DashboardChartDto {
   /** A coloured number tile: a money or activity figure. */
   metric?: MetricTile;
   /** An interactive map: the screen draws it, for the viewer, from their own access (nothing is sent here). */
-  map?: { view: "RESULTS" | "ACTIVITIES"; title: string; projectId: string; /** Only on a share link: the data the card shows, read on the server because a link holder has no session. */ preloaded?: Record<string, unknown> };
+  map?: {
+    view: "RESULTS" | "ACTIVITIES"; title: string; projectId: string; /** Only on a share link: the data the card shows, read on the server because a link holder has no session. */ preloaded?: Record<string, unknown>;
+    /** How the areas look (Phase 50.3d). */ colorBy?: string; categoryLevel?: number; bands?: unknown; areaLabels?: string; clickToFilter?: boolean;
+    /** Figure cards beside chosen areas, resolved for the person looking (Phase 50.3d). */ callouts?: Array<{ key: string; name: string; figures: CardFigure[] }>;
+  };
   /** A text block. */
   text?: string;
   /** Why it is not drawn: not available to this viewer, or the chart's own reason (an indicator was removed). */
@@ -261,18 +266,20 @@ export async function drawCharts(
       // A map reads recorded values and the plan as the person opening the dashboard: it is never drawn for a share link (no extras there).
       if (!extras) return { widgetId: w.id, unavailable: "Maps are not shown through a share link." };
       const title = w.map.title?.trim() || MAP_VIEW_LABEL[w.map.view];
+      // How the areas are coloured and labelled travels with the drawing (Phase 50.3d); it is the author's choice, never data.
+      const style = mapStyleOf(w.map);
       if (share && extras) {
         const gx = extras.ctx;
         if (w.map.view === "RESULTS") {
           const [places, results] = await Promise.all([share.maps.places(gx), share.maps.results(gx, w.projectId)]);
           if (places === undefined || results === undefined) return { widgetId: w.id, unavailable: "This map could not be read just now." };
-          return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}), preloaded: { places, results } } };
+          return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}), ...style, preloaded: { places, results } } };
         }
         const activities = await share.maps.activities(gx, w.projectId);
         if (!activities) return { widgetId: w.id, unavailable: "This map could not be read just now." };
         return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}), preloaded: activities as unknown as Record<string, unknown> } };
       }
-      return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}) } };
+      return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}), ...style } };
     }
     if (w.kind === "METRIC") {
       if (!w.metric) return { widgetId: w.id, unavailable: "This tile has no figure." };
@@ -452,4 +459,15 @@ export class PublicDashboardHandler {
     }, this.extras ? { ctx: guest, service: new ShareLinkExtras(this.extras) } : undefined, undefined, this.maps ? { maps: this.maps } : undefined);
     return ok({ name: found.value.name, widgets: found.value.widgets, charts });
   }
+}
+
+/** The parts of a map's settings that say how it looks (Phase 50.3d), copied into its drawing only when set. */
+function mapStyleOf(q: { colorBy?: string | undefined; categoryLevel?: number | undefined; bands?: unknown; areaLabels?: string | undefined; clickToFilter?: boolean | undefined }): Record<string, unknown> {
+  const style: Record<string, unknown> = {};
+  if (q.colorBy) style["colorBy"] = q.colorBy;
+  if (q.categoryLevel !== undefined) style["categoryLevel"] = q.categoryLevel;
+  if (q.bands !== undefined) style["bands"] = q.bands;
+  if (q.areaLabels) style["areaLabels"] = q.areaLabels;
+  if (q.clickToFilter !== undefined) style["clickToFilter"] = q.clickToFilter;
+  return style;
 }

@@ -5,6 +5,7 @@
  */
 import { defineBlock, type BlockDefinition, type BlockFamily, type BlockProblem } from "../block-definition.js";
 import { FILTER_DIMENSIONS, type FilterDimension } from "../filters.js";
+import { filterControlProblems, type FilterBarOptions, type FilterControl } from "../filter-dimensions.js";
 
 export const CALLOUT_TONES = ["info", "good", "warn"] as const;
 export interface CalloutProps { text: string; tone: (typeof CALLOUT_TONES)[number] }
@@ -13,7 +14,16 @@ export interface AiData { text?: string | undefined; accepted?: boolean | undefi
 export interface GroupProps { title?: string | undefined }
 export interface TabsProps { titles: string[] }
 export interface RepeaterProps { over: "PROJECT" | "PLACE"; limit: number }
-export interface FilterBarProps { dimensions: FilterDimension[] }
+/** `dimensions` is the plain list (older bars); `controls` says how each is shown (Phase 50.3). A dimension with no control is a dropdown. */
+export interface FilterBarProps { dimensions: FilterDimension[]; controls?: FilterControl[] | undefined; options?: FilterBarOptions | undefined }
+
+function filterBarProblems(p: FilterBarProps): BlockProblem[] {
+  if (!Array.isArray(p.dimensions) || p.dimensions.length === 0) return [{ message: "Choose at least one filter." }];
+  if (p.dimensions.some((d) => !FILTER_DIMENSIONS.includes(d))) return [{ message: "That filter is not offered." }];
+  if (new Set(p.dimensions).size !== p.dimensions.length) return [{ message: "A filter is on the bar twice." }];
+  const out = (p.controls ?? []).flatMap((c) => (p.dimensions.includes(c.dimension) ? filterControlProblems(c) : ["A filter style is set for a filter not on the bar."]));
+  return [...new Set(out)].map((message) => ({ message }));
+}
 
 const MAX_INSTRUCTION = 300;
 /** The structure blocks that are their own frame. */
@@ -46,5 +56,5 @@ export const STRUCTURE_BLOCKS: Readonly<Record<string, BlockDefinition<never, un
   plain<GroupProps>("GROUP", "CONTAINERS", { w: 12, h: 4 }, () => ({}), (p) => ((p.title?.length ?? 0) > 80 ? [{ message: "A group's title is at most 80 characters." }] : []), "FRAME"),
   plain<TabsProps>("TABS", "CONTAINERS", { w: 12, h: 6 }, () => ({ titles: ["Tab 1", "Tab 2"] }), (p) => (p.titles.length < 2 || p.titles.length > 6 ? [{ message: "Tabs take 2 to 6 titles." }] : p.titles.some((t) => !t.trim() || t.length > 40) ? [{ message: "A tab title is 1 to 40 characters." }] : []), "TABS"),
   plain<RepeaterProps>("REPEATER", "CONTAINERS", { w: 12, h: 4 }, () => ({ over: "PROJECT", limit: 6 }), (p) => (!["PROJECT", "PLACE"].includes(p.over) ? [{ message: "Choose what to repeat over." }] : p.limit < 1 || p.limit > 12 ? [{ message: "A repeater shows 1 to 12 items." }] : []), "REPEAT"),
-  plain<FilterBarProps>("FILTER_BAR", "CONTROLS", { w: 12, h: 1, maxH: 2 }, () => ({ dimensions: ["PERIOD"] }), (p) => (p.dimensions.length === 0 ? [{ message: "Choose at least one filter." }] : p.dimensions.some((d) => !FILTER_DIMENSIONS.includes(d)) ? [{ message: "That filter is not offered." }] : [])),
+  plain<FilterBarProps>("FILTER_BAR", "CONTROLS", { w: 12, h: 1, maxH: 2 }, () => ({ dimensions: ["PERIOD"] }), filterBarProblems),
 ].map((d) => [d.kind, d as unknown as BlockDefinition<never, unknown, never>]));

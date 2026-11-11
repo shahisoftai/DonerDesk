@@ -41,7 +41,7 @@ export async function duplicateCanvasAction(id: string): Promise<Result<CanvasVi
 }
 
 /** Reads what the canvas shows now, for the signed-in person: used after a save and when the period filter changes. */
-export async function resolveCanvasAction(id: string, filters: { periodId?: string; places?: string[]; group?: string; status?: string; level?: string; indicator?: string } = {}): Promise<Result<ResolvedCanvas, AppError>> {
+export async function resolveCanvasAction(id: string, filters: { periodId?: string; places?: string[]; group?: string; status?: string; level?: string; indicator?: string; donors?: string[]; partners?: string[] } = {}): Promise<Result<ResolvedCanvas, AppError>> {
   const context = await requireSession();
   const params = new URLSearchParams();
   if (filters.periodId) params.set("periodId", filters.periodId);
@@ -50,6 +50,8 @@ export async function resolveCanvasAction(id: string, filters: { periodId?: stri
   if (filters.status) params.set("status", filters.status);
   if (filters.level) params.set("level", filters.level);
   if (filters.indicator) params.set("indicator", filters.indicator);
+  if (filters.donors?.length) params.set("donors", filters.donors.join(","));
+  if (filters.partners?.length) params.set("partners", filters.partners.join(","));
   const query = params.size ? `?${params}` : "";
   return gatewayRequest(`/v1/canvases/${encodeURIComponent(id)}/resolve${query}`, ResolvedCanvasSchema, context.token);
 }

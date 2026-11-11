@@ -31,6 +31,8 @@ model Organization {
   dataResidency String   @default("DEFAULT") // EU | US | AFRICA | ASIA | DEFAULT
   aiEnabled     Boolean  @default(true)
   canvasAiEnabled Boolean @default(false)
+  /// The organisation's own facility types (Phase 50.3b): [{ key, label, sector? }]; empty = none chosen yet.
+  facilityTypesJson Json @default("[]")
   storageProvider String @default("LOCAL") // LOCAL | GOOGLE_DRIVE | R2
   driveRootFolderId String?
   reportingDefaults String @default("{}") // JSON: OrganizationReportingDefaults
@@ -2167,6 +2169,8 @@ model Place {
   code        String?
   /// A place people go to for a service (clinic, school, water point, distribution site), as opposed to an area.
   facility    Boolean   @default(false)
+  /// What kind of facility (Phase 50.3b), one of the organisation's facility types; null when not a facility or not typed.
+  facilityType String?
   /// POLYGON (an outline) or LINE (a route) when a drawn shape is stored for this area; the shape itself is a GeoJSON file in storage, never in the row.
   geometryKind  String?
   /// Where the shape's file is kept (`places/<tenantId>/<placeId>.geojson`). Never sent to a browser.

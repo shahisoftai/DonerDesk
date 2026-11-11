@@ -54,6 +54,8 @@ export interface BlockDefinition<P, M = unknown, D = unknown> {
   container?: "FRAME" | "TABS" | "REPEAT";
   /** For an AI block: how its words are drafted from the records (a summary, key messages, or an answer to a question). */
   aiDraft?: "SUMMARY" | "MESSAGES" | "QUESTION";
+  /** True (or a test on its settings) when a click elsewhere can dim this block instead of narrowing it (Phase 50.4). */
+  highlightable?: boolean | ((props: P) => boolean);
   /** The formatting sections this block offers (Phase 50.2); absent = its family's set (`FAMILY_FORMATS`). */
   formats?: readonly FormatCapability[];
   reads?: "FACTS" | "VIEWER_PROJECTS" | "PORTFOLIO";

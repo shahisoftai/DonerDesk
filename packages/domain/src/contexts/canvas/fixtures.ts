@@ -102,7 +102,7 @@ export const BLOCK_FIXTURES: Readonly<Record<BlockKind, BlockFixture>> = {
   KPI: { props: { indicatorId: "a", includeDraft: false }, data: { sheet: SAMPLE_SHEET } },
   BIG_NUMBERS: withFacts({ numbers: [{ label: "People reached", source: "REACH_UNIQUE" }, { label: "Indicator a", source: "INDICATOR", indicatorId: "a" }, { label: "Budget", source: "FINANCE_BUDGET" }, { label: "Not recorded", source: "INDICATOR", indicatorId: "zz" }] }),
   METRIC: { props: { metric: "ACTIVITIES_TOTAL" }, data: { plan: [plan("DONE", "DONE"), plan("IN_PROGRESS", "LATE")] } },
-  MULTI_CARD: { props: { items: [{ source: { kind: "INDICATOR", indicatorId: "a", measure: "CUMULATIVE" }, label: "Children" }, { source: { kind: "COUNT", metric: "DONORS" } }, { source: { kind: "COUNT", metric: "PLACES_REACHED", level: 2 } }], layout: "GRID", columns: 3, includeDraft: false }, data: { sheet: SAMPLE_SHEET, counts: { donors: [{ name: "ECHO" }, { name: "echo " }, { name: "UNICEF" }], placesWithValues: [{ key: "lahore", level: 2, within: ["punjab"] }] } } },
+  MULTI_CARD: { props: { items: [{ source: { kind: "INDICATOR", indicatorId: "a", measure: "CUMULATIVE" }, label: "Children" }, { source: { kind: "COUNT", metric: "DONORS" } }, { source: { kind: "COUNT", metric: "PLACES_REACHED", level: 2 } }], layout: "GRID", columns: 3, includeDraft: false }, data: { ...SAMPLE_FACTS, counts: { donors: [{ name: "ECHO" }, { name: "echo " }, { name: "UNICEF" }], placesWithValues: [{ key: "lahore", level: 2, within: ["punjab"] }] } } },
   PROGRESS_RINGS: withFacts({}),
   CHART: { props: { spec: chartSpec }, data: dataset(["a"]) },
   SMALL_MULTIPLES: withFacts({ title: "By indicator" }),
