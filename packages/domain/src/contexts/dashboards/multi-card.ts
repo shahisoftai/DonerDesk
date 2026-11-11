@@ -48,9 +48,18 @@ function indicatorFigure(src: Extract<CardSource, { kind: "INDICATOR" }>, input:
   if (input.place) {
     if (src.measure === "CUMULATIVE") return { label: ind.name, value: null, unit, reason: "A total to date is not recorded by place.", unverified: false };
     const want = normalizeLocationKey(input.place.key);
-    const at = (c: DataSheetCell) => c.breakdown?.find((b) => b.dimension.trim().toUpperCase() === "LOCATION" && normalizeLocationKey(b.category) === want);
-    const cell = cells.find((c) => at(c) && num(at(c)!.value) !== null);
-    return cell ? { label: ind.name, value: num(at(cell)!.value), unit, reason: null, unverified: cell.status !== "VERIFIED" } : { label: ind.name, value: null, unit, reason: "Not reported", unverified: false };
+    // A place's own entry, else (for a count, never a rate) the sum of the places inside it that recorded one: a province is its districts.
+    const inside = new Set((input.counts?.placesWithValues ?? []).filter((p) => p.within.includes(want)).map((p) => p.key));
+    const valueAt = (c: DataSheetCell): number | null => {
+      const loc = (c.breakdown ?? []).filter((b) => b.dimension.trim().toUpperCase() === "LOCATION");
+      const own = loc.find((b) => normalizeLocationKey(b.category) === want);
+      if (own) return num(own.value);
+      if (ind.isRate || inside.size === 0) return null;
+      const parts = loc.filter((b) => inside.has(normalizeLocationKey(b.category))).map((b) => num(b.value)).filter((v): v is number => v !== null);
+      return parts.length ? parts.reduce((a, b) => a + b, 0) : null;
+    };
+    const cell = cells.find((c) => valueAt(c) !== null);
+    return cell ? { label: ind.name, value: valueAt(cell), unit, reason: null, unverified: cell.status !== "VERIFIED" } : { label: ind.name, value: null, unit, reason: "Not reported", unverified: false };
   }
   const pick = (c: DataSheetCell) => num(src.measure === "CUMULATIVE" ? c.cumulativeValue : c.periodValue);
   const cell = cells.find((c) => pick(c) !== null);

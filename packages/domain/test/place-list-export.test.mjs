@@ -42,3 +42,13 @@ test("results by place: a gap is empty, never 0; unverified is said; a place wit
   assert.equal(geo.unpinned, 1);
   assert.equal(JSON.parse(geo.text).features[0].properties["People trained"], 0);
 });
+
+test("a facility's type survives export and import (Phase 50.3b)", async () => {
+  const { placeListToCsv, parsePlaceSheet } = await import("../dist/index.js");
+  const csv = placeListToCsv([{ id: "n", name: "Nepal", adminLevel: 0, path: "Nepal", aliases: [] }, { id: "s", name: "Jumla OTP", adminLevel: 4, parentId: "n", path: "Jumla OTP › Nepal", aliases: [], facility: true, facilityType: "OTP" }]);
+  assert.match(csv.split("\n")[0], /Facility type$/);
+  const parsed = parsePlaceSheet(csv);
+  assert.deepEqual(parsed.problems, []);
+  assert.equal(parsed.rows.find((r) => r.name === "Jumla OTP").facilityType, "OTP");
+  assert.equal(parsed.rows.find((r) => r.name === "Nepal").facilityType, undefined);
+});

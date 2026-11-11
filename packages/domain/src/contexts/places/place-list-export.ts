@@ -16,10 +16,11 @@ export interface ExportablePlace {
   latitude?: number | undefined;
   longitude?: number | undefined;
   facility?: boolean | undefined;
+  facilityType?: string | undefined;
   archived?: boolean | undefined;
 }
 
-export const PLACE_EXPORT_COLUMNS = ["Name", "Level", "Parent", "Code", "Latitude", "Longitude", "Other spellings"] as const;
+export const PLACE_EXPORT_COLUMNS = ["Name", "Level", "Parent", "Code", "Latitude", "Longitude", "Other spellings", "Facility type"] as const;
 
 const live = (p: ExportablePlace): boolean => !p.archived;
 const pinned = (p: ExportablePlace): boolean => typeof p.latitude === "number" && typeof p.longitude === "number" && Number.isFinite(p.latitude) && Number.isFinite(p.longitude);
@@ -33,7 +34,7 @@ export function placeListToCsv(places: readonly ExportablePlace[]): string {
   const byId = new Map(places.map((p) => [p.id, p]));
   const rows = inImportOrder(places).map((p) => [
     p.name, `adm${p.adminLevel}`, p.parentId ? byId.get(p.parentId)?.name ?? "" : "", p.code ?? "",
-    pinned(p) ? p.latitude! : "", pinned(p) ? p.longitude! : "", p.aliases.join(", "),
+    pinned(p) ? p.latitude! : "", pinned(p) ? p.longitude! : "", p.aliases.join(", "), p.facility ? p.facilityType ?? "" : "",
   ].map((v) => csvCell(v as string | number)).join(","));
   return [PLACE_EXPORT_COLUMNS.join(","), ...rows].join("\n") + "\n";
 }
@@ -44,7 +45,7 @@ export function placeListToGeoJson(places: readonly ExportablePlace[]): { text: 
     type: "Feature" as const,
     id: p.id,
     geometry: { type: "Point" as const, coordinates: [p.longitude!, p.latitude!] },
-    properties: { name: p.name, level: p.adminLevel, path: p.path, ...(p.code ? { pcode: p.code } : {}), ...(p.aliases.length > 0 ? { aliases: p.aliases.join(", ") } : {}), ...(p.facility ? { facility: true } : {}) },
+    properties: { name: p.name, level: p.adminLevel, path: p.path, ...(p.code ? { pcode: p.code } : {}), ...(p.aliases.length > 0 ? { aliases: p.aliases.join(", ") } : {}), ...(p.facility ? { facility: true } : {}), ...(p.facility && p.facilityType ? { facilityType: p.facilityType } : {}) },
   }));
   return { text: JSON.stringify({ type: "FeatureCollection", features }), unpinned: kept.length - features.length };
 }

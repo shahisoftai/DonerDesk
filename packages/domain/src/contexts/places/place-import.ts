@@ -1,11 +1,12 @@
 /**
  * Importing a list of places (Phase 33.1): a pasted or uploaded sheet with the columns
- * Name, Level, Parent, Latitude, Longitude, Code, Other spellings. Any row with a problem blocks
+ * Name, Level, Parent, Latitude, Longitude, Code, Other spellings, and (Phase 50.3b) Facility type. Any row with a problem blocks
  * the whole import and names its row (the work-plan import's rule); a place already listed is
  * skipped, not duplicated. Pure: ids come from the caller.
  */
 import { normalizeHeader, splitDelimited } from "../../core/delimited.js";
 import { normalizeLocationKey } from "../workplan/location-key.js";
+import { normalizeFacilityTypeKey } from "./facility-types.js";
 import { ADMIN_LEVEL_LABEL, PlaceRegistry, placeKeys, validatePlace, type AdminLevel, type PlaceRecord } from "./place.js";
 
 export interface PlaceImportRow {
@@ -17,6 +18,8 @@ export interface PlaceImportRow {
   longitude?: number;
   code?: string;
   aliases: string[];
+  /** A facility type key (OTP, SC…): marks the place as a facility of that type. */
+  facilityType?: string;
 }
 
 export interface PlaceImportProblem {
@@ -32,13 +35,14 @@ export interface PlaceImportPlan {
   problems: PlaceImportProblem[];
 }
 
-const COLUMN: Record<string, "name" | "level" | "parent" | "latitude" | "longitude" | "code" | "aliases"> = {
+const COLUMN: Record<string, "name" | "level" | "parent" | "latitude" | "longitude" | "code" | "aliases" | "facilityType"> = {
   name: "name", place: "name", location: "name",
   level: "level", type: "level", kind: "level", adminlevel: "level",
   parent: "parent", parentplace: "parent", inside: "parent", locatedin: "parent",
   latitude: "latitude", lat: "latitude", longitude: "longitude", lng: "longitude", lon: "longitude", long: "longitude",
   code: "code", placecode: "code", pcode: "code",
   otherspellings: "aliases", aliases: "aliases", alias: "aliases", alsoknownas: "aliases",
+  facilitytype: "facilityType", facility: "facilityType",
 };
 
 const LEVEL_WORDS: Array<[AdminLevel, string[]]> = [
@@ -54,6 +58,9 @@ export function parseAdminLevel(text: string): AdminLevel | undefined {
   for (const [level, words] of LEVEL_WORDS) if (words.includes(t)) return level;
   return undefined;
 }
+
+/** A facility type key (OTP, SC) marks the place as a facility of that type; empty, "No" or "Yes" (no type given) leaves it unmarked. */
+const facilityKey = (v: string): string => (/^(|no|false|0)$/i.test(v.trim()) ? "" : /^(yes|true|1)$/i.test(v.trim()) ? "" : normalizeFacilityTypeKey(v));
 
 /** Reads the sheet's rows. Does not touch the existing list. A blank line is skipped; a missing Name or Level is a problem. */
 export function parsePlaceSheet(text: string): { rows: PlaceImportRow[]; problems: PlaceImportProblem[] } {
@@ -92,6 +99,7 @@ export function parsePlaceSheet(text: string): { rows: PlaceImportRow[]; problem
       ...(longitude !== undefined ? { longitude } : {}),
       ...(get("code") ? { code: get("code") } : {}),
       aliases: get("aliases") ? get("aliases").split(/[|;]+/).map((a) => a.trim()).filter(Boolean) : [],
+      ...(facilityKey(get("facilityType")) ? { facilityType: facilityKey(get("facilityType")) } : {}),
     });
   }
   return { rows, problems };
@@ -160,6 +168,7 @@ export function planPlaceImport(rows: readonly PlaceImportRow[], registry: Place
         ...(r.longitude !== undefined ? { longitude: r.longitude } : {}),
         ...(r.code ? { code: r.code } : {}),
         aliases: r.aliases, archived: false,
+        ...(r.facilityType ? { facility: true, facilityType: r.facilityType } : {}),
       };
       const valid = validatePlace(record, [...existing, ...created]);
       if (!valid.ok) {

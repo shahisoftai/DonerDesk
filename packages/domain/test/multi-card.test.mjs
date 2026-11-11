@@ -51,3 +51,12 @@ test("problems: empty, duplicates, wrong options", () => {
   assert.ok(validateCountQuery({ metric: "DONORS", level: 2 }));
   assert.equal(validateCountQuery({ metric: "PLACES_REACHED", level: 2 }), null);
 });
+
+test("a province's figure is the sum of its districts that recorded one; a rate is never summed", () => {
+  const s = { ...SAMPLE_SHEET, cells: [{ indicatorId: "a", periodId: "p3", periodValue: "30", cumulativeValue: "40", status: "VERIFIED", breakdown: [{ dimension: "LOCATION", category: "Humla", value: "10" }, { dimension: "LOCATION", category: "Jumla", value: "5" }, { dimension: "LOCATION", category: "Doti", value: "15" }] }, { indicatorId: "r", periodId: "p3", periodValue: "70", cumulativeValue: "70", status: "VERIFIED", breakdown: [{ dimension: "LOCATION", category: "Humla", value: "60" }] }] };
+  const counts = { placesWithValues: [{ key: "humla", level: 2, within: ["karnali", "nepal"] }, { key: "jumla", level: 2, within: ["karnali", "nepal"] }, { key: "doti", level: 2, within: ["sudurpashchim", "nepal"] }] };
+  const items = [{ source: { kind: "INDICATOR", indicatorId: "a", measure: "PERIOD" } }, { source: { kind: "INDICATOR", indicatorId: "r", measure: "PERIOD" } }];
+  const m = resolveMultiCard({ ...base, items }, { sheet: s, counts, place: { key: "karnali", name: "Karnali" } });
+  assert.equal(m.items[0].value, 15);
+  assert.equal(m.items[1].value, null, "a rate recorded for one district is not the province's rate");
+});
