@@ -1,0 +1,25 @@
+import { chromium } from "../demo-ui/lib.mjs";
+const browser = await chromium.connectOverCDP("http://localhost:9360");
+const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+const page = await ctx.newPage();
+const URL_ = "https://donordesk.online/shared/canvas/8vSHMDmxiJNJG7S4YElUSj3q9Wac2fsC";
+const posts = [];
+page.on("request", (r) => { if (r.method() !== "GET") posts.push(`${r.method()} ${r.url().replace("https://donordesk.online", "").slice(0, 80)}`); });
+const where = () => page.evaluate(() => { const f = document.querySelector('[data-testid="map-callouts"]').parentElement.getBoundingClientRect(); const e = document.querySelector('section[data-card="jumla"]'); const b = e.getBoundingClientRect(); return { x: Math.round(b.x - f.x), y: Math.round(b.y - f.y), fixed: e.getAttribute("data-fixed"), cursor: getComputedStyle(e).cursor, pe: getComputedStyle(e).pointerEvents }; });
+await page.goto(URL_, { waitUntil: "domcontentloaded" });
+await page.locator('section[data-card="jumla"]').waitFor({ timeout: 60000 });
+await page.waitForTimeout(4000);
+console.log("before:", JSON.stringify(await where()));
+const card = page.locator('section[data-card="jumla"]'); await card.scrollIntoViewIfNeeded();
+const b = await card.boundingBox(); const sx = b.x + b.width / 2, sy = b.y + 10;
+await page.mouse.move(sx, sy); await page.mouse.down();
+for (let i = 1; i <= 8; i++) { await page.mouse.move(sx - 12 * i, sy + 6 * i); await page.waitForTimeout(40); }
+await page.mouse.up(); await page.waitForTimeout(800);
+console.log("after drag:", JSON.stringify(await where()));
+await page.reload({ waitUntil: "domcontentloaded" });
+await page.locator('section[data-card="jumla"]').waitFor({ timeout: 60000 }); await page.waitForTimeout(3000);
+console.log("after reload (same tab):", JSON.stringify(await where()));
+await page.locator('section[data-card="jumla"]').dblclick(); await page.waitForTimeout(800);
+console.log("after double-click reset:", JSON.stringify(await where()));
+console.log("anything sent to the server (non-GET):", posts.filter((p) => !/\/data\?/.test(p)).join(" | ") || "nothing");
+await ctx.close(); await browser.close(); process.exit(0);

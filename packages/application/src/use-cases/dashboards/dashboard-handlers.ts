@@ -1,3 +1,4 @@
+import { placesOfResultCountries } from "../../services/share-link-extras.js";
 import type { CardFigure } from "@donordesk/domain";
 import { createHash, randomBytes } from "node:crypto";
 import {
@@ -273,7 +274,7 @@ export async function drawCharts(
         if (w.map.view === "RESULTS") {
           const [places, results] = await Promise.all([share.maps.places(gx), share.maps.results(gx, w.projectId)]);
           if (places === undefined || results === undefined) return { widgetId: w.id, unavailable: "This map could not be read just now." };
-          return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}), ...style, preloaded: { places, results } } };
+          return { widgetId: w.id, map: { view: w.map.view, title, projectId: w.projectId, ...(w.map.indicatorId ? { indicatorId: w.map.indicatorId } : {}), ...style, preloaded: { places: placesOfResultCountries(places, results), results } } };
         }
         const activities = await share.maps.activities(gx, w.projectId);
         if (!activities) return { widgetId: w.id, unavailable: "This map could not be read just now." };

@@ -9,7 +9,7 @@ page.on("request", (r) => { if (!/_next\/static|\.pmtiles|\/geo\/|\/tiles\/|\.wo
 page.on("response", (r) => { if (r.status() >= 400) log.push(`${r.status()} ${r.url().replace("https://donordesk.online", "").slice(0, 100)}`); });
 page.on("framenavigated", (f) => { if (f === page.mainFrame()) log.push(`navigated: ${f.url().replace("https://donordesk.online", "").slice(0, 80)}`); });
 await page.goto(process.argv[2], { waitUntil: "domcontentloaded" });
-for (const s of [3, 8, 15, 30]) {
+for (const s of [4, 12, 25, 45]) {
   await page.waitForTimeout(Math.max(0, s * 1000 - (Date.now() - t0)));
   console.log(`t+${s}s`, JSON.stringify(await page.evaluate(() => ({ url: location.pathname, canvases: document.querySelectorAll("canvas").length, cards: document.querySelectorAll("section[data-card]").length, slicers: document.querySelectorAll("[data-filter]").length, mapReady: document.querySelector("[data-map-ready]")?.getAttribute("data-map-ready") }))));
 }

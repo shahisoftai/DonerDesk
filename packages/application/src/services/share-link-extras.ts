@@ -47,3 +47,26 @@ export class ShareMapReader implements IShareMapReader {
     return { rows: rows.value, ...(country ? { country } : {}) };
   }
 }
+
+/**
+ * The places a shared map needs: those under the country (or countries) its own results sit in, and nothing else. The organisation's whole list
+ * (every other project's countries and sites) is never put into a link's page: it is not needed there, it would be sent to every visitor
+ * (a hundred kilobytes per country), and it names places of other projects. A map with no results of its own gets no places.
+ */
+export function placesOfResultCountries(placesDto: unknown, resultsDto: unknown): unknown {
+  const list = (placesDto as { places?: Array<{ id: string; parentId?: string | null }> } | null)?.places;
+  if (!Array.isArray(list)) return placesDto;
+  const byId = new Map(list.map((p) => [p.id, p] as const));
+  const used = new Set<string>();
+  const walk = (v: unknown, depth: number): void => {
+    if (depth > 8 || v === null || typeof v !== "object") return;
+    if (Array.isArray(v)) { for (const x of v) walk(x, depth + 1); return; }
+    const o = v as Record<string, unknown>;
+    if (typeof o["placeId"] === "string") used.add(o["placeId"]);
+    for (const x of Object.values(o)) walk(x, depth + 1);
+  };
+  walk(resultsDto, 0);
+  const top = (id: string): string => { let cur = byId.get(id); for (let i = 0; cur?.parentId && byId.has(cur.parentId) && i < 8; i++) cur = byId.get(cur.parentId); return cur?.id ?? id; };
+  const roots = new Set([...used].filter((id) => byId.has(id)).map(top));
+  return { ...(placesDto as object), places: list.filter((p) => roots.has(top(p.id))) };
+}

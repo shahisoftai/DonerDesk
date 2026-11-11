@@ -27,3 +27,16 @@ test("through a link the counts carry donors and partners as numbers; their name
   const signedOutGuestNoGate = await svc.read(ctx, ["p1"], []);
   assert.equal(signedOutGuestNoGate.donors.length, 1, "without a link the finance gate still decides which funding names are read");
 });
+
+test("a link's map carries only the places under the country its own results sit in", async () => {
+  const { placesOfResultCountries } = await import("../dist/index.js");
+  const places = { canEdit: false, places: [
+    { id: "np", name: "Nepal", adminLevel: 0 }, { id: "ka", name: "Karnali", adminLevel: 1, parentId: "np" }, { id: "hu", name: "Humla", adminLevel: 2, parentId: "ka" }, { id: "site", name: "Simikot OTP", adminLevel: 4, parentId: "hu" },
+    { id: "ke", name: "Kenya", adminLevel: 0 }, { id: "tu", name: "Turkana County", adminLevel: 1, parentId: "ke" }, { id: "et", name: "Ethiopia", adminLevel: 0 },
+  ] };
+  const results = { indicators: [{ rollup: { rows: [{ placeId: "hu", value: 3 }, { placeId: "ka", value: 9 }] } }] };
+  const out = placesOfResultCountries(places, results);
+  assert.deepEqual(out.places.map((p) => p.name).sort(), ["Humla", "Karnali", "Nepal", "Simikot OTP"], "Nepal's places only, including pinned sites with no results of their own");
+  assert.equal(out.canEdit, false);
+  assert.deepEqual(placesOfResultCountries(places, { indicators: [] }).places, [], "no results, no places: nothing from the list goes out");
+});

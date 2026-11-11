@@ -1,0 +1,21 @@
+import { chromium } from "../demo-ui/lib.mjs";
+const browser = await chromium.connectOverCDP("http://localhost:9360");
+const ctx = await browser.newContext({ viewport: { width: 1400, height: 900 } });
+await ctx.addInitScript(() => { window.__lt = []; try { new PerformanceObserver((l) => { for (const e of l.getEntries()) window.__lt.push([Math.round(e.startTime), Math.round(e.duration)]); }).observe({ entryTypes: ["longtask"] }); } catch {} });
+const page = await ctx.newPage();
+const t0 = Date.now();
+await page.goto(process.argv[2], { waitUntil: "commit" });
+const marks = {};
+await page.waitForLoadState("domcontentloaded"); marks.domContentLoaded = Date.now() - t0;
+await page.locator("canvas.maplibregl-canvas").first().waitFor({ timeout: 90000 }); marks.firstMapCanvas = Date.now() - t0;
+await page.locator('[data-map-ready="true"]').first().waitFor({ timeout: 90000 }); marks.mapDrawn = Date.now() - t0;
+await page.waitForTimeout(2000);
+const r = await page.evaluate(() => {
+  const nav = performance.getEntriesByType("navigation")[0];
+  const res = performance.getEntriesByType("resource");
+  const js = res.filter((e) => /\.js(\?|$)/.test(e.name));
+  const lt = window.__lt;
+  return { ttfb: Math.round(nav.responseStart), htmlKB: Math.round(nav.encodedBodySize / 1024), jsKB: Math.round(js.reduce((a, e) => a + e.encodedBodySize, 0) / 1024), jsFiles: js.length, tileKB: Math.round(res.filter((e) => /pmtiles/.test(e.name)).reduce((a, e) => a + (e.encodedBodySize || e.transferSize), 0) / 1024), longTasks: lt.length, blockedMs: lt.reduce((a, b) => a + b[1], 0), worst: lt.sort((a, b) => b[1] - a[1]).slice(0, 5) };
+});
+console.log(JSON.stringify({ marks, ...r }, null, 1));
+await ctx.close(); await browser.close(); process.exit(0);
