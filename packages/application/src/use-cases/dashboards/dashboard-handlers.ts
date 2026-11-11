@@ -204,7 +204,7 @@ export interface DashboardChartDto {
   map?: {
     view: "RESULTS" | "ACTIVITIES"; title: string; projectId: string; /** Only on a share link: the data the card shows, read on the server because a link holder has no session. */ preloaded?: Record<string, unknown>;
     /** How the areas look (Phase 50.3d). */ colorBy?: string; categoryLevel?: number; bands?: unknown; areaLabels?: string; clickToFilter?: boolean;
-    /** Figure cards beside chosen areas, resolved for the person looking (Phase 50.3d). */ callouts?: Array<{ key: string; name: string; figures: CardFigure[] }>;
+    /** Figure cards beside chosen areas, resolved for the person looking (Phase 50.3d). */ callouts?: Array<{ key: string; name: string; figures: CardFigure[]; text?: string; placeKey?: string }>; /** Where a person dropped each card, px from its place. */ calloutOffsets?: Record<string, { dx: number; dy: number }>; calloutColumns?: number;
   };
   /** A text block. */
   text?: string;

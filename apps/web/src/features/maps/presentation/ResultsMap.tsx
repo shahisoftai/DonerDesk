@@ -259,7 +259,7 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
       {view.status === "error" && <p role="alert" className="text-sm text-danger-600">{t("maps.boundariesFailed")}</p>}
       <div className={compact ? "grid gap-3" : "grid gap-3 lg:grid-cols-[1fr_18rem]"}>
         <div className="space-y-2">
-          <MapLibreCanvas scene={scene} height={compact ? "h-[26rem]" : "h-[28rem]"} onSelect={choose} onNote={setNote} onFailed={onUnavailable} overlay={callouts ? (p) => <CalloutLayer projection={p} cards={calloutAnchors(callouts.cards, places, joined).placed} columns={callouts.columns} accent={callouts.accent} /> : undefined} />
+          <MapLibreCanvas scene={scene} height={compact ? "h-[26rem]" : "h-[28rem]"} onSelect={choose} onNote={setNote} onFailed={onUnavailable} overlay={callouts ? (p) => <CalloutLayer projection={p} cards={calloutAnchors(callouts.cards, places, joined).placed} columns={callouts.columns} accent={callouts.accent} offsets={callouts.offsets} onMove={callouts.onMove} /> : undefined} />
           {model && <MapLegend bands={bands} areaStyle={areaStyle} areas={(scene.layers.find((l) => l.kind === "FILL") as { features?: Array<{ name: string; color: string }> } | undefined)?.features ?? []} />}
           {model && <p className="text-sm text-slate-600">{t("maps.summary", { ...summaryCounts(model) })}</p>}
           {note === NO_BASEMAP && <p className="text-xs text-slate-500">{t("maps.noBasemap")}</p>}

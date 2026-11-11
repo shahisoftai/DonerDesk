@@ -35,6 +35,7 @@ import { BLOCK_DRAG_TYPE } from "../editor/presentation/AddDrawer";
 import { pointToCell } from "../editor/domain/drop-cell";
 import { FilterPane, type FilterBarProps } from "../filters/FilterPane";
 import { FilterSlotProvider } from "../filters/filter-slot";
+import { BlockEditProvider } from "@/components/editing/block-edit-context";
 import { useFilterAddress } from "../filters/use-filter-address";
 
 export interface ProjectOption { id: string; name: string }
@@ -264,12 +265,14 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
           {blocks.length === 0 ? (
             <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{editing ? "This page is empty. Open Add to choose a block, or drag one onto the page." : canEdit ? "This page is empty. Choose Edit to add blocks." : "This page is empty."}</p>
           ) : (
+            <BlockEditProvider value={editing ? (id, change) => { const b = ed.page.blocks.find((x) => x.id === id); if (b && b.style?.locked !== true) ed.setProps(id, change(b.props)); } : null}>
             <FilterSlotProvider value={live && hasFilterBar ? <FilterPane bar={filterBar} choices={live.choices} filters={filters} tone={{ strip: pageTheme.accentSoft, ink: pageTheme.accent, on: pageTheme.accent }} onChange={setFilters} onClear={() => setFilters(NO_FILTER)} /> : null}>
             <div style={{ zoom: session.view.zoom }} data-testid="zoom" data-zoom={session.view.zoom}><CanvasPageGrid canvas={canvas} blocks={blocks} drawings={drawings} widgets={widgets} models={live?.models} repeats={live?.repeats} editing={editing} selectedIds={new Set(ed.selection.ids)} onSelect={ed.selectBlock} showGrid={session.view.grid} onMarquee={(cells, add) => (cells.w === 0 ? ed.setSelection({ ids: [] }) : selectByRectangle({ canvas, page: ed.page, selection: ed.selection, select: ed.setSelection } as never, cells, add))}
               onPick={live ? (name) => setFilters((f) => pickToFilter(live.choices, f, name)) : undefined}
               isChanged={(b) => !previewCurrent && savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)}
               frame={(b, node) => <BlockFrame bounds={b.bounds} movable={editing && b.style?.locked !== true} selected={ed.selection.ids.includes(b.id)} label={label(b.kind)} onBounds={(c) => ed.bounds(b.id, c)} onSelect={() => ed.selectBlock(b.id)}>{node}</BlockFrame>} /></div>
             </FilterSlotProvider>
+            </BlockEditProvider>
           )}
 
           <section className="mt-4 space-y-2 print:hidden" aria-label="Design check">

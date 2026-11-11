@@ -12,17 +12,18 @@ import { PlaceListSchema, PlaceResultsSchema } from "@/lib/server/schemas-places
 import { WorkPlanRowSchema } from "@/lib/server/schemas";
 import { z } from "zod";
 import { themeFor } from "@donordesk/domain/contexts/canvas/index.js";
+import { useBlockEdit } from "@/components/editing/block-edit-context";
 import type { ExplorerProps } from "@/features/maps/presentation/results-loader";
 
 /** How a dashboard map looks (Phase 50.3d), from its drawing: colour mode, labels and figure cards. */
-export interface MapLook { colorBy?: "VALUE" | "RULES" | "CATEGORY" | "NONE" | undefined; categoryLevel?: number | undefined; bands?: Array<{ from: number | null; to: number | null; color: string }> | undefined; areaLabels?: "NONE" | "NAME" | "VALUE" | "NAME_AND_VALUE" | undefined; callouts?: Array<{ key: string; name: string; figures: Array<{ label: string; value: number | null; unit: string; reason: string | null; unverified: boolean }> }> | undefined }
+export interface MapLook { colorBy?: "VALUE" | "RULES" | "CATEGORY" | "NONE" | undefined; categoryLevel?: number | undefined; bands?: Array<{ from: number | null; to: number | null; color: string }> | undefined; areaLabels?: "NONE" | "NAME" | "VALUE" | "NAME_AND_VALUE" | undefined; callouts?: Array<{ key: string; name: string; text?: string | undefined; placeKey?: string | undefined; figures: Array<{ label: string; value: number | null; unit: string; reason: string | null; unverified: boolean }> }> | undefined; calloutOffsets?: Record<string, { dx: number; dy: number }> | undefined; calloutColumns?: number | undefined }
 
 const THEME = themeFor("DEFAULT");
 /** The map's look as the explorer's props; absent settings leave the explorer as it was. */
-export function lookProps(look: MapLook | undefined): Pick<ExplorerProps, "areaStyle" | "callouts"> {
+export function lookProps(look: MapLook | undefined, onMove?: ((key: string, offset: { dx: number; dy: number } | null) => void) | null): Pick<ExplorerProps, "areaStyle" | "callouts"> {
   if (!look) return {};
   const style = look.colorBy || look.areaLabels ? { areaStyle: { colorBy: look.colorBy ?? "VALUE", bands: look.bands, byParent: false, palette: THEME.palette, labels: look.areaLabels } } : {};
-  const callouts = look.callouts?.length ? { callouts: { cards: look.callouts, columns: 3, accent: "#d4a106" } } : {};
+  const callouts = look.callouts?.length ? { callouts: { cards: look.callouts, columns: look.calloutColumns ?? 3, accent: "#d4a106", offsets: look.calloutOffsets ?? {}, ...(onMove ? { onMove } : {}) } } : {};
   return { ...style, ...callouts };
 }
 
@@ -93,6 +94,14 @@ function SharedActivityMap({ projectId, data }: { projectId: string; data: Recor
 }
 
 function ResultsMap({ projectId, indicatorId, look }: { projectId: string; indicatorId?: string | undefined; look?: MapLook | undefined }) {
+  // While the canvas is edited, a dropped card is kept in the map's own settings (offset from its place); null puts it back to automatic.
+  const edit = useBlockEdit();
+  const onMove = edit ? (key: string, offset: { dx: number; dy: number } | null) => edit((props) => {
+    const p = (props ?? {}) as { callouts?: { offsets?: Record<string, { dx: number; dy: number }> } };
+    const offsets = { ...(p.callouts?.offsets ?? {}) };
+    if (offset) offsets[key] = { dx: Math.round(offset.dx), dy: Math.round(offset.dy) }; else delete offsets[key];
+    return { ...p, callouts: { ...(p.callouts ?? {}), offsets } };
+  }) : null;
   const [state, setState] = useState<State<{ places: PlaceItem[]; results: PlaceResults }>>({ kind: "loading" });
   useEffect(() => {
     let live = true;
@@ -108,7 +117,7 @@ function ResultsMap({ projectId, indicatorId, look }: { projectId: string; indic
   if (state.kind === "error") return <p role="alert" className="p-3 text-sm text-slate-600">{state.message}</p>;
   return (
     <div className="h-full overflow-auto p-2">
-      <MapExplorer compact initialIndicatorId={indicatorId} projectId={projectId} places={state.value.places} initial={state.value.results} periods={state.value.results.periods} {...lookProps(look)} />
+      <MapExplorer compact initialIndicatorId={indicatorId} projectId={projectId} places={state.value.places} initial={state.value.results} periods={state.value.results.periods} {...lookProps(look, onMove)} />
     </div>
   );
 }

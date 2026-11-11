@@ -133,19 +133,21 @@ export class ResolveCanvasHandler {
     const out: DashboardChartDto[] = [];
     for (const d of drawings) {
       const block = byId.get(d.widgetId);
-      const callouts = (block?.props as { callouts?: { placeKeys: string[]; items: CardItem[]; columns: number } } | undefined)?.callouts;
-      if (!d.map || !block || !callouts || callouts.placeKeys.length === 0) { out.push(d); continue; }
+      const callouts = (block?.props as { callouts?: { placeKeys: string[]; items: CardItem[]; columns: number; offsets?: Record<string, { dx: number; dy: number }>; texts?: Array<{ id: string; placeKey: string; text: string }> } } | undefined)?.callouts;
+      if (!d.map || !block || !callouts || (callouts.placeKeys.length === 0 && !(callouts.texts?.length))) { out.push(d); continue; }
       const facts = await factsOf(projectOf(block.bindings) ?? homeId);
       if (!facts) { out.push(d); continue; }
       // A card is headed by the place's own name: the places list first, then the names the records use, else the key.
       const tree = this.counts?.tree ? await this.counts.tree(ctx) : undefined;
       const names = new Map([...filterChoices(facts).places.map((p) => [p.key, p.label] as const), ...(tree ?? []).map((p) => [p.key, p.label] as const)]);
-      const cards = callouts.placeKeys.map((k) => normalizeLocationKey(k)).filter(Boolean).slice(0, 12).map((key) => {
+      const cards: Array<{ key: string; name: string; figures: ReturnType<typeof resolveMultiCard>["items"]; text?: string; placeKey?: string }> = callouts.placeKeys.map((k) => normalizeLocationKey(k)).filter(Boolean).slice(0, 30).map((key) => {
         const name = names.get(key) ?? key;
         const model = resolveMultiCard({ items: callouts.items, layout: "GRID", columns: callouts.columns, includeDraft: false }, { sheet: facts.sheet, counts: facts.counts, place: { key, name } });
         return { key, name, figures: model.items };
       });
-      out.push({ ...d, map: { ...d.map, callouts: cards } });
+      // A text card is the person's own words, tied to a place; it carries no figure.
+      for (const t of (callouts.texts ?? []).slice(0, 20)) { const key = normalizeLocationKey(t.placeKey); cards.push({ key: `text:${t.id}`, name: names.get(key) ?? t.placeKey, figures: [], text: t.text, placeKey: key }); }
+      out.push({ ...d, map: { ...d.map, callouts: cards, calloutColumns: callouts.columns, ...(callouts.offsets ? { calloutOffsets: callouts.offsets } : {}) } });
     }
     return out;
   }

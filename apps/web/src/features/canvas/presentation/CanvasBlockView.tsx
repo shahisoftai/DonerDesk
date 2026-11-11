@@ -13,6 +13,7 @@ import { motionChartOption, motionStyle } from "../domain/motion-style";
 import { screenRendererFor } from "./screen-registry";
 import { NothingToShow, screenText } from "./screens/screen-text";
 import { frameCss, titleCss } from "../domain/format-style";
+import { BlockIdProvider } from "@/components/editing/block-edit-context";
 
 interface Props {
   block: BlockInstance;
@@ -79,6 +80,8 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
   const ownFrame = Boolean(fmt && (fmt.title || fmt.frame || fmt.accentBar));
   const shownTitle = hints?.title.show === false ? null : title;
   const visibility = `${fmt?.visibility?.hideOnPhone ? "hidden sm:block" : ""} ${fmt?.visibility?.hideOnPrint ? "print:hidden" : ""}`;
+
+  body = <BlockIdProvider value={block.id}>{body}</BlockIdProvider>;
 
   return (
     <div role={editing ? "button" : undefined} tabIndex={editing ? 0 : undefined} onClick={editing ? onSelect : undefined} onKeyDown={keyDown} aria-pressed={editing ? selected : undefined} aria-label={editing ? `${label}${hidden ? " (hidden)" : ""}` : undefined}

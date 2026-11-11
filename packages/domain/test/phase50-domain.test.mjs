@@ -124,3 +124,24 @@ test("facility types: only on a facility, keys normalised, list checked", () => 
   const r = validatePlace({ id: "p", name: "Site", kind: "POINT", adminLevel: 4, aliases: [], archived: false, facilityType: "OTP" }, []);
   assert.equal(r.ok, false);
 });
+
+test("a card a person dropped stays exactly there; the others go around it; far rings come before the side column", () => {
+  const view = { w: 600, h: 400 }, card = { w: 120, h: 60 };
+  const boxes = placeCallouts([{ key: "a", x: 300, y: 200, fixed: { dx: 10, dy: -100 } }, { key: "b", x: 305, y: 150 }], view, card);
+  const a = boxes.find((b) => b.key === "a"), b = boxes.find((x) => x.key === "b");
+  assert.deepEqual([a.x, a.y, a.fixed], [310, 100, true]);
+  assert.ok(!(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h), "the auto card avoids the fixed one");
+  // An anchor in a corner whose near ring is off the map is placed on a wider ring, not in the side column.
+  const corner = placeCallouts([{ key: "k", x: 590, y: 10 }], view, card);
+  assert.equal(corner[0].inColumn, false);
+  const sized = placeCallouts([{ key: "t", x: 300, y: 200, size: { w: 80, h: 30 } }], view, card);
+  assert.deepEqual([sized[0].w, sized[0].h], [80, 30]);
+});
+
+test("text cards and dropped offsets are checked", () => {
+  const base = { view: "RESULTS", callouts: { placeKeys: [], items: [], columns: 3, texts: [{ id: "t1", placeKey: "humla", text: "Road cut by landslide" }] } };
+  assert.equal(validateMapWidget(base), null);
+  assert.match(validateMapWidget({ ...base, callouts: { ...base.callouts, texts: [{ id: "t1", placeKey: "humla", text: "" }] } }), /text card/);
+  assert.match(validateMapWidget({ ...base, callouts: { ...base.callouts, offsets: { t1: { dx: 9000, dy: 0 } } } }), /too far/);
+  assert.match(validateMapWidget({ view: "RESULTS", callouts: { placeKeys: [], items: [], columns: 3 } }), /text card/);
+});

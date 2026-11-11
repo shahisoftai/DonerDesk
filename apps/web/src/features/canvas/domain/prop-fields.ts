@@ -85,7 +85,8 @@ export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
     { type: "list", path: "bands", label: "Bands (when coloured by bands), low to high", add: "Add a band", blank: { from: null, to: null, color: "#2563eb" }, item: [{ type: "number", path: "from", label: "From (empty = lowest)" }, { type: "number", path: "to", label: "Up to (empty = highest)" }, { type: "text", path: "color", label: "Colour (#rrggbb)" }] },
     { type: "select", path: "areaLabels", label: "Labels on areas", empty: "None", options: opts(MAP_AREA_LABELS.filter((l) => l !== "NONE"), (v) => ({ NAME: "Name", VALUE: "Figure", NAME_AND_VALUE: "Name and figure" })[v] ?? v) },
     { type: "boolean", path: "clickToFilter", label: "Clicking an area filters the page" },
-    { type: "lines", path: "callouts.placeKeys", label: "Figure cards beside these areas (one place per line)" },
+    { type: "lines", path: "callouts.placeKeys", label: "Figure cards beside these areas (one place per line, up to 30)" },
+    { type: "list", path: "callouts.texts", label: "Text cards on the map", add: "Add a text card", blank: { placeKey: "", text: "" }, item: [{ type: "text", path: "placeKey", label: "Place it points at" }, { type: "textarea", path: "text", label: "Words (up to 200 characters)" }] },
     { type: "number", path: "callouts.columns", label: "Columns in each card (1 to 3)", min: 1, max: 3 },
     { type: "list", path: "callouts.items", label: "Figures in each card", add: "Add a figure", blank: { source: { kind: "COUNT", metric: "PLACES_REACHED", level: 2 } }, item: CARD_ITEM }],
   PROJECT_LIST: [{ type: "select", path: "affiliation", label: "Projects", options: opts(PROJECT_LIST_AFFILIATIONS, words) }, { type: "text", path: "title", label: "Name of the list" }],
@@ -143,8 +144,13 @@ const AFTER: Readonly<Record<string, (props: unknown, path: string) => unknown>>
     const controls = getAt(props, "controls");
     return Array.isArray(controls) ? setAt(props, "controls", controls.map((c) => (c && typeof c === "object" && "levels" in c ? { ...c, levels: toNumbers((c as { levels: unknown }).levels) } : c))) : props;
   },
-  MAP: (props, path) => {
+  MAP: (props0, path) => {
+    // Cards on a map always carry their lists and a column count, so a first text card or place is a valid setting at once.
+    const c = getAt(props0, "callouts") as Record<string, unknown> | undefined;
+    const props = path.startsWith("callouts") && c ? setAt(props0, "callouts", { placeKeys: [], items: [], columns: 3, ...c }) : props0;
     if (path === "callouts.items") return setAt(props, "callouts.items", tidyItems(getAt(props, "callouts.items")));
+    // Every text card gets an id the first time it is written, so its dropped position follows it when others are added or removed.
+    if (path === "callouts.texts") { const v = getAt(props, "callouts.texts"); return Array.isArray(v) ? setAt(props, "callouts.texts", v.map((t, i) => ({ ...(t as object), id: (t as { id?: string }).id || `t${Date.now().toString(36)}${i}` }))) : props; }
     if (path === "bands") { const v = getAt(props, "bands"); return Array.isArray(v) ? setAt(props, "bands", v.map((b) => ({ ...(b as object), from: (b as { from?: number }).from ?? null, to: (b as { to?: number }).to ?? null }))) : props; }
     return props;
   },

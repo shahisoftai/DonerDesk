@@ -23,7 +23,13 @@ export const MAP_COLOR_MODES = ["VALUE", "RULES", "CATEGORY", "NONE"] as const;
 export type MapColorMode = (typeof MAP_COLOR_MODES)[number];
 export const MAP_AREA_LABELS = ["NONE", "NAME", "VALUE", "NAME_AND_VALUE"] as const;
 export interface MapBand { from: number | null; to: number | null; color: string }
-export interface MapCallouts { placeKeys: string[]; items: CardItem[]; columns: number }
+/**
+ * Cards on a map (Phase 50.3d): figure cards for chosen places, and text cards a person writes, each tied to a place. `offsets` is where a
+ * person dropped a card, in px from its place (key = place key, or `text:<id>`); a card with none is placed automatically.
+ */
+export interface MapCallouts { placeKeys: string[]; items: CardItem[]; columns: number; offsets?: Record<string, { dx: number; dy: number }> | undefined; texts?: MapTextCard[] | undefined }
+export interface MapTextCard { id: string; placeKey: string; text: string }
+export const MAX_MAP_TEXT_CARDS = 20;
 
 export interface MapWidgetQuery {
   view: MapView;
@@ -64,9 +70,16 @@ export function mapStyleProblems(q: MapWidgetQuery): string | null {
   if ((q.tooltipIndicatorIds?.length ?? 0) > 6) return "A tooltip shows at most 6 extra figures.";
   if (q.callouts) {
     if (q.view !== "RESULTS") return "Figure cards go on a results map.";
-    if (q.callouts.placeKeys.length < 1 || q.callouts.placeKeys.length > 12) return "Choose 1 to 12 areas for figure cards.";
-    if (q.callouts.items.length < 1 || q.callouts.items.length > 9) return "A figure card on a map shows 1 to 9 figures.";
+    const texts = q.callouts.texts ?? [];
+    if (q.callouts.placeKeys.length > 30) return "A map holds figure cards for at most 30 places.";
+    if (q.callouts.placeKeys.length === 0 && texts.length === 0) return "Choose places for figure cards, or write a text card.";
+    if (q.callouts.placeKeys.length > 0 && (q.callouts.items.length < 1 || q.callouts.items.length > 9)) return "A figure card on a map shows 1 to 9 figures.";
     if (!Number.isInteger(q.callouts.columns) || q.callouts.columns < 1 || q.callouts.columns > 3) return "A figure card on a map has 1 to 3 columns.";
+    if (texts.length > MAX_MAP_TEXT_CARDS) return `A map holds at most ${MAX_MAP_TEXT_CARDS} text cards.`;
+    if (texts.some((t) => !t.id || !t.placeKey?.trim() || !t.text?.trim() || t.text.length > 200)) return "A text card names its place and has 1 to 200 characters.";
+    if (new Set(texts.map((t) => t.id)).size !== texts.length) return "Two text cards share an id.";
+    if (Object.values(q.callouts.offsets ?? {}).some((o) => !Number.isFinite(o?.dx) || !Number.isFinite(o?.dy) || Math.abs(o.dx) > 2000 || Math.abs(o.dy) > 2000)) return "A card was dropped too far from its place.";
+    if (q.callouts.placeKeys.length === 0) return null;
     const card = multiCardProblems({ items: q.callouts.items, layout: "GRID", columns: q.callouts.columns, includeDraft: false });
     if (card.length) return card[0]!;
   }

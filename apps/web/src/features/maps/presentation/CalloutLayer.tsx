@@ -1,43 +1,95 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { formatFigure, type NumbersFormat } from "@donordesk/domain/contexts/canvas/index.js";
 import { placeCallouts, type CardFigure } from "@donordesk/domain/contexts/dashboards/index.js";
 import type { MapProjection } from "../ports/map-projection";
 import { useMapText } from "./useMapText";
 
-export interface CalloutCard { key: string; name: string; figures: readonly CardFigure[]; lng: number; lat: number }
+export interface CalloutCard { key: string; name: string; figures: readonly CardFigure[]; text?: string | undefined; lng: number; lat: number }
+type Offset = { dx: number; dy: number };
 
-/** A card is sized to its figures: a row of figures per `columns`, so nothing is cut off. */
-const cardSize = (figures: number, columns: number) => ({ w: 64 * Math.max(1, columns) + 12, h: 28 + Math.ceil(figures / Math.max(1, columns)) * 30 });
+/** A card is sized to what it holds: a row of figures per `columns`; a text card by its words. Nothing is cut off. */
+function sizeOf(c: CalloutCard, columns: number): { w: number; h: number } {
+  if (c.text !== undefined) { const lines = Math.min(6, Math.ceil(c.text.length / 26)); return { w: 180, h: 26 + lines * 15 }; }
+  return { w: 64 * Math.max(1, columns) + 12, h: 28 + Math.ceil(c.figures.length / Math.max(1, columns)) * 30 };
+}
+
+interface Props { projection: MapProjection; cards: readonly CalloutCard[]; columns: number; numbers?: NumbersFormat | undefined; accent: string; offsets?: Readonly<Record<string, Offset>> | undefined; onMove?: ((key: string, offset: Offset | null) => void) | undefined }
 
 /**
- * Figure cards beside chosen areas of a map, each joined to its area by a line (Phase 50.3d). Positions come from the pure
- * `placeCallouts` rule (no overlap, inside the map, a side column for what does not fit) and are worked out again when the map moves.
- * A figure nobody recorded reads "Not yet reported", never 0. The cards are also listed as text for a screen reader.
+ * Cards on a map, each joined to its place by a line (Phase 50.3d): figure cards and a person's own text cards. Positions come from the
+ * pure `placeCallouts` rule; a card a person dragged stays where it was dropped (an offset from its place, so it moves with the map), and
+ * the others are placed around it. While the canvas is edited, a card is dragged with the pointer or moved with the arrow keys
+ * (Shift = 10 px); a double-click or Delete puts it back to automatic. A figure nobody recorded reads "Not measured", never 0.
  */
-export function CalloutLayer({ projection, cards, columns, numbers, accent }: { projection: MapProjection; cards: readonly CalloutCard[]; columns: number; numbers?: NumbersFormat | undefined; accent: string }) {
+export function CalloutLayer({ projection, cards, columns, numbers, accent, offsets = {}, onMove }: Props) {
   const { t, lang } = useMapText();
-  const [tick, setTick] = useState(0);
+  const [, setTick] = useState(0);
+  const [drag, setDrag] = useState<{ key: string; dx: number; dy: number } | null>(null);
+  const start = useRef<{ key: string; px: number; py: number; dx: number; dy: number } | null>(null);
+  // The last drop is kept here until the saved settings come back with it, so a card never jumps back for a moment.
+  const [pending, setPending] = useState<Record<string, Offset | null>>({});
+  useEffect(() => setPending({}), [offsets]);
+  const place = (key: string, offset: Offset | null) => { setPending((p) => ({ ...p, [key]: offset })); onMove?.(key, offset); };
   useEffect(() => projection.onView(() => setTick((n) => n + 1)), [projection]);
-  void tick;
-  const anchors = cards.flatMap((c) => { const p = projection.project(c.lng, c.lat); return p ? [{ key: c.key, x: p.x, y: p.y }] : []; });
-  const card = cardSize(Math.max(0, ...cards.map((c) => c.figures.length)), columns);
-  const boxes = placeCallouts(anchors, projection.size(), card, { distance: 16, gap: 4 });
+  const anchors = cards.flatMap((c) => {
+    const p = projection.project(c.lng, c.lat);
+    if (!p) return [];
+    const fixed = drag?.key === c.key ? { dx: drag.dx, dy: drag.dy } : c.key in pending ? pending[c.key] ?? undefined : offsets[c.key];
+    return [{ key: c.key, x: p.x, y: p.y, size: sizeOf(c, columns), ...(fixed ? { fixed } : {}) }];
+  });
+  const boxes = placeCallouts(anchors, projection.size(), { w: 180, h: 100 }, { distance: 16, gap: 4 });
   const byKey = new Map(cards.map((c) => [c.key, c]));
+  const editable = Boolean(onMove);
+
+  const down = (key: string, box: { x: number; y: number; anchorX: number; anchorY: number }) => (e: ReactPointerEvent<HTMLElement>) => {
+    if (!editable || e.button !== 0) return;
+    e.stopPropagation(); e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    start.current = { key, px: e.clientX, py: e.clientY, dx: box.x - box.anchorX, dy: box.y - box.anchorY };
+    setDrag({ key, dx: start.current.dx, dy: start.current.dy });
+  };
+  const move = (e: ReactPointerEvent<HTMLElement>) => {
+    const s = start.current; if (!s) return;
+    e.stopPropagation();
+    setDrag({ key: s.key, dx: s.dx + e.clientX - s.px, dy: s.dy + e.clientY - s.py });
+  };
+  const up = (e: ReactPointerEvent<HTMLElement>) => {
+    const s = start.current; if (!s) return;
+    e.stopPropagation();
+    start.current = null;
+    const dx = s.dx + e.clientX - s.px, dy = s.dy + e.clientY - s.py;
+    setDrag(null);
+    if (Math.abs(e.clientX - s.px) + Math.abs(e.clientY - s.py) > 2) place(s.key, { dx, dy });
+  };
+
   return (
     <div className="pointer-events-none absolute inset-0" data-testid="map-callouts">
       <svg className="absolute inset-0 h-full w-full" aria-hidden>
-        {boxes.map((b) => { const ex = b.x + (b.anchorX < b.x ? 0 : b.anchorX > b.x + b.w ? b.w : b.w / 2); const ey = b.y + b.h / 2; return <g key={b.key}><line x1={b.anchorX} y1={b.anchorY} x2={ex} y2={ey} stroke={accent} strokeWidth={2} /><circle cx={b.anchorX} cy={b.anchorY} r={3} fill={accent} /></g>; })}
+        {boxes.map((b) => { const ex = Math.min(Math.max(b.anchorX, b.x), b.x + b.w); const ey = Math.min(Math.max(b.anchorY, b.y), b.y + b.h); return <g key={b.key}><line x1={b.anchorX} y1={b.anchorY} x2={ex} y2={ey} stroke={accent} strokeWidth={2} /><circle cx={b.anchorX} cy={b.anchorY} r={3} fill={accent} /></g>; })}
       </svg>
       {boxes.map((b) => {
         const c = byKey.get(b.key)!;
         return (
-          <section key={b.key} aria-label={c.name} className="absolute overflow-hidden rounded bg-white/95 p-1.5 text-slate-900 shadow dark:bg-slate-900/95 dark:text-slate-100" style={{ left: b.x, top: b.y, width: b.w, height: b.h, borderTop: `3px solid ${accent}` }}>
+          <section key={b.key} aria-label={c.name} data-card={b.key} data-fixed={b.fixed || undefined} tabIndex={editable ? 0 : undefined}
+            title={editable ? "Drag to place this card; double-click to put it back" : undefined}
+            onPointerDown={down(b.key, b)} onPointerMove={move} onPointerUp={up}
+            onDoubleClick={editable ? (e) => { e.stopPropagation(); place(b.key, null); } : undefined}
+            onKeyDown={editable ? (e) => {
+              const step = e.shiftKey ? 10 : 1;
+              const delta = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key as "ArrowLeft"];
+              if (delta) { e.preventDefault(); e.stopPropagation(); place(b.key, { dx: b.x - b.anchorX + delta[0]!, dy: b.y - b.anchorY + delta[1]! }); }
+              else if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); place(b.key, null); }
+            } : undefined}
+            className={`absolute overflow-hidden rounded bg-white/95 p-1.5 text-slate-900 shadow dark:bg-slate-900/95 dark:text-slate-100 ${editable ? "pointer-events-auto cursor-move touch-none outline-sky-600 focus:outline focus:outline-2" : ""}`}
+            style={{ left: b.x, top: b.y, width: b.w, height: b.h, borderTop: `3px solid ${accent}` }}>
             <h4 className="truncate text-xs font-bold">{c.name}</h4>
-            <ul className="grid gap-x-2" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
-              {c.figures.map((f, i) => { const v = formatFigure(f.value, numbers ?? {}, lang); return <li key={i} className="min-w-0 leading-tight"><span className={`block truncate text-[11px] ${v === null ? "italic text-slate-500" : "font-semibold tabular-nums"}`}>{v ?? t("maps.notMeasured")}</span><span className="block truncate text-[9px] text-slate-500">{f.label}</span></li>; })}
-            </ul>
+            {c.text !== undefined
+              ? <p className="text-[11px] leading-snug">{c.text}</p>
+              : <ul className="grid gap-x-2" style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}>
+                  {c.figures.map((f, i) => { const v = formatFigure(f.value, numbers ?? {}, lang); return <li key={i} className="min-w-0 leading-tight"><span className={`block truncate text-[11px] ${v === null ? "italic text-slate-500" : "font-semibold tabular-nums"}`}>{v ?? t("maps.notMeasured")}</span><span className="block truncate text-[9px] text-slate-500">{f.label}</span></li>; })}
+                </ul>}
           </section>
         );
       })}

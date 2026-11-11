@@ -92,3 +92,9 @@ test("the accent bar and one-side border reach the screen as logical sides", () 
   assert.equal(css["borderInlineStart"], "6px solid #d4a106");
   assert.equal(css["borderTop"], "2px solid #7a4f84");
 });
+
+test("a map's first text card gets an id and the cards' lists and columns, so it is a valid setting at once", () => {
+  const out = afterChange("MAP", { view: "RESULTS", callouts: { texts: [{ placeKey: "Humla", text: "Road cut" }] } }, "callouts.texts") as { callouts: { texts: Array<{ id: string }>; placeKeys: string[]; items: unknown[]; columns: number } };
+  assert.ok(out.callouts.texts[0]!.id);
+  assert.deepEqual([out.callouts.placeKeys, out.callouts.items, out.callouts.columns], [[], [], 3]);
+});
