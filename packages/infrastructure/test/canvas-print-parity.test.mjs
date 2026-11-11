@@ -136,7 +136,7 @@ test("every ported painter draws exactly what the Studio's own block draws, for 
 });
 
 test("the painters registry covers exactly the ported kinds, each is a real block, and the pending list only shrinks", () => {
-  assert.deepEqual(Object.keys(PRINT_PAINTERS).sort(), [...Object.keys(LEGACY), "SMALL_MULTIPLES", "SHAPE", "ICON", "CALLOUT", "AI_SUMMARY", "AI_MESSAGES", "AI_ASK", "GROUP", "TABS", "REPEATER", "FILTER_BAR"].sort());
+  assert.deepEqual(Object.keys(PRINT_PAINTERS).sort(), [...Object.keys(LEGACY), "SMALL_MULTIPLES", "MULTI_CARD", "SHAPE", "ICON", "CALLOUT", "AI_SUMMARY", "AI_MESSAGES", "AI_ASK", "GROUP", "TABS", "REPEATER", "FILTER_BAR"].sort());
   for (const k of Object.keys(PRINT_PAINTERS)) assert.ok(BLOCK_KINDS.includes(k), k);
   assert.deepEqual([...PRINT_PENDING, ...Object.keys(PRINT_PAINTERS)].sort(), [...BLOCK_KINDS].sort());
   const PRINT_PENDING_MAX = 6; // lower this as the rest of the blocks are ported

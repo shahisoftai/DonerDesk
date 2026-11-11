@@ -48,7 +48,7 @@ export const CanvasPageSchema = z.object({
   mode: z.enum(["GRID", "FREE"]).optional(), size: z.object({ w: z.number().int().min(100).max(6000), h: z.number().int().min(100).max(6000) }).optional(),
   background: z.enum(["page", "card", "tint", "accent"]).optional(), themeId: z.string().max(40).optional(),
 });
-const Options = z.object({ periodFromId: z.string().max(80).optional(), periodToId: z.string().max(80).optional(), locationKeys: z.array(z.string().max(80)).max(50).optional(), acknowledgement: z.string().max(300).optional(), subtitle: z.string().max(200).optional(), themeSpec: z.record(z.string().max(40), z.unknown()).optional() });
+const Options = z.object({ periodFromId: z.string().max(80).optional(), periodToId: z.string().max(80).optional(), locationKeys: z.array(z.string().max(80)).max(50).optional(), acknowledgement: z.string().max(300).optional(), subtitle: z.string().max(200).optional(), themeSpec: z.object({ id: z.string().max(40), label: z.string().max(60), description: z.string().max(200).default(""), accent: z.string().max(9) }).passthrough().optional() });
 
 const Scope = z.enum(["ORG", "PROJECT", "MINE", "PORTFOLIO"]);
 const Profile = z.enum(["LIVE_INTERNAL", "SNAPSHOT", "DONOR_REPORT", "SOCIAL", "INTERNAL"]);
