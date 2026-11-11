@@ -82,7 +82,7 @@ export const canvasEn = {
   "canvas.tour.skip": "Skip",
   "canvas.tour.done": "Done",
   "canvas.tour.add.title": "Add blocks",
-  "canvas.tour.add.body": "Choose a block from the list on the right. Charts and figures read the project's records.",
+  "canvas.tour.add.body": "Open Add to choose a block, or drag one onto the page. Charts and figures read the project's records.",
   "canvas.tour.move.title": "Move and resize",
   "canvas.tour.move.body": "Drag a block to move it and drag its corner to resize. Hold Shift to select several.",
   "canvas.tour.look.title": "Change the look",

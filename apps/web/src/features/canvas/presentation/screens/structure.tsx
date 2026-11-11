@@ -1,5 +1,6 @@
 "use client";
 
+import { useFilterSlot } from "../../filters/filter-slot";
 import { useState } from "react";
 import type { BlockModel, PaintFrame } from "@donordesk/domain/contexts/canvas/index.js";
 import { NothingToShow, readyOrNothing, screenText } from "./screen-text";
@@ -50,7 +51,9 @@ export function RepeaterScreen({ model }: Frame & { model: BlockModel<{ over: ke
 
 const FILTER_LABEL: Record<string, string> = { PERIOD: "Period", PROJECT: "Project", PLACE: "Place", SECTOR: "Sector", STATUS: "Status", DRAFTS: "Drafts" };
 export function FilterBarScreen({ model }: Frame & { model: BlockModel<{ dimensions: string[] }> }) {
+  const slot = useFilterSlot();
   if (model.state !== "ready") return null;
+  if (slot) return <>{slot}</>;
   return (
     <div className="hidden flex-wrap items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm dark:bg-slate-900 [[data-editing]_&]:flex" role="group" aria-label="Filters">
       {model.model.dimensions.map((d) => <span key={d} className="rounded-full border border-slate-300 bg-white px-3 py-0.5 text-xs dark:border-slate-600 dark:bg-slate-800">{FILTER_LABEL[d] ?? d}: all</span>)}

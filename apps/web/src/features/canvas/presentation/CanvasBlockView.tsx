@@ -90,7 +90,7 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
             <div className="min-h-0 flex-1 overflow-auto">{body}</div>
           </section>
         : def?.bare === true && !(drawing && widget)
-        ? <div className="h-full min-h-0 overflow-auto" aria-label={title}>{body}</div>
+        ? <div className={`h-full min-h-0 ${def?.family === "CONTROLS" ? "overflow-visible" : "overflow-auto"}`} aria-label={title}>{body}</div>
         : <Tile title={title} status="ready" ariaLabel={`${title}`} flush {...(changed && editing ? { subtitle: "Updating…" } : {})}><div className="h-full min-h-0 overflow-auto">{body}</div></Tile>}
     </div>
   );

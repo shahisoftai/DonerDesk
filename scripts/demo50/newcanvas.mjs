@@ -1,0 +1,15 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("newcanvas");
+await page.goto("https://donordesk.online/visuals/new", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3000);
+await page.locator("label", { hasText: /^Name/ }).locator("input").fill("Nepal CMAM & IYCF — sites by province");
+await page.locator("select").filter({ has: page.locator('option[value="PROJECT"]') }).selectOption("PROJECT");
+const proj = page.locator("select").filter({ has: page.locator("option", { hasText: "Choose a project" }) });
+await proj.selectOption({ label: await proj.locator("option").filter({ hasText: "DEMO-14" }).first().innerText() });
+await page.waitForTimeout(1500);
+await page.locator("label", { hasText: "A blank page" }).locator("input[type=radio]").check({ force: true });
+await page.waitForTimeout(500);
+const btns = await page.getByRole("button").allInnerTexts(); console.log(btns.filter((b) => /create|make|start/i.test(b)));
+await page.getByRole("button", { name: /^(Create|Make|Start)/ }).last().click();
+await page.waitForURL((u) => /\/visuals\/[0-9a-f-]{36}/.test(u.pathname), { timeout: 30000 }).catch(async () => console.log("alert:", (await page.locator("[role=alert]").allTextContents()).join("/")));
+console.log(page.url());
+await browser.close(); process.exit(0);

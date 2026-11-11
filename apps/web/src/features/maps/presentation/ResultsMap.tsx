@@ -22,6 +22,7 @@ import { MapBreadcrumbs } from "./MapBreadcrumbs";
 import { MapDataTable } from "./MapDataTable";
 import { MapLibreCanvas } from "./MapLibreCanvas";
 import { CalloutLayer } from "./CalloutLayer";
+import { MapLegend } from "./MapLegend";
 import { calloutAnchors } from "../domain/scene/callout-anchors";
 import { useMapServices } from "./MapServices";
 import { OverlayPanel } from "./OverlayPanel";
@@ -259,12 +260,7 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
       <div className={compact ? "grid gap-3" : "grid gap-3 lg:grid-cols-[1fr_18rem]"}>
         <div className="space-y-2">
           <MapLibreCanvas scene={scene} height={compact ? "h-[26rem]" : "h-[28rem]"} onSelect={choose} onNote={setNote} onFailed={onUnavailable} overlay={callouts ? (p) => <CalloutLayer projection={p} cards={calloutAnchors(callouts.cards, places, joined).placed} columns={callouts.columns} accent={callouts.accent} /> : undefined} />
-          {model && (
-            <div className="flex flex-wrap items-center gap-2 text-xs" aria-label={t("maps.legend")}>
-              {bands.map((b, i) => <span key={i} className="inline-flex items-center gap-1"><span className="inline-block h-3 w-5" style={{ background: b.color }} /><bdi dir="ltr">{Math.round(b.from) === Math.round(b.to) ? Math.round(b.from).toLocaleString() : `${Math.round(b.from).toLocaleString()}–${Math.round(b.to).toLocaleString()}`}</bdi></span>)}
-              <span className="inline-flex items-center gap-1"><span className="inline-block h-3 w-5" style={{ background: "#e5e7eb" }} />{t("maps.notMeasured")}</span>
-            </div>
-          )}
+          {model && <MapLegend bands={bands} areaStyle={areaStyle} areas={(scene.layers.find((l) => l.kind === "FILL") as { features?: Array<{ name: string; color: string }> } | undefined)?.features ?? []} />}
           {model && <p className="text-sm text-slate-600">{t("maps.summary", { ...summaryCounts(model) })}</p>}
           {note === NO_BASEMAP && <p className="text-xs text-slate-500">{t("maps.noBasemap")}</p>}
           {note === LOW_DETAIL_BASEMAP && <p className="text-xs text-slate-500">{t("maps.lowDetailBasemap")}</p>}

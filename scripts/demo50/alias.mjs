@@ -1,0 +1,17 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const [name, alias] = [process.argv[2], process.argv[3]];
+const { page, browser } = await attach("alias");
+await page.goto(BASE + "/settings/places", { waitUntil: "domcontentloaded" });
+await page.getByLabel("Search places").fill(name);
+await page.waitForTimeout(1200);
+const row = page.locator("tr, li").filter({ hasText: name }).filter({ has: page.getByRole("button", { name: /Pin|Change pin/ }) }).first();
+await row.getByRole("button", { name: /Pin|Change pin/ }).click();
+const box = page.getByRole("textbox", { name: "Other spellings" }).last();
+await box.waitFor({ timeout: 15000 });
+const cur = await box.inputValue();
+await box.fill([cur, alias].filter(Boolean).join(", "));
+const ed = page.getByRole("region").filter({ has: box }).last();
+await ed.getByRole("button", { name: /^Save/ }).first().click();
+await page.waitForTimeout(3000);
+console.log(name, "aliases ->", [cur, alias].filter(Boolean).join(", "), (await page.locator('[role="alert"]').allTextContents()).join("/"));
+await browser.close(); process.exit(0);

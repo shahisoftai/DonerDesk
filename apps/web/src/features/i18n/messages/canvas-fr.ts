@@ -80,7 +80,7 @@ export const canvasFr: Record<keyof typeof canvasEn, string> = {
   "canvas.tour.skip": "Passer",
   "canvas.tour.done": "Terminé",
   "canvas.tour.add.title": "Ajouter des blocs",
-  "canvas.tour.add.body": "Choisissez un bloc dans la liste de droite. Les graphiques et les chiffres lisent les données du projet.",
+  "canvas.tour.add.body": "Ouvrez Ajouter pour choisir un bloc, ou faites-le glisser sur la page. Les graphiques et les chiffres lisent les données du projet.",
   "canvas.tour.move.title": "Déplacer et redimensionner",
   "canvas.tour.move.body": "Faites glisser un bloc pour le déplacer et son coin pour le redimensionner. Maintenez Maj pour en sélectionner plusieurs.",
   "canvas.tour.look.title": "Changer l'apparence",

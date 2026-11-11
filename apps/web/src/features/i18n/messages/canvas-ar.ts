@@ -80,7 +80,7 @@ export const canvasAr: Record<keyof typeof canvasEn, string> = {
   "canvas.tour.skip": "تخطي",
   "canvas.tour.done": "تم",
   "canvas.tour.add.title": "إضافة كتل",
-  "canvas.tour.add.body": "اختر كتلة من القائمة على اليمين. تقرأ الرسوم والأرقام من سجلات المشروع.",
+  "canvas.tour.add.body": "افتح «إضافة» لاختيار كتلة، أو اسحبها إلى الصفحة. تقرأ الرسوم والأرقام من سجلات المشروع.",
   "canvas.tour.move.title": "النقل وتغيير الحجم",
   "canvas.tour.move.body": "اسحب الكتلة لنقلها واسحب زاويتها لتغيير حجمها. اضغط Shift لتحديد عدة كتل.",
   "canvas.tour.look.title": "تغيير المظهر",

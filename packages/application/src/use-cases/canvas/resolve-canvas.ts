@@ -82,7 +82,7 @@ export class ResolveCanvasHandler {
       drawings = drawn.value.charts;
     }
 
-    drawings = await this.withCallouts(stored.canvas, stored.projectId, drawings, factsOf);
+    drawings = await this.withCallouts(ctx, stored.canvas, stored.projectId, drawings, factsOf);
     const list = await this.projectList(ctx);
     const portfolio = await this.portfolioFacts(ctx, stored.canvas);
 
@@ -122,7 +122,7 @@ export class ResolveCanvasHandler {
    * Figure cards beside areas of a results map (Phase 50.3d): each chosen area's figures, worked out from the project's facts narrowed to
    * that one place, by the same rule as a figure card. Read under the viewer's own access; a project they cannot see gives no cards.
    */
-  private async withCallouts(canvas: Canvas, homeId: string | undefined, drawings: DashboardChartDto[], factsOf: (id: string | undefined) => Promise<CanvasFacts | undefined>): Promise<DashboardChartDto[]> {
+  private async withCallouts(ctx: AuthenticatedContext, canvas: Canvas, homeId: string | undefined, drawings: DashboardChartDto[], factsOf: (id: string | undefined) => Promise<CanvasFacts | undefined>): Promise<DashboardChartDto[]> {
     const byId = new Map(canvas.pages.flatMap((p) => p.blocks).map((b) => [b.id, b] as const));
     const out: DashboardChartDto[] = [];
     for (const d of drawings) {
@@ -131,7 +131,9 @@ export class ResolveCanvasHandler {
       if (!d.map || !block || !callouts || callouts.placeKeys.length === 0) { out.push(d); continue; }
       const facts = await factsOf(projectOf(block.bindings) ?? homeId);
       if (!facts) { out.push(d); continue; }
-      const names = new Map(filterChoices(facts).places.map((p) => [p.key, p.label]));
+      // A card is headed by the place's own name: the places list first, then the names the records use, else the key.
+      const tree = this.counts?.tree ? await this.counts.tree(ctx) : undefined;
+      const names = new Map([...filterChoices(facts).places.map((p) => [p.key, p.label] as const), ...(tree ?? []).map((p) => [p.key, p.label] as const)]);
       const cards = callouts.placeKeys.map((k) => normalizeLocationKey(k)).filter(Boolean).slice(0, 12).map((key) => {
         const name = names.get(key) ?? key;
         const model = resolveMultiCard({ items: callouts.items, layout: "GRID", columns: callouts.columns, includeDraft: false }, { sheet: facts.sheet, counts: facts.counts, place: { key, name } });

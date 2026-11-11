@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { DRAWER_MAX, DRAWER_MIN } from "../domain/drawer-state";
 
@@ -15,10 +16,14 @@ export function DrawerShell({ id, title, width, pinned, offset, onWidth, onPin, 
   const start = useRef<{ x: number; w: number } | null>(null);
   const rtl = typeof document !== "undefined" && document.dir === "rtl";
   const clamp = (w: number) => Math.min(DRAWER_MAX, Math.max(DRAWER_MIN, Math.round(w)));
-  return (
+  // Drawn at the document root: an animated (transformed) ancestor would otherwise trap a fixed drawer inside its own box.
+  const [root, setRoot] = useState<HTMLElement | null>(null);
+  useEffect(() => setRoot(document.body), []);
+  if (!root) return null;
+  return createPortal(
     <aside id={id} aria-label={title} data-testid={id} data-pinned={pinned || undefined}
       style={{ ["--drawer-w" as string]: `${width}px`, ["--drawer-off" as string]: `${offset}px` }}
-      className={`fixed inset-x-0 bottom-0 z-30 flex max-h-[70vh] flex-col border-t border-slate-200 bg-white shadow-xl print:hidden dark:border-slate-700 dark:bg-slate-900 sm:inset-x-auto sm:bottom-0 sm:top-16 sm:max-h-none sm:w-[var(--drawer-w)] sm:border-s sm:border-t-0 sm:[inset-inline-end:var(--drawer-off)] ${pinned ? "sm:shadow-none" : ""}`}>
+      className={`fixed inset-x-0 bottom-0 z-30 flex max-h-[70vh] flex-col border-t border-slate-200 bg-white shadow-xl print:hidden dark:border-slate-700 dark:bg-slate-900 sm:inset-x-auto sm:bottom-0 sm:top-[3.25rem] sm:max-h-none sm:w-[var(--drawer-w)] sm:border-s sm:border-t-0 sm:[inset-inline-end:var(--drawer-off)] ${pinned ? "sm:shadow-none" : ""}`}>
       <div role="separator" aria-orientation="vertical" aria-label={t("drawer.resize")} aria-valuemin={DRAWER_MIN} aria-valuemax={DRAWER_MAX} aria-valuenow={width} tabIndex={0}
         className="absolute inset-y-0 start-0 hidden w-1.5 cursor-col-resize hover:bg-sky-300 focus:bg-sky-400 focus:outline-none sm:block"
         onPointerDown={(e) => { start.current = { x: e.clientX, w: width }; (e.target as HTMLElement).setPointerCapture(e.pointerId); }}
@@ -31,6 +36,7 @@ export function DrawerShell({ id, title, width, pinned, offset, onWidth, onPin, 
         <button type="button" className="min-h-8 min-w-8 rounded text-lg leading-none hover:bg-slate-100 dark:hover:bg-slate-800" aria-label={t("drawer.close")} onClick={onClose}>×</button>
       </header>
       <div className="min-h-0 flex-1 overflow-y-auto p-3">{children}</div>
-    </aside>
+    </aside>,
+    root,
   );
 }

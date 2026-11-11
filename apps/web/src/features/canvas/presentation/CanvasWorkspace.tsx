@@ -34,6 +34,7 @@ import { pinnedWidth } from "../editor/domain/drawer-state";
 import { BLOCK_DRAG_TYPE } from "../editor/presentation/AddDrawer";
 import { pointToCell } from "../editor/domain/drop-cell";
 import { FilterPane, type FilterBarProps } from "../filters/FilterPane";
+import { FilterSlotProvider } from "../filters/filter-slot";
 import { useFilterAddress } from "../filters/use-filter-address";
 
 export interface ProjectOption { id: string; name: string }
@@ -180,7 +181,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
   const selectedProblems = [...problems, ...serverProblems.filter((s) => !problems.some((p) => p.blockId === s.blockId && p.message === s.message))];
 
   return (
-    <div ref={stage} className="space-y-4 [&:fullscreen]:overflow-auto [&:fullscreen]:bg-white [&:fullscreen]:p-6 dark:[&:fullscreen]:bg-slate-950" data-testid="canvas-workspace" data-editing={editing || undefined} data-presenting={present.presenting || undefined}>
+    <div ref={stage} style={editing ? { paddingInlineEnd: pinnedWidth(drawers) } : undefined} className="space-y-4 [&:fullscreen]:overflow-auto [&:fullscreen]:bg-white [&:fullscreen]:p-6 dark:[&:fullscreen]:bg-slate-950" data-testid="canvas-workspace" data-editing={editing || undefined} data-presenting={present.presenting || undefined}>
       <header className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           {editing ? <input aria-label="Name" className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xl font-semibold dark:border-slate-600 dark:bg-slate-900" value={canvas.title} onChange={(e) => ed.rename(e.target.value)} /> : <h1 className="truncate text-xl font-semibold tracking-tight">{canvas.title}</h1>}
@@ -237,7 +238,6 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
         {editing && canvas.pages.length > 1 && <button type="button" className="ms-2 text-xs text-red-700 underline" onClick={() => ed.removePage(ed.page.id)}>{t("canvas.ui.removePage")}</button>}
       </nav>
 
-      {live && hasFilterBar && <FilterPane bar={filterBar} choices={live.choices} filters={filters} tone={{ strip: pageTheme.accentSoft, ink: pageTheme.accent, on: pageTheme.accent }} onChange={setFilters} onClear={() => setFilters(NO_FILTER)} />}
       {live && !hasFilterBar && (isFiltered(filters) || paneOpen) && (live.choices.periods.length > 0 || live.choices.places.length > 0 || live.choices.groups.length > 0 || live.choices.statuses.length > 0 || live.choices.levels.length > 0) && (
         <section id="canvas-filter-pane" aria-label="Filters" className="flex flex-wrap items-end gap-3 rounded-lg bg-slate-50 p-3 text-sm print:hidden dark:bg-slate-900" data-testid="canvas-filters">
           {live.choices.periods.length > 0 && <label className="space-y-1"><span className="block text-xs font-medium text-slate-600 dark:text-slate-300">{t("canvas.ui.filtersPeriod")}</span>
@@ -258,16 +258,18 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
         </section>
       )}
 
-      <div style={editing ? { paddingInlineEnd: pinnedWidth(drawers) } : undefined} className="sm:transition-[padding]">
+      <div>
         <div onDragOver={editing ? (e) => { if (e.dataTransfer.types.includes(BLOCK_DRAG_TYPE)) { e.preventDefault(); e.dataTransfer.dropEffect = "copy"; } } : undefined}
           onDrop={editing ? (e) => { const kind = e.dataTransfer.getData(BLOCK_DRAG_TYPE); const grid = document.querySelector<HTMLElement>('[data-testid="canvas-grid"]'); if (!kind) return; e.preventDefault(); const r = grid?.getBoundingClientRect(); const cell = grid && r ? pointToCell({ x: e.clientX, y: e.clientY }, { left: r.left, top: r.top, width: r.width, offsetWidth: grid.offsetWidth }, parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) : { x: 0, y: 0 }; ed.addAt(kind, cell); setRecent((list) => [kind, ...list.filter((k) => k !== kind)].slice(0, 6)); } : undefined}>
           {blocks.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{editing ? "This page is empty. Add a block from the list on the right." : canEdit ? "This page is empty. Choose Edit to add blocks." : "This page is empty."}</p>
+            <p className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">{editing ? "This page is empty. Open Add to choose a block, or drag one onto the page." : canEdit ? "This page is empty. Choose Edit to add blocks." : "This page is empty."}</p>
           ) : (
+            <FilterSlotProvider value={live && hasFilterBar ? <FilterPane bar={filterBar} choices={live.choices} filters={filters} tone={{ strip: pageTheme.accentSoft, ink: pageTheme.accent, on: pageTheme.accent }} onChange={setFilters} onClear={() => setFilters(NO_FILTER)} /> : null}>
             <div style={{ zoom: session.view.zoom }} data-testid="zoom" data-zoom={session.view.zoom}><CanvasPageGrid canvas={canvas} blocks={blocks} drawings={drawings} widgets={widgets} models={live?.models} repeats={live?.repeats} editing={editing} selectedIds={new Set(ed.selection.ids)} onSelect={ed.selectBlock} showGrid={session.view.grid} onMarquee={(cells, add) => (cells.w === 0 ? ed.setSelection({ ids: [] }) : selectByRectangle({ canvas, page: ed.page, selection: ed.selection, select: ed.setSelection } as never, cells, add))}
               onPick={live ? (name) => setFilters((f) => pickToFilter(live.choices, f, name)) : undefined}
               isChanged={(b) => !previewCurrent && savedBlocks.current.get(b.id) !== JSON.stringify(b.props) + JSON.stringify(b.bindings)}
               frame={(b, node) => <BlockFrame bounds={b.bounds} movable={editing && b.style?.locked !== true} selected={ed.selection.ids.includes(b.id)} label={label(b.kind)} onBounds={(c) => ed.bounds(b.id, c)} onSelect={() => ed.selectBlock(b.id)}>{node}</BlockFrame>} /></div>
+            </FilterSlotProvider>
           )}
 
           <section className="mt-4 space-y-2 print:hidden" aria-label="Design check">

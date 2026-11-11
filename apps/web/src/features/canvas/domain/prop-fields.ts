@@ -72,6 +72,7 @@ export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
     { type: "text", path: "title", label: "Title" },
   ],
   MULTI_CARD: [
+    title,
     { type: "text", path: "header", label: "Heading inside the card", hint: "In a repeater over places, the place's name is used when this is empty." },
     { type: "select", path: "layout", label: "Layout", options: opts(MULTI_CARD_LAYOUTS, words) },
     { type: "number", path: "columns", label: "Columns (1 to 4)", min: 1, max: 4 },

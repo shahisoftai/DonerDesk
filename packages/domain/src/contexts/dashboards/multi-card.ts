@@ -26,6 +26,8 @@ export interface MultiCardProps {
   layout: (typeof MULTI_CARD_LAYOUTS)[number];
   columns: number;
   includeDraft: boolean;
+  /** The card's title, above it like any block's; absent = the block's usual name. */
+  title?: string | undefined;
   /** A heading inside the card ("Punjab"); in a repeater the repeated place's name is used when this is empty. */
   header?: string | undefined;
 }
@@ -93,6 +95,7 @@ export function multiCardProblems(p: MultiCardProps): string[] {
   if (!MULTI_CARD_LAYOUTS.includes(p.layout)) out.push("Unknown layout.");
   if (!Number.isInteger(p.columns) || p.columns < 1 || p.columns > 4) out.push("A card has 1 to 4 columns.");
   if ((p.header?.length ?? 0) > 60) out.push("A card heading is at most 60 characters.");
+  if ((p.title?.length ?? 0) > 80) out.push("A card title is at most 80 characters.");
   const seen = new Set<string>();
   for (const it of p.items) {
     const k = sourceKey(it.source);

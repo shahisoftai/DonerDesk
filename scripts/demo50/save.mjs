@@ -1,0 +1,10 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("save");
+await page.getByRole("button", { name: "Save", exact: true }).click();
+await page.waitForTimeout(5000);
+console.log((await page.locator('[role="status"],[role="alert"]').allTextContents()).join(" / ").slice(0, 500));
+const cdp = await page.context().newCDPSession(page);
+await page.waitForTimeout(6000);
+const shot = await cdp.send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
+(await import("node:fs")).writeFileSync("/tmp/claude-1000/canvas1.png", Buffer.from(shot.data, "base64"));
+await browser.close(); process.exit(0);
