@@ -34,24 +34,8 @@ export class PublicCanvasHandler {
     }, this.extras ? { ctx: guest, service: new ShareLinkExtras(this.extras) } : undefined, filters.periodId, this.maps ? { maps: this.maps } : undefined);
     const models: Record<string, BlockModel<unknown>> = {};
     for (const id of withoutProject) models[id] = unavailable("This block has no project.");
+    // One reader of a project's facts for everything on the page: its blocks, its map cards and the choices its filters offer. Each project is read once.
     const facts = new Map<string, ReturnType<typeof canvasFactsFor>>();
-    for (const page of stored.canvas.pages) for (const block of page.blocks) {
-      // A repeater is shown on screen only: a link never lists the organisation's projects, so what a repeater holds is not drawn through one.
-      if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id] || block.container) continue;
-      const def = definitionFor(block.kind) as unknown as { reads?: string; resolve(p: unknown, d: unknown): BlockModel<unknown> } | undefined;
-      if (!def) continue;
-      if (def.reads !== "FACTS" && def.reads !== undefined) { models[block.id] = unavailable("This block is not shown through a link."); continue; }
-      let data: unknown;
-      if (def.reads === "FACTS") {
-        const pid = projectOf(block.bindings) ?? stored.projectId;
-        if (!pid) { models[block.id] = unavailable("This block has no project."); continue; }
-        if (!facts.has(pid)) facts.set(pid, canvasFactsFor(this.sheets, this.info, guest, pid, stored.canvas, stored.title, filters, needsCounts(stored.canvas) ? this.counts : undefined, { shareLink: true }));
-        const f = await facts.get(pid);
-        data = f ? { ...f, finance: { enabled: false, rows: [] }, sheet: { ...f.sheet, finance: [], registerFinance: undefined } } : undefined;
-      }
-      models[block.id] = def.resolve(block.props, data);
-    }
-    // Cards on a map, and the choices the page's filters offer: both read as the guest, from what the canvas names.
     const homeId = stored.projectId ?? stored.canvas.pages.flatMap((p) => p.blocks).map((b) => projectOf(b.bindings)).find(Boolean);
     const tree = this.counts?.tree ? await this.counts.tree(guest) : undefined;
     const factsOf = async (id: string | undefined): Promise<CanvasFacts | undefined> => {
@@ -62,6 +46,21 @@ export class PublicCanvasHandler {
       const named = f && filters.placeKeys?.length === 1 ? tree?.find((p) => p.key === normalizeLocationKey(filters.placeKeys![0]!)) : undefined;
       return f ? { ...f, ...(named ? { placeName: named.label } : {}), finance: { enabled: false, rows: [] }, sheet: { ...f.sheet, finance: [], registerFinance: undefined } } : undefined;
     };
+    for (const page of stored.canvas.pages) for (const block of page.blocks) {
+      // A repeater is shown on screen only: a link never lists the organisation's projects, so what a repeater holds is not drawn through one.
+      if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id] || block.container) continue;
+      const def = definitionFor(block.kind) as unknown as { reads?: string; resolve(p: unknown, d: unknown): BlockModel<unknown> } | undefined;
+      if (!def) continue;
+      if (def.reads !== "FACTS" && def.reads !== undefined) { models[block.id] = unavailable("This block is not shown through a link."); continue; }
+      let data: unknown;
+      if (def.reads === "FACTS") {
+        const pid = projectOf(block.bindings) ?? stored.projectId;
+        if (!pid) { models[block.id] = unavailable("This block has no project."); continue; }
+        data = await factsOf(pid);
+      }
+      models[block.id] = def.resolve(block.props, data);
+    }
+    // Cards on a map, and the choices the page's filters offer: both read as the guest, from what the canvas names.
     drawings = await attachMapCallouts(stored.canvas, stored.projectId, drawings, factsOf, tree);
     const home = await factsOf(homeId);
     const choices: PublicFilterChoices = home ? { ...filterChoices(home), ...(tree ? { placeTree: ownPlaces(tree, filterChoices(home).places) } : {}) } : { periods: [], places: [] };
