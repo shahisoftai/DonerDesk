@@ -313,7 +313,7 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
         {retire.error && <p role="alert" className="mt-2 text-sm text-danger-600">{retire.error}</p>}
         {pinOf && (() => {
           const target = places.find((x) => x.id === pinOf);
-          return target ? <div className="mt-3"><PlacePinEditor key={target.id} place={target} country={places.find((x) => !x.archived && x.adminLevel === 0)?.name} onClose={() => setPinOf(null)} /></div> : null;
+          return target ? <div className="mt-3"><PlacePinEditor key={target.id} place={target} places={places} country={places.find((x) => !x.archived && x.adminLevel === 0)?.name} onClose={() => setPinOf(null)} /></div> : null;
         })()}
         {outlineOf && (() => {
           const target = places.find((x) => x.id === outlineOf);

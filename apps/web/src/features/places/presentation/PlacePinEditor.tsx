@@ -14,7 +14,7 @@ import type { Pin, PlacedBy } from "@/features/maps/domain/marking/pin";
  * Pins an existing place, or changes or clears its pin, and says whether it is a facility (Phase 49). A place needs a pin to take part in
  * distances, rings and the nearest-facility list, and to be drawn as a dot; the list could only add pins to new places before.
  */
-export function PlacePinEditor({ place, country, onClose }: { place: PlaceItem; country?: string | undefined; onClose: () => void }) {
+export function PlacePinEditor({ place, places = [], country, onClose }: { place: PlaceItem; places?: readonly PlaceItem[]; country?: string | undefined; onClose: () => void }) {
   const { t } = useMapText();
   const router = useRouter();
   const [pin, setPin] = useState<Pin | null>(place.latitude !== undefined && place.longitude !== undefined ? { latitude: place.latitude, longitude: place.longitude } : null);
@@ -23,13 +23,17 @@ export function PlacePinEditor({ place, country, onClose }: { place: PlaceItem; 
   const [facilityType, setFacilityType] = useState(place.facilityType ?? "");
   const [types, setTypes] = useState<Array<{ key: string; label: string }>>([]);
   useEffect(() => { void getFacilityTypesAction().then((r) => { if (r.ok) setTypes(r.value.types); }); }, []);
+  const [parentId, setParentId] = useState(place.parentId ?? "");
+  const [aliases, setAliases] = useState(place.aliases.join(", "));
   const [busy, setBusy] = useState(false);
+  // A place can be moved only under a place at a higher level (the server also refuses a circle).
+  const parents = places.filter((p) => !p.archived && p.id !== place.id && p.adminLevel < place.adminLevel).sort((a, b) => a.path.localeCompare(b.path));
   const [error, setError] = useState<string | null>(null);
 
   async function save() {
     setBusy(true); setError(null);
     try {
-      const r = await updatePlaceAction(place.id, { latitude: pin?.latitude ?? null, longitude: pin?.longitude ?? null, facility, ...(facility ? { facilityType: facilityType || null } : {}), ...(pin ? { placedBy: by } : {}) });
+      const r = await updatePlaceAction(place.id, { latitude: pin?.latitude ?? null, longitude: pin?.longitude ?? null, facility, ...(facility ? { facilityType: facilityType || null } : {}), ...(parentId !== (place.parentId ?? "") ? { parentId: parentId || null } : {}), ...(aliases !== place.aliases.join(", ") ? { aliases: aliases.split(",").map((a) => a.trim()).filter(Boolean) } : {}), ...(pin ? { placedBy: by } : {}) });
       if (!r.ok) { setError(r.error.message); return; }
       router.refresh();
       onClose();
@@ -39,6 +43,12 @@ export function PlacePinEditor({ place, country, onClose }: { place: PlaceItem; 
   return (
     <section className="card space-y-3" aria-label={t("maps.places.pinFor", { name: place.name })}>
       <h3 className="text-sm font-semibold">{t("maps.places.pinFor", { name: place.name })}</h3>
+      {parents.length > 0 && <label className="block space-y-1 text-sm"><span className="block text-xs font-medium">Inside</span>
+        <select aria-label="Inside" className="w-full rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={parentId} onChange={(e) => setParentId(e.target.value)}>
+          <option value="">Nothing (top of the list)</option>{parents.map((p) => <option key={p.id} value={p.id}>{p.path}</option>)}
+        </select></label>}
+      <label className="block space-y-1 text-sm"><span className="block text-xs font-medium">Other spellings</span>
+        <input aria-label="Other spellings" className="w-full rounded border border-slate-300 bg-white px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={aliases} onChange={(e) => setAliases(e.target.value)} placeholder="Separate with commas" /></label>
       <PinPicker value={pin} country={country} onChange={(next, placedBy) => { setPin(next); setBy(placedBy); }} />
       <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={facility} onChange={(e) => setFacility(e.target.checked)} /> {t("maps.places.isFacility")}</label>
       {facility && <label className="block space-y-1 text-sm"><span className="block text-xs font-medium">{t("facility.type")}</span>

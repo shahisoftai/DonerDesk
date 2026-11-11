@@ -1,0 +1,13 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("dcimport");
+await page.goto(`${BASE}/projects/14d6f13d-34ee-47ef-9d64-d16595e3e690/data`, { waitUntil: "domcontentloaded" });
+await page.getByText("Import / export", { exact: true }).first().click();
+await page.waitForTimeout(1500);
+await page.locator('input[type=file]').first().setInputFiles(process.env.FILE);
+await page.getByRole("button", { name: "Check file" }).click();
+await page.waitForTimeout(6000);
+const sec = page.locator("section,div").filter({ has: page.getByRole("heading", { name: "Import a data sheet" }) }).last();
+console.log((await sec.innerText()).slice(0, 2500));
+const out = await page.evaluate(() => [...document.querySelectorAll("label,button,input[type=file],h2,h3,p")].map((e) => `${e.tagName}:${(e.textContent||"").trim().slice(0,90)}${e.getAttribute("type")==="file"?" [file]":""}`).filter((t) => /import|file|upload|csv|preview|apply|check/i.test(t)));
+console.log(out.join("\n"));
+await browser.close(); process.exit(0);

@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("ftypes");
+if (!page.url().includes("/settings/places")) await page.goto(BASE + "/settings/places");
+const card = page.locator('[data-testid="facility-types"]');
+await card.locator("summary").click();
+await card.getByLabel("Starting list").selectOption("NUTRITION");
+await card.getByRole("button", { name: "Save" }).click();
+await page.waitForTimeout(2500);
+console.log((await card.innerText()).slice(0, 600));
+await browser.close(); process.exit(0);

@@ -1,0 +1,10 @@
+import fs from "node:fs";
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("placesimp");
+const box = page.getByRole("textbox", { name: "Add many places from a sheet" });
+await box.fill(fs.readFileSync(process.env.FILE, "utf8"));
+await page.getByRole("button", { name: "Check the sheet" }).click();
+await page.waitForTimeout(5000);
+const sec = page.getByRole("region", { name: "Add many places from a sheet" });
+console.log((await sec.innerText()).slice(0, 1800));
+await browser.close(); process.exit(0);

@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("console");
+const logs = [];
+page.on("console", (m) => { if (m.type() === "error" || m.type() === "warning") logs.push(`${m.type()}: ${m.text().slice(0, 400)}`); });
+page.on("pageerror", (e) => logs.push(`pageerror: ${e.message.slice(0, 400)}`));
+page.on("response", (r) => { if (r.status() >= 400) logs.push(`${r.status()} ${r.url().slice(0, 200)}`); });
+await page.goto(BASE + process.argv[2], { waitUntil: "load" });
+await page.waitForTimeout(5000);
+console.log(logs.join("\n") || "no errors");
+await browser.close(); process.exit(0);

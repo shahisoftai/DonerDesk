@@ -1,0 +1,15 @@
+import { attach } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("newind");
+await page.getByLabel("Code", { exact: true }).fill("OP3-1c");
+await page.getByLabel("Indicator name", { exact: true }).fill("Monthly nutrition data reports shared with the nutrition cluster");
+await page.getByLabel("Baseline", { exact: true }).fill("0");
+await page.getByLabel("Target", { exact: true }).fill("42");
+await page.getByLabel("Unit (optional)").fill("reports");
+await page.getByLabel("Data source (optional)").fill("Cluster 4W submissions");
+const freq = page.getByLabel("Frequency (optional)");
+if (await freq.evaluate((e) => e.tagName) === "SELECT") await freq.selectOption({ label: "Monthly" }).catch(() => {}); else await freq.fill("Monthly");
+await page.getByRole("button", { name: "Save indicator" }).click();
+await page.waitForTimeout(4000);
+console.log(page.url());
+console.log((await page.locator('[role="alert"]').allTextContents()).join(" | "));
+await browser.close(); process.exit(0);

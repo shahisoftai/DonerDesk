@@ -30,7 +30,7 @@ export const PLACES_COPY = {
   listTitle: "Your places",
   showRetired: "Show retired places",
   importTitle: "Add many places from a sheet",
-  importIntro: "Paste rows or choose a file with the columns Name, Level, Inside (the place it is in), Latitude, Longitude, Code and Other spellings. Every row is checked first; nothing is added until you confirm.",
+  importIntro: "Paste rows or choose a file with the columns Name, Level, Inside (the place it is in), Latitude, Longitude, Code, Other spellings and Facility type (OTP, SC…). Every row is checked first; nothing is added until you confirm.",
   importPreview: "Check the sheet",
   importApply: "Add these places",
   importWillAdd: (n: number) => `${n} ${n === 1 ? "place" : "places"} will be added.`,
