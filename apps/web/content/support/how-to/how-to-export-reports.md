@@ -5,7 +5,9 @@ Exports produce the files you send to the donor. They come from the approved rep
 ## Where to export
 
 - From the report editor, click the primary button **Export report** (once the report is approved), or
-- open the period's **Export Center** (⋯ menu → Export center) to see all exports and history.
+- open the period's **Export Center** (⋯ menu → Export center) to see all exports and history. It opens with a **Preflight summary** listing every warning (each with a **Fix this →** link), then the files you can select.
+
+To share a **draft** before approval, use **⋯ → Download draft**: a Word or PDF copy, watermarked for internal review. It is never a donor submission.
 
 ## Export types
 

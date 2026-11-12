@@ -2,14 +2,15 @@
 
 Use this when something has gone wrong, or might, and the team should see it. On the project **Overview**, find **Problems and risks** and select **Raise a problem**.
 
-## The four things to fill in
+## What to fill in
 
-1. **Has it happened?** A problem has happened; a risk might.
-2. **What is it?** One short sentence.
-3. **How serious is it?** Low, medium or high.
-4. **What are we doing about it?** One short sentence, and who owns it (optional).
+1. **What is it?** One short sentence.
+2. **What kind is it?** Choose one: **It has happened** (a problem), **It might happen** (a risk), **We are assuming** (an assumption), **We decided** (a decision) or **We depend on someone** (a dependency).
+3. **How serious?** **High**, **Medium** or **Low**.
+4. **Who is handling it?** Choose a team member, or leave **Nobody yet**.
+5. **What is being done about it?** One short sentence.
 
-That is all. Open ones are listed with the most serious first.
+Select **Raise it** (or **Cancel**). Open ones are listed under **Problems and risks** with the most serious first, and a **Show** filter lets you view everything or one kind.
 
 ## Keep it current
 

@@ -60,7 +60,7 @@ With several files, click **Use the first file's confidentiality and indicator f
 
 ## Get help polishing the text
 
-On an activity, use the **Suggested narrative** panel to have AI turn your summary into a cleaner narrative. You see your original next to the suggestion and can copy it. Nothing changes until you choose to use it.
+On an activity, the **AI writing assistance** panel has a **Polish with AI** button that turns your field notes into a cleaner narrative. You see your original next to the suggestion and can copy it. Nothing changes until you choose to use it.
 
 ## Attach evidence
 

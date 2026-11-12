@@ -119,6 +119,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "How to Review and Approve Reports", description: "Move reports through the approval workflow.", href: "/support/how-to/review-and-approve-reports" },
       { title: "How to Use the Audit Trail", description: "Track every change made to your data.", href: "/support/how-to/use-the-audit-trail" },
       { title: "How to Use Comments and Feedback", description: "Leave comments on report sections.", href: "/support/how-to/use-comments-feedback" },
+      { title: "How to Personalise Your Workspace", description: "Bookmarks, dark mode, language, Arrange Home and email choices.", href: "/support/how-to/personalise-your-workspace" },
       { title: "How to Use the Notification System", description: "Stay informed with in-app notifications.", href: "/support/how-to/use-the-notification-system" },
       { title: "How to Use Compliance Checklist", description: "Resolve checklist items before export.", href: "/support/how-to/use-compliance-checklist" },
       { title: "How to Use Bulk Actions", description: "Apply changes to multiple records at once.", href: "/support/how-to/use-bulk-actions" },
