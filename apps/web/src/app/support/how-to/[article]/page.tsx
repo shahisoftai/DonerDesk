@@ -4,6 +4,7 @@ import { CategoryArticle } from "@/components/support/CategoryArticle";
 
 const FILE_MAP: Record<string, string> = {
   "log-in": "how-to/how-to-log-in.md",
+  "use-the-maps-explorer": "how-to/how-to-use-the-maps-explorer.md",
   "personalise-your-workspace": "how-to/how-to-personalise-your-workspace.md",
   "record-data": "how-to/how-to-record-data.md",
   "use-the-finance-tab": "how-to/how-to-use-the-finance-tab.md",

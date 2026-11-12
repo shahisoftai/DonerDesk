@@ -4,8 +4,8 @@ When you work without a signal, the field app can keep a street map of your proj
 
 1. While you have a connection, open the **field app** (`/field`).
 2. Choose your project under **Download for offline use**.
-3. Under **Map for offline use**, choose **See the map's size**. The app tells you how big the map is before anything large is downloaded.
-4. Choose **Keep the map on this phone**.
+3. The **Map for offline use** box appears once a project is chosen. Choose **See the map's size**. The app tells you how big the map is before anything large is downloaded (for example *about 7.2 MB*).
+4. Choose **Keep the map on this phone**. It then says *The map is kept on this phone*, and on a later visit *A map is already kept for this project*.
 
 The map then works with no network: the streets and place names come from your phone.
 

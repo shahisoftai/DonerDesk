@@ -14,7 +14,7 @@ Pick these in the **Charts** tab, under **Chart type**. A type that your data ca
 | **Proportion bar** | Show shares in one bar | Counts that add up |
 | **Small multiples** | Repeat one chart per indicator | Indicators in the same unit |
 | **Dot density** | Place dots on a map, each standing for a stated number | Places with pins |
-| **Hex grid** | Sum values into hexagons | Places with pins. A place is never added to the area that contains it |
+| **Hexagon grid map** (hex grid) | Sum values into hexagons | Places with pins. A place is never added to the area that contains it |
 
 ## Rules these charts follow
 - Rates (percentages, ratios) are never stacked, sliced or summed.

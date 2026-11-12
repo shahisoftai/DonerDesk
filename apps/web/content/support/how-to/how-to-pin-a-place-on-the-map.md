@@ -17,10 +17,15 @@ You can drag the map to move around and zoom in for a closer spot, then click ag
 
 Places in **Settings → Places** can be pinned too, which they need for distances, rings and the nearest-facility list:
 
-1. Find the place in **Your places** and choose **Pin** (or **Change pin**).
-2. Click the map where the place is, or type its latitude and longitude and choose **Set**.
-3. Tick **This place is a facility** if it is a clinic, school, water point or other service site.
-4. Choose **Save**.
+1. Find the place in **Your places** (use **Search places**, or the filters **With a pin** and **Facilities only**) and choose **Pin** (or **Change pin**). The pin editor opens below the list, headed *Pin for <place>*.
+2. Check **Inside** (the place it belongs to) and add **Other spellings** if people write the name differently.
+3. Click the map where the place is, drag the marker to move it, or type **Latitude** and **Longitude** and choose **Set**, or choose **Use my location**. **Undo** and **Remove the pin** are beside them.
+4. Tick **This place is a facility (a health centre, a school…)** if it is a clinic, school, water point or other service site.
+5. Choose **Save** (or **Cancel**).
+
+Areas (a district, a province) also have **Draw outline** in the same list, to draw their shape yourself when no official boundary exists.
+
+To add a new place with a pin in one go, use **Add a place** at the top of **Settings → Places**: fill **Name**, **What is it?**, **Inside**, then **Pin on the map (optional)**: **Latitude** and **Longitude** or **Place on map**.
 
 If your device cannot draw maps, you type the coordinates instead; they are saved the same way.
 

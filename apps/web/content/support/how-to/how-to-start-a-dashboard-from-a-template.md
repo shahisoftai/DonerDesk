@@ -1,10 +1,10 @@
 # How to Start from a Template or a Sector Starter
 
-1. Open **Dashboards and infographics**, then the **Templates** tab.
-2. Choose a starter. There are general ones (flash update, results at a glance, people reached, funding and burn, 3W, field operations, donor one-pager, sector scorecard) and one set for each sector.
-3. Pick the **project**.
-4. Match each **role** (for example "people reached") to one of the project's indicators. DonorDesk suggests matches by shared words, never reuses an indicator and never guesses. You choose.
-5. Click **Apply**.
+1. Open **Dashboards and infographics**, then the **Templates** tab. It lists **Sector templates**, one or more per sector (for example *Water, sanitation and hygiene: access and results*), each marked *Draft template* and showing how many charts and indicator roles it has. The general starters (flash update, results at a glance, people reached, funding and burn, 3W, field operations, donor one-pager, sector scorecard) are under **New** instead: see [How to make a dashboard](/support/how-to/make-a-dashboard).
+2. Choose **Look inside** to see what it holds, **Copy and edit** to make your own copy, or **Use this template**.
+3. In *Make a dashboard from “…”*, pick the **Project**, a **Name** and **Who sees it** (**Only me** or **Everyone on the project**).
+4. Match each **role** (for example "People with basic water access (needed)") to one of the project's indicators. DonorDesk suggests matches by shared words, never reuses an indicator and never guesses. You choose; leave one empty if none fits.
+5. Click **Create the dashboard**. The page says *Your dashboard is ready. Open it.*
 
 ## What you get
 - A headline row of up to four indicator tiles for the roles you matched, then the charts.

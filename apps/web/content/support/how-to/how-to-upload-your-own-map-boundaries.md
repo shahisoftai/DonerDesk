@@ -2,6 +2,18 @@
 
 By default, DonerDesk maps draw the built-in world: country outlines and province borders. If your programme works with its own geography — districts, sub-districts, chiefdoms, project zones — you can upload your boundaries once, and every map in the workspace draws them instead.
 
+## Two kinds of upload
+
+**Settings** has two cards. **Boundaries for a country and level** adds an official-style file for one country and one level (provinces, districts, sub-districts, or parishes, wards and communes); maps use it for that country and level and you can open it from the map. **Custom map boundaries** is one layer that every map draws instead of the built-in outlines. Use the first when you have the boundaries for one country; use the second for your own project zones. This guide covers both.
+
+### Boundaries for a country and level
+
+1. Go to **Settings → Boundaries for a country and level**.
+2. Type the **Country** and its three-letter **Country code** (for example BTN), choose the **Level**, and choose the **Boundary file** (GeoJSON, up to 12 MB).
+3. Click **Upload boundaries**. The card then lists *Country · level · file* with the number of boundaries and whether they carry codes, and a **Remove** button.
+
+A file whose boundaries carry a code joins to your places exactly; without codes the maps match by name.
+
 ## What you need
 
 - **Administrator** access to the workspace (Settings is where the upload lives).

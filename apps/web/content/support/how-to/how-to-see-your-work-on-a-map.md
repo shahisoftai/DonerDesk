@@ -19,6 +19,10 @@ A place with several activities shows the **worst** of them, and the dot grows w
 
 Under the map you will find a short summary — for example *5 sites · 1 site late · 2 sites on time · 2 sites done · 1 risk open*.
 
+## Maps of results, not only activities
+
+The plan's **Map** view shows activities. To see **results** by place (shaded areas, periods, layers), use the Maps explorer: see [How to use the Maps explorer](/support/how-to/use-the-maps-explorer).
+
 ## "Where we work" on the Overview
 
 Your project's **Overview** page has a **Where we work** section with the same map. It shows the project's country and region, and links to the plan. If no activity sits at a known place, the section stays out of the way.

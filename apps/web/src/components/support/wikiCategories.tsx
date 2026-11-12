@@ -147,6 +147,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "How to Track Dependencies, Budget, People Reached and Workload", description: "Order the work, follow spending against the clock and see who you reached.", href: "/support/how-to/track-dependencies-budget-and-people-reached" },
       { title: "How to Add Fields, Use Automatic Reminders and Change Many Activities", description: "Custom fields, automatic reminders and bulk changes on the plan.", href: "/support/how-to/add-fields-and-automatic-reminders" },
       { title: "How to See Your Work on a Map", description: "Plan page Map view and the Where we work card on the project Overview.", href: "/support/how-to/see-your-work-on-a-map" },
+      { title: "How to Use the Maps Explorer", description: "Results by place: shading, periods, ground, layers, overlays and movements.", href: "/support/how-to/use-the-maps-explorer" },
       { title: "How to Pin a Place on the Map", description: "Place a location the map does not know by hand.", href: "/support/how-to/pin-a-place-on-the-map" },
       { title: "How to Analyse Places on a Map", description: "Rings of N km, the nearest health facility and the people living nearby.", href: "/support/how-to/analyse-places-on-a-map" },
       { title: "How to Use Context Layers on a Map", description: "Population, health facilities, settlements and your own imagery.", href: "/support/how-to/use-context-layers-on-a-map" },
