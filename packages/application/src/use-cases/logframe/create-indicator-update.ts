@@ -58,6 +58,10 @@ export class CreateIndicatorUpdateHandler {
     }
     const saved = await upsertIndicatorUpdate(this.ids, this.repo, ctx.tenant.tenantId, ctx.tenant.userId, input.reportingPeriodId, row, this.linker ? (u) => this.linker!.attachPendingFor(ctx, u) : undefined);
     if (!saved.ok) return saved;
+    // A verified value is never changed by a save, so say so instead of reporting a save that did not happen.
+    if (!saved.value.changed) {
+      return { ok: false, error: DomainError.conflict(`${indicator.value.code} already has a verified value for this period, so nothing was changed. Ask a reviewer to send it back or reopen it first.`) };
+    }
     await this.audit.record({
       tenantId: ctx.tenant.tenantId,
       actorId: ctx.tenant.userId,

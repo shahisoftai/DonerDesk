@@ -145,3 +145,18 @@ test("ME-05: the grid and the single-value path refuse a percentage of 450 and a
   assert.match(single.error.message, /OUT|IND-1: the period value "abc" is not a number/);
   assert.equal((await w.create.handle(ctx, { indicatorId: "ind-p", reportingPeriodId: "period-1", periodAchievement: "85%", cumulativeAchievement: "", attachedEvidenceIds: [] })).ok, true);
 });
+
+test("a save over a verified value is refused with a sentence, never reported as saved or audited", async () => {
+  const existing = IndicatorUpdate.create({
+    id: "upd-v", tenantId: "tenant-a", indicatorId: "ind-1", reportingPeriodId: "period-1",
+    periodAchievement: "4500", cumulativeAchievement: "4500", createdById: "user-1",
+  });
+  existing.submit();
+  existing.verify("user-2");
+  const h = harness({ existing });
+  const out = await h.create.handle(ctx, { indicatorId: "ind-1", reportingPeriodId: "period-1", periodAchievement: "1", cumulativeAchievement: "1", attachedEvidenceIds: [] });
+  assert.equal(out.ok, false);
+  assert.match(out.error.message, /already has a verified value.*reviewer/);
+  assert.equal(h.store.row.periodAchievement, "4500");
+  assert.equal(h.store.audits.length, 0);
+});
