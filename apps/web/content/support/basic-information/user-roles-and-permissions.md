@@ -42,6 +42,15 @@ Every person in a workspace has one **role**. The role decides what they can see
 | Comment | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
 | View audit log | ✓ | ✓ | | | | ✓ | |
 | Manage billing | ✓ | | | | | | |
+| Plan work (create and move planned activities) | ✓ | ✓ | ✓ | | | | |
+| Update the planned work you lead | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| Ask people for work (assign tasks) | ✓ | ✓ | ✓ | ✓ | | ✓ | |
+| See the team's work | ✓ | ✓ | ✓ | | | | |
+| Raise a problem or risk | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | |
+| Manage problems and risks | ✓ | ✓ | ✓ | ✓ | | ✓ | |
+| Approve or reject finance entries | ✓ | ✓ | | | | | |
+
+Two more things sit outside the table. **Record** shows only the kinds of entry a person's role allows (a number needs the right to enter indicator values; an activity needs the right to log activities). And an **outside partner** is not a role: it is a Field Officer or Viewer who sees only the projects you choose and only a short list of screens (see [How to invite an outside partner](/support/how-to/invite-an-outside-partner)).
 
 Plans limit seats: **Viewers** are counted separately and cheaply from full seats (see [Plans and limits](/support/account-billing/plans-and-limits)).
 
