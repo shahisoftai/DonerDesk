@@ -11,8 +11,19 @@ export const CreateLogframeItemSchema = z.object({
   code: z.string().max(50).optional(),
   title: z.string().min(1).max(300),
   description: z.string().max(2000).optional(),
+  assumptions: z.string().max(4000).optional(),
+  rationale: z.string().max(4000).optional(),
 });
 export type CreateLogframeItemInput = z.infer<typeof CreateLogframeItemSchema>;
+
+/** A correction of a result's words; only the fields sent change, and an empty assumptions or rationale clears it. */
+export const UpdateLogframeItemSchema = z.object({
+  title: z.string().min(1).max(300).optional(),
+  description: z.string().max(2000).optional(),
+  assumptions: z.string().max(4000).optional(),
+  rationale: z.string().max(4000).optional(),
+});
+export type UpdateLogframeItemInput = z.infer<typeof UpdateLogframeItemSchema>;
 
 /** Place a logframe item under a new parent (null = top level) at a sibling position. */
 export const MoveLogframeItemSchema = z.object({
@@ -115,6 +126,8 @@ export const UpdateIndicatorSchema = z.object({
   countedElsewhere: z.boolean().optional(),
   /** `null` removes the formula (the indicator is typed again). */
   formula: IndicatorFormulaSchema.nullable().optional(),
+  /** Why a target or baseline an approved report used is being changed; kept with the framework's history. */
+  reason: z.string().max(500).optional(),
 });
 export type UpdateIndicatorInput = z.infer<typeof UpdateIndicatorSchema>;
 

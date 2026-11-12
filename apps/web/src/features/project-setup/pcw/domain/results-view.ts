@@ -60,12 +60,12 @@ export function unconfirmedCodes(items: readonly NodeItem[], confirmed: readonly
 export const indentFor = (level: SetupLogLevel): number => DEPTH[level];
 
 /** The results an indicator can measure, deepest first: outputs, then outcomes, then the goal. */
-export function indicatorTargets(items: readonly NodeItem[]): Array<{ code: string; label: string }> {
+export function indicatorTargets(items: readonly NodeItem[], words: Readonly<Record<string, string>> = LEVEL_LABEL): Array<{ code: string; label: string }> {
   return [...items]
     .map((i) => i.value as LogframeNodeDef)
     .filter((n): n is LogframeNodeDef & { code: string } => n.code !== null && n.level !== "ACTIVITY")
     .sort((a, b) => DEPTH[b.level] - DEPTH[a.level])
-    .map((n) => ({ code: n.code, label: `${LEVEL_LABEL[n.level]} ${n.code} · ${n.title ?? ""}` }));
+    .map((n) => ({ code: n.code, label: `${words[n.level] ?? LEVEL_LABEL[n.level]} ${n.code} · ${n.title ?? ""}` }));
 }
 
 export const INDICATOR_TYPE_LABEL = { NUMBER: "Number", PERCENTAGE: "Percentage", RATIO: "Ratio", CURRENCY: "Money" } as const;

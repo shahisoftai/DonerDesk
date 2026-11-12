@@ -11,6 +11,7 @@ import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { roleLabel } from "../domain/team-view";
 import { usePcwCopy } from "./usePcwCopy";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { presetVocabulary } from "@donordesk/domain/contexts/logframe/framework-vocabulary.js";
 import { BREAKDOWN_SUGGESTIONS, FREQUENCIES, FREQUENCY_GROUPS, INDICATOR_TYPES, INDICATOR_TYPE_LABEL, indicatorRows, indicatorTargets, parseBreakdown } from "../domain/results-view";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
@@ -25,7 +26,8 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
   const PCW_COPY = pcw.c;
   const c = PCW_COPY.indicators;
   const rows = indicatorRows(view);
-  const targets = indicatorTargets(view.logframe);
+  const chosen = view.extras.start.wording ? presetVocabulary(view.extras.start.wording) : undefined;
+  const targets = indicatorTargets(view.logframe, chosen?.levels);
   const team = view.extras.team;
   const [name, setName] = useState("");
   const [result, setResult] = useState("");

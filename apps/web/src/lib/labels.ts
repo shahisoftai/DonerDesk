@@ -98,13 +98,6 @@ export const REPORT_FREQUENCY_OPTIONS: readonly string[] = [
   "CUSTOM",
 ];
 
-export const LOGFRAME_LEVEL_LABEL: Record<string, string> = {
-  GOAL: "Goal",
-  OUTCOME: "Outcome",
-  OUTPUT: "Output",
-  ACTIVITY: "Activity",
-};
-
 export const LOGFRAME_LEVEL_OPTIONS: readonly string[] = ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"];
 
 export const INDICATOR_TYPE_LABEL: Record<string, string> = {

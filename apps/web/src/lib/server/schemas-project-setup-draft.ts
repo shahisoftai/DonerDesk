@@ -5,7 +5,7 @@ import type { BudgetLineDef, FundingDef, RiskDef, IndicatorDef, LogframeNodeDef,
 const Result = z.object({
   key: z.string(),
   slide: z.custom<SlideKey>((v) => typeof v === "string"),
-  status: z.enum(["OPEN", "MET", "NOT_USED"]),
+  status: z.enum(["OPEN", "MET", "NOT_USED", "ADVICE"]),
   code: z.custom<RequirementCode>((v) => typeof v === "string").optional(),
   params: z.record(z.union([z.string(), z.number()])).optional(),
   itemKey: z.string().optional(),
@@ -67,6 +67,7 @@ export const SetupDraftViewSchema = z.object({
   extras: z.custom<SetupExtras>((v) => typeof v === "object" && v !== null),
   results: z.array(Result),
   inbox: z.array(Result),
+  advice: z.array(Result).default([]),
   progress: z.array(z.object({ slide: z.custom<SlideKey>((v) => typeof v === "string"), total: z.number(), open: z.number(), complete: z.boolean() })),
 });
 export type SetupDraftView = z.infer<typeof SetupDraftViewSchema>;

@@ -10,6 +10,9 @@ import { Select } from "@/components/ui/Select";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { usePcwCopy } from "./usePcwCopy";
 import { LEVELS, needsParent, parentChoices, treeRows, unconfirmedCodes } from "../domain/results-view";
+import { sentenceFor } from "../domain/pcw-view";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { presetVocabulary } from "@donordesk/domain/contexts/logframe/framework-vocabulary.js";
 import { moveParents } from "../domain/parity-view";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
@@ -18,6 +21,10 @@ import { WizardLibraryPanel } from "@/features/sector-library/presentation/Wizar
 /** Slide 3: the results framework as a tree. Anything from a document waits to be accepted; anything typed here is yours already. */
 export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void }) {
   const pcw = usePcwCopy();
+  const { t } = useI18n();
+  // The donor wording chosen on the Start step wins; otherwise the translated default words.
+  const chosen = view.extras.start.wording ? presetVocabulary(view.extras.start.wording) : undefined;
+  const lw = (level: string): string => chosen?.levels[level as keyof typeof chosen.levels] ?? PCW_COPY.common.levels[level] ?? level;
   const PCW_COPY = pcw.c;
   const c = PCW_COPY.results;
   const [level, setLevel] = useState<SetupLogLevel>(view.logframe.some((i) => i.value.level === "GOAL") ? "OUTCOME" : "GOAL");
@@ -49,7 +56,7 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
     });
 
   const add = () => {
-    if (needsParent(level) && !parent) return fail(PCW_COPY.common.chooseParent(PCW_COPY.common.levels[level] ?? level));
+    if (needsParent(level) && !parent) return fail(PCW_COPY.common.chooseParent(lw(level)));
     run(() => changeResultsAction(id, { kind: "ADD_NODE", level, title, parentCode: parent || null }));
     setTitle("");
   };
@@ -62,11 +69,11 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
         <ul className="space-y-1">
           {rows.map(({ item, node, depth }) => (
             <li key={item.path} style={{ paddingInlineStart: `${depth * 1.5}rem` }} className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-white/10">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{PCW_COPY.common.levels[node.level]}</span>
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{lw(node.level)}</span>
               <span className="font-mono text-xs text-slate-500">{node.code}</span>
               <input
                 key={`n-${node.title}`}
-                aria-label={`${PCW_COPY.common.levels[node.level]} ${node.code ?? ""}`}
+                aria-label={`${lw(node.level)} ${node.code ?? ""}`}
                 defaultValue={node.title ?? ""}
                 className="min-w-[12rem] flex-1 bg-transparent outline-none focus:underline"
                 onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== node.title && run(() => changeResultsAction(id, { kind: "EDIT_NODE_TITLE", path: item.path, title: e.target.value }))}
@@ -88,6 +95,21 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
                   </select>
                 );
               })() : null}
+              {node.level === "OUTCOME" || node.level === "OUTPUT" ? (
+                <details className="basis-full text-xs">
+                  <summary className="cursor-pointer text-slate-600 dark:text-slate-300">{t("framework.logic.summary")}</summary>
+                  <div className="mt-1 grid gap-2 sm:grid-cols-2">
+                    <label className="block"><span className="mb-0.5 block">{t("framework.edit.rationale")}</span>
+                      <textarea key={`r-${node.rationale ?? ""}`} className="input w-full" rows={2} maxLength={4000} defaultValue={node.rationale ?? ""}
+                        onBlur={(e) => e.target.value.trim() !== (node.rationale ?? "") && run(() => changeResultsAction(id, { kind: "EDIT_NODE_LOGIC", path: item.path, rationale: e.target.value }))} />
+                    </label>
+                    <label className="block"><span className="mb-0.5 block">{t("framework.edit.assumptions")}</span>
+                      <textarea key={`a-${node.assumptions ?? ""}`} className="input w-full" rows={2} maxLength={4000} defaultValue={node.assumptions ?? ""}
+                        onBlur={(e) => e.target.value.trim() !== (node.assumptions ?? "") && run(() => changeResultsAction(id, { kind: "EDIT_NODE_LOGIC", path: item.path, assumptions: e.target.value }))} />
+                    </label>
+                  </div>
+                </details>
+              ) : null}
               <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
               {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{c.accept}</button> : null}
               <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${c.remove} ${node.title ?? ""}`}>{c.remove}</button>
@@ -95,6 +117,7 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
           ))}
         </ul>
       )}
+      {view.advice.filter((a) => a.slide === "RESULTS").map((a) => <p key={a.key} role="note" className="text-sm text-slate-600 dark:text-slate-300">{sentenceFor(a, pcw.sentences)}</p>)}
       {pendingCodes.length > 0 ? (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-500/40 dark:bg-amber-500/10">
           <p>{c.codesNote}</p>
@@ -104,7 +127,7 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
       <fieldset className="grid gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:grid-cols-3 dark:border-white/20">
         <legend className="px-1 text-sm font-semibold">{c.add}</legend>
         <Field label={c.level}>
-          <Select value={level} onChange={(e) => { setLevel(e.target.value as SetupLogLevel); setParent(""); }}>{LEVELS.map((l) => <option key={l} value={l}>{PCW_COPY.common.levels[l]}</option>)}</Select>
+          <Select value={level} onChange={(e) => { setLevel(e.target.value as SetupLogLevel); setParent(""); }}>{LEVELS.map((l) => <option key={l} value={l}>{lw(l)}</option>)}</Select>
         </Field>
         <Field label={c.title}><Input value={title} onChange={(e) => setTitle(e.target.value)} /></Field>
         <Field label={c.parent}>

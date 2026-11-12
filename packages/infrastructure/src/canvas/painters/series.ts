@@ -34,7 +34,7 @@ export const paintSmallMultiples: PrintPainter<ModelOf<typeof smallMultiplesMode
 export const paintResultsChain: PrintPainter<ModelOf<typeof resultsChainModel>> = ({ model, ctx: c, title, width }) => {
   if (model.state !== "ready") return notReported(c, title, width, 110);
   const { t, s, l } = c;
-  const levelLabel = (level: string): string => (level === "IMPACT" ? l.impact : level === "GOAL" ? l.goal : level === "OUTCOME" ? l.outcome : level === "OUTPUT" ? l.output : level === "ACTIVITY" ? l.activity : l.indicators);
+  const levelLabel = (level: string): string => c.data.levelWords?.[level] ?? (level === "IMPACT" ? l.impact : level === "GOAL" ? l.goal : level === "OUTCOME" ? l.outcome : level === "OUTPUT" ? l.output : level === "ACTIVITY" ? l.activity : l.indicators);
   let y = 12 * s;
   let body = "";
   const labelW = 120 * s;

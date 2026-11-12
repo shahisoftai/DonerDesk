@@ -82,6 +82,8 @@ export interface AiReporterOutlineSlot {
 }
 
 export interface AiReporterContextProject {
+  /** The donor's word for the outcome level, when it is not "Outcome". */
+  outcomeWord?: string;
   title?: string;
   projectCode?: string;
   donorName?: string;

@@ -12,7 +12,7 @@
 # Exit:   0 built and pulled; 3 refused before anything was built (fall back to a local build); anything else = failed.
 # Knobs:  HOST_BUILD_DIR (default /var/tmp/dd-hostbuild)   HOST_BUILD_MEM_MB (3000: the build peaked at ~2.6 GB)
 #         HOST_BUILD_MARGIN_MB (300)   HOST_BUILD_MIN_DISK_GB (6)   HOST_BUILD_CLEAN=1 (delete the build dir afterwards)
-#         SSH (same as deploy-fast.sh)   SSH_HOST (contabo)
+#         FULL_BUILD=1 (rebuild every package, ignoring the stamps)   SSH (same as deploy-fast.sh)   SSH_HOST (contabo)
 
 set -euo pipefail
 
@@ -104,12 +104,51 @@ case "${SCOPE}" in
 esac
 "${PNPM[@]}" install --frozen-lockfile --store-dir "${DIR}/.store" > "${DIR}/install.log" 2>&1 || { tail -30 "${DIR}/install.log"; exit 11; }
 lap "pnpm install"
-"${PNPM[@]}" -r "${FILTER[@]}" build > "${DIR}/build.log" 2>&1 || { tail -40 "${DIR}/build.log"; exit 13; }
-lap "build"
-# After the build, not before: each package is type-checked against its dependencies' built output, which a fresh host does not have yet.
-if [[ "${TYPECHECK}" == "1" ]]; then
-  "${PNPM[@]}" -r "${FILTER[@]}" typecheck > "${DIR}/typecheck.log" 2>&1 || { tail -40 "${DIR}/typecheck.log"; exit 12; }
-  lap "type-check"
+# Build only what changed. A package is rebuilt when its sources (or the root files every package reads) differ from the stamp written after its last
+# successful build, when its output is missing, or when a package it depends on is rebuilt. Stamps are written only after build and type-check pass,
+# so a failed run is rebuilt next time. FULL_BUILD=1 rebuilds everything.
+declare -A PDIR=([contracts]=packages/contracts [domain]=packages/domain [application]=packages/application [infrastructure]=packages/infrastructure [api]=apps/api [web]=apps/web)
+declare -A POUT=([contracts]=packages/contracts/dist [domain]=packages/domain/dist [application]=packages/application/dist [infrastructure]=packages/infrastructure/dist [api]=apps/api/dist/server.js [web]=apps/web/.next/standalone/apps/web/server.js)
+declare -A PDEPS=([contracts]="" [domain]="" [application]="contracts domain" [infrastructure]="contracts domain application" [api]="contracts domain application infrastructure" [web]="contracts domain")
+ORDER="contracts domain application infrastructure api web"
+case "${SCOPE}" in
+  api) WANT="contracts domain application infrastructure api" ;;
+  web) WANT="contracts domain web" ;;
+  *)   WANT="${ORDER}" ;;
+esac
+STAMPS="${DIR}/stamps"; mkdir -p "${STAMPS}"
+ROOT_HASH=$(cat package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig*.json 2>/dev/null | sha256sum | cut -c1-64)
+src_hash() {
+  { echo "${ROOT_HASH}"
+    cd "$1" && find . \( -name node_modules -o -name dist -o -name .next -o -name .turbo -o -name .cache -o -name coverage -o -name '*.tsbuildinfo' \) -prune -o -type f -print0 \
+      | sort -z | xargs -0 -r sha256sum; } | sha256sum | cut -c1-64
+}
+declare -A HASH DIRTY
+BUILD_SET=()
+for p in ${ORDER}; do
+  [[ " ${WANT} " == *" ${p} "* ]] || continue
+  # A package's fingerprint covers its own sources and its dependencies' fingerprints, so a dependency rebuilt under another scope rebuilds it too.
+  HASH[$p]=$( { src_hash "${PDIR[$p]}"; for d in ${PDEPS[$p]}; do echo "${HASH[$d]}"; done; } | sha256sum | cut -c1-64)
+  dirty=0
+  [[ "${FULL_BUILD:-0}" == "1" ]] && dirty=1
+  [[ -e "${POUT[$p]}" ]] || dirty=1
+  [[ "$(cat "${STAMPS}/${p}" 2>/dev/null)" == "${HASH[$p]}" ]] || dirty=1
+  for d in ${PDEPS[$p]}; do [[ "${DIRTY[$d]:-0}" == "1" ]] && dirty=1; done
+  DIRTY[$p]=${dirty}
+  [[ "${dirty}" == "1" ]] && BUILD_SET+=(--filter "@donordesk/${p}")
+done
+echo "  [host] to build: $(for p in ${WANT}; do [[ "${DIRTY[$p]}" == "1" ]] && printf '%s ' "$p"; done)(unchanged ones are kept)"
+if [[ ${#BUILD_SET[@]} -gt 0 ]]; then
+  "${PNPM[@]}" -r "${BUILD_SET[@]}" build > "${DIR}/build.log" 2>&1 || { tail -40 "${DIR}/build.log"; exit 13; }
+  lap "build"
+  # After the build, not before: each package is type-checked against its dependencies' built output, which a fresh host does not have yet.
+  if [[ "${TYPECHECK}" == "1" ]]; then
+    "${PNPM[@]}" -r "${BUILD_SET[@]}" typecheck > "${DIR}/typecheck.log" 2>&1 || { tail -40 "${DIR}/typecheck.log"; exit 12; }
+    lap "type-check"
+  fi
+  for p in ${WANT}; do [[ "${DIRTY[$p]}" == "1" ]] && echo "${HASH[$p]}" > "${STAMPS}/${p}"; done
+else
+  echo "  [host] nothing changed since the last successful build"
 fi
 case "${SCOPE}" in api|both) test -f apps/api/dist/server.js || { echo "  [host] apps/api/dist/server.js missing"; exit 14; } ;; esac
 case "${SCOPE}" in web|both) test -f apps/web/.next/standalone/apps/web/server.js || { echo "  [host] web standalone output missing"; exit 14; } ;; esac
@@ -118,7 +157,7 @@ REMOTE
   local rc=0
   # -E 75: a second build waiting more than 10 s for the lock gives up with 75 instead of queueing behind the first.
   ${SSH} "flock -w 10 -E 75 ${DIR}/.lock systemd-run --scope --quiet -p MemoryMax=${MEM_MB}M -p MemorySwapMax=0 -p CPUWeight=20 \
-      nice -n 19 ionice -c3 env DIR=${DIR} SRC=${SRC} SCOPE=${SCOPE} TYPECHECK=${TYPECHECK} bash ${DIR}/run-build.sh" || rc=$?
+      nice -n 19 ionice -c3 env DIR=${DIR} SRC=${SRC} SCOPE=${SCOPE} TYPECHECK=${TYPECHECK} FULL_BUILD=${FULL_BUILD:-0} bash ${DIR}/run-build.sh" || rc=$?
   case ${rc} in
     0) ;;
     75) say "another host build is running."; return ${EXIT_REFUSED} ;;

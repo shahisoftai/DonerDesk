@@ -7,6 +7,7 @@ import { ReportingProfileForm } from "./ReportingProfileForm";
 import { SecondApproverToggle } from "./SecondApproverToggle";
 import { EvidenceForVerificationToggle } from "./EvidenceForVerificationToggle";
 import { SimpleReviewToggle } from "./SimpleReviewToggle";
+import { FrameworkVocabularyForm } from "./FrameworkVocabularyForm";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function ProjectReportingProfilePage({ params }: { params: 
         <SecondApproverToggle projectId={id} initial={result.value.profile?.requireSecondApprover ?? false} />
         <SimpleReviewToggle projectId={id} initial={result.value.profile?.simpleReview ?? false} />
         <EvidenceForVerificationToggle projectId={id} initial={result.value.profile?.requireEvidenceForVerification ?? false} />
+        <FrameworkVocabularyForm projectId={id} initial={result.value.profile?.vocabulary} />
         <ReportingProfileForm projectId={id} initialProfile={result.value.profile} />
       </div>
     </div>

@@ -5,7 +5,10 @@
 | **Workspace / tenant** | Your organisation's private space. Data is isolated from other organisations. |
 | **Project** | One funded grant or programme (title, code, donor, country, dates). |
 | **Donor template** | The donor's report structure and rules, extracted and approved by you. |
-| **Logframe** | The results framework: Goal → Outcome → Output → Activity. |
+| **Results framework** | The chain of results a project intends to achieve (Goal → Outcome → Output → Activity) and why each leads to the next. |
+| **Logframe** | The same results read as a measurement matrix: indicators, baselines, targets, means of verification and assumptions. DonorDesk keeps one set of results and shows it either way. |
+| **Assumption** | What must hold for one result to lead to the result above it. Written on the result itself. |
+| **Donor wording** | The words your donor uses for the levels (for example Intermediate Result instead of Outcome). Only the words on screen change. |
 | **Indicator** | A measurable result with baseline, target, unit and frequency. |
 | **Baseline / Target** | Starting value and value to achieve. |
 | **Indicator update** | The value for one indicator in one reporting period. |

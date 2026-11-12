@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ReportingProfile, ALL_REPORT_TYPES, templateAppliesToReportType } from "@donordesk/domain";
+import { DomainError, ReportingProfile, ALL_REPORT_TYPES, templateAppliesToReportType, vocabularyProblems, type FrameworkVocabulary } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportingProfileRepository } from "../../ports/setup.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
@@ -138,6 +138,31 @@ export class SetSimpleReviewHandler {
     const saved = await this.access.save(profile, created);
     if (!saved.ok) return saved;
     await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "reporting_profile.simple_review_set", entityType: "reporting_profile", entityId: profile.id, projectId, newValue: JSON.stringify({ simpleReview: value }) });
+    return { ok: true, value: undefined };
+  }
+}
+
+/** What this project's donor calls the levels of the results chain. Only the words change; stored levels never do. */
+export class SetFrameworkVocabularyHandler {
+  private readonly access: ProfileAccess;
+  constructor(ids: IIdGenerator, profiles: IReportingProfileRepository, private readonly audit: IAuditLogger) {
+    this.access = new ProfileAccess(ids, profiles);
+  }
+
+  async handle(ctx: AuthenticatedContext, projectId: string, input: FrameworkVocabulary): Promise<Result<void, DomainError>> {
+    const trimmed: FrameworkVocabulary = {
+      document: input.document.trim(),
+      levels: { GOAL: input.levels.GOAL.trim(), OUTCOME: input.levels.OUTCOME.trim(), OUTPUT: input.levels.OUTPUT.trim(), ACTIVITY: input.levels.ACTIVITY.trim() },
+    };
+    const problem = vocabularyProblems(trimmed)[0];
+    if (problem) return { ok: false, error: DomainError.validation(`The ${problem.field === "document" ? "document name" : problem.field.toLowerCase() + " word"} ${problem.code === "EMPTY" ? "is missing" : problem.code === "TOO_LONG" ? "is too long (40 characters at most)" : problem.code === "DUPLICATE" ? "repeats another level's word" : "must be plain words"}.`) };
+    const loaded = await this.access.loadOrCreate(ctx, projectId);
+    if (!loaded.ok) return loaded;
+    const { profile, created } = loaded.value;
+    profile.setVocabulary(trimmed, ctx.tenant.userId);
+    const saved = await this.access.save(profile, created);
+    if (!saved.ok) return saved;
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "reporting_profile.vocabulary_set", entityType: "reporting_profile", entityId: profile.id, projectId, newValue: JSON.stringify(trimmed) });
     return { ok: true, value: undefined };
   }
 }

@@ -1,5 +1,5 @@
 import type { SectionFinding, ReadingAreaRunState, ReadingLeftOutArea, SetupSourceInfo, LaunchSummary, LaunchVerdict, BudgetLineDef, BudgetSuggestion, FinanceSummary, FundingDef, IndicatorDef, LogframeNodeDef, RiskDef, PlaceDef, PlanCoverage, MethodSuggestion, PlannedActivityDef, ScheduleTimeline, SetupLinkSuggestion, Proposed, ProposedStatus, RequirementResult, SetupDraft, SetupExtras, SlideProgress } from "@donordesk/domain";
-import { areaRunStates, leftOutFromRuns, SETUP_REQUIREMENTS, SLIDE_KEYS, emptyExtras, evaluateRequirements, gapInbox, planCoverage, SECTOR_TEMPLATES, budgetKeyOf, canLaunch, financeSummary, launchSummary, planKeyOf, scheduleTimeline, suggestBudgetLinks, slideProgress, suggestMethods, suggestSetupLinks } from "@donordesk/domain";
+import { areaRunStates, leftOutFromRuns, SETUP_REQUIREMENTS, SLIDE_KEYS, emptyExtras, evaluateRequirements, gapInbox, adviceNotes, planCoverage, SECTOR_TEMPLATES, budgetKeyOf, canLaunch, financeSummary, launchSummary, planKeyOf, scheduleTimeline, suggestBudgetLinks, slideProgress, suggestMethods, suggestSetupLinks } from "@donordesk/domain";
 import type { StoredSetupProposal, StoredSetupRun } from "../../ports/project-setup.js";
 import { STALE_AREA_RUN_MS } from "./proposal-state.js";
 
@@ -89,6 +89,8 @@ export interface SetupDraftView {
   extras: SetupExtras;
   results: RequirementResult[];
   inbox: RequirementResult[];
+  /** Suggestions that never block a sign-off or launch (for example, saying why a result leads upward). */
+  advice: RequirementResult[];
   progress: SlideProgress[];
 }
 
@@ -134,6 +136,7 @@ export function describeDraft(stored: StoredSetupProposal, reading?: ReadingRuns
     extras: draft.extras,
     results,
     inbox: gapInbox(results),
+    advice: adviceNotes(results),
     progress: SLIDE_KEYS.map((slide) => slideProgress(results, slide)),
   };
 }

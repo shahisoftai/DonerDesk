@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { LibrarySectorId } from "@donordesk/domain";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { useDonorLevelWord } from "@/features/logframe/presentation/FrameworkVocabularyProvider";
 import type { LibraryFilters } from "../domain/library-dto";
 import { EMPTY_FILTERS, hasUnreviewed, pruneSelection, selectRecommended, toggle, toggleGroup, toggleIn, withFilter, type Selection } from "../domain/picker-state";
 import type { LibraryAdopter, LibraryBrowser, LibraryPage } from "../ports/library-port";
@@ -33,6 +34,7 @@ const KINDS = ["COUNT", "RATE", "RATIO", "INDEX"] as const;
  */
 export function LibraryPicker({ browser, adopter, projectId, targets, targetKey, initialSectors = [], onChanged }: LibraryPickerProps) {
   const { t } = useI18n();
+  const donorWord = useDonorLevelWord();
   const [filters, setFilters] = useState<LibraryFilters>({ ...EMPTY_FILTERS, sectors: [...initialSectors] });
   const [page, setPage] = useState<LibraryPage | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +112,7 @@ export function LibraryPicker({ browser, adopter, projectId, targets, targetKey,
           <fieldset className="flex flex-wrap gap-2 text-xs">
             <legend className="mb-1 text-sm font-medium">{t("lib.filter.level")}</legend>
             {LEVELS.map((l) => (
-              <label key={l} className="flex items-center gap-1"><input type="checkbox" checked={filters.levels.includes(l)} onChange={() => setFilters((f) => withFilter(f, "levels", toggleIn(f.levels, l)))} />{t(`lib.level.${l}` as never)}</label>
+              <label key={l} className="flex items-center gap-1"><input type="checkbox" checked={filters.levels.includes(l)} onChange={() => setFilters((f) => withFilter(f, "levels", toggleIn(f.levels, l)))} />{donorWord(l) ?? t(`lib.level.${l}` as never)}</label>
             ))}
           </fieldset>
           <fieldset className="flex flex-wrap gap-2 text-xs">

@@ -162,7 +162,7 @@ export async function canvasFactsFor(sheets: GetProjectDataSheetHandler, infogra
   const countFacts = counts ? await counts.read(ctx, [projectId], [sheet.value], countOptions) : undefined;
   const o = canvas.options;
   return {
-    sheet: restrictSheet(sheet.value, filters), reach: data.value.reach, activities: data.value.activities, finance: data.value.finance, indicators: data.value.indicators,
+    sheet: restrictSheet(sheet.value, filters), reach: data.value.reach, activities: data.value.activities, finance: data.value.finance, indicators: data.value.indicators, levelWords: data.value.levelWords,
     // A viewer's own filter narrows what the design chose: a period ends the range there, places replace the default places.
     range: { fromId: o?.periodFromId, toId: filters.periodId ?? o?.periodToId }, locationKeys: filters.placeKeys?.length ? filters.placeKeys : o?.locationKeys, acknowledgement: o?.acknowledgement, subtitle: o?.subtitle,
     project: { title: data.value.project.title, donorName: data.value.project.donorName, country: data.value.project.country }, designTitle: title,

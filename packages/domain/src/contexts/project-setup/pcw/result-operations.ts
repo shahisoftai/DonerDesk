@@ -15,6 +15,7 @@ export type ResultOperation =
   | { kind: "ADD_INDICATOR"; value: Record<string, unknown> }
   | { kind: "EDIT_INDICATOR"; path: string; patch: Partial<Pick<IndicatorDef, "title" | "type" | "unit" | "baseline" | "target" | "frequency" | "logframeCode" | "disaggregation">> }
   | { kind: "EDIT_NODE_TITLE"; path: string; title: string }
+  | { kind: "EDIT_NODE_LOGIC"; path: string; assumptions?: string; rationale?: string }
   | { kind: "BULK_INDICATORS"; frequency?: string; disaggregation?: string[]; level?: SetupLogLevel }
   /** Entries of the sector library, resolved by the caller (the organisation's own wording included); added as the person's own indicators. */
   | { kind: "ADD_FROM_LIBRARY"; entries: readonly LibraryIndicator[]; logframeCode?: string | null; today: string }
@@ -93,6 +94,16 @@ export const RESULT_OPERATIONS: { [K in ResultOperation["kind"]]: Handler<K> } =
     const name = clean(title, 300);
     if (!name) return refuse("A result needs a name.");
     const logframe = p.logframe.map((n, i) => (i === at.index ? { ...n, value: { ...n.value!, title: name }, status: "EDITED" as const } : n));
+    return done({ ...p, logframe });
+  },
+  EDIT_NODE_LOGIC: (p, { path, assumptions, rationale }) => {
+    const at = itemAt(p.logframe, path, "logframe");
+    if (!at) return refuse("That result is not in the project.");
+    const next = { ...at.item.value! };
+    // Empty text clears; an omitted field is kept. Nothing is invented.
+    if (assumptions !== undefined) next.assumptions = clean(assumptions, 4000) ?? null;
+    if (rationale !== undefined) next.rationale = clean(rationale, 4000) ?? null;
+    const logframe = p.logframe.map((n, i) => (i === at.index ? { ...n, value: next, status: "EDITED" as const } : n));
     return done({ ...p, logframe });
   },
   ADD_FROM_LIBRARY: (p, { entries, logframeCode, today }) => {

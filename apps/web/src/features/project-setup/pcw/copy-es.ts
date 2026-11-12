@@ -61,6 +61,7 @@ export const PCW_ES: PcwBundle = {
     risksUndecided: (p) => `${p.count} ${s(Number(p.count), "riesgo espera", "riesgos esperan")} a que lo acepte o lo rechace.`,
     risksMissing: () => "Añada los principales riesgos del proyecto, o indique que no hay ninguno que registrar.",
     risksUnrated: (p) => `Indique la gravedad de «${first(p)}»${more(p)}. Una entrada sin valoración se omite al iniciar el proyecto.`,
+    resultsWithoutReasoning: (p) => `Opcional: indique por qué estos resultados llevan al nivel superior (${p.count}), por ejemplo ${p.first}.`,
     assumptionsMissing: () => "Añada lo que el proyecto da por supuesto, o indique que no hay nada que registrar.",
     dashboardMissing: () => "Elija un panel inicial, o indique que no se usa.",
   },
@@ -75,6 +76,8 @@ export const PCW_ES: PcwBundle = {
       useStarting: "Usar las respuestas iniciales de este sector",
       startingApplied: (label, filled) => (filled.length === 0 ? `${label}: todo lo que ofrece ya estaba respondido.` : `${label} completado: ${filled.join(", ")}.`),
       sectorsHelp: "Las respuestas iniciales dependen solo del sector. Lo que exige un donante sale de sus propios documentos y plantillas, nunca se adivina.",
+      wording: "Vocabulario del donante para el marco de resultados", wordingDefault: "Vocabulario de DonorDesk (Goal, Outcome, Output, Activity)",
+      wordingHelp: "Solo cambian las palabras en pantalla y en los archivos descargados; puede cambiarlo después en el perfil de informes.",
     },
     results: {
       add: "Añadir un resultado", level: "Tipo", title: "Qué se logrará", parent: "Pertenece a", none: "— ninguno —",

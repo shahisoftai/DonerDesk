@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { LogframeItemSelect } from "@/features/logframe/presentation/LogframeItemSelect";
+import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
 import { useRouter } from "next/navigation";
 import { closeRiskAction, raiseRiskAction } from "@/lib/actions/tasks";
 import type { RiskItem } from "@/lib/server/schemas";
@@ -23,12 +26,15 @@ const TONE = { HIGH: "danger", MEDIUM: "warning", LOW: "neutral" } as const;
  * "Problems and risks": open ones, the most serious first, with "See all" for the rest. The form has the four things a person
  * knows: what it is (and whether it has happened), how serious, who is handling it, what is being done. No matrix, no categories.
  */
-export function RisksCard({ projectId, risks, people, userId, canRaise, today, plannedActivityId }: {
+export function RisksCard({ projectId, risks, people, userId, canRaise, today, plannedActivityId, results = [] }: {
   projectId: string; risks: RiskItem[]; people: ProjectPerson[]; userId: string; canRaise: boolean; today: string; plannedActivityId?: string;
+  /** The project's results, so a problem can be raised against one; none = the choice is not offered. */
+  results?: OutlineSource[];
 }) {
   const router = useRouter();
   const state = useActionState();
   const hydrated = useHydrated();
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [all, setAll] = useState(false);
   const [filterKind, setFilterKind] = useState<RiskKind | "">("");
@@ -36,6 +42,7 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
   const [kind, setKind] = useState<RiskKind>("PROBLEM");
   const [seriousness, setSeriousness] = useState<"HIGH" | "MEDIUM" | "LOW">("MEDIUM");
   const [owner, setOwner] = useState("");
+  const [result, setResult] = useState("");
   const [action, setAction] = useState("");
   const [closing, setClosing] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -48,7 +55,7 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
 
   async function raise(e: React.FormEvent) {
     e.preventDefault();
-    const out = await state.runCreate((idempotencyKey) => raiseRiskAction(projectId, { kind, title, seriousness, action, ...(owner ? { ownerId: owner } : {}), ...(plannedActivityId ? { plannedActivityId } : {}) }, { idempotencyKey }));
+    const out = await state.runCreate((idempotencyKey) => raiseRiskAction(projectId, { kind, title, seriousness, action, ...(owner ? { ownerId: owner } : {}), ...(plannedActivityId ? { plannedActivityId } : {}), ...(result ? { logframeItemId: result } : {}) }, { idempotencyKey }));
     if (out) { setOpen(false); setTitle(""); setAction(""); setOwner(""); router.refresh(); }
   }
   async function close(id: string) {
@@ -75,6 +82,11 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
             <Field label="Who is handling it?" error={err("ownerId")}>
               <Select value={owner} onChange={(e) => setOwner(e.target.value)}><option value="">Nobody yet</option>{people.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}</Select>
             </Field>
+            {results.length > 0 && (
+              <Field label={t("framework.risk.result")} error={err("logframeItemId")}>
+                <LogframeItemSelect id="risk-result" items={results} value={result} onChange={setResult} emptyLabel={t("framework.risk.none")} />
+              </Field>
+            )}
             <Field label={RISK_ACTION_HINT[kind]} error={err("action")}><Textarea dictate rows={2} maxLength={1000} value={action} onChange={(e) => setAction(e.target.value)} /></Field>
           </fieldset>
           {state.error && <p role="alert" className="text-sm text-danger-600">{state.error}</p>}

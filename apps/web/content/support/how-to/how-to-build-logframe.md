@@ -39,6 +39,23 @@ Click **Choose from the library** on the Logframe page for ready-made results an
 2. Add child items under each parent.
 3. Add indicators (see below).
 
+## Add the reasoning and the assumptions
+
+Select **Edit** on any result to correct its title or description, and to write **why it leads to the result above it** and **what must hold** for it to do so (its assumptions). When you add a result, open **Logic (optional)** to write them straight away. Both are optional, and they are kept with each version of the framework. An Excel or CSV import also reads optional **Assumptions** and **Rationale** columns when your sheet has them.
+
+## Read it as a Results Framework or a Logframe
+
+Above the hierarchy, choose **Results framework** or **Logframe**. It is the same set of results and indicators, shown two ways:
+
+- **Results framework**: Goal, Outcome and Output with the reasoning behind each, and the indicator names. Activities are left out.
+- **Logframe**: every level with each indicator's baseline, target, unit, means of verification, data source and frequency, and the assumptions.
+
+A value nobody has set shows as a dash, never as zero. **Download Word** and **Download PDF** (for people who can export) give you the same table as a file.
+
+## Use your donor's words
+
+In **Setup → Reporting profile → Results framework wording**, choose your donor's terms (for example USAID, FCDO, European Union, United Nations) or type your own. The levels, the page headings and the downloaded files then use those words. Your results and indicators are not changed; only the words on screen are.
+
 ## Rearranging the hierarchy
 
 The **Logframe hierarchy** is a tree. Drag an item to reorder it or drop it under another item to change its parent. There is also a **Move to** menu (including "top level") for keyboard and touch use. The order you set is kept.

@@ -29,8 +29,11 @@ const LEVEL_WORD = { GOAL: "Goal", OUTCOME: "Outcome", OUTPUT: "Output", ACTIVIT
 
 /** Parents before children, in document order, so the importer's "nearest earlier item one level up" reads the tree. */
 export function logframeSheet(p: ProjectSetupProposal): SheetForImport {
-  const rows = chosen(p.logframe).map((n) => [LEVEL_WORD[n.level], n.code, n.title, n.description]);
-  return sheet(["Level", "Code", "Title", "Description"], rows, []);
+  const nodes = chosen(p.logframe);
+  // The logic columns are added only when some result has them, so a sheet without logic reads exactly as before.
+  const withLogic = nodes.some((n) => n.assumptions || n.rationale);
+  const rows = nodes.map((n) => [LEVEL_WORD[n.level], n.code, n.title, n.description, ...(withLogic ? [n.assumptions, n.rationale] : [])]);
+  return sheet(["Level", "Code", "Title", "Description", ...(withLogic ? ["Assumptions", "Rationale"] : [])], rows, []);
 }
 
 const INDICATOR_TYPES = new Set(["NUMBER", "PERCENTAGE", "YES_NO", "TEXT", "RATIO", "CURRENCY"]);

@@ -45,6 +45,8 @@ export class PrismaLogframeRepository implements ILogframeRepository {
         title: i.title,
         description: i.description,
         sortOrder: i.sortOrder,
+        assumptions: i.assumptions ?? null,
+        rationale: i.rationale ?? null,
       },
     });
     return ok(i);
@@ -57,8 +59,10 @@ export class PrismaLogframeRepository implements ILogframeRepository {
         level: i.level,
         code: i.code,
         title: i.title,
-        description: i.description,
+        description: i.description ?? null,
         sortOrder: i.sortOrder,
+        assumptions: i.assumptions ?? null,
+        rationale: i.rationale ?? null,
       },
     });
     return ok(i);
@@ -84,7 +88,7 @@ export class PrismaLogframeRepository implements ILogframeRepository {
         tenantId: row.tenantId,
         projectId: row.projectId,
         createdAt: row.createdAt,
-        props: { parentId: row.parentId ?? undefined, level: row.level as never, code: row.code ?? undefined, title: row.title, description: row.description ?? undefined, sortOrder: row.sortOrder },
+        props: { parentId: row.parentId ?? undefined, level: row.level as never, code: row.code ?? undefined, title: row.title, description: row.description ?? undefined, sortOrder: row.sortOrder, ...(row.assumptions ? { assumptions: row.assumptions } : {}), ...(row.rationale ? { rationale: row.rationale } : {}) },
       }),
     );
   }
@@ -97,7 +101,7 @@ export class PrismaLogframeRepository implements ILogframeRepository {
           tenantId: row.tenantId,
           projectId: row.projectId,
           createdAt: row.createdAt,
-          props: { parentId: row.parentId ?? undefined, level: row.level as never, code: row.code ?? undefined, title: row.title, description: row.description ?? undefined, sortOrder: row.sortOrder },
+          props: { parentId: row.parentId ?? undefined, level: row.level as never, code: row.code ?? undefined, title: row.title, description: row.description ?? undefined, sortOrder: row.sortOrder, ...(row.assumptions ? { assumptions: row.assumptions } : {}), ...(row.rationale ? { rationale: row.rationale } : {}) },
         }),
       ),
     );

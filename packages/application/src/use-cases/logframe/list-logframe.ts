@@ -31,6 +31,8 @@ export class ListLogframeHandler {
           title: i.title,
           description: i.description,
           sortOrder: i.sortOrder,
+          ...(i.assumptions ? { assumptions: i.assumptions } : {}),
+          ...(i.rationale ? { rationale: i.rationale } : {}),
           ...(i.level === "ACTIVITY" && records ? { delivery: delivery.get(i.id) ?? { recordedCount: 0, acceptedCount: 0, lastActivityDate: null, participantsTotal: 0 } } : {}),
         })),
         indicators: indResult.value.map((i) => ({

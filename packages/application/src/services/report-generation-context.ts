@@ -1,5 +1,6 @@
 import type { PlanDeliverySummary, FinanceSummaryView, Result, Project, ReportingPeriod, ReportScope, TemplateSection, VerifiedFinding } from "@donordesk/domain";
-import { DomainError, partitionFindings, isDueInPeriod, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
+import { DomainError, isDefaultVocabulary, levelName, partitionFindings, isDueInPeriod, describeReportScope, blueprintSectionsFor, templateAppliesToReportType } from "@donordesk/domain";
+import type { IReportingProfileRepository } from "../ports/setup.js";
 import { taggedEvidenceIds } from "./period-evidence.js";
 import { resolveGenerationActivities, resolvePeriodActivities, scopeIndicatorData } from "./period-activities.js";
 import type { AuthenticatedContext } from "../context.js";
@@ -109,6 +110,8 @@ export class ReportGenerationContextBuilder {
     private readonly evidenceFiles?: IEvidenceRepository,
     /** Absent: reports do not read the work plan. */
     private readonly planDelivery?: IPlanDelivery,
+    /** Absent: the writer is told nothing about the donor's words for the levels. */
+    private readonly profiles?: IReportingProfileRepository,
   ) {}
 
   /**
@@ -252,6 +255,11 @@ export class ReportGenerationContextBuilder {
       status: a.status,
     }));
 
+    // The donor's word for the outcome level, only when it is not the default one.
+    const profile = this.profiles ? await this.profiles.findByProject(project.id, ctx.tenant.tenantId) : undefined;
+    const donorWords = profile?.ok && profile.value && !isDefaultVocabulary(profile.value.vocabulary) ? profile.value.vocabulary : undefined;
+    const vocabularyFor = donorWords;
+
     return {
       ok: true,
       value: {
@@ -266,7 +274,7 @@ export class ReportGenerationContextBuilder {
         ...(finance.value ? { finance: finance.value } : {}),
         ...(plan?.ok && plan.value ? { deliveryPlan: plan.value } : {}),
         ...(period.reportType === "SITUATION" ? { situation: { current: period.scope, ...(previousScope.value ? { previous: previousScope.value } : {}) } } : {}),
-        reportContext: buildReportContext(project, period, base.template, period.storyContext, describeReportScope(period.reportType, period.scope, activitiesResult.value.map((a) => a.activityTitle), previousScope.value)),
+        reportContext: withOutcomeWord(buildReportContext(project, period, base.template, period.storyContext, describeReportScope(period.reportType, period.scope, activitiesResult.value.map((a) => a.activityTitle), previousScope.value)), vocabularyFor ? levelName("OUTCOME", vocabularyFor) : undefined),
       },
     };
   }
@@ -284,6 +292,11 @@ export class ReportGenerationContextBuilder {
     if (!previous.ok) return previous;
     return { ok: true, value: previous.value?.scope };
   }
+}
+
+/** Adds the donor's outcome word to the project part of a context; no word = the context unchanged. */
+function withOutcomeWord(context: ReportGenerationContext, word: string | undefined): ReportGenerationContext {
+  return word && word !== "Outcome" ? { ...context, project: { ...context.project, outcomeWord: word } } : context;
 }
 
 export function buildReportContext(

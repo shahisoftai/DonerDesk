@@ -281,6 +281,18 @@
     "./contexts/places/analysis/index.js": {
       "types": "./dist/contexts/places/analysis/index.d.ts",
       "import": "./dist/contexts/places/analysis/index.js"
+    },
+    "./contexts/logframe/framework-vocabulary.js": {
+      "types": "./dist/contexts/logframe/framework-vocabulary.d.ts",
+      "import": "./dist/contexts/logframe/framework-vocabulary.js"
+    },
+    "./contexts/logframe/logframe-item.js": {
+      "types": "./dist/contexts/logframe/logframe-item.d.ts",
+      "import": "./dist/contexts/logframe/logframe-item.js"
+    },
+    "./contexts/logframe/framework-lenses.js": {
+      "types": "./dist/contexts/logframe/framework-lenses.d.ts",
+      "import": "./dist/contexts/logframe/framework-lenses.js"
     }
   },
   "scripts": {

@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { UpsertReportingProfileSchema, AcknowledgeProjectSetupSchema, SetStandingStatementSchema, SetRequireSecondApproverSchema, SetRequireEvidenceForVerificationSchema, SetSimpleReviewSchema } from "@donordesk/contracts";
+import { UpsertReportingProfileSchema, AcknowledgeProjectSetupSchema, SetStandingStatementSchema, SetRequireSecondApproverSchema, SetRequireEvidenceForVerificationSchema, SetSimpleReviewSchema, SetFrameworkVocabularySchema } from "@donordesk/contracts";
 
 /**
  * Feature 18 project setup + reporting profile routes. Registered inside the
@@ -29,6 +29,15 @@ export async function registerProjectSetupRoutes(app: FastifyInstance) {
     const body = SetSimpleReviewSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.setSimpleReview.handle(ctx, projectId, body.value);
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
+  app.put("/v1/projects/:projectId/framework-vocabulary", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const body = SetFrameworkVocabularySchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setFrameworkVocabulary.handle(ctx, projectId, body);
     if (!r.ok) throw r.error;
     return { ok: true };
   });

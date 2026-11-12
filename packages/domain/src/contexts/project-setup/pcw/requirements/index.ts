@@ -6,13 +6,14 @@ import type { RequirementDef } from "../requirement.js";
 import { ENTRY_REQUIREMENTS, REPORTING_REQUIREMENTS } from "./entry-reporting.js";
 import { FINANCE_REQUIREMENTS, LAUNCH_REQUIREMENTS } from "./finance-launch.js";
 import { PLACES_REQUIREMENTS, PLAN_REQUIREMENTS } from "./places-plan.js";
-import { INDICATOR_REQUIREMENTS, RESULTS_REQUIREMENTS } from "./results-indicators.js";
+import { INDICATOR_REQUIREMENTS, RESULTS_ADVICE, RESULTS_REQUIREMENTS } from "./results-indicators.js";
 import { START_REQUIREMENTS, TEAM_REQUIREMENTS } from "./start-team.js";
 
 export const SETUP_REQUIREMENTS: readonly RequirementDef[] = [
   ...START_REQUIREMENTS,
   ...TEAM_REQUIREMENTS,
   ...RESULTS_REQUIREMENTS,
+  RESULTS_ADVICE,
   ...INDICATOR_REQUIREMENTS,
   ...PLACES_REQUIREMENTS,
   ...PLAN_REQUIREMENTS,

@@ -15,10 +15,11 @@ import { suggestBudgetLinks } from "./suggesters/budget-links.js";
 import { isRateForForm, suggestMethods } from "./suggesters/collection-method.js";
 import { suggestSetupLinks, type SetupLinkSuggestion } from "./suggesters/plan-links.js";
 import { SECTOR_REGISTRY } from "../../sector-library/sectors.js";
+import { presetVocabulary } from "../../logframe/framework-vocabulary.js";
 import { LIBRARY_SECTOR_IDS, type LibrarySectorId } from "../../sector-library/model.js";
 
 export type SetupOperation =
-  | { kind: "SET_START"; patch: Partial<Pick<SetupStart, "donor" | "sector" | "country" | "packId">> }
+  | { kind: "SET_START"; patch: Partial<Pick<SetupStart, "donor" | "sector" | "country" | "packId" | "wording">> }
   | { kind: "ADD_PERSON"; person: DraftPerson }
   | { kind: "UPDATE_PERSON"; key: string; patch: Partial<Omit<DraftPerson, "key">> }
   | { kind: "REMOVE_PERSON"; key: string }
@@ -83,7 +84,14 @@ export const DRAFT_OPERATIONS: { [K in SetupOperation["kind"]]: Handler<K> } = {
     if (value.trim()) answers[key] = value.trim().slice(0, 600); else delete answers[key];
     return withExtras(d, { libraryAnswers: answers });
   },
-  SET_START: (d, op) => withExtras(d, { start: { ...d.extras.start, ...op.patch } }),
+  SET_START: (d, op) => {
+    const wording = op.patch.wording;
+    if (wording !== undefined && wording !== "" && !presetVocabulary(wording)) return refuse("Choose one of the listed donor wordings.");
+    const start = { ...d.extras.start, ...op.patch };
+    // An empty choice puts the default words back.
+    if (wording === "") delete start.wording;
+    return withExtras(d, { start });
+  },
   ADD_PERSON: (d, { person }) => {
     if (!person.key.trim() || !person.name.trim()) return refuse("A person needs a name.");
     if (d.extras.team.some((p) => p.key === person.key)) return refuse("That person is already on the team.");

@@ -1,12 +1,15 @@
 import { findHeaderRow, normalizeHeader, splitDelimited } from "../../core/delimited.js";
 import type { LogframeLevel } from "./logframe-item.js";
-import { INDICATOR_SHEET_HEADERS } from "./header-vocab.js";
+import { INDICATOR_SHEET_HEADERS, LOGFRAME_ASSUMPTION_HEADERS, LOGFRAME_RATIONALE_HEADERS } from "./header-vocab.js";
 
 export interface ParsedLogframeRow {
   level: LogframeLevel;
   code?: string;
   title: string;
   description?: string;
+  /** Only when the sheet had the column and the cell was filled. */
+  assumptions?: string;
+  rationale?: string;
 }
 
 export interface ParseLogframeResult {
@@ -38,7 +41,7 @@ const DESC_HEADERS: ReadonlyArray<string> = ["description", "desc", "definition"
 
 function looksLikeHeaderRow(cells: string[]): boolean {
   const normalized = cells.map(normalizeHeader);
-  const known = new Set([...LEVEL_HEADERS, ...CODE_HEADERS, ...TITLE_HEADERS, ...DESC_HEADERS, ...INDICATOR_SHEET_HEADERS]);
+  const known = new Set([...LEVEL_HEADERS, ...CODE_HEADERS, ...TITLE_HEADERS, ...DESC_HEADERS, ...LOGFRAME_ASSUMPTION_HEADERS, ...LOGFRAME_RATIONALE_HEADERS, ...INDICATOR_SHEET_HEADERS]);
   return normalized.filter((h) => h && known.has(h)).length >= 2;
 }
 
@@ -101,6 +104,8 @@ function parseTabular(text: string): { rows: ParsedLogframeRow[]; warnings: stri
   const codeCol = headers.findIndex((h) => CODE_HEADERS.includes(h));
   const titleCol = headers.findIndex((h) => TITLE_HEADERS.includes(h));
   const descCol = headers.findIndex((h) => DESC_HEADERS.includes(h));
+  const assumptionCol = headers.findIndex((h) => LOGFRAME_ASSUMPTION_HEADERS.includes(h));
+  const rationaleCol = headers.findIndex((h) => LOGFRAME_RATIONALE_HEADERS.includes(h));
 
   if (titleCol === -1 && codeCol === -1) {
     return { rows: [], warnings: ["No Title or Code column found in the header row."], structured: false };
@@ -151,6 +156,8 @@ function parseTabular(text: string): { rows: ParsedLogframeRow[]; warnings: stri
       code: code || undefined,
       title,
       description: descCol >= 0 ? (cells[descCol] ?? "").trim() || undefined : undefined,
+      ...(assumptionCol >= 0 && (cells[assumptionCol] ?? "").trim() ? { assumptions: (cells[assumptionCol] ?? "").trim() } : {}),
+      ...(rationaleCol >= 0 && (cells[rationaleCol] ?? "").trim() ? { rationale: (cells[rationaleCol] ?? "").trim() } : {}),
     });
   }
   return { rows, warnings, structured: rows.length > 0 };

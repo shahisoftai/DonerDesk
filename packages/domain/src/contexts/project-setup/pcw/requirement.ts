@@ -22,7 +22,7 @@ export const REQUIREMENT_CODES = [
   "methodMissing", "reviewModeMissing", "windowRuleMissing",
   "cadenceMissing", "reportRulesMissing", "reportRuleIncomplete",
   "fundingMissing", "budgetUndecided", "budgetLineUnlinked", "reportingCurrencyMissing", "budgetDiffers", 
-  "risksUndecided", "risksMissing", "risksUnrated", "assumptionsMissing", "dashboardMissing",
+  "risksUndecided", "risksMissing", "risksUnrated", "assumptionsMissing", "dashboardMissing", "resultsWithoutReasoning",
 ] as const;
 export type RequirementCode = (typeof REQUIREMENT_CODES)[number];
 
@@ -38,12 +38,14 @@ export interface RequirementDef {
   /** The numbers (1-47) of the setup steps this requirement covers; a test pins that all 47 are covered. */
   coversSteps: readonly number[];
   allowsNotUsed: boolean;
+  /** Advice only: an unmet rule is shown as a suggestion and never blocks a sign-off or a launch. */
+  advice?: boolean;
   /** Another requirement's key: answering that one "not used" turns this one off too (finance off switches the slide off). */
   unlessNotUsed?: string;
   check: (draft: SetupDraft) => Verdict;
 }
 
-export type RequirementStatus = "OPEN" | "MET" | "NOT_USED";
+export type RequirementStatus = "OPEN" | "MET" | "NOT_USED" | "ADVICE";
 
 export interface RequirementResult {
   key: string;
@@ -60,7 +62,7 @@ export function evaluateRequirement(def: RequirementDef, draft: SetupDraft): Req
   if (off) return { key: def.key, slide: def.slide, status: "NOT_USED" };
   const verdict = def.check(draft);
   if (verdict.met) return { key: def.key, slide: def.slide, status: "MET" };
-  return { key: def.key, slide: def.slide, status: "OPEN", code: verdict.code, params: verdict.params, itemKey: verdict.itemKey };
+  return { key: def.key, slide: def.slide, status: def.advice ? "ADVICE" : "OPEN", code: verdict.code, params: verdict.params, itemKey: verdict.itemKey };
 }
 
 export function evaluateRequirements(draft: SetupDraft, defs: readonly RequirementDef[]): RequirementResult[] {
@@ -71,6 +73,12 @@ export function evaluateRequirements(draft: SetupDraft, defs: readonly Requireme
 export function gapInbox(results: readonly RequirementResult[]): RequirementResult[] {
   const order = new Map(SLIDE_KEYS.map((key, i) => [key, i] as const));
   return results.filter((r) => r.status === "OPEN").sort((a, b) => (order.get(a.slide) ?? 0) - (order.get(b.slide) ?? 0));
+}
+
+/** Suggestions that do not block anything, in slide order. */
+export function adviceNotes(results: readonly RequirementResult[]): RequirementResult[] {
+  const order = new Map(SLIDE_KEYS.map((key, i) => [key, i] as const));
+  return results.filter((r) => r.status === "ADVICE").sort((a, b) => (order.get(a.slide) ?? 0) - (order.get(b.slide) ?? 0));
 }
 
 export interface SlideProgress {

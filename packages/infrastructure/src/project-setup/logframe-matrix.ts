@@ -23,13 +23,14 @@ const LOGIC_HEADERS = ["intervention logic", "logique d'intervention", "logique 
 const INDICATOR_HEADERS = ["indicator", "indicators", "objectively verifiable indicators", "ovi", "indicateur", "indicateurs", "indicador", "indicadores"];
 const BASELINE_HEADERS = ["baseline", "baseline value", "valeur de reference", "situation de reference", "linea de base"];
 const TARGET_HEADERS = ["target", "targets", "cible", "valeur cible", "meta", "metas"];
+const ASSUMPTION_HEADERS = ["assumptions", "assumption", "key assumptions", "risks and assumptions", "hypotheses", "hypotheses et risques", "supuestos", "hipotesis"];
 const VERIFICATION_HEADERS = ["means of verification", "sources of verification", "sources and means of verification", "moyens de verification", "sources de verification", "fuentes de verificacion", "medios de verificacion"];
 
 const QUOTE_LIMIT = 1000;
 const PREFIX: Readonly<Record<SetupLogLevel, string>> = { GOAL: "G", OUTCOME: "OC", OUTPUT: "OP", ACTIVITY: "A" };
 const RANK: Readonly<Record<SetupLogLevel, number>> = { GOAL: 0, OUTCOME: 1, OUTPUT: 2, ACTIVITY: 3 };
 
-interface MatrixColumns { logic: number; level: number | null; indicator: number | null; baseline: number | null; target: number | null; verification: number | null }
+interface MatrixColumns { logic: number; level: number | null; indicator: number | null; baseline: number | null; target: number | null; verification: number | null; assumptions: number | null }
 
 function columnsOf(line: string): MatrixColumns | null {
   const cells = line.split("\t").map(fold);
@@ -42,7 +43,7 @@ function columnsOf(line: string): MatrixColumns | null {
   if (logic === null || indicator === null) return null;
   // A column before the logic with no header (or "level") holds the level words.
   const level = logic > 0 && (cells[logic - 1] === "" || cells[logic - 1] === "level" || cells[logic - 1] === "niveau" || cells[logic - 1] === "nivel") ? logic - 1 : null;
-  return { logic, level, indicator, baseline: find(BASELINE_HEADERS), target: find(TARGET_HEADERS), verification: find(VERIFICATION_HEADERS) };
+  return { logic, level, indicator, baseline: find(BASELINE_HEADERS), target: find(TARGET_HEADERS), verification: find(VERIFICATION_HEADERS), assumptions: find(ASSUMPTION_HEADERS) };
 }
 
 /** The level a cell starts with and what follows it ("Output 1.2: Clinics set up" → OUTPUT, "1.2", "Clinics set up"). */
@@ -108,7 +109,7 @@ export function parseLogframeMatrix(blocks: ReadonlyArray<SourceBlock>): MatrixN
         code = `${PREFIX[level]}${numbering}`;
         codeSource = "GENERATED";
       }
-      const value: LogframeNodeDef = { level, code: fit(code, FIELD_LIMITS.code), title: fit((title ?? logic)!, FIELD_LIMITS.title), description: null, parentCode: parent?.code ?? null, codeSource };
+      const value: LogframeNodeDef = { level, code: fit(code, FIELD_LIMITS.code), title: fit((title ?? logic)!, FIELD_LIMITS.title), description: null, parentCode: parent?.code ?? null, codeSource, ...(cellAt(cells, columns.assumptions) ? { assumptions: fit(cellAt(cells, columns.assumptions), 1000) } : {}) };
       lastAt[rank] = value;
       lastAt.length = rank + 1;
       current = { node: { value, sourceQuote: quoteOf(line), sourceRef: refOf(block), confidence: "HIGH", status: "PROPOSED" }, indicators: [] };

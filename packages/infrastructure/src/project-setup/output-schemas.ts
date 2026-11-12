@@ -14,7 +14,7 @@ const meta = { quote: str, block: int, confidence: CONFIDENCE };
 const texts = (...keys: string[]): Record<string, Schema> => Object.fromEntries(keys.map((k) => [k, nullable(str)]));
 const items = (key: string, fields: Record<string, Schema>): Schema => obj({ [key]: list(obj({ ...fields, ...meta })) });
 
-export const LOGFRAME_SCHEMA = items("logframe", { level: { type: "string", enum: ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"] }, title: str, ...texts("code", "description", "parentCode") });
+export const LOGFRAME_SCHEMA = items("logframe", { level: { type: "string", enum: ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"] }, title: str, ...texts("code", "description", "parentCode", "assumptions", "rationale") });
 export const STRUCTURE_SCHEMA = obj({ items: list(obj({ i: int, level: { type: "string", enum: ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"] }, parent: nullable(int) })) });
 export const INDICATORS_SCHEMA = items("indicators", { title: str, disaggregation: nullable(list(str)), ...texts("code", "logframeCode", "type", "unit", "baseline", "target", "targetSchedule", "frequency", "direction", "meansOfVerification") });
 export const PLAN_SCHEMA = items("plan", { title: str, ...texts("logframeCode", "start", "end", "location", "lead") });

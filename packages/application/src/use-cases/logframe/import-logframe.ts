@@ -103,6 +103,8 @@ export class ImportLogframeHandler {
         code: row.code,
         title: row.title,
         description: row.description,
+        assumptions: row.assumptions,
+        rationale: row.rationale,
       });
       const saved = await this.repo.create(item);
       if (!saved.ok) return saved;

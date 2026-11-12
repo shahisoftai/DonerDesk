@@ -22,9 +22,11 @@ import {
   type LocationTrendsView,
   type UniqueReach,
   type Result,
+  isDefaultVocabulary,
 } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IClock } from "../../ports/core.js";
+import type { IReportingProfileRepository } from "../../ports/setup.js";
 import type { IProjectRepository } from "../../ports/projects.js";
 import type { ILogframeRepository, IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
 import type { IReportingPeriodRepository } from "../../ports/reporting.js";
@@ -56,6 +58,8 @@ export class GetProjectInfographicDataHandler {
     private readonly facts: IDeliveryFactsReader,
     private readonly planContext: IPlanContextReader,
     private readonly clock: IClock,
+    /** With it, the donor's words for the levels travel with the data (only when they differ from the default). */
+    private readonly profiles?: IReportingProfileRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<ProjectInfographicDataDto, DomainError>> {
@@ -173,10 +177,13 @@ export class GetProjectInfographicDataHandler {
     }
 
     const budget = project.value.budget;
+    const profile = this.profiles ? await this.profiles.findByProject(projectId, ctx.tenant.tenantId) : undefined;
+    const words = profile?.ok && profile.value && !isDefaultVocabulary(profile.value.vocabulary) ? profile.value.vocabulary.levels : undefined;
     return {
       ok: true,
       value: {
         projectId,
+        ...(words ? { levelWords: words } : {}),
         project: {
           title: project.value.title,
           projectCode: project.value.projectCode,
@@ -218,6 +225,8 @@ async function todayFor(clock: IClock, planContext: IPlanContextReader, projectI
 
 export interface ProjectInfographicDataDto {
   projectId: string;
+  /** The donor's words for GOAL, OUTCOME, OUTPUT and ACTIVITY; absent = the default words. */
+  levelWords?: Record<string, string>;
   project: {
     title: string;
     projectCode: string;

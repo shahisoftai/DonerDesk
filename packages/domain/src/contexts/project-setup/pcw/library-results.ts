@@ -67,7 +67,7 @@ export function addFromSkeleton(p: ProjectSetupProposal, sectorId: LibrarySector
     const parentLevel = SECTOR_LEVEL_PARENT[node.level];
     const parentCode = node.parent ? codeByKey.get(node.parent) ?? null : null;
     if (parentLevel !== null && node.parent && !parentCode) { skipped.push(`${node.title}: its parent could not be added.`); continue; }
-    const def: LogframeNodeDef = { level: node.level, code: null, title: node.title, description: null, parentCode };
+    const def: LogframeNodeDef = { level: node.level, code: null, title: node.title, description: null, parentCode, ...(node.assumption ? { assumptions: node.assumption } : {}) };
     proposal = proposeCodes({ ...proposal, logframe: [...proposal.logframe, person(def)] }, "LIVE");
     codeByKey.set(node.key, live(proposal.logframe).slice(-1)[0]!.value!.code);
     added += 1;

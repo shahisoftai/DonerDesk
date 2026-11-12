@@ -51,7 +51,7 @@ export function ResultsChainScreen(props: ScreenRendererPropsOf<typeof resultsCh
       <ol className="space-y-2 p-3">
         {m.levels.map((group) => (
           <li key={group.level} className="flex gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-            <p className="w-24 shrink-0 text-sm font-bold text-sky-800 dark:text-sky-300">{name(group.level)}</p>
+            <p className="w-24 shrink-0 text-sm font-bold text-sky-800 dark:text-sky-300">{group.word ?? name(group.level)}</p>
             <ul className="min-w-0 flex-1 space-y-1">
               {group.rows.map((lv) => (
                 <li key={lv.id} className="flex justify-between gap-3 text-sm">

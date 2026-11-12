@@ -65,7 +65,8 @@ test("every requirement has a unique key, a real slide and covers at least one s
   assert.equal(new Set(keys).size, keys.length);
   for (const r of SETUP_REQUIREMENTS) {
     assert.ok(SETUP_SLIDES[r.slide], r.key);
-    assert.ok(r.coversSteps.length > 0, r.key);
+    // Advice-only rules cover no step: they suggest, and nothing waits on them.
+    if (!r.advice) assert.ok(r.coversSteps.length > 0, r.key);
     if (r.unlessNotUsed) assert.ok(keys.includes(r.unlessNotUsed), `${r.key} points at a missing switch`);
   }
   for (const slide of SLIDE_KEYS) assert.ok(SETUP_REQUIREMENTS.some((r) => r.slide === slide), `no requirement on ${slide}`);

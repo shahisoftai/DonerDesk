@@ -36,6 +36,8 @@ export function planLogframeCopy(input: {
         ...(item.code ? { code: item.code } : {}),
         title: item.title,
         ...(item.description ? { description: item.description } : {}),
+        ...(item.assumptions ? { assumptions: item.assumptions } : {}),
+        ...(item.rationale ? { rationale: item.rationale } : {}),
         sortOrder: item.sortOrder,
       },
     }),

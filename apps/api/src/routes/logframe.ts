@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { registerParseFileRoute } from "./parse-file.js";
 import {
   CreateLogframeItemSchema,
+  UpdateLogframeItemSchema,
   MoveLogframeItemSchema,
   ImportLogframeTextSchema,
   CopyProjectSetupSchema,
@@ -19,7 +20,7 @@ import {
   ParseIndicatorSheetSchema,
   IndicatorUpdateReviewReasonSchema,
 } from "@donordesk/contracts";
-import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME, buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME, buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME } from "@donordesk/infrastructure";
+import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME, buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME, buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME, buildFrameworkDocx, buildFrameworkPdf, FRAMEWORK_FILE_NAME } from "@donordesk/infrastructure";
 import { DomainError, parseCsv } from "@donordesk/domain";
 
 export async function registerLogframeRoutes(app: FastifyInstance) {
@@ -69,6 +70,35 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const body = CreateLogframeItemSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.createLogframeItem.handle(ctx, body);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  // The framework as one lens reads it (Results Framework or Logframe), as data and as a Word or PDF file (Phase 52.2).
+  app.get("/v1/projects/:projectId/framework", async (req) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const lens = z.object({ lens: z.string().default("LOGFRAME") }).parse(req.query).lens;
+    const r = await req.container.handlers.getFrameworkDocument.handle({ tenant: req.tenant, requestId: req.id }, projectId, lens);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
+  app.get("/v1/projects/:projectId/framework/export", async (req, reply) => {
+    const projectId = (req.params as { projectId: string }).projectId;
+    const query = z.object({ lens: z.string().default("LOGFRAME"), format: z.enum(["docx", "pdf"]).default("docx") }).parse(req.query);
+    const r = await req.container.handlers.getFrameworkDocument.handle({ tenant: req.tenant, requestId: req.id }, projectId, query.lens);
+    if (!r.ok) throw r.error;
+    const file = query.format === "pdf" ? await buildFrameworkPdf(r.value) : await buildFrameworkDocx(r.value);
+    reply.header("content-type", query.format === "pdf" ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+    reply.header("content-disposition", `attachment; filename="${FRAMEWORK_FILE_NAME(r.value, query.format)}"`);
+    return file;
+  });
+
+  app.patch("/v1/logframe-items/:id", async (req) => {
+    const id = (req.params as { id: string }).id;
+    const body = UpdateLogframeItemSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.updateLogframeItem.handle(ctx, id, body);
     if (!r.ok) throw r.error;
     return r.value;
   });

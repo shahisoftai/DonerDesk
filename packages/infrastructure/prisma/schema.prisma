@@ -367,6 +367,8 @@ model ReportingProfile {
   simpleReview          Boolean  @default(false)
   /// JSON {key: text}: statements that hold for every period (branding policy, waste procedure).
   standingStatementsJson   String   @default("{}")
+  /// JSON {document, levels{GOAL,OUTCOME,OUTPUT,ACTIVITY}}: what the donor calls the levels of the results chain (phase 52); {} = the default words.
+  vocabularyJson           String   @default("{}")
   version                  Int      @default(1)
   createdById              String
   updatedById              String
@@ -440,6 +442,10 @@ model LogframeItem {
   title       String
   description String?
   sortOrder   Int      @default(0)
+  /// What must hold for this result to lead to its parent (phase 52).
+  assumptions String?
+  /// Why this result is expected to lead to its parent (phase 52).
+  rationale   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -1861,6 +1867,8 @@ model ProjectRisk {
   closedById        String?
   closedAt          DateTime?
   plannedActivityId String?
+  /// The result (logframe item) it puts at risk, when raised against one (phase 52). Never part of a framework version.
+  logframeItemId    String?
   raisedById        String
   reviewBy          DateTime? @db.Date
   createdAt         DateTime  @default(now())
@@ -1902,6 +1910,8 @@ model LogframeVersion {
   summary      String
   createdById  String
   createdAt    DateTime  @default(now())
+  /// STRUCTURE and/or MEASUREMENT, comma separated: what this version touched (phase 52); empty for the first or for older rows.
+  changeKinds  String    @default("")
   approvedById String?
   approvedAt   DateTime?
 

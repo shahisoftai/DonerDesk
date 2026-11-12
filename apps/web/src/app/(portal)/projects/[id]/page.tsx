@@ -20,6 +20,9 @@ import { CloseOutSection } from "@/features/projects/presentation/overview/Close
 import { SetupSection } from "@/features/projects/presentation/overview/SetupSection";
 import { DeleteDemoProjectButton } from "@/features/tour/presentation/DeleteDemoProjectButton";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
+import { loadReportingProfileAction } from "@/lib/actions/setup";
+import { gatewayRequest } from "@/lib/server/api-gateway";
+import { LogframeResponseSchema } from "@/lib/server/schemas";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +56,12 @@ export default async function ProjectDetail({
   const has = (section: (typeof sections)[number]) => sections.includes(section);
   const periods = data.reporting.ok ? data.reporting.value.periods : [];
   const activePeriodId = data.reporting.ok ? data.reporting.value.activePeriodId : null;
+  // A failed read shows the default words.
+  const profile = has("SETUP") ? await loadReportingProfileAction(identity.id) : null;
+  const vocabulary = profile?.ok ? profile.value.profile?.vocabulary : undefined;
   const riskPeople = data.risks.ok ? data.risks.value.people : [];
+  // A failed read only means the risk form does not offer a result to raise a problem against.
+  const results = has("RISKS") ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token) : null;
   const planPeople = data.delivery.ok ? data.delivery.value.people : [];
 
   return (
@@ -132,6 +140,7 @@ export default async function ProjectDetail({
               userId={meId}
               canRaise={ctx.capabilities.has("risk.raise")}
               today={today}
+              results={results?.ok ? results.value.items : []}
             />
           </div>
           <div className="mt-4">
@@ -142,7 +151,7 @@ export default async function ProjectDetail({
 
       {has("CLOSEOUT") && data.closeOut.ok ? <CloseOutSection closeOut={data.closeOut.value} projectId={identity.id} /> : null}
 
-      {has("SETUP") && data.setup.ok ? <SetupSection setup={data.setup.value} projectId={identity.id} /> : null}
+      {has("SETUP") && data.setup.ok ? <SetupSection setup={data.setup.value} projectId={identity.id} vocabulary={vocabulary} /> : null}
 
       {has("REPORTING") && !data.reporting.ok ? (
         <div className="mt-8">

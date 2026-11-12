@@ -49,6 +49,10 @@ export interface LogframeNodeDef {
   title: string | null;
   description: string | null;
   parentCode: string | null;
+  /** What must hold for this result to lead upward; only what the document states or the person writes, never guessed. */
+  assumptions?: string | null;
+  /** Why this result leads to its parent; same rule. */
+  rationale?: string | null;
   /** GENERATED when the domain assigns the code because the document had none; never shown as if the document stated it. */
   codeSource?: "DOCUMENT" | "GENERATED";
 }

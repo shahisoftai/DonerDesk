@@ -181,6 +181,8 @@ export interface IndicatorUpdateGenerationContext {
  * language to the donor and implementing organization.
  */
 export interface ProjectGenerationContext {
+  /** What the donor calls the outcome level, only when it differs from "Outcome"; lets a section named for one ("Intermediate Result 2") be matched to its own indicators. */
+  outcomeWord?: string;
   title: string;
   projectCode: string;
   donorName: string;

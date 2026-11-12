@@ -17,6 +17,14 @@ Someone with edit rights on the project can select **Sign off the framework as i
 
 Reports approved after this record the framework version they were approved against.
 
+## What kind of change it was
+
+Each version is marked **Results or reasoning changed** (a result, its description, its assumptions or its rationale) and/or **Measurement changed** (an indicator, a baseline, a target, how it is verified). This lets a donor see at a glance whether the plan or only the way it is measured moved.
+
+## Changing a target after a report was approved
+
+If a report that has been approved used an indicator, you cannot quietly change its baseline or target. Open the indicator, change the value, and write **why** in the reason box (at least ten characters). The reason is saved with the new version of the framework, so the history shows when the target moved and why. The written text of an approved report is not changed, but the indicator table in a file exported afterwards uses the targets as they stand then, so say in the reason when a report already went to the donor. The code of an indicator in a signed-off framework does not change; archive it and add a new one instead.
+
 ## What the history does not do
 
 - It shows what changed, not who typed each field. The audit trail records who saved each change.

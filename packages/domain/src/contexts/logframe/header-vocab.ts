@@ -17,6 +17,10 @@ export const INDICATOR_DISAGG_HEADERS: ReadonlyArray<string> = ["disaggregationr
 /** Which logframe item the indicator measures, when that is not simply the indicator's own code. */
 export const INDICATOR_LOGFRAME_CODE_HEADERS: ReadonlyArray<string> = ["logframecode", "outputcode", "logframeitemcode", "measures"];
 
+/** Optional columns of the Logframe sheet: the reasoning behind a result and what must hold for it to lead upward. */
+export const LOGFRAME_RATIONALE_HEADERS: ReadonlyArray<string> = ["rationale", "causallogic", "whythisleadstotheresultabove"];
+export const LOGFRAME_ASSUMPTION_HEADERS: ReadonlyArray<string> = ["assumptions", "assumption", "keyassumptions"];
+
 export const INDICATOR_SHEET_HEADERS: ReadonlyArray<string> = [
   ...INDICATOR_CODE_HEADERS,
   ...INDICATOR_NAME_HEADERS,

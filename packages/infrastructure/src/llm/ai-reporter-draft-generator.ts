@@ -538,6 +538,7 @@ export class AiReporterDraftGenerator implements IReportDraftGenerator {
     return {
       project: ctx?.project
         ? {
+            ...(ctx.project.outcomeWord ? { outcomeWord: ctx.project.outcomeWord } : {}),
             title: ctx.project.title,
             projectCode: ctx.project.projectCode,
             donorName: ctx.project.donorName,

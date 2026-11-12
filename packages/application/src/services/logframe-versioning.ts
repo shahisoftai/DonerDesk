@@ -3,7 +3,9 @@ import {
   DomainError,
   buildLogframeSnapshot,
   canonicalSnapshotJson,
+  classifyFrameworkChange,
   diffLogframeSnapshots,
+  formatChangeKinds,
   parseSnapshot,
   summarizeLogframeChanges,
   type LogframeSnapshot,
@@ -48,7 +50,9 @@ export class LogframeVersioner {
     if (!latest.value && now.value.snapshot.items.length === 0 && now.value.snapshot.indicators.length === 0) return { ok: true, value: null };
 
     const before = latest.value ? parseSnapshot(latest.value.snapshotJson) : null;
-    const summary = reason ?? summarizeLogframeChanges(diffLogframeSnapshots(before, now.value.snapshot));
+    const changes = diffLogframeSnapshots(before, now.value.snapshot);
+    const auto = summarizeLogframeChanges(changes);
+    const summary = reason ? `${auto} (reason: ${reason})` : auto;
     const record: LogframeVersionRecord = {
       id: this.ids.generate(),
       tenantId: tenantId.toString(),
@@ -59,6 +63,8 @@ export class LogframeVersioner {
       summary,
       createdById: ctx.tenant.userId,
       createdAt: new Date(),
+      // The first version is the baseline, not a change.
+      changeKinds: before ? formatChangeKinds(classifyFrameworkChange(changes).kinds) : "",
     };
     const saved = await this.versions.create(record);
     if (!saved.ok) return saved;
@@ -76,7 +82,7 @@ type Handle = (...args: never[]) => Promise<Result<unknown, DomainError>>;
 export function withLogframeVersioning<H extends { handle: Handle }>(
   handler: H,
   versioner: LogframeVersioner,
-  options: { projectOf: (args: unknown[]) => Promise<string | undefined> | string | undefined; onError?: (error: unknown) => void },
+  options: { projectOf: (args: unknown[]) => Promise<string | undefined> | string | undefined; /** The person's reason for the change, when the call carries one. */ reasonOf?: (args: unknown[]) => string | undefined; onError?: (error: unknown) => void },
 ): H {
   const original = handler.handle.bind(handler) as (...args: unknown[]) => Promise<Result<unknown, DomainError>>;
   (handler as { handle: unknown }).handle = async (...args: unknown[]) => {
@@ -89,7 +95,7 @@ export function withLogframeVersioning<H extends { handle: Handle }>(
     const result = await original(...args);
     if (result.ok && projectId) {
       try {
-        const captured = await versioner.capture(args[0] as AuthenticatedContext, projectId);
+        const captured = await versioner.capture(args[0] as AuthenticatedContext, projectId, options.reasonOf?.(args));
         if (!captured.ok) options.onError?.(captured.error);
       } catch (error) {
         options.onError?.(error);

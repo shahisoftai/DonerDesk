@@ -35,6 +35,15 @@ export const RESULTS_REQUIREMENTS: readonly RequirementDef[] = [
   },
 ];
 
+export const RESULTS_ADVICE: RequirementDef = {
+  key: "results.reasoning", slide: "RESULTS", coversSteps: [], allowsNotUsed: false, advice: true,
+  // Only outcomes and outputs are asked: they are the results a donor reads the reasoning of.
+  check: (d) => {
+    const bare = live(d.proposal.logframe).filter((n) => (n.level === "OUTCOME" || n.level === "OUTPUT") && !present(n.rationale)).map((n) => label(n.code, n.title));
+    return bare.length === 0 ? MET : allOf(bare, "resultsWithoutReasoning");
+  },
+};
+
 export const INDICATOR_REQUIREMENTS: readonly RequirementDef[] = [
   {
     key: "indicators.decided", slide: "INDICATORS", coversSteps: [8], allowsNotUsed: false,

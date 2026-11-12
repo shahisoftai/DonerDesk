@@ -23,7 +23,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { moveLogframeItemAction } from "@/lib/actions/logframe";
 import { buildHierarchy, type HierarchyNode } from "@/lib/shared/hierarchy";
 import { Badge } from "@/components/data/Badge";
-import { LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
+import { useLevelName } from "./FrameworkVocabularyProvider";
+import { EditLogframeItemForm } from "./EditLogframeItemForm";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { eligibleParents, logframeLevelTone, outlineLogframe } from "@/features/logframe/domain/logframe-outline";
 
 export interface LogframeTreeItem {
@@ -32,6 +34,9 @@ export interface LogframeTreeItem {
   level: string;
   code?: string;
   title: string;
+  description?: string;
+  assumptions?: string;
+  rationale?: string;
   delivery?: { recordedCount: number; acceptedCount: number; lastActivityDate: string | null; participantsTotal: number };
 }
 
@@ -141,6 +146,9 @@ function Branch(props: BranchProps) {
 function Node({ node, depth, projectId, indicatorCounts, editable, busy, renderMoveTo }: BranchProps & { node: HierarchyNode<LogframeTreeItem> }) {
   const sortable = useSortable({ id: node.id, disabled: !editable || busy });
   const count = indicatorCounts[node.id] ?? 0;
+  const levelName = useLevelName();
+  const { t } = useI18n();
+  const [editing, setEditing] = useState(false);
   const { children, ...item } = node;
   return (
     <li
@@ -164,7 +172,7 @@ function Node({ node, depth, projectId, indicatorCounts, editable, busy, renderM
               ⠿
             </button>
           )}
-          <Badge tone={logframeLevelTone(node.level)}>{LOGFRAME_LEVEL_LABEL[node.level] ?? node.level}</Badge>
+          <Badge tone={logframeLevelTone(node.level)}>{levelName(node.level)}</Badge>
           {node.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{node.code}</span>}
           <span className="truncate font-medium">{node.title}</span>
         </div>
@@ -178,6 +186,7 @@ function Node({ node, depth, projectId, indicatorCounts, editable, busy, renderM
             </span>
           )}
           {editable && renderMoveTo(item)}
+          {editable && <button type="button" className="text-brand-600 hover:underline dark:text-brand-400" onClick={() => setEditing((open) => !open)} aria-expanded={editing}>{editing ? t("framework.edit.close") : t("framework.edit.open")}</button>}
           {node.level !== "ACTIVITY" && (
             <Link className="text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/logframe/new?parentId=${encodeURIComponent(node.id)}`}>
               Add child
@@ -193,6 +202,13 @@ function Node({ node, depth, projectId, indicatorCounts, editable, busy, renderM
           </Link>
         </div>
       </div>
+      {(node.rationale || node.assumptions) && (
+        <dl className="mt-1 space-y-0.5 pl-3 text-xs text-slate-600 dark:text-slate-300">
+          {node.rationale && <div><dt className="inline font-medium">{t("framework.node.why")} </dt><dd className="inline">{node.rationale}</dd></div>}
+          {node.assumptions && <div><dt className="inline font-medium">{t("framework.node.assumes")} </dt><dd className="inline">{node.assumptions}</dd></div>}
+        </dl>
+      )}
+      {editing && <EditLogframeItemForm item={node} onDone={() => setEditing(false)} />}
       {children.length > 0 && (
         <Branch nodes={children} depth={depth + 1} projectId={projectId} indicatorCounts={indicatorCounts} editable={editable} busy={busy} renderMoveTo={renderMoveTo} />
       )}
@@ -212,6 +228,7 @@ function MoveToSelect({
   onMove: (parentId: string | null) => void;
 }) {
   const TOP = "__top__";
+  const levelName = useLevelName();
   return (
     <label className="flex items-center gap-1 text-slate-500">
       <span className="sr-only">Move {item.title} to</span>
@@ -224,7 +241,7 @@ function MoveToSelect({
         <option value={TOP}>Move to: top level</option>
         {options.map((option) => (
           <option key={option.id} value={option.id}>
-            Move to: {LOGFRAME_LEVEL_LABEL[option.level] ?? option.level} {option.code ? `${option.code} ` : ""}{option.title}
+            Move to: {levelName(option.level)} {option.code ? `${option.code} ` : ""}{option.title}
           </option>
         ))}
       </select>

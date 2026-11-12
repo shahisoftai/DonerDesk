@@ -335,6 +335,8 @@ export const LogframeItemSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   sortOrder: z.number().int().optional(),
+  assumptions: z.string().optional(),
+  rationale: z.string().optional(),
   /** ACTIVITY nodes only: what recorded activities have delivered against this node. */
   delivery: z
     .object({ recordedCount: z.number(), acceptedCount: z.number(), lastActivityDate: z.string().nullable(), participantsTotal: z.number() })
@@ -1178,6 +1180,7 @@ export const ReportingProfileSchema = z.object({
   requireEvidenceForVerification: z.boolean().default(false),
   simpleReview: z.boolean().default(false),
   standingStatements: z.record(z.string()).default({}),
+  vocabulary: z.object({ document: z.string(), levels: z.object({ GOAL: z.string(), OUTCOME: z.string(), OUTPUT: z.string(), ACTIVITY: z.string() }) }).optional(),
   version: z.number(),
   createdAt: z.string(),
 });
@@ -1526,6 +1529,7 @@ export const RiskSchema = z.object({
   status: z.enum(["OPEN", "CLOSED"]),
   closedNote: z.string().optional(),
   plannedActivityId: z.string().optional(),
+  logframeItemId: z.string().optional(),
   raisedById: z.string(),
   reviewBy: z.string().optional(),
   canChange: z.boolean(),
@@ -1701,14 +1705,24 @@ export const PlanFieldValuesSchema = z.object({
   values: z.record(z.string(), z.record(z.string(), z.string())),
 });
 
+/** The framework as one lens reads it: columns, then rows whose cells are text or a gap (never 0). */
+export const FrameworkDocumentSchema = z.object({
+  lens: z.enum(["RESULTS", "LOGFRAME"]),
+  title: z.string(),
+  columns: z.array(z.object({ key: z.string(), label: z.string(), owner: z.enum(["RESULT", "INDICATOR"]) })),
+  rows: z.array(z.object({ kind: z.enum(["RESULT", "INDICATOR"]), depth: z.number(), cells: z.record(z.string(), z.string().nullable()) })),
+});
+export type FrameworkDocumentView = z.infer<typeof FrameworkDocumentSchema>;
+
 export const LogframeVersionsResponseSchema = z.object({
-  items: z.array(z.object({ version: z.number(), summary: z.string(), createdAt: z.string(), createdById: z.string(), approvedAt: z.string().nullable(), approvedById: z.string().nullable() })),
+  items: z.array(z.object({ version: z.number(), summary: z.string(), createdAt: z.string(), createdById: z.string(), approvedAt: z.string().nullable(), approvedById: z.string().nullable(), kinds: z.array(z.enum(["STRUCTURE", "MEASUREMENT"])).default([]) })),
 });
 
 export const LogframeChangesResponseSchema = z.object({
   from: z.number().nullable(),
   to: z.number(),
-  changes: z.array(z.object({ text: z.string() })),
+  changes: z.array(z.object({ text: z.string(), group: z.enum(["STRUCTURE", "MEASUREMENT"]).optional() })),
+  kinds: z.array(z.enum(["STRUCTURE", "MEASUREMENT"])).default([]),
 });
 
 export const RequirementPacksResponseSchema = z.object({

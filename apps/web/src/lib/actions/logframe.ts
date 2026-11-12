@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { CopyProjectSetupSchema, CreateLogframeItemSchema, ImportLogframeTextSchema, MoveLogframeItemSchema, UpdateIndicatorSemanticsSchema } from "@donordesk/contracts";
+import { CopyProjectSetupSchema, CreateLogframeItemSchema, ImportLogframeTextSchema, MoveLogframeItemSchema, UpdateIndicatorSemanticsSchema, UpdateLogframeItemSchema } from "@donordesk/contracts";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -93,4 +93,12 @@ export async function copyProjectSetupAction(targetProjectId: string, input: unk
     method: "POST",
     body: parsed.data,
   });
+}
+
+/** Corrects the words of a result (title, description, rationale, assumptions); its place and level are not changed here. */
+export async function updateLogframeItemAction(itemId: string, input: unknown): Promise<Result<{ id: string }, AppError>> {
+  const context = await requireSession();
+  const parsed = UpdateLogframeItemSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: { kind: "validation", message: "Please correct the highlighted fields.", fields: flattenZodFields(parsed.error) } };
+  return gatewayRequest(`/v1/logframe-items/${encodeURIComponent(itemId)}`, IdResponseSchema, context.token, { method: "PATCH", body: parsed.data });
 }

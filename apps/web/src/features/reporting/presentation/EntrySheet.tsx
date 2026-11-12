@@ -9,7 +9,8 @@ import { collectionText } from "@/features/tasks/domain/collection-view";
 import { DisaggregationEditor } from "@/features/logframe/presentation/DisaggregationEditor";
 import { CommentsDisclosure } from "@/features/comments/presentation/CommentsDisclosure";
 import { loadValueHistoryAction } from "@/lib/actions/indicators";
-import { LOGFRAME_LEVEL_LABEL, INDICATOR_VERIFICATION_LABEL } from "@/lib/labels";
+import { INDICATOR_VERIFICATION_LABEL } from "@/lib/labels";
+import { useLevelName } from "@/features/logframe/presentation/FrameworkVocabularyProvider";
 import type { PeriodIndicatorRow, ValueHistoryResponse } from "@/lib/server/schemas";
 import { cn } from "@/components/ui/cn";
 import { toSheetRow } from "./sheet-rows";
@@ -85,6 +86,7 @@ const Btn = ({ onClick, disabled, children, pressed }: { onClick: () => void; di
  * earlier periods, resizable and hideable columns, density and zoom. All behaviour is in `entry-sheet.ts`; this draws it.
  */
 export function EntrySheet(props: EntrySheetProps) {
+  const levelName = useLevelName();
   const { rows, values, initial, canEdit, closedReason, today, userId, names = {}, canAsk = false, projectId, onChanges, onBreakdown, prefs, onPrefs, history, places = [], canVerify = false, onVerifySelected, verifying = false, autosave } = props;
   const { t } = useI18n();
   const ctx = useMemo(() => ({ canEdit, closedReason: closedReason ?? null }), [canEdit, closedReason]);
@@ -446,7 +448,7 @@ export function EntrySheet(props: EntrySheetProps) {
               return (
                 <RowGroup
                   key={row.id}
-                  header={levelChanged ? <tr role="presentation"><td colSpan={columns.length} className="border-b border-slate-200 bg-slate-50 p-0 dark:border-white/10 dark:bg-white/5"><div className="sticky left-0 w-fit px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{row.logframeLevel ? (LOGFRAME_LEVEL_LABEL[row.logframeLevel] ?? row.logframeLevel) : "—"}</div></td></tr> : null}
+                  header={levelChanged ? <tr role="presentation"><td colSpan={columns.length} className="border-b border-slate-200 bg-slate-50 p-0 dark:border-white/10 dark:bg-white/5"><div className="sticky left-0 w-fit px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{row.logframeLevel ? levelName(row.logframeLevel) : "—"}</div></td></tr> : null}
                 >
                   <tr role="row" aria-rowindex={r + 2}>
                     {columns.map((c, i) => {

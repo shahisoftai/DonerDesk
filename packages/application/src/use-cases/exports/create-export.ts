@@ -1,5 +1,5 @@
 import type { Result } from "@donordesk/domain";
-import { DomainError, ExportPackage, bindingsForSection, chartAchievement, indicatorExportRow, omitExcludedStatements, type ChartConfig, type ExportIndicatorRow } from "@donordesk/domain";
+import { DomainError, ExportPackage, bindingsForSection, indicatorAsApproved, versionInForce, chartAchievement, indicatorExportRow, omitExcludedStatements, type ChartConfig, type ExportIndicatorRow } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IExportRepository, IExportBuilder, ExportIntent, ExportChartInput } from "../../ports/exports.js";
 import type { IStorage } from "../../ports/infrastructure.js";
@@ -8,7 +8,7 @@ import type { IReportingPeriodRepository, IReportDraftRepository, IReportSection
 import { chartPayloadToResolved, isInfographicArtifact } from "../../services/section-chart-service.js";
 import type { IDonorTemplateRepository } from "../../ports/templates.js";
 import type { IProjectRepository } from "../../ports/projects.js";
-import type { IIndicatorRepository, IIndicatorUpdateRepository } from "../../ports/logframe.js";
+import type { IIndicatorRepository, IIndicatorUpdateRepository, ILogframeVersionRepository } from "../../ports/logframe.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IChecklistRepository } from "../../ports/compliance.js";
 import type { IEvidenceRepository } from "../../ports/evidence.js";
@@ -40,6 +40,8 @@ export class CreateExportHandler {
     private readonly claims?: IReportClaimRepository,
     /** The charts drawn from each section's tables; absent: only hand-configured charts are exported. */
     private readonly reportArtifacts?: IReportArtifactRepository,
+    /** With it, the indicator table of an approved report shows the targets the report was approved against, not today's. */
+    private readonly frameworkVersions?: ILogframeVersionRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateExportInput): Promise<Result<{ id: string; fileUrl: string; fileName: string }, DomainError>> {
@@ -122,10 +124,17 @@ export class CreateExportHandler {
     const inds = await this.indicators.findByProject(input.projectId, ctx.tenant.tenantId);
     const ups = await this.updates.findByReportingPeriod(input.reportingPeriodId, ctx.tenant.tenantId);
     const indicatorRows: ExportIndicatorRow[] = [];
+    // An approved report is read against the framework that was in force when it was approved; a target changed since does not rewrite it.
+    let approvedFramework: ReturnType<typeof versionInForce> = null;
+    if (this.frameworkVersions && draft?.approvedAt && ["APPROVED", "EXPORTED", "SUBMITTED"].includes(draft.status)) {
+      const versions = await this.frameworkVersions.list(input.projectId, ctx.tenant.tenantId);
+      if (versions.ok) approvedFramework = versionInForce(versions.value, draft.approvedAt);
+    }
     if (inds.ok && ups.ok) {
       for (const ind of inds.value) {
         const u = ups.value.find((x) => x.indicatorId === ind.id);
-        indicatorRows.push(indicatorExportRow({ reportType: period.value.reportType, indicator: ind, update: u }));
+        const shown = indicatorAsApproved({ id: ind.id, code: ind.code, name: ind.name, baseline: ind.baseline, target: ind.target, unit: ind.unit, type: ind.type }, approvedFramework);
+        indicatorRows.push(indicatorExportRow({ reportType: period.value.reportType, indicator: shown, update: u }));
       }
     }
 

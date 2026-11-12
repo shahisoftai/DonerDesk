@@ -14,6 +14,9 @@ export interface SnapshotItem {
   title: string;
   description: string | null;
   sortOrder: number;
+  /** Present only when set, so a framework without them keeps the same content hash as before. */
+  assumptions?: string;
+  rationale?: string;
 }
 
 export interface SnapshotIndicator {
@@ -51,6 +54,8 @@ interface ItemLike {
   title: string;
   description?: string | undefined;
   sortOrder: number;
+  assumptions?: string | undefined;
+  rationale?: string | undefined;
 }
 
 interface IndicatorLike {
@@ -84,6 +89,8 @@ export function buildLogframeSnapshot(items: ReadonlyArray<ItemLike>, indicators
         title: i.title,
         description: i.description ?? null,
         sortOrder: i.sortOrder,
+        ...(i.assumptions ? { assumptions: i.assumptions } : {}),
+        ...(i.rationale ? { rationale: i.rationale } : {}),
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder || a.id.localeCompare(b.id)),
     indicators: indicators
@@ -142,6 +149,8 @@ const ITEM_FIELDS: ReadonlyArray<[keyof SnapshotItem, string]> = [
   ["code", "code"],
   ["parentId", "place in the framework"],
   ["level", "level"],
+  ["assumptions", "assumptions"],
+  ["rationale", "rationale"],
 ];
 
 const INDICATOR_FIELDS: ReadonlyArray<[keyof SnapshotIndicator, string]> = [

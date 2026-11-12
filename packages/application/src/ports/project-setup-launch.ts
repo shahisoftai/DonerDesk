@@ -2,11 +2,14 @@
  * The narrow shapes the wizard's launch steps delegate to (Phase 38.9b, interface segregation): each step sees only the one
  * call it makes, never the container. The existing handlers satisfy these structurally in the container's wiring.
  */
-import type { DomainError, Result, SetupDraft } from "@donordesk/domain";
+import type { DomainError, FrameworkVocabulary, Result, SetupDraft } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../context.js";
 
 type R<T> = Promise<Result<T, DomainError>>;
 
+export interface SetupVocabularyWriter {
+  handle(ctx: AuthenticatedContext, projectId: string, vocabulary: FrameworkVocabulary): R<void>;
+}
 export interface SetupReviewModeWriter {
   handle(ctx: AuthenticatedContext, projectId: string, simple: boolean): R<void>;
 }

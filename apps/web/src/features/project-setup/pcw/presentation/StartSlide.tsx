@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { startSuggestions } from "../domain/start-suggestions";
+import { VOCABULARY_PRESETS } from "@donordesk/domain/contexts/logframe/framework-vocabulary.js";
 import { usePcwCopy } from "./usePcwCopy";
 import { StartDocuments } from "./StartDocuments";
 import { SectorChooser } from "@/features/sector-library/presentation/SectorChooser";
@@ -30,7 +31,7 @@ export function StartSlide({ id, view, onView }: { id: string; view: SetupDraftV
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const save = (patch: { donor?: string; sector?: string; country?: string }) =>
+  const save = (patch: { donor?: string; sector?: string; country?: string; wording?: string }) =>
     startTransition(async () => {
       const r = await editDraftAction(id, { kind: "SET_START", patch });
       if (r.ok) { setError(null); onView(r.value); } else setError(r.error.message);
@@ -76,6 +77,14 @@ export function StartSlide({ id, view, onView }: { id: string; view: SetupDraftV
           const r = await editDraftAction(id, { kind: "SET_LIBRARY_ANSWER", key, value });
           if (r.ok) { setError(null); onView(r.value); } else setError(r.error.message);
         })} />
+      </div>
+      <div className="sm:col-span-3">
+        <Field label={PCW_COPY.start.wording} hint={PCW_COPY.start.wordingHelp}>
+          <Select value={start.wording ?? ""} disabled={pending} onChange={(e) => save({ wording: e.target.value })}>
+            <option value="">{PCW_COPY.start.wordingDefault}</option>
+            {VOCABULARY_PRESETS.filter((p) => p.key !== "DONORDESK").map((p) => <option key={p.key} value={p.key}>{p.label} ({p.vocabulary.document})</option>)}
+          </Select>
+        </Field>
       </div>
       <div className="sm:col-span-3 space-y-2">
         <p className="text-sm text-slate-600 dark:text-slate-300">{PCW_COPY.start.sectorsHelp}</p>

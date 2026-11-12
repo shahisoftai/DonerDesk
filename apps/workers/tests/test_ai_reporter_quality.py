@@ -732,6 +732,21 @@ def test_each_outcome_subsection_shows_only_its_own_indicators() -> None:
     assert two and "OC2a" in two[1] and "OP2.1" in two[1] and "OC1a" not in two[1]
 
 
+def test_a_section_named_in_the_donors_own_word_shows_only_its_own_outcome() -> None:
+    from app.ai_reporter.models import ContextProject
+
+    def build(title: str, word: str | None):
+        req = _per_outcome_req(title)
+        req.context.project = ContextProject(outcomeWord=word)
+        return artifact_builder.indicator_table(req)
+
+    two = build("Intermediate Result 2: Hygiene", "Intermediate Result")
+    assert two and "OC2a" in two[1] and "OC1a" not in two[1]
+    # Without the donor's word the title names no outcome, so the per-outcome rule does not apply.
+    plain = build("Intermediate Result 2: Hygiene", None)
+    assert plain is None or plain[1] != two[1]
+
+
 def test_an_unnumbered_outcome_section_still_uses_the_level_split() -> None:
     req = _per_outcome_req("Results by Outcome")
     built = artifact_builder.indicator_table(req)

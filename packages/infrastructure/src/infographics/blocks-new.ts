@@ -540,7 +540,7 @@ export function resultsChainBlock(c: RenderCtx, section: InfographicSectionConfi
   }
   const ordered = [...groups.entries()].filter(([, list]) => list.length > 0).sort(([a], [b]) => (LEVEL_ORDER.indexOf(a) + 1 || 99) - (LEVEL_ORDER.indexOf(b) + 1 || 99));
   if (ordered.length === 0) return notReported(c, title, width, 110);
-  const levelLabel = (level: string): string => (level === "IMPACT" ? l.impact : level === "GOAL" ? l.goal : level === "OUTCOME" ? l.outcome : level === "OUTPUT" ? l.output : level === "ACTIVITY" ? l.activity : l.indicators);
+  const levelLabel = (level: string): string => c.data.levelWords?.[level] ?? (level === "IMPACT" ? l.impact : level === "GOAL" ? l.goal : level === "OUTCOME" ? l.outcome : level === "OUTPUT" ? l.output : level === "ACTIVITY" ? l.activity : l.indicators);
   let y = 12 * s;
   let body = "";
   const labelW = 120 * s;

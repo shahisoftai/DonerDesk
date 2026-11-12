@@ -2,11 +2,12 @@
 import { use } from "react";
 import { importLogframeTextAction } from "@/lib/actions/logframe";
 import { TextImportPanel } from "@/features/imports/presentation/TextImportPanel";
-import { LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
+import { useLevelName } from "@/features/logframe/presentation/FrameworkVocabularyProvider";
 import type { ImportLogframeResponse } from "@/lib/server/schemas";
 
 export default function ImportLogframePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const levelName = useLevelName();
   return (
     <TextImportPanel<ImportLogframeResponse>
       kind="logframe"
@@ -24,7 +25,7 @@ export default function ImportLogframePage({ params }: { params: Promise<{ id: s
       renderItem={(item) => (
         <>
           <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-600 dark:bg-white/10 dark:text-slate-300">
-            {LOGFRAME_LEVEL_LABEL[item.level as keyof typeof LOGFRAME_LEVEL_LABEL] ?? item.level}
+            {levelName(item.level)}
           </span>
           {item.code && <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{item.code}</span>}
           <span className="min-w-0 flex-1">{item.title}</span>

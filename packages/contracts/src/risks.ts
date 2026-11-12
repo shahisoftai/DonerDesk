@@ -12,6 +12,8 @@ export const CreateRiskSchema = z.object({
   action: z.string().max(1000).default(""),
   /** The planned activity it affects, when raised from one. */
   plannedActivityId: z.string().min(1).optional(),
+  /** The result it puts at risk, when raised against one. */
+  logframeItemId: z.string().min(1).optional(),
 });
 export type CreateRiskInput = z.infer<typeof CreateRiskSchema>;
 

@@ -27,7 +27,7 @@ export const smallMultiplesModel = (props: SectionProps, facts: CanvasFacts | un
 
 const LEVEL_ORDER = ["IMPACT", "GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"] as const;
 const PER_LEVEL = 4;
-export interface ChainLevel { level: string; rows: LatestValue[]; more: number }
+export interface ChainLevel { level: string; rows: LatestValue[]; more: number; /** The donor's word for this level, when it differs from the default. */ word?: string }
 
 export const resultsChainModel = (_props: SectionProps, facts: CanvasFacts | undefined) => {
   if (!facts) return unavailable(NO_FACTS);
@@ -35,7 +35,7 @@ export const resultsChainModel = (_props: SectionProps, facts: CanvasFacts | und
   const groups = new Map<string, LatestValue[]>();
   for (const lv of all) groups.set((lv.level ?? "OTHER").toUpperCase(), [...(groups.get((lv.level ?? "OTHER").toUpperCase()) ?? []), lv]);
   const rank = (l: string): number => { const i = (LEVEL_ORDER as readonly string[]).indexOf(l); return i < 0 ? 99 : i; };
-  const levels: ChainLevel[] = [...groups.entries()].sort(([a], [b]) => rank(a) - rank(b)).map(([level, list]) => ({ level, rows: list.slice(0, PER_LEVEL), more: Math.max(0, list.length - PER_LEVEL) }));
+  const levels: ChainLevel[] = [...groups.entries()].sort(([a], [b]) => rank(a) - rank(b)).map(([level, list]) => ({ level, rows: list.slice(0, PER_LEVEL), more: Math.max(0, list.length - PER_LEVEL), ...(facts.levelWords?.[level] ? { word: facts.levelWords[level] } : {}) }));
   if (levels.length === 0) return empty("No indicator has a recorded value yet.");
   return ready({ levels }, all.some((x) => !x.verified) ? ["Some figures are not verified yet."] : []);
 };

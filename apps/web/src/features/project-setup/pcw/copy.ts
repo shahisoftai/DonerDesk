@@ -67,6 +67,7 @@ export const REQUIREMENT_SENTENCES: PcwSentences = {
   risksUndecided: (p) => `${p.count} risk${Number(p.count) > 1 ? "s are" : " is"} waiting for you to accept or reject.`,
   risksMissing: () => "Add the project's main risks, or say there are none to record.",
   risksUnrated: (p) => `Say how serious “${first(p)}”${more(p)} is. An entry with no rating is left out when the project starts.`,
+  resultsWithoutReasoning: (p) => `Optional: say why these lead to the result above them (${p.count}), for example ${p.first}.`,
   assumptionsMissing: () => "Add what the project is assuming, or say there is nothing to record.",
   dashboardMissing: () => "Choose a starting dashboard, or say it is not used.",
 };
@@ -87,6 +88,8 @@ export const PCW_COPY = {
     useStarting: "Use the starting answers for this sector",
     startingApplied: (label: string, filled: readonly string[]): string => (filled.length === 0 ? `${label}: everything it offers was already answered.` : `${label} filled: ${filled.join(", ")}.`),
     sectorsHelp: "Starting answers depend on the sector only. What a donor requires comes from your own documents and template, so it is never guessed.",
+    wording: "Donor wording for the results framework", wordingDefault: "DonorDesk wording (Goal, Outcome, Output, Activity)",
+    wordingHelp: "Only the words on screen and in downloaded files change; you can change this later in the reporting profile.",
   },
   results: {
     add: "Add a result", level: "Kind", title: "What will be achieved", parent: "Belongs to", none: "— none —",

@@ -1,4 +1,5 @@
 import { Entity } from "../../core/entity.js";
+import { DEFAULT_VOCABULARY, type FrameworkVocabulary } from "../logframe/framework-vocabulary.js";
 import { DomainError } from "../../core/domain-error.js";
 import { isFinanceDataMode, type FinanceDataMode } from "../finance/finance-data-mode.js";
 
@@ -35,6 +36,8 @@ export interface ReportingProfileProps {
   simpleReview?: boolean;
   /** Statements that hold for every period (branding policy, waste procedure), by compliance section key. */
   standingStatements?: Record<string, string>;
+  /** What this project's donor calls the levels of the results chain; absent = the default words. */
+  vocabulary?: FrameworkVocabulary;
   version: number;
   createdById: string;
   updatedById: string;
@@ -228,6 +231,7 @@ export class ReportingProfile extends Entity<string> {
   get requireEvidenceForVerification(): boolean { return this.props.requireEvidenceForVerification ?? false; }
   get simpleReview(): boolean { return this.props.simpleReview ?? false; }
   get standingStatements(): Record<string, string> { return { ...(this.props.standingStatements ?? {}) }; }
+  get vocabulary(): FrameworkVocabulary { return this.props.vocabulary ?? DEFAULT_VOCABULARY; }
 
   /** Makes a template the default for one report type (or, with undefined, removes that type's default). */
   setDefaultTemplateForType(reportType: string, templateId: string | undefined, updatedById: string): void {
@@ -245,6 +249,11 @@ export class ReportingProfile extends Entity<string> {
 
   setSimpleReview(value: boolean, updatedById: string): void {
     this.props.simpleReview = value;
+    this.bump(updatedById);
+  }
+
+  setVocabulary(value: FrameworkVocabulary, updatedById: string): void {
+    this.props.vocabulary = value;
     this.bump(updatedById);
   }
 

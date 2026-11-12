@@ -113,6 +113,8 @@ export interface LogframeSkeletonNode {
   parent?: string;
   /** Sphere/standard ids this node answers to, shown as a hint. */
   standards?: readonly string[];
+  /** A starting assumption for this result, written like any library text: unreviewed until a person confirms it. Optional; none is shipped yet. */
+  assumption?: string;
 }
 
 export type AssessmentAnswerType = "NUMBER" | "TEXT" | "YES_NO" | "CHOICE";

@@ -20,6 +20,8 @@ export class CreateLogframeItemHandler {
         code: input.code,
         title: input.title,
         description: input.description,
+        assumptions: input.assumptions,
+        rationale: input.rationale,
       });
     } catch (err) {
       if (err instanceof DomainError) return { ok: false, error: err };

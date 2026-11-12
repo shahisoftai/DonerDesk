@@ -5,17 +5,18 @@
  * when a launch actually runs.
  */
 import {
-  ActivationStep, BudgetLinesStep, LibraryLinksStep, DashboardStep, EntryWindowsStep, FormsStep, IndicatorOwnerApplier, InvitationsStep, PlanLeadApplier, PendingMemberResolver, ResponsibilitiesStep, ReviewModeStep,
+  ActivationStep, BudgetLinesStep, LibraryLinksStep, DashboardStep, EntryWindowsStep, FormsStep, IndicatorOwnerApplier, InvitationsStep, PlanLeadApplier, PendingMemberResolver, ResponsibilitiesStep, ReviewModeStep, WordingStep,
   type AddBudgetLineHandler, type UpdateProjectHandler, type ApplyDashboardTemplateHandler, type AssignPlannedActivityHandler, type GetPlanItemBudgetHandler, type ListWorkPlanHandler, type SetupBudgetWriter, type SetupDashboardWriter, type SetupPlanRows, type AssignProjectMemberHandler, type IAuditLogger, type IPendingMemberRepository, type IResponsibilityApplier, type SetIndicatorOwnerHandler,
   type SetupActingContext, type SetupIndicatorOwners, type SetupMemberAssigner, type CreateFormFromIndicatorHandler, type InviteUserHandler, type ISetupLaunchStep, type IUserRepository, type ListIndicatorsHandler,
-  type ListPendingInvitationsHandler, type ListReportingPeriodsHandler, type SetPeriodEntryWindowHandler, type SetSimpleReviewHandler,
-  type SetupEntryWindowWriter, type SetupFormWriter, type SetupLibraryLinkWriter, type SetupInviter, type SetupReviewModeWriter, type SetupUserDirectory,
+  type ListPendingInvitationsHandler, type ListReportingPeriodsHandler, type SetPeriodEntryWindowHandler, type SetSimpleReviewHandler, type SetFrameworkVocabularyHandler,
+  type SetupEntryWindowWriter, type SetupFormWriter, type SetupLibraryLinkWriter, type SetupInviter, type SetupReviewModeWriter, type SetupVocabularyWriter, type SetupUserDirectory,
 } from "@donordesk/application";
 import type { AuthenticatedContext } from "@donordesk/application";
 import { TenantId, isRateIndicator, ok, type BudgetCostCategory, type Role } from "@donordesk/domain";
 
 export interface LaunchStepDeps {
   setSimpleReview: SetSimpleReviewHandler;
+  setFrameworkVocabulary: SetFrameworkVocabularyHandler;
   setPeriodEntryWindow: SetPeriodEntryWindowHandler;
   listReportingPeriods: ListReportingPeriodsHandler;
   listIndicators: ListIndicatorsHandler;
@@ -90,6 +91,7 @@ export function createPendingMemberResolver(deps: () => LaunchStepDeps, pending:
 
 export function createLaunchSteps(deps: () => LaunchStepDeps, extras: LaunchStepExtras): ISetupLaunchStep[] {
   const d = new Proxy({} as LaunchStepDeps, { get: (_t, key) => deps()[key as keyof LaunchStepDeps] });
+  const wording: SetupVocabularyWriter = { handle: (ctx, projectId, vocabulary) => d.setFrameworkVocabulary.handle(ctx, projectId, vocabulary) };
   const review: SetupReviewModeWriter = { handle: (ctx, projectId, simple) => d.setSimpleReview.handle(ctx, projectId, simple) };
   const windows: SetupEntryWindowWriter = {
     periods: async (ctx, projectId) => {
@@ -131,7 +133,7 @@ export function createLaunchSteps(deps: () => LaunchStepDeps, extras: LaunchStep
     apply: (ctx, templateId, input) => d.applyDashboardTemplate.handle(ctx, templateId, { projectId: input.projectId, name: input.name, scope: "PROJECT", mapping: input.mapping }),
   };
   return [
-    new LibraryLinksStep(extras.libraryLinks), new ReviewModeStep(review), new EntryWindowsStep(windows), new FormsStep(forms),
+    new LibraryLinksStep(extras.libraryLinks), new WordingStep(wording), new ReviewModeStep(review), new EntryWindowsStep(windows), new FormsStep(forms),
     new ResponsibilitiesStep(extras.users, members, extras.pending, appliers, extras.now, extras.newId),
     new BudgetLinesStep(planRows(d), budget), new DashboardStep(dashboard), new InvitationsStep(inviter),
     new ActivationStep({ activate: async (ctx, projectId) => { const r = await d.updateProject.handle(ctx, projectId, { status: "ACTIVE" }); return r.ok ? ok(undefined) : r; } }),

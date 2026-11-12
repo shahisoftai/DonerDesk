@@ -6,6 +6,7 @@
 import type { LibraryIndicator, LibrarySectorId, SectorContent } from "./model.js";
 import { LIBRARY_SECTOR_IDS } from "./model.js";
 import { withActivities } from "./data/activities.js";
+import { withAssumptions } from "./data/assumptions.js";
 import { WASH } from "./data/wash.js";
 import { NUTRITION } from "./data/nutrition.js";
 import { FOOD_SECURITY } from "./data/food-security.js";
@@ -33,7 +34,7 @@ const AUTHORED: Readonly<Record<LibrarySectorId, SectorContent>> = {
 
 /** Every sector with its suggested results completed by the usual activities under each output (the wizard needs them before a project can start). */
 export const BUILT_IN_CONTENT: Readonly<Record<LibrarySectorId, SectorContent>> = Object.fromEntries(
-  LIBRARY_SECTOR_IDS.map((id) => [id, { ...AUTHORED[id], logframe: withActivities(id, AUTHORED[id].logframe) }]),
+  LIBRARY_SECTOR_IDS.map((id) => [id, { ...AUTHORED[id], logframe: withAssumptions(id, withActivities(id, AUTHORED[id].logframe)) }]),
 ) as unknown as Record<LibrarySectorId, SectorContent>;
 
 export const BUILT_IN_INDICATORS: readonly LibraryIndicator[] = LIBRARY_SECTOR_IDS.flatMap((id) => BUILT_IN_CONTENT[id].indicators);

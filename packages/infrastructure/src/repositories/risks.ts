@@ -13,7 +13,7 @@ function toDomain(r: Row): ProjectRisk {
     props: {
       projectId: r.projectId, kind: r.kind as RiskKind, title: r.title, seriousness: r.seriousness as Seriousness, ...(r.ownerId ? { ownerId: r.ownerId } : {}),
       action: r.action, status: r.status as RiskStatus, ...(r.closedNote ? { closedNote: r.closedNote } : {}), ...(r.closedById ? { closedById: r.closedById } : {}),
-      ...(r.closedAt ? { closedAt: r.closedAt } : {}), ...(r.plannedActivityId ? { plannedActivityId: r.plannedActivityId } : {}), raisedById: r.raisedById,
+      ...(r.closedAt ? { closedAt: r.closedAt } : {}), ...(r.plannedActivityId ? { plannedActivityId: r.plannedActivityId } : {}), ...(r.logframeItemId ? { logframeItemId: r.logframeItemId } : {}), raisedById: r.raisedById,
       ...(r.reviewBy ? { reviewBy: toDay(r.reviewBy) } : {}),
     },
   });
@@ -33,7 +33,7 @@ export class PrismaProjectRiskRepository implements IProjectRiskRepository {
 
   async create(risk: ProjectRisk) {
     const s = risk.snapshot();
-    await this.prisma.projectRisk.create({ data: { id: risk.id, tenantId: risk.tenantIdValue, projectId: s.projectId, plannedActivityId: s.plannedActivityId ?? null, raisedById: s.raisedById, ...mutable(risk) } });
+    await this.prisma.projectRisk.create({ data: { id: risk.id, tenantId: risk.tenantIdValue, projectId: s.projectId, plannedActivityId: s.plannedActivityId ?? null, logframeItemId: s.logframeItemId ?? null, raisedById: s.raisedById, ...mutable(risk) } });
     return ok(risk);
   }
 

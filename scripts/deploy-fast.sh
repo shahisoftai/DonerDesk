@@ -9,7 +9,7 @@
 #   RELEASE_ID="20260901120000" SCOPE=both scripts/deploy-fast.sh
 #   SCOPE: web|api|both (default: auto-detect from git diff)
 #   BUILD_ON=host builds (and type-checks) on the Contabo host in a memory-capped, lowest-priority job (scripts/host-build.sh):
-#   ~3 min instead of ~12 on the dev machine. Default is local. If the host refuses before building (low memory or disk,
+#   ~3 min instead of ~12 on the dev machine, and only changed packages are rebuilt. Default is host (BUILD_ON=local to build here). If the host refuses before building (low memory or disk,
 #   unreachable, another build running) the script builds locally instead; a build that fails on the host stops the deploy.
 #
 # Exit codes: 0 on full success, non-zero on any gate failure. Every step
@@ -25,7 +25,7 @@ SCOPE="${SCOPE:-auto}"
 NO_BACKUP="${NO_BACKUP:-0}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 SKIP_TYPECHECK="${SKIP_TYPECHECK:-0}"
-BUILD_ON="${BUILD_ON:-local}"
+BUILD_ON="${BUILD_ON:-host}"
 RELEASE_ID="${RELEASE_ID:-$(date -u +%Y%m%d%H%M%S)}"
 
 ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"

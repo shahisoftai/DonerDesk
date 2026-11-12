@@ -3,6 +3,7 @@ import {
   ProjectSetup,
   ReportingProfile,
   normalizeFinanceDataMode,
+  parseVocabulary,
   type ProjectSetupProps,
   type ReportingProfileProps,
   type WorkspaceProvisionStatus,
@@ -142,6 +143,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           requireEvidenceForVerification: p.requireEvidenceForVerification,
           simpleReview: p.simpleReview,
           standingStatementsJson: JSON.stringify(p.standingStatements),
+          vocabularyJson: JSON.stringify(p.vocabulary),
           version: p.version,
           createdById: p.createdById,
           updatedById: p.updatedById,
@@ -174,6 +176,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
           requireEvidenceForVerification: p.requireEvidenceForVerification,
           simpleReview: p.simpleReview,
           standingStatementsJson: JSON.stringify(p.standingStatements),
+          vocabularyJson: JSON.stringify(p.vocabulary),
           version: p.version,
           updatedById: p.updatedById,
         },
@@ -212,6 +215,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
     requireEvidenceForVerification?: boolean | null;
     simpleReview?: boolean | null;
     standingStatementsJson?: string | null;
+    vocabularyJson?: string | null;
     version: number;
     createdById: string;
     updatedById: string;
@@ -234,6 +238,7 @@ export class PrismaReportingProfileRepository implements IReportingProfileReposi
       requireEvidenceForVerification: row.requireEvidenceForVerification ?? false,
       simpleReview: row.simpleReview ?? false,
       standingStatements: parseStringMap(row.standingStatementsJson),
+      vocabulary: parseVocabulary(row.vocabularyJson),
       version: row.version,
       createdById: row.createdById,
       updatedById: row.updatedById,

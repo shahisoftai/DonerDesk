@@ -6,6 +6,10 @@ export const SetStandingStatementSchema = z.object({ key: z.string().min(1).max(
 export const SetRequireSecondApproverSchema = z.object({ value: z.boolean() });
 export const SetRequireEvidenceForVerificationSchema = z.object({ value: z.boolean() });
 export const SetSimpleReviewSchema = z.object({ value: z.boolean() });
+export const SetFrameworkVocabularySchema = z.object({
+  document: z.string().max(80),
+  levels: z.object({ GOAL: z.string().max(80), OUTCOME: z.string().max(80), OUTPUT: z.string().max(80), ACTIVITY: z.string().max(80) }),
+});
 
 export const ProfileToneSchema = z.enum(["FORMAL", "CONCISE", "NARRATIVE", "TECHNICAL"]);
 

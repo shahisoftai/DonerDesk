@@ -6,6 +6,7 @@ import type { IPersonNotifier } from "../../ports/reminders.js";
 import type { IProjectRiskRepository } from "../../ports/risks.js";
 import type { IProjectRoster } from "../../ports/tasks.js";
 import type { IPlannedActivityRepository } from "../../ports/workplan.js";
+import type { ILogframeRepository } from "../../ports/logframe.js";
 
 const isManager = (ctx: AuthenticatedContext) => Permissions.can(ctx.tenant.role as Role, "risk.manage");
 const today = (clock: IClock): PlainDate => toPlainDate(clock.now())!;
@@ -20,6 +21,7 @@ export interface RiskDto {
   status: string;
   closedNote?: string;
   plannedActivityId?: string;
+  logframeItemId?: string;
   raisedById: string;
   reviewBy?: string;
   /** Whether the caller may change or close it (the screen shows the buttons only then). */
@@ -32,7 +34,7 @@ function toDto(r: ProjectRisk, ctx: AuthenticatedContext): RiskDto {
   const s = r.snapshot();
   return {
     id: r.id, kind: s.kind, title: s.title, seriousness: s.seriousness, ...(s.ownerId ? { ownerId: s.ownerId } : {}), action: s.action, status: s.status,
-    ...(s.closedNote ? { closedNote: s.closedNote } : {}), ...(s.plannedActivityId ? { plannedActivityId: s.plannedActivityId } : {}), raisedById: s.raisedById,
+    ...(s.closedNote ? { closedNote: s.closedNote } : {}), ...(s.plannedActivityId ? { plannedActivityId: s.plannedActivityId } : {}), ...(s.logframeItemId ? { logframeItemId: s.logframeItemId } : {}), raisedById: s.raisedById,
     ...(s.reviewBy ? { reviewBy: s.reviewBy } : {}),
     canChange: r.isOpen && canActOnRisk(ctx.tenant.userId, { ownerId: s.ownerId, raisedById: s.raisedById }, isManager(ctx)),
   };
@@ -50,6 +52,8 @@ export class CreateRiskHandler {
   constructor(
     private readonly ids: IIdGenerator, private readonly repo: IProjectRiskRepository, private readonly roster: IProjectRoster, private readonly plans: IPlannedActivityRepository,
     private readonly notifier: IPersonNotifier, private readonly audit: IAuditLogger, private readonly clock: IClock,
+    /** With it, a result a problem is raised against must belong to this project. */
+    private readonly results?: ILogframeRepository,
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string, input: CreateRiskInput): Promise<Result<{ id: string }, DomainError>> {
@@ -61,9 +65,14 @@ export class CreateRiskHandler {
       if (!plan.ok) return plan;
       if (!plan.value || plan.value.projectId !== projectId) return err(DomainError.validation("Choose a planned activity of this project", { field: "plannedActivityId" }));
     }
+    if (input.logframeItemId && this.results) {
+      const item = await this.results.findById(input.logframeItemId, ctx.tenant.tenantId);
+      if (!item.ok) return item;
+      if (!item.value || item.value.projectId !== projectId) return err(DomainError.validation("Choose a result of this project", { field: "logframeItemId" }));
+    }
     const created = ProjectRisk.create({
       id: this.ids.generate(), tenantId: ctx.tenant.tenantId.toString(), projectId, kind: input.kind, title: input.title, seriousness: input.seriousness,
-      ownerId: input.ownerId, action: input.action, raisedById: ctx.tenant.userId, today: today(this.clock), ...(input.plannedActivityId ? { plannedActivityId: input.plannedActivityId } : {}),
+      ownerId: input.ownerId, action: input.action, raisedById: ctx.tenant.userId, today: today(this.clock), ...(input.plannedActivityId ? { plannedActivityId: input.plannedActivityId } : {}), ...(input.logframeItemId ? { logframeItemId: input.logframeItemId } : {}),
     });
     if (!created.ok) return created;
     const saved = await this.repo.create(created.value);

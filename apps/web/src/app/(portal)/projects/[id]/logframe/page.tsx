@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { requireSession } from "@/lib/server/auth-context";
+import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { LogframeResponseSchema, OrganizationSchema, ArchivedIndicatorsResponseSchema, ProjectsResponseSchema, ProjectDetailSchema } from "@/lib/server/schemas";
+import { FrameworkDocumentSchema, LogframeResponseSchema, OrganizationSchema, ArchivedIndicatorsResponseSchema, ProjectsResponseSchema, ProjectDetailSchema } from "@/lib/server/schemas";
+import { getTranslator } from "@/lib/server/locale";
+import { FrameworkTable } from "@/features/logframe/presentation/FrameworkTable";
+import { FrameworkViewSwitch } from "@/features/logframe/presentation/FrameworkViewSwitch";
 import { CopySetupPanel } from "@/features/logframe/presentation/CopySetupPanel";
 import { ArchivedIndicatorsPanel } from "@/features/logframe/presentation/ArchivedIndicatorsPanel";
 import { InlineError } from "@/components/feedback/PageState";
@@ -12,13 +15,39 @@ import { ConfirmSemanticsButton } from "@/features/logframe/presentation/Confirm
 import { isLogframeReorderEnabled } from "@/lib/shared/feature-flags";
 import { ProjectLibraryPanel } from "@/features/sector-library/presentation/ProjectLibraryPanel";
 import { ReferenceTag } from "@/features/sector-library/presentation/ReferenceTag";
+import { loadReportingProfileAction } from "@/lib/actions/setup";
+import { LOGFRAME_LEVELS } from "@donordesk/domain/contexts/logframe/logframe-item.js";
+import { levelName } from "@donordesk/domain/contexts/logframe/framework-vocabulary.js";
+import { isFrameworkLens } from "@donordesk/domain/contexts/logframe/framework-lenses.js";
 import { findSector } from "@donordesk/domain/contexts/sector-library/sectors.js";
 
 export const dynamic = "force-dynamic";
 
-export default async function LogframePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function LogframePage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ view?: string }> }) {
   const resolvedParams = await params;
+  const { view } = await searchParams;
   const ctx = await requireSession();
+  const { t } = await getTranslator();
+  if (view && isFrameworkLens(view)) {
+    const framework = await gatewayRequest(`/v1/projects/${resolvedParams.id}/framework?lens=${view}`, FrameworkDocumentSchema, ctx.token);
+    return (
+      <div className="animate-fade-in space-y-4">
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-xl font-semibold tracking-tight">{framework.ok ? framework.value.title : "Framework"}</h1>
+          <div className="flex flex-wrap items-center gap-2">
+            <FrameworkViewSwitch projectId={resolvedParams.id} current={view} />
+            {framework.ok && hasCapability(ctx, "export.create") && (
+              <>
+                <a className="btn-secondary text-xs" href={`/api/projects/${resolvedParams.id}/framework/export?lens=${view}&format=docx`}>{t("framework.download.word")}</a>
+                <a className="btn-secondary text-xs" href={`/api/projects/${resolvedParams.id}/framework/export?lens=${view}&format=pdf`}>{t("framework.download.pdf")}</a>
+              </>
+            )}
+          </div>
+        </header>
+        {framework.ok ? <FrameworkTable document={framework.value} /> : <InlineError title={framework.error.message} referenceId={framework.error.referenceId} />}
+      </div>
+    );
+  }
   const [result, orgResult, projectResult] = await Promise.all([
     gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token),
     gatewayRequest("/v1/organization", OrganizationSchema, ctx.token),
@@ -37,6 +66,9 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
     );
   }
   const data = result.value;
+  const profile = await loadReportingProfileAction(resolvedParams.id);
+  const vocabulary = profile.ok ? profile.value.profile?.vocabulary : undefined;
+  const levelChain = LOGFRAME_LEVELS.map((level) => levelName(level, vocabulary)).join(" → ");
   const indicatorCounts: Record<string, number> = {};
   for (const ind of data.indicators) {
     if (ind.logframeItemId) indicatorCounts[ind.logframeItemId] = (indicatorCounts[ind.logframeItemId] ?? 0) + 1;
@@ -63,7 +95,8 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
     <div className="animate-fade-in" data-tour-id="logframe-indicator-list">
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold tracking-tight">Logframe &amp; indicators</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <FrameworkViewSwitch projectId={resolvedParams.id} current="edit" />
           <a className="btn-secondary text-xs" href="/api/templates/logframe">Download template</a>
           <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/new`}>Add logframe item</Link>
           <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/logframe/history`}>Framework history</Link>
@@ -74,7 +107,7 @@ export default async function LogframePage({ params }: { params: Promise<{ id: s
       <section className="mt-8">
         <h2 className="font-medium">Results hierarchy</h2>
         <p className="text-sm text-slate-500 dark:text-slate-400">
-          Goal → Outcome → Output → Activity.{canReorder ? " Drag the handle to reorder items, or use “Move to” to change an item’s parent." : ""}
+          {levelChain}.{canReorder ? " Drag the handle to reorder items, or use “Move to” to change an item’s parent." : ""}
         </p>
         {data.items.length === 0 ? (
           <>

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { SetStandingStatementHandler, SetTemplateDefaultForTypeHandler, SetRequireSecondApproverHandler } from "../dist/index.js";
+import { SetStandingStatementHandler, SetTemplateDefaultForTypeHandler, SetRequireSecondApproverHandler, SetFrameworkVocabularyHandler } from "../dist/index.js";
 import { ReportingProfile, TenantId } from "@donordesk/domain";
 
 const ctx = { tenant: { tenantId: TenantId.create("tenant-a"), userId: "u1" }, requestId: "r" };
@@ -57,4 +57,25 @@ test("the second-approver rule is off by default, set and audited only when it c
   assert.equal(w.get().requireSecondApprover, true);
   await h.handle(ctx, "p", true);
   assert.equal(w.audits.length, 1);
+});
+
+test("52.0: the donor's words are saved (creating the profile when there is none), trimmed, audited; bad words are refused with a sentence", async () => {
+  const w = world();
+  const h = new SetFrameworkVocabularyHandler(w.ids, w.profiles, w.audit);
+  const fcdo = { document: " Logframe ", levels: { GOAL: "Impact", OUTCOME: "Outcome", OUTPUT: "Output", ACTIVITY: "Activity " } };
+  assert.equal((await h.handle(ctx, "p", fcdo)).ok, true);
+  assert.equal(w.created.length, 1);
+  assert.equal(w.get().vocabulary.document, "Logframe");
+  assert.equal(w.get().vocabulary.levels.ACTIVITY, "Activity");
+  assert.equal(w.audits.at(-1).eventType, "reporting_profile.vocabulary_set");
+
+  const before = w.audits.length;
+  const empty = await h.handle(ctx, "p", { ...fcdo, levels: { ...fcdo.levels, OUTPUT: " " } });
+  assert.equal(empty.ok, false);
+  assert.match(empty.error.message, /output word is missing/);
+  const dup = await h.handle(ctx, "p", { ...fcdo, levels: { ...fcdo.levels, OUTPUT: "Outcome" } });
+  assert.equal(dup.ok, false);
+  assert.match(dup.error.message, /repeats another level/);
+  assert.equal(w.audits.length, before, "a refused change is not audited");
+  assert.equal(w.get().vocabulary.levels.OUTPUT, "Output", "and nothing was stored");
 });

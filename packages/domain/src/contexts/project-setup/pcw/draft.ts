@@ -86,6 +86,8 @@ export interface SetupStart {
   country?: string;
   /** The default pack applied (fill-only); absent until one is chosen. */
   packId?: string;
+  /** The donor wording chosen for the results framework's levels (a `VOCABULARY_PRESETS` key); absent = the default words. */
+  wording?: string;
   withDocuments: boolean;
   /** The documents' own answers were put in once (`prefillFromDocuments`); never again, so a person's change stays. */
   fromDocuments?: boolean;

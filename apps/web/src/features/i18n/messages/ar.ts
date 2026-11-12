@@ -1,6 +1,7 @@
 import type { MessageKey } from "./en.ts";
 import { recordAr } from "./record-ar.ts";
 import { libraryAr } from "./library-ar.ts";
+import { frameworkAr } from "./framework-ar.ts";
 import { canvasAr } from "./canvas-ar.ts";
 import { editor50Ar } from "./editor50-ar.ts";
 import { studioAr } from "./studio-ar.ts";
@@ -879,4 +880,5 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   ...studioAr,
   ...editorAr,
   ...libraryAr,
+  ...frameworkAr,
 };

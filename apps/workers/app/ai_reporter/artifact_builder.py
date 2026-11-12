@@ -125,7 +125,7 @@ def _digits(code: str | None) -> str | None:
     return found[0].lstrip("0") or "0" if found else None
 
 
-def _per_outcome_findings(findings: list[Finding], section_title: str) -> list[Finding] | None:
+def _per_outcome_findings(findings: list[Finding], section_title: str, outcome_word: str | None = None) -> list[Finding] | None:
     """A section named for one outcome ("Outcome 2: ...") shows only that outcome's indicators.
 
     Both "Outcome 1" and "Outcome 2" sub-sections used to match `"outcome" in title` and print the same rows (demo 8).
@@ -133,6 +133,9 @@ def _per_outcome_findings(findings: list[Finding], section_title: str) -> list[F
     split below decides.
     """
     match = _OUTCOME_NUMBER_RE.search(section_title)
+    if not match and outcome_word:
+        # The donor's own word for the level ("Intermediate Result 2") names an outcome just as "Outcome 2" does.
+        match = re.search(rf"\b{re.escape(outcome_word.lower())}\s*(\d+)\b", section_title)
     if not match or not any(f.outcomeCode for f in findings):
         return None
     wanted = match.group(1).lstrip("0") or "0"
@@ -153,7 +156,8 @@ def _scoped_findings(req: SectionDraftRequest) -> list[Finding]:
     titles = [t.lower() for t in (structure.sectionTitles if structure else [])]
     mine = (req.section.canonicalTitle or req.section.title or "").lower()
     is_outcome = "outcome" in mine or "impact" in mine
-    numbered = _per_outcome_findings(findings, mine)
+    project = getattr(req.context, "project", None) if req.context else None
+    numbered = _per_outcome_findings(findings, mine, getattr(project, "outcomeWord", None))
     if numbered is not None:
         return numbered
     other_outcome = any(("outcome" in t or "impact" in t) and t != mine for t in titles)

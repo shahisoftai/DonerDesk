@@ -5,7 +5,7 @@ import type { ILogframeVersionRepository, LogframeVersionRecord } from "@donorde
 
 type Row = {
   id: string; tenantId: string; projectId: string; version: number; snapshotJson: string; contentHash: string; summary: string;
-  createdById: string; createdAt: Date; approvedById: string | null; approvedAt: Date | null;
+  createdById: string; createdAt: Date; changeKinds: string; approvedById: string | null; approvedAt: Date | null;
 };
 
 const toRecord = (r: Row): LogframeVersionRecord => ({ ...r });
@@ -17,7 +17,7 @@ export class PrismaLogframeVersionRepository implements ILogframeVersionReposito
     await this.prisma.logframeVersion.create({
       data: {
         id: record.id, tenantId: record.tenantId, projectId: record.projectId, version: record.version, snapshotJson: record.snapshotJson,
-        contentHash: record.contentHash, summary: record.summary, createdById: record.createdById, createdAt: record.createdAt,
+        contentHash: record.contentHash, summary: record.summary, createdById: record.createdById, createdAt: record.createdAt, changeKinds: record.changeKinds ?? "",
       },
     });
     return ok(record);

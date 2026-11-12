@@ -29,7 +29,8 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/data/Badge";
 import { useToast } from "@/components/feedback/Toast";
 import { indicatorVerificationTone } from "@/lib/shared/tone";
-import { INDICATOR_VERIFICATION_LABEL, INDICATOR_TYPE_LABEL, LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
+import { INDICATOR_VERIFICATION_LABEL, INDICATOR_TYPE_LABEL } from "@/lib/labels";
+import { useLevelName } from "@/features/logframe/presentation/FrameworkVocabularyProvider";
 import { logframeLevelRank, logframeLevelTone } from "@/features/logframe/domain/logframe-outline";
 import { DisaggregationEditor } from "@/features/logframe/presentation/DisaggregationEditor";
 import { EntrySheet, type AutosaveStatus } from "@/features/reporting/presentation/EntrySheet";
@@ -840,6 +841,7 @@ function LevelGroupRows({
   context: { today?: string | undefined; userId: string; names: Record<string, string>; canAsk: boolean; projectId: string };
   onVerify: (row: PeriodIndicatorRow) => void;
 }) {
+  const levelName = useLevelName();
   return (
     <>
       {rows.map((row) => {
@@ -854,7 +856,7 @@ function LevelGroupRows({
           <Fragment key={row.id}>
             <tr className={`trow ${dirty.has(row.id) ? "bg-brand-500/5" : ""}`}>
               <td className="px-3 py-2">
-                {level === "UNASSIGNED" ? "—" : <Badge tone={logframeLevelTone(level)}>{LOGFRAME_LEVEL_LABEL[level] ?? level}</Badge>}
+                {level === "UNASSIGNED" ? "—" : <Badge tone={logframeLevelTone(level)}>{levelName(level)}</Badge>}
               </td>
               <td className="px-3 py-2 font-mono text-xs">{row.code}</td>
               <td className="min-w-[200px] px-3 py-2">

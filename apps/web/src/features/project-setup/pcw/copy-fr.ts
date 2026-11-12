@@ -61,6 +61,7 @@ export const PCW_FR: PcwBundle = {
     risksUndecided: (p) => `${p.count} ${s(Number(p.count), "risque attend", "risques attendent")} que vous l'acceptiez ou le refusiez.`,
     risksMissing: () => "Ajoutez les principaux risques du projet, ou indiquez qu'il n'y en a aucun à noter.",
     risksUnrated: (p) => `Dites quelle est la gravité de « ${first(p)} »${more(p)}. Une entrée sans niveau est écartée au démarrage du projet.`,
+    resultsWithoutReasoning: (p) => `Facultatif : dites pourquoi ces résultats mènent au niveau supérieur (${p.count}), par exemple ${p.first}.`,
     assumptionsMissing: () => "Ajoutez ce que le projet suppose, ou indiquez qu'il n'y a rien à noter.",
     dashboardMissing: () => "Choisissez un tableau de bord de départ, ou indiquez qu'il n'est pas utilisé.",
   },
@@ -75,6 +76,8 @@ export const PCW_FR: PcwBundle = {
       useStarting: "Utiliser les réponses de départ de ce secteur",
       startingApplied: (label, filled) => (filled.length === 0 ? `${label} : tout ce qu'il propose était déjà renseigné.` : `${label} rempli : ${filled.join(", ")}.`),
       sectorsHelp: "Les réponses de départ dépendent du secteur seulement. Ce qu'exige un bailleur vient de vos propres documents et modèles : ce n'est jamais deviné.",
+      wording: "Vocabulaire du bailleur pour le cadre de résultats", wordingDefault: "Vocabulaire DonorDesk (Goal, Outcome, Output, Activity)",
+      wordingHelp: "Seuls les mots affichés et ceux des fichiers téléchargés changent ; vous pourrez le modifier plus tard dans le profil de rapport.",
     },
     results: {
       add: "Ajouter un résultat", level: "Type", title: "Ce qui sera accompli", parent: "Appartient à", none: "— aucun —",

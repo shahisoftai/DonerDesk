@@ -4,7 +4,10 @@ import {
   Permissions,
   describeLogframeChange,
   diffLogframeSnapshots,
+  classifyFrameworkChange,
+  parseChangeKinds,
   parseSnapshot,
+  type FrameworkChangeKind,
   type LogframeChange,
   type Role,
 } from "@donordesk/domain";
@@ -20,6 +23,8 @@ export interface LogframeVersionView {
   createdById: string;
   approvedAt: Date | null;
   approvedById: string | null;
+  /** What this version touched: the results and reasoning (STRUCTURE) and/or how they are measured (MEASUREMENT). */
+  kinds: FrameworkChangeKind[];
 }
 
 /** The history of a project's results framework, newest first. */
@@ -39,6 +44,7 @@ export class ListLogframeVersionsHandler {
           createdById: v.createdById,
           approvedAt: v.approvedAt ?? null,
           approvedById: v.approvedById ?? null,
+          kinds: parseChangeKinds(v.changeKinds),
         })),
       },
     };
@@ -48,7 +54,8 @@ export class ListLogframeVersionsHandler {
 export interface LogframeChangesView {
   from: number | null;
   to: number;
-  changes: Array<LogframeChange & { text: string }>;
+  changes: Array<LogframeChange & { text: string; group: FrameworkChangeKind }>;
+  kinds: FrameworkChangeKind[];
 }
 
 /** What changed between two versions of the framework (`from` omitted = the version before `to`). */
@@ -69,8 +76,11 @@ export class GetLogframeChangesHandler {
     }
     const snapshot = parseSnapshot(after.value.snapshotJson);
     if (!snapshot) return { ok: false, error: DomainError.invariant("This version of the framework could not be read.") };
-    const changes = diffLogframeSnapshots(before, snapshot).map((c) => ({ ...c, text: describeLogframeChange(c) }));
-    return { ok: true, value: { from: fromNumber, to, changes } };
+    const raw = diffLogframeSnapshots(before, snapshot);
+    const classified = classifyFrameworkChange(raw);
+    const kindOf = new Set(classified.structure);
+    const changes = raw.map((c) => ({ ...c, text: describeLogframeChange(c), group: (kindOf.has(c) ? "STRUCTURE" : "MEASUREMENT") as FrameworkChangeKind }));
+    return { ok: true, value: { from: fromNumber, to, changes, kinds: classified.kinds } };
   }
 }
 

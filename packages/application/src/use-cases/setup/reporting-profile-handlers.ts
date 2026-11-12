@@ -1,4 +1,4 @@
-import type { Result, DomainError } from "@donordesk/domain";
+import type { Result, DomainError, FrameworkVocabulary } from "@donordesk/domain";
 import { ReportingProfile, DomainError as DE } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IReportingProfileRepository } from "../../ports/setup.js";
@@ -25,6 +25,7 @@ export interface ReportingProfileDto {
   requireSecondApprover: boolean;
   requireEvidenceForVerification: boolean;
   simpleReview: boolean;
+  vocabulary: FrameworkVocabulary;
   standingStatements: Record<string, string>;
   version: number;
   createdAt: string;
@@ -50,6 +51,7 @@ export function toReportingProfileDto(p: ReportingProfile): ReportingProfileDto 
     requireSecondApprover: p.requireSecondApprover,
     requireEvidenceForVerification: p.requireEvidenceForVerification,
     simpleReview: p.simpleReview,
+    vocabulary: p.vocabulary,
     standingStatements: p.standingStatements,
     version: p.version,
     createdAt: p.createdAt.toISOString(),

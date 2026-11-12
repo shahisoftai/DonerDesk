@@ -43,6 +43,8 @@ export interface LogframeVersionRecord {
   summary: string;
   createdById: string;
   createdAt: Date;
+  /** Comma separated FrameworkChangeKind values this version introduced (STRUCTURE, MEASUREMENT); empty for the first. */
+  changeKinds?: string;
   approvedById?: string | null;
   approvedAt?: Date | null;
 }

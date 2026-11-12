@@ -30,7 +30,12 @@ const read = (raw: Record<string, unknown>): LogframeNodeDef | null => {
   const title = text(raw.title);
   if (!lv || !title || isHeadingOnly(title)) return null;
   const code = text(raw.code);
-  return { level: lv, code, title, description: text(raw.description), parentCode: text(raw.parentCode), ...(code ? { codeSource: "DOCUMENT" as const } : {}) };
+  const quote = text(raw.quote) ?? "";
+  // Logic is kept only when its own words are in the item's quote: a reasoning or assumption the model supplied is never trusted.
+  const stated = (value: unknown): string | null => { const t = text(value); return t && quote.toLowerCase().includes(t.toLowerCase()) ? t : null; };
+  const assumptions = stated(raw.assumptions);
+  const rationale = stated(raw.rationale);
+  return { level: lv, code, title, description: text(raw.description), parentCode: text(raw.parentCode), ...(assumptions ? { assumptions } : {}), ...(rationale ? { rationale } : {}), ...(code ? { codeSource: "DOCUMENT" as const } : {}) };
 };
 
 /** More items than this are not re-structured (the answer would not fit one small call); the first read's order stands. */
@@ -93,7 +98,7 @@ export const LOGFRAME_SPEC: AreaExtractionSpec = {
   keywords: ["goal", "impact", "objective", "outcome", "output", "result", "activity", "activities", "logframe", "logical framework", "results framework"],
   instructions: [
     "Extract the results hierarchy (logframe). Answer:",
-    '{"logframe": [{"level": "GOAL|OUTCOME|OUTPUT|ACTIVITY", "code": "...", "title": "...", "description": "...", "parentCode": "...", "quote": "...", "block": N, "confidence": "..."}]}',
+    '{"logframe": [{"level": "GOAL|OUTCOME|OUTPUT|ACTIVITY", "code": "...", "title": "...", "description": "...", "parentCode": "...", "assumptions": null, "rationale": null, "quote": "...", "block": N, "confidence": "..."}]}',
     "Impact/overall objective is GOAL; specific objective/result/purpose is OUTCOME; an output under it is OUTPUT; a planned action is ACTIVITY.",
     "parentCode is the code of the item one level up, only when the document's numbering or layout shows it; otherwise null.",
     "List only statements the document itself presents as a goal, objective, outcome, result, output or activity (in a table, or under such a heading or label). Never turn ordinary narrative into a result, and never build a chain the document does not state. A level the document does not state stays absent. Give every item you list a level.",
@@ -101,6 +106,7 @@ export const LOGFRAME_SPEC: AreaExtractionSpec = {
     "Only the project's own results are items. Objectives of a response plan, cluster, sector strategy, allocation or fund (HRP or strategic objectives such as \"SO1\", \"Cluster objectives\", \"HRP objectives\", \"Contribution to cluster/sector objectives\") are context the project contributes to: never list them.",
     "Template text that was never filled in (\"To be completed after identification of priority interventions\", \"[insert …]\", \"Not Selected\", a bare label such as \"Activity 1.1.1\" with no description) is not an item: skip it. When the results table is empty or unfilled, leave it empty: a person fills it in.",
     "A heading that only names a level (\"Goal\", \"Objectives\", \"Outputs\", \"Activities\") is not an item: list the statement under it instead.",
+    "assumptions and rationale are null unless the very same words are inside the item's quote: an assumption is what the document says must hold for the result; a rationale is the document's own reason the result leads to the one above it. Never write either yourself.",
     "Milestone, payment-schedule, pricing and budget tables are not results: do not list their rows or invent a parentCode from their numbering.",
     "parentCode is only the code of another item you list in this answer; if that parent has no code or is not listed, use null.",
     "List items in the document's order. Do not repeat an item.",

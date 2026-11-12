@@ -8,6 +8,8 @@ import { InlineError } from "@/components/feedback/PageState";
 import { RecordButton } from "@/features/record/presentation/RecordButton";
 import { ProjectLifecycleBanner } from "@/features/projects/presentation/ProjectLifecycleBanner";
 import { formatDate } from "@/lib/shared/dates";
+import { loadReportingProfileAction } from "@/lib/actions/setup";
+import { FrameworkVocabularyProvider } from "@/features/logframe/presentation/FrameworkVocabularyProvider";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,9 @@ export default async function ProjectLayout({ params, children }: { params: Prom
     return <InlineError title={projectResult.error.message} referenceId={projectResult.error.referenceId} />;
   }
   const project = projectResult.value;
+  // A failed read shows the default words; the project still opens.
+  const profile = await loadReportingProfileAction(project.id);
+  const vocabulary = profile.ok ? profile.value.profile?.vocabulary : undefined;
 
   const tabs = [
     // Reporting is the primary surface: each reporting period is a workspace
@@ -68,7 +73,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
       <div className="mt-4">
         <Tabs items={tabs} label="Project sections" />
       </div>
-      <div className="mt-6">{children}</div>
+      <div className="mt-6"><FrameworkVocabularyProvider vocabulary={vocabulary}>{children}</FrameworkVocabularyProvider></div>
     </div>
   );
 }

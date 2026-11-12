@@ -5,6 +5,7 @@
  */
 import { recordEn } from "./record-en.ts";
 import { libraryEn } from "./library-en.ts";
+import { frameworkEn } from "./framework-en.ts";
 import { canvasEn } from "./canvas-en.ts";
 import { editor50En } from "./editor50-en.ts";
 import { studioEn } from "./studio-en.ts";
@@ -865,6 +866,7 @@ export const en = {
   ...studioEn,
   ...editorEn,
   ...libraryEn,
+  ...frameworkEn,
 } as const;
 
 export type MessageKey = keyof typeof en;

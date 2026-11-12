@@ -63,6 +63,7 @@ export const PCW_AR: PcwBundle = {
     risksUndecided: (p) => `مخاطر بانتظار قبولك أو رفضك: ${p.count}.`,
     risksMissing: () => "أضف أهم مخاطر المشروع، أو اذكر أنه لا توجد مخاطر لتسجيلها.",
     risksUnrated: (p) => `حدّد مدى خطورة «${first(p)}»${more(p)}. يُستبعد أي إدخال بلا تقييم عند بدء المشروع.`,
+    resultsWithoutReasoning: (p) => `اختياري: اذكر لماذا تؤدي هذه النتائج إلى المستوى الأعلى (${p.count})، مثلاً ${p.first}.`,
     assumptionsMissing: () => "أضف ما يفترضه المشروع، أو اذكر أنه لا يوجد ما يُسجَّل.",
     dashboardMissing: () => "اختر لوحة متابعة أولية، أو اذكر أنها غير مستخدمة.",
   },
@@ -77,6 +78,8 @@ export const PCW_AR: PcwBundle = {
       useStarting: "استخدم الإجابات الأولية لهذا القطاع",
       startingApplied: (label, filled) => (filled.length === 0 ? `${label}: كل ما يقترحه كان مجاباً عنه بالفعل.` : `${label} — تمت تعبئة: ${filled.join("، ")}.`),
       sectorsHelp: "تعتمد الإجابات الأولية على القطاع وحده. أما ما تشترطه الجهة المانحة فيأتي من مستنداتك ونماذجك، ولا يُخمَّن أبداً.",
+      wording: "مصطلحات الجهة المانحة لإطار النتائج", wordingDefault: "مصطلحات DonorDesk (Goal, Outcome, Output, Activity)",
+      wordingHelp: "تتغير الكلمات المعروضة على الشاشة وفي الملفات المنزّلة فقط، ويمكنك تغيير ذلك لاحقاً في ملف إعداد التقارير.",
     },
     results: {
       add: "إضافة نتيجة", level: "النوع", title: "ما الذي سيتحقق", parent: "يتبع", none: "— لا شيء —",

@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
-import { INDICATOR_TYPE_OPTIONS, INDICATOR_TYPE_LABEL, LOGFRAME_LEVEL_LABEL } from "@/lib/labels";
+import { INDICATOR_TYPE_OPTIONS, INDICATOR_TYPE_LABEL } from "@/lib/labels";
+import { useLevelName } from "./FrameworkVocabularyProvider";
 import type { OutlineSource } from "@/features/logframe/domain/logframe-outline";
 import { defaultBreakdown } from "@donordesk/domain/contexts/logframe/indicator-change-rules.js";
 import { Checkbox } from "@/components/ui/Checkbox";
@@ -31,6 +32,7 @@ export function NewIndicatorForm({
   initialItemId?: string;
 }) {
   const router = useRouter();
+  const levelName = useLevelName();
   const [logframeItemId, setLogframeItemId] = useState(items.some((item) => item.id === initialItemId) ? initialItemId ?? "" : "");
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -47,7 +49,7 @@ export function NewIndicatorForm({
   // Counts of people are broken down by sex by default; the user's own choice always wins.
   const breakdown = breakdownChoice ?? defaultBreakdown(unit || undefined, type);
   const chosenItem = items.find((item) => item.id === logframeItemId);
-  const placedUnder = chosenItem ? `${LOGFRAME_LEVEL_LABEL[chosenItem.level] ?? chosenItem.level}${chosenItem.code ? ` ${chosenItem.code}` : ""}` : "";
+  const placedUnder = chosenItem ? `${levelName(chosenItem.level)}${chosenItem.code ? ` ${chosenItem.code}` : ""}` : "";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

@@ -32,6 +32,8 @@ export interface CanvasFacts {
   activities: ActivitiesByLocation;
   finance: { enabled: boolean; rows: DataSheetFinanceRow[] };
   indicators: FactsIndicator[];
+  /** The donor's words for the result levels, when they differ from the default. */
+  levelWords?: Record<string, string> | undefined;
   /** The design's acknowledgement line (a banner with no words of its own shows it). */
   acknowledgement?: string | undefined;
   /** The project the figures belong to, for a cover. */

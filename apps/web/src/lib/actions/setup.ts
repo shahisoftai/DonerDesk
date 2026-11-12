@@ -108,3 +108,10 @@ export async function setSimpleReviewAction(projectId: string, value: boolean): 
   const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/simple-review`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: { value } });
   return result.ok ? { ok: true, value: undefined } : result;
 }
+
+/** What the donor calls the levels of the results chain (only the words shown change). */
+export async function setFrameworkVocabularyAction(projectId: string, vocabulary: { document: string; levels: Record<"GOAL" | "OUTCOME" | "OUTPUT" | "ACTIVITY", string> }): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/framework-vocabulary`, z.object({ ok: z.boolean() }), context.token, { method: "PUT", body: vocabulary });
+  return result.ok ? { ok: true, value: undefined } : result;
+}

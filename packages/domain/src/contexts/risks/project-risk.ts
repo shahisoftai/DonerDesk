@@ -58,6 +58,8 @@ export interface ProjectRiskProps {
   closedAt?: Date;
   /** The planned activity it affects, when raised from one. */
   plannedActivityId?: string;
+  /** The result it puts at risk, when raised against one. */
+  logframeItemId?: string;
   raisedById: string;
   reviewBy?: PlainDate;
 }
@@ -83,14 +85,14 @@ export class ProjectRisk extends Entity<string> {
     super(id, createdAt, updatedAt);
   }
 
-  static create(input: RiskFields & { id: string; tenantId: string; projectId: string; raisedById: string; plannedActivityId?: string; today: PlainDate }): Result<ProjectRisk> {
+  static create(input: RiskFields & { id: string; tenantId: string; projectId: string; raisedById: string; plannedActivityId?: string; logframeItemId?: string; today: PlainDate }): Result<ProjectRisk> {
     const valid = validate(input);
     if (!valid.ok) return valid;
     const reviewBy = reviewByFor(input.seriousness, input.today);
     return ok(new ProjectRisk(input.id, input.tenantId, {
       projectId: input.projectId, kind: input.kind, title: input.title.trim(), seriousness: input.seriousness,
       ...(input.ownerId ? { ownerId: input.ownerId } : {}), action: input.action.trim(), status: "OPEN",
-      ...(input.plannedActivityId ? { plannedActivityId: input.plannedActivityId } : {}), raisedById: input.raisedById, ...(reviewBy ? { reviewBy } : {}),
+      ...(input.plannedActivityId ? { plannedActivityId: input.plannedActivityId } : {}), ...(input.logframeItemId ? { logframeItemId: input.logframeItemId } : {}), raisedById: input.raisedById, ...(reviewBy ? { reviewBy } : {}),
     }));
   }
 

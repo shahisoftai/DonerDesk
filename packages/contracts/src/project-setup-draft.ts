@@ -33,7 +33,7 @@ const ReportRuleSchema = z.object({
 });
 
 export const SetupOperationSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("SET_START"), patch: z.object({ donor: text(200), sector: text(40), country: text(100), packId: text(80) }).partial().strict() }),
+  z.object({ kind: z.literal("SET_START"), patch: z.object({ donor: text(200), sector: text(40), country: text(100), packId: text(80), wording: text(20) }).partial().strict() }),
   z.object({ kind: z.literal("ADD_PERSON"), person: PersonSchema }),
   z.object({ kind: z.literal("UPDATE_PERSON"), key, patch: PersonSchema.omit({ key: true }).partial().strict() }),
   z.object({ kind: z.literal("REMOVE_PERSON"), key }),
@@ -102,10 +102,11 @@ export const SetupResultOperationSchema = z.discriminatedUnion("kind", [
     }).partial().strict(),
   }),
   z.object({ kind: z.literal("EDIT_NODE_TITLE"), path: text(40).regex(/^logframe\.\d+$/), title: text(300).min(1) }),
+  z.object({ kind: z.literal("EDIT_NODE_LOGIC"), path: text(40).regex(/^logframe\.\d+$/), assumptions: text(4000).optional(), rationale: text(4000).optional() }),
   z.object({ kind: z.literal("BULK_INDICATORS"), frequency: text(120).optional(), disaggregation: z.array(text(60)).max(20).optional(), level: Level.optional() }),
 ]);
 export type SetupResultOperationInput = z.infer<typeof SetupResultOperationSchema>;
-export const SETUP_RESULT_OPERATION_KINDS = ["ADD_NODE", "ADD_INDICATOR", "EDIT_INDICATOR", "EDIT_NODE_TITLE", "BULK_INDICATORS", "ADD_FROM_LIBRARY", "ADD_FROM_SKELETON"] as const;
+export const SETUP_RESULT_OPERATION_KINDS = ["ADD_NODE", "ADD_INDICATOR", "EDIT_INDICATOR", "EDIT_NODE_TITLE", "EDIT_NODE_LOGIC", "BULK_INDICATORS", "ADD_FROM_LIBRARY", "ADD_FROM_SKELETON"] as const;
 
 /**
  * Choosing from the sector library (Phase 46): the request names library entries by id, and the server resolves them (the

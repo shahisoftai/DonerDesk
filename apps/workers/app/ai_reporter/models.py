@@ -86,6 +86,8 @@ class RequiredTableBrief(BaseModel):
 
 class ContextProject(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    # The donor's word for the outcome level when it is not "Outcome" ("Intermediate Result", "Specific objective").
+    outcomeWord: str | None = None
     title: str | None = None
     projectCode: str | None = None
     donorName: str | None = None

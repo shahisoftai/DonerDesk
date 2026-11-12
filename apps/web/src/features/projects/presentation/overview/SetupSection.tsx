@@ -7,7 +7,10 @@ import { OverviewSection } from "./overview-pieces";
  * The definitions the reports draw on: the logframe, the donor templates and the reporting profile.
  * The things a report cannot be written without, in one place.
  */
-export function SetupSection({ setup, projectId }: { setup: SetupData; projectId: string }) {
+import { isDefaultVocabulary, levelName, type FrameworkVocabulary } from "@donordesk/domain/contexts/logframe/framework-vocabulary.js";
+
+export function SetupSection({ setup, projectId, vocabulary }: { setup: SetupData; projectId: string; /** The donor's words for the levels; absent = the default words. */ vocabulary?: FrameworkVocabulary | undefined }) {
+  const donorWords = vocabulary && !isDefaultVocabulary(vocabulary);
   return (
     <OverviewSection kicker="Setup" title="Definitions the report draws on">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -15,7 +18,10 @@ export function SetupSection({ setup, projectId }: { setup: SetupData; projectId
           <h3 className="text-[13.5px] font-semibold">Logframe</h3>
           <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
             {setup.logframe
-              ? `${countOf(setup.logframe.outcomes, "outcome", "outcomes")} · ${countOf(setup.logframe.outputs, "output", "outputs")} · ${countOf(setup.logframe.indicators, "indicator", "indicators")}`
+              ? donorWords
+                // Donor words are not pluralised (the rule differs by language): the count follows the word.
+                ? `${levelName("OUTCOME", vocabulary)}: ${setup.logframe.outcomes} · ${levelName("OUTPUT", vocabulary)}: ${setup.logframe.outputs} · ${countOf(setup.logframe.indicators, "indicator", "indicators")}`
+                : `${countOf(setup.logframe.outcomes, "outcome", "outcomes")} · ${countOf(setup.logframe.outputs, "output", "outputs")} · ${countOf(setup.logframe.indicators, "indicator", "indicators")}`
               : "Not available"}
           </p>
         </Link>

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { archiveIndicatorAction, moveIndicatorAction, updateIndicatorAction } from "@/lib/actions/indicators";
 import { Field } from "@/components/ui/Field";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -89,6 +90,7 @@ export interface OtherIndicator { id: string; code: string; name: string; type: 
 
 export function IndicatorManageCard({ indicator, items, others = [] }: { indicator: ManagedIndicator; items: OutlineSource[]; others?: OtherIndicator[] }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [name, setName] = useState(indicator.name);
   const [code, setCode] = useState(indicator.code);
   const [baseline, setBaseline] = useState(indicator.baseline);
@@ -105,6 +107,7 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
   const [busy, setBusy] = useState<"save" | "move" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [reason, setReason] = useState("");
 
   async function save() {
     if (busy) return;
@@ -128,6 +131,7 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
       targetSchedule: parsedSchedule.schedule,
       countedElsewhere,
       formula: calc,
+      reason: reason.trim() || undefined,
     });
     setBusy(null);
     if (!result.ok) return setMessage({ tone: "error", text: result.error.message });
@@ -208,6 +212,9 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
       </Field>
       <TargetBreakdownsEditor rows={breakdowns} onChange={setBreakdowns} disabled={busy !== null} />
       <FormulaEditor value={calc} onChange={setCalc} others={others} disabled={busy !== null} />
+      <Field label={t("framework.reason.label")} htmlFor="manage-reason" hint={t("framework.reason.hint")}>
+        <Input id="manage-reason" value={reason} maxLength={500} onChange={(e) => setReason(e.target.value)} disabled={busy !== null} />
+      </Field>
       <div><Button onClick={() => void save()} pending={busy === "save"} disabled={busy !== null || !name.trim() || !code.trim()}>Save changes</Button></div>
 
       <div className="border-t border-slate-200 pt-4 dark:border-white/10">
