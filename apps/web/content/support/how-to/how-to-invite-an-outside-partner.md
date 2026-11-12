@@ -2,7 +2,7 @@
 
 An **outside partner** is someone from another organisation who works on one or more of your projects, for example an implementing partner that reports activities. They see only the projects you choose.
 
-Only an Admin or a Project Manager can invite people.
+Only an **Admin** can invite people.
 
 ## Invite a partner
 
@@ -29,4 +29,4 @@ On the Team page, change the person's role or remove them. Their access ends at 
 
 - A partner's screens are the same as everyone else's; a shorter menu for partners is not available yet.
 - Partners are not set to expire automatically.
-- Two-step sign-in is not available to outside partners yet. Protect the partner's password and remove their access when the work ends.
+- Outside partners can turn on two-step sign-in like everyone else (they have a **Security** page), and it counts when you [require it for the whole organisation](/support/how-to/require-two-step-sign-in). Remove their access when the work ends.
