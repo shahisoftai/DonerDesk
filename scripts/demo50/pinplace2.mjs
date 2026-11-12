@@ -1,0 +1,13 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("pinplace2");
+await page.goto(BASE + "/settings/places", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(5000);
+await page.getByPlaceholder("Search places").fill("Jumla"); await page.waitForTimeout(1500);
+const row = page.locator("div,li", { hasText: "District or locality" }).filter({ hasText: /^Jumla/ }).filter({ has: page.getByRole("button", { name: "Pin", exact: true }) }).last();
+await row.getByRole("button", { name: "Pin", exact: true }).click(); await page.waitForTimeout(4500);
+console.log("editor:", await page.getByText(/^Pin for /).last().innerText());
+await page.getByLabel("Latitude").last().fill("29.27"); await page.getByLabel("Longitude").last().fill("82.18");
+await page.getByRole("button", { name: "Set", exact: true }).click(); await page.waitForTimeout(1500);
+await page.getByRole("button", { name: "Save", exact: true }).last().click(); await page.waitForTimeout(3000);
+await page.getByPlaceholder("Search places").fill("Jumla"); await page.waitForTimeout(1500);
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").match(/\d+ of \d+ places[^]{0,200}/)?.[0]);
+await browser.close(); process.exit(0);

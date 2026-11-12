@@ -5,6 +5,8 @@ import { cookies } from "next/headers";
 import { safeRedirect } from "@/lib/shared/navigation";
 import { AuthService, AuthFormError, type SignupInput } from "@/features/auth/application/auth-service";
 import type { AuthFormState } from "@/features/auth/application/auth-schemas";
+import { gatewayRequest } from "@/lib/server/api-gateway";
+import { LegalConsentSchema } from "@/lib/server/schemas";
 
 const service = new AuthService();
 
@@ -21,18 +23,20 @@ export async function loginAction(
   const challenge = String(form.get("challenge") ?? "");
   const code = String(form.get("code") ?? "").trim();
 
+  let landing = "";
   // Step two: the person answered the code prompt.
   if (challenge) {
     if (!code) return { error: "Enter the code from your authenticator app.", fields: { code: ["Required"] }, mfaChallenge: challenge };
     try {
       const { token } = await service.loginMfa(challenge, code);
       await setSessionCookie(token);
+      landing = await landingAfterSignIn(token, next);
     } catch (err) {
       // A wrong code keeps the prompt open; an expired or refused sign-in starts again from the password.
       if (err instanceof AuthFormError) return { ...err.state, mfaChallenge: /too long|start again/i.test(err.state.error ?? "") ? undefined : challenge };
       return { error: "Unable to sign you in. Please try again." };
     }
-    redirect(safeRedirect(next));
+    redirect(landing);
   }
 
   if (!email || !password) {
@@ -42,11 +46,12 @@ export async function loginAction(
     const result = await service.login(email, password);
     if ("mfaChallenge" in result) return { error: null, mfaChallenge: result.mfaChallenge };
     await setSessionCookie(result.token);
+    landing = await landingAfterSignIn(result.token, next);
   } catch (err) {
     if (err instanceof AuthFormError) return err.state;
     return { error: "Unable to sign you in. Please try again." };
   }
-  redirect(safeRedirect(next));
+  redirect(landing);
 }
 
 export async function signupAction(
@@ -110,7 +115,20 @@ export async function signupAction(
   if ((requestedPlan === "TEAM" || requestedPlan === "GROWTH") && !trialGranted) {
     redirect(`/checkout?plan=${requestedPlan.toLowerCase()}`);
   }
-  redirect("/dashboard");
+  // A new account has not accepted the terms yet: land on onboarding directly (see landingAfterSignIn).
+  redirect("/onboarding");
+}
+
+/**
+ * Where a person lands after signing in. A redirect from a server action is streamed through an internal
+ * request; if the portal layout's terms gate then redirects again (e.g. /dashboard -> /onboarding), the
+ * client receives a half-applied page that renders blank until a hard refresh. So the gate is applied
+ * here, before the first redirect. A failed check falls back to the asked-for page (the layout still gates).
+ */
+async function landingAfterSignIn(token: string, next: string): Promise<string> {
+  const consent = await gatewayRequest("/v1/legal/consent", LegalConsentSchema, token);
+  if (consent.ok && !consent.value.accepted) return "/onboarding";
+  return safeRedirect(next);
 }
 
 /** Only allowlist values survive; anything else becomes STARTER. */

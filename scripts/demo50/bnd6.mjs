@@ -1,0 +1,12 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("bnd6");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/activities", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+await page.getByRole("button", { name: "Map", exact: true }).click(); await page.waitForTimeout(8000);
+console.log("map note:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/(custom|Custom|uploaded|boundaries)[^/]{0,120}/g)?.slice(0,3));
+await page.screenshot({ path: S + "/bnd6.png" });
+page.on("dialog", d => d.accept());
+await page.goto(BASE + "/settings", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4500);
+await page.getByRole("button", { name: "Remove the uploaded boundaries" }).click(); await page.waitForTimeout(3500);
+console.log("AFTER REMOVE:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/No custom boundaries[^/]*/)?.[0]);
+await browser.close(); process.exit(0);

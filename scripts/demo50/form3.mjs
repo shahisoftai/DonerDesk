@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("form3");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/forms", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+await page.getByText("ZZ TEST water points checked").first().click(); await page.waitForTimeout(3000);
+const base = new URL(page.url()).pathname; console.log("FORM:", base.replace(/[0-9a-f-]{36}/g,":id"));
+page.on("dialog", d => d.accept());
+await page.getByRole("button", { name: "Publish" }).click(); await page.waitForTimeout(3500);
+console.log("PUBLISHED:", (await page.locator("main").innerText()).replace(/\n+/g," / ").replace(/^.*Templates \/ Team \/ Settings/,"").slice(0,700));
+console.log("LINKS:", (await page.locator("main a:visible, main button:visible").allInnerTexts()).join(" | ").slice(0,500));
+await browser.close(); process.exit(0);

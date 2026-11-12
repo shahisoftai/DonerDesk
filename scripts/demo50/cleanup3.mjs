@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("cleanup3");
+await page.goto(BASE + "/projects/14d6f13d-34ee-47ef-9d64-d16595e3e690/data", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(5000);
+await page.getByRole("button", { name: "List", exact: true }).click().catch(()=>{}); await page.waitForTimeout(2500);
+await page.getByPlaceholder(/Code or name/i).fill("OP1-1a").catch(()=>{}); await page.waitForTimeout(2000);
+const rows = await page.locator("tr", { hasText: "OP1-1a" }).allInnerTexts();
+console.log(rows.map((r) => r.replace(/\s+/g, " ").slice(0, 200)).join("\n"));
+await page.screenshot({ path: S + "/cleanup3.png" });
+await browser.close(); process.exit(0);

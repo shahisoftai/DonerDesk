@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("cleanup1");
+await page.goto(BASE + "/projects/14d6f13d-34ee-47ef-9d64-d16595e3e690/reports/e8df4e42-7295-4f43-b34b-1018f2b4275f/inputs?tab=indicators", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(7000);
+await page.getByRole("button", { name: "Form", exact: true }).click(); await page.waitForTimeout(3000);
+const row = page.locator("tr", { hasText: "OP1-1a" }).first();
+console.log("ROW:", (await row.innerText()).replace(/\s+/g," ").slice(0, 400));
+console.log("INPUT VALUES:", await row.locator("input, textarea").evaluateAll((els) => els.map((e) => e.value)));
+await row.scrollIntoViewIfNeeded();
+await page.screenshot({ path: S + "/cleanup1.png" });
+await browser.close(); process.exit(0);

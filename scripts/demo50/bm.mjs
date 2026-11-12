@@ -1,0 +1,20 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("bm");
+await page.goto(BASE + "/team", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+const btn = page.getByRole("button", { name: /Bookmark/ }).first();
+console.log("before:", (await btn.innerText()).trim());
+await btn.click(); await page.waitForTimeout(1800);
+console.log("after click:", (await btn.innerText()).trim());
+console.log("toast:", (await page.locator("[role=status],[role=alert]").allInnerTexts()).join(" | ").slice(0,200));
+await page.goto(BASE + "/dashboard", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(5000);
+const body = await page.locator("main").innerText();
+const i = body.search(/BOOKMARKS|Bookmarks/); console.log("home bookmarks:", i >= 0 ? body.slice(i, i + 300).replace(/\n+/g," / ") : "none");
+await page.screenshot({ path: S + "/bm_home.png" });
+// remove it again
+await page.goto(BASE + "/team", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+const b2 = page.getByRole("button", { name: /Bookmark/ }).first();
+console.log("on team page now:", (await b2.innerText()).trim());
+await b2.click(); await page.waitForTimeout(1500);
+console.log("after remove:", (await b2.innerText()).trim());
+await browser.close(); process.exit(0);

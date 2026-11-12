@@ -1,0 +1,14 @@
+import { open, tabs, todo, shot } from "./wz.mjs";
+const { page, browser } = await open("wz2");
+const ins = page.locator("main input[type=text], main input:not([type])");
+await ins.nth(0).fill("ZZ TEST Donor"); await ins.nth(1).fill("Kenya"); await page.waitForTimeout(1200);
+console.log("country suggestions:", await page.locator("[role=listbox] [role=option], datalist option, ul li").allInnerTexts().then(a=>a.slice(0,5)));
+await ins.nth(1).press("Tab");
+await page.locator("main select").first().selectOption({ label: "Water, sanitation and hygiene" });
+await page.waitForTimeout(1500);
+console.log(await tabs(page));
+await page.getByRole("button", { name: /Use the starting answers/ }).click(); await page.waitForTimeout(5000);
+console.log("AFTER STARTING ANSWERS:", await tabs(page));
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").slice(0,1200));
+await shot(page, "wz2");
+await browser.close(); process.exit(0);

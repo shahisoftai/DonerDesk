@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("cleanup4");
+await page.goto(BASE + "/projects/14d6f13d-34ee-47ef-9d64-d16595e3e690/reports/e8df4e42-7295-4f43-b34b-1018f2b4275f/inputs?tab=indicators", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(7000);
+await page.getByRole("button", { name: "Sheet", exact: true }).click(); await page.waitForTimeout(3000);
+const rows = await page.locator("tr, [role=row]", { hasText: "OP1-1a" }).allInnerTexts();
+console.log(rows.map((r)=>r.replace(/\s+/g," ").slice(0,250)).join("\n---\n"));
+const cells = await page.locator("[role=row]", { hasText: "OP1-1a" }).first().locator("[role=gridcell], td").allInnerTexts().catch(()=>[]);
+console.log("CELLS:", cells.map(c=>c.trim()).join(" | "));
+console.log("HEADER INFO:", (await page.locator("main").innerText()).match(/\d+ values still being entered[^\n]*/)?.[0]);
+await browser.close(); process.exit(0);

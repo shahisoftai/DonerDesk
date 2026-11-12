@@ -1,0 +1,17 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("mapctl");
+await page.goto(BASE + "/visuals/maps/14d6f13d-34ee-47ef-9d64-d16595e3e690", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(11000);
+const g = page.locator("label", { hasText: /^Ground/ }).locator("select"); console.log("ground options:", await g.locator("option").allInnerTexts());
+await g.selectOption({ label: "None (boundaries only)" }); await page.waitForTimeout(3000); console.log("ground none ->", await g.inputValue());
+await g.selectOption({ label: "Streets and terrain" }); await page.waitForTimeout(2000);
+await page.getByLabel("Compare the latest periods side by side").check(); await page.waitForTimeout(5000);
+console.log("compare canvases:", await page.locator("canvas").count());
+await page.getByLabel("Compare the latest periods side by side").uncheck(); await page.waitForTimeout(2000);
+const sl = page.locator("input[type=range]").first(); console.log("slider max:", await sl.getAttribute("max"));
+await sl.fill("1"); await page.waitForTimeout(4000);
+console.log("period label:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/(Play|Pause) \/ [^/]*\/ [^/]*/)?.[0]);
+await page.getByRole("button", { name: "View as a table" }).click(); await page.waitForTimeout(2500);
+console.log("TABLE:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/(PLACE|Place)[^]{0,260}/)?.[0]);
+await page.screenshot({ path: S + "/mapctl.png" });
+await browser.close(); process.exit(0);

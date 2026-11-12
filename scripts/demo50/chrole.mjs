@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("chrole");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/team", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+const row = page.locator("tr", { hasText: "ZZ Test Field" });
+await row.getByRole("button", { name: "Change role" }).click(); await page.waitForTimeout(1200);
+console.log("DIALOG:", (await page.locator("[role=dialog], tr:has-text('ZZ Test Field')").last().innerText()).replace(/\n+/g," / ").slice(0,600));
+const sel = page.locator("[role=dialog] select, tr:has-text('ZZ Test Field') select").first();
+await sel.selectOption({ label: "Field Officer" }); await page.waitForTimeout(1000);
+console.log("AFTER SELECT:", (await page.locator("[role=dialog], tr:has-text('ZZ Test Field')").last().innerText()).replace(/\n+/g," / ").slice(0,700));
+await page.screenshot({ path: "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad/chrole.png" });
+await browser.close(); process.exit(0);

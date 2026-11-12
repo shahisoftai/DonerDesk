@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("exp");
+await page.goto(BASE + "/projects/14d6f13d-34ee-47ef-9d64-d16595e3e690/reports/e8df4e42-7295-4f43-b34b-1018f2b4275f", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(6000);
+await page.getByRole("button", { name: /More actions/ }).click(); await page.waitForTimeout(700);
+console.log("MENU:", (await page.locator("[role=menu]").innerText()).replace(/\n+/g," | "));
+await page.getByText("Export center").first().click(); await page.waitForTimeout(4500);
+console.log("URL", new URL(page.url()).pathname.replace(/[0-9a-f-]{36}/g,":id"));
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").replace(/^.*Templates \/ Team \/ Settings/,"").slice(0,2200));
+await page.screenshot({ path: S + "/exp.png" });
+await browser.close(); process.exit(0);

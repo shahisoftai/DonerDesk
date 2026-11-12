@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("risk");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4500);
+await page.getByRole("button", { name: /Raise a problem/ }).first().click(); await page.waitForTimeout(1200);
+const d = page.locator("[role=dialog], form").last();
+console.log((await d.innerText()).replace(/\n+/g," / ").slice(0,1200));
+await page.keyboard.press("Escape");
+const body = await page.locator("main").innerText();
+const i = body.search(/Problems|Risks/); console.log("\nOVERVIEW RISK SECTION:", body.slice(i, i+500).replace(/\n+/g," / "));
+await browser.close(); process.exit(0);

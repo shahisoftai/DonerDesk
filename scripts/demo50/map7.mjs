@@ -1,0 +1,15 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("map7");
+await page.goto(BASE + "/settings/places", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(6000);
+const form = page.locator("div, section", { has: page.getByRole("button", { name: "Add place" }).first() }).filter({ hasText: "What is it?" }).last();
+const inp = form.locator("input:visible, select:visible");
+await inp.nth(0).fill("ZZ TEST pin camp");
+await inp.nth(1).selectOption({ label: "Community or site" });
+const ins = inp.nth(2); await ins.selectOption({ label: (await ins.locator("option").allInnerTexts()).find(o=>/^Ainabkoi/.test(o)) });
+await inp.nth(3).fill("0.2"); await inp.nth(4).fill("35.1"); await page.waitForTimeout(800);
+console.log("form text near pin:", (await form.innerText()).replace(/\n+/g," / ").split("Inside")[1]?.slice(-500));
+await form.getByRole("button", { name: "Add place" }).last().click(); await page.waitForTimeout(3500);
+await page.getByPlaceholder("Search places").fill("ZZ TEST"); await page.waitForTimeout(1500);
+console.log("LIST:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/places \/[^]{0,300}/)?.[0]);
+console.log("alerts:", (await page.locator("[role=alert],[role=status]").allInnerTexts()).join("|"));
+await browser.close(); process.exit(0);

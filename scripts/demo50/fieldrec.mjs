@@ -1,0 +1,17 @@
+import { chromium } from "../demo-ui/lib.mjs";
+const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 1300, height: 900 } })).newPage();
+await p.goto("https://donordesk.online/login"); await p.getByLabel(/email/i).fill("zz-field@example.invalid"); await p.getByLabel(/password/i).first().fill("ZzTest-Fld-2026-ok"); await p.getByRole("button", { name: /^sign in$/i }).click();
+await p.waitForURL((u) => !/login/.test(u.pathname), { timeout: 40000 }); await p.waitForTimeout(3000);
+await p.goto("https://donordesk.online/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed", { waitUntil: "domcontentloaded" }); await p.waitForTimeout(3500);
+console.log("tabs:", (await p.locator("main a").evaluateAll(a=>[...new Set(a.map(x=>x.innerText.trim()))].filter(s=>s&&s.length<20))).join(" | "));
+await p.getByRole("button", { name: /^\+?\s*Record/ }).first().click(); await p.waitForTimeout(1200);
+const d = p.locator("[role=dialog], aside").last(); console.log("KINDS:", (await d.innerText()).replace(/\n+/g," / ").split("What are you recording?")[1]?.slice(0,200));
+await d.getByRole("button", { name: /^Something we did/ }).click(); await p.waitForTimeout(1200);
+await d.getByLabel("Activity title").fill("ZZ TEST hygiene session (field check)");
+await d.getByRole("button", { name: "Pick a day" }).click(); await p.waitForTimeout(500);
+await d.getByLabel("Pick a day", { exact: true }).fill("2026-07-15"); await p.waitForTimeout(1200);
+console.log("period msg:", (await d.innerText()).match(/Counts toward[^\n]*|not in a reporting period[^\n]*|outside[^\n]*/)?.[0]);
+await d.getByLabel("Location").fill("Gode"); await d.getByLabel("What happened?").fill("Held a hygiene session with 40 women and 12 men. Test record.");
+await d.getByRole("button", { name: "Save" }).click(); await p.waitForTimeout(4000);
+console.log("AFTER:", (await d.innerText().catch(()=>"closed")).replace(/\n+/g," / ").slice(-300));
+await b.close();

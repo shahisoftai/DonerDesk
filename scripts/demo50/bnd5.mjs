@@ -1,0 +1,13 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("bnd5");
+page.on("dialog", d => d.accept());
+await page.goto(BASE + "/settings", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4500);
+const card = page.locator("[aria-labelledby=boundary-layers-title]");
+await card.getByRole("button", { name: "Remove" }).click(); await page.waitForTimeout(3000);
+console.log("COUNTRY CARD AFTER REMOVE:", (await card.innerText()).replace(/\n+/g," / ").slice(0,200));
+const custom = page.locator("section, div[class*=card]", { hasText: "Custom map boundaries" }).filter({ has: page.locator("input[type=file]") }).last();
+await custom.locator("input[type=file]").setInputFiles(S + "/zz-bhutan.geojson"); await page.waitForTimeout(1000);
+await custom.getByRole("button", { name: "Upload boundaries" }).click(); await page.waitForTimeout(4500);
+console.log("CUSTOM AFTER UPLOAD:", (await custom.innerText()).replace(/\n+/g," / ").slice(0,500));
+await browser.close(); process.exit(0);

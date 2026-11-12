@@ -1,0 +1,16 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("dash1");
+await page.goto(BASE + "/visuals/new", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+await page.getByRole("button", { name: "Show how a project is progressing" }).click(); await page.waitForTimeout(1200);
+await page.locator("label", { hasText: /^Results at a glance/ }).first().click(); await page.waitForTimeout(800);
+await page.getByLabel("Name", { exact: true }).fill("ZZ TEST results at a glance");
+await page.getByLabel("Who is it for").selectOption({ label: "Only me" }).catch(async()=>{ await page.locator("label",{hasText:"Only me"}).click(); });
+const proj = page.getByLabel("Project", { exact: true }); await proj.selectOption({ label: (await proj.locator("option").allInnerTexts()).find(o=>/DEMO-14/.test(o)) }); await page.waitForTimeout(1500);
+const ind = page.getByLabel("First indicator"); await ind.selectOption({ index: 5 }).catch(()=>{});
+console.log("indicator selects:", await page.locator("select").evaluateAll(s=>s.map(x=>[x.getAttribute("aria-label")||x.closest("label")?.innerText.slice(0,20), x.value.slice(0,20)])).then(a=>a.slice(0,8)));
+await page.getByRole("button", { name: "Make it" }).click(); await page.waitForTimeout(8000);
+console.log("URL", new URL(page.url()).pathname);
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").slice(0,900));
+await page.screenshot({ path: S + "/dash1.png" });
+await browser.close(); process.exit(0);

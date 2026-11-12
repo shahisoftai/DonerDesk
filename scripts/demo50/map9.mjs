@@ -1,0 +1,14 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("map9");
+await page.goto(BASE + "/settings/places", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(6000);
+await page.getByPlaceholder("Search places").fill("ZZ TEST"); await page.waitForTimeout(2000);
+await page.getByRole("button", { name: "Pin", exact: true }).first().click(); await page.waitForTimeout(5000);
+const ed = page.locator("div", { hasText: /^Pin for ZZ TEST pin camp/ }).last();
+await page.getByLabel("Latitude").last().fill("0.2"); await page.getByLabel("Longitude").last().fill("35.1");
+await page.getByRole("button", { name: "Set", exact: true }).click(); await page.waitForTimeout(2500);
+console.log("after Set:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/(No pin yet|Pin at|Pinned)[^/]*/)?.[0]);
+await page.getByLabel(/This place is a facility/).check();
+await page.getByRole("button", { name: "Save", exact: true }).last().click(); await page.waitForTimeout(3500);
+await page.getByPlaceholder("Search places").fill("ZZ TEST"); await page.waitForTimeout(1500);
+console.log("LIST:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/\d+ of \d+ places[^]{0,160}/)?.[0]);
+await browser.close(); process.exit(0);

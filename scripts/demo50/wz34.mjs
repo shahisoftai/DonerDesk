@@ -1,0 +1,11 @@
+import { open, tabs, todo, shot } from "./wz.mjs";
+const { page, browser } = await open("wz34");
+await page.getByRole("button", { name: /^10\. / }).click(); await page.waitForTimeout(2500);
+await page.getByRole("button", { name: /Confirm all 2/ }).click(); await page.waitForTimeout(2500);
+console.log("after confirm:", await tabs(page)); console.log((await todo(page))?.slice(0,300));
+const nu = page.locator("main label").filter({ hasText: "Not used for this project" }); console.log("not-used labels", await nu.count());
+await nu.first().click(); await page.waitForTimeout(2500);
+console.log(await tabs(page)); console.log((await todo(page))?.slice(0,300));
+const so = page.getByRole("button", { name: "Sign off" }); console.log("sign off enabled:", await so.isEnabled());
+await shot(page, "wz34");
+await browser.close(); process.exit(0);

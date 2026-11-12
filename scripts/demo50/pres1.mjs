@@ -1,0 +1,16 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("pres1");
+await page.goto(BASE + "/visuals/fee3d075-90d6-4c46-b028-09e0d812852a", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(8000);
+console.log("pin-ish buttons:", await page.locator("button:visible, summary:visible").evaluateAll(s=>s.map(x=>x.innerText.trim().replace(/\n/g," ")).filter(t=>/pin|Pin|Home|star|Feature/.test(t))));
+const more = await page.locator("summary", { hasText: /^More/ }).first(); await more.click(); await page.waitForTimeout(500);
+console.log("more has pin:", /Pin/.test(await page.locator("details[open]").last().innerText()));
+await page.keyboard.press("Escape");
+await page.getByRole("button", { name: "Present" }).click(); await page.waitForTimeout(3500);
+console.log("PRESENT:", (await page.locator("body").innerText()).replace(/\n+/g," / ").slice(0,300));
+console.log("fullscreen:", await page.evaluate(()=>!!document.fullscreenElement));
+await page.keyboard.press("Escape"); await page.waitForTimeout(1000);
+await page.goto(BASE + "/visuals/tv", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(5000);
+console.log("TV:", (await page.locator("main").innerText()).replace(/\n+/g," / ").slice(0,500));
+await page.goto(BASE + "/visuals", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(5000);
+const card = page.locator("a, article, li, div", { hasText: "ZZ TEST results at a glance" }).last(); console.log("card text:", (await card.innerText()).replace(/\n+/g," / ").slice(0,200));
+await browser.close(); process.exit(0);

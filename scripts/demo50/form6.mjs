@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("form6");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/forms", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+await page.getByText("ZZ TEST water points checked").first().click(); await page.waitForTimeout(3000);
+await page.getByText(/^Records/).first().click(); await page.waitForTimeout(2500);
+await page.getByRole("button", { name: "Accept" }).first().click(); await page.waitForTimeout(2500);
+await page.getByText("What it adds up to", { exact: true }).first().click(); await page.waitForTimeout(3500);
+console.log("ADDS UP:", (await page.locator("main").innerText()).replace(/\n+/g," / ").replace(/^.*SurveyCTO/,"").slice(0,900));
+console.log("BTNS:", (await page.locator("main button:visible, main select:visible").allInnerTexts()).join(" | "));
+await browser.close(); process.exit(0);

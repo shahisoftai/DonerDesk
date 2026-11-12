@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("pub3");
+await page.goto(BASE + "/visuals/fee3d075-90d6-4c46-b028-09e0d812852a", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(8000);
+await page.locator("summary", { hasText: /^Share and publish/ }).first().click(); await page.waitForTimeout(1000);
+const d = page.locator("details[open]").last();
+await d.getByRole("button", { name: "Keep a PDF copy" }).click(); await page.waitForTimeout(15000);
+const t = (await d.innerText()).replace(/\n+/g," / "); const i=t.indexOf("Published copies"); console.log(t.slice(i, i+500));
+console.log("links:", await d.locator("a:visible").evaluateAll(a=>a.map(x=>x.innerText+" -> "+x.getAttribute("href")).slice(0,4)));
+console.log("alerts:", (await page.locator("[role=alert],[role=status]").allInnerTexts()).join("|").slice(0,300));
+await browser.close(); process.exit(0);

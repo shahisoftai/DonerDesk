@@ -1,0 +1,13 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("flow1");
+await page.goto(BASE + "/visuals/maps/14d6f13d-34ee-47ef-9d64-d16595e3e690", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(11000);
+const sec = page.locator("section, div", { hasText: "Movements between places" }).filter({ has: page.getByRole("button", { name: "Add movement" }) }).last();
+await sec.scrollIntoViewIfNeeded();
+console.log("FIELDS:", await sec.locator("input:visible, select:visible").evaluateAll(s=>s.map(x=>[x.tagName,x.type,x.getAttribute("aria-label")||x.placeholder||(x.closest("label")?.innerText||"").split("\n")[0].slice(0,25), x.tagName==="SELECT"?x.options.length+" opts":""])));
+const sels = sec.locator("select:visible"); const pick = async (i, re) => sels.nth(i).selectOption({ label: (await sels.nth(i).locator("option").allInnerTexts()).find(o=>re.test(o)) });
+await pick(0, /^Humla ›/); await pick(1, /^Jumla ›/);
+const ins = sec.locator("input:visible"); const n = await ins.count();
+await ins.nth(0).fill("ZZ TEST therapeutic food"); await ins.nth(1).fill("40"); await ins.nth(2).fill("cartons");
+await sec.getByRole("button", { name: "Add movement" }).click(); await page.waitForTimeout(3500);
+console.log("AFTER:", (await sec.innerText()).replace(/\n+/g," / ").replace(/Achham[^]*?Add movement/,"…").slice(-500));
+await browser.close(); process.exit(0);

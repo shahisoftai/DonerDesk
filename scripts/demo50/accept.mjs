@@ -1,0 +1,14 @@
+import fs from "node:fs";
+import { chromium } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const [linkFile, name, pw] = process.argv.slice(2);
+const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 1200, height: 900 } })).newPage();
+await p.goto("https://donordesk.online" + fs.readFileSync(`${S}/${linkFile}`, "utf8").trim(), { waitUntil: "domcontentloaded" }); await p.waitForTimeout(3000);
+console.log("PAGE:", (await p.locator("body").innerText()).replace(/\n+/g," / ").slice(0,700));
+console.log("fields:", await p.locator("input:visible").evaluateAll(s=>s.map(x=>[x.type,x.name||x.id,x.placeholder])));
+await p.locator("input[name=name]").fill(name);
+const pws = p.locator("input[type=password]"); for (let i=0;i<await pws.count();i++) await pws.nth(i).fill(pw);
+const cb = p.locator("input[type=checkbox]"); for (let i=0;i<await cb.count();i++) await cb.nth(i).check();
+await p.getByRole("button", { name: /Accept invitation/ }).click(); await p.waitForTimeout(5000);
+console.log("AFTER:", new URL(p.url()).pathname, "|", (await p.locator("body").innerText()).replace(/\n+/g," / ").slice(0,400));
+await b.close();

@@ -1,0 +1,11 @@
+import { chromium } from "../demo-ui/lib.mjs";
+const b = await chromium.connectOverCDP("http://localhost:9360");
+const ctx = await b.newContext({ viewport: { width: 1400, height: 900 } });
+const p = await ctx.newPage();
+p.on("console", (m) => { if (["error","warning"].includes(m.type())) console.log("C", m.type(), m.text().slice(0,200)); });
+p.on("pageerror", (e) => console.log("PE", String(e).slice(0,300)));
+p.on("requestfailed", (r) => console.log("RF", r.url().slice(0,120), r.failure()?.errorText));
+await p.goto(process.argv[2], { waitUntil: "load" });
+await p.waitForTimeout(15000);
+console.log(await p.evaluate(()=>[...document.querySelectorAll("canvas")].map(c=>c.className+":"+c.width+"x"+c.height).join("|")), await p.locator(".maplibregl-map").count(), (await p.locator("body").innerText()).slice(0,300));
+await ctx.close(); process.exit(0);

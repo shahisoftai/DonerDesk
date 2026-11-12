@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("newvis2");
+await page.goto(BASE + "/visuals/new", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+await page.getByRole("button", { name: "Show how a project is progressing" }).click(); await page.waitForTimeout(1500);
+const f = await page.evaluate(() => { const m=[...document.querySelectorAll("button")].find(b=>/Make it/.test(b.innerText)); const form=m.closest("form")||m.parentElement.parentElement; return form.innerText.replace(/\n+/g," / ").slice(-900); });
+console.log("TAIL:", f);
+await page.getByRole("button", { name: /Make it/ }).scrollIntoViewIfNeeded();
+await page.screenshot({ path: S + "/newvis2.png" });
+await browser.close(); process.exit(0);

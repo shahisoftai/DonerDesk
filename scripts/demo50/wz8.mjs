@@ -1,0 +1,11 @@
+import { open, tabs, shot } from "./wz.mjs";
+const { page, browser } = await open("wz8");
+await page.getByRole("button", { name: /^4\. / }).click(); await page.waitForTimeout(1500);
+await page.getByRole("button", { name: /Choose from the library/ }).click(); await page.waitForTimeout(2000);
+await page.getByRole("button", { name: "Select the recommended ones" }).click(); await page.waitForTimeout(1500);
+const add = page.getByRole("button", { name: /Add selected: \d+/ }); console.log("add label:", await add.innerText());
+await add.click(); await page.waitForTimeout(6000);
+console.log(await tabs(page));
+const t = (await page.locator("main").innerText()).replace(/\n+/g," / "); const i = t.indexOf("4 / 10"); console.log(t.slice(i, i+1600));
+await shot(page, "wz8");
+await browser.close(); process.exit(0);

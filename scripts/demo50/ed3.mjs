@@ -1,0 +1,12 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("ed3");
+await page.goto(BASE + "/visuals/fee3d075-90d6-4c46-b028-09e0d812852a", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(8000);
+await page.getByRole("button", { name: "Edit", exact: true }).click(); await page.waitForTimeout(3500);
+await page.getByRole("button", { name: "Add", exact: true }).click(); await page.waitForTimeout(1500);
+const drawer = page.locator("aside, [role=complementary]").last(); const text = drawer.getByText("Text", { exact: true }).first(); await text.click(); await page.keyboard.press("Enter"); await page.waitForTimeout(2500);
+console.log("layers now:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/Layers[^]{0,400}/)?.[0]);
+console.log("EDIT PANEL:", (await page.locator("aside, [role=complementary]").last().innerText().catch(()=>"")).replace(/\n+/g," / ").slice(0,700));
+await page.getByRole("button", { name: "Save", exact: true }).click(); await page.waitForTimeout(4000);
+console.log("saved?:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/(Saved|Not saved|Revision|saved)[^/]{0,60}/i)?.[0]);
+await browser.close(); process.exit(0);

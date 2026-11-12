@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("map4");
+await page.goto(BASE + "/settings/places", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(6000);
+const row = page.locator("li, tr, div", { hasText: /^Achham District Hospital SC/ }).filter({ has: page.getByRole("button", { name: "Change pin" }) }).first();
+await row.getByRole("button", { name: "Change pin" }).click(); await page.waitForTimeout(6000);
+console.log("canvas", await page.locator("canvas").count());
+const t = (await row.innerText().catch(()=>"")) ; console.log("ROW:", t.replace(/\n+/g," / ").slice(0,800));
+console.log("PINUI:", (await page.locator("main").innerText()).replace(/\n+/g," / ").match(/(Latitude|latitude)[^]{0,500}/)?.[0]);
+await page.screenshot({ path: S + "/map4.png" });
+await browser.close(); process.exit(0);

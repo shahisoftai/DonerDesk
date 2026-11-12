@@ -34,5 +34,14 @@ export const config = {
     "/notifications/:path*",
     "/audit/:path*",
     "/settings/:path*",
+    // Every other portal route: the portal layout's gates read x-pathname, which is empty without this.
+    "/dashboards/:path*",
+    "/downloads/:path*",
+    "/help/:path*",
+    "/more/:path*",
+    "/portfolio/:path*",
+    "/programmes/:path*",
+    "/visuals/:path*",
+    "/waiting/:path*",
   ],
 };

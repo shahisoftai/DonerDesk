@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("inf2");
+await page.goto(BASE + "/visuals/assets?project=cd291c72-ebc9-4f16-8633-b7c9007507ed", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(5000);
+await page.getByRole("button", { name: "New infographic" }).click(); await page.waitForTimeout(3000);
+await page.getByText("Flash update", { exact: true }).first().click(); await page.waitForTimeout(3500);
+console.log("AFTER PICK:", new URL(page.url()).pathname, "|", (await page.locator("main").innerText()).replace(/\n+/g," / ").slice(0,500));
+console.log("btns:", (await page.locator("main button:visible").allInnerTexts()).map(s=>s.replace(/\n/g," ")).filter(s=>s.length<40).slice(-12));
+await page.screenshot({ path: S + "/inf2.png" });
+await browser.close(); process.exit(0);

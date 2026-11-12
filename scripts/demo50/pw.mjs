@@ -1,0 +1,10 @@
+import { chromium } from "../demo-ui/lib.mjs";
+const b = await chromium.launch({ args: ["--enable-unsafe-swiftshader","--use-angle=swiftshader","--ignore-gpu-blocklist"] });
+const p = await (await b.newContext({ viewport: { width: 1400, height: 900 } })).newPage();
+p.on("pageerror", (e) => console.log("PE", String(e).slice(0,200)));
+const t0 = Date.now();
+await p.goto(process.argv[2], { waitUntil: "commit" });
+await p.locator("canvas.maplibregl-canvas").first().waitFor({ timeout: 80000 }).then(()=>console.log("map canvas ms", Date.now()-t0)).catch(()=>console.log("no map canvas"));
+await p.waitForTimeout(4000);
+console.log(await p.evaluate(()=>({canvases:document.querySelectorAll("canvas").length, maps:document.querySelectorAll(".maplibregl-map").length, tables:document.querySelectorAll("table").length})));
+await b.close();

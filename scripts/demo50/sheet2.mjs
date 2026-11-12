@@ -1,0 +1,14 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("sheet2");
+const R = "/projects/8e20556a-115e-48a7-be9b-bb1bfe14bf70/reports/b31e987c-08db-4c41-af79-8ac33d39945e";
+await page.goto(BASE + R + "/inputs?tab=indicators", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(6000);
+console.log("HEADERS:", (await page.locator("th, [role=columnheader]").allInnerTexts()).map(s=>s.trim().replace(/\s+/g," ")).filter(Boolean).join(" | "));
+await page.getByRole("button", { name: "Form", exact: true }).click(); await page.waitForTimeout(2500);
+console.log("\nFORM VIEW:", (await page.locator("main").innerText()).replace(/\n+/g," / ").split("View /")[1]?.slice(0,1500));
+await page.screenshot({ path: S + "/formview.png" });
+await page.goto(BASE + R + "/inputs?tab=story", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+console.log("\nSTORY:", (await page.locator("main").innerText()).replace(/\n+/g," / ").split("Story")[2]?.slice(0,1400));
+await page.goto(BASE + R + "/inputs?tab=files", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+console.log("\nFILES:", (await page.locator("main").innerText()).replace(/\n+/g," / ").split("Files")[2]?.slice(0,900));
+await browser.close(); process.exit(0);

@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("form5");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/forms", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+await page.getByText("ZZ TEST water points checked").first().click(); await page.waitForTimeout(3000);
+await page.getByText("Fill in", { exact: true }).first().click(); await page.waitForTimeout(3000);
+await page.locator("main input:visible").first().fill("3"); await page.getByRole("button", { name: "Send", exact: true }).click(); await page.waitForTimeout(3500);
+console.log("SENT:", (await page.locator("main").innerText()).replace(/\n+/g," / ").replace(/^.*Templates \/ Team \/ Settings/,"").slice(0,450));
+await page.getByText(/^Records/).first().click(); await page.waitForTimeout(3000);
+console.log("RECORDS:", (await page.locator("main").innerText()).replace(/\n+/g," / ").replace(/^.*SurveyCTO/,"").slice(0,500));
+console.log("BTNS:", (await page.locator("main button:visible").allInnerTexts()).join(" | "));
+await browser.close(); process.exit(0);

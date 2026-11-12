@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("map11");
+await page.goto(BASE + "/visuals/maps/14d6f13d-34ee-47ef-9d64-d16595e3e690", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(12000);
+await page.getByText("Karnali", { exact: true }).first().click(); await page.waitForTimeout(6000);
+const t = (await page.locator("main").innerText()).replace(/\n+/g," / ");
+for (const k of ["Open its","Analyse","Draw rings","rings","Nearest","People living","distance","Districts","Sub-districts"]) console.log(k, t.includes(k));
+const i = t.indexOf("Places in this project"); console.log(t.slice(i, i+700));
+console.log("BTNS:", (await page.locator("main button:visible").allInnerTexts()).map(s=>s.replace(/\n/g," ")).filter(s=>s&&s.length<40).slice(0,30).join(" | "));
+await page.screenshot({ path: S + "/map11.png" });
+await browser.close(); process.exit(0);

@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("rchart1");
+await page.goto(BASE + "/projects/14d6f13d-34ee-47ef-9d64-d16595e3e690/reports/e8df4e42-7295-4f43-b34b-1018f2b4275f", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(8000);
+await page.getByText("Progress Against Indicators", { exact: true }).first().click(); await page.waitForTimeout(2500);
+console.log("inspector tabs:", await page.locator("[role=tab]:visible").allInnerTexts());
+await page.getByRole("tab", { name: /^Chart/ }).click().catch(()=>{}); await page.waitForTimeout(2500);
+const ins = page.locator("aside, [role=tabpanel]").last(); console.log("CHART TAB:", (await ins.innerText().catch(()=>"?")).replace(/\n+/g," / ").slice(0,900));
+await page.screenshot({ path: S + "/rchart1.png" });
+await browser.close(); process.exit(0);

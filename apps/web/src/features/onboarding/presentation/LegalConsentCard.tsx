@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { acceptLegalTermsAction } from "@/lib/actions/legal";
@@ -44,6 +45,7 @@ export function LegalConsentCard({
   const [error, setError] = useState<string | null>(null);
   const [consent, setConsent] = useState<LegalConsent>(initial);
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   const accepted = consent.accepted;
 
@@ -61,6 +63,8 @@ export function LegalConsentCard({
       }
       setConsent(result.value);
       onAccepted?.(result.value);
+      // The step list and "Setup complete" are server-rendered: re-read them so they agree with this card.
+      router.refresh();
     });
   };
 

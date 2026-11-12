@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("cmd1");
+await page.goto(BASE + "/visuals/fee3d075-90d6-4c46-b028-09e0d812852a", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(8000);
+await page.getByRole("button", { name: "Edit", exact: true }).click(); await page.waitForTimeout(3000);
+await page.getByRole("button", { name: "Commands" }).click(); await page.waitForTimeout(1500);
+console.log("COMMANDS:", (await page.locator("[role=dialog]").last().innerText().catch(()=>"?")).replace(/\n+/g," / ").slice(0,900));
+await page.keyboard.press("Escape");
+await page.getByRole("button", { name: "?", exact: true }).click(); await page.waitForTimeout(1200);
+console.log("SHORTCUTS:", (await page.locator("[role=dialog]").last().innerText().catch(()=>"?")).replace(/\n+/g," / ").slice(0,900));
+await browser.close(); process.exit(0);

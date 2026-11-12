@@ -1,0 +1,12 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("chrole3");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/team", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+await page.locator("tr", { hasText: "ZZ Test Field" }).getByRole("button", { name: "Change role" }).click(); await page.waitForTimeout(1200);
+const btn = page.getByRole("button", { name: "Confirm change" }); await btn.scrollIntoViewIfNeeded();
+const box = btn.locator("xpath=ancestor::*[self::div or self::section or self::form][3]"); console.log((await box.innerText()).replace(/\n+/g," / ").slice(0,600));
+const sel = box.locator("select").first(); console.log("options:", await sel.locator("option").allInnerTexts());
+await sel.selectOption({ label: "Field Officer" }); await page.waitForTimeout(800);
+console.log("AFTER:", (await box.innerText()).replace(/\n+/g," / ").slice(0,700));
+await btn.click(); await page.waitForTimeout(2500);
+console.log("ROW:", (await page.locator("tr", { hasText: "ZZ Test Field" }).first().innerText()).replace(/\s+/g," "));
+await browser.close(); process.exit(0);

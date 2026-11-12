@@ -1,0 +1,12 @@
+import { open, tabs, shot } from "./wz.mjs";
+const { page, browser } = await open("wz6");
+await page.getByRole("button", { name: /^3\. / }).click(); await page.waitForTimeout(1500);
+await page.getByRole("button", { name: /Choose from the library/ }).click(); await page.waitForTimeout(2000);
+await page.getByRole("button", { name: "Add the suggested results" }).click(); await page.waitForTimeout(5000);
+console.log(await tabs(page));
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").split("What will be achieved")[0].slice(-200));
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").slice(0,200));
+const t = (await page.locator("main").innerText()).replace(/\n+/g," / ");
+const i = t.indexOf("3 / 10"); console.log(t.slice(i, i+1500));
+await shot(page, "wz6");
+await browser.close(); process.exit(0);

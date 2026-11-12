@@ -1,0 +1,10 @@
+import { open, tabs, todo } from "./wz.mjs";
+const { page, browser } = await open("wz24");
+await page.getByRole("button", { name: /^6\. / }).click(); await page.waitForTimeout(2000);
+await page.getByLabel("Activity", { exact: true }).last().fill("ZZ Test build water points");
+await page.getByLabel("Part of", { exact: true }).last().selectOption({ index: 1 });
+await page.getByRole("button", { name: "Add an activity" }).click(); await page.waitForTimeout(3500);
+const t = (await page.locator("main").innerText()).replace(/\n+/g," / "); const i=t.indexOf("Activities with planned work"); console.log(t.slice(i, i+1500));
+console.log(await page.locator("main input:visible, main select:visible, main textarea:visible").evaluateAll(s=>s.slice(0,14).map(x=>[x.tagName,x.type,(x.closest("div")?.previousElementSibling?.innerText||x.closest("label")?.innerText||"").slice(0,30),x.value])));
+await page.screenshot({ path: "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad/wz24.png" });
+await browser.close(); process.exit(0);

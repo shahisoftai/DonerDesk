@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("formclose");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/forms", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+await page.getByText("ZZ TEST water points checked").first().click(); await page.waitForTimeout(3000);
+page.on("dialog", d => d.accept());
+await page.getByRole("button", { name: "Close this form" }).click(); await page.waitForTimeout(2500);
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").replace(/^.*Templates \/ Team \/ Settings/,"").slice(0,200));
+await page.goto(BASE + "/visuals/charts", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+console.log("CHARTS:", (await page.locator("main").innerText()).replace(/\n+/g," / ").slice(0,600));
+await browser.close(); process.exit(0);

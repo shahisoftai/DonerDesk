@@ -1,0 +1,13 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("clean2");
+page.on("dialog", d => d.accept());
+await page.goto(BASE + "/visuals/maps/14d6f13d-34ee-47ef-9d64-d16595e3e690", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(11000);
+const mv = page.locator("div, li", { hasText: "ZZ TEST therapeutic food" }).filter({ has: page.getByRole("button", { name: "Remove" }) }).last();
+await mv.getByRole("button", { name: "Remove" }).click(); await page.waitForTimeout(3000);
+console.log("movement left:", /ZZ TEST therapeutic food/.test(await page.locator("main").innerText()));
+await page.goto(BASE + "/settings/places", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(6000);
+await page.getByPlaceholder("Search places").fill("ZZ TEST"); await page.waitForTimeout(1500);
+await page.getByRole("button", { name: "Retire" }).first().click(); await page.waitForTimeout(3000);
+await page.getByPlaceholder("Search places").fill("ZZ TEST"); await page.waitForTimeout(1500);
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").match(/\d+ of \d+ places[^]{0,100}/)?.[0]);
+await browser.close(); process.exit(0);

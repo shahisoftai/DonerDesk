@@ -1,0 +1,13 @@
+import { chromium } from "../demo-ui/lib.mjs";
+const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 1300, height: 900 } })).newPage();
+await p.goto("https://donordesk.online/login"); await p.getByLabel(/email/i).fill("zz-pm@example.invalid"); await p.getByLabel(/password/i).first().fill("ZzTest-Pm-2026-ok"); await p.getByRole("button", { name: /^sign in$/i }).click();
+await p.waitForURL((u) => !/login/.test(u.pathname), { timeout: 40000 }); await p.waitForTimeout(3000);
+await p.goto("https://donordesk.online/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/activities?view=completed", { waitUntil: "domcontentloaded" }); await p.waitForTimeout(4500);
+const t = (await p.locator("main").innerText()).replace(/\n+/g," / "); const i = t.indexOf("Planned activities"); console.log("LIST:", t.slice(i, i+900));
+console.log("btns:", (await p.locator("main button:visible").allInnerTexts()).join(" | ").slice(0,500));
+await p.getByText("ZZ TEST hygiene session").first().click().catch(()=>{}); await p.waitForTimeout(3500);
+console.log("URL", new URL(p.url()).pathname);
+console.log("DETAIL:", (await p.locator("main").innerText()).replace(/\n+/g," / ").replace(/^.*Templates \/ Team \/ Settings/,"").slice(0,1300));
+await p.getByRole("button", { name: "Accept", exact: true }).click(); await p.waitForTimeout(3500);
+console.log("AFTER ACCEPT:", (await p.locator("main").innerText()).replace(/\n+/g," / ").replace(/^.*Templates \/ Team \/ Settings/,"").slice(0,400));
+await b.close();

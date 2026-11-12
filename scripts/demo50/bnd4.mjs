@@ -1,0 +1,12 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("bnd4");
+await page.goto(BASE + "/settings", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4500);
+const card = page.locator("[aria-labelledby=boundary-layers-title]");
+await card.getByLabel("Country", { exact: true }).fill("Bhutan"); await card.getByLabel("Country code", { exact: true }).fill("BTN");
+await card.getByLabel("Level", { exact: true }).selectOption({ label: "districts" });
+await card.getByLabel("Boundary file").setInputFiles(S + "/zz-bhutan.geojson"); await page.waitForTimeout(1200);
+console.log("btns:", await page.locator("main button:visible").allInnerTexts().then(a=>a.filter(s=>/pload|Check|Save/.test(s))));
+await card.getByRole("button", { name: "Upload boundaries" }).click(); await page.waitForTimeout(4500);
+console.log((await card.innerText()).replace(/\n+/g," / ").slice(0,800));
+await browser.close(); process.exit(0);

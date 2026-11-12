@@ -1,0 +1,12 @@
+import fs from "node:fs";
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("apikey");
+await page.goto(BASE + "/settings/integrations", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+await page.getByLabel(/What will use it/).fill("ZZ TEST support guide check");
+await page.getByLabel("The list of projects").check(); await page.getByLabel("Indicator values, by period").check().catch(()=>{});
+await page.getByRole("button", { name: "Create key" }).click(); await page.waitForTimeout(3500);
+const txt = (await page.locator("main").innerText()).replace(/\n+/g," / "); const m = txt.match(/dd_live_[A-Za-z0-9_-]+/);
+console.log("after create:", txt.slice(txt.indexOf("ZZ TEST support")-300, txt.indexOf("ZZ TEST support")+300));
+if (m) fs.writeFileSync(S + "/key.txt", m[0]); console.log("key captured:", !!m);
+await browser.close(); process.exit(0);

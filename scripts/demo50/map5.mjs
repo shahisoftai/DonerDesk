@@ -1,0 +1,12 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("map5");
+await page.goto(BASE + "/settings/places", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(6000);
+await page.getByRole("button", { name: "Pin", exact: true }).first().click();
+await page.waitForTimeout(6000);
+console.log("canvases:", await page.locator("canvas").count());
+const ed = page.locator("canvas").first(); await ed.scrollIntoViewIfNeeded(); await page.waitForTimeout(800);
+const box = ed.locator("xpath=ancestor::*[self::section or self::div[contains(@class,'rounded')]][1]"); console.log("EDITOR:", (await box.innerText()).replace(/\n+/g," / ").slice(0,700));
+console.log("BTNS:", (await box.locator("button:visible, input:visible").evaluateAll(s=>s.map(x=>x.innerText||x.getAttribute("aria-label")||x.placeholder||x.type))).join(" | "));
+await page.screenshot({ path: S + "/map5.png" });
+await browser.close(); process.exit(0);

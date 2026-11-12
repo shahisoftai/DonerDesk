@@ -1,0 +1,11 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("wsrole");
+await page.goto(BASE + "/team", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+console.log("TABLE:", (await page.locator("table").first().innerText()).replace(/\s+/g," ").slice(0,600));
+await page.locator("tr", { hasText: "ZZ Test PM" }).getByRole("button", { name: "Change role" }).click(); await page.waitForTimeout(1200);
+const btn = page.getByRole("button", { name: /Confirm change/ }); await btn.scrollIntoViewIfNeeded();
+const box = btn.locator("xpath=ancestor::*[self::div or self::section or self::form][3]");
+const sel = box.locator("select").first(); await sel.selectOption({ label: "M&E Officer" }); await page.waitForTimeout(1000);
+console.log("DIALOG:", (await box.innerText()).replace(/\n+/g," / ").slice(0,900));
+await page.getByRole("button", { name: "Cancel" }).last().click();
+await browser.close(); process.exit(0);

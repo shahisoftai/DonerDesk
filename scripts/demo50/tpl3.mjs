@@ -1,0 +1,15 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const { page, browser } = await attach("tpl3");
+await page.goto(BASE + "/visuals/templates", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(6000);
+await page.getByRole("button", { name: "Use this template" }).first().click(); await page.waitForTimeout(3000);
+const proj = page.locator("main select:visible").first(); await proj.selectOption({ label: (await proj.locator("option").allInnerTexts()).find(o=>/DEMO-15/.test(o)) }); await page.waitForTimeout(2500);
+const vals = await page.locator("main select:visible").evaluateAll(s=>s.slice(2).map(x=>x.value.slice(0,8))); console.log("suggested roles:", vals);
+await page.locator("main input:visible").first().fill("ZZ TEST WASH template");
+console.log("buttons:", (await page.locator("main button:visible").allInnerTexts()).slice(-5));
+const apply = page.getByRole("button", { name: /Apply|Make|Create/ }).last(); console.log("clicking:", await apply.innerText());
+await apply.click(); await page.waitForTimeout(6000);
+const open = page.getByRole("link", { name: /Open it/ }).or(page.getByText("Open it")).first(); console.log("open href:", await open.getAttribute("href").catch(()=>"(no href)"));
+await open.click(); await page.waitForTimeout(8000);
+console.log("URL", new URL(page.url()).pathname);
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").slice(0,300));
+await browser.close(); process.exit(0);

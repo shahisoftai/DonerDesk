@@ -1,0 +1,10 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("detail");
+await page.goto(BASE + "/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/activities/new", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(4000);
+await page.getByText(/Add detail/).first().click(); await page.waitForTimeout(1200);
+const d = await page.evaluate(() => [...document.querySelectorAll("label, legend, summary, h3, h4")].filter(e=>e.offsetParent!==null).map(e=>e.innerText.trim().replace(/\s+/g," ")).filter(Boolean));
+console.log([...new Set(d)].join(" | "));
+console.log((await page.locator("main").innerText()).replace(/\n+/g," / ").split("Add detail")[1]?.slice(0,1800));
+await page.screenshot({ path: S + "/detail.png", fullPage: true });
+await browser.close(); process.exit(0);

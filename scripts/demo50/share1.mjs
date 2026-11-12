@@ -1,0 +1,14 @@
+import fs from "node:fs";
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("share1");
+await page.goto(BASE + "/visuals/fee3d075-90d6-4c46-b028-09e0d812852a", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(8000);
+await page.locator("summary", { hasText: /^Share and publish/ }).first().click(); await page.waitForTimeout(1000);
+const d = page.locator("details[open]").last();
+console.log("FIELDS:", await d.locator("select:visible, input:visible").evaluateAll(s=>s.map(x=>[x.tagName,x.type,(x.closest("label")?.innerText||"").slice(0,25).replace(/\n/g," "), x.value])));
+await d.getByRole("button", { name: "Make a link" }).click(); await page.waitForTimeout(3500);
+const t = (await d.innerText()).replace(/\n+/g," / "); const i = t.indexOf("Share links"); console.log(t.slice(i, i+900));
+const links = await d.locator("input[readonly], code, a").evaluateAll(a=>a.map(x=>x.value||x.innerText||x.href).filter(s=>/http|shared|embed/.test(s)));
+console.log("LINKS:", links);
+fs.writeFileSync(S + "/sharelinks.json", JSON.stringify(links));
+await browser.close(); process.exit(0);

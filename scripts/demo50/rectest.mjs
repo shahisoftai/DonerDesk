@@ -1,0 +1,17 @@
+import { attach, BASE } from "../demo-ui/lib.mjs";
+const S = "/tmp/claude-1000/-home-najeeb-Linux-Dev-Humanetarian-DonerDesk/5b9cec18-2a09-4c38-858b-78c68c0eb2a3/scratchpad";
+const { page, browser } = await attach("rectest");
+await page.goto(BASE + "/projects/14d6f13d-34ee-47ef-9d64-d16595e3e690", { waitUntil: "domcontentloaded" }); await page.waitForTimeout(3500);
+await page.getByRole("button", { name: /^\+?\s*Record/ }).first().click(); await page.waitForTimeout(1200);
+const dlg = page.locator("[role=dialog], aside").last();
+const txt = async () => (await dlg.innerText()).replace(/\n+/g, " / ");
+if (/What are you recording/.test(await txt())) await dlg.getByRole("button", { name: /^A number/ }).click();
+await page.waitForTimeout(1500);
+const sel = dlg.locator("select").nth(1);
+const opts = await sel.locator("option").allInnerTexts();
+console.log("OPTIONS:", opts.slice(0, 8).join(" || "), "... total", opts.length);
+await sel.selectOption({ index: 0 });
+await page.waitForTimeout(800);
+console.log("FORM:", (await txt()).slice((await txt()).indexOf("‹ Back"), (await txt()).indexOf("‹ Back") + 700));
+await page.screenshot({ path: S + "/rectest1.png" });
+await browser.close(); process.exit(0);

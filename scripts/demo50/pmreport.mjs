@@ -1,0 +1,11 @@
+import { chromium } from "../demo-ui/lib.mjs";
+const b = await chromium.launch(); const p = await (await b.newContext({ viewport: { width: 1300, height: 900 } })).newPage();
+await p.goto("https://donordesk.online/login"); await p.getByLabel(/email/i).fill("zz-pm@example.invalid"); await p.getByLabel(/password/i).first().fill("ZzTest-Pm-2026-ok"); await p.getByRole("button", { name: /^sign in$/i }).click();
+await p.waitForURL((u) => !/login/.test(u.pathname), { timeout: 40000 }); await p.waitForTimeout(3000);
+await p.goto("https://donordesk.online/projects/cd291c72-ebc9-4f16-8633-b7c9007507ed/reports/fdaa85df-0241-493a-a718-eb0e9f00bac5", { waitUntil: "domcontentloaded" }); await p.waitForTimeout(7000);
+console.log("BTNS:", (await p.locator("main button:visible").allInnerTexts()).map(s=>s.replace(/\n/g," ")).join(" | ").slice(0,900));
+await p.getByRole("button", { name: /Approve all clean sections/ }).click(); await p.waitForTimeout(4000);
+console.log("TOAST:", (await p.locator("[role=status],[role=alert],[role=dialog]").allInnerTexts()).join(" | ").slice(0,400));
+console.log("OUTLINE:", (await p.locator("main").innerText()).replace(/\n+/g," / ").match(/OUTLINE[^]{0,300}/)?.[0]);
+console.log("BTNS:", (await p.locator("main button:visible").allInnerTexts()).map(s=>s.replace(/\n/g," ")).slice(0,8).join(" | "));
+await b.close();
