@@ -19,7 +19,7 @@ Only an **Admin** can invite people.
 - Evidence and files that belong to those projects.
 - The screens they need to report: adding activities, uploading evidence and entering indicator values.
 
-They cannot see your other projects, the team list, billing, the audit trail, exports, funding, or report approvals. A page outside their access says *"This page is not part of your account."*
+A partner has a short menu: **My projects** and **Security** in the side menu, and **Today**, **Waiting** and **More** in the bar on a phone. Their **Projects** list shows only the projects you chose, and the **Reports** page lists only those projects' reports. They cannot see your other projects, the team list, billing, the audit trail, exports, funding, or report approvals. A page outside their access says *"This page is not part of your account."*
 
 ## Remove access
 
@@ -27,6 +27,5 @@ On the Team page, change the person's role or remove them. Their access ends at 
 
 ## Limits
 
-- A partner's screens are the same as everyone else's; a shorter menu for partners is not available yet.
 - Partners are not set to expire automatically.
 - Outside partners can turn on two-step sign-in like everyone else (they have a **Security** page), and it counts when you [require it for the whole organisation](/support/how-to/require-two-step-sign-in). Remove their access when the work ends.

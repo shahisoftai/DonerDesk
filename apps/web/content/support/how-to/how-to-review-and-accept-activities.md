@@ -48,7 +48,7 @@ An accepted record is not frozen. If it has a wrong figure, text or logframe lin
 
 Use this when a record was entered twice, entered by mistake, or replaced by a better one.
 
-1. Open the activity. In **Replaced or entered by mistake?** choose **Replaced by** (optional) and click **Withdraw this record**.
+1. Open the activity. In **Replaced or entered by mistake?** choose **Replaced by** (optional) and click **Withdraw this record**, then confirm with **Withdraw** (*It will be left out of reports. You can restore it later.*).
 2. Confirm.
 
 A withdrawn record:

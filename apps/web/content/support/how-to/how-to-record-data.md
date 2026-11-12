@@ -46,9 +46,9 @@ Use this for a completed activity: a training, a distribution, a visit.
 3. Fill in **Activity title**, **Activity date** (**Today**, **Yesterday** or **Pick a day**), **Location** and **What happened?**
 4. Optional: add **Photos and files**. Choose **Add photos or files** (or drop them), or click **Take a photo** on a phone. Photos are made smaller before they upload to save phone storage and data.
 5. Optional: open **Add detail** for **Who came** (total, male, female, children, people with disability), the **planned activity** this delivers, the logframe activity, an end date (**Through**), and more notes.
-6. Click **Save**.
+6. Click **Save**. The panel confirms (**Saved: *your title* was saved**) with **Record another activity** and **Done**. Under the date it says which period the activity counts toward, for example **Counts toward Final · Jul 2026**.
 
-The activity then goes to a reviewer. See [How to review and accept activities](/support/how-to/review-and-accept-activities). The full form is also on **Projects → project → Activities → Activity updates → New activity**; see [How to log activities](/support/how-to/log-activities).
+The activity then goes to a reviewer, who sees it as *Submitted* and **1 waiting for review** on the Activity updates list. See [How to review and accept activities](/support/how-to/review-and-accept-activities). The full form is also on **Projects → project → Activities → Activity updates → New activity**; see [How to log activities](/support/how-to/log-activities).
 
 ## Record a photo or file
 
