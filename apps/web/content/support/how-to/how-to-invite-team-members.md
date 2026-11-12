@@ -7,7 +7,7 @@ Only **Admins** can invite people and change roles.
 1. Click **Team** in the main menu.
 2. Click **Invite member**.
 3. Enter the person's **Email** and choose a **Role** (see [Roles and permissions](/support/getting-started/user-roles-and-permissions)).
-4. Click **Send invite**.
+4. Click **Send invite**. To bring in someone from another organisation, choose **Outside partner**; see [How to invite an outside partner](/support/how-to/invite-an-outside-partner).
 
 An **Invitation created** panel shows the acceptance link (`/invite/accept?token=…`). **DonorDesk does not send invitation emails at the moment**, so copy the link, add your workspace's address in front of it, and send it to the person yourself (email, chat, etc.).
 
@@ -18,7 +18,7 @@ Below the member table, **Invited, not joined yet (n)** lists everyone you invit
 ## What the invitee does
 
 1. Opens the link (**Join your workspace**).
-2. Enters their name and a password (at least 8 characters).
+2. Enters their name and a password (at least 12 characters with no spaces, using three of: lowercase, uppercase, number, symbol).
 3. Ticks **I have read and accept the Terms of Service and the Privacy Policy** (recorded in the audit trail) and clicks **Accept invitation**, signing in.
 
 They join with the role you chose. Links expire; if it stops working, invite the person again.

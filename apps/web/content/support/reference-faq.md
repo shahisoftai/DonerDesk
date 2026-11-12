@@ -102,7 +102,7 @@ Yes. Click **Edit (reopens section)**, change it, save, and approve the section 
 Yes: [How to run a reporting month](/support/how-to/run-a-reporting-month).
 
 ### What does the report workflow look like?
-Update Project → Tell the Story → Generate Draft → Review & Submit. See [the reporting workflow](/support/getting-started/reporting-workflow).
+Enter your data → answer the story questions → generate the report → review and submit. See [the reporting workflow](/support/getting-started/reporting-workflow).
 
 ### How many AI drafts do I get?
 Starter 5, Team 20, Growth 100 a month; Enterprise is contracted. Fallback drafts and single-section regenerations do not use a draft. You can buy top-up packs on Team and Growth.

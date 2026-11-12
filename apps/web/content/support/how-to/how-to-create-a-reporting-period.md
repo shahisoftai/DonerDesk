@@ -25,7 +25,7 @@ The last block of the project is not created here: it belongs to the [closing re
 
 ## After creating it
 
-The period workspace opens with the four steps: **Update Project → Tell the Story → Generate Draft → Review & Submit**. See [Understanding the reporting workflow](/support/getting-started/reporting-workflow).
+The period workspace opens on **Ready to write this report**. It lists three things to check, each with a button: **Indicator values** (**Review data** or **Enter data**), **Story answers** (**Answer now**) and **Evidence** (**Add more**). When you are ready, click **Generate report**. Each item shows how complete it is (for example *24 of 33 verified*), and you can generate before everything is green: unverified figures are marked in the report. See [Understanding the reporting workflow](/support/getting-started/reporting-workflow).
 
 ## Cancel a period, restore it, or make it the final report
 

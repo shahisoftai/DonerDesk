@@ -1,6 +1,6 @@
 # DonorDesk Support Documentation Index
 
-Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Data Center, report charts and reopening added 2026-10-15; Chart Studio how-to (50 chart types, 40 themes, style options) added 2026-11-09; last full refresh: 2026-10-07; corrected after demo 5 (2026-10-06).
+Source files for the public Support Center at donordesk.online/support. Each file is routed from `apps/web/src/app/support/<category>/[article]/page.tsx` (see `FILE_MAP`) and listed in `apps/web/src/components/support/wikiCategories.tsx`. **When you add, rename or remove an article, update both.** Data Center, report charts and reopening added 2026-10-15; Chart Studio how-to (50 chart types, 40 themes, style options) added 2026-11-09; last full refresh: 2026-11-12 (browser audit on the live site: wizard, Record, Report inputs, Finance, Bring in data, Home, Visuals); corrected after demo 5 (2026-10-06).
 
 ## Ground truth to check when editing
 
@@ -17,6 +17,8 @@ what-is-donordesk, getting-started-overview, key-concepts, understanding-project
 ## How-To (`how-to/`)
 Accounts: log-in, create-an-account, change-your-password, set-up-new-organisation, change-organisation-profile, invite-team-members, manage-team-roles-permissions, onboard-team-member.
 Projects: create-a-project, archive-a-project, build-logframe, upload-donor-template, connect-google-drive.
+Entering data (added 2026-11-12): record-data (the Record button), bring-in-data, track-reports-and-downloads (Reports list and Download Center).
+Finance and settings (added 2026-11-12): use-the-finance-tab, set-up-finance-for-your-organisation, set-up-your-places-list, write-your-own-starting-answers.
 Reporting: project-walkthrough, run-a-reporting-month, create-a-reporting-period, create-the-closing-report, review-and-accept-activities, fix-or-remove-an-indicator, change-a-reports-template, update-indicator-values, use-the-data-center, use-the-chart-studio, add-a-chart-to-a-report, reopen-an-approved-report, import-from-google-sheets, log-activities, dictate-instead-of-typing, work-offline-and-take-photos, upload-evidence, tell-the-story-and-add-inputs, generate-ai-report-draft, use-the-report-editor, review-and-approve-reports, export-reports, use-compliance-checklist, use-bulk-actions, use-comments-feedback, use-the-audit-trail, prepare-for-donor-visit.
 Maps (updated 2026-11-10, Phase 49): see-your-work-on-a-map, pin-a-place-on-the-map (now also pins existing places and marks facilities), upload-your-own-map-boundaries, analyse-places-on-a-map, use-context-layers-on-a-map, download-places-and-map-results, keep-a-map-for-offline-use.
 Navigation: use-the-dashboard, search-projects-and-evidence, use-the-notification-system, use-the-academy-tour, manage-billing-subscription.

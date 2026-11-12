@@ -30,12 +30,14 @@ For the project's last report, use the guided [closing report](/support/how-to/c
 
 On the **Reporting** page, **Create all periods** sets up the whole monthly or quarterly calendar in one click and leaves the last block to the closing report. See [How to create a reporting period](/support/how-to/create-a-reporting-period).
 
-## The four-step workspace
+## The period workspace
 
-1. **Update Project** – indicators, activities, evidence
-2. **Tell the Story** – challenges, changes, lessons
-3. **Generate Draft** – AI Reporter writes the report
-4. **Review & Submit** – edit, decide, approve, export
+It opens on **Ready to write this report**, with three things to check and one button:
+
+1. **Indicator values** – entered and verified
+2. **Story answers** – challenges, changes, lessons
+3. **Evidence** – files for the period
+4. **Generate report** – the AI Reporter writes the report; then review, approve and export in the editor
 
 ## Status
 

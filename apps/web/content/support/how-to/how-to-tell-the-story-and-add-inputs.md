@@ -1,6 +1,6 @@
 # How to Tell the Story and Add Report Inputs
 
-Numbers do not explain themselves. **Tell the Story** (step 2 of the reporting workspace) is where you add the context that the AI uses to write a convincing report. Open the **Data & story inputs** page from **⋯ → Edit data & story** in the editor or from the period workspace.
+Numbers do not explain themselves. **Story answers** is where you add the context that the AI uses to write a convincing report. Open it by clicking **Answer now** beside **Story answers** in the period workspace, or from **⋯ → Edit data & story** in the editor. The page is called **Report inputs** and has three tabs: **Indicators**, **Story** and **Files**. You want **Story**.
 
 Report writers can edit it; others can read it.
 

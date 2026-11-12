@@ -4,6 +4,13 @@ import { CategoryArticle } from "@/components/support/CategoryArticle";
 
 const FILE_MAP: Record<string, string> = {
   "log-in": "how-to/how-to-log-in.md",
+  "record-data": "how-to/how-to-record-data.md",
+  "use-the-finance-tab": "how-to/how-to-use-the-finance-tab.md",
+  "set-up-finance-for-your-organisation": "how-to/how-to-set-up-finance-for-your-organisation.md",
+  "bring-in-data": "how-to/how-to-bring-in-data.md",
+  "track-reports-and-downloads": "how-to/how-to-track-reports-and-downloads.md",
+  "set-up-your-places-list": "how-to/how-to-set-up-your-places-list.md",
+  "write-your-own-starting-answers": "how-to/how-to-write-your-own-starting-answers.md",
   "create-an-account": "how-to/how-to-create-an-account.md",
   "change-your-password": "how-to/how-to-change-your-password.md",
   "set-up-new-organisation": "how-to-set-up-new-organisation.md",

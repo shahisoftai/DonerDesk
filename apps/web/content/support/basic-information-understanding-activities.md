@@ -29,7 +29,7 @@ The **logframe** describes planned activities as part of the results framework. 
 
 ## How activities feed reports
 
-The AI Reporter uses submitted activities for the period: narratives, participant numbers, challenges and lessons learned support the matching sections, and linked evidence is cited as a source. Your activity text is also what **Tell the Story** builds on.
+The AI Reporter uses submitted activities for the period: narratives, participant numbers, challenges and lessons learned support the matching sections, and linked evidence is cited as a source. Your activity text is also what the story answers build on.
 
 ## Compliance
 

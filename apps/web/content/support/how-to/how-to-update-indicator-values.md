@@ -1,25 +1,41 @@
 # How to Update Indicator Values
 
-Indicator values are entered **per reporting period** in a spreadsheet-style grid. This is step **1. Update Project** of the reporting workspace.
+Indicator values are entered **per reporting period**, in a spreadsheet-style screen called **Report inputs**, or one at a time with **Record**.
 
 Who can enter values: Admin, Project Manager and M&E Officer. Who can verify: Admin, Project Manager and M&E Officer.
 
-## Open the grid
+## Quick way: one number from anywhere
 
-1. Go to **Projects → project → Reporting** and open the reporting period.
-2. Click **Update Project** (step 1) to open **Record indicator values for this reporting period**.
+For a single figure, you do not need to open the report. Click **Record** in the top bar, choose **A number**, and follow [How to record a number, an activity, a file or an expense](/support/how-to/record-data). It works out the reporting period from the date you pick.
 
-If there is no reporting period yet, create one first (see [Understanding reporting periods](/support/getting-started/understanding-reporting-periods)).
+## Open the full entry screen
+
+1. Go to **Projects → project → Reporting**. Each reporting period has an **Enter indicator data** link. Or open the period and, in **Ready to write this report**, click **Review data** beside **Indicator values**.
+2. The page is called **Report inputs**. It has three tabs: **Indicators** (with how many are verified), **Story** and **Files**. You are on **Indicators**.
+
+If there is no reporting period yet, create one first ([How to create a reporting period](/support/how-to/create-a-reporting-period)).
+
+The line **Entry closed on …** (or **Entry opens/closes …**) shows the entry window. **Change the entry window** adjusts it (project managers and admins). People who can verify values are not held to the window.
+
+## Two views: Sheet and Form
+
+Under **View**, choose how you want to work.
+
+- **Sheet** is like a spreadsheet, best for many rows. Columns: **Code**, **Indicator**, earlier months, **Baseline**, **Target**, **Last period**, **This period**, **Cumulative**, **Notes**, **Data source**, **% of target**, **Status**. Click a cell and type. Arrow keys and Tab move between cells. You can paste a block of cells from Excel straight in, and use **Fill down**, **Clear**, **Undo** and **Redo**. **Find** and **Go to** jump to an indicator, **Show** filters rows (for example only figures still empty), and **Columns**, **Row height** and **Zoom** change how it looks. Tick **Save automatically** to have drafts saved a couple of seconds after your last change. Cells you cannot change (verified, calculated or closed) are locked.
+- **Form** is one row per indicator with **Period achievement**, **Cumulative**, **Comments**, **Data source**, a **Breakdown (n)** button and **Not applicable this period**.
 
 ## Enter values
 
-1. Each row is an indicator. Type the **Period achievement** and, where relevant, the **source of the figure** and a comment.
+1. Each row is an indicator. Type the value for **this period**, and, where relevant, the **data source** and a note.
 2. If the indicator has a **breakdown** (the **Breakdown** button shows on its row), enter values by category (for example Female / Male); for Number and Currency indicators each dimension must add up to the total.
-3. Click **Save all**. Values are saved in one bulk operation. Each indicator has one value per period, so saving again updates it.
+3. If an indicator does not apply this period, choose **Not applicable** and give a reason. It is not counted as a gap or as 0.
+4. Leave a value **empty** if it was not measured. An empty value is never saved as 0.
+5. Click **Save all**. Values are saved as drafts. Each indicator has one value per period, so saving again updates it.
    - **Same as last period (n)** appears under an empty value when the indicator had a value last period; click it to repeat that figure.
-   - For indicators whose values **add up** (calculation *Sum of period values*), the **Cumulative** box fills in by itself: last period's running total plus what you typed. It shows *Last: n* as a hint. If you type your own cumulative figure it is never replaced.
-   - The **source of the figure** carries forward from the last period, so you only change it when it changes.
-4. If you may verify values, click **Save & verify all** to save and verify everything in the period in one step. When nothing is unsaved the button reads **Verify all (n)**. Rows that cannot be verified are listed with the indicator code and the reason; the others are still verified.
+   - For indicators whose values **add up** (calculation *Sum of period values*), the **Cumulative** box fills in by itself: last period's running total plus what you typed. If you type your own cumulative figure it is never replaced.
+   - The **data source** carries forward from the last period, so you only change it when it changes.
+6. Click **Submit for review (n)** to hand in the values that have a figure. If your project uses **simple review**, hand-in and verification happen for you when you save and a file is attached.
+7. If you may verify values, click **Verify all (n)** (or **Verify selected**). Rows that cannot be verified are listed with the indicator code and the reason; the others are still verified. A verifier can also **send values back** with a reason, or use **Reopen verified (n)** to take verified values back to "needs correction" (the report must not be approved yet).
 
 Under each indicator the badge shows whether its **calculation is confirmed**. See [Understanding indicators and targets](/support/getting-started/indicators-and-targets).
 
@@ -31,9 +47,9 @@ The **Data Center** (**Projects → project → Data**) shows all periods in one
 
 ## Import instead of typing
 
-- **Google Sheets:** click **Import from Google Sheets**, paste the sheet's URL. The sheet must be shared with the connected Google account and have a header row with the indicator code and period achievement (cumulative, comments and data source columns are optional). Values are applied to the grid; review them and press **Save all** to keep them. See [How to import from Google Sheets](/support/how-to/import-from-google-sheets).
+- **Google Sheets:** click **Import from Google Sheet**, paste the sheet's URL. The sheet must be shared with the connected Google account and have a header row with the indicator code and period achievement (cumulative, comments and data source columns are optional). Values are applied to the grid; review them and press **Save all** to keep them. **Download Excel** and **Import Excel** do the same with a workbook: the workbook has dropdown checks, and an empty cell stays empty. See [How to import from Google Sheets](/support/how-to/import-from-google-sheets).
 - **Excel or CSV of all periods:** download the data sheet from the **Data Center**, fill the shaded columns and import it; a preview shows every change first. Verified values are never overwritten.
-- **Spreadsheet or pasted CSV:** on the report's **Data & story inputs** page you can paste CSV such as `Indicator code,Period achievement` or upload a file, and DonorDesk proposes inputs that you confirm before they are saved.
+- **Another file:** open **Projects → project → Bring in data**, choose **Indicator values**, and follow the screen. Every import checks each row before anything is saved. See [How to bring in data](/support/how-to/bring-in-data).
 
 ## Verify
 

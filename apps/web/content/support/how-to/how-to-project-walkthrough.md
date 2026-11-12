@@ -104,10 +104,10 @@ Detail: [Review and accept activities](/support/how-to/review-and-accept-activit
 
 ## Stage 9: Enter and verify the month's numbers
 
-1. Open the period, then **Update Project**. Type each indicator's **period achievement** (and cumulative if your donor wants it) in the grid.
+1. Open the period and click **Review data** (or **Enter data**) beside **Indicator values**. Type each indicator's value for **this period** (and the cumulative figure if your donor wants it) in the **Sheet**, or use the **Form** view.
 2. For breakdown indicators, click **Breakdown** and enter women and men (or the categories required). They must add up to the total.
 3. Leave an indicator empty in a month it was not measured (for example a quarterly survey). It is shown as **not measured**, never as zero.
-4. Click **Save & verify all**. Rows that cannot be verified are listed with the reason.
+4. Click **Save all**, then **Submit for review**. If you may verify, click **Verify all**. Rows that cannot be verified are listed with the reason.
 
 Detail: [Update indicator values](/support/how-to/update-indicator-values), [Use the Data Center](/support/how-to/use-the-data-center) (all months in one sheet, Excel import and charts), [Import from Google Sheets](/support/how-to/import-from-google-sheets), [Troubleshooting indicator data](/support/troubleshooting/indicator-data).
 

@@ -148,7 +148,7 @@ This practice makes report writing fast, accurate, and auditable.
 
 In DonorDesk you do not have to type evidence references by hand. You build the chain from claim to proof by linking data:
 
-1. Enter and **verify** the indicator value for the period (Update Project).
+1. Enter and **verify** the indicator value for the period (the **Indicator values** step of the period).
 2. Upload the supporting file to the **Evidence** library and **link** it to the indicator or activity it proves.
 3. Generate the draft. Each section shows its **Sources** (evidence files, activities, indicator updates), and every factual statement is checked against them.
 

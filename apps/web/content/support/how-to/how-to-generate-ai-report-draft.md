@@ -4,12 +4,13 @@ DonorDesk's **AI Reporter** writes the narrative of a donor report from the data
 
 ## Before you generate
 
-Open the reporting period and check the four steps in the **Reporting workspace**:
+Open the reporting period. The workspace says **Ready to write this report** and lists what the AI will write from:
 
-1. **Update Project** – indicator values entered (and verified), activities logged, evidence uploaded and linked for the period.
-2. **Tell the Story** – answers to the four story questions: challenges, why targets were over- or under-achieved, what changed or was adapted, and (optionally) a lesson or story.
-3. **Generate Draft**
-4. **Review & Submit**
+1. **Indicator values** (**Review data** / **Enter data**) – values entered and verified, with how many are verified, for example *24 of 33 verified*. Unverified figures will be marked in the report.
+2. **Story answers** (**Answer now**) – answers to the story questions: what went well, challenges, why targets were over- or under-achieved, what changed or was adapted, and (optionally) a lesson or story. Reports read better when you explain challenges and changes.
+3. **Evidence** (**Add more**) – files uploaded and linked for the period.
+
+Then click **Generate report**. After the draft exists you review and submit it in the report editor. The ⋯ menu (**More actions**) has **Edit data & story**, **Scan for missing items**, **Export center** and **Switch to classic view** (the older layout with numbered steps, if you prefer it).
 
 You also need:
 - a **reviewed donor template** pinned to the period (see [How to upload a donor template](/support/how-to/upload-donor-template)), otherwise a standard outline is used and flagged;

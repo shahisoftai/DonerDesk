@@ -12,14 +12,14 @@ The [Academy tour](/tour) walks through this on a demo project.
 
 ## Each reporting period
 
-Every reporting period has a workspace organised into four steps:
+Every reporting period has a workspace. It opens on **Ready to write this report**, which lists what the AI will write from (**Indicator values**, **Story answers**, **Evidence**) with a **Generate report** button. The work falls into four stages:
 
-| Step | What you do |
+| Stage | What you do |
 |---|---|
-| **1. Update Project** | Enter indicator values in the period grid (or import from Excel/CSV or Google Sheets), log activities, upload and link evidence, verify data. |
-| **2. Tell the Story** | Answer the story questions: challenges, why targets were over/under achieved, what changed, and a lesson or story. You can also paste a field report or CSV and confirm the inputs DonorDesk proposes. |
-| **3. Generate Draft** | The AI Reporter writes the report section by section following the donor template. |
-| **4. Review & Submit** | Edit in the document-style report editor, decide on flagged statements, approve sections, clear the checks, submit for review, approve, and export. |
+| **1. Enter your data** (**Indicator values**) | Enter indicator values in the Report inputs sheet (or import from Excel or Google Sheets), log activities, upload and link evidence, verify data. |
+| **2. Tell the story** (**Story answers**) | Answer the story questions: what went well, challenges, why targets were over/under achieved, what changed, and a lesson or story. |
+| **3. Generate the report** (**Generate report**) | The AI Reporter writes the report section by section following the donor template. |
+| **4. Review and submit** | Edit in the document-style report editor, decide on flagged statements, approve sections, clear the checks, submit for review, approve, and export. |
 
 ## The report editor
 

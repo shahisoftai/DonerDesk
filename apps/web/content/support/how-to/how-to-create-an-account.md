@@ -6,7 +6,7 @@ Creating an account also creates your organisation's **workspace**. You become i
 
 1. Go to donordesk.online and click **Sign up** (or choose a plan on the [Pricing page](/pricing)).
 2. Fill in **Create your workspace**:
-   - **Your name**, **Email** and **Password** (at least 8 characters)
+   - **Your name**, **Email** and **Password** (at least 12 characters with no spaces, using three of: lowercase, uppercase, number, symbol)
    - **Organization name** and **Organization type** (local NGO, national NGO, international NGO, UN implementing partner, consulting firm, government programme unit or other)
    - **Country** and **Primary sector**
    - **Data residency** – restricts where your organisation's data may be written (platform default, EU, US, Africa, Asia)
@@ -20,11 +20,13 @@ You can also **sign up or sign in with Google** on the sign-in page.
 
 You land on **Set up your workspace**, the onboarding checklist:
 
-1. **Connect Google Drive** – where evidence lives ([guide](/support/how-to/connect-google-drive))
-2. **Organization profile** (optional)
-3. **Default reporting profile** (optional) – default language, tone and rules for new projects
-4. **Invite your team** (optional)
-5. **Accept the Terms of Service and Privacy Policy** (required)
+1. **Accept Terms of Service** (required) – review and accept the Terms and Privacy Policy
+2. **Connect Google Drive** (recommended) – where evidence lives ([guide](/support/how-to/connect-google-drive))
+3. **Organization profile** – confirm your details
+4. **Default reporting profile** (optional) – default language, tone and rules for new projects
+5. **Invite your team** (optional)
+
+A banner shows **Setup complete** once the required step is done, and a **Create your first project** button appears. You can finish the optional steps any time from **Settings → Setup**.
 
 Then create your first project. The [Academy tour](/tour) shows the whole workflow on a demo project.
 

@@ -4,11 +4,19 @@ The **Data Center** shows every indicator value of a project, across all its rep
 
 Open **Projects → your project → Data**. Anyone who can see the project can view and download. Importing needs the right to enter indicator values (Admin, Project Manager, M&E Officer).
 
+The Data Center has four tabs: **Indicator data**, **By place**, **Charts** and **Import / export**. A bar above them links to the project's sister tools: **Collection forms**, **Chart Studio**, **Maps**, **Report builder** and the Data Center itself.
+
+## By place
+
+The **By place** tab reads each result at the places you choose. Under **Show results for**, pick **Country**, **State or province**, **District or locality**, **Sub-district** or **Community or site**. A locality's figures count toward its state and its country, and a place that recorded nothing is never shown as zero.
+
+Results appear here only when values were recorded **with a breakdown by location**. Otherwise the tab says *No result of this project has been recorded by place yet* and lists them under **Not recorded by place**: they appear only as project totals. To fill it, enter a breakdown by location when you record a value ([How to update indicator values](/support/how-to/update-indicator-values)). See also [How to analyse places on a map](/support/how-to/analyse-places-on-a-map).
+
 ## Indicator data
 
 Two layouts, switched at the top:
 
-- **By period** has indicators down the side and one column per reporting period. Choose what to show: **Period value**, **Cumulative value** or **% of target**.
+- **By period** has indicators down the side and one column per reporting period. Choose what to show: **Period value**, **Cumulative value**, **% of target** or **Variance from scheduled target**.
 - **List** has one row per indicator per period, with the period value, cumulative value, % of target, verification status and data source.
 
 Narrow what you see with **Find indicator** (code or name), **Level** (goal, outcome, output, activity) and, in the list, **Period**.

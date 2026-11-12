@@ -7,10 +7,10 @@ Open **Projects → your project → Logframe**.
 ## Option A: Import from Excel or CSV (fastest)
 
 1. On the Logframe page click **Download template** and fill in the **Logframe** sheet (one row per item with its code, level, title and parent code).
-2. Click **Import logframe from Excel** and upload the file (XLSX, CSV or TXT).
+2. Click **Import logframe**, then **Upload Excel/CSV** and choose the file (XLSX, CSV or TXT).
 3. **Review the parsed content** shown on screen, then create the records.
 4. Items are created with their parent links. Rows whose **code already exists are skipped**, so re-importing is safe.
-5. Fill in the **Indicators** sheet and use **Import indicators from Excel**. By default an indicator's code must match a logframe item's code in this project. To put **several indicators under one item**, fill the optional **Logframe Code** column (the last column of the template) with the item's code; the indicator's own code can then be anything unique.
+5. Fill in the **Indicators** sheet and import it from the indicators import screen (**Import indicators** on the Logframe page, then **Upload Excel/CSV**). By default an indicator's code must match a logframe item's code in this project. To put **several indicators under one item**, fill the optional **Logframe Code** column (the last column of the template) with the item's code; the indicator's own code can then be anything unique.
 
 ## Option B: Paste or dictate your results list
 
@@ -29,7 +29,11 @@ Edit the text if needed, then click **Create logframe items**. The same screen (
 
 When a project's logframe is empty and your workspace has other projects, the Logframe page offers **Reuse another project's logframe**. Choose the project and click **Copy logframe and indicators**. The results hierarchy and the indicator definitions (codes, targets, units, frequency, calculation) are copied. **Recorded values, evidence, activities, retired indicators and who is responsible are not copied.** Copying is only offered into an empty logframe, so nothing is duplicated. You can also do this while [creating a project](/support/how-to/create-a-project).
 
-## Option D: Build by hand
+## Option D: Choose from the sector library
+
+Click **Choose from the library** on the Logframe page for ready-made results and indicators for your sector, each with its definition and how it is usually collected. Nothing is added until you press **Add**; each indicator arrives with no baseline or target, and starts as **not yet reviewed**. See [The sector library](/support/getting-started/sector-library).
+
+## Option E: Build by hand
 
 1. Click to add a logframe item. Choose its **level** (Goal, Outcome, Output or Activity), give it a **code** and title, and pick its **parent** with the item picker.
 2. Add child items under each parent.

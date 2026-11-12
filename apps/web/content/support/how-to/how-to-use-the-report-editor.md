@@ -43,7 +43,7 @@ Regenerate the whole draft, **Reopen for changes** (approvers, on an approved re
 
 ## When inputs change
 
-If you change indicator values, evidence or the story after generating, an **Inputs changed** banner appears. Re-check the affected sections, or regenerate them if you want new text. A summary section is flagged if other sections changed a lot after it was written.
+If you change indicator values, evidence or the story after generating, a banner tells you how many values changed and how many sections are affected (for example *22 indicator values changed since this draft was written · 5 sections affected*). It offers **Re-check statements only** (keeps your text and re-checks the figures), **Rewrite affected sections** (asks you to confirm, then rewrites each affected section) and **Dismiss**. A summary section is flagged if other sections changed a lot after it was written.
 
 ## Keyboard shortcuts
 

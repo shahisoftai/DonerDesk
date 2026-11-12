@@ -37,7 +37,7 @@ A report never names an evidence id, a record id or a file name: the system reje
 
 - Enter and **verify indicator values** for the period.
 - Upload evidence and **link** it to indicators and activities.
-- Fill in **Tell the Story**.
+- Fill in **Story answers**.
 - Make sure the donor template's sections have instructions and mandatory questions.
 
 ## Numbers look different from what I expected

@@ -3,7 +3,7 @@
 ## While signed in
 
 1. Go to **Settings → Security**.
-2. Enter your **current password**, then the **new password** and confirm it (at least 8 characters).
+2. Enter your **current password**, then the **new password** and confirm it (at least 12 characters with no spaces, using three of: lowercase, uppercase, number, symbol).
 3. Save. You see **Password updated**; use the new password next time you sign in.
 
 ## If you forgot it
@@ -16,4 +16,4 @@ Use **Forgot your password?** on the sign-in page. The reset link expires after 
 - If you signed up with Google, you can still set a DonorDesk password through **Forgot your password?**.
 - If you suspect someone else has access, change your password immediately and tell your Admin.
 
-DonorDesk does not currently offer two-factor authentication.
+For stronger protection, turn on two-step sign-in on the same **Settings → Security** page. See [How to turn on two-step sign-in](/support/how-to/turn-on-two-step-sign-in).

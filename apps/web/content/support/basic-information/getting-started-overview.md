@@ -43,7 +43,7 @@ For the whole monthly routine on one page, see [How to run a reporting month](/s
 
 ## 7. Write the report
 
-Work the four steps: **Update Project → Tell the Story → Generate Draft → Review & Submit** ([AI draft](/support/how-to/generate-ai-report-draft), [editor](/support/how-to/use-the-report-editor)).
+Open the period and work through **Indicator values → Story answers → Evidence → Generate report**, then review and submit ([AI draft](/support/how-to/generate-ai-report-draft), [editor](/support/how-to/use-the-report-editor)).
 
 ## 8. Review, approve, export
 

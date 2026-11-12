@@ -3,7 +3,7 @@
 ## I can't enter values
 
 - You need permission: Admin, Project Manager or M&E Officer.
-- The period must exist. Open the reporting period, then **Update Project**.
+- The period must exist. Open the reporting period, then click **Enter data** (or **Review data**) beside **Indicator values**.
 - If the report is already approved, values are locked for that version.
 
 ## "Could not save indicator data"

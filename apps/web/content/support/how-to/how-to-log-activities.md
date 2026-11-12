@@ -2,12 +2,17 @@
 
 Activities are the field updates that tell the story behind your indicators: trainings held, distributions made, visits completed. Roles that can create activities: Admin, Project Manager, M&E Officer and Field Officer. Admin and Project Manager can approve them.
 
-Open **Projects → your project → Activities**.
+Open **Projects → your project → Activities**. This tab has two views:
+
+- **Planned activities** (opens first): the work plan, with **List**, **Timeline**, **Map**, **Week**, **Month** and **Quarter** views. See [How to plan your activities](/support/how-to/plan-your-activities).
+- **Activity updates** (also reachable as **Completed activities**): the work that was done. This is the list this guide is about.
+
+For a quick entry from anywhere, click **Record → Something we did** ([How to record data](/support/how-to/record-data)).
 
 ## Add an activity
 
-1. Click **New activity**.
-2. Fill in:
+1. Open **Activity updates** and click **New activity**.
+2. The form shows only the essentials first: **Activity title**, **Activity date** (**Today**, **Yesterday** or **Pick a day**), **Location**, **What happened?** and **Photos and files (optional)**. Open **Add detail** for everything else: **Start from an earlier record**, **Who came**, **Which planned activity is this?**, **Logframe activity**, **Through** (an end date), **Reporting period** and **More about it**. The rest of this list describes the fields:
    - **Activity title** and **Activity date**
    - **Reporting period** – the report this activity should feed. Once you have a date, DonorDesk states the period instead of asking: *Reporting period: Monthly · Mar 2026 (from the activity date)*, with a **Change** link if you need another. If no period contains the date, nothing is chosen for you: the list appears with a note and you must pick the period the record belongs to (or create the period first). A record is never put into a period just because it is listed first.
    - **Location**
