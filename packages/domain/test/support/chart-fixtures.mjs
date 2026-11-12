@@ -66,4 +66,4 @@ export const CASES = {
   THEME_RIVER: ["INDICATORS_OVER_TIME", ["a", "b"]], FILL_GAUGE: ["INDICATOR_VS_TARGET", ["a"]], MULTI_RING: ["INDICATORS_PROGRESS", ["a", "b", "c"]],
   BAR_LINE_COMBO: ["INDICATORS_OVER_TIME", ["a", "b"]], PIVOT_TABLE: ["INDICATORS_OVER_TIME", ["a", "b"]], SCORECARD_TABLE: ["INDICATORS_PROGRESS", ["a", "b", "r"]],
 };
-export const measureFor = (kind) => (["GAUGE", "PROGRESS_RING", "PROGRESS_BAR", "KPI_NUMBER", "BULLET", "FILL_GAUGE", "MULTI_RING"].includes(kind) ? "CUMULATIVE" : ["FUNNEL", "PIE", "DONUT", "TREEMAP", "LOLLIPOP", "DOT_PLOT", "BAR_HORIZONTAL", "RADAR", "SUNBURST", "WAFFLE"].includes(kind) ? "CUMULATIVE" : "PERIOD");
+export const measureFor = (kind) => (["GAUGE", "PROGRESS_RING", "PROGRESS_BAR", "KPI_NUMBER", "BULLET", "FILL_GAUGE", "MULTI_RING", "THERMOMETER", "DIVERGING_BAR"].includes(kind) ? "CUMULATIVE" : ["FUNNEL", "PIE", "DONUT", "TREEMAP", "LOLLIPOP", "DOT_PLOT", "BAR_HORIZONTAL", "RADAR", "SUNBURST", "WAFFLE"].includes(kind) ? "CUMULATIVE" : "PERIOD");

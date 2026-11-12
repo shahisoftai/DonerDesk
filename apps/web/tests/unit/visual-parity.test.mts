@@ -117,6 +117,7 @@ test("no source file links to a route the register says is redirected or removed
   for (const route of gone) for (const f of sources) {
     const rel = relative(ROOT, f);
     if (rel.includes(`app${route}`) || rel.includes(`app/(portal)${route}`)) continue; // the redirect page itself
+    if (rel.endsWith("src/middleware.ts")) continue; // its matcher lists routes so their gates run; it links to nothing
     if (pattern(route).test(readFileSync(f, "utf8"))) hits.push(`${rel} -> ${route}`);
   }
   assert.deepEqual(hits, [], `links to retired routes:\n${hits.join("\n")}`);
