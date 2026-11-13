@@ -9,10 +9,11 @@ import { LazyChartStudio, LazyMapExplorer } from "./LazyStudios";
 import { PlaceListSchema, PlaceResultsSchema } from "@/lib/server/schemas-places";
 import { PlaceFlowListSchema } from "@/lib/server/schemas-place-flows";
 import { FlowsPanel } from "@/features/maps/presentation/FlowsPanel";
+import { AddMapToDashboard } from "@/features/maps/presentation/AddMapToDashboard";
 import { MapContextSchema } from "@/lib/server/schemas-map-context";
 
 /** The project's results by place as maps and rankings, saved as views, with the places as KML and GeoJSON. Drawn by the project page and by the Visual Studio. */
-export async function MapStudioPanel({ projectId, studioHref }: { projectId: string; studioHref: string }) {
+export async function MapStudioPanel({ projectId, studioHref, indicatorId }: { projectId: string; studioHref: string; indicatorId?: string | undefined }) {
   const id = projectId;
   const ctx = await requireSession();
   const [sheet, saved, placeList, initial, photos, plan, flows, mapContext, project] = await Promise.all([
@@ -33,7 +34,8 @@ export async function MapStudioPanel({ projectId, studioHref }: { projectId: str
   return (
     <>
       <p className="mb-3 text-sm"><Link className="underline" href={`/projects/${id}/data`}>Data Center</Link> · <Link className="underline" href={studioHref}>Chart Studio</Link></p>
-      <LazyMapExplorer projectId={id} places={placeList.ok ? placeList.value.places : []} initial={initial.ok ? initial.value : null} periods={sheet.value.periods.map((p) => ({ id: p.id, label: p.label }))} activityCounts={activityCounts} mapContext={mapContext.ok ? mapContext.value : null} projectCountry={project.ok ? project.value.country : null} />
+      <LazyMapExplorer projectId={id} places={placeList.ok ? placeList.value.places : []} initial={initial.ok ? initial.value : null} periods={sheet.value.periods.map((p) => ({ id: p.id, label: p.label }))} activityCounts={activityCounts} mapContext={mapContext.ok ? mapContext.value : null} projectCountry={project.ok ? project.value.country : null} initialIndicatorId={indicatorId} />
+      <div className="mt-3"><AddMapToDashboard projectId={id} projectName={project.ok ? project.value.title : ""} indicatorId={indicatorId} /></div>
       {photos.ok && <div className="mt-8"><PhotosMapPanel projectId={id} photos={photos.value.items} places={placeList.ok ? placeList.value.places.map((p) => ({ name: p.name, aliases: p.aliases, latitude: p.latitude, longitude: p.longitude, archived: p.archived })) : []} /></div>}
       {flows.ok && <FlowsPanel projectId={id} places={(placeList.ok ? placeList.value.places : []).filter((p) => !p.archived).map((p) => ({ id: p.id, path: p.path }))} flows={flows.value.flows} canEdit={flows.value.canEdit} limit={flows.value.limit} />}
       <h2 className="mb-2 mt-8 text-lg font-semibold">Map charts and saved views</h2>

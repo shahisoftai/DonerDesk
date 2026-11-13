@@ -42,6 +42,9 @@ import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
 import { firstIndicator } from "./results-loader";
 import { mapReadiness } from "@donordesk/domain/contexts/places/map-readiness.js";
+import { MarkerLayer } from "./MarkerLayer";
+import { MAX_MARKER_INDICATORS, type MarkerKind } from "../domain/scene/place-markers";
+import { useMarkers } from "./useMarkers";
 import { MapReadinessCard } from "./MapReadinessCard";
 import { homeCountryOf } from "../domain/drill/home-country";
 
@@ -161,6 +164,8 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
   const toggleContext = (key: ContextToggle) => setContextOn((on) => { const next = new Set(on); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   const plan = useMemo(() => groundPlan(ground, dark ? "dark" : "light"), [ground, dark]);
   const anchored = useMemo(() => (callouts ? calloutAnchors(callouts.cards, places, joined) : null), [callouts, places, joined]);
+  const markers = useMarkers(results, places, joined);
+  const { kind: markerKind, setKind: setMarkerKind, ids: markerIds, setIds: setMarkerIds, data: markerData, anchors: markerAnchors } = markers;
   const scene = useMemo(() => {
     const built = buildResultsScene({
       model: model ?? EMPTY_MODEL, layers, joined, unit: indicator?.unit ?? null, selectedRef: selected?.ref ?? null,
@@ -256,20 +261,7 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
             {(results?.indicators ?? []).map((i) => <option key={i.id} value={i.id}>{i.code} {i.name}</option>)}
           </select>
         </label>}
-        {!compact && (
-          <label className="flex items-center gap-1">{t("maps.ground")}
-            <select className="input" value={ground} onChange={(e) => setGround(e.target.value as MapGround)}>
-              {MAP_GROUNDS.map((g) => <option key={g} value={g}>{t(`maps.ground.${g}` as never)}</option>)}
-            </select>
-          </label>
-        )}
       </div>
-      {!compact && (
-        <div className="flex flex-wrap items-center gap-4" data-no-print>
-          {!staticData && <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> {t("maps.compare")}</label>}
-          <button type="button" className="text-sm font-medium underline" onClick={() => window.print()}>{t("maps.print")}</button>
-        </div>
-      )}
       <p className="hidden text-sm print:block">{t("maps.printLine", { indicator: indicator ? `${indicator.code} ${indicator.name}` : t("maps.printTitle"), where: path.length > 0 ? path[path.length - 1]!.name : t("maps.world"), date: new Date().toISOString().slice(0, 10) })}</p>
       <PeriodSlider steps={steps} periodId={periodId} onChange={setPeriodId} />
       {!compact && compare && !staticData && (
@@ -287,7 +279,7 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
       {view.status === "error" && <p role="alert" className="text-sm text-danger-600">{t("maps.boundariesFailed")}</p>}
       <div className={compact ? "grid gap-3" : "grid gap-3 lg:grid-cols-[1fr_18rem]"}>
         <div className="space-y-2">
-          <MapLibreCanvas scene={scene} height={compact ? "h-[26rem]" : "h-[28rem]"} onSelect={choose} onNote={setNote} onFailed={onUnavailable} overlay={callouts ? (p) => <CalloutLayer projection={p} cards={anchored!.placed} unplaced={anchored!.unplaced} columns={callouts.columns} accent={callouts.accent} offsets={callouts.offsets} onMove={callouts.onMove} viewerMovable={callouts.viewerMovable} /> : undefined} />
+          <MapLibreCanvas scene={scene} height={compact ? "h-[26rem]" : "h-[28rem]"} onSelect={choose} onNote={setNote} onFailed={onUnavailable} overlay={callouts || (markerData && markerData.ok) ? (p) => <>{markerData && markerData.ok && markerKind !== "NONE" && <MarkerLayer projection={p} kind={markerKind} markers={markerData.markers} anchors={markerAnchors} />}{callouts && <CalloutLayer projection={p} cards={anchored!.placed} unplaced={anchored!.unplaced} columns={callouts.columns} accent={callouts.accent} offsets={callouts.offsets} onMove={callouts.onMove} viewerMovable={callouts.viewerMovable} />}</> : undefined} />
           {model && <MapLegend bands={bands} areaStyle={areaStyle} areas={(scene.layers.find((l) => l.kind === "FILL") as { features?: Array<{ name: string; color: string }> } | undefined)?.features ?? []} />}
           {model && <p className="text-sm text-slate-600">{t("maps.summary", { ...summaryCounts(model) })}</p>}
           {note === NO_BASEMAP && <p className="text-xs text-slate-500">{t("maps.noBasemap")}</p>}
@@ -312,10 +304,35 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
         </div>
         <div className="space-y-3" data-no-print>
           {!compact && <PlaceTree places={places} activityCounts={activityCounts ?? {}} figurePlaceIds={figureIds} selectedId={selected?.placeId ?? null} onSelect={focusPlace} />}
-          {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
-          {!compact && <ContextLayerToggles offered={offeredContext(mapContext)} on={contextOn} onToggle={toggleContext} />}
-          {!compact && !staticData && <AnalysisPanel projectId={projectId} places={places} siteIds={figureIds} onRings={showOverlay} />}
-          {!compact && <OverlayPanel onOverlay={showOverlay} />}
+          {!compact && (
+            <details className="rounded-lg border p-2" data-testid="map-more-options">
+              <summary className="cursor-pointer text-sm font-medium">{t("maps.more")}</summary>
+              <div className="mt-3 space-y-3">
+                <label className="flex items-center gap-1 text-sm">{t("maps.ground")}
+                  <select className="input" value={ground} onChange={(e) => setGround(e.target.value as MapGround)}>
+                    {MAP_GROUNDS.map((g) => <option key={g} value={g}>{t(`maps.ground.${g}` as never)}</option>)}
+                  </select>
+                </label>
+                {!staticData && <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> {t("maps.compare")}</label>}
+                <fieldset className="space-y-1 text-sm" data-testid="marker-controls">
+                  <legend className="font-medium">{t("maps.markers.title")}</legend>
+                  <select className="input" aria-label={t("maps.markers.title")} value={markerKind} onChange={(e) => setMarkerKind(e.target.value as MarkerKind)}>
+                    {(["NONE", "BAR", "PIE"] as const).map((k) => <option key={k} value={k}>{t(`maps.markers.${k}` as never)}</option>)}
+                  </select>
+                  {markerKind !== "NONE" && (results?.indicators ?? []).map((i) => (
+                    <label key={i.id} className="flex items-center gap-1"><input type="checkbox" checked={markerIds.includes(i.id)} disabled={!markerIds.includes(i.id) && markerIds.length >= MAX_MARKER_INDICATORS} onChange={(e) => setMarkerIds((ids) => (e.target.checked ? [...ids, i.id] : ids.filter((x) => x !== i.id)))} /> {i.code} {i.name}</label>
+                  ))}
+                  {markerData && !markerData.ok && <p role="status" className="text-xs text-slate-600">{t(`maps.markers.refusal.${markerData.refusal}` as never)}</p>}
+                  {markerData && markerData.ok && markerData.withoutFull > 0 && <p className="text-xs text-slate-600">{t("maps.markers.partial", { count: markerData.withoutFull })}</p>}
+                </fieldset>
+                <button type="button" className="text-sm font-medium underline" onClick={() => window.print()}>{t("maps.print")}</button>
+                {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
+                {!compact && <ContextLayerToggles offered={offeredContext(mapContext)} on={contextOn} onToggle={toggleContext} />}
+                {!compact && !staticData && <AnalysisPanel projectId={projectId} places={places} siteIds={figureIds} onRings={showOverlay} />}
+                {!compact && <OverlayPanel onOverlay={showOverlay} />}
+              </div>
+            </details>
+          )}
           {selected && <PlacePanel panel={panel} name={selected.name} canDrill={openLevel !== null} drillLabel={openLevel !== null ? t("maps.open", { level: levelPlural(openLevel) }) : undefined} onDrill={() => void openSelected()} onSelect={(id) => { const p = places.find((x) => x.id === id); if (p) setSelected({ ref: null, placeId: p.id, name: p.name }); }} onClose={() => setSelected(null)} />}
         </div>
       </div>

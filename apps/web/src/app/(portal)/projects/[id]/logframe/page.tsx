@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MapButton } from "@/features/maps/presentation/MapButton";
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { FrameworkDocumentSchema, LogframeResponseSchema, OrganizationSchema, ArchivedIndicatorsResponseSchema, ProjectsResponseSchema, ProjectDetailSchema } from "@/lib/server/schemas";
@@ -162,7 +163,7 @@ export default async function LogframePage({ params, searchParams }: { params: P
               {data.indicators.map((i) => (
                 <tr key={i.id} className="trow">
                   <td className="px-3 py-2 font-mono">{i.code}</td>
-                  <td className="px-3 py-2"><Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/indicators/${i.id}`}>{i.name}</Link>{i.library ? <span className="ms-2 rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-900 dark:bg-brand-900/40 dark:text-brand-100" data-testid="library-badge">Sector library</span> : null}{i.library?.referenceText ? <ReferenceTag entry={{ standardText: i.library.referenceText, referenceStandard: i.library.referenceStandard ?? undefined }} /> : null}</td>
+                  <td className="px-3 py-2"><Link className="font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${resolvedParams.id}/indicators/${i.id}`}>{i.name}</Link>{i.recordByPlace ? <> · <MapButton projectId={resolvedParams.id} indicatorId={i.id} /></> : null}{i.library ? <span className="ms-2 rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-900 dark:bg-brand-900/40 dark:text-brand-100" data-testid="library-badge">Sector library</span> : null}{i.library?.referenceText ? <ReferenceTag entry={{ standardText: i.library.referenceText, referenceStandard: i.library.referenceStandard ?? undefined }} /> : null}</td>
                   <td className="px-3 py-2">{i.type?.toLowerCase().replace("_", " ") ?? "—"}</td>
                   <td className="px-3 py-2">{i.baseline || "—"}</td>
                   <td className="px-3 py-2">{i.target}{i.unit ? ` ${i.unit}` : ""}</td>
