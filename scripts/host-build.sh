@@ -161,7 +161,8 @@ REMOTE
   case ${rc} in
     0) ;;
     75) say "another host build is running."; return ${EXIT_REFUSED} ;;
-    137|143) say "the build was stopped at the ${MEM_MB} MB memory cap (production is untouched). Raise HOST_BUILD_MEM_MB or use BUILD_ON=local."; return 1 ;;
+    # Nothing was shipped and production is untouched, so the caller may build locally instead (a full rebuild of every package can exceed the cap).
+    137|143) say "the build was stopped at the ${MEM_MB} MB memory cap (production is untouched); building locally instead."; return ${EXIT_REFUSED} ;;
     *) say "the build failed on the host (exit ${rc}); the output above is the first failure."; return 1 ;;
   esac
   lap "built on the host"
