@@ -92,7 +92,8 @@ build() {
   ${SSH} "mkdir -p ${DIR} && cat > ${DIR}/run-build.sh" <<'REMOTE'
 set -uo pipefail
 cd "${SRC}"
-export CI=true DD_SKIP_NEXT_TYPECHECK=1 NEXT_TELEMETRY_DISABLED=1 COREPACK_HOME="${DIR}/.corepack" COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+# DD_LOW_MEMORY_BUILD + a capped heap keep `next build` under the cgroup cap (see apps/web/next.config.mjs).
+export CI=true DD_SKIP_NEXT_TYPECHECK=1 DD_LOW_MEMORY_BUILD=1 NODE_OPTIONS=--max-old-space-size=2048 NEXT_TELEMETRY_DISABLED=1 COREPACK_HOME="${DIR}/.corepack" COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 PNPM=(corepack pnpm)
 T0=$(date +%s); T=${T0}
 lap() { local n; n=$(date +%s); echo "  [host] $1: $((n - T))s (total $((n - T0))s)"; T=${n}; }
