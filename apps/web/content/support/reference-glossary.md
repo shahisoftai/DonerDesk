@@ -4,6 +4,9 @@ This glossary explains the key terms used in DonorDesk.
 
 ## A
 
+**Assumption (of a result)**
+What must hold for a result to lead to the one above it, written on that result in the Logframe (the logframe's assumptions column). Different from an assumption recorded under Problems and risks, which is about the whole project.
+
 **Activity**
 A specific task or event carried out as part of a project. Examples: training sessions, distribution events, field visits.
 
@@ -66,7 +69,7 @@ Recording the value of an indicator for a specific reporting period.
 ## L
 
 **Logframe (Logical Framework)**
-A hierarchical planning tool showing a project's Goal, Outcomes, Outputs, Activities, and Indicators.
+The project's results set out as a measurement matrix: Goal, Outcomes, Outputs and Activities with their indicators, baselines, targets, means of verification and assumptions. In DonorDesk it is one of two ways to read the same results (the other is the results framework).
 
 ## M
 
@@ -93,6 +96,9 @@ A single donor-funded initiative within your organisation. Each project has its 
 A user role for the person responsible for managing a specific project.
 
 ## R
+
+**Results framework**
+The chain of results a project intends to achieve and why each leads to the next. In DonorDesk it is one of two ways to read the project's results (the other is the logframe); the level names follow the donor wording chosen in the reporting profile.
 
 **Readiness Score**
 A percentage (0-100%) showing how complete a reporting period is. Based on sections, indicators, evidence, compliance, and approvals.

@@ -48,6 +48,9 @@ Email privacy@donordesk.online. See [How DonorDesk handles your data](/support/s
 ### How many projects can I have?
 Active projects: Starter 1, Team 5, Growth 20. Archived projects and the demo project do not count.
 
+### What is the difference between a results framework and a logframe?
+They describe the same results. A results framework explains the chain (what leads to what, and why); a logframe adds how each result is measured and what is assumed. DonorDesk stores one set of results and shows both: on the Logframe page choose **Results framework** or **Logframe**. Your donor's own words for the levels can be set in **Setup → Reporting profile**. See [Understanding logframes](/support/getting-started/understanding-logframes).
+
 ### Can I import my logframe?
 Yes: Excel, CSV or TXT using the downloadable template. Indicators, activities and evidence records can be imported too. See [Data import and export](/support/advanced-features/data-import-export).
 

@@ -44,3 +44,19 @@ Every quantitative indicator needs **baseline, target, unit and frequency**. See
 ## Disaggregation does not add up
 
 For Number and Currency indicators each breakdown must equal the period total. Fix the categories or the total.
+
+## "The code of an indicator in an approved framework does not change"
+
+The framework has been signed off, so its indicator codes are fixed. Archive the indicator and add a new one with the code you want (see [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator)).
+
+## Saving a target asks "Why are you changing this?"
+
+A report that has been approved used this indicator. Write the reason (at least ten characters) and save again; it is kept with the framework history.
+
+## The levels have the wrong names
+
+The level names follow the project's **Results framework wording** in **Setup → Reporting profile**. Choose your donor's terms there, or **My own words**.
+
+## A downloaded logframe shows a dash in a cell
+
+A dash means nothing was written there (for example no baseline, or no assumption for that result). It is never a zero.

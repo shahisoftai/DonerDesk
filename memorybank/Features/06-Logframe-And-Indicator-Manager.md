@@ -2,6 +2,8 @@
 
 **DonorDesk Version 3.007**
 
+> **Since Phase 52:** the same results can be read as a results framework or a logframe, in the donor's own words, with assumptions and reasoning per result. See [64](64-Results-Framework-And-Logframe.md).
+
 ## Overview
 
 Users can create, upload, or AI-structure project logframes with Goals, Outcomes, Outputs, Activities, and Indicators.

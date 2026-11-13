@@ -38,6 +38,8 @@ Every EU grant is governed by:
 
 **Read Annex V first.** It tells you exactly what to submit and when.
 
+> **In DonorDesk:** choose **European Union** in **Setup → Reporting profile → Results framework wording**. The levels read Overall objective, Specific objective and Result, and the downloaded document is titled "Intervention logic".
+
 ## EU Narrative Reporting Requirements
 
 ### Periodic Reports

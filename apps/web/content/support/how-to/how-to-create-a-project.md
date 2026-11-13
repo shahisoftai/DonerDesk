@@ -24,6 +24,7 @@ Read the yellow notice at the top once. The wizard reads documents with an AI th
 Say what kind of project it is.
 - **Donor** and **Country**: type them.
 - **Main sector** (a list of about 30 humanitarian and development sectors): this decides the starting answers and the indicator library you are offered. You can add other sectors too.
+- **Donor wording for the results framework**: choose your donor's terms for the levels (USAID, FCDO, European Union or United Nations), or leave DonorDesk's own words. The Results framework slide uses them at once, and the project keeps them when it starts. You can change them later in **Setup → Reporting profile**.
 - Optional: **Choose files** (up to five documents) and **Read my documents** (see "Start from documents" below).
 - **Use the starting answers for this sector** fills in the usual reporting frequency, review mode, entry window, common risks and a starting dashboard. It only fills what is still empty, and you can change every answer afterwards. In a test it completed the **Data entry** and **Reporting** slides at once. Your organisation can write its own starting answers: see [How to write your organisation's starting answers](/support/how-to/write-your-own-starting-answers).
 
@@ -35,7 +36,8 @@ Say what kind of project it is.
 ### 3. Results framework
 What the project will achieve, from goal down to activities.
 - **Choose from the library** opens the sector library. Click **Add the suggested results** to add your sector's goal, outcomes, outputs and activities in one go (about 20 items). You can also pick groups in the library.
-- **Add a result** adds one by hand: choose its **Kind** (**Goal**, **Outcome**, **Output**, **Activity**), write what will be achieved, and choose what it **Belongs to**.
+- **Add a result** adds one by hand: choose its **Kind** (**Goal**, **Outcome**, **Output**, **Activity**, or your donor's words for them), write what will be achieved, and choose what it **Belongs to**.
+- Each outcome and output has **Logic (optional)**: **Why this leads to the result above it** and **Assumptions**. The library's suggested results arrive with a starting assumption you can keep, change or delete. A note reminds you of outcomes and outputs without their reasoning; it is a suggestion only and never stops the launch.
 - Where your documents or the library gave no codes, the wizard makes them up and asks you to check them: click **Keep the N codes made up for you** to accept.
 - Edit or **Remove** any result. Every outcome needs an output and every output needs an activity.
 

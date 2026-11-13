@@ -404,3 +404,7 @@ memorybank/
 ## 2026-11-10: Phase 49 — maps hardening (Version 3.007)
 - Feature: [`Features/63-Maps-Hardening.md`](Features/63-Maps-Hardening.md). Plan and progress: [`imp/phase49-maps-hardening.md`](imp/phase49-maps-hardening.md). Live check: [`demo/verification-phase49-maps.md`](demo/verification-phase49-maps.md).
 - Deployed 2026-11-10 (`20261110133250` and fixes); migration `20261114090000_tenant_map_settings`; map data under `/opt/donordesk/shared/{geo,tiles}` (see `contabo-ops.md`).
+
+## 2026-11-13: Phase 52 — results framework and logframe (Version 3.007)
+- Feature: [`Features/64-Results-Framework-And-Logframe.md`](Features/64-Results-Framework-And-Logframe.md). Plan and build record: [`imp/phase52-results-framework-and-logframe.md`](imp/phase52-results-framework-and-logframe.md).
+- Deployed 2026-11-13 (`20261113100000`, fixes `20261113130000`); migrations `20261116090000_framework_vocabulary`, `20261116100000_framework_logic`, `20261116110000_framework_change_kinds` (additive, no RLS change).

@@ -8,9 +8,12 @@ Use this when something has gone wrong, or might, and the team should see it. On
 2. **What kind is it?** Choose one: **It has happened** (a problem), **It might happen** (a risk), **We are assuming** (an assumption), **We decided** (a decision) or **We depend on someone** (a dependency).
 3. **How serious?** **High**, **Medium** or **Low**.
 4. **Who is handling it?** Choose a team member, or leave **Nobody yet**.
-5. **What is being done about it?** One short sentence.
+5. **Which result does it affect? (optional)** Choose the outcome, output or activity the problem puts at risk, or leave **None in particular**.
+6. **What is being done about it?** One short sentence.
 
-Select **Raise it** (or **Cancel**). Open ones are listed under **Problems and risks** with the most serious first, and a **Show** filter lets you view everything or one kind.
+Select **Raise it** (or **Cancel**). Open ones are listed under **Problems and risks** with the most serious first, and a **Show** filter lets you view everything or one kind. An item raised against a result says so under its title ("Affects: OC1 …").
+
+An assumption written here is about the whole project. To write what must hold for one result to lead to the next, use that result's **Assumptions** on the Logframe page instead (see [How to build a logframe](/support/how-to/build-logframe)).
 
 ## Keep it current
 

@@ -18,7 +18,7 @@ Some indicators show a **reference standard**, for example "at most 20 people pe
 
 1. On the **Start** step choose the **main sector**, and tick any other sectors the project works in. The sector's assessment questions appear; your answers are saved with the project description.
 2. **Use the starting answers for this sector** fills only what is still empty (how often you report, report layouts, how values are checked, usual risks, a starting dashboard).
-3. On **Results framework**, **Choose from the library** → **Add the suggested results** adds the sector's goal, outcomes, outputs and activities. You can edit or remove any of them.
+3. On **Results framework**, **Choose from the library** → **Add the suggested results** adds the sector's goal, outcomes, outputs and activities. Each outcome and output comes with a **starting assumption** (for example, that water points keep working and the source is not depleted). You can edit or remove any of them.
 4. On **Indicators**, **Choose from the library**, tick the indicators you want (use the filters for result level, kind, "recommended only" or "with a reference standard") and press **Add**. Each indicator arrives with no baseline and no target: you set both.
 
 An indicator is placed under the result it measures when its wording fits that result. **If no result fits, it is not placed by guess**: the wizard tells you "Choose which result … measures" and you pick one in the **Measures** box.
@@ -39,6 +39,6 @@ Under **Settings → Sector library** an administrator can see how many indicato
 
 ## What the library does not do
 
-It never sets a baseline or a target, never judges your results against a standard, and never changes an indicator you already have without asking. The text of the library is in English.
+It never sets a baseline or a target, never judges your results against a standard, and never changes an indicator you already have without asking. Its starting assumptions are general conditions, not checked against your context: confirm each one before it goes to a donor. The text of the library is in English.
 
 See also: [Understanding indicators](/support/getting-started/indicators-and-targets), [Logframes](/support/getting-started/understanding-logframes) and [Troubleshooting project setup](/support/troubleshooting/project-setup).

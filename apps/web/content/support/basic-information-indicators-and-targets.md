@@ -26,6 +26,8 @@ Instead of writing an indicator yourself you can choose one from the [sector lib
 
 An indicator can be edited, moved to another logframe item or removed at any time (see [How to fix, move or remove an indicator](/support/how-to/fix-or-remove-an-indicator)). Its type is locked once a value is recorded. An indicator with recorded values is **archived**, not erased (restore it from **Archived indicators** on the Logframe page), so earlier reports keep their history; one used in an approved report cannot be removed or moved until the report is sent back for changes.
 
+Once the framework has been signed off (Framework history page), an indicator's **code** is fixed, and changing a **baseline or target** that an approved report used asks **why** (kept with the framework history). An approved report keeps showing the targets it was approved against.
+
 Several indicators can measure the same logframe item.
 
 ## Period values

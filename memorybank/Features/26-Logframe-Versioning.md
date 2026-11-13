@@ -5,6 +5,8 @@
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit finding H-1). Browser check of the history page is pending. Builds on [Feature 06](06-Logframe-And-Indicator-Manager.md).
 
+> **Since Phase 52:** each version records whether it changed the results/reasoning or the measurement, and after sign-off a code is fixed and a judged target needs a reason. See [64](64-Results-Framework-And-Logframe.md).
+
 ## 1. What a user gets
 
 | In plain words | Where it shows |

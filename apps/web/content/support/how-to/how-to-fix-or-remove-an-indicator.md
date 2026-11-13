@@ -9,7 +9,14 @@ Open **Projects → your project → Logframe**, then click the indicator to ope
 1. Change the **code**, **name**, **unit**, **baseline** or **target**.
 2. Click **Save changes**.
 
-Every change is recorded in the audit trail (what it was, what it is now).
+Every change is recorded in the audit trail (what it was, what it is now) and in the [framework history](/support/how-to/see-framework-history).
+
+### After the framework is signed off
+
+Once someone has selected **Sign off the framework as it is now** on the Framework history page, two rules apply:
+
+- **The code no longer changes.** Saving a new code is refused with the message *"The code of an indicator in an approved framework does not change. Archive it and add a new indicator instead."*
+- **A baseline or target that an approved report used needs a reason.** Write it in **Why are you changing this?** (at least ten characters) and save again. The reason is kept with the framework history and the audit trail. An indicator no approved report has used can still be corrected without one.
 
 ## Turn the breakdown on or off
 

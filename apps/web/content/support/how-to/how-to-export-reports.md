@@ -56,6 +56,10 @@ A Word or PDF file ends in **-final** when it is the sealed donor copy and **-in
 
 The message lists the reasons in words, for example "The donor copy cannot be sealed yet: 2 statements still need a decision." Requirements the donor sets are worked out automatically when you seal, so you no longer need to do that first. Fix the listed items, then try again.
 
+## Targets in an approved report
+
+The indicator table of an approved (or exported, or submitted) report shows the baselines and targets of the framework as it stood **when the report was approved**. If a target is changed later, a new export of that report still shows the old one, so the file always matches what was approved. To export with the new targets, reopen the report and approve it again. You can also download the framework itself as a Word or PDF file from the Logframe page (**Results framework** or **Logframe**, then **Download Word** or **Download PDF**).
+
 ## Download and history
 
 Each export is stored with its type, who ran it, when, the report version and the files included. Find it in the Export Center and download it again at any time.

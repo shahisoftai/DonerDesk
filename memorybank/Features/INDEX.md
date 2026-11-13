@@ -241,3 +241,9 @@ Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project work
 | # | Feature | Doc |
 |---|---|---|
 | 63 | World basemap and regions, OCHA boundaries as tiles, context layers and imagery, Analyse panel, pin editor, files out, offline map, one map engine | [63-Maps-Hardening.md](./63-Maps-Hardening.md) |
+
+## Phase 52 — results framework and logframe (2026-11-13)
+
+| # | Feature | Doc |
+|---|---|---|
+| 64 | One set of results read as a results framework or a logframe, donor wording, assumptions and reasoning per result, change kinds, rules after sign-off, approved reports keep their targets | [64-Results-Framework-And-Logframe.md](./64-Results-Framework-And-Logframe.md) |
