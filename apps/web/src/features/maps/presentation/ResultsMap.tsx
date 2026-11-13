@@ -9,7 +9,7 @@ import { useColorMode } from "../../design/presentation/use-color-mode";
 import { attributionLine, fileFor, findCountry, type BoundaryManifest } from "../domain/boundary-sources";
 import { joinUnits, matchedByNameOnly, nameRef } from "../domain/boundaries/join";
 import { WORLD_PATH, decodePath, encodePath, levelBelow, open, resultsLevelFor, shownLevel, toCrumb, type DrillPath } from "../domain/drill/drill-path";
-import { LOW_DETAIL_BASEMAP, NO_BASEMAP, type BasemapNote } from "../domain/basemap/regions";
+import type { BasemapNote } from "../domain/basemap/regions";
 import type { BoundaryOrigin } from "../ports/boundary-source";
 import { buildMapTable } from "../domain/table/map-table";
 import { DEFAULT_LAYERS, OVERLAY_LAYER, buildExplorerModel, summaryCounts, moveLayer, panelPeriods, placePanel, setLayerOpacity, sharedBands, toggleLayer, withBands, type ExplorerModel } from "../domain/map-explorer";
@@ -43,13 +43,15 @@ import type { ExplorerProps } from "./results-loader";
 import { firstIndicator } from "./results-loader";
 import { mapReadiness } from "@donordesk/domain/contexts/places/map-readiness.js";
 import { MarkerLayer } from "./MarkerLayer";
-import { MAX_MARKER_INDICATORS, type MarkerKind } from "../domain/scene/place-markers";
+import { MarkerControls } from "./MarkerControls";
+import { useOpeningPath } from "./useOpeningPath";
+import { MapFootnotes } from "./MapFootnotes";
+import { useComparePanels } from "./useComparePanels";
 import { useMarkers } from "./useMarkers";
 import { MapReadinessCard } from "./MapReadinessCard";
 import { homeCountryOf } from "../domain/drill/home-country";
 
 const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], regions: [], unmapped: [], bands: [], isRate: false };
-const ADDRESS_KEY = "map";
 
 interface Selection { ref: string | null; placeId: string | null; name: string }
 
@@ -90,8 +92,6 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
   const [note, setNote] = useState<BasemapNote | null>(null);
   const [showTable, setShowTable] = useState(false);
   const [manifest, setManifest] = useState<BoundaryManifest | null>(null);
-  const [compare, setCompare] = useState(false);
-  const [panels, setPanels] = useState<Array<{ label: string; results: PlaceResults }>>([]);
   const [error, setError] = useState<string | null>(null);
   /** Set when the drawn level is the organisation's own upload: its credit replaces the shipped files'. */
   const [credit, setCredit] = useState<BoundaryOrigin | null>(null);
@@ -100,32 +100,8 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
 
   useEffect(() => { void loadBoundaryManifest().then(setManifest); }, []);
 
-  // A project working in one country opens on it; a bookmarked address (?map=0:name:uganda/1:UG01) opens where it was.
-  useEffect(() => {
-    const fromAddress = addressed ? decodePath(new URLSearchParams(window.location.search).get(ADDRESS_KEY)) : [];
-    if (fromAddress.length > 0) { setPath(fromAddress.map((c) => ({ level: c.level, ref: c.ref, name: c.ref.replace(/^name:/, "").replace(/_/g, " ") }))); return; }
-    const open = (home: string | null) => { if (home) setPath([{ level: 0, name: home, ref: nameRef(home) }]); };
-    const ruled = homeCountryOf({ places, results: initial });
-    if (ruled || !projectCountry) { open(ruled); return; }
-    // The project's own country, only when the boundary catalogue knows it (never guessed).
-    void loadBoundaryManifest().then((m) => open(homeCountryOf({ places, results: initial, projectCountry, knownCountries: m ? [findCountry(m, projectCountry)?.name ?? ""].filter(Boolean) : [] })));
-    // Once, on opening.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Names learnt from the loaded boundaries replace the placeholders an address gave.
-  useEffect(() => {
-    if (view.opened.length === 0) return;
-    const named = path.map((c, i) => (view.opened[i] && view.opened[i]!.name !== c.name ? { ...c, name: view.opened[i]!.name } : c));
-    if (named.some((c, i) => c !== path[i])) setPath(named);
-  }, [view.opened, path]);
-
-  useEffect(() => {
-    if (!addressed) return;
-    const url = new URL(window.location.href);
-    if (path.length === 0) url.searchParams.delete(ADDRESS_KEY); else url.searchParams.set(ADDRESS_KEY, encodePath(path));
-    window.history.replaceState(null, "", url);
-  }, [path, addressed]);
+  // Where the map opens, and its address (a hook, so the explorer only composes).
+  useOpeningPath({ path, setPath, addressed, places, results: initial, projectCountry, opened: view.opened });
 
   useEffect(() => {
     if (view.status === "loading") return;
@@ -177,21 +153,9 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
     return { ...built, detail: plan.detail, layers: [...cover, ...context, ...built.layers] };
   }, [model, layers, joined, indicator, selected, overlay, plan, mask, dark, lang, t, mapContext, contextOn, areaStyle]);
 
-  // Side-by-side periods: one small map per period on one shared scale.
-  const latest = useMemo(() => panelPeriods(periods), [periods]);
-  useEffect(() => {
-    if (!compare || view.status === "loading") return;
-    let live = true;
-    const level = resultsLevelFor(view.shown, results?.levelsAvailable ?? []);
-    void Promise.all(latest.map((p) => read(projectId, level, p.id).then((o) => (o.ok ? { label: p.label, results: o.value } : null)))).then((all) => { if (live) setPanels(all.filter((x): x is { label: string; results: PlaceResults } => x !== null)); });
-    return () => { live = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [compare, view.shown, view.status, projectId, latest]);
-  const panelScenes = useMemo(() => {
-    const models = panels.map((p) => ({ label: p.label, model: buildExplorerModel(p.results, places, indicatorId) })).filter((x): x is { label: string; model: ExplorerModel } => x.model !== null);
-    const bands = sharedBands(models.map((m) => m.model));
-    return models.map((m) => ({ label: m.label, scene: buildResultsScene({ model: withBands(m.model, bands), layers, joined: joinUnits(view.units, places.filter((p) => m.model.regions.some((r) => r.placeId === p.id)), places), unit: indicator?.unit ?? null, selectedRef: null, selectedPlaceId: null, basemap: "plain", lang, label: `${m.label}: ${t("maps.summary", { ...summaryCounts(m.model) })}` }) }));
-  }, [panels, places, indicatorId, layers, view.units, indicator, lang, t]);
+  // Side-by-side periods (a hook, so the explorer only composes).
+  const summaryOf = useCallback((counts: ReturnType<typeof summaryCounts>) => t("maps.summary", { ...counts }), [t]);
+  const { compare, setCompare, scenes: panelScenes } = useComparePanels({ periods, ready: view.status !== "loading", level: resultsLevelFor(view.shown, results?.levelsAvailable ?? []), projectId, read, places, indicatorId, indicatorUnit: indicator?.unit ?? null, layers, units: view.units, lang, summaryOf });
 
   // Whether the chosen boundary can be opened. At the world that depends on the chosen country's own files.
   useEffect(() => {
@@ -282,13 +246,7 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
           <MapLibreCanvas scene={scene} height={compact ? "h-[26rem]" : "h-[28rem]"} onSelect={choose} onNote={setNote} onFailed={onUnavailable} overlay={callouts || (markerData && markerData.ok) ? (p) => <>{markerData && markerData.ok && markerKind !== "NONE" && <MarkerLayer projection={p} kind={markerKind} markers={markerData.markers} anchors={markerAnchors} />}{callouts && <CalloutLayer projection={p} cards={anchored!.placed} unplaced={anchored!.unplaced} columns={callouts.columns} accent={callouts.accent} offsets={callouts.offsets} onMove={callouts.onMove} viewerMovable={callouts.viewerMovable} />}</> : undefined} />
           {model && <MapLegend bands={bands} areaStyle={areaStyle} areas={(scene.layers.find((l) => l.kind === "FILL") as { features?: Array<{ name: string; color: string }> } | undefined)?.features ?? []} />}
           {model && <p className="text-sm text-slate-600">{t("maps.summary", { ...summaryCounts(model) })}</p>}
-          {note === NO_BASEMAP && <p className="text-xs text-slate-500">{t("maps.noBasemap")}</p>}
-          {note === LOW_DETAIL_BASEMAP && <p className="text-xs text-slate-500">{t("maps.lowDetailBasemap")}</p>}
-          {path.length === 1 && view.status === "ready" && finest !== undefined && finest < 4 && <p className="text-xs text-slate-500">{t("maps.finest", { country: path[0]!.name, level: levelPlural(finest) })}</p>}
-          {byName > 0 && <p className="text-xs text-slate-500">{t("maps.byNameOnly", { count: byName })}</p>}
-          {credit ? <p className="text-xs text-slate-500" data-testid="boundary-credit">{t("maps.credit.uploaded", { country: credit.countryName, name: credit.layerName })}</p> : country && fileEntry && <p className="text-xs text-slate-500">{attributionLine(country, view.shown as 2 | 3 | 4)}</p>}
-          <p className="text-xs text-slate-500" data-no-print><Link className="underline" href="/maps/sources">{t("maps.sources.link")}</Link></p>
-          {model && model.unmapped.length > 0 && <p className="text-xs text-slate-500">{t("maps.unmappedList", { names: model.unmapped.map((u) => u.name).join(", ") })}</p>}
+          <MapFootnotes note={note} finest={path.length === 1 && view.status === "ready" && finest !== undefined && finest < 4 ? { country: path[0]!.name, level: finest } : null} countryName={path[0]?.name ?? null} shownLevel={view.shown} byName={byName} credit={credit} attribution={country && fileEntry ? attributionLine(country, view.shown as 2 | 3 | 4) : null} unmapped={model?.unmapped ?? []} />
           <div data-no-print>
             <button type="button" className="text-sm font-medium underline" aria-expanded={showTable} aria-controls="map-as-table" onClick={() => setShowTable((v) => !v)}>{showTable ? t("maps.table.hide") : t("maps.table.show")}</button>
             {showTable && <div id="map-as-table" className="mt-2"><MapDataTable rows={tableRows} unit={indicator?.unit ?? null} selectedPlaceId={selected?.placeId ?? null} onSelect={(row) => setSelected({ ref: row.ref, placeId: row.placeId, name: row.name })} /></div>}
@@ -314,17 +272,7 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
                   </select>
                 </label>
                 {!staticData && <label className="flex items-center gap-1 text-sm"><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> {t("maps.compare")}</label>}
-                <fieldset className="space-y-1 text-sm" data-testid="marker-controls">
-                  <legend className="font-medium">{t("maps.markers.title")}</legend>
-                  <select className="input" aria-label={t("maps.markers.title")} value={markerKind} onChange={(e) => setMarkerKind(e.target.value as MarkerKind)}>
-                    {(["NONE", "BAR", "PIE"] as const).map((k) => <option key={k} value={k}>{t(`maps.markers.${k}` as never)}</option>)}
-                  </select>
-                  {markerKind !== "NONE" && (results?.indicators ?? []).map((i) => (
-                    <label key={i.id} className="flex items-center gap-1"><input type="checkbox" checked={markerIds.includes(i.id)} disabled={!markerIds.includes(i.id) && markerIds.length >= MAX_MARKER_INDICATORS} onChange={(e) => setMarkerIds((ids) => (e.target.checked ? [...ids, i.id] : ids.filter((x) => x !== i.id)))} /> {i.code} {i.name}</label>
-                  ))}
-                  {markerData && !markerData.ok && <p role="status" className="text-xs text-slate-600">{t(`maps.markers.refusal.${markerData.refusal}` as never)}</p>}
-                  {markerData && markerData.ok && markerData.withoutFull > 0 && <p className="text-xs text-slate-600">{t("maps.markers.partial", { count: markerData.withoutFull })}</p>}
-                </fieldset>
+                <MarkerControls kind={markerKind} onKind={setMarkerKind} ids={markerIds} onIds={setMarkerIds} indicators={results?.indicators ?? []} data={markerData} />
                 <button type="button" className="text-sm font-medium underline" onClick={() => window.print()}>{t("maps.print")}</button>
                 {!compact && <LayerPanel layers={layers} onToggle={(id) => setLayers((l) => toggleLayer(l, id))} onOpacity={(id, v) => setLayers((l) => setLayerOpacity(l, id, v))} onMove={(id, d) => setLayers((l) => moveLayer(l, id, d))} />}
                 {!compact && <ContextLayerToggles offered={offeredContext(mapContext)} on={contextOn} onToggle={toggleContext} />}
