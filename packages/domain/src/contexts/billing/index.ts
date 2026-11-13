@@ -1,4 +1,5 @@
 export * from "./plan.js";
+export * from "./ask-access.js";
 export * from "./llm-pricing.js";
 export * from "./entitlement.js";
 export * from "./billing-subscription.js";

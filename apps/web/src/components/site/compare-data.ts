@@ -223,7 +223,7 @@ export const SECTIONS: MatrixSection[] = [
       sheet: y("Pivot tables."),
     } },
     { label: "Ask your records a question", cells: {
-      dd: p("Ask in plain language; the answer is built only from your records and names the source behind each statement, and it says so when the records do not answer. Off until an administrator turns it on, and new."),
+      dd: p("Ask in plain language; the answer is built only from your records and names the source behind each statement, and it says so when the records do not answer. Included from the Team plan up; off until an administrator turns it on, and new."),
       ai: u(),
       dr: u(),
       tola: p("AI features (a knowledge database, a data analytics assistant) are described as in pilot."),

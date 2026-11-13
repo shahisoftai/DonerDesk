@@ -67,7 +67,7 @@ export default async function SettingsPage() {
           </p>
         </section>
       )}
-      <AskSettingsCard initialEnabled={result.value.askEnabled === true} canEdit={ctx.capabilities.has("org.manage")} />
+      <AskSettingsCard initialEnabled={result.value.askEnabled === true} canEdit={ctx.capabilities.has("org.manage")} inPlan={result.value.askAccess !== "NOT_IN_PLAN"} />
       <SetupAssistSettingsCard initialEnabled={result.value.setupAssistEnabled === true} canEdit={ctx.capabilities.has("org.manage")} />
       {ctx.capabilities.has("org.manage") && (
         <>

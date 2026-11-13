@@ -37,6 +37,7 @@ function world(over = {}) {
     async () => over.provider === null ? null : ({
       complete: async (input) => (calls.prompts.push(input), { text: over.reply ?? JSON.stringify({ answer: [{ text: "In January 170 households received kits (verified).", sources: ["S2"] }], missing: [] }), model: "m", promptVersion: "1", usage: { inputTokens: 1, outputTokens: 1 } }),
     }),
+    { resolve: async () => ok({ planCode: over.plan ?? "TEAM", limits: { askAssistant: (over.plan ?? "TEAM") !== "STARTER" } }) },
   );
   return { h, org, events, calls };
 }
@@ -102,4 +103,17 @@ test("only an administrator turns Ask on, and the change is audited", async () =
   assert.ok((await update.handle(as("admin", "ADMIN"), { enabled: true })).ok);
   assert.equal(org.askEnabled, true);
   assert.equal(events[0].eventType, "organization.ask_settings_updated");
+});
+
+test("a Starter organisation is refused even when an administrator has turned Ask on; Team, Growth and Enterprise are not", async () => {
+  const starter = world({ plan: "STARTER" });
+  const r = await starter.h.handle(manager, "p1", "How many households received kits?");
+  assert.equal(r.value.available, false);
+  assert.match(r.value.reason, /Team plan and above/);
+  assert.equal(starter.calls.prompts.length, 0);
+  assert.equal(starter.calls.search.length, 0);
+  for (const plan of ["TEAM", "GROWTH", "ENTERPRISE"]) {
+    const w = world({ plan });
+    assert.equal((await w.h.handle(manager, "p1", "How many households received kits (OUT-1)?")).value.available, true, plan);
+  }
 });

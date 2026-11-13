@@ -16,6 +16,7 @@ Your DonorDesk plan sets limits on projects, team seats, storage and AI report d
 | AI report drafts per month | 5 | 20 | 100 | Contracted pool |
 | AI credit top-up packs | – | Yes | Yes | Contracted |
 | Bring your own AI provider | – | – | Yes | Yes |
+| Ask about your projects (floating assistant) | – (help search only) | Yes | Yes | Yes |
 | SSO / SCIM, custom data residency | – | – | – | Yes |
 | Support | Community | Email | Priority email + onboarding call | SLA + dedicated contact |
 

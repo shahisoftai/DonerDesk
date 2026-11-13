@@ -17,6 +17,7 @@ import { ToastProvider } from "@/components/feedback/Toast";
 import { TourOverlay } from "@/features/tour/presentation/TourOverlay";
 import { OutboxProvider } from "@/features/offline/presentation/OutboxProvider";
 import { OutboxBanner } from "@/features/offline/presentation/OutboxBanner";
+import { AskAssistant } from "@/features/help/presentation/AskAssistant";
 import { RecordHost } from "@/features/record/presentation/RecordHost";
 import { RECORD_KINDS } from "@/features/record/domain/record-kinds";
 
@@ -88,6 +89,10 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         {children}
       </AppShell>
       </RecordHost>
+      <AskAssistant
+        access={ctx.external ? "PARTNER" : orgResult.ok ? orgResult.value.askAccess ?? "NOT_IN_PLAN" : "NOT_IN_PLAN"}
+        aboveTabBar={canRecord && homeVariantFor(ctx.role) === "FIELD"}
+      />
       <TourOverlay />
       <OutboxBanner />
       </OutboxProvider>

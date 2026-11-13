@@ -9,7 +9,8 @@ export default async function AskPage({ params }: { params: Promise<{ id: string
   const { id } = await params;
   const ctx = await requireSession();
   const org = await gatewayRequest("/v1/organization", OrganizationProfileSchema, ctx.token);
-  const enabled = org.ok && org.value.askEnabled === true && !ctx.external;
+  const enabled = org.ok && org.value.askAccess === "AVAILABLE" && !ctx.external;
+  const notInPlan = org.ok && org.value.askAccess === "NOT_IN_PLAN";
   return (
     <div className="animate-fade-in space-y-4">
       <header>
@@ -18,7 +19,7 @@ export default async function AskPage({ params }: { params: Promise<{ id: string
       </header>
       {enabled ? <AskPanel projectId={id} /> : (
         <p className="rounded-lg bg-slate-50 p-3 text-sm text-slate-700 dark:bg-white/5 dark:text-slate-200">
-          {ctx.external ? "Ask DonorDesk is not available to outside partners." : <>Ask DonorDesk is switched off for this organisation. {ctx.capabilities.has("org.manage") ? <>You can turn it on in <a className="underline" href="/settings">Settings</a>.</> : "An administrator can turn it on in Settings."}</>}
+          {ctx.external ? "Ask DonorDesk is not available to outside partners." : notInPlan ? <>Ask about your projects is part of the Team plan and above. <a className="underline" href="/settings/billing">See plans</a>.</> : <>Ask DonorDesk is switched off for this organisation. {ctx.capabilities.has("org.manage") ? <>You can turn it on in <a className="underline" href="/settings">Settings</a>.</> : "An administrator can turn it on in Settings."}</>}
         </p>
       )}
     </div>

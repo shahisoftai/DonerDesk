@@ -36,6 +36,7 @@ export const PlanLimitsJsonSchema = z.object({
   viewerSeats: z.number().int().nullable(),
   aiCreditTopUp: z.boolean(),
   byoLlmEnabled: z.boolean(),
+  askAssistant: z.boolean().optional(),
 });
 export type PlanLimitsJson = z.infer<typeof PlanLimitsJsonSchema>;
 

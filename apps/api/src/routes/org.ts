@@ -26,6 +26,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       };
     }
     const o = result.value;
+    const access = await req.container.handlers.getAskAccess.handle(ctx);
     return {
       id: o.id,
       name: o.name,
@@ -46,6 +47,7 @@ export async function registerOrgRoutes(app: FastifyInstance) {
       reportingDefaults: o.reportingDefaults,
       agentMemoryEnabled: o.agentMemoryEnabled,
       askEnabled: o.askEnabled,
+      askAccess: access.ok ? access.value : "NOT_IN_PLAN",
       setupAssistEnabled: o.setupAssistEnabled === true,
       mfaRequiredFrom: o.mfaRequiredFrom ? o.mfaRequiredFrom.toISOString() : null,
       agentMemoryPlatformEnabled,

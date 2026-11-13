@@ -5,7 +5,7 @@ export type PlanCode = "STARTER" | "TEAM" | "GROWTH" | "ENTERPRISE";
 export const PLAN_CODES: readonly PlanCode[] = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
 
 /** Bumping this version invalidates persisted catalog-coded snapshots. */
-export const PLAN_CATALOG_VERSION = 3;
+export const PLAN_CATALOG_VERSION = 4;
 
 export interface PlanLimits {
   /** Active projects; null = unlimited (contractual). */
@@ -22,6 +22,8 @@ export interface PlanLimits {
   aiCreditTopUp: boolean;
   /** Whether the tenant may draft with its own (BYO) LLM provider on this plan. */
   byoLlmEnabled: boolean;
+  /** Whether the Ask assistant (questions put to the organisation's records) may be used on this plan. */
+  askAssistant: boolean;
 }
 
 export interface PlanDefinition extends PlanLimits {
@@ -52,6 +54,7 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
     viewerSeats: 2,
     aiCreditTopUp: false,
     byoLlmEnabled: false,
+    askAssistant: false,
   },
   TEAM: {
     code: "TEAM",
@@ -66,6 +69,7 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
     viewerSeats: null,
     aiCreditTopUp: true,
     byoLlmEnabled: false,
+    askAssistant: true,
   },
   GROWTH: {
     code: "GROWTH",
@@ -80,6 +84,7 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
     viewerSeats: null,
     aiCreditTopUp: true,
     byoLlmEnabled: true,
+    askAssistant: true,
   },
   ENTERPRISE: {
     code: "ENTERPRISE",
@@ -94,6 +99,7 @@ export const PLAN_CATALOG: Readonly<Record<PlanCode, PlanDefinition>> = {
     viewerSeats: null,
     aiCreditTopUp: true,
     byoLlmEnabled: true,
+    askAssistant: true,
   },
 };
 
@@ -124,6 +130,7 @@ const PLAN_LIMITS_PASSTHROUGH_KEYS = [
   "viewerSeats",
   "aiCreditTopUp",
   "byoLlmEnabled",
+  "askAssistant",
 ] as const satisfies readonly (keyof PlanLimits)[];
 
 export function resolvePlanLimits(code: PlanCode): PlanLimits {
@@ -143,6 +150,8 @@ export interface PlanLimitsJson {
   viewerSeats: number | null;
   aiCreditTopUp: boolean;
   byoLlmEnabled: boolean;
+  /** Absent in rows stored before Ask became a plan feature; read through `askAccess`, which falls back to the plan's own value. */
+  askAssistant?: boolean;
 }
 
 export function planLimitsToJson(limits: PlanLimits): PlanLimitsJson {

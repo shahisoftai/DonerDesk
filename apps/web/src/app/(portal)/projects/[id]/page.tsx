@@ -70,7 +70,8 @@ export default async function ProjectDetail({
         <div className="text-sm text-slate-600 dark:text-slate-400">
           {identity.donorName} · {identity.country} · {identity.sector.replace(/_/g, " ")}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link className="text-sm underline" href={`/visuals/assets?project=${identity.id}`}>Visuals for this project</Link>
           {identity.isDemo ? <Badge tone="info">Demo</Badge> : null}
           <Badge tone={projectStatusTone(identity.status)}>{identity.status.replace(/_/g, " ")}</Badge>
           <Badge tone="neutral">{identity.reportingFrequency.toLowerCase().replace("_", " ")}</Badge>

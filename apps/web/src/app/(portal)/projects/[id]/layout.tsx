@@ -30,19 +30,13 @@ export default async function ProjectLayout({ params, children }: { params: Prom
   const tabs = [
     // Reporting is the primary surface: each reporting period is a workspace
     // framed as "Update Project → Tell the Story → Generate → Review & Submit".
-    { label: "Reporting", href: `/projects/${project.id}/reports` },
+    { label: "Reporting", href: `/projects/${project.id}/reports`, matchPrefixes: [`/projects/${project.id}/templates`] },
     { label: "Overview", href: `/projects/${project.id}` },
     { label: "Logframe", href: `/projects/${project.id}/logframe`, matchPrefixes: [`/projects/${project.id}/indicators`] },
     { label: "Activities", href: `/projects/${project.id}/activities` },
-    { label: "Data", href: `/projects/${project.id}/data` },
+    { label: "Data", href: `/projects/${project.id}/data`, matchPrefixes: [`/projects/${project.id}/import`] },
     { label: "Finance", href: `/projects/${project.id}/finance` },
-    { label: "Ask", href: `/projects/${project.id}/ask`, secondary: true },
-    { label: "Dashboards", href: "/visuals", secondary: true },
-    { label: "Infographics", href: `/visuals/assets?project=${project.id}`, secondary: true },
     { label: "Evidence", href: `/projects/${project.id}/evidence`, secondary: true },
-    { label: "Bring in data", href: `/projects/${project.id}/import`, secondary: true },
-    // One-time setup; placed last so it reads as configuration, not a workflow.
-    { label: "Templates", href: `/projects/${project.id}/templates`, secondary: true },
     { label: "Team", href: `/projects/${project.id}/team`, secondary: true },
     { label: "Settings", href: `/projects/${project.id}/settings`, secondary: true },
   ];

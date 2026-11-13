@@ -250,6 +250,8 @@ function TierModal({ row, busy, onClose, onSave }: any) {
     viewerSeats: row?.limits?.viewerSeats == null ? "" : String(row.limits.viewerSeats),
     aiCreditTopUp: row?.limits?.aiCreditTopUp ?? false,
     byoLlmEnabled: row?.limits?.byoLlmEnabled ?? false,
+    // A row stored before Ask became a plan feature has no value: show the plan's own (Starter off, the others on).
+    askAssistant: row?.limits?.askAssistant ?? (row?.planCode !== "STARTER"),
   });
   const storageBytes = form.maxManagedStorageGb === "" ? null : String(Math.round(Number(form.maxManagedStorageGb) * 1073741824));
   return <Modal title={`Edit ${row?.name ?? row?.planCode} tier`} subtitle="Global feature allocation — applies to every tenant on this tier" onClose={onClose} wide>
@@ -266,6 +268,7 @@ function TierModal({ row, busy, onClose, onSave }: any) {
       <label className="check full"><input type="checkbox" checked={form.enabled} onChange={e => setForm({ ...form, enabled: e.target.checked })} /> Tier enabled (available for new assignments and checkout)</label>
       <label className="check full"><input type="checkbox" checked={form.aiCreditTopUp} onChange={e => setForm({ ...form, aiCreditTopUp: e.target.checked })} /> AI credit top-up packs purchasable</label>
       <label className="check full"><input type="checkbox" checked={form.byoLlmEnabled} onChange={e => setForm({ ...form, byoLlmEnabled: e.target.checked })} /> Tenant's own LLM provider (BYO-LLM) allowed</label>
+      <label className="check full"><input type="checkbox" checked={form.askAssistant} onChange={e => setForm({ ...form, askAssistant: e.target.checked })} /> Ask assistant (questions put to the tenant's records) allowed</label>
     </FormGrid>
     <ModalActions busy={busy} onClose={onClose} onSave={() => onSave({
       name: form.name || undefined,
@@ -281,6 +284,7 @@ function TierModal({ row, busy, onClose, onSave }: any) {
         monthlyAiDraftCredits: form.monthlyAiDraftCredits === "" ? null : Number(form.monthlyAiDraftCredits),
         aiCreditTopUp: form.aiCreditTopUp,
         byoLlmEnabled: form.byoLlmEnabled,
+        askAssistant: form.askAssistant,
       },
     })} label="Save tier" />
   </Modal>;
@@ -298,6 +302,8 @@ function TenantTierModal({ row, busy, onClose, onSave, onReset }: any) {
     viewerSeats: row?.limits?.viewerSeats == null ? "" : String(row.limits.viewerSeats),
     aiCreditTopUp: row?.limits?.aiCreditTopUp ?? false,
     byoLlmEnabled: row?.limits?.byoLlmEnabled ?? false,
+    // A row stored before Ask became a plan feature has no value: show the plan's own (Starter off, the others on).
+    askAssistant: row?.limits?.askAssistant ?? (row?.planCode !== "STARTER"),
   });
   const storageBytes = limits.maxManagedStorageGb === "" ? null : String(Math.round(Number(limits.maxManagedStorageGb) * 1073741824));
   return <Modal title={`Manage tier — ${row?.name}`} subtitle={`Currently ${row?.planName ?? row?.planCode} via ${pretty(row?.source)}. Manual changes take effect immediately.`} onClose={onClose} wide>
@@ -313,12 +319,13 @@ function TenantTierModal({ row, busy, onClose, onSave, onReset }: any) {
         <label className="field"><span>AI report drafts / month</span><input value={limits.monthlyAiDraftCredits} onChange={e => setLimits({ ...limits, monthlyAiDraftCredits: e.target.value })} placeholder="Blank = unlimited" /></label>
         <label className="check full"><input type="checkbox" checked={limits.aiCreditTopUp} onChange={e => setLimits({ ...limits, aiCreditTopUp: e.target.checked })} /> AI credit top-up packs purchasable</label>
         <label className="check full"><input type="checkbox" checked={limits.byoLlmEnabled} onChange={e => setLimits({ ...limits, byoLlmEnabled: e.target.checked })} /> Tenant's own LLM provider (BYO-LLM) allowed</label>
+        <label className="check full"><input type="checkbox" checked={limits.askAssistant} onChange={e => setLimits({ ...limits, askAssistant: e.target.checked })} /> Ask assistant (questions put to the tenant's records) allowed</label>
       </>}
     </FormGrid>
     <footer className="modal-actions">
       <button onClick={onReset} disabled={busy}>Reset overrides</button>
       <button onClick={onClose}>Cancel</button>
-      <button className="primary" disabled={busy} onClick={() => onSave({ planCode, reason: reason || undefined, customLimits, limits: { maxActiveProjects: limits.maxActiveProjects === "" ? null : Number(limits.maxActiveProjects), maxSeats: limits.maxSeats === "" ? null : Number(limits.maxSeats), viewerSeats: limits.viewerSeats === "" ? null : Number(limits.viewerSeats), maxManagedStorageBytes: storageBytes, monthlyAiDraftCredits: limits.monthlyAiDraftCredits === "" ? null : Number(limits.monthlyAiDraftCredits), aiCreditTopUp: limits.aiCreditTopUp, byoLlmEnabled: limits.byoLlmEnabled } })}>{busy ? "Saving…" : "Apply tier change"}</button>
+      <button className="primary" disabled={busy} onClick={() => onSave({ planCode, reason: reason || undefined, customLimits, limits: { maxActiveProjects: limits.maxActiveProjects === "" ? null : Number(limits.maxActiveProjects), maxSeats: limits.maxSeats === "" ? null : Number(limits.maxSeats), viewerSeats: limits.viewerSeats === "" ? null : Number(limits.viewerSeats), maxManagedStorageBytes: storageBytes, monthlyAiDraftCredits: limits.monthlyAiDraftCredits === "" ? null : Number(limits.monthlyAiDraftCredits), aiCreditTopUp: limits.aiCreditTopUp, byoLlmEnabled: limits.byoLlmEnabled, askAssistant: limits.askAssistant } })}>{busy ? "Saving…" : "Apply tier change"}</button>
     </footer>
   </Modal>;
 }

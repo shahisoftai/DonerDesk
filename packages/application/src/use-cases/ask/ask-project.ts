@@ -1,5 +1,5 @@
 import {
-  DomainError, NOT_FOUND_SENTENCE, Permissions, activityCandidates, buildAskPrompt, evidenceCandidates, groundAnswer, indicatorCandidates, projectCandidate,
+  DomainError, NOT_FOUND_SENTENCE, askAccess, Permissions, activityCandidates, buildAskPrompt, evidenceCandidates, groundAnswer, indicatorCandidates, projectCandidate,
   readableConfidentialityLevels, redactForLlm, selectSources, toPlainDate,
   type AskAnswer, type AskCandidate, type Result, type Role,
 } from "@donordesk/domain";
@@ -11,11 +11,19 @@ import type { IOrganizationRepository } from "../../ports/identity.js";
 import type { ILLMProvider } from "../../ports/infrastructure.js";
 import type { ILlmUsageRepository } from "../../ports/billing.js";
 import type { IProjectRepository } from "../../ports/projects.js";
+import type { EntitlementService } from "../../services/entitlement-service.js";
 import type { VisibleProjects } from "../../services/visible-projects.js";
 import type { GetProjectDataSheetHandler } from "../data-center/data-sheet.js";
 
 export const ASK_OPERATION = "ASK_DONORDESK";
 export const ASK_MAX_QUESTION = 500;
+/** What a person is told for each way Ask can be closed to them (a partner never reaches the handler: the route is not on the partner list). */
+export const ASK_UNAVAILABLE_REASON: Record<Exclude<ReturnType<typeof askAccess>, "AVAILABLE">, string> = {
+  NOT_IN_PLAN: "Ask about your projects is part of the Team plan and above.",
+  NOT_TURNED_ON: "Ask DonorDesk is switched off for this organisation. An administrator can turn it on in Settings.",
+  NO_AI: "Ask DonorDesk is switched off for this organisation. An administrator can turn it on in Settings.",
+  PARTNER: "Ask DonorDesk is not available to outside partners.",
+};
 const HOURLY_LIMIT = 60;
 const DAILY_LIMIT = 400;
 
@@ -50,6 +58,7 @@ export class AskProjectHandler {
     private readonly audit: IAuditLogger,
     private readonly clock: IClock,
     private readonly llmFor: (tenantId: string) => Promise<ILLMProvider | null>,
+    private readonly entitlements: Pick<EntitlementService, "resolve">,
   ) {}
 
   async handle(ctx: AuthenticatedContext, projectId: string, rawQuestion: string): Promise<Result<AskOutcome, DomainError>> {
@@ -64,9 +73,14 @@ export class AskProjectHandler {
 
     const org = await this.orgs.findByTenant(ctx.tenant.tenantId);
     if (!org.ok) return org;
-    if (!org.value?.askEnabled || !org.value.aiEnabled) {
-      return { ok: true, value: { available: false, reason: "Ask DonorDesk is switched off for this organisation. An administrator can turn it on in Settings." } };
-    }
+    // The plan decides first (Team and above), then the administrator's opt-in; a failed plan read refuses rather than guesses.
+    const entitlement = await this.entitlements.resolve({ tenantId: String(ctx.tenant.tenantId) });
+    if (!entitlement.ok) return { ok: true, value: { available: false, reason: "Ask DonorDesk could not check this organisation's plan right now. Try again in a moment." } };
+    const access = askAccess({
+      planCode: entitlement.value.planCode, limits: entitlement.value.limits,
+      askEnabled: org.value?.askEnabled === true, aiEnabled: org.value?.aiEnabled === true, external: false,
+    });
+    if (access !== "AVAILABLE") return { ok: true, value: { available: false, reason: ASK_UNAVAILABLE_REASON[access] } };
 
     // A cap on questions, so a loop or a script cannot spend the organisation's model budget.
     const tenant = String(ctx.tenant.tenantId);

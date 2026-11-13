@@ -392,6 +392,7 @@ export * from "./use-cases/dashboards/saved-report-handlers.js";
 export * from "./use-cases/logframe/get-indicator-value-history.js";
 export * from "./use-cases/logframe/indicator-entry-file.js";
 export * from "./use-cases/ask/ask-project.js";
+export * from "./use-cases/ask/get-ask-access.js";
 export * from "./ports/project-setup.js";
 export * from "./ports/project-setup-apply.js";
 export * from "./ports/project-setup-launch.js";
