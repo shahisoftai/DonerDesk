@@ -15,8 +15,13 @@ export function listedRefs(units: ReadonlyMap<number, readonly BoundaryUnit[]>, 
   for (const [level, list] of units) {
     const here = places.filter((p) => !p.archived && p.adminLevel === level);
     const codes = new Set(here.map((p) => p.code).filter((c): c is string => !!c));
-    const names = new Set(here.filter((p) => !p.code).map((p) => normalizeLocationKey(p.name)));
-    for (const u of list) if ((u.pcode && codes.has(u.pcode)) || names.has(normalizeLocationKey(u.name))) out.add(u.ref);
+    // By code when both sides have one; by name when either has none (province files carry no codes). Never across levels.
+    const namesUncoded = new Set(here.filter((p) => !p.code).map((p) => normalizeLocationKey(p.name)));
+    const namesAll = new Set(here.map((p) => normalizeLocationKey(p.name)));
+    for (const u of list) {
+      const key = normalizeLocationKey(u.name);
+      if (u.pcode ? codes.has(u.pcode) || namesUncoded.has(key) : namesAll.has(key)) out.add(u.ref);
+    }
   }
   return out;
 }

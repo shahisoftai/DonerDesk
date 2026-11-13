@@ -56,3 +56,18 @@ test("a long project name still makes a valid dashboard: page title 80, canvas t
   assert.ok(fitText(long, 120).length <= 120);
   assert.equal(fitText("short", 80), "short");
 });
+
+test("an area is ticked when the places list holds it: by code when both have one, by name when the file has no codes", async () => {
+  const { listedRefs, seedUnitsFor } = await import("../../src/features/places/domain/area-ticks.ts");
+  const u = (ref: string, name: string, pcode = "") => ({ ref, name, pcode, parentPcode: "", geometry: null });
+  const units = new Map([[1, [u("g", "Garissa"), u("w", "Wajir")]], [2, [u("d1", "Dadaab", "KE007001"), u("d2", "Fafi", "KE007002")]]]);
+  const places = [
+    { name: "Garissa County", adminLevel: 1, code: "KE-GAR", archived: false },
+    { name: "Dadaab", adminLevel: 2, code: "KE007001", archived: false },
+    { name: "Fafi", adminLevel: 2, code: "OTHER", archived: false },
+    { name: "Wajir", adminLevel: 2, code: null, archived: false },
+  ];
+  assert.deepEqual([...listedRefs(units as never, places)].sort(), ["d1", "g"]);
+  assert.deepEqual(seedUnitsFor([{ ref: "c", name: "Kenya", adminLevel: 0, parentRef: null }, { ref: "g", name: "Garissa", adminLevel: 1, parentRef: "c", code: null }, { ref: "d1", name: "Dadaab", adminLevel: 2, parentRef: "g", code: "KE007001" }]),
+    [{ ref: "g", level: 1, name: "Garissa" }, { ref: "d1", level: 2, name: "Dadaab", parentRef: "g", code: "KE007001" }]);
+});

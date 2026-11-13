@@ -14,10 +14,10 @@ export type ShellTabKey = (typeof SHELL_TABS)[number]["key"];
 
 export function ShellTabs({ active }: { active: ShellTabKey }) {
   return (
-    <nav aria-label="Visual Studio" className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
+    <nav aria-label="Visual Studio" className="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700">
       {SHELL_TABS.map((t) => (
         <Link key={t.key} href={t.href} aria-current={t.key === active ? "page" : undefined}
-          className={`-mb-px border-b-2 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-700 ${t.key === active ? "border-sky-700 font-medium" : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"}`}>{t.label}</Link>
+          className={`-mb-px shrink-0 border-b-2 px-3 py-2 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-700 ${t.key === active ? "border-sky-700 font-medium" : "border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"}`}>{t.label}</Link>
       ))}
     </nav>
   );
