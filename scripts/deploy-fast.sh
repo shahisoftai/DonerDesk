@@ -166,6 +166,8 @@ if [[ "${SKIP_BUILD}" != "1" && "${HOST_BUILT}" != "1" ]]; then
   # pipefail so a failed build stops the deploy instead of being hidden by tee/tail.
   # The type-check has its own step (or the caller has just run it, see SKIP_TYPECHECK): `next build` repeating it costs minutes.
   export DD_SKIP_NEXT_TYPECHECK=1
+  # Measured 2026-11-13: the low-memory web build (no lint in the build, one worker) took 417 s here against 696 s. CI lints.
+  export DD_LOW_MEMORY_BUILD=1 NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=2048"
   if ! (set -o pipefail; pnpm -r "${BUILD_FILTER[@]}" build 2>&1 | tee "${BUILD_LOG}" | tail -3); then
     echo "ERROR: build failed — see ${BUILD_LOG}" >&2
     tail -40 "${BUILD_LOG}" >&2
