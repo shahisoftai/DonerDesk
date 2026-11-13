@@ -50,9 +50,9 @@ test("a district with no pin and no drawn area points at the middle of the pinne
 import { groundPlan, groundOf, NEW_MAP_GROUND, DEFAULT_GROUND, SIMPLE_TILE_LAYERS } from "../../src/features/maps/domain/ground.ts";
 import { countryMask, outerRings } from "../../src/features/maps/domain/scene/country-mask.ts";
 
-test("a map with no saved ground keeps the street map; a new one starts on none; each ground has one plan", () => {
-  assert.equal(groundOf(undefined), DEFAULT_GROUND); assert.equal(DEFAULT_GROUND, "STREETS"); assert.equal(groundOf("nonsense"), "STREETS");
-  assert.equal(NEW_MAP_GROUND, "NONE");
+test("a map with no saved ground, and a new one, use the simple grey ground; each ground has one plan", () => {
+  assert.equal(groundOf(undefined), DEFAULT_GROUND); assert.equal(DEFAULT_GROUND, "SIMPLE"); assert.equal(groundOf("nonsense"), "SIMPLE");
+  assert.equal(NEW_MAP_GROUND, "SIMPLE");
   assert.deepEqual(groundPlan("NONE", "light"), { basemap: "plain", detail: "SIMPLE", mask: false });
   assert.deepEqual(groundPlan("SIMPLE", "dark"), { basemap: "dark", detail: "SIMPLE", mask: false });
   assert.deepEqual(groundPlan("COUNTRY", "light"), { basemap: "light", detail: "SIMPLE", mask: true });

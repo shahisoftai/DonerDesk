@@ -5,7 +5,15 @@
  * the same area the same colour. Pure.
  */
 export type AreaColorBy = "VALUE" | "RULES" | "CATEGORY" | "NONE";
-export type AreaLabels = "NONE" | "NAME" | "VALUE" | "NAME_AND_VALUE";
+export type AreaLabels = "NONE" | "NAME" | "VALUE" | "NAME_AND_VALUE" | "AUTO";
+/** The labels a drawn area can carry once AUTO has been decided. */
+export type DrawnLabels = Exclude<AreaLabels, "AUTO">;
+/** AUTO prints name and figure while the view is small enough to read, then falls back to the name alone. */
+export const AUTO_LABEL_LIMIT = 40;
+export function resolveLabels(mode: AreaLabels | undefined, areaCount: number): DrawnLabels {
+  if (mode === undefined || mode === "AUTO") return areaCount <= AUTO_LABEL_LIMIT ? "NAME_AND_VALUE" : "NONE";
+  return mode;
+}
 export interface AreaBand { from: number | null; to: number | null; color: string }
 export interface AreaStyle { colorBy: AreaColorBy; bands?: readonly AreaBand[] | undefined; byParent?: boolean | undefined; palette: readonly string[]; labels?: AreaLabels | undefined }
 export interface AreaLegendEntry { label: string; color: string }
@@ -23,7 +31,7 @@ export function categoryColours(keys: readonly string[], palette: readonly strin
   return new Map(sorted.map((k, i) => [k, palette[i % Math.max(1, palette.length)] ?? "#94a3b8"]));
 }
 
-export function areaLabel(labels: AreaLabels | undefined, name: string, display: string | null): string | undefined {
+export function areaLabel(labels: DrawnLabels | undefined, name: string, display: string | null): string | undefined {
   switch (labels ?? "NONE") {
     case "NONE": return undefined;
     case "NAME": return name;

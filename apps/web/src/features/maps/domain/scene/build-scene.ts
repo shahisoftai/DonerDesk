@@ -9,7 +9,7 @@ import { geometryBounds, pointBounds, unionBounds } from "../model/bounds.ts";
 import type { JoinedUnit } from "../boundaries/join.ts";
 import { NO_DATA_COLOR, colorFor, layerState, type ExplorerLayer, type ExplorerModel, type MapRegion } from "../map-explorer.ts";
 import type { Overlay } from "../overlay-layer.ts";
-import { areaLabel, bandColour, categoryColours, OUTLINE_ONLY, type AreaStyle } from "./area-style.ts";
+import { areaLabel, resolveLabels, bandColour, categoryColours, OUTLINE_ONLY, type AreaStyle } from "./area-style.ts";
 
 export interface ResultsSceneInput {
   model: ExplorerModel;
@@ -45,12 +45,13 @@ export function buildResultsScene(input: ResultsSceneInput): MapScene {
   const categoryKey = (j: JoinedUnit): string => (input.areaStyle?.byParent ? j.unit.parentPcode || j.unit.ref : j.unit.ref);
   const categories = input.areaStyle?.colorBy === "CATEGORY" ? categoryColours(joined.map(categoryKey), input.areaStyle.palette) : new Map<string, string>();
 
+  const labelMode = resolveLabels(input.areaStyle?.labels, joined.length);
   const fillLayer: FillLayerSpec = {
     kind: "FILL",
     opacity: fill.visible ? fill.opacity : 0.15,
     outline: outline.visible,
     selectedRef,
-    ...(input.areaStyle?.labels && input.areaStyle.labels !== "NONE" ? { labels: true } : {}),
+    ...(labelMode !== "NONE" ? { labels: true } : {}),
     features: joined.map((j) => {
       const region = j.placeId ? regionByPlace.get(j.placeId) : undefined;
       const st = input.areaStyle;
@@ -59,7 +60,7 @@ export function buildResultsScene(input: ResultsSceneInput): MapScene {
         : st?.colorBy === "RULES" ? bandColour(region?.value ?? null, st.bands ?? [], NO_DATA_COLOR)
         : st?.colorBy === "CATEGORY" ? categories.get(categoryKey(j)) ?? NO_DATA_COLOR
         : colorFor(region?.value ?? null, model.bands);
-      const label = areaLabel(st?.labels, j.unit.name, region?.display ?? null);
+      const label = areaLabel(labelMode, j.unit.name, region?.display ?? null);
       const lines = region ? [region.path, figure(region.display, unit, region.verified), ...(j.basis === "NAME" ? ["Matched by name only"] : [])] : ["Not measured"];
       tips[j.unit.ref] = { title: j.unit.name, lines: lines.filter((l) => l && l !== j.unit.name) };
       return { ref: j.unit.ref, name: j.unit.name, color, geometry: j.unit.geometry, ...(label ? { label } : {}), ...(j.unit.tile ? { tile: j.unit.tile } : {}) };

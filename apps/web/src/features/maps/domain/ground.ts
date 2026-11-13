@@ -5,17 +5,17 @@
  * - STREETS: the full street and terrain map (what maps drew before; still right for pinning and drawing).
  * - SIMPLE: land, water, borders and place names only (16 layers instead of 67).
  * - COUNTRY: the simple ground with everything outside the chosen country hidden (neighbours' names, roads and borders disappear).
- * - NONE: a flat colour; only the data's own boundaries are drawn. The fastest, and the default for a new dashboard map.
+ * - NONE: a flat colour; only the data's own boundaries are drawn. The fastest, 
  *
- * A map saved without a choice keeps STREETS, so no existing map changes until someone changes it. Pure.
+ * A map with no saved choice, and a new map, use SIMPLE: the sober grey ground with land, water, borders and names (Phase 53). Pure.
  */
 import type { BasemapMode } from "./model/scene.ts";
 
 export const MAP_GROUNDS = ["STREETS", "SIMPLE", "COUNTRY", "NONE"] as const;
 export type MapGround = (typeof MAP_GROUNDS)[number];
-export const DEFAULT_GROUND: MapGround = "STREETS";
+export const DEFAULT_GROUND: MapGround = "SIMPLE";
 /** What a map added to a dashboard or canvas starts with. */
-export const NEW_MAP_GROUND: MapGround = "NONE";
+export const NEW_MAP_GROUND: MapGround = "SIMPLE";
 
 export const isMapGround = (v: unknown): v is MapGround => typeof v === "string" && (MAP_GROUNDS as readonly string[]).includes(v);
 export const groundOf = (v: unknown): MapGround => (isMapGround(v) ? v : DEFAULT_GROUND);

@@ -41,7 +41,7 @@ import { contextLayers, offeredContext, type ContextToggle } from "../domain/sce
 import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
 import { firstIndicator } from "./results-loader";
-import { homeCountry } from "../domain/drill/home-country";
+import { homeCountryOf } from "../domain/drill/home-country";
 
 const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], regions: [], unmapped: [], bands: [], isRate: false };
 const ADDRESS_KEY = "map";
@@ -52,7 +52,7 @@ interface Selection { ref: string | null; placeId: string | null; name: string }
  * The interactive results map on the new engine: a real basemap, smooth zoom, clustering, and drilling from the world down to
  * admin 4 wherever boundary files exist. It composes the pieces; the rules are in `domain/` and the drawing is behind a port.
  */
-export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable, areaStyle, callouts, ground: savedGround }: ExplorerProps & { onUnavailable: () => void }) {
+export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable, areaStyle, callouts, ground: savedGround, projectCountry }: ExplorerProps & { onUnavailable: () => void }) {
   const services = useMapServices();
   const { t, lang, levelPlural } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
@@ -99,8 +99,11 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
   useEffect(() => {
     const fromAddress = addressed ? decodePath(new URLSearchParams(window.location.search).get(ADDRESS_KEY)) : [];
     if (fromAddress.length > 0) { setPath(fromAddress.map((c) => ({ level: c.level, ref: c.ref, name: c.ref.replace(/^name:/, "").replace(/_/g, " ") }))); return; }
-    const home = homeCountry(places, initial);
-    if (home) setPath([{ level: 0, name: home, ref: nameRef(home) }]);
+    const open = (home: string | null) => { if (home) setPath([{ level: 0, name: home, ref: nameRef(home) }]); };
+    const ruled = homeCountryOf({ places, results: initial });
+    if (ruled || !projectCountry) { open(ruled); return; }
+    // The project's own country, only when the boundary catalogue knows it (never guessed).
+    void loadBoundaryManifest().then((m) => open(homeCountryOf({ places, results: initial, projectCountry, knownCountries: m ? [findCountry(m, projectCountry)?.name ?? ""].filter(Boolean) : [] })));
     // Once, on opening.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
-import { DataSheetResponseSchema, PhotoEvidenceResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
+import { DataSheetResponseSchema, ProjectDetailSchema, PhotoEvidenceResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { PhotosMapPanel } from "@/features/maps/presentation/PhotosMapPanel";
 import { SavedChartListSchema } from "@/lib/server/schemas-charts";
 import { InlineError } from "@/components/feedback/PageState";
@@ -15,7 +15,7 @@ import { MapContextSchema } from "@/lib/server/schemas-map-context";
 export async function MapStudioPanel({ projectId, studioHref }: { projectId: string; studioHref: string }) {
   const id = projectId;
   const ctx = await requireSession();
-  const [sheet, saved, placeList, initial, photos, plan, flows, mapContext] = await Promise.all([
+  const [sheet, saved, placeList, initial, photos, plan, flows, mapContext, project] = await Promise.all([
     gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/data-sheet`, DataSheetResponseSchema, ctx.token),
     gatewayRequest(`/v1/charts?projectId=${encodeURIComponent(id)}`, SavedChartListSchema, ctx.token),
     gatewayRequest("/v1/places", PlaceListSchema, ctx.token),
@@ -24,6 +24,7 @@ export async function MapStudioPanel({ projectId, studioHref }: { projectId: str
     gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/work-plan`, WorkPlanResponseSchema, ctx.token),
     gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/place-flows`, PlaceFlowListSchema, ctx.token),
     gatewayRequest("/v1/organization/map-context", MapContextSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${encodeURIComponent(id)}`, ProjectDetailSchema, ctx.token),
   ]);
   // Planned activities naming each place directly (phase 42.1); the tree rolls them up. Absent when the plan cannot be read.
   const activityCounts: Record<string, number> = {};
@@ -32,7 +33,7 @@ export async function MapStudioPanel({ projectId, studioHref }: { projectId: str
   return (
     <>
       <p className="mb-3 text-sm"><Link className="underline" href={`/projects/${id}/data`}>Data Center</Link> · <Link className="underline" href={studioHref}>Chart Studio</Link></p>
-      <LazyMapExplorer projectId={id} places={placeList.ok ? placeList.value.places : []} initial={initial.ok ? initial.value : null} periods={sheet.value.periods.map((p) => ({ id: p.id, label: p.label }))} activityCounts={activityCounts} mapContext={mapContext.ok ? mapContext.value : null} />
+      <LazyMapExplorer projectId={id} places={placeList.ok ? placeList.value.places : []} initial={initial.ok ? initial.value : null} periods={sheet.value.periods.map((p) => ({ id: p.id, label: p.label }))} activityCounts={activityCounts} mapContext={mapContext.ok ? mapContext.value : null} projectCountry={project.ok ? project.value.country : null} />
       {photos.ok && <div className="mt-8"><PhotosMapPanel projectId={id} photos={photos.value.items} places={placeList.ok ? placeList.value.places.map((p) => ({ name: p.name, aliases: p.aliases, latitude: p.latitude, longitude: p.longitude, archived: p.archived })) : []} /></div>}
       {flows.ok && <FlowsPanel projectId={id} places={(placeList.ok ? placeList.value.places : []).filter((p) => !p.archived).map((p) => ({ id: p.id, path: p.path }))} flows={flows.value.flows} canEdit={flows.value.canEdit} limit={flows.value.limit} />}
       <h2 className="mb-2 mt-8 text-lg font-semibold">Map charts and saved views</h2>
