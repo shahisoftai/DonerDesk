@@ -60,3 +60,11 @@ test("a by-place entry starts with the places the project uses, and a typed plac
   assert.equal(matchPlaceChoice("Gode", rows), null);
   assert.equal(matchPlaceChoice("", rows), null);
 });
+
+test("the project's own places decide the level; the organisation's list is only the fallback", () => {
+  const many = [p("c", "Kenya", 0), p("k1", "County A", 1), p("k2", "County B", 1), ...Array.from({ length: 10 }, (_, i) => p(`d${i}`, `Sub ${i}`, 2))];
+  assert.equal(defaultPlaceLevel(many), 2);
+  assert.equal(defaultPlaceLevel(many, ["k1", "k2"]), 1);
+  assert.equal(defaultPlaceLevel(many, ["nope"]), 2);
+  assert.deepEqual(canRecordByPlace({ calculated: false }, many, ["k1"]), { ok: true, level: 1 });
+});

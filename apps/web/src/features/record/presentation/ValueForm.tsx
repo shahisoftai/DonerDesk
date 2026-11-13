@@ -73,7 +73,7 @@ export function ValueForm(props: ValueFormProps) {
   const [saveWhenOpen, setSaveWhenOpen] = useState(false);
 
   const indicator = typable.find((i) => i.id === indicatorId);
-  const byPlace = indicator?.recordByPlace && summableType(indicator.type) && props.places ? canRecordByPlace({ calculated: false, placeLevel: indicator.placeLevel }, props.places) : null;
+  const byPlace = indicator?.recordByPlace && summableType(indicator.type) && props.places ? canRecordByPlace({ calculated: false, placeLevel: indicator.placeLevel }, props.places, props.usedPlaceIds ?? []) : null;
   const landing = useMemo(() => dateLanding(date, periods), [date, periods]);
   const periodId = landing.kind === "FOUND" ? landing.periodId : undefined;
   const splitComplete = split.length > 0 && split.every((e) => e.category.trim() !== "" && e.value.trim() !== "");

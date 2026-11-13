@@ -12,9 +12,13 @@ export interface PlaceRow { placeId: string; name: string; path: string }
 const live = (places: readonly RecordablePlace[]): RecordablePlace[] => places.filter((p) => !p.archived);
 
 /** The level most places are at below the country (ties go to the shallower level); null when there are none. */
-export function defaultPlaceLevel(places: readonly RecordablePlace[]): number | null {
+export function defaultPlaceLevel(places: readonly RecordablePlace[], usedIds: readonly string[] = []): number | null {
+  // The project's own places decide the level when it has any; the organisation's whole list is only the fallback.
+  const used = new Set(usedIds);
+  const mine = live(places).filter((p) => used.has(p.id) && p.adminLevel >= 1);
+  const pool = mine.length > 0 ? mine : live(places);
   const counts = new Map<number, number>();
-  for (const p of live(places)) if (p.adminLevel >= 1) counts.set(p.adminLevel, (counts.get(p.adminLevel) ?? 0) + 1);
+  for (const p of pool) if (p.adminLevel >= 1) counts.set(p.adminLevel, (counts.get(p.adminLevel) ?? 0) + 1);
   let best: number | null = null;
   for (const [level, n] of [...counts].sort((a, b) => a[0] - b[0])) if (best === null || n > (counts.get(best) ?? 0)) best = level;
   return best;
@@ -28,9 +32,9 @@ export function placeRows(places: readonly RecordablePlace[], level: number): Pl
 export type RecordByPlaceVerdict = { ok: true; level: number } | { ok: false; reason: "NO_PLACES" | "CALCULATED" };
 
 /** Whether an indicator can be recorded by place, and at which level when it has not chosen one. A calculated indicator is never typed. */
-export function canRecordByPlace(indicator: { calculated: boolean; placeLevel?: number | null | undefined }, places: readonly RecordablePlace[]): RecordByPlaceVerdict {
+export function canRecordByPlace(indicator: { calculated: boolean; placeLevel?: number | null | undefined }, places: readonly RecordablePlace[], usedIds: readonly string[] = []): RecordByPlaceVerdict {
   if (indicator.calculated) return { ok: false, reason: "CALCULATED" };
-  const level = indicator.placeLevel ?? defaultPlaceLevel(places);
+  const level = indicator.placeLevel ?? defaultPlaceLevel(places, usedIds);
   if (level === null || placeRows(places, level).length === 0) return { ok: false, reason: "NO_PLACES" };
   return { ok: true, level };
 }
