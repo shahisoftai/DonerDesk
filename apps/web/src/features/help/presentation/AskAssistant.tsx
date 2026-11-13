@@ -23,7 +23,7 @@ const CLOSED: Record<Exclude<Access, "AVAILABLE">, string> = {
 
 function projectIdOf(pathname: string): string | null {
   const m = /^\/projects\/([^/]+)/.exec(pathname);
-  return m && m[1] !== "new" ? m[1] : null;
+  return m && m[1] && m[1] !== "new" ? m[1] : null;
 }
 
 /**

@@ -69,6 +69,8 @@ export const OrganizationSchema = z.object({
   timeZone: z.string().optional(),
   aiEnabled: z.boolean().optional(),
   storageProvider: z.string().default("LOCAL"),
+  /** The one Ask rule as the API enforces it (the floating assistant reads it). */
+  askAccess: z.enum(["AVAILABLE", "NOT_IN_PLAN", "NOT_TURNED_ON", "NO_AI", "PARTNER"]).optional(),
 });
 
 export const OrganizationReportingDefaultsSchema = z
