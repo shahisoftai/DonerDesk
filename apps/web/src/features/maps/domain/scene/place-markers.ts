@@ -6,6 +6,8 @@
  */
 export type MarkerKind = "NONE" | "BAR" | "PIE";
 export const MARKER_LIMIT = 60;
+/** One colour per compared indicator, in order (the screen draws them from the theme's series colours; these are the fallbacks). */
+export const MARKER_COLOURS: readonly string[] = ["var(--viz-1, #2563eb)", "var(--viz-2, #0891b2)", "var(--viz-3, #7c3aed)", "var(--viz-4, #d97706)"];
 export const MAX_MARKER_INDICATORS = 4;
 
 export interface MarkerIndicator { id: string; code: string; name: string; unit: string | null; isRate: boolean; additive: boolean; rows: ReadonlyArray<{ placeId: string; name: string; value: string | null }> }

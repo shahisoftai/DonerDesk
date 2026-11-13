@@ -45,7 +45,10 @@ export function buildResultsScene(input: ResultsSceneInput): MapScene {
   const categoryKey = (j: JoinedUnit): string => (input.areaStyle?.byParent ? j.unit.parentPcode || j.unit.ref : j.unit.ref);
   const categories = input.areaStyle?.colorBy === "CATEGORY" ? categoryColours(joined.map(categoryKey), input.areaStyle.palette) : new Map<string, string>();
 
-  const labelMode = resolveLabels(input.areaStyle?.labels, joined.length);
+  // Automatic labels count (and label) only the areas that have a figure: a country of 47 counties with 5 figures reads clearly.
+  const autoLabels = input.areaStyle?.labels === undefined || input.areaStyle.labels === "AUTO";
+  const figured = joined.filter((j) => j.placeId && regionByPlace.has(j.placeId)).length;
+  const labelMode = resolveLabels(input.areaStyle?.labels, autoLabels ? figured : joined.length);
   const fillLayer: FillLayerSpec = {
     kind: "FILL",
     opacity: fill.visible ? fill.opacity : 0.15,
@@ -60,7 +63,7 @@ export function buildResultsScene(input: ResultsSceneInput): MapScene {
         : st?.colorBy === "RULES" ? bandColour(region?.value ?? null, st.bands ?? [], NO_DATA_COLOR)
         : st?.colorBy === "CATEGORY" ? categories.get(categoryKey(j)) ?? NO_DATA_COLOR
         : colorFor(region?.value ?? null, model.bands);
-      const label = areaLabel(labelMode, j.unit.name, region?.display ?? null);
+      const label = autoLabels && !region ? undefined : areaLabel(labelMode, j.unit.name, region?.display ?? null);
       const lines = region ? [region.path, figure(region.display, unit, region.verified), ...(j.basis === "NAME" ? ["Matched by name only"] : [])] : ["Not measured"];
       tips[j.unit.ref] = { title: j.unit.name, lines: lines.filter((l) => l && l !== j.unit.name) };
       return { ref: j.unit.ref, name: j.unit.name, color, geometry: j.unit.geometry, ...(label ? { label } : {}), ...(j.unit.tile ? { tile: j.unit.tile } : {}) };

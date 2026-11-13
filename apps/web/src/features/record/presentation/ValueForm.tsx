@@ -38,6 +38,8 @@ export interface ValueFormProps {
   onDone: () => void;
   /** The project's places (Phase 53.2): an indicator recorded by place shows one box per place at its level. */
   places?: ReadonlyArray<RecordablePlace> | undefined;
+  /** The places this project already uses (its planned work and figures): the by-place rows start with them. */
+  usedPlaceIds?: ReadonlyArray<string> | undefined;
   /** A value already saved for this indicator in this period, so the form can say so before a second one is added. */
   existingFor?: ((indicatorId: string, periodId: string) => { value: string; by?: string | undefined } | null) | undefined;
 }
@@ -151,7 +153,7 @@ export function ValueForm(props: ValueFormProps) {
       </div>
 
       {byPlace?.ok && props.places && indicator ? (
-        <PlaceFigures places={props.places} level={byPlace.level} type={indicator.type ?? "NUMBER"} figures={placeFigures}
+        <PlaceFigures key={indicator.id} places={props.places} usedPlaceIds={props.usedPlaceIds ?? []} level={byPlace.level} type={indicator.type ?? "NUMBER"} figures={placeFigures}
           onChange={(figures, entries, total) => { setPlaceFigures(figures); setSplit(entries); setValue(total); setProblem(null); }} />
       ) : (
       <div className="space-y-2">

@@ -51,3 +51,15 @@ test("by-place entry and the map's empty state agree on the rules", async () => 
   assert.equal(totalFromPlaces("NUMBER", [{ value: "2" }, { value: "3" }]), "5");
   assert.equal(mapReadiness({ placeCount: 0, indicators: [], unconfirmedLocations: 0 })?.code, "NO_PLACES");
 });
+
+test("automatic labels label only the areas that have a figure, however many areas the country has", async () => {
+  const { buildResultsScene } = await import("../../src/features/maps/domain/scene/build-scene.ts");
+  const { DEFAULT_LAYERS } = await import("../../src/features/maps/domain/map-explorer.ts");
+  const sq = (x: number) => ({ type: "Polygon", coordinates: [[[x, 0], [x + 1, 0], [x + 1, 1], [x, 1], [x, 0]]] });
+  const joined = Array.from({ length: 60 }, (_, i) => ({ unit: { ref: `R${i}`, name: `Area ${i}`, pcode: `R${i}`, parentPcode: "", geometry: sq(i) }, placeId: `p${i}`, basis: "CODE" as const }));
+  const model = { indicatorId: "i", level: 1, pins: [], unmapped: [], bands: [], isRate: false, regions: [{ placeId: "p0", value: 5, display: "5", path: "A", verified: true }] } as never;
+  const scene = buildResultsScene({ model, layers: DEFAULT_LAYERS, joined: joined as never, unit: null, selectedRef: null, selectedPlaceId: null, basemap: "plain", label: "m" });
+  const fill = scene.layers.find((l) => l.kind === "FILL") as { features: Array<{ label?: string }>; labels?: boolean };
+  assert.equal(fill.labels, true);
+  assert.deepEqual(fill.features.map((f) => f.label).filter(Boolean), ["Area 0\n5"]);
+});

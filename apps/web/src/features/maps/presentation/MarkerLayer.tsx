@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { MapProjection } from "../ports/map-projection";
-import type { MarkerKind, PlaceMarker } from "../domain/scene/place-markers";
+import { MARKER_COLOURS, type MarkerKind, type PlaceMarker } from "../domain/scene/place-markers";
 
-const SERIES = ["var(--viz-1, #2563eb)", "var(--viz-2, #0891b2)", "var(--viz-3, #7c3aed)", "var(--viz-4, #d97706)"];
+const SERIES = MARKER_COLOURS;
 const SIZE = 44;
 
 /** Small bars or a pie at each place (Phase 53.5), drawn over the map through the same projection the figure cards use. Reads, never writes. */

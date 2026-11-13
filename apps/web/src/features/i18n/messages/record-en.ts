@@ -44,6 +44,8 @@ export const recordEn = {
   "record.value.breakdown": "Split",
   "record.value.byPlace": "How many in each place?",
   "record.value.byPlaceTotal": "Total: {total}",
+  "record.value.byPlaceAdd": "Add a place",
+  "record.value.byPlaceAddHint": "Type a place name",
   "record.value.byPlaceEmpty": "This project has no places yet. Add them under Where we work.",
   "record.value.source": "Where the figure came from",
   "record.value.sourcePlaceholder": "For example: clinic register, May",

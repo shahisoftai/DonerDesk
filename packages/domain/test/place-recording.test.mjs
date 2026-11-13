@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { canRecordByPlace, defaultPlaceLevel, placeEntries, placeRows, suggestPlaceRecording, totalFromPlaces, mapReadiness, MAP_READINESS_CODES } from "../dist/index.js";
+import { canRecordByPlace, defaultPlaceLevel, startingRows, matchPlaceChoice, placeEntries, placeRows, suggestPlaceRecording, totalFromPlaces, mapReadiness, MAP_READINESS_CODES } from "../dist/index.js";
 
 const p = (id, name, adminLevel, archived = false) => ({ id, name, adminLevel, archived });
 const places = [p("c", "Kenya", 0), p("a", "Nakuru", 1), p("b", "Kisumu", 1), p("d", "Gone", 1, true), p("e", "Town", 2)];
@@ -49,4 +49,14 @@ test("the map says the first thing missing", () => {
   assert.equal(mapReadiness({ placeCount: 3, indicators: [ind({ recordByPlace: true, hasFigureByPlace: true })], unconfirmedLocations: 2 }).code, "PLACES_TO_CONFIRM");
   assert.equal(mapReadiness({ placeCount: 3, indicators: [ind({ recordByPlace: true, hasFigureByPlace: true })], unconfirmedLocations: 0 }), null);
   assert.equal(MAP_READINESS_CODES.length, 4);
+});
+
+test("a by-place entry starts with the places the project uses, and a typed place is matched, never guessed", () => {
+  const rows = [{ placeId: "a", name: "Gode", path: "Gode › Somali › Ethiopia" }, { placeId: "b", name: "Gode", path: "Gode › Kenya" }, { placeId: "c", name: "Wajir", path: "Wajir › Kenya" }];
+  assert.deepEqual(startingRows(rows, ["c", "zzz"]).map((r) => r.placeId), ["c"]);
+  assert.deepEqual(startingRows(rows, []), []);
+  assert.equal(matchPlaceChoice("Wajir", rows)?.placeId, "c");
+  assert.equal(matchPlaceChoice("gode › kenya", rows)?.placeId, "b");
+  assert.equal(matchPlaceChoice("Gode", rows), null);
+  assert.equal(matchPlaceChoice("", rows), null);
 });

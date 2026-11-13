@@ -623,6 +623,7 @@ export const en = {
   "maps.noPlaces": "No places are listed yet.",
   "maps.addPlaces": "Add places",
   "maps.noEntries": "The places list has no entries for this project.",
+  "maps.markers.key": "Colour key",
   "maps.markers.title": "Small charts on places",
   "maps.markers.NONE": "None",
   "maps.markers.BAR": "Bars",

@@ -6,8 +6,8 @@
 import { disaggregationMustSum, type DisaggregationEntry } from "../logframe/indicator-disaggregation.js";
 import type { IndicatorType } from "../logframe/indicator.js";
 
-export interface RecordablePlace { id: string; name: string; adminLevel: number; archived: boolean }
-export interface PlaceRow { placeId: string; name: string }
+export interface RecordablePlace { id: string; name: string; adminLevel: number; archived: boolean; /** "Rabak › White Nile › Sudan": tells two places with one name apart. */ path?: string | undefined }
+export interface PlaceRow { placeId: string; name: string; path: string }
 
 const live = (places: readonly RecordablePlace[]): RecordablePlace[] => places.filter((p) => !p.archived);
 
@@ -22,7 +22,7 @@ export function defaultPlaceLevel(places: readonly RecordablePlace[]): number | 
 
 /** The rows of the by-place entry: one per live place at the level, in name order. */
 export function placeRows(places: readonly RecordablePlace[], level: number): PlaceRow[] {
-  return live(places).filter((p) => p.adminLevel === level).sort((a, b) => a.name.localeCompare(b.name)).map((p) => ({ placeId: p.id, name: p.name }));
+  return live(places).filter((p) => p.adminLevel === level).sort((a, b) => a.name.localeCompare(b.name)).map((p) => ({ placeId: p.id, name: p.name, path: p.path ?? p.name }));
 }
 
 export type RecordByPlaceVerdict = { ok: true; level: number } | { ok: false; reason: "NO_PLACES" | "CALCULATED" };
@@ -58,6 +58,25 @@ export function totalFromPlaces(type: IndicatorType, entries: ReadonlyArray<Pick
   const numbers = entries.map((e) => toNumber(e.value)).filter((n): n is number => n !== null);
   if (numbers.length === 0) return null;
   return String(numbers.reduce((a, b) => a + b, 0));
+}
+
+/**
+ * The rows a by-place entry starts with: the places the project already uses (its planned work and figures), at the indicator's level.
+ * Nothing is guessed from the whole organisation's list; anything else is added by the person (see `matchPlaceChoice`).
+ */
+export function startingRows(rows: readonly PlaceRow[], usedIds: readonly string[]): PlaceRow[] {
+  const used = new Set(usedIds);
+  return rows.filter((r) => used.has(r.placeId));
+}
+
+/** The place a typed or chosen text names: its path, else its name when that is unique among the candidates; never a guess. */
+export function matchPlaceChoice(text: string, candidates: readonly PlaceRow[]): PlaceRow | null {
+  const t = text.trim().toLowerCase();
+  if (!t) return null;
+  const byPath = candidates.filter((c) => c.path.toLowerCase() === t);
+  if (byPath.length === 1) return byPath[0]!;
+  const byName = candidates.filter((c) => c.name.toLowerCase() === t);
+  return byName.length === 1 ? byName[0]! : null;
 }
 
 /** The LOCATION breakdown entries for the places that have a typed figure (an empty box is left out, not stored as 0). */

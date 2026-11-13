@@ -621,6 +621,7 @@ export const es: Record<MessageKey, string> = {
   "maps.noPlaces": "Todavía no hay lugares en la lista.",
   "maps.addPlaces": "Añadir lugares",
   "maps.noEntries": "La lista de lugares no tiene entradas para este proyecto.",
+  "maps.markers.key": "Leyenda de colores",
   "maps.markers.title": "Gráficos pequeños en los lugares",
   "maps.markers.NONE": "Ninguno",
   "maps.markers.BAR": "Barras",

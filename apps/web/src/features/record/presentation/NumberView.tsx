@@ -13,7 +13,7 @@ const toQuickPeriod = (p: PackPeriod): QuickPeriod => ({ id: p.id, reportType: p
 /** The number form inside the sheet: reads the project's indicators and periods through the lookup (server or phone) and hands them to the form. */
 export function NumberView({ deps, projectId, today, can, indicatorId, onClose }: KindViewProps) {
   const { t } = useI18n();
-  const [data, setData] = useState<{ indicators: QuickIndicator[]; periods: QuickPeriod[]; places: Array<{ id: string; name: string; adminLevel: number; archived: boolean }> } | "missing" | "failed" | null>(null);
+  const [data, setData] = useState<{ indicators: QuickIndicator[]; periods: QuickPeriod[]; places: Array<{ id: string; name: string; adminLevel: number; archived: boolean; path: string }> } | "missing" | "failed" | null>(null);
   const [simpleReview, setSimpleReview] = useState(false);
 
   // A refresh after a period was opened keeps the form on screen (and what was typed in it); only a first load shows the waiting line.
@@ -21,7 +21,7 @@ export function NumberView({ deps, projectId, today, can, indicatorId, onClose }
     if (!keepShown) setData(null);
     try {
       const [indicators, periods, packPlaces] = await Promise.all([deps.lookup.indicators(projectId), deps.lookup.periods(projectId), deps.lookup.places(projectId)]);
-      setData(indicators === null || periods === null ? "missing" : { indicators: indicators.map(toQuickIndicator), periods: periods.map(toQuickPeriod), places: packPlaces.filter((p) => p.adminLevel !== undefined).map((p) => ({ id: p.id, name: p.name, adminLevel: p.adminLevel!, archived: false })) });
+      setData(indicators === null || periods === null ? "missing" : { indicators: indicators.map(toQuickIndicator), periods: periods.map(toQuickPeriod), places: packPlaces.filter((p) => p.adminLevel !== undefined).map((p) => ({ id: p.id, name: p.name, adminLevel: p.adminLevel!, archived: false, path: p.path })) });
     } catch { setData("failed"); }
   }, [deps.lookup, projectId]);
 

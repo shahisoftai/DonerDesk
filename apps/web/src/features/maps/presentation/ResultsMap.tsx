@@ -142,16 +142,18 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
   const anchored = useMemo(() => (callouts ? calloutAnchors(callouts.cards, places, joined) : null), [callouts, places, joined]);
   const markers = useMarkers(results, places, joined);
   const { kind: markerKind, setKind: setMarkerKind, ids: markerIds, setIds: setMarkerIds, data: markerData, anchors: markerAnchors } = markers;
+  // Pins and small charts say the same thing twice: while the charts are on, the pins step aside.
+  const sceneLayers = useMemo(() => (markerData && markerData.ok && markerKind !== "NONE" ? layers.map((l) => (l.id === "SYMBOLS" ? { ...l, visible: false } : l)) : layers), [layers, markerData, markerKind]);
   const scene = useMemo(() => {
     const built = buildResultsScene({
-      model: model ?? EMPTY_MODEL, layers, joined, unit: indicator?.unit ?? null, selectedRef: selected?.ref ?? null,
+      model: model ?? EMPTY_MODEL, layers: sceneLayers, joined, unit: indicator?.unit ?? null, selectedRef: selected?.ref ?? null,
       selectedPlaceId: selected?.placeId ?? null, overlay, basemap: plan.basemap, lang,
       label: t("maps.summary", { ...summaryCounts(model ?? EMPTY_MODEL) }), areaStyle,
     });
     const context = contextLayers(mapContext, contextOn, typeof location === "undefined" ? "" : location.origin);
     const cover: MaskLayerSpec[] = plan.mask && mask ? [{ kind: "MASK", geometry: mask, color: GROUND_COLOUR[dark ? "dark" : "light"] }] : [];
     return { ...built, detail: plan.detail, layers: [...cover, ...context, ...built.layers] };
-  }, [model, layers, joined, indicator, selected, overlay, plan, mask, dark, lang, t, mapContext, contextOn, areaStyle]);
+  }, [model, sceneLayers, joined, indicator, selected, overlay, plan, mask, dark, lang, t, mapContext, contextOn, areaStyle]);
 
   // Side-by-side periods (a hook, so the explorer only composes).
   const summaryOf = useCallback((counts: ReturnType<typeof summaryCounts>) => t("maps.summary", { ...counts }), [t]);

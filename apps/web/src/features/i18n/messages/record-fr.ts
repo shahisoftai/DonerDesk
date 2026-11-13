@@ -42,6 +42,8 @@ export const recordFr: Record<keyof typeof recordEn, string> = {
   "record.value.breakdown": "Répartition",
   "record.value.byPlace": "Combien dans chaque lieu ?",
   "record.value.byPlaceTotal": "Total : {total}",
+  "record.value.byPlaceAdd": "Ajouter un lieu",
+  "record.value.byPlaceAddHint": "Tapez le nom d'un lieu",
   "record.value.byPlaceEmpty": "Ce projet n'a pas encore de lieux. Ajoutez-les sous « Où nous travaillons ».",
   "record.value.source": "D'où vient ce chiffre",
   "record.value.sourcePlaceholder": "Par exemple : registre du centre de santé, mai",

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createCanvasAction } from "@/lib/actions/canvas";
-import { mapOnlyPages } from "../domain/map-page";
+import { fitText, mapOnlyPages } from "../domain/map-page";
 import { useMapText } from "./useMapText";
 
 /** The map's last step (Phase 53.3): make it a dashboard in one click. Sharing and downloading are then on the dashboard itself. */
@@ -16,7 +16,7 @@ export function AddMapToDashboard({ projectId, projectName, indicatorId }: { pro
   async function add() {
     setBusy(true); setError(null);
     const title = t("maps.builder.dashboardTitle", { project: projectName });
-    const r = await createCanvasAction({ title, scope: "PROJECT", projectId, pages: mapOnlyPages({ projectId, indicatorId, title, alt: t("maps.builder.alt", { project: projectName }) }) });
+    const r = await createCanvasAction({ title: fitText(title, 120), scope: "PROJECT", projectId, pages: mapOnlyPages({ projectId, indicatorId, title, alt: t("maps.builder.alt", { project: projectName }) }) });
     if (!r.ok) { setBusy(false); setError(r.error.message); return; }
     router.push(`/visuals/${r.value.id}`);
   }

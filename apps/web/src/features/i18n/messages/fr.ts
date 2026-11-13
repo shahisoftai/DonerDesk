@@ -621,6 +621,7 @@ export const fr: Record<MessageKey, string> = {
   "maps.noPlaces": "Aucun lieu n'est encore répertorié.",
   "maps.addPlaces": "Ajouter des lieux",
   "maps.noEntries": "La liste des lieux n'a aucune entrée pour ce projet.",
+  "maps.markers.key": "Légende des couleurs",
   "maps.markers.title": "Petits graphiques sur les lieux",
   "maps.markers.NONE": "Aucun",
   "maps.markers.BAR": "Barres",

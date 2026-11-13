@@ -637,6 +637,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.noPlaces": "لا توجد أماكن في القائمة بعد.",
   "maps.addPlaces": "إضافة أماكن",
   "maps.noEntries": "قائمة الأماكن لا تحتوي على إدخالات لهذا المشروع.",
+  "maps.markers.key": "مفتاح الألوان",
   "maps.markers.title": "رسوم صغيرة على الأماكن",
   "maps.markers.NONE": "بلا",
   "maps.markers.BAR": "أعمدة",

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { placeMarkers, MARKER_LIMIT } from "../../src/features/maps/domain/scene/place-markers.ts";
 import { MAP_OPTION_GROUPS, optionsIn } from "../../src/features/maps/domain/map-options.ts";
-import { mapOnlyPages } from "../../src/features/maps/domain/map-page.ts";
+import { fitText, mapOnlyPages } from "../../src/features/maps/domain/map-page.ts";
 import { tabOf } from "../../src/features/places/domain/where-we-work.ts";
 
 const ind = (id: string, rows: Array<[string, string | null]>, o: object = {}) => ({ id, code: id, name: id, unit: "people", isRate: false, additive: true, rows: rows.map(([p, v]) => ({ placeId: p, name: p, value: v })), ...o });
@@ -46,4 +46,13 @@ test("an unknown Where we work tab falls back to the first", () => {
   assert.equal(tabOf("points"), "points");
   assert.equal(tabOf("nonsense"), "areas");
   assert.equal(tabOf(undefined), "areas");
+});
+
+test("a long project name still makes a valid dashboard: page title 80, canvas title 120, a format is set", () => {
+  const long = "[DEMO-16] Inclusive Quality Education for Out-of-School and Marginalised Children in Kenya's Arid Counties (IQE-KE): results by place";
+  const [page] = mapOnlyPages({ projectId: "p", title: long, alt: long });
+  assert.ok(page!.title.length <= 80);
+  assert.equal(page!.format, "WEB_FLUID");
+  assert.ok(fitText(long, 120).length <= 120);
+  assert.equal(fitText("short", 80), "short");
 });

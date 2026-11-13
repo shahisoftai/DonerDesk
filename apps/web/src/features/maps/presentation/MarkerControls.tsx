@@ -1,6 +1,6 @@
 "use client";
 
-import { MAX_MARKER_INDICATORS, type MarkerKind, type MarkerResult } from "../domain/scene/place-markers";
+import { MARKER_COLOURS, MAX_MARKER_INDICATORS, type MarkerKind, type MarkerResult } from "../domain/scene/place-markers";
 import { useMapText } from "./useMapText";
 
 /** The "small charts on places" choice inside More options (Phase 53.5): the kind, which indicators, and why a chart was refused. */
@@ -22,6 +22,11 @@ export function MarkerControls({ kind, onKind, ids, onIds, indicators, data }: {
           <input type="checkbox" checked={ids.includes(i.id)} disabled={!ids.includes(i.id) && ids.length >= MAX_MARKER_INDICATORS} onChange={(e) => onIds((all) => (e.target.checked ? [...all, i.id] : all.filter((x) => x !== i.id)))} /> {i.code} {i.name}
         </label>
       ))}
+      {data && data.ok && data.markers[0] && (
+        <ul className="flex flex-wrap gap-x-3 text-xs" aria-label={t("maps.markers.key")}>
+          {data.markers[0].parts.map((p, i) => <li key={p.indicatorId} className="flex items-center gap-1"><span aria-hidden="true" className="inline-block h-3 w-3 rounded-sm" style={{ background: MARKER_COLOURS[i % MARKER_COLOURS.length] }} />{p.code}</li>)}
+        </ul>
+      )}
       {data && !data.ok && <p role="status" className="text-xs text-slate-600">{t(`maps.markers.refusal.${data.refusal}` as never)}</p>}
       {data && data.ok && data.withoutFull > 0 && <p className="text-xs text-slate-600">{t("maps.markers.partial", { count: data.withoutFull })}</p>}
     </fieldset>

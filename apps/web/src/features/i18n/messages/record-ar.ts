@@ -42,6 +42,8 @@ export const recordAr: Record<keyof typeof recordEn, string> = {
   "record.value.breakdown": "التوزيع",
   "record.value.byPlace": "كم العدد في كل مكان؟",
   "record.value.byPlaceTotal": "المجموع: {total}",
+  "record.value.byPlaceAdd": "إضافة مكان",
+  "record.value.byPlaceAddHint": "اكتب اسم مكان",
   "record.value.byPlaceEmpty": "ليس لهذا المشروع أماكن بعد. أضفها من «أين نعمل».",
   "record.value.source": "من أين جاء الرقم",
   "record.value.sourcePlaceholder": "مثلًا: سجل المركز الصحي، مايو",
