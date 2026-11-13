@@ -67,7 +67,7 @@ test("an area is ticked when the places list holds it: by code when both have on
     { name: "Fafi", adminLevel: 2, code: "OTHER", archived: false },
     { name: "Wajir", adminLevel: 2, code: null, archived: false },
   ];
-  assert.deepEqual([...listedRefs(units as never, places)].sort(), ["d1", "g"]);
+  assert.deepEqual([...listedRefs(units as never, places)].sort(), ["d1", "d2", "g"], "Fafi's code is from another scheme, so its name matches");
   assert.deepEqual(seedUnitsFor([{ ref: "c", name: "Kenya", adminLevel: 0, parentRef: null }, { ref: "g", name: "Garissa", adminLevel: 1, parentRef: "c", code: null }, { ref: "d1", name: "Dadaab", adminLevel: 2, parentRef: "g", code: "KE007001" }]),
     [{ ref: "g", level: 1, name: "Garissa" }, { ref: "d1", level: 2, name: "Dadaab", parentRef: "g", code: "KE007001" }]);
 });

@@ -14,14 +14,12 @@ export function listedRefs(units: ReadonlyMap<number, readonly BoundaryUnit[]>, 
   const out = new Set<string>();
   for (const [level, list] of units) {
     const here = places.filter((p) => !p.archived && p.adminLevel === level);
-    const codes = new Set(here.map((p) => p.code).filter((c): c is string => !!c));
-    // By code when both sides have one; by name when either has none (province files carry no codes). Never across levels.
-    const namesUncoded = new Set(here.filter((p) => !p.code).map((p) => normalizeLocationKey(p.name)));
-    const namesAll = new Set(here.map((p) => normalizeLocationKey(p.name)));
-    for (const u of list) {
-      const key = normalizeLocationKey(u.name);
-      if (u.pcode ? codes.has(u.pcode) || namesUncoded.has(key) : namesAll.has(key)) out.add(u.ref);
-    }
+    const pcodes = new Set(list.map((u) => u.pcode).filter(Boolean));
+    const codes = new Set(here.map((p) => p.code).filter((c): c is string => !!c && pcodes.has(c)));
+    // A place whose code names an area here is matched by that code only; any other place (no code, or a code from another scheme)
+    // is matched by name at the same level. Never across levels, never by a partial name.
+    const names = new Set(here.filter((p) => !p.code || !pcodes.has(p.code)).map((p) => normalizeLocationKey(p.name)));
+    for (const u of list) if ((u.pcode && codes.has(u.pcode)) || names.has(normalizeLocationKey(u.name))) out.add(u.ref);
   }
   return out;
 }
