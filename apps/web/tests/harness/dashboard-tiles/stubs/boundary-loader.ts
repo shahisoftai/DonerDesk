@@ -2,3 +2,4 @@
 export async function loadBoundaryManifest() { return null; }
 export async function loadBoundaryFile() { return null; }
 export async function loadAdmin1File() { return null; }
+export async function loadBoundaryIndex() { return null; }

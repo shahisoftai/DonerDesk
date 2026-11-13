@@ -59,16 +59,16 @@ await check("the status donut draws the plan's activities and says what is late"
 
 await check("the results map opens on the project's country, says how many places have a figure, and lets the viewer change the period", async () => {
   const card = page.locator("section[aria-label='Children vaccinated by place']");
-  await card.getByText(/places have a figure/).waitFor({ timeout: 15000 });
-  assert.match(await text(card), /3 of 3 places have a figure/);
+  await card.getByText(/Places with a figure/).waitFor({ timeout: 15000 });
+  assert.match(await text(card), /Places with a figure: 3 of 3/);
   assert.equal(await card.getByLabel("Indicator").inputValue(), "i1");
   assert.equal(await card.getByLabel("Layers").count(), 0, "the card is compact: no layer panel");
   const slider = card.getByLabel("Reporting period");
   await slider.fill("1");
   await card.getByText("Jan 2026").first().waitFor();
-  await card.getByText(/1 of 3 places have a figure/).waitFor();
+  await card.getByText(/Places with a figure: 1 of 3/).waitFor();
   await slider.fill("2");
-  await card.getByText(/3 of 3 places have a figure/).waitFor();
+  await card.getByText(/Places with a figure: 3 of 3/).waitFor();
   const reads = (await page.evaluate(() => window.__h.reads)).filter((r) => r.name === "results").map((r) => r.args[2]);
   assert.ok(reads.includes("p1") && reads.includes("p2"), `the map re-read each period: ${JSON.stringify(reads)}`);
 });
@@ -76,7 +76,7 @@ await check("the results map opens on the project's country, says how many place
 await check("a place nobody reported is grey and counted as such, never drawn as zero", async () => {
   const card = page.locator("section[aria-label='Children vaccinated by place']");
   await card.getByLabel("Reporting period").fill("1");
-  await card.getByText(/1 of 3 places have a figure/).waitFor();
+  await card.getByText(/Places with a figure: 1 of 3/).waitFor();
   assert.match(await text(card), /Not measured/);
   assert.doesNotMatch(await text(card), /120–120/, "one value is one legend entry, not a range from itself to itself");
   assert.match(await text(card), /\b120\b/);
