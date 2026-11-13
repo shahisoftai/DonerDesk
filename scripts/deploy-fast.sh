@@ -220,7 +220,9 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   rsync -a --exclude=geo --exclude=tiles "${ROOT}/apps/web/public/" "${WEB_STAGE}/apps/web/public/" 2>/dev/null || true
   rsync -a "${ROOT}/apps/web/content/" "${WEB_STAGE}/apps/web/content/"
   rsync -a "${ROOT}/apps/web/package.json" "${WEB_STAGE}/apps/web/package.json"
-  rsync -a --delete "${ROOT}/node_modules/" "${WEB_STAGE}/node_modules/"
+  # No root node_modules here: .next/standalone/node_modules already holds exactly what the server loads (Next traces it, ~63 MB).
+  # Copying the whole workspace node_modules over it (~1.1 GB) only slowed the stage, the upload and the chown. The api ships its own.
+  # Verified 2026-11-13: the standalone server alone serves app, support, image and public pages without a module error.
   echo "    web stage ready: $(du -sh "${WEB_STAGE}" | cut -f1) (shipped with rsync, only changes travel)"
 fi
 
