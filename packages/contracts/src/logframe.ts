@@ -95,6 +95,8 @@ export const CreateIndicatorSchema = z.object({
   targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
   targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
   countedElsewhere: z.boolean().optional(),
+  recordByPlace: z.boolean().optional(),
+  placeLevel: z.number().int().min(0).max(4).optional(),
   formula: IndicatorFormulaSchema.optional(),
   /** The sector library entry the indicator is copied from (phase 46): its id and version, and the stored link. */
   library: z.object({ id: z.string().min(1).max(60), version: z.number().int().min(1), linkJson: z.string().max(8000) }).optional(),
@@ -124,6 +126,8 @@ export const UpdateIndicatorSchema = z.object({
   targetBreakdowns: z.array(TargetBreakdownSchema).max(50).optional(),
   targetSchedule: z.array(TargetScheduleEntrySchema).max(60).optional(),
   countedElsewhere: z.boolean().optional(),
+  recordByPlace: z.boolean().optional(),
+  placeLevel: z.number().int().min(0).max(4).optional(),
   /** `null` removes the formula (the indicator is typed again). */
   formula: IndicatorFormulaSchema.nullable().optional(),
   /** Why a target or baseline an approved report used is being changed; kept with the framework's history. */

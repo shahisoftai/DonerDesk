@@ -477,6 +477,8 @@ model Indicator {
   /// {op, terms[], percent?}: the value is calculated from other indicators of the project (phase 33.3).
   formulaJson           String?
   countedElsewhere      Boolean  @default(false) // what it counts is also counted by another project: left out of portfolio totals
+  recordByPlace         Boolean  @default(false) // figures are entered one per place (phase 53.2)
+  placeLevel            Int?     // the admin level those places are at (0 country … 4 site)
   /// The sector library entry this indicator was copied from (phase 46): id, version, and the link that remembers what the entry said then.
   libraryId             String?
   libraryVersion        Int?

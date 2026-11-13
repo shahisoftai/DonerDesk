@@ -137,6 +137,8 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
         formulaJson: i.formula ? JSON.stringify(i.formula) : null,
         countedElsewhere: i.countedElsewhere,
+        recordByPlace: i.recordByPlace,
+        placeLevel: i.placeLevel ?? null,
         libraryId: i.libraryId ?? null,
         libraryVersion: i.libraryVersion ?? null,
         libraryJson: i.libraryJson ?? null,
@@ -167,6 +169,8 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         targetScheduleJson: i.targetSchedule.length ? JSON.stringify(i.targetSchedule) : null,
         formulaJson: i.formula ? JSON.stringify(i.formula) : null,
         countedElsewhere: i.countedElsewhere,
+        recordByPlace: i.recordByPlace,
+        placeLevel: i.placeLevel ?? null,
         libraryId: i.libraryId ?? null,
         libraryVersion: i.libraryVersion ?? null,
         libraryJson: i.libraryJson ?? null,
@@ -215,6 +219,8 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     targetScheduleJson: string | null;
     formulaJson: string | null;
     countedElsewhere: boolean;
+    recordByPlace: boolean;
+    placeLevel: number | null;
     libraryId: string | null;
     libraryVersion: number | null;
     libraryJson: string | null;
@@ -244,6 +250,8 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         targetSchedule: parseTargetSchedule(row.targetScheduleJson),
         formula: parseFormula(row.formulaJson),
         countedElsewhere: row.countedElsewhere,
+        recordByPlace: row.recordByPlace,
+        ...(row.placeLevel !== null ? { placeLevel: row.placeLevel } : {}),
         ...(row.libraryId ? { libraryId: row.libraryId } : {}),
         ...(row.libraryVersion !== null ? { libraryVersion: row.libraryVersion } : {}),
         ...(row.libraryJson ? { libraryJson: row.libraryJson } : {}),

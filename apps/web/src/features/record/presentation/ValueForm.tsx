@@ -16,6 +16,8 @@ import { AdviceList } from "./AdviceList";
 import { ConfirmationScreen } from "./ConfirmationScreen";
 import { DayChips } from "./DayChips";
 import { PeriodOpenCard } from "./PeriodOpenCard";
+import { PlaceFigures } from "./PlaceFigures";
+import { canRecordByPlace, type RecordablePlace } from "@donordesk/domain/contexts/places/place-recording.js";
 
 export interface ValueFormProps {
   projectId: string;
@@ -34,6 +36,8 @@ export interface ValueFormProps {
   onPeriodsChanged: () => void;
   onSaved?: ((saved: ValueSaved) => void) | undefined;
   onDone: () => void;
+  /** The project's places (Phase 53.2): an indicator recorded by place shows one box per place at its level. */
+  places?: ReadonlyArray<RecordablePlace> | undefined;
   /** A value already saved for this indicator in this period, so the form can say so before a second one is added. */
   existingFor?: ((indicatorId: string, periodId: string) => { value: string; by?: string | undefined } | null) | undefined;
 }
@@ -58,6 +62,7 @@ export function ValueForm(props: ValueFormProps) {
   const [note, setNote] = useState("");
   const [source, setSource] = useState("");
   const [split, setSplit] = useState<DisaggregationEntryInput[]>([]);
+  const [placeFigures, setPlaceFigures] = useState<Record<string, string>>({});
   const [problem, setProblem] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +71,7 @@ export function ValueForm(props: ValueFormProps) {
   const [saveWhenOpen, setSaveWhenOpen] = useState(false);
 
   const indicator = typable.find((i) => i.id === indicatorId);
+  const byPlace = indicator?.recordByPlace && summableType(indicator.type) && props.places ? canRecordByPlace({ calculated: false, placeLevel: indicator.placeLevel }, props.places) : null;
   const landing = useMemo(() => dateLanding(date, periods), [date, periods]);
   const periodId = landing.kind === "FOUND" ? landing.periodId : undefined;
   const splitComplete = split.length > 0 && split.every((e) => e.category.trim() !== "" && e.value.trim() !== "");
@@ -113,7 +119,7 @@ export function ValueForm(props: ValueFormProps) {
   }, [saveWhenOpen, landing.kind, blocked]);
 
   function another() {
-    setValue(""); setNote(""); setSource(""); setSplit([]); setFilter(""); setSaved(null); setError(null);
+    setValue(""); setNote(""); setSource(""); setSplit([]); setPlaceFigures({}); setFilter(""); setSaved(null); setError(null);
     if (indicator) setIndicatorId(nextIndicatorId(typable, indicator.id));
     window.setTimeout(() => valueRef.current?.focus(), 0);
   }
@@ -144,6 +150,10 @@ export function ValueForm(props: ValueFormProps) {
         </Select>
       </div>
 
+      {byPlace?.ok && props.places && indicator ? (
+        <PlaceFigures places={props.places} level={byPlace.level} type={indicator.type ?? "NUMBER"} figures={placeFigures}
+          onChange={(figures, entries, total) => { setPlaceFigures(figures); setSplit(entries); setValue(total); setProblem(null); }} />
+      ) : (
       <div className="space-y-2">
         <label className="label" htmlFor="record-value">{indicator?.unit ? t("record.value.howManyUnit", { unit: indicator.unit }) : t("record.value.howMany")}</label>
         <Input
@@ -153,6 +163,7 @@ export function ValueForm(props: ValueFormProps) {
         />
         {problem && <p id="record-value-problem" role="alert" className="text-sm font-medium text-danger-700 dark:text-danger-400">{problem}</p>}
       </div>
+      )}
 
       <DayChips date={date} today={today} onChange={setDate} />
 

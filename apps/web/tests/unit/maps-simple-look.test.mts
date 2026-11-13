@@ -43,3 +43,11 @@ test("the home country chain: one country place, results, then the project's cou
   assert.equal(homeCountryOf({ places: [], results: null, projectCountry: "Atlantis", knownCountries: ["Nepal"] }), null);
   assert.equal(homeCountryOf({ places: [], results: null, projectCountry: "" }), null);
 });
+
+test("by-place entry and the map's empty state agree on the rules", async () => {
+  const { canRecordByPlace, totalFromPlaces } = await import("@donordesk/domain/contexts/places/place-recording.js");
+  const { mapReadiness } = await import("@donordesk/domain/contexts/places/map-readiness.js");
+  assert.deepEqual(canRecordByPlace({ calculated: false }, [{ id: "a", name: "A", adminLevel: 1, archived: false }]), { ok: true, level: 1 });
+  assert.equal(totalFromPlaces("NUMBER", [{ value: "2" }, { value: "3" }]), "5");
+  assert.equal(mapReadiness({ placeCount: 0, indicators: [], unconfirmedLocations: 0 })?.code, "NO_PLACES");
+});

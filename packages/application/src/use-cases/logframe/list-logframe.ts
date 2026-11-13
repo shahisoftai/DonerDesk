@@ -53,6 +53,8 @@ export class ListLogframeHandler {
           targetSchedule: i.targetSchedule,
           ...(i.formula ? { formula: i.formula } : {}),
           countedElsewhere: i.countedElsewhere,
+          recordByPlace: i.recordByPlace,
+          placeLevel: i.placeLevel,
           library: libraryInfo(i.libraryJson),
           semantics: i.semantics,
           semanticsDescription: describeSemantics(effectiveIndicatorSemantics(i), i.type),

@@ -17,6 +17,8 @@ export interface PackPlace {
   name: string;
   /** "Rabak › White Nile › Sudan": tells two places with the same name apart. */
   path: string;
+  /** 0 country … 4 site; absent in a pack from an older server (the by-place entry then offers every place). */
+  adminLevel?: number;
 }
 
 /** Pack v2 (Phase 44): a number the person may type. Calculated indicators are never carried. */
@@ -26,6 +28,8 @@ export interface PackIndicator {
   name: string;
   type: string;
   disaggregationRequired: boolean;
+  recordByPlace?: boolean;
+  placeLevel?: number;
   unit?: string;
   frequency?: string;
 }

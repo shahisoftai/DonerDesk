@@ -367,6 +367,8 @@ export const IndicatorItemSchema = z.object({
   formula: z.object({ op: z.enum(["RATIO", "SUM", "DIFFERENCE"]), terms: z.array(z.string()), percent: z.boolean().optional() }).optional(),
   /** Counted by another project too: left out of the portfolio totals. */
   countedElsewhere: z.boolean().default(false),
+  recordByPlace: z.boolean().default(false),
+  placeLevel: z.number().int().nullable().optional(),
   /** The sector library entry the indicator was copied from, with its reference standard (phase 46). */
   library: z.object({ id: z.string(), version: z.number(), adoptedOn: z.string(), referenceText: z.string().nullable(), referenceStandard: z.custom<import("@donordesk/domain").ReferenceStandard>().nullable() }).nullable().default(null),
   semantics: z

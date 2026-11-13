@@ -293,6 +293,14 @@
     "./contexts/logframe/framework-lenses.js": {
       "types": "./dist/contexts/logframe/framework-lenses.d.ts",
       "import": "./dist/contexts/logframe/framework-lenses.js"
+    },
+    "./contexts/places/place-recording.js": {
+      "types": "./dist/contexts/places/place-recording.d.ts",
+      "import": "./dist/contexts/places/place-recording.js"
+    },
+    "./contexts/places/map-readiness.js": {
+      "types": "./dist/contexts/places/map-readiness.d.ts",
+      "import": "./dist/contexts/places/map-readiness.js"
     }
   },
   "scripts": {

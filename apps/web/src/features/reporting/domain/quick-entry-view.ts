@@ -12,6 +12,9 @@ export interface QuickIndicator {
   unit?: string | undefined;
   type?: string | undefined;
   disaggregationRequired?: boolean | undefined;
+  /** Figures are entered one per place (Phase 53.2), at this admin level when given. */
+  recordByPlace?: boolean | undefined;
+  placeLevel?: number | undefined;
   /** Calculated from other indicators: never typed. */
   formula?: unknown;
 }

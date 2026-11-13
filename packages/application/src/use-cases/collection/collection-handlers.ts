@@ -603,13 +603,13 @@ export interface OfflinePackDto {
   /** The forms that are open for answers, with their questions; nothing else about the project. */
   forms: Array<{ id: string; name: string; description?: string; fields: FormField[] }>;
   /** The live places, for place questions: an id, a name and the path that tells two of the same name apart. */
-  places: Array<{ id: string; name: string; path: string }>;
+  places: Array<{ id: string; name: string; path: string; adminLevel?: number }>;
   /**
    * Pack v2 (Phase 44), present only when the handler was given the readers. The numbers the person may type (calculated ones left
    * out), the project's reporting periods (so a day can be matched to one with no connection) and the person's OWN open planned
    * items for the next 14 days. Still no recorded values, no people and no files.
    */
-  indicators?: Array<{ id: string; code: string; name: string; type: string; disaggregationRequired: boolean; unit?: string; frequency?: string }>;
+  indicators?: Array<{ id: string; code: string; name: string; type: string; disaggregationRequired: boolean; recordByPlace?: boolean; placeLevel?: number; unit?: string; frequency?: string }>;
   periods?: Array<{ id: string; reportType: string; startDate: string; endDate: string; status: string }>;
   plan?: Array<{ id: string; title: string; plannedStart: string; plannedEnd: string; status: string; location?: string }>;
 }
@@ -647,7 +647,7 @@ export class GetOfflinePackHandler {
       generatedAt: this.clock.now().toISOString(),
       // Forms and numbers are answered with the permission to enter numbers; without it they are simply not carried.
       forms: !mayEnterNumbers ? [] : listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({ id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields] })),
-      places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id) })),
+      places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id), adminLevel: p.adminLevel })),
     };
 
     if (this.readers.indicators && mayEnterNumbers) {
@@ -655,7 +655,7 @@ export class GetOfflinePackHandler {
       if (!found.ok) return found;
       dto.indicators = found.value
         .filter((i) => !i.formula)
-        .map((i) => ({ id: i.id, code: i.code, name: i.name, type: String(i.type), disaggregationRequired: i.disaggregationRequired, ...(i.unit ? { unit: i.unit } : {}), ...(i.frequency ? { frequency: i.frequency } : {}) }));
+        .map((i) => ({ id: i.id, code: i.code, name: i.name, type: String(i.type), disaggregationRequired: i.disaggregationRequired, ...(i.recordByPlace ? { recordByPlace: true } : {}), ...(i.placeLevel !== undefined ? { placeLevel: i.placeLevel } : {}), ...(i.unit ? { unit: i.unit } : {}), ...(i.frequency ? { frequency: i.frequency } : {}) }));
     }
     if (this.readers.periods) {
       const found = await this.readers.periods.findByProject(projectId, ctx.tenant.tenantId);

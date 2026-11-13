@@ -113,6 +113,7 @@ const REQUIRED_PRISMA_FIELDS = [
   { model: "Organization", field: "setupAssistEnabled" },
   { model: "Indicator", field: "targetScheduleJson" },
   { model: "Indicator", field: "countedElsewhere" },
+  { model: "Indicator", field: "recordByPlace" },
   { model: "Indicator", field: "libraryId" },
   { model: "OrganisationLibraryEntry", field: "payloadJson" },
   { model: "EvidenceFile", field: "reviewNote" },

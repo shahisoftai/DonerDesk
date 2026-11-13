@@ -32,6 +32,9 @@ export interface IndicatorProps {
   targetSchedule?: TargetScheduleEntry[];
   /** What this indicator counts is also counted by another project, so the portfolio roll-up lists it but does not add it. */
   countedElsewhere?: boolean;
+  /** Figures are entered one per place (Phase 53.2), at `placeLevel` (0 country … 4 site); the project's map is drawn from them. */
+  recordByPlace?: boolean;
+  placeLevel?: number | undefined;
   /** Set when the value is calculated from other indicators (phase 33.3): nobody types a value for it. */
   formula?: IndicatorFormula | undefined;
   /** The sector library entry this indicator was copied from (phase 46), its version then, and what the entry said then (`LibraryLink`). */
@@ -70,6 +73,8 @@ export class Indicator extends Entity<string> {
     targetBreakdowns?: DisaggregationEntry[];
     targetSchedule?: TargetScheduleEntry[];
     countedElsewhere?: boolean;
+    recordByPlace?: boolean;
+    placeLevel?: number;
     formula?: IndicatorFormula;
     /** Serialized IndicatorSemantics, when the source states how the indicator is read (a library entry does). */
     semanticsJson?: string;
@@ -90,6 +95,8 @@ export class Indicator extends Entity<string> {
       targetBreakdowns: input.targetBreakdowns ?? [],
       targetSchedule: input.targetSchedule ?? [],
       countedElsewhere: input.countedElsewhere ?? false,
+      recordByPlace: input.recordByPlace ?? false,
+      placeLevel: input.placeLevel,
       formula: input.formula,
       unit: input.unit,
       meansOfVerification: input.meansOfVerification,
@@ -130,6 +137,8 @@ export class Indicator extends Entity<string> {
   get targetSchedule(): TargetScheduleEntry[] { return this.props.targetSchedule ?? []; }
   get formula(): IndicatorFormula | undefined { return this.props.formula; }
   get countedElsewhere(): boolean { return this.props.countedElsewhere ?? false; }
+  get recordByPlace(): boolean { return this.props.recordByPlace ?? false; }
+  get placeLevel(): number | undefined { return this.props.placeLevel; }
   get libraryId(): string | undefined { return this.props.libraryId; }
   get libraryVersion(): number | undefined { return this.props.libraryVersion; }
   get libraryJson(): string | undefined { return this.props.libraryJson; }

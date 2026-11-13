@@ -47,6 +47,8 @@ export class CreateIndicatorHandler {
       targetBreakdowns: breakdowns.value,
       targetSchedule: sortedTargetSchedule(input.targetSchedule ?? []),
       countedElsewhere: input.countedElsewhere ?? false,
+      recordByPlace: input.recordByPlace ?? false,
+      ...(input.placeLevel !== undefined ? { placeLevel: input.placeLevel } : {}),
       ...(formula?.ok ? { formula: formula.value } : {}),
       ...(input.semantics ? { semanticsJson: JSON.stringify(input.semantics) } : {}),
       ...(input.library ? { libraryId: input.library.id, libraryVersion: input.library.version, libraryJson: input.library.linkJson } : {}),

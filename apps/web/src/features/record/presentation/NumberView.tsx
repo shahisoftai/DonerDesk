@@ -7,21 +7,21 @@ import type { QuickIndicator, QuickPeriod } from "@/features/reporting/domain/qu
 import type { KindViewProps } from "./KindView";
 import { ValueForm } from "./ValueForm";
 
-const toQuickIndicator = (i: PackIndicator): QuickIndicator => ({ id: i.id, code: i.code, name: i.name, unit: i.unit, type: i.type, disaggregationRequired: i.disaggregationRequired });
+const toQuickIndicator = (i: PackIndicator): QuickIndicator => ({ id: i.id, code: i.code, name: i.name, unit: i.unit, type: i.type, disaggregationRequired: i.disaggregationRequired, recordByPlace: i.recordByPlace, placeLevel: i.placeLevel });
 const toQuickPeriod = (p: PackPeriod): QuickPeriod => ({ id: p.id, reportType: p.reportType, startDate: p.startDate, endDate: p.endDate, status: p.status });
 
 /** The number form inside the sheet: reads the project's indicators and periods through the lookup (server or phone) and hands them to the form. */
 export function NumberView({ deps, projectId, today, can, indicatorId, onClose }: KindViewProps) {
   const { t } = useI18n();
-  const [data, setData] = useState<{ indicators: QuickIndicator[]; periods: QuickPeriod[] } | "missing" | "failed" | null>(null);
+  const [data, setData] = useState<{ indicators: QuickIndicator[]; periods: QuickPeriod[]; places: Array<{ id: string; name: string; adminLevel: number; archived: boolean }> } | "missing" | "failed" | null>(null);
   const [simpleReview, setSimpleReview] = useState(false);
 
   // A refresh after a period was opened keeps the form on screen (and what was typed in it); only a first load shows the waiting line.
   const load = useCallback(async (keepShown = false) => {
     if (!keepShown) setData(null);
     try {
-      const [indicators, periods] = await Promise.all([deps.lookup.indicators(projectId), deps.lookup.periods(projectId)]);
-      setData(indicators === null || periods === null ? "missing" : { indicators: indicators.map(toQuickIndicator), periods: periods.map(toQuickPeriod) });
+      const [indicators, periods, packPlaces] = await Promise.all([deps.lookup.indicators(projectId), deps.lookup.periods(projectId), deps.lookup.places(projectId)]);
+      setData(indicators === null || periods === null ? "missing" : { indicators: indicators.map(toQuickIndicator), periods: periods.map(toQuickPeriod), places: packPlaces.filter((p) => p.adminLevel !== undefined).map((p) => ({ id: p.id, name: p.name, adminLevel: p.adminLevel!, archived: false })) });
     } catch { setData("failed"); }
   }, [deps.lookup, projectId]);
 
@@ -46,6 +46,7 @@ export function NumberView({ deps, projectId, today, can, indicatorId, onClose }
       projectId={projectId}
       indicators={data.indicators}
       periods={data.periods}
+      places={data.places}
       today={today}
       sink={deps.valueSink}
       periodOpener={deps.periods}

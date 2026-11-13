@@ -41,6 +41,8 @@ import { contextLayers, offeredContext, type ContextToggle } from "../domain/sce
 import { useMapText } from "./useMapText";
 import type { ExplorerProps } from "./results-loader";
 import { firstIndicator } from "./results-loader";
+import { mapReadiness } from "@donordesk/domain/contexts/places/map-readiness.js";
+import { MapReadinessCard } from "./MapReadinessCard";
 import { homeCountryOf } from "../domain/drill/home-country";
 
 const EMPTY_MODEL: ExplorerModel = { indicatorId: "", level: 1, pins: [], regions: [], unmapped: [], bands: [], isRate: false };
@@ -227,8 +229,16 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
     setLayers((l) => (o ? (l.some((x) => x.id === "OVERLAY") ? l : [...l, OVERLAY_LAYER]) : l.filter((x) => x.id !== "OVERLAY")));
   }, []);
 
-  if (places.length === 0) return <div className="card text-sm"><p>{t("maps.noPlaces")}</p><Link className="mt-2 inline-block font-medium underline" href="/settings/places">{t("maps.addPlaces")}</Link></div>;
-  if (results?.noPlaces) return <p className="card text-sm">{t("maps.noEntries")}</p>;
+  // Nothing to draw: say the first thing missing and offer one button (Phase 53.2), instead of an empty ground.
+  const readiness = results === null && places.length > 0 ? null : mapReadiness({
+    placeCount: places.filter((p) => !p.archived).length,
+    indicators: [
+      ...(results?.indicators ?? []).map((i) => ({ id: i.id, code: i.code, name: i.name, recordByPlace: true, hasFigureByPlace: i.rollup.rows.length > 0 })),
+      ...(results?.withoutLocation ?? []).map((i) => ({ id: i.id, code: i.code, name: i.name, recordByPlace: false, hasFigureByPlace: false })),
+    ],
+    unconfirmedLocations: 0,
+  });
+  if (readiness && readiness.code !== "PLACES_TO_CONFIRM") return <MapReadinessCard projectId={projectId} readiness={readiness} />;
 
   const country = path[0] && manifest ? findCountry(manifest, path[0].name) : null;
   const fileEntry = country && view.shown >= 2 ? fileFor(country, view.shown as 2 | 3 | 4) : null;
