@@ -95,6 +95,9 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
                   </select>
                 );
               })() : null}
+              <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
+              {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{c.accept}</button> : null}
+              <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${c.remove} ${node.title ?? ""}`}>{c.remove}</button>
               {node.level === "OUTCOME" || node.level === "OUTPUT" ? (
                 <details className="basis-full text-xs">
                   <summary className="cursor-pointer text-slate-600 dark:text-slate-300">{t("framework.logic.summary")}</summary>
@@ -110,9 +113,6 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
                   </div>
                 </details>
               ) : null}
-              <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
-              {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{c.accept}</button> : null}
-              <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${c.remove} ${node.title ?? ""}`}>{c.remove}</button>
             </li>
           ))}
         </ul>

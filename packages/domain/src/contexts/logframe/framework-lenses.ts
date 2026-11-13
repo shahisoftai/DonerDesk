@@ -1,5 +1,5 @@
 import { DEFAULT_VOCABULARY, documentName, levelName, type FrameworkVocabulary } from "./framework-vocabulary.js";
-import type { LogframeLevel } from "./logframe-item.js";
+import { logframeLevelRank, type LogframeLevel } from "./logframe-item.js";
 import type { LogframeSnapshot, SnapshotIndicator, SnapshotItem } from "./logframe-snapshot.js";
 
 /**
@@ -106,11 +106,19 @@ export function renderFramework(snapshot: LogframeSnapshot, lens: FrameworkLens,
     const parent = item.parentId && keptIds.has(item.parentId) ? item.parentId : null;
     children.set(parent, [...(children.get(parent) ?? []), item]);
   }
+  // Siblings read in the tree's own order (as `compareLogframeItems`: position, level, then code numerically). The snapshot is
+  // ordered by position then id for a stable hash, which would put OC2 before OC1 when nothing was ever reordered.
+  const treeOrder = (a: SnapshotItem, b: SnapshotItem) =>
+    a.sortOrder - b.sortOrder ||
+    logframeLevelRank(a.level as LogframeLevel) - logframeLevelRank(b.level as LogframeLevel) ||
+    (a.code ?? "").localeCompare(b.code ?? "", undefined, { numeric: true });
+  for (const list of children.values()) list.sort(treeOrder);
   const indicatorsOf = new Map<string, SnapshotIndicator[]>();
   for (const indicator of snapshot.indicators) {
     if (indicator.archived || !keptIds.has(indicator.logframeItemId)) continue;
     indicatorsOf.set(indicator.logframeItemId, [...(indicatorsOf.get(indicator.logframeItemId) ?? []), indicator]);
   }
+  for (const list of indicatorsOf.values()) list.sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true }));
 
   const columns = frameworkColumns(lens);
   // Every row has a cell for every column, so a screen or a file never meets a missing key.

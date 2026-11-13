@@ -60,4 +60,5 @@ export const frameworkEs: Record<keyof typeof frameworkEn, string> = {
 
   "framework.risk.result": "¿Qué resultado afecta? (opcional)",
   "framework.risk.none": "Ninguno en particular",
+  "framework.risk.affects": "Afecta a: {result}",
 };

@@ -63,4 +63,5 @@ export const frameworkEn = {
 
   "framework.risk.result": "Which result does it affect? (optional)",
   "framework.risk.none": "None in particular",
+  "framework.risk.affects": "Affects: {result}",
 } as const;

@@ -60,4 +60,5 @@ export const frameworkFr: Record<keyof typeof frameworkEn, string> = {
 
   "framework.risk.result": "Quel résultat est concerné ? (facultatif)",
   "framework.risk.none": "Aucun en particulier",
+  "framework.risk.affects": "Concerne : {result}",
 };

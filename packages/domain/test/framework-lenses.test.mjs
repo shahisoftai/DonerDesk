@@ -65,3 +65,18 @@ test("a result whose parent is not shown becomes a root rather than being lost",
 test("the same snapshot, lens and words always give the same document", () => {
   assert.deepEqual(renderFramework(snapshot, FRAMEWORK_LENSES.LOGFRAME), renderFramework(snapshot, FRAMEWORK_LENSES.LOGFRAME));
 });
+
+test("the lenses read results in the tree's order: OC1 before OC2 even when ids say otherwise, and codes numerically (1.10 after 1.2)", () => {
+  const snap = buildLogframeSnapshot(
+    [
+      item({ id: "zz", level: "OUTCOME", code: "OC1", title: "First outcome" }),
+      item({ id: "aa", level: "OUTCOME", code: "OC2", title: "Second outcome" }),
+      item({ id: "m1", level: "OUTPUT", code: "1.10", title: "Tenth", parentId: "zz" }),
+      item({ id: "m2", level: "OUTPUT", code: "1.2", title: "Second", parentId: "zz" }),
+    ],
+    [ind({ id: "x2", code: "IND-10", logframeItemId: "m2" }), ind({ id: "x1", code: "IND-2", logframeItemId: "m2" })],
+  );
+  const doc = renderFramework(snap, FRAMEWORK_LENSES.LOGFRAME);
+  assert.deepEqual(doc.rows.filter((r) => r.kind === "RESULT").map((r) => r.cells.resultCode), ["OC1", "1.2", "1.10", "OC2"]);
+  assert.deepEqual(doc.rows.filter((r) => r.kind === "INDICATOR").map((r) => r.cells.code), ["IND-2", "IND-10"]);
+});

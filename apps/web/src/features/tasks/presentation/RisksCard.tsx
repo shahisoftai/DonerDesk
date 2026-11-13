@@ -48,6 +48,8 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
   const [note, setNote] = useState("");
 
   const names = Object.fromEntries(people.map((p) => [p.id, p.label.replace(/ \(you\)$/, "")]));
+  // The result a risk was raised against, named as the logframe names it (code, then title).
+  const resultName = (id: string | undefined) => { const it = id ? results.find((x) => x.id === id) : undefined; return it ? [it.code, it.title].filter(Boolean).join(" ") : undefined; };
   const byKind = filterKind ? risks.filter((r) => r.kind === filterKind) : risks;
   const openOnes = byKind.filter((r) => r.status === "OPEN");
   const shown = all ? byKind : openOnes.slice(0, 3);
@@ -113,6 +115,7 @@ export function RisksCard({ projectId, risks, people, userId, canRaise, today, p
                 <div className="min-w-0">
                   <p className="font-medium">{r.title}</p>
                   <p className="text-xs text-slate-500">{riskKindWords(r.kind)} · {riskLine(r, userId, names, today)}</p>
+                  {resultName(r.logframeItemId) && <p className="text-xs text-slate-500">{t("framework.risk.affects", { result: resultName(r.logframeItemId)! })}</p>}
                   {r.status === "OPEN" && r.action && <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{r.action}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
