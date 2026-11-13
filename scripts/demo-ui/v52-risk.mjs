@@ -1,0 +1,24 @@
+import { attach, BASE } from "./lib.mjs";
+const { page } = await attach("v52-risk");
+const T = process.env.T, S = process.env.OUT;
+const errors = []; page.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
+await page.goto(`${BASE}/projects/${T}`, { waitUntil: "networkidle" });
+const btns = await page.$$eval("main button", (b) => b.filter((e) => e.offsetParent).map((e) => e.textContent.trim()).filter(Boolean));
+console.log("buttons:", btns.slice(0, 30).join(" | "));
+const raise = page.getByRole("button", { name: /raise|problem or risk|add a risk|new risk/i }).first();
+if (!(await raise.count())) { console.log("NO raise button on overview"); process.exit(0); }
+await raise.click();
+await page.waitForTimeout(800);
+await page.getByLabel("What is it?").fill("ZZ TEST flood may contaminate water points");
+const resultSel = page.getByLabel(/Which result does it affect/);
+console.log("result picker shown:", (await resultSel.count()) ? "yes" : "NO");
+const opts = await resultSel.evaluate((s) => [...s.options].map((o) => o.textContent.trim()));
+console.log("options:", opts.join(" / "));
+const oc1 = await resultSel.evaluate((s) => [...s.options].find((o) => /OC1/.test(o.textContent))?.value);
+await resultSel.selectOption(oc1);
+await page.screenshot({ path: `${S}/19-risk-form.png`, fullPage: true });
+await page.getByRole("button", { name: /raise it/i }).click();
+await page.waitForTimeout(3000);
+console.log("risk listed:", /ZZ TEST flood may contaminate/.test(await page.evaluate(() => document.body.innerText)) ? "yes" : "NO");
+console.log("errors:", errors.length ? errors : "none");
+process.exit(0);

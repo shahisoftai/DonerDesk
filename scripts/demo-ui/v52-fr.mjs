@@ -1,0 +1,13 @@
+import { attach, BASE } from "./lib.mjs";
+const { page } = await attach("v52-fr");
+const T = process.env.T, S = process.env.OUT;
+const setLang = async (v) => { await page.goto(`${BASE}/projects/${T}/logframe`, { waitUntil: "networkidle" }); await page.getByLabel(/^Language|^Langue|^Idioma/).first().selectOption(v); await page.waitForTimeout(2500); };
+await setLang("fr");
+await page.goto(`${BASE}/projects/${T}/logframe?view=LOGFRAME`, { waitUntil: "networkidle" });
+await page.waitForTimeout(1000);
+const t = await page.evaluate(() => document.body.innerText);
+for (const p of ["Cadre de résultats", "Cadre logique", "Télécharger en PDF", "Hypothèses", "Moyens de vérification", "Valeur de référence"]) console.log(" ", p, t.includes(p) ? "yes" : "NO");
+await page.screenshot({ path: `${S}/25-fr.png` });
+await setLang("en");
+console.log("back to English:", (await page.evaluate(() => document.body.innerText)).includes("Results framework") ? "yes" : "NO");
+process.exit(0);

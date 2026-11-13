@@ -1,0 +1,11 @@
+import { attach, BASE } from "./lib.mjs";
+const { page } = await attach("v52-login");
+await page.goto(BASE + "/login", { waitUntil: "domcontentloaded" });
+await page.getByLabel(/email/i).fill(process.env.DEMO_EMAIL);
+await page.getByLabel(/password/i).first().fill(process.env.DEMO_PASSWORD);
+await page.getByRole("button", { name: /sign in/i }).click();
+await page.waitForURL((u) => !/login/.test(u.pathname), { timeout: 60000 });
+await page.goto(BASE + "/projects", { waitUntil: "networkidle" });
+const links = await page.$$eval("a[href^='/projects/']", (as) => [...new Set(as.map((a) => a.getAttribute("href") + " | " + a.textContent.trim().slice(0, 60)))].filter((h) => /^\/projects\/[0-9a-f-]{20,}[^/]* \|/.test(h)).slice(0, 12));
+console.log("url", page.url()); console.log(links.join("\n"));
+process.exit(0);

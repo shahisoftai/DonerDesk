@@ -1,0 +1,53 @@
+import { attach, BASE } from "./lib.mjs";
+const { page } = await attach("v52-wiz");
+const S = process.env.OUT;
+const errors = []; page.on("pageerror", (e) => errors.push(String(e).slice(0, 200)));
+const text = () => page.evaluate(() => document.body.innerText);
+await page.goto(`${BASE}/projects/new/wizard?id=${process.env.D}`, { waitUntil: "networkidle" });
+const wording = page.getByLabel("Donor wording for the results framework");
+console.log("options:", (await wording.evaluate((s) => [...s.options].map((o) => o.textContent.trim()))).join(" / "));
+await wording.selectOption("EU");
+await page.waitForTimeout(2500);
+await page.reload({ waitUntil: "networkidle" });
+console.log("wording kept after reload:", await page.getByLabel("Donor wording for the results framework").inputValue());
+await page.getByRole("button", { name: /^3\. Results framework/ }).click();
+await page.waitForTimeout(1500);
+const add = async (level, title, parentText) => {
+  const levelSel = page.getByLabel("Kind", { exact: true });
+  const val = await levelSel.evaluate((s, l) => [...s.options].find((o) => o.value === l)?.value, level);
+  await levelSel.selectOption(val);
+  await page.getByLabel("What will be achieved").fill(title);
+  if (parentText) {
+    const p = page.getByLabel("Belongs to");
+    const v = await p.evaluate((s, t) => [...s.options].find((o) => o.textContent.includes(t))?.value, parentText);
+    if (v) await p.selectOption(v);
+  }
+  await page.getByRole("button", { name: /^add a result$/i }).click();
+  await page.waitForTimeout(2000);
+};
+const kinds = await page.getByLabel("Kind", { exact: true }).evaluate((s) => [...s.options].map((o) => o.textContent.trim()));
+console.log("Kind options:", kinds.join(" / "));
+await add("GOAL", "ZZ TEST overall aim");
+await add("OUTCOME", "ZZ TEST specific aim", "ZZ TEST overall aim");
+await page.screenshot({ path: `${S}/22-wiz-results.png`, fullPage: true });
+let t = await text();
+console.log("EU words on rows:", /Overall objective/.test(t) && /Specific objective/.test(t) ? "yes" : "NO");
+console.log("advice shown:", /Optional: say why these lead/.test(t) ? "yes" : "NO");
+// Logic on the outcome.
+const row = page.locator("li").filter({ hasText: "ZZ TEST specific aim" }).first();
+await row.getByText("Logic (optional)").click();
+const why = row.getByLabel(/Why this leads/);
+await why.fill("Reaching this aim moves the overall aim forward");
+await why.blur();
+await page.waitForTimeout(2500);
+await page.reload({ waitUntil: "networkidle" });
+await page.getByRole("button", { name: /^3\. Results framework/ }).click();
+await page.waitForTimeout(1500);
+const row2 = page.locator("li").filter({ hasText: "ZZ TEST specific aim" }).first();
+await row2.getByText("Logic (optional)").click();
+console.log("rationale saved:", await row2.getByLabel(/Why this leads/).inputValue());
+t = await text();
+console.log("advice gone after reasoning:", /Optional: say why these lead/.test(t) ? "still shown" : "gone");
+await page.screenshot({ path: `${S}/23-wiz-logic.png`, fullPage: true });
+console.log("errors:", errors.length ? errors : "none");
+process.exit(0);
