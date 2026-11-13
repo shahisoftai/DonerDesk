@@ -19,7 +19,7 @@ export interface CanvasAsDesign { config: InfographicConfig; skipped: SkippedBlo
 type Props = Record<string, unknown>;
 const str = (v: unknown): string | undefined => (typeof v === "string" && v.trim() ? v : undefined);
 const asProps = (b: BlockInstance): Props => (b.props && typeof b.props === "object" ? (b.props as Props) : {});
-type Mapped = Partial<InfographicSectionConfig> & { kind: InfographicSectionKind } | string;
+type Mapped = Partial<InfographicSectionConfig> & { kind: InfographicSectionKind; /** Drawn in the file, but part of it is screen-only: said, never dropped silently. */ screenOnlyPart?: string } | string;
 
 const FILE_KINDS = new Set<string>(Object.keys(INFOGRAPHIC_BLOCK_SPECS));
 const MAPPERS: Readonly<Record<string, (b: BlockInstance, p: Props) => Mapped>> = {
@@ -33,7 +33,7 @@ const MAPPERS: Readonly<Record<string, (b: BlockInstance, p: Props) => Mapped>> 
     const legacy = p.spec ? toLegacySpec(p.spec as ChartSpecV2) : null;
     return legacy ? { kind: "CHART", chart: legacy as never, ...(str((p.spec as { title?: string }).title) ? { title: str((p.spec as { title?: string }).title) } : {}) } : "This chart has no file version yet.";
   },
-  MAP: (_b, p) => ({ kind: "MAP", ...(str(p.title) ? { title: str(p.title) } : {}), ...(str(p.shading) ? { mapMetric: p.shading as never } : {}) }),
+  MAP: (_b, p) => ({ kind: "MAP", ...(str(p.title) ? { title: str(p.title) } : {}), ...(str(p.shading) ? { mapMetric: p.shading as never } : {}), ...(p.markers ? { screenOnlyPart: "The small charts on this map are drawn on screen only; the file has the map without them." } : {}) }),
   TABLE: (_b, p) => ({ kind: "TABLE", ...(str(p.title) ? { title: str(p.title) } : {}), indicatorIds: Array.isArray((p.query as { indicatorIds?: unknown } | undefined)?.indicatorIds) ? ((p.query as { indicatorIds: string[] }).indicatorIds) : [] }),
   METRIC: (_b, p) => metricFigure(p),
   MULTI_CARD: (_b, p) => multiCardFigures(p),
@@ -106,7 +106,9 @@ export function canvasAsDesign(canvas: Canvas, projectId?: string): CanvasAsDesi
       const mapped: Mapped = mapper ? mapper(block, props) : FILE_KINDS.has(block.kind) ? ({ ...props, kind: block.kind } as Mapped) : SCREEN_ONLY[block.kind] ?? "This kind of block cannot be put in a file.";
       if (mapped === "PROJECT_LIST_FILE") { if (canvas.scope === "PORTFOLIO") sections.push({ kind: "PORTFOLIO_TABLE", span: snapSpan(block.bounds.w), ...(str(props.title) ? { title: str(props.title) } : {}) } as InfographicSectionConfig); else skipped.push({ blockId: block.id, kind: block.kind, reason: "A list of projects goes in a file only from a portfolio canvas." }); first = false; continue; }
       if (typeof mapped === "string") { skipped.push({ blockId: block.id, kind: block.kind, reason: mapped }); continue; }
-      const section: InfographicSectionConfig = { ...mapped, span: snapSpan(block.bounds.w), ...(block.alt ? { altText: block.alt } : {}), ...(first && pageIndex > 0 ? { pageBreakBefore: true } : {}) } as InfographicSectionConfig;
+      const { screenOnlyPart, ...drawn } = mapped;
+      if (screenOnlyPart) skipped.push({ blockId: block.id, kind: block.kind, reason: screenOnlyPart });
+      const section: InfographicSectionConfig = { ...drawn, span: snapSpan(block.bounds.w), ...(block.alt ? { altText: block.alt } : {}), ...(first && pageIndex > 0 ? { pageBreakBefore: true } : {}) } as InfographicSectionConfig;
       sections.push(section);
       first = false;
     }

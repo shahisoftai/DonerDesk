@@ -3,7 +3,8 @@ import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { PlaceListSchema, UnconfirmedLocationsSchema } from "@/lib/server/schemas-places";
 import { InlineError } from "@/components/feedback/PageState";
-import { SeedPlacesCard } from "@/features/places/presentation/SeedPlacesCard";
+import { ProjectAreaPicker } from "@/features/places/presentation/ProjectAreaPicker";
+import { ProjectDetailSchema } from "@/lib/server/schemas";
 import { PlacesPanel } from "@/features/places/presentation/PlacesPanel";
 import { WHERE_WE_WORK_TABS, tabOf } from "@/features/places/domain/where-we-work";
 
@@ -14,9 +15,10 @@ export default async function WhereWeWorkPage({ params, searchParams }: { params
   const { id } = await params;
   const tab = tabOf((await searchParams).tab);
   const ctx = await requireSession();
-  const [list, unconfirmed] = await Promise.all([
+  const [list, unconfirmed, project] = await Promise.all([
     gatewayRequest("/v1/places?includeArchived=true", PlaceListSchema, ctx.token),
     gatewayRequest("/v1/places/unconfirmed", UnconfirmedLocationsSchema, ctx.token),
+    gatewayRequest(`/v1/projects/${encodeURIComponent(id)}`, ProjectDetailSchema, ctx.token),
   ]);
   if (!list.ok) return <InlineError title={list.error.message} referenceId={list.error.referenceId} />;
   const canEdit = list.value.canEdit && hasCapability(ctx, "project.edit");
@@ -30,7 +32,8 @@ export default async function WhereWeWorkPage({ params, searchParams }: { params
           </Link>
         ))}
       </nav>
-      {tab === "areas" && (canEdit ? <SeedPlacesCard /> : <p className="text-sm text-slate-600 dark:text-slate-300">Ask a project editor to tick the areas where this project works.</p>)}
+      {tab === "areas" && <ProjectAreaPicker initialCountry={project.ok ? project.value.country : ""} canEdit={canEdit} places={list.value.places.map((p) => ({ name: p.name, adminLevel: p.adminLevel, code: p.code ?? null, archived: p.archived }))} />}
+      {tab === "areas" && !canEdit && <p className="text-sm text-slate-600 dark:text-slate-300">Ask a project editor to tick the areas where this project works.</p>}
       {tab !== "areas" && <PlacesPanel places={list.value.places} canEdit={canEdit} unconfirmed={tab === "confirm" && unconfirmed.ok ? unconfirmed.value : null} />}
       <p className="text-sm"><Link className="underline" href={`/visuals/maps/${id}`}>See the map</Link></p>
     </div>

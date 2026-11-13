@@ -89,6 +89,7 @@ export function entryWindowFor(periodEnd: string, rule: WindowRule): { opensOn: 
  */
 export const LAUNCH_STEPS = [
   { key: "LIBRARY_LINKS", label: "Link indicators to the sector library" },
+  { key: "PLACE_RECORDING", label: "Record figures by place" },
   { key: "WORDING", label: "Your donor's words for the levels" },
   { key: "REVIEW_MODE", label: "How values are checked" },
   { key: "ENTRY_WINDOWS", label: "When values can be entered" },

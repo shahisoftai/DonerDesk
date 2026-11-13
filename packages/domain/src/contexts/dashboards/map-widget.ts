@@ -50,6 +50,8 @@ export interface MapWidgetQuery {
   /** RULES: value bands, low to high; `from`/`to` null = open-ended. Colours are #rrggbb. */
   bands?: MapBand[] | undefined;
   areaLabels?: (typeof MAP_AREA_LABELS)[number] | undefined;
+  /** Small charts on places (Phase 53.6): two to four indicators of one unit compared at each place; the screen applies the honesty rules. */
+  markers?: { kind: (typeof MAP_MARKER_KINDS)[number]; indicatorIds: string[] } | undefined;
   /** Extra figures in an area's tooltip (indicator ids, at most 6). */
   tooltipIndicatorIds?: string[] | undefined;
   /** A click on an area sets the place filter (default on). */
@@ -96,6 +98,8 @@ export function bandFor(value: number | null, bands: readonly MapBand[]): MapBan
   return bands.find((b) => (b.from === null || value >= b.from) && (b.to === null || value < b.to)) ?? null;
 }
 
+export const MAP_MARKER_KINDS = ["BAR", "PIE"] as const;
+
 export function validateMapWidget(q: MapWidgetQuery): string | null {
   if (!MAP_VIEWS.includes(q.view)) return "That map is not one a dashboard can show.";
   if (q.title !== undefined && q.title.length > 60) return "A map's name is at most 60 characters.";
@@ -103,6 +107,7 @@ export function validateMapWidget(q: MapWidgetQuery): string | null {
   if (q.shading !== undefined && !MAP_SHADINGS.includes(q.shading)) return "Choose one of the offered map shadings.";
   const style = mapStyleProblems(q);
   if (style) return style;
+  if (q.markers !== undefined && (!MAP_MARKER_KINDS.includes(q.markers.kind) || q.view !== "RESULTS" || q.markers.indicatorIds.length < 2 || q.markers.indicatorIds.length > 4 || q.markers.indicatorIds.some((id) => !id.trim() || id.length > 64))) return "Small charts on places compare two to four indicators on a results map.";
   if (q.placeKeys !== undefined && (q.placeKeys.length > MAP_MAX_PLACE_KEYS || q.placeKeys.some((k) => !k.trim() || k.length > 80))) return `A map shows at most ${MAP_MAX_PLACE_KEYS} chosen places.`;
   return null;
 }

@@ -74,7 +74,10 @@ export function buildResultsScene(input: ResultsSceneInput): MapScene {
   const pins: PinFeature[] = [];
   if (symbols.visible) {
     const max = Math.max(1, ...model.pins.map((p) => p.value ?? 0));
+    // With labels on, an area already says its name and figure: its pin would only cover the words, so pins stay for places with no area.
+    const drawnAsArea = new Set(fillLayer.labels ? joined.filter((j) => j.placeId && regionByPlace.has(j.placeId)).map((j) => j.placeId!) : []);
     for (const p of model.pins) {
+      if (drawnAsArea.has(p.placeId)) continue;
       pins.push({ id: p.placeId, name: p.name, lng: p.lng, lat: p.lat, color: p.value === null ? NO_DATA_COLOR : "#b45309", radius: p.value === null ? 5 : 6 + Math.sqrt(p.value / max) * 14 });
       tips[pinTipKey(p.placeId)] = { title: p.name, lines: [p.path !== p.name ? p.path : "", figure(p.display, unit, p.verified)].filter(Boolean) };
     }

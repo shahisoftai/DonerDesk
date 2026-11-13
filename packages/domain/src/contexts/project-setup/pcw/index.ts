@@ -23,3 +23,4 @@ export * from "./launch-plan.js";
 export * from "./responsibilities.js";
 export * from "./run-views.js";
 export * from "./prefill.js";
+export * from "./place-recording-launch.js";

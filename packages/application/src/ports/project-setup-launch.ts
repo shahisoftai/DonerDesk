@@ -23,6 +23,10 @@ export interface SetupFormWriter {
   /** A draft form from one indicator; refuses one that is calculated or not a running sum, in a sentence. */
   createDraft(ctx: AuthenticatedContext, indicatorId: string): R<{ id: string; notes: string[] }>;
 }
+/** Marks the indicators the wizard created as recorded one figure per place (Phase 53.6); an indicator already marked is left as it is. */
+export interface SetupPlaceRecordingWriter {
+  recordByPlace(ctx: AuthenticatedContext, projectId: string, codes: readonly string[], level: number): R<{ changed: number; notes: string[] }>;
+}
 /** Writes the link between an indicator the wizard created and the sector library entry it was chosen from. */
 export interface SetupLibraryLinkWriter {
   link(ctx: AuthenticatedContext, projectId: string, items: ReadonlyArray<{ code: string; libraryId: string; libraryVersion: number; linkJson: string }>): R<{ linked: number; notes: string[] }>;

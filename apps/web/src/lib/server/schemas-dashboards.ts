@@ -31,6 +31,7 @@ export const ChartDrawingSchema = z.object({
     view: z.enum(["RESULTS", "ACTIVITIES"]), title: z.string(), projectId: z.string(), indicatorId: z.string().optional(), preloaded: z.record(z.unknown()).optional(),
     ground: z.enum(["STREETS", "SIMPLE", "COUNTRY", "NONE"]).optional(), colorBy: z.enum(["VALUE", "RULES", "CATEGORY", "NONE"]).optional(), categoryLevel: z.number().int().optional(), bands: z.array(z.object({ from: z.number().nullable(), to: z.number().nullable(), color: z.string() })).optional(),
     areaLabels: z.enum(["NONE", "NAME", "VALUE", "NAME_AND_VALUE"]).optional(), clickToFilter: z.boolean().optional(),
+    markers: z.object({ kind: z.enum(["BAR", "PIE"]), indicatorIds: z.array(z.string()) }).optional(),
     callouts: z.array(z.object({ key: z.string(), name: z.string(), text: z.string().optional(), placeKey: z.string().optional(), figures: z.array(z.object({ label: z.string(), value: z.number().nullable(), unit: z.string(), reason: z.string().nullable(), unverified: z.boolean() })) })).optional(),
     calloutOffsets: z.record(z.object({ dx: z.number(), dy: z.number() })).optional(), calloutColumns: z.number().int().optional(),
   }).optional(),

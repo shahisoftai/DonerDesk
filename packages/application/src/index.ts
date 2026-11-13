@@ -449,6 +449,7 @@ export * from "./use-cases/sector-library/review-sheet.js";
 export * from "./use-cases/sector-library/review-progress.js";
 export * from "./use-cases/project-setup/add-setup-library.js";
 export * from "./use-cases/project-setup/launch-steps/library-links-step.js";
+export * from "./use-cases/project-setup/launch-steps/place-recording-step.js";
 export * from "./use-cases/project-setup/launch-steps/wording-step.js";
 export * from "./ports/visual-data.js";
 export * from "./services/data-versioning.js";

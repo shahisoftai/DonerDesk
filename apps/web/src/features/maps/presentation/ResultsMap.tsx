@@ -59,7 +59,7 @@ interface Selection { ref: string | null; placeId: string | null; name: string }
  * The interactive results map on the new engine: a real basemap, smooth zoom, clustering, and drilling from the world down to
  * admin 4 wherever boundary files exist. It composes the pieces; the rules are in `domain/` and the drawing is behind a port.
  */
-export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable, areaStyle, callouts, ground: savedGround, projectCountry }: ExplorerProps & { onUnavailable: () => void }) {
+export function ResultsMap({ projectId, places, initial, initialIndicatorId, periods, compact = false, loadResults, staticData = false, activityCounts, mapContext: serverMapContext, lockedIndicatorId, periodId: heldPeriod, onPeriodChange, onUnavailable, areaStyle, callouts, ground: savedGround, projectCountry, markers: savedMarkers }: ExplorerProps & { onUnavailable: () => void }) {
   const services = useMapServices();
   const { t, lang, levelPlural } = useMapText();
   const read = loadResults ?? ((id: string, level: number, period?: string) => getPlaceResultsAction(id, level, period));
@@ -140,7 +140,7 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
   const toggleContext = (key: ContextToggle) => setContextOn((on) => { const next = new Set(on); if (next.has(key)) next.delete(key); else next.add(key); return next; });
   const plan = useMemo(() => groundPlan(ground, dark ? "dark" : "light"), [ground, dark]);
   const anchored = useMemo(() => (callouts ? calloutAnchors(callouts.cards, places, joined) : null), [callouts, places, joined]);
-  const markers = useMarkers(results, places, joined);
+  const markers = useMarkers(results, places, joined, savedMarkers);
   const { kind: markerKind, setKind: setMarkerKind, ids: markerIds, setIds: setMarkerIds, data: markerData, anchors: markerAnchors } = markers;
   // Pins and small charts say the same thing twice: while the charts are on, the pins step aside.
   const sceneLayers = useMemo(() => (markerData && markerData.ok && markerKind !== "NONE" ? layers.map((l) => (l.id === "SYMBOLS" ? { ...l, visible: false } : l)) : layers), [layers, markerData, markerKind]);

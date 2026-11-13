@@ -29,6 +29,7 @@ export default async function PlacesPage() {
     <div className="animate-fade-in">
       <h1 className="text-xl font-semibold tracking-tight">{PLACES_COPY.title}</h1>
       <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{PLACES_COPY.intro}</p>
+      <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">This is the whole organisation&apos;s list. To choose where one project works, open the project and go to <strong>Data → Where we work</strong>, where you tick areas on a map.</p>
       {list.value.canEdit && hasCapability(ctx, "project.edit") && <SeedPlacesCard />}
       <PlacesPanel
         places={list.value.places}

@@ -137,7 +137,7 @@ function signed() {
   return signOffDraft(d, "u1", NOW.toISOString(), 0).draft;
 }
 const step = (key, behaviour = () => ok({ done: 1, notes: [] })) => { const calls = []; return { key, calls, async run(...a) { calls.push(a[1]); return behaviour(); } }; };
-const ALL_KEYS = ["LIBRARY_LINKS", "WORDING", "REVIEW_MODE", "ENTRY_WINDOWS", "FORMS", "RESPONSIBILITIES", "BUDGET_LINES", "DASHBOARD", "INVITATIONS", "ACTIVATION"];
+const ALL_KEYS = ["LIBRARY_LINKS", "PLACE_RECORDING", "WORDING", "REVIEW_MODE", "ENTRY_WINDOWS", "FORMS", "RESPONSIBILITIES", "BUDGET_LINES", "DASHBOARD", "INVITATIONS", "ACTIVATION"];
 
 test("launch re-checks on the server: not signed off, stale, or something open are all refused before anything is created", async () => {
   const unsigned = completeDraftForTest();
@@ -188,27 +188,27 @@ test("the report says what the draft holds that launching does not write, so not
 });
 
 test("a step that fails stops the launch there, keeps the earlier steps, and the setup stays open to try again", async () => {
-  const steps = [step("LIBRARY_LINKS"), step("WORDING"), step("REVIEW_MODE"), step("ENTRY_WINDOWS", () => fail("The periods are not ready.")), step("FORMS"), step("RESPONSIBILITIES"), step("BUDGET_LINES"), step("DASHBOARD"), step("INVITATIONS"), step("ACTIVATION")];
+  const steps = [step("LIBRARY_LINKS"), step("PLACE_RECORDING"), step("WORDING"), step("REVIEW_MODE"), step("ENTRY_WINDOWS", () => fail("The periods are not ready.")), step("FORMS"), step("RESPONSIBILITIES"), step("BUDGET_LINES"), step("DASHBOARD"), step("INVITATIONS"), step("ACTIVATION")];
   const x = launcher({ steps });
   const r = await x.handler.handle(as("u1"), "pr1");
   assert.equal(r.value.status, "PARTIAL");
-  assert.deepEqual(r.value.steps.map((s) => s.status), ["DONE", "DONE", "DONE", "FAILED", "NOT_RUN", "NOT_RUN", "NOT_RUN", "NOT_RUN", "NOT_RUN", "NOT_RUN"]);
-  assert.equal(r.value.steps[3].error, "The periods are not ready.");
-  assert.equal(steps[4].calls.length, 0);
+  assert.deepEqual(r.value.steps.map((s) => s.status), ["DONE", "DONE", "DONE", "DONE", "FAILED", "NOT_RUN", "NOT_RUN", "NOT_RUN", "NOT_RUN", "NOT_RUN", "NOT_RUN"]);
+  assert.equal(r.value.steps[4].error, "The periods are not ready.");
+  assert.equal(steps[5].calls.length, 0);
   assert.equal(x.proposals.get().status, "PARTIAL");
   assert.equal(x.audit.events.at(-1).eventType, "setup.launch.partial");
 });
 
 test("launching again resumes: finished steps are skipped and only the failed one onward runs", async () => {
   let attempt = 0;
-  const steps = [step("LIBRARY_LINKS"), step("WORDING"), step("REVIEW_MODE"), step("ENTRY_WINDOWS", () => (++attempt === 1 ? fail("not ready") : ok({ done: 3, notes: [] }))), step("FORMS"), step("RESPONSIBILITIES"), step("BUDGET_LINES"), step("DASHBOARD"), step("INVITATIONS"), step("ACTIVATION")];
+  const steps = [step("LIBRARY_LINKS"), step("PLACE_RECORDING"), step("WORDING"), step("REVIEW_MODE"), step("ENTRY_WINDOWS", () => (++attempt === 1 ? fail("not ready") : ok({ done: 3, notes: [] }))), step("FORMS"), step("RESPONSIBILITIES"), step("BUDGET_LINES"), step("DASHBOARD"), step("INVITATIONS"), step("ACTIVATION")];
   const x = launcher({ steps });
   await x.handler.handle(as("u1"), "pr1");
   const again = await x.handler.handle(as("u1"), "pr1");
   assert.equal(again.value.status, "LAUNCHED");
-  assert.deepEqual(again.value.steps.map((s) => s.status), ["ALREADY_DONE", "ALREADY_DONE", "ALREADY_DONE", "DONE", "DONE", "DONE", "DONE", "DONE", "DONE", "DONE"]);
+  assert.deepEqual(again.value.steps.map((s) => s.status), ["ALREADY_DONE", "ALREADY_DONE", "ALREADY_DONE", "ALREADY_DONE", "DONE", "DONE", "DONE", "DONE", "DONE", "DONE", "DONE"]);
   assert.equal(steps[0].calls.length, 1, "a finished step is never run twice");
-  assert.equal(steps[3].calls.length, 2);
+  assert.equal(steps[4].calls.length, 2);
   assert.equal(x.applied.length, 2, "the apply is asked again and itself skips the project and the areas already made");
 });
 

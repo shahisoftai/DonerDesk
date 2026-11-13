@@ -770,6 +770,7 @@ import { createWorkplanModule, type WorkplanHandlers } from "./container/workpla
 import { createFinanceModule, type FinanceHandlers } from "./container/finance-module.js";
 import { createSectorLibraryModule, type SectorLibraryHandlers } from "./container/sector-library-module.js";
 import { IndicatorLibraryLinkWriter } from "./project-setup/library-link-writer.js";
+import { IndicatorPlaceRecordingWriter } from "./project-setup/place-recording-writer.js";
 import { createProjectSetupModule, type ProjectSetupHandlers } from "./container/project-setup-module.js";
 import { createLaunchSteps, createPendingMemberResolver, createUserDirectory, type LaunchStepDeps } from "./project-setup/launch-steps.js";
 import { PrismaPendingMemberRepository } from "./repositories/project-setup.js";
@@ -1576,7 +1577,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listWorkPlan: handlers.listWorkPlan, assignPlannedActivity: handlers.assignPlannedActivity, addBudgetLine: handlers.addBudgetLine,
     getPlanItemBudget: handlers.getPlanItemBudget, applyDashboardTemplate: handlers.applyDashboardTemplate, updateProject: handlers.updateProject,
   });
-  const setupLaunchSteps = createLaunchSteps(launchStepDeps, { users: createUserDirectory(users), libraryLinks: new IndicatorLibraryLinkWriter(indicators, audits), pending: pendingMembers, now: () => clock.now(), newId: () => ids.generate() });
+  const setupLaunchSteps = createLaunchSteps(launchStepDeps, { users: createUserDirectory(users), libraryLinks: new IndicatorLibraryLinkWriter(indicators, audits), placeRecording: new IndicatorPlaceRecordingWriter(indicators, audits), pending: pendingMembers, now: () => clock.now(), newId: () => ids.generate() });
   const pendingMemberResolver = createPendingMemberResolver(launchStepDeps, pendingMembers, users, audits);
   // The sector library (phase 46) writes through the ordinary create handlers, so they are built once and shared.
   const createIndicatorHandler = new CreateIndicatorHandler(ids, indicators, audits);

@@ -103,7 +103,8 @@ const model = (): ExplorerModel => {
 
 test("scene: a figure colours its boundary, a missing one is grey and says so, an unmatched boundary is grey, tips are plain text", () => {
   const joined = joinUnits([unit("Gulu", "G1"), unit("Arua", "A1"), unit("Lira", "L1")], [place("a", "Gulu", { code: "G1" }), place("b", "Arua", { code: "A1" })]);
-  const scene = buildResultsScene({ model: model(), layers: DEFAULT_LAYERS, joined, unit: "people", selectedRef: null, selectedPlaceId: null, basemap: "light", label: "A label" });
+  // Labels off: with labels on, a pin on a labelled area is left out (Phase 53.6), tested in maps-simple-look.
+  const scene = buildResultsScene({ model: model(), layers: DEFAULT_LAYERS, joined, unit: "people", selectedRef: null, selectedPlaceId: null, basemap: "light", label: "A label", areaStyle: { colorBy: "VALUE", palette: [], labels: "NONE" } });
   const fill = scene.layers.find((l) => l.kind === "FILL")!;
   assert.equal(fill.kind === "FILL" && fill.features[0]!.color !== "#e5e7eb", true);
   assert.equal(fill.kind === "FILL" && fill.features[1]!.color, "#e5e7eb");

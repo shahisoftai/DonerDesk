@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { MapReadiness } from "@donordesk/domain/contexts/places/map-readiness.js";
 import { useMapText } from "./useMapText";
+import { RecordByPlaceButton } from "./RecordByPlaceButton";
 
 /** Where each reason's one button goes. A table, so a new reason adds a row (the compiler asks for it). */
 const ACTION_HREF: Record<MapReadiness["code"], (projectId: string) => string> = {
@@ -18,7 +19,8 @@ export function MapReadinessCard({ projectId, readiness }: { projectId: string; 
   return (
     <div className="card space-y-2 text-sm" role="status" data-testid="map-readiness">
       <p>{t(`maps.ready.${readiness.code}` as never)}</p>
-      <Link className="btn-primary inline-block" href={ACTION_HREF[readiness.code](projectId)}>{t(`maps.ready.${readiness.code}.action` as never)}</Link>
+      {readiness.code === "NO_INDICATOR_BY_PLACE" && <RecordByPlaceButton projectId={projectId} />}
+      <Link className={readiness.code === "NO_INDICATOR_BY_PLACE" ? "ms-3 text-sm underline" : "btn-primary inline-block"} href={ACTION_HREF[readiness.code](projectId)}>{t(`maps.ready.${readiness.code}.action` as never)}</Link>
     </div>
   );
 }

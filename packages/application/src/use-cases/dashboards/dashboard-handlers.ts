@@ -204,7 +204,7 @@ export interface DashboardChartDto {
   /** An interactive map: the screen draws it, for the viewer, from their own access (nothing is sent here). */
   map?: {
     view: "RESULTS" | "ACTIVITIES"; title: string; projectId: string; /** Only on a share link: the data the card shows, read on the server because a link holder has no session. */ preloaded?: Record<string, unknown>;
-    /** How the areas look (Phase 50.3d). */ colorBy?: string; categoryLevel?: number; bands?: unknown; areaLabels?: string; clickToFilter?: boolean;
+    /** How the areas look (Phase 50.3d). */ colorBy?: string; categoryLevel?: number; bands?: unknown; areaLabels?: string; clickToFilter?: boolean; markers?: unknown;
     /** Figure cards beside chosen areas, resolved for the person looking (Phase 50.3d). */ callouts?: Array<{ key: string; name: string; figures: CardFigure[]; text?: string; placeKey?: string }>; /** Where a person dropped each card, px from its place. */ calloutOffsets?: Record<string, { dx: number; dy: number }>; calloutColumns?: number;
   };
   /** A text block. */
@@ -463,7 +463,7 @@ export class PublicDashboardHandler {
 }
 
 /** The parts of a map's settings that say how it looks (Phase 50.3d), copied into its drawing only when set. */
-function mapStyleOf(q: { ground?: string | undefined; colorBy?: string | undefined; categoryLevel?: number | undefined; bands?: unknown; areaLabels?: string | undefined; clickToFilter?: boolean | undefined }): Record<string, unknown> {
+function mapStyleOf(q: { ground?: string | undefined; colorBy?: string | undefined; categoryLevel?: number | undefined; bands?: unknown; areaLabels?: string | undefined; clickToFilter?: boolean | undefined; markers?: unknown }): Record<string, unknown> {
   const style: Record<string, unknown> = {};
   if (q.ground) style["ground"] = q.ground;
   if (q.colorBy) style["colorBy"] = q.colorBy;
@@ -471,5 +471,6 @@ function mapStyleOf(q: { ground?: string | undefined; colorBy?: string | undefin
   if (q.bands !== undefined) style["bands"] = q.bands;
   if (q.areaLabels) style["areaLabels"] = q.areaLabels;
   if (q.clickToFilter !== undefined) style["clickToFilter"] = q.clickToFilter;
+  if (q.markers !== undefined) style["markers"] = q.markers;
   return style;
 }

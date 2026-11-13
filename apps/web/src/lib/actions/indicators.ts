@@ -10,6 +10,9 @@ import type { Result } from "@/lib/shared/result";
 import type { AppError } from "@/lib/shared/app-error";
 import { idempotency, type CreateOptions } from "./_idempotency";
 import { IdResponseSchema, OkResponseSchema } from "./_schemas";
+import { LogframeResponseSchema } from "@/lib/server/schemas";
+import { PlaceListSchema } from "@/lib/server/schemas-places";
+import { suggestPlaceRecording } from "@donordesk/domain/contexts/places/place-recording.js";
 import {
   PeriodIndicatorsResponseSchema,
   ParseIndicatorSheetResponseSchema,
@@ -304,4 +307,30 @@ export async function archiveIndicatorAction(indicatorId: string): Promise<Resul
 export async function restoreIndicatorAction(indicatorId: string): Promise<Result<{ id: string }, AppError>> {
   const context = await requireSession();
   return gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/restore`, IdResponseSchema, context.token, { method: "POST", body: {} });
+}
+
+/**
+ * Records every countable indicator of a project one figure per place (Phase 53.6): the one-click fix the map offers when nothing is
+ * recorded by place. Rates, ratios, calculated indicators and those already by place are left alone (`suggestPlaceRecording`). Each change
+ * goes through the ordinary indicator update, so its permission and audit apply.
+ */
+export async function recordIndicatorsByPlaceAction(projectId: string): Promise<Result<{ changed: number; refused: number }, AppError>> {
+  const context = await requireSession();
+  const [logframe, places] = await Promise.all([
+    gatewayRequest(`/v1/projects/${encodeURIComponent(projectId)}/logframe`, LogframeResponseSchema, context.token),
+    gatewayRequest("/v1/places", PlaceListSchema, context.token),
+  ]);
+  if (!logframe.ok) return logframe;
+  if (!places.ok) return places;
+  const picks = suggestPlaceRecording(
+    logframe.value.indicators.map((i) => ({ id: i.id, type: i.type as never, calculated: !!i.formula, recordByPlace: i.recordByPlace })),
+    places.value.places.map((p) => ({ id: p.id, name: p.name, adminLevel: p.adminLevel, archived: p.archived })),
+  );
+  let changed = 0;
+  let refused = 0;
+  for (const pick of picks) {
+    const r = await gatewayRequest(`/v1/indicators/${encodeURIComponent(pick.indicatorId)}`, IdResponseSchema, context.token, { method: "PATCH", body: { recordByPlace: true } });
+    if (r.ok) changed += 1; else refused += 1;
+  }
+  return { ok: true, value: { changed, refused } };
 }

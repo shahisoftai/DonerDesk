@@ -63,3 +63,18 @@ test("automatic labels label only the areas that have a figure, however many are
   assert.equal(fill.labels, true);
   assert.deepEqual(fill.features.map((f) => f.label).filter(Boolean), ["Area 0\n5"]);
 });
+
+test("with labels on, a place drawn as a labelled area has no pin on top; a place with no area keeps its pin", async () => {
+  const { buildResultsScene } = await import("../../src/features/maps/domain/scene/build-scene.ts");
+  const { DEFAULT_LAYERS } = await import("../../src/features/maps/domain/map-explorer.ts");
+  const sq = { type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]] };
+  const joined = [{ unit: { ref: "A", name: "Area", pcode: "A", parentPcode: "", geometry: sq }, placeId: "area", basis: "CODE" as const }];
+  const model = { indicatorId: "i", level: 1, unmapped: [], bands: [], isRate: false,
+    regions: [{ placeId: "area", value: 5, display: "5", path: "Area", verified: true }],
+    pins: [{ placeId: "area", name: "Area", lng: 0.5, lat: 0.5, value: 5, display: "5", path: "Area", verified: true }, { placeId: "site", name: "Clinic", lng: 3, lat: 3, value: 2, display: "2", path: "Clinic", verified: true }] } as never;
+  const scene = buildResultsScene({ model, layers: DEFAULT_LAYERS, joined: joined as never, unit: null, selectedRef: null, selectedPlaceId: null, basemap: "plain", label: "m" });
+  const pins = scene.layers.find((l) => l.kind === "PINS") as { pins: Array<{ id: string }> };
+  assert.deepEqual(pins.pins.map((p) => p.id), ["site"]);
+  const off = buildResultsScene({ model, layers: DEFAULT_LAYERS, joined: joined as never, unit: null, selectedRef: null, selectedPlaceId: null, basemap: "plain", label: "m", areaStyle: { colorBy: "VALUE", palette: [], labels: "NONE" } });
+  assert.equal((off.layers.find((l) => l.kind === "PINS") as { pins: unknown[] }).pins.length, 2);
+});

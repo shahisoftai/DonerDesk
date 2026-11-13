@@ -68,7 +68,7 @@ test("an entry window is counted in days from the period's last day, across mont
 });
 
 test("the wizard's steps are listed in order with a plain name", () => {
-  assert.deepEqual(LAUNCH_STEPS.map((s) => s.key), ["LIBRARY_LINKS", "WORDING", "REVIEW_MODE", "ENTRY_WINDOWS", "FORMS", "RESPONSIBILITIES", "BUDGET_LINES", "DASHBOARD", "INVITATIONS", "ACTIVATION"]);
+  assert.deepEqual(LAUNCH_STEPS.map((s) => s.key), ["LIBRARY_LINKS", "PLACE_RECORDING", "WORDING", "REVIEW_MODE", "ENTRY_WINDOWS", "FORMS", "RESPONSIBILITIES", "BUDGET_LINES", "DASHBOARD", "INVITATIONS", "ACTIVATION"]);
   assert.ok(LAUNCH_STEPS.every((s) => s.label.length > 5 && !/[_A-Z]{4,}/.test(s.label)));
   assert.equal(LAUNCH_STEPS.at(-1).key, "ACTIVATION", "starting the project is last: it happens only when everything before it worked");
 });
@@ -180,4 +180,15 @@ test("budget lines are made on the activity chosen for them; whole-project lines
     { title: "Drill wells", start: "2027-04-01", code: "F1", category: "PERSONNEL", description: "Staff salaries", currency: "EUR", amount: "4000" },
     { title: "Drill wells", start: "2027-04-01", code: "B2", category: "OTHER", description: "Rig hire", currency: "EUR", amount: "2500.50" },
   ]);
+});
+
+test("a launch records countable indicators by place at the level most ticked areas are at; rates and no places leave them alone", async () => {
+  const { placeRecordingForLaunch } = await import("../dist/index.js");
+  const item = (value, status = "ACCEPTED") => ({ value, status, quote: "", confidence: "HIGH" });
+  const draft = (places, indicators) => ({ proposal: { places: places.map((p) => item(p)), indicators: indicators.map((i) => item(i)) } });
+  const ind = [{ code: "1.1", type: "NUMBER" }, { code: "1.2", type: "PERCENTAGE" }, { code: "1.3", type: "CURRENCY" }];
+  const pl = (adminLevel, viaChildren = false) => ({ name: "x", adminLevel, viaChildren });
+  assert.deepEqual(placeRecordingForLaunch(draft([pl(1, true), pl(2), pl(2), pl(3)], ind)), { codes: ["1.1", "1.3"], level: 2 });
+  assert.deepEqual(placeRecordingForLaunch(draft([], ind)), { codes: [], level: null });
+  assert.deepEqual(placeRecordingForLaunch(draft([pl(0)], ind)), { codes: [], level: null });
 });

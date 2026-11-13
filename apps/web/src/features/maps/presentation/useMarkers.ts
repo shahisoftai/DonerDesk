@@ -7,9 +7,9 @@ import type { JoinedUnit } from "../domain/boundaries/join";
 import type { PlaceResults } from "@/lib/server/schemas-places";
 
 /** The small-charts choice and what it draws (Phase 53.5): kept out of the explorer so the explorer only composes. */
-export function useMarkers(results: PlaceResults | null, places: readonly AnchorPlace[], joined: readonly JoinedUnit[]) {
-  const [kind, setKind] = useState<MarkerKind>("NONE");
-  const [ids, setIds] = useState<string[]>([]);
+export function useMarkers(results: PlaceResults | null, places: readonly AnchorPlace[], joined: readonly JoinedUnit[], saved?: { kind: "BAR" | "PIE"; indicatorIds: readonly string[] }) {
+  const [kind, setKind] = useState<MarkerKind>(saved?.kind ?? "NONE");
+  const [ids, setIds] = useState<string[]>(saved ? [...saved.indicatorIds] : []);
   const data = useMemo<MarkerResult | null>(() => {
     if (kind === "NONE" || !results) return null;
     const inds: MarkerIndicator[] = results.indicators.filter((i) => ids.includes(i.id)).map((i) => ({ id: i.id, code: i.code, name: i.name, unit: i.unit, isRate: i.isRate, additive: i.rollup.additive, rows: i.rollup.rows.map((x) => ({ placeId: x.placeId, name: x.name, value: x.value })) }));

@@ -68,3 +68,16 @@ test("the project's own places decide the level; the organisation's list is only
   assert.equal(defaultPlaceLevel(many, ["nope"]), 2);
   assert.deepEqual(canRecordByPlace({ calculated: false }, many, ["k1"]), { ok: true, level: 1 });
 });
+
+test("a saved map's small charts are checked, and a file names them as screen-only while keeping the map", async () => {
+  const { validateMapWidget, canvasAsDesign } = await import("../dist/index.js");
+  assert.equal(validateMapWidget({ view: "RESULTS", markers: { kind: "BAR", indicatorIds: ["a", "b"] } }), null);
+  assert.match(validateMapWidget({ view: "RESULTS", markers: { kind: "BAR", indicatorIds: ["a"] } }), /two to four/);
+  assert.match(validateMapWidget({ view: "ACTIVITIES", markers: { kind: "PIE", indicatorIds: ["a", "b"] } }), /results map/);
+  const canvas = { id: "c", scope: "PROJECT", title: "T", mode: "DASHBOARD", profile: "LIVE_INTERNAL", language: "en", themeId: "DEFAULT", revision: 1,
+    pages: [{ id: "p", title: "P", format: "WEB_FLUID", blocks: [{ id: "m", kind: "MAP", bounds: { x: 0, y: 0, w: 12, h: 6 }, props: { view: "RESULTS", markers: { kind: "BAR", indicatorIds: ["a", "b"] } }, bindings: [] }] }] };
+  const out = canvasAsDesign(canvas);
+  assert.equal(out.config.sections.length, 1);
+  assert.match(out.skipped[0].reason, /small charts/);
+  assert.equal("screenOnlyPart" in out.config.sections[0], false);
+});

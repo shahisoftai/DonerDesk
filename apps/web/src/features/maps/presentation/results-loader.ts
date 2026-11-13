@@ -23,6 +23,8 @@ export interface ExplorerProps {
   mapContext?: import("@/lib/server/schemas-map-context").MapContextDto | null | undefined;
   /** The project's own country (Project.country): the map opens on it when the places and results do not already say (Phase 53.1). */
   projectCountry?: string | null | undefined;
+  /** Small charts on places saved with a dashboard map (Phase 53.6); the person can still change them on screen. */
+  markers?: { kind: "BAR" | "PIE"; indicatorIds: readonly string[] } | undefined;
   /** Show only this indicator (the indicator's own page): the indicator list is not offered. */
   lockedIndicatorId?: string | undefined;
   /** The period is held by the page around the map (so a chart beside it can follow). Omit both to let the map keep its own. */
