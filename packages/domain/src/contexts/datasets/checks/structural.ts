@@ -33,7 +33,7 @@ export const KEY_UNIQUE: CheckDef = {
 };
 
 export const PLACE_KNOWN: CheckDef = {
-  key: "PLACE_KNOWN", label: "Places are in your places list", defaultSeverity: "WARN", params: [], always: true,
+  key: "PLACE_KNOWN", label: "Places are in your places list", defaultSeverity: "WARN", params: [], always: true, noteOnVisuals: false,
   validate: () => undefined,
   run: ({ rows, columns, places }) => {
     const out: Array<{ rows: number[]; message: string; column: string }> = [];

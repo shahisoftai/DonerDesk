@@ -35,6 +35,8 @@ export interface CheckDef {
   params: readonly CheckParamDef[];
   /** Always run on every dataset (key, place, period); others run only when configured. */
   always: boolean;
+  /** false = its findings are about matching (a place not in the list), not about the figures, so a visual does not count them as data notes. */
+  noteOnVisuals?: boolean;
   /** A sentence when the params do not fit the columns. */
   validate(params: Record<string, unknown>, columns: readonly ColumnDef[]): string | undefined;
   run(input: CheckInput, params: Record<string, unknown>): Array<Omit<Finding, "check" | "severity">>;

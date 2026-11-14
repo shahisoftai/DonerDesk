@@ -21,7 +21,7 @@ export const dataSlicerBlock = defineBlock<DataSlicerProps, DataSlicerModel, Dat
   defaults: () => ({ source: "", column: "", multi: true }),
   validate: (p) => (!p.source ? [{ message: "Choose the dataset this slicer filters." }] : !p.column ? [{ message: "Choose the column to filter by." }] : (p.label?.length ?? 0) > 40 ? [{ message: "A slicer label is at most 40 characters." }] : []),
   slots: [],
-  sizes: { min: { w: 2, h: 1 }, max: { w: 12, h: 6 }, default: { w: 3, h: 2 } },
+  sizes: { min: { w: 2, h: 2 }, max: { w: 12, h: 6 }, default: { w: 4, h: 2 } },
   lint: [],
   resolve: (p, data) => {
     if (!data) return NOT_READ;

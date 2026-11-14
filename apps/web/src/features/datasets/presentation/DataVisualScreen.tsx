@@ -29,7 +29,6 @@ export function DataVisualScreen({ model, frame }: { model: BlockModel<DataVisua
   const pick = filters && column ? (name: string) => filters.toggle(source, column, name, true) : undefined;
   return (
     <div ref={box} className="flex h-full flex-col gap-1 px-3 py-2">
-      {m.title && <h3 className="text-sm font-semibold">{m.title}</h3>}
       <div className="min-h-0 flex-1">
         {option ? <DataChart option={option} label={m.title ?? t("ds.visual.label")} onPick={pick} />
           : m.family === "CARD" ? <DataCardView table={m.table} />

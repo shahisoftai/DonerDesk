@@ -44,4 +44,4 @@ export function runChecks(input: CheckInput, configs: readonly CheckConfig[] = [
 export const blocks = (findings: readonly Finding[]): boolean => findings.some((f) => f.severity === "BLOCK");
 
 /** Rows with an open warning, for the note under a visual ("Drawn from 1,204 rows; 12 have a data note"). */
-export const rowsWithNotes = (findings: readonly Finding[]): Set<number> => new Set(findings.filter((f) => f.severity !== "NOTE").flatMap((f) => f.rows));
+export const rowsWithNotes = (findings: readonly Finding[]): Set<number> => new Set(findings.filter((f) => f.severity !== "NOTE" && checkDef(f.check)?.noteOnVisuals !== false).flatMap((f) => f.rows));

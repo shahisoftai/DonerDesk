@@ -47,7 +47,8 @@ export function applyKit(columns: readonly ColumnDef[], kit: Kit, mapping: KitMa
     const k = role ? byRole.get(role) : undefined;
     if (!k) return c;
     const parts = k.rateParts && mapping[k.rateParts.numerator] && mapping[k.rateParts.denominator] ? { numerator: mapping[k.rateParts.numerator]!, denominator: mapping[k.rateParts.denominator]!, percent: k.rateParts.percent } : undefined;
-    return { ...c, kind: k.kind, semantic: k.semantic, role: k.role, ...(k.unit ? { unit: k.unit } : {}), ...(parts ? { rateParts: parts } : {}) };
+    // The kit's plain wording replaces a raw header ("TotalChildScreen" → "Children screened"); a name the person typed is kept.
+    return { ...c, ...(c.label === c.sourceHeader ? { label: k.label } : {}), kind: k.kind, semantic: k.semantic, role: k.role, ...(k.unit ? { unit: k.unit } : {}), ...(parts ? { rateParts: parts } : {}) };
   });
 }
 

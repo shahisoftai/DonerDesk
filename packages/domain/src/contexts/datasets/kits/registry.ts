@@ -7,10 +7,10 @@ export const KITS: readonly Kit[] = [NUTRITION_KIT, WASH_KIT];
 const BY_KEY = new Map(KITS.map((k) => [k.key, k]));
 export const kitOf = (key: string): Kit | undefined => BY_KEY.get(key);
 
-/** The kit a dataset's columns fit best, when at least a third of its roles are matched. */
-export function bestKit<T extends { score: number }>(match: (kit: Kit) => T): { kit: Kit; match: T } | undefined {
-  const scored = KITS.map((kit) => ({ kit, match: match(kit) })).sort((a, b) => b.match.score - a.match.score);
-  return scored[0] && scored[0].match.score >= 1 / 3 ? scored[0] : undefined;
+/** The kit a dataset's columns fit best: at least 6 of its roles matched, or a third of them (a monthly export rarely has every kit column). */
+export function bestKit<T extends { score: number; matched: number }>(match: (kit: Kit) => T): { kit: Kit; match: T } | undefined {
+  const scored = KITS.map((kit) => ({ kit, match: match(kit) })).sort((a, b) => b.match.matched - a.match.matched);
+  return scored[0] && (scored[0].match.matched >= 6 || scored[0].match.score >= 1 / 3) ? scored[0] : undefined;
 }
 
 /** The kit's template sheet: its headers (the kit's own labels) and one empty row to fill. */

@@ -225,3 +225,12 @@ test("dataset blocks resolve their fixtures", () => {
     assert.equal(definitionFor(kind).resolve(fx.props, undefined).state, "unavailable");
   }
 });
+
+test("a monthly export is offered its kit, and the kit's wording replaces raw headers", async () => {
+  const { bestKit } = await import("../dist/index.js");
+  const { columns } = confirm(wide());
+  const best = bestKit((k) => matchKit(columns, k));
+  assert.equal(best?.kit.key, "NUTRITION");
+  const applied = applyKit(columns, NUTRITION_KIT, best.match.mapping);
+  assert.equal(applied.find((c) => c.sourceHeader === "TotalChildScreen").label, "Children screened");
+});

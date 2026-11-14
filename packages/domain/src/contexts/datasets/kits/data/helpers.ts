@@ -10,7 +10,7 @@ export const card = (title: string, values: KitWellField[], w = 3): KitBlock => 
 export const pie = (title: string, slices: string, value: string): KitBlock => ({ type: "VISUAL", family: "PIE", title, w: 4, h: 4, wells: { AXIS: [f(slices)], VALUES: [f(value)] } });
 export const table = (title: string, rows: string[], values: KitWellField[], extra: Partial<KitBlock> = {}): KitBlock => ({ type: "VISUAL", family: "TABLE", title, w: 12, h: 5, wells: { ROWS: rows.map((r) => f(r)), VALUES: values }, ...extra });
 export const map = (title: string, place: string, colour: KitWellField, w = 6): KitBlock => ({ type: "VISUAL", family: "MAP", title, w, h: 5, wells: { LOCATION: [f(place)], COLOUR: [colour] } });
-export const slicer = (title: string, columnRole: string): KitBlock => ({ type: "SLICER", title, w: 3, h: 1, roles: { column: columnRole } });
+export const slicer = (title: string, columnRole: string): KitBlock => ({ type: "SLICER", title, w: 4, h: 2, roles: { column: columnRole } });
 export const note = (text: string): KitBlock => ({ type: "TEXT", text, w: 12, h: 1 });
 
 /** Received, used and balance (and optionally opening) columns for one supply item, with the balance check. */
