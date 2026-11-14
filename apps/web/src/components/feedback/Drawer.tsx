@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Maximize2, X } from "lucide-react";
+import { ArrowLeft, Maximize2, X } from "lucide-react";
 import { trapFocus } from "./Dialog";
 
 type Side = "left" | "right" | "bottom";
@@ -22,6 +22,31 @@ export const DRAWER_WIDTH: Record<DrawerSize, string> = {
   lg: "w-[36rem]",
   xl: "w-[52rem]",
 };
+
+/**
+ * Stacked panels (Version 4.000, plan F67). Every open side panel takes a place in one stack; the one on top is the active one,
+ * the ones below step back (slightly smaller, shifted, dimmed) and the top one shows "Back", which closes only itself.
+ */
+type StackListener = () => void;
+const stack: string[] = [];
+const listeners = new Set<StackListener>();
+const notify = () => listeners.forEach((l) => l());
+function useStackDepth(id: string, open: boolean): { depth: number; below: number } {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const l = () => force((n) => n + 1);
+    listeners.add(l);
+    return () => { listeners.delete(l); };
+  }, []);
+  useEffect(() => {
+    if (!open) return;
+    stack.push(id);
+    notify();
+    return () => { const i = stack.lastIndexOf(id); if (i >= 0) stack.splice(i, 1); notify(); };
+  }, [id, open]);
+  const at = stack.lastIndexOf(id);
+  return { depth: at, below: at < 0 ? 0 : stack.length - 1 - at };
+}
 
 /** How long the slide takes; the panel stays mounted this long after closing so it can leave. */
 export const DRAWER_EXIT_MS = 220;
@@ -73,6 +98,7 @@ export function Drawer({
   const [mounted, setMounted] = useState(open);
   const [shown, setShown] = useState(false);
   const [asking, setAsking] = useState(false);
+  const { depth, below } = useStackDepth(titleId, open);
 
   useEffect(() => {
     if (open) {
@@ -100,9 +126,11 @@ export function Drawer({
     panel?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        // Only the panel on top answers Escape.
+        if (stack[stack.length - 1] !== titleId) return;
         event.preventDefault();
         requestClose();
-      } else if (panel) {
+      } else if (panel && stack[stack.length - 1] === titleId) {
         trapFocus(panel, event);
       }
     };
@@ -118,9 +146,11 @@ export function Drawer({
 
   const width = side === "bottom" ? "" : `${DRAWER_WIDTH[size ?? (wide ? "md" : "sm")]} max-w-[100vw] sm:max-w-[calc(100vw-1rem)]`;
   const position = PANEL_POSITION[side];
+  // A panel with others on top of it steps back; the scrim is drawn once, by the bottom panel.
+  const stepBack = below > 0 ? "sm:-translate-x-6 sm:scale-[0.98] sm:opacity-70 rtl:sm:translate-x-6" : "";
   return (
-    <div className="fixed inset-0 z-50" role="presentation">
-      <div className={`absolute inset-0 ${DRAWER_SCRIM} ${shown ? "opacity-100" : "opacity-0"}`} onClick={requestClose} aria-hidden="true" />
+    <div className="fixed inset-0 z-50" role="presentation" style={{ zIndex: 50 + Math.max(0, depth) }}>
+      <div className={`absolute inset-0 ${depth > 0 ? "bg-transparent" : DRAWER_SCRIM} ${shown ? "opacity-100" : "opacity-0"}`} onClick={requestClose} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
@@ -128,11 +158,17 @@ export function Drawer({
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className={`absolute ${DRAWER_SURFACE} ${position.base} ${width} ${shown ? "translate-x-0 translate-y-0" : position.shut}`}
+        className={`absolute ${DRAWER_SURFACE} ${position.base} ${width} ${shown ? `translate-x-0 translate-y-0 ${stepBack}` : position.shut}`}
+        aria-hidden={below > 0 || undefined}
       >
         {side === "bottom" && <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-white/20" aria-hidden="true" />}
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-3.5 dark:border-white/10">
-          <div className="min-w-0 pt-1">
+          {depth > 0 && side !== "bottom" && (
+            <button type="button" aria-label="Back" title="Back" className="btn-ghost btn-icon -ms-2 mt-0.5 shrink-0" onClick={requestClose}>
+              <ArrowLeft aria-hidden="true" className="rtl:rotate-180" />
+            </button>
+          )}
+          <div className="min-w-0 flex-1 pt-1">
             <h2 id={titleId} className="truncate text-[15px] font-semibold tracking-[-0.01em] text-slate-950 dark:text-white">
               {title}
             </h2>

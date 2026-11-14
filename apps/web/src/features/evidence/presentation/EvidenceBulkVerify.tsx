@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/Checkbox";
 import { bulkVerifyEvidenceAction } from "@/lib/actions/evidence";
 import { toggleSelection } from "@/features/activities/domain/bulk-selection";
 import { countOf } from "@donordesk/domain/core/plural.js";
+import { SelectionBar } from "@/components/ui/SelectionBar";
 
 type Selection = { selected: string[]; toggle: (id: string) => void; set: (ids: string[]) => void; clear: () => void };
 const SelectionContext = createContext<Selection | null>(null);
@@ -55,12 +56,11 @@ export function EvidenceBulkBar({ pendingIds, canVerify }: { pendingIds: string[
       <Button size="sm" variant="secondary" disabled={pendingIds.length === 0} onClick={() => set(pendingIds)}>
         Select all {pendingIds.length} awaiting verification on this page
       </Button>
-      <Button size="sm" disabled={selected.length === 0 || busy} pending={busy} onClick={() => void verify()}>
-        Verify {selected.length > 0 ? countOf(selected.length, "selected file") : "selected"}
-      </Button>
-      {selected.length > 0 && <Button size="sm" variant="ghost" onClick={clear}>Clear</Button>}
       {message && <span role="status">{message}</span>}
       {failures.length > 0 && <ul className="w-full list-disc pl-5 text-danger-700 dark:text-danger-400">{failures.map((f, i) => <li key={i}>{f}</li>)}</ul>}
+      <SelectionBar count={selected.length} noun={["file", "files"]} onClear={clear}>
+        <Button size="sm" disabled={busy} pending={busy} onClick={() => void verify()}>Verify</Button>
+      </SelectionBar>
     </div>
   );
 }

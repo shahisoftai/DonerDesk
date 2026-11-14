@@ -1,5 +1,6 @@
 "use client";
 
+import { AddToDashboard } from "@/features/dashboards/presentation/AddToDashboard";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { buildChart, datasetQueryFor, type ChartBuild } from "@donordesk/domain/contexts/reporting/chart-render.js";
 import { CHART_KINDS, CHART_SIZES, LABEL_FORMATS, LEGEND_POSITIONS, NUMBER_FORMATS, TEMPLATE_SHAPE, kindsByFamily, validateChartSpec, type ChartKind, type ChartSpecV2, type SeriesStyle } from "@donordesk/domain/contexts/reporting/chart-spec-v2.js";
@@ -7,9 +8,7 @@ import { CHART_PALETTES, DATA_CHART_TEMPLATES, type DataChartTemplate } from "@d
 import type { DatasetResult } from "@donordesk/domain/contexts/reporting/dataset-query.js";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { deleteChartAction, getSavedChartAction, listSavedChartsAction, resolveChartDatasetAction, saveChartAction } from "@/lib/actions/charts";
-import { addDashboardChartAction, listDashboardsAction } from "@/lib/actions/dashboards";
 import type { SavedChartDetail, SavedChartView } from "@/lib/server/schemas-charts";
-import type { DashboardSummary } from "@/lib/server/schemas-dashboards";
 import { cn } from "@/components/ui/cn";
 import { StudioChart, type ChartExport } from "./StudioChart";
 import { StylePanel } from "./StylePanel";
@@ -67,12 +66,6 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
   const exportRef = useRef<ChartExport | null>(null);
   const [missingRegions, setMissingRegions] = useState<string[]>([]);
   const [versions, setVersions] = useState<SavedChartDetail["versions"]>([]);
-  const [dashboards, setDashboards] = useState<DashboardSummary[]>([]);
-  const [dashboardId, setDashboardId] = useState("");
-  useEffect(() => {
-    void listDashboardsAction(projectId).then((r) => { if (r.ok) setDashboards(r.value.filter((d) => d.canEdit)); });
-  }, [projectId]);
-
   // The dataset: asked for again, after a short pause, whenever what the chart is drawn from changes. Styling never asks again.
   const query = useMemo(() => datasetQueryFor(spec, allIds), [spec, allIds]);
   const queryKey = JSON.stringify(query);
@@ -144,19 +137,6 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
     edit(v.spec as unknown as ChartSpecV2);
     setName(v.name);
     setMessage({ tone: "ok", text: t("studio.versions.restored") });
-  }
-  /** The same indicator as a KPI tile: its latest figure, share of target and trend (the first indicator the chart uses). */
-  async function addKpiToDashboard() {
-    const indicatorId = spec.dataset.indicatorIds[0];
-    if (!dashboardId || !indicatorId) return;
-    const r = await addDashboardChartAction(dashboardId, { projectId, kpi: { indicatorId, includeDraft: spec.dataset.includeDraft } });
-    setMessage(r.ok ? { tone: "ok", text: "Added as a KPI tile." } : { tone: "error", text: r.error.message });
-  }
-
-  async function addToDashboard() {
-    if (!dashboardId) return;
-    const r = await addDashboardChartAction(dashboardId, { projectId, spec });
-    setMessage(r.ok ? { tone: "ok", text: t("studio.dashboard.added") } : { tone: "error", text: r.error.message });
   }
   async function remove(c: SavedChartView) {
     if (!window.confirm(t("studio.deleteConfirm", { name: c.name }))) return;
@@ -302,15 +282,15 @@ export function ChartStudio({ projectId, indicators, periods, initialCharts, can
             </Section>
           )}
           <Section title={t("studio.dashboard")}>
-            {dashboards.length === 0 ? <p className="text-xs text-slate-500">{t("studio.dashboard.none")}</p> : (
-              <div className="flex flex-wrap items-center gap-2">
-                <select aria-label={t("studio.dashboard.choose")} className={cn(input, "w-auto max-w-full")} value={dashboardId} onChange={(e) => setDashboardId(e.target.value)}>
-                  <option value="">{t("studio.dashboard.choose")}</option>{dashboards.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-                <button type="button" className={btn} disabled={!dashboardId || problems.length > 0} onClick={() => void addToDashboard()}>{t("studio.dashboard.add")}</button>
-                <button type="button" className={btn} disabled={!dashboardId || spec.dataset.indicatorIds.length === 0} onClick={() => void addKpiToDashboard()}>Add as a KPI tile</button>
-              </div>
-            )}
+            {/* The shared "Add to a dashboard" control (plan F24). */}
+            <AddToDashboard
+              projectId={projectId}
+              addedText={t("studio.dashboard.added")}
+              choices={[
+                { key: "chart", label: t("studio.dashboard.add"), input: problems.length > 0 ? null : { spec }, disabledReason: problems.length > 0 ? "Fix the chart's problems first." : undefined },
+                { key: "kpi", label: "Add as a KPI tile", input: spec.dataset.indicatorIds[0] ? { kpi: { indicatorId: spec.dataset.indicatorIds[0], includeDraft: spec.dataset.includeDraft } } : null },
+              ]}
+            />
           </Section>
         </div>
 

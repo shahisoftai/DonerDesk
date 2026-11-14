@@ -1,5 +1,6 @@
 "use client";
 
+import { AttachAndVerify, type NeedsFile } from "./AttachAndVerify";
 import { ReferenceVerdictLine } from "@/features/sector-library/presentation/ReferenceVerdictLine";
 import Link from "next/link";
 import { collectionText } from "@/features/tasks/domain/collection-view";
@@ -399,6 +400,8 @@ export function IndicatorEntryGrid({
     }
   }
 
+  const [needsFile, setNeedsFile] = useState<NeedsFile[]>([]);
+
   async function verifyAll(updateIds?: string[]) {
     setVerifyingAll(true);
     try {
@@ -413,7 +416,7 @@ export function IndicatorEntryGrid({
         const others = failed.filter((f) => !needFile.includes(f));
         const parts = [
           needFile.length > 0
-            ? `${needFile.map((f) => f.indicatorCode).join(", ")} ${needFile.length === 1 ? "has" : "have"} no file behind ${needFile.length === 1 ? "it" : "them"}. This project requires one before a value is verified. Open Evidence, link a verified file to ${needFile.length === 1 ? "the value" : "each value"}, then verify again.`
+            ? `${needFile.map((f) => f.indicatorCode).join(", ")} ${needFile.length === 1 ? "has" : "have"} no file behind ${needFile.length === 1 ? "it" : "them"}. This project requires one before a value is verified. Attach a file to ${needFile.length === 1 ? "it" : "each"} here and it is verified in the same step.`
             : "",
           ...others.map((f) => `${f.indicatorCode}: ${f.message}`),
         ].filter(Boolean);
@@ -422,7 +425,13 @@ export function IndicatorEntryGrid({
           description: parts.join(" "),
           tone: "warning",
           durationMs: 20000,
-          action: needFile.length > 0 ? { label: "Open evidence", onAction: () => router.push(`/projects/${projectId}/evidence`) } : undefined,
+          action: needFile.length > 0 ? {
+            label: "Attach the files",
+            onAction: () => setNeedsFile(needFile.flatMap((f) => {
+              const row = rows.find((r) => r.update?.id === f.updateId);
+              return row ? [{ updateId: f.updateId, indicatorId: row.id, code: f.indicatorCode, name: row.name ?? f.indicatorCode }] : [];
+            })),
+          } : undefined,
         });
       } else {
         toast.push({ title: `${verified} indicator value${verified === 1 ? "" : "s"} verified`, tone: "success" });
@@ -534,6 +543,7 @@ export function IndicatorEntryGrid({
 
   return (
     <div className="mt-6 space-y-6">
+      <AttachAndVerify open={needsFile.length > 0} onClose={() => setNeedsFile([])} projectId={projectId} periodId={periodId} items={needsFile} onChanged={() => router.refresh()} />
       <div className="card flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <p className="text-sm font-medium">Record indicator values for this reporting period</p>
