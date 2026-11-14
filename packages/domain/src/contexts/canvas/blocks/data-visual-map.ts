@@ -81,6 +81,7 @@ export function datasetMap(rows: readonly VisualRow[], places: readonly MapPlace
   }
   // The map opens on the deepest level most rows reached (districts when a table is by district).
   const counts = levels.map((l) => ({ l, n: Object.values(byLevel[String(l)]!.indicators[0]?.rollup.rows ?? []).length }));
-  const firstLevel = counts.filter((c) => c.n > 1).map((c) => c.l)[0] ?? levels[0] ?? 1;
+  const filled = counts.filter((c) => c.n > 1).map((c) => c.l);
+  const firstLevel = filled[filled.length - 1] ?? levels[levels.length - 1] ?? 1;
   return { places: places.filter((p) => levels.includes(p.adminLevel) || p.adminLevel === 0), byLevel, firstLevel, unplacedRows };
 }
