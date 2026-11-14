@@ -1,0 +1,245 @@
+<title>DonorDesk Brand Options</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a review sheet. Three option bands, each showing palette, app screen (light + dark), slide-over, marketing hero, chart set. */
+:root {
+  --page: #f4f5f7; --panel: #ffffff; --ink: #0f1419; --ink-2: #4a5360; --line: #dde1e6;
+  --sans: "IBM Plex Sans", system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --page: #0d1015; --panel: #151a21; --ink: #e8ecf1; --ink-2: #9aa4b1; --line: #2a313b; color-scheme: dark } }
+:root[data-theme="dark"] { --page: #0d1015; --panel: #151a21; --ink: #e8ecf1; --ink-2: #9aa4b1; --line: #2a313b; color-scheme: dark }
+
+*{box-sizing:border-box}
+body{background:var(--page);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;padding-block:40px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:48px}
+header.intro h1{font-size:30px;line-height:1.15;letter-spacing:-0.02em;margin:0 0 8px;text-wrap:balance}
+header.intro p{margin:0;color:var(--ink-2);max-width:68ch}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+
+/* Each option defines its own brand tokens; the mockups read only these. */
+.opt{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:28px}
+.opt-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;align-items:baseline}
+.opt-head h2{margin:0;font-size:22px;letter-spacing:-0.015em}
+.opt-head p{margin:4px 0 0;color:var(--ink-2);max-width:62ch}
+.tag{font-family:var(--mono);font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+
+.sw{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.chip{border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12px}
+.chip i{display:block;height:54px}
+.chip span{display:block;padding:7px 9px 8px}
+.chip b{display:block;font-weight:600;font-size:12.5px}
+.chip code{font-family:var(--mono);color:var(--ink-2);font-size:11.5px}
+.scale{display:flex;border-radius:8px;overflow:hidden;height:26px;border:1px solid var(--line)}
+.scale i{flex:1}
+.viz{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.viz i{width:28px;height:28px;border-radius:6px}
+.label{font-size:12.5px;font-weight:600;color:var(--ink-2);margin-bottom:8px;letter-spacing:.01em}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+
+/* ---------- App mock ---------- */
+.app{--bg:var(--l-bg);--surf:var(--l-surf);--txt:var(--l-txt);--mut:var(--l-mut);--bd:var(--l-bd);--nav:var(--l-nav);--navtxt:var(--l-navtxt);
+  background:var(--bg);color:var(--txt);border-radius:12px;overflow:hidden;border:1px solid var(--line);display:grid;grid-template-columns:150px 1fr;min-height:330px;position:relative;font-size:13px}
+.app.dark{--bg:var(--d-bg);--surf:var(--d-surf);--txt:var(--d-txt);--mut:var(--d-mut);--bd:var(--d-bd);--nav:var(--d-nav);--navtxt:var(--d-navtxt)}
+.side{background:var(--nav);color:var(--navtxt);padding:14px 10px;display:flex;flex-direction:column;gap:3px}
+.logo{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13px;margin:0 4px 12px;letter-spacing:-0.01em}
+.logo i{width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,var(--accent),var(--brand))}
+.nav{padding:6px 8px;border-radius:7px;opacity:.82}
+.nav.on{background:color-mix(in srgb,var(--navtxt) 14%,transparent);opacity:1;font-weight:600}
+.navgrp{font-size:10px;letter-spacing:.08em;text-transform:uppercase;opacity:.55;margin:10px 8px 2px}
+.main{padding:14px 16px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.crumb{font-size:11px;color:var(--mut)}
+.ph{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--bd)}
+.ph h3{margin:2px 0 0;font-size:16px;letter-spacing:-0.01em}
+.btns{display:flex;gap:6px;flex-wrap:wrap}
+.b{font:inherit;font-size:12px;font-weight:500;border-radius:8px;padding:6px 11px;border:0;cursor:pointer;white-space:nowrap}
+.b.p{background:var(--brand);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 0 0 1px color-mix(in srgb,var(--brand) 70%,#000)}
+.b.s{background:var(--surf);color:var(--txt);box-shadow:0 0 0 1px var(--bd),0 1px 2px rgba(0,0,0,.05)}
+.b.g{background:transparent;color:var(--mut)}
+.sec{background:var(--surf);border:1px solid var(--bd);border-radius:10px;padding:12px}
+.sec h4{margin:0 0 2px;font-size:13px}
+.sec .d{color:var(--mut);font-size:11.5px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-top:1px solid var(--bd);gap:8px}
+.row:first-of-type{border-top:0}
+.lnk{color:var(--link);text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--link) 40%,transparent);text-underline-offset:3px;font-weight:500}
+.pill{font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:999px}
+.ok{background:color-mix(in srgb,var(--good) 14%,transparent);color:var(--good)}
+.wa{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn)}
+.bar{height:6px;border-radius:4px;background:var(--bd);overflow:hidden;width:90px}
+.bar i{display:block;height:100%;background:var(--brand)}
+.over{position:absolute;inset:8px 8px 8px auto;width:42%;min-width:170px;background:var(--surf);border-radius:12px;box-shadow:0 18px 48px -10px rgba(0,0,0,.35),0 0 0 1px var(--bd);display:flex;flex-direction:column}
+.over .oh{padding:11px 12px;border-bottom:1px solid var(--bd)}
+.over .oh b{display:block;font-size:13px}
+.over .oh span{color:var(--mut);font-size:11px}
+.over .ob{padding:11px 12px;flex:1;display:flex;flex-direction:column;gap:8px}
+.inp{border:1px solid var(--bd);border-radius:7px;padding:6px 8px;font-size:12px;color:var(--mut);background:var(--bg)}
+.inp.f{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 22%,transparent);color:var(--txt)}
+.over .of{padding:9px 12px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:6px;background:color-mix(in srgb,var(--bg) 60%,var(--surf))}
+.scrim{position:absolute;inset:0;background:rgba(5,10,20,.28)}
+@media (max-width:560px){.app{grid-template-columns:1fr}.side{display:none}.over{width:auto;left:8px}}
+
+/* ---------- Marketing hero mock ---------- */
+.hero{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:var(--h-bg);color:var(--h-txt)}
+.hnav{display:flex;align-items:center;gap:16px;padding:12px 18px;font-size:12.5px;border-bottom:1px solid color-mix(in srgb,var(--h-txt) 12%,transparent);flex-wrap:wrap}
+.hnav .logo{margin:0}
+.hnav .sp{flex:1}
+.hnav a{opacity:.8}
+.hbody{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;padding:30px 22px 26px;align-items:center}
+@media (max-width:760px){.hbody{grid-template-columns:1fr}}
+.hbody h3{font-size:clamp(22px,3vw,30px);line-height:1.12;letter-spacing:-0.025em;margin:6px 0 10px;text-wrap:balance}
+.hbody p{margin:0 0 16px;opacity:.82;font-size:14px;max-width:46ch}
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--h-acc)}
+.shot{background:var(--h-shot);border-radius:10px;padding:12px;box-shadow:0 20px 50px -18px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{background:var(--h-card);border-radius:8px;padding:9px;color:var(--h-cardtxt)}
+.kpi small{display:block;font-size:10px;opacity:.7}
+.kpi b{font-size:17px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em}
+.bars{display:flex;align-items:flex-end;gap:5px;height:66px;background:var(--h-card);border-radius:8px;padding:9px}
+.bars i{flex:1;border-radius:3px 3px 0 0}
+.proof{display:flex;gap:18px;flex-wrap:wrap;padding:12px 22px 16px;font-size:12px;opacity:.7}
+
+footer.pick{border-top:1px solid var(--line);padding-top:24px;color:var(--ink-2);max-width:72ch}
+footer.pick b{color:var(--ink)}
+</style>
+
+<div class="wrap">
+<header class="intro">
+  <div class="kicker">DonorDesk 4.000 · brand review · 14 November 2026</div>
+  <h1>Three colour brands for DonorDesk 4.000</h1>
+  <p>Each option shows the palette, the app (light and dark) with buttons, links, a section and the new right-side panel, the marketing site's first screen, and the eight chart colours. Every text and button colour was chosen to pass WCAG AA on its background. Pick one, or ask to mix parts.</p>
+</header>
+
+<!-- OPTION A -->
+<section class="opt" style="
+  --brand:#1e40af; --accent:#0d9488; --link:#1d4ed8; --good:#15803d; --warn:#b45309;
+  --l-bg:#f6f7f9; --l-surf:#ffffff; --l-txt:#0f172a; --l-mut:#5b6575; --l-bd:#e3e6eb; --l-nav:#0f1b3d; --l-navtxt:#e6ebf7;
+  --d-bg:#0b1220; --d-surf:#121a2b; --d-txt:#e7ecf4; --d-mut:#9aa6b8; --d-bd:#243049; --d-nav:#080e1b; --d-navtxt:#dfe6f3;
+  --h-bg:#0f1b3d; --h-txt:#f1f4fb; --h-acc:#5eead4; --h-shot:#1a2a55; --h-card:#ffffff; --h-cardtxt:#0f172a;">
+  <div class="opt-head">
+    <div><h2>A · Cobalt and Teal</h2><p>Deep cobalt with a teal accent on cool grey. Feels like a bank or a large development agency: trustworthy and calm with dense data.</p></div>
+    <span class="tag">Recommended</span>
+  </div>
+  <div>
+    <div class="label">Core palette</div>
+    <div class="sw">
+      <div class="chip"><i style="background:#1e40af"></i><span><b>Primary</b><code>#1E40AF</code></span></div>
+      <div class="chip"><i style="background:#0f1b3d"></i><span><b>Navy (nav, hero)</b><code>#0F1B3D</code></span></div>
+      <div class="chip"><i style="background:#0d9488"></i><span><b>Accent</b><code>#0D9488</code></span></div>
+      <div class="chip"><i style="background:#0f172a"></i><span><b>Ink</b><code>#0F172A</code></span></div>
+      <div class="chip"><i style="background:#f6f7f9"></i><span><b>Canvas</b><code>#F6F7F9</code></span></div>
+      <div class="chip"><i style="background:#6d28d9"></i><span><b>AI marker</b><code>#6D28D9</code></span></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div><div class="label">Primary scale 50 → 900</div><div class="scale"><i style="background:#eff4ff"></i><i style="background:#dbe6fe"></i><i style="background:#bfd2fd"></i><i style="background:#93b2fb"></i><i style="background:#5f87f6"></i><i style="background:#3b63eb"></i><i style="background:#2849d4"></i><i style="background:#1e40af"></i><i style="background:#1d358a"></i><i style="background:#0f1b3d"></i></div></div>
+    <div><div class="label">Chart colours (colour-blind safe order)</div><div class="viz"><i style="background:#1e40af"></i><i style="background:#0d9488"></i><i style="background:#d97706"></i><i style="background:#be185d"></i><i style="background:#0284c7"></i><i style="background:#65a30d"></i><i style="background:#7c3aed"></i><i style="background:#64748b"></i></div></div>
+  </div>
+  <div class="grid2">
+    <div class="app"><div class="side"><div class="logo"><i></i>DonorDesk</div><div class="navgrp">Work</div><div class="nav on">Home</div><div class="nav">Projects</div><div class="nav">Reports</div><div class="navgrp">Admin</div><div class="nav">Settings</div></div>
+      <div class="main"><div class="ph"><div><div class="crumb">Projects / Kenya Education</div><h3>Results</h3></div><div class="btns"><button class="b s">Export</button><button class="b p">Record a value</button></div></div>
+        <div class="sec"><h4>Indicators due this month</h4><div class="d">Three values are late. <a class="lnk">Open the entry sheet</a></div>
+          <div class="row"><span>Learners enrolled</span><div class="bar"><i style="width:72%"></i></div><span class="pill ok">On track</span></div>
+          <div class="row"><span>Classrooms built</span><div class="bar"><i style="width:40%"></i></div><span class="pill wa">Late</span></div></div></div></div>
+    <div class="app dark"><div class="side"><div class="logo"><i></i>DonorDesk</div><div class="navgrp">Work</div><div class="nav on">Home</div><div class="nav">Projects</div><div class="nav">Reports</div></div>
+      <div class="main"><div class="ph"><div><div class="crumb">Projects / Kenya Education</div><h3>Results</h3></div><div class="btns"><button class="b p">Record a value</button></div></div>
+        <div class="sec"><h4>Indicators due this month</h4><div class="d">Three values are late.</div><div class="row"><span>Learners enrolled</span><span class="pill ok">On track</span></div></div></div>
+      <div class="scrim"></div><div class="over"><div class="oh"><b>Record a value</b><span>Learners enrolled · Oct 2026</span></div><div class="ob"><div class="inp f">1,240</div><div class="inp">Data source</div></div><div class="of"><button class="b g">Cancel</button><button class="b p">Save</button></div></div></div>
+  </div>
+  <div class="hero"><div class="hnav"><div class="logo"><i></i>DonorDesk</div><span class="sp"></span><a>Product</a><a>Solutions</a><a>Pricing</a><a>Security</a><button class="b s" style="--surf:transparent;--txt:#f1f4fb;--bd:rgba(255,255,255,.3)">Sign in</button><button class="b p" style="background:#0d9488;box-shadow:none">Start free</button></div>
+    <div class="hbody"><div><div class="eyebrow">Programme management for NGOs</div><h3>Plan the work, prove the results, report to every donor.</h3><p>Logframes, field data, evidence and donor-ready reports in one place, checked figure by figure.</p><div class="btns"><button class="b p" style="background:#0d9488;box-shadow:none;padding:9px 15px;font-size:13px">Start free</button><button class="b s" style="--surf:transparent;--txt:#f1f4fb;--bd:rgba(255,255,255,.35);padding:9px 15px;font-size:13px">Book a demo</button></div></div>
+      <div class="shot"><div class="kpis"><div class="kpi"><small>Reached</small><b>48,210</b></div><div class="kpi"><small>On track</small><b>18 / 24</b></div><div class="kpi"><small>Spent</small><b>62%</b></div></div><div class="bars"><i style="height:40%;background:#1e40af"></i><i style="height:55%;background:#1e40af"></i><i style="height:48%;background:#1e40af"></i><i style="height:70%;background:#0d9488"></i><i style="height:82%;background:#0d9488"></i><i style="height:76%;background:#0d9488"></i></div></div></div>
+    <div class="proof"><span>Used in 9 countries</span><span>Every figure checked against its source</span><span>Works offline in the field</span></div></div>
+</section>
+
+<!-- OPTION B -->
+<section class="opt" style="
+  --brand:#0f5f68; --accent:#c2410c; --link:#0f6b75; --good:#15803d; --warn:#b45309;
+  --l-bg:#f5f7f7; --l-surf:#ffffff; --l-txt:#0c1a1d; --l-mut:#56666a; --l-bd:#dfe5e6; --l-nav:#ffffff; --l-navtxt:#163238;
+  --d-bg:#0a1416; --d-surf:#111f22; --d-txt:#e5eeef; --d-mut:#94a6a9; --d-bd:#223639; --d-nav:#0d1a1c; --d-navtxt:#d8e5e7;
+  --h-bg:#f5f7f7; --h-txt:#0c1a1d; --h-acc:#c2410c; --h-shot:#0f5f68; --h-card:#ffffff; --h-cardtxt:#0c1a1d;">
+  <div class="opt-head">
+    <div><h2>B · Petrol and Copper</h2><p>Dark petrol green-blue with a copper accent on a light canvas, light sidebar. Warmer and more human, closest to the current brand's warmth, but corporate.</p></div>
+    <span class="tag">Light navigation</span>
+  </div>
+  <div>
+    <div class="label">Core palette</div>
+    <div class="sw">
+      <div class="chip"><i style="background:#0f5f68"></i><span><b>Primary</b><code>#0F5F68</code></span></div>
+      <div class="chip"><i style="background:#0a3a40"></i><span><b>Deep petrol</b><code>#0A3A40</code></span></div>
+      <div class="chip"><i style="background:#c2410c"></i><span><b>Accent</b><code>#C2410C</code></span></div>
+      <div class="chip"><i style="background:#0c1a1d"></i><span><b>Ink</b><code>#0C1A1D</code></span></div>
+      <div class="chip"><i style="background:#f5f7f7"></i><span><b>Canvas</b><code>#F5F7F7</code></span></div>
+      <div class="chip"><i style="background:#6d28d9"></i><span><b>AI marker</b><code>#6D28D9</code></span></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div><div class="label">Primary scale 50 → 900</div><div class="scale"><i style="background:#effafa"></i><i style="background:#d4f0f1"></i><i style="background:#a9e0e3"></i><i style="background:#6fc6cc"></i><i style="background:#3aa5ae"></i><i style="background:#1f8791"></i><i style="background:#166f78"></i><i style="background:#0f5f68"></i><i style="background:#0c4b52"></i><i style="background:#0a3a40"></i></div></div>
+    <div><div class="label">Chart colours (colour-blind safe order)</div><div class="viz"><i style="background:#0f5f68"></i><i style="background:#c2410c"></i><i style="background:#2563eb"></i><i style="background:#ca8a04"></i><i style="background:#9d174d"></i><i style="background:#4d7c0f"></i><i style="background:#6d28d9"></i><i style="background:#6b7280"></i></div></div>
+  </div>
+  <div class="grid2">
+    <div class="app" style="--l-nav:#ffffff"><div class="side" style="border-right:1px solid #dfe5e6"><div class="logo"><i></i>DonorDesk</div><div class="navgrp">Work</div><div class="nav on" style="background:#e4f2f3;color:#0f5f68">Home</div><div class="nav">Projects</div><div class="nav">Reports</div><div class="navgrp">Admin</div><div class="nav">Settings</div></div>
+      <div class="main"><div class="ph"><div><div class="crumb">Projects / Kenya Education</div><h3>Results</h3></div><div class="btns"><button class="b s">Export</button><button class="b p">Record a value</button></div></div>
+        <div class="sec"><h4>Indicators due this month</h4><div class="d">Three values are late. <a class="lnk">Open the entry sheet</a></div>
+          <div class="row"><span>Learners enrolled</span><div class="bar"><i style="width:72%"></i></div><span class="pill ok">On track</span></div>
+          <div class="row"><span>Classrooms built</span><div class="bar"><i style="width:40%"></i></div><span class="pill wa">Late</span></div></div></div></div>
+    <div class="app dark" style="--brand:#1f8791;--link:#6fc6cc"><div class="side"><div class="logo"><i></i>DonorDesk</div><div class="navgrp">Work</div><div class="nav on">Home</div><div class="nav">Projects</div><div class="nav">Reports</div></div>
+      <div class="main"><div class="ph"><div><div class="crumb">Projects / Kenya Education</div><h3>Results</h3></div><div class="btns"><button class="b p">Record a value</button></div></div>
+        <div class="sec"><h4>Indicators due this month</h4><div class="d">Three values are late.</div><div class="row"><span>Learners enrolled</span><span class="pill ok">On track</span></div></div></div>
+      <div class="scrim"></div><div class="over"><div class="oh"><b>Record a value</b><span>Learners enrolled · Oct 2026</span></div><div class="ob"><div class="inp f">1,240</div><div class="inp">Data source</div></div><div class="of"><button class="b g">Cancel</button><button class="b p">Save</button></div></div></div>
+  </div>
+  <div class="hero"><div class="hnav"><div class="logo"><i></i>DonorDesk</div><span class="sp"></span><a>Product</a><a>Solutions</a><a>Pricing</a><a>Security</a><button class="b s" style="--surf:#fff;--txt:#0c1a1d;--bd:#dfe5e6">Sign in</button><button class="b p">Start free</button></div>
+    <div class="hbody"><div><div class="eyebrow">Programme management for NGOs</div><h3>Plan the work, prove the results, report to every donor.</h3><p>Logframes, field data, evidence and donor-ready reports in one place, checked figure by figure.</p><div class="btns"><button class="b p" style="padding:9px 15px;font-size:13px">Start free</button><button class="b s" style="--surf:#fff;--txt:#0c1a1d;--bd:#cfd8d9;padding:9px 15px;font-size:13px">Book a demo</button></div></div>
+      <div class="shot"><div class="kpis"><div class="kpi"><small>Reached</small><b>48,210</b></div><div class="kpi"><small>On track</small><b>18 / 24</b></div><div class="kpi"><small>Spent</small><b>62%</b></div></div><div class="bars"><i style="height:40%;background:#0f5f68"></i><i style="height:55%;background:#0f5f68"></i><i style="height:48%;background:#0f5f68"></i><i style="height:70%;background:#c2410c"></i><i style="height:82%;background:#c2410c"></i><i style="height:76%;background:#c2410c"></i></div></div></div>
+    <div class="proof"><span>Used in 9 countries</span><span>Every figure checked against its source</span><span>Works offline in the field</span></div></div>
+</section>
+
+<!-- OPTION C -->
+<section class="opt" style="
+  --brand:#2f3fb8; --accent:#0891b2; --link:#3442c4; --good:#15803d; --warn:#b45309;
+  --l-bg:#fafafa; --l-surf:#ffffff; --l-txt:#111318; --l-mut:#5c616b; --l-bd:#e4e5e8; --l-nav:#111318; --l-navtxt:#e9eaee;
+  --d-bg:#0c0d10; --d-surf:#15171c; --d-txt:#ecedf0; --d-mut:#9a9fa9; --d-bd:#272a31; --d-nav:#08090b; --d-navtxt:#e4e5e9;
+  --h-bg:#111318; --h-txt:#f4f5f7; --h-acc:#67e8f9; --h-shot:#1f2230; --h-card:#ffffff; --h-cardtxt:#111318;">
+  <div class="opt-head">
+    <div><h2>C · Graphite and Indigo</h2><p>Near-neutral graphite with a crisp indigo primary and cyan accent. The most "tech" of the three: sharp, minimal, closest to Linear or Vercel.</p></div>
+    <span class="tag">Most minimal</span>
+  </div>
+  <div>
+    <div class="label">Core palette</div>
+    <div class="sw">
+      <div class="chip"><i style="background:#2f3fb8"></i><span><b>Primary</b><code>#2F3FB8</code></span></div>
+      <div class="chip"><i style="background:#111318"></i><span><b>Graphite (nav, hero)</b><code>#111318</code></span></div>
+      <div class="chip"><i style="background:#0891b2"></i><span><b>Accent</b><code>#0891B2</code></span></div>
+      <div class="chip"><i style="background:#5c616b"></i><span><b>Muted text</b><code>#5C616B</code></span></div>
+      <div class="chip"><i style="background:#fafafa"></i><span><b>Canvas</b><code>#FAFAFA</code></span></div>
+      <div class="chip"><i style="background:#6d28d9"></i><span><b>AI marker</b><code>#6D28D9</code></span></div>
+    </div>
+  </div>
+  <div class="grid2">
+    <div><div class="label">Primary scale 50 → 900</div><div class="scale"><i style="background:#eef0fe"></i><i style="background:#dfe2fd"></i><i style="background:#c3c8fb"></i><i style="background:#9ca3f6"></i><i style="background:#737cee"></i><i style="background:#525ce2"></i><i style="background:#3d47cc"></i><i style="background:#2f3fb8"></i><i style="background:#283391"></i><i style="background:#1a1f55"></i></div></div>
+    <div><div class="label">Chart colours (colour-blind safe order)</div><div class="viz"><i style="background:#2f3fb8"></i><i style="background:#0891b2"></i><i style="background:#ea580c"></i><i style="background:#db2777"></i><i style="background:#16a34a"></i><i style="background:#ca8a04"></i><i style="background:#7c3aed"></i><i style="background:#71717a"></i></div></div>
+  </div>
+  <div class="grid2">
+    <div class="app"><div class="side"><div class="logo"><i></i>DonorDesk</div><div class="navgrp">Work</div><div class="nav on">Home</div><div class="nav">Projects</div><div class="nav">Reports</div><div class="navgrp">Admin</div><div class="nav">Settings</div></div>
+      <div class="main"><div class="ph"><div><div class="crumb">Projects / Kenya Education</div><h3>Results</h3></div><div class="btns"><button class="b s">Export</button><button class="b p">Record a value</button></div></div>
+        <div class="sec"><h4>Indicators due this month</h4><div class="d">Three values are late. <a class="lnk">Open the entry sheet</a></div>
+          <div class="row"><span>Learners enrolled</span><div class="bar"><i style="width:72%"></i></div><span class="pill ok">On track</span></div>
+          <div class="row"><span>Classrooms built</span><div class="bar"><i style="width:40%"></i></div><span class="pill wa">Late</span></div></div></div></div>
+    <div class="app dark" style="--brand:#4b57d6;--link:#9ca3f6"><div class="side"><div class="logo"><i></i>DonorDesk</div><div class="navgrp">Work</div><div class="nav on">Home</div><div class="nav">Projects</div><div class="nav">Reports</div></div>
+      <div class="main"><div class="ph"><div><div class="crumb">Projects / Kenya Education</div><h3>Results</h3></div><div class="btns"><button class="b p">Record a value</button></div></div>
+        <div class="sec"><h4>Indicators due this month</h4><div class="d">Three values are late.</div><div class="row"><span>Learners enrolled</span><span class="pill ok">On track</span></div></div></div>
+      <div class="scrim"></div><div class="over"><div class="oh"><b>Record a value</b><span>Learners enrolled · Oct 2026</span></div><div class="ob"><div class="inp f">1,240</div><div class="inp">Data source</div></div><div class="of"><button class="b g">Cancel</button><button class="b p">Save</button></div></div></div>
+  </div>
+  <div class="hero"><div class="hnav"><div class="logo"><i></i>DonorDesk</div><span class="sp"></span><a>Product</a><a>Solutions</a><a>Pricing</a><a>Security</a><button class="b s" style="--surf:transparent;--txt:#f4f5f7;--bd:rgba(255,255,255,.25)">Sign in</button><button class="b p" style="background:#fff;color:#111318;box-shadow:none">Start free</button></div>
+    <div class="hbody"><div><div class="eyebrow">Programme management for NGOs</div><h3>Plan the work, prove the results, report to every donor.</h3><p>Logframes, field data, evidence and donor-ready reports in one place, checked figure by figure.</p><div class="btns"><button class="b p" style="background:#fff;color:#111318;box-shadow:none;padding:9px 15px;font-size:13px">Start free</button><button class="b s" style="--surf:transparent;--txt:#f4f5f7;--bd:rgba(255,255,255,.3);padding:9px 15px;font-size:13px">Book a demo</button></div></div>
+      <div class="shot"><div class="kpis"><div class="kpi"><small>Reached</small><b>48,210</b></div><div class="kpi"><small>On track</small><b>18 / 24</b></div><div class="kpi"><small>Spent</small><b>62%</b></div></div><div class="bars"><i style="height:40%;background:#2f3fb8"></i><i style="height:55%;background:#2f3fb8"></i><i style="height:48%;background:#2f3fb8"></i><i style="height:70%;background:#0891b2"></i><i style="height:82%;background:#0891b2"></i><i style="height:76%;background:#0891b2"></i></div></div></div>
+    <div class="proof"><span>Used in 9 countries</span><span>Every figure checked against its source</span><span>Works offline in the field</span></div></div>
+</section>
+
+<footer class="pick">
+  <p><b>What stays the same in all three:</b> status colours (green, amber, red) are kept apart from the brand and always come with a word; violet marks AI-drafted text only; section spacing, buttons, links and the floating right-side panel follow the plan's §7 page anatomy. Charts, maps, infographics, PDFs and emails take the chosen palette. Charts that people coloured themselves keep their own colours.</p>
+</footer>
+</div>
