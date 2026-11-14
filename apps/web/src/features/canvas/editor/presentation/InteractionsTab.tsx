@@ -22,7 +22,7 @@ export function InteractionsTab({ canvas, source, others, label, onSet }: Props)
               <div role="radiogroup" aria-label={label(b)} className="flex gap-1">
                 {INTERACTION_EFFECTS.filter((e) => e !== "HIGHLIGHT" || highlight).map((e) => (
                   <button key={e} type="button" role="radio" aria-checked={now === e} data-effect={e} onClick={() => onSet(b.id, e)}
-                    className={`min-h-8 rounded px-2 text-xs ${now === e ? "bg-sky-700 text-white" : "border border-slate-300 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-700"}`}>{t(`inter.${e}` as never)}</button>
+                    className={`min-h-8 rounded px-2 text-xs ${now === e ? "bg-brand-700 text-white" : "border border-slate-300 hover:bg-white dark:border-slate-600 dark:hover:bg-slate-700"}`}>{t(`inter.${e}` as never)}</button>
                 ))}
               </div>
               {!highlight && <span className="w-full text-[11px] text-slate-500">{t("inter.cannotHighlight")}</span>}

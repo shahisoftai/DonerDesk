@@ -16,8 +16,8 @@ export const LIGHT_ROLES: ThemeRoleMap = {
 
 /** The same roles on a dark surface; each is checked against the dark tile background by the design-token test. */
 export const DARK_ROLES: ThemeRoleMap = {
-  text: "#f1f5f9", muted: "#a3b5ad", surface: "#12231f", emphasis: "#f1f5f9", rampStart: "#1e3a4a", mapArea: "#2a3a35", mapAreaHover: "#3a4d46",
-  track: "rgba(200,210,205,0.22)", positive: "#34d399", negative: "#f87171", neutral: "#9fb1a9", faint: "#4b5c55",
+  text: "#e7ecf4", muted: "#9aa6b8", surface: "#121a2b", emphasis: "#e7ecf4", rampStart: "#1d2a4f", mapArea: "#243049", mapAreaHover: "#30406a",
+  track: "rgba(200,210,230,0.22)", positive: "#34d399", negative: "#f87171", neutral: "#9aa6b8", faint: "#3a4766",
 };
 
 export const ROLES_BY_MODE = { light: LIGHT_ROLES, dark: DARK_ROLES } as const;

@@ -17,8 +17,8 @@ export default async function DatasetDetailPage({ params, searchParams }: { para
   const sheet = d.value.projectId ? await gatewayRequest(`/v1/projects/${encodeURIComponent(d.value.projectId)}/data-sheet`, DataSheetResponseSchema, ctx.token) : null;
   const indicators = sheet && sheet.ok ? sheet.value.indicators.map((i) => ({ id: i.id, code: i.code, name: i.name, type: i.type })) : [];
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Visual Studio</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="datasets" />
       <p className="text-xs"><a className="hover:underline" href="/visuals/datasets">Datasets</a></p>
       <DatasetPage dataset={d.value} kits={kits.ok ? kits.value.kits : []} indicators={indicators} isAdmin={ctx.capabilities.has("org.manage")} initialTab={tab} />

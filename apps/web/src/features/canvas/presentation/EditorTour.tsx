@@ -38,7 +38,7 @@ export function EditorTour() {
       <p className="mt-1 text-slate-600 dark:text-slate-300">{t(`canvas.tour.${step}.body` as never)}</p>
       <div className="mt-3 flex items-center gap-2">
         {back && <button type="button" className={btn} onClick={() => setStep(back)}>{t("canvas.tour.back")}</button>}
-        {next ? <button type="button" className={`${btn} bg-sky-700 text-white hover:bg-sky-800 dark:hover:bg-sky-800`} onClick={() => setStep(next)}>{t("canvas.tour.next")}</button> : <button type="button" className={`${btn} bg-sky-700 text-white hover:bg-sky-800 dark:hover:bg-sky-800`} onClick={finish}>{t("canvas.tour.done")}</button>}
+        {next ? <button type="button" className={`${btn} bg-brand-700 text-white hover:bg-brand-800 dark:hover:bg-brand-800`} onClick={() => setStep(next)}>{t("canvas.tour.next")}</button> : <button type="button" className={`${btn} bg-brand-700 text-white hover:bg-brand-800 dark:hover:bg-brand-800`} onClick={finish}>{t("canvas.tour.done")}</button>}
         <button type="button" className="ms-auto text-xs underline" onClick={finish}>{t("canvas.tour.skip")}</button>
       </div>
     </aside>

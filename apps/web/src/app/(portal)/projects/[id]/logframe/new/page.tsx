@@ -18,7 +18,7 @@ export default async function NewLogframeItemPage({
   const result = await gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, ctx.token);
   return (
     <div className="animate-fade-in mx-auto max-w-2xl">
-      <h1 className="text-xl font-semibold tracking-tight">Add logframe item</h1>
+      <h1 className="page-title">Add logframe item</h1>
       {result.ok ? (
         <NewLogframeItemForm projectId={id} items={result.value.items} initialParentId={parentId} />
       ) : (

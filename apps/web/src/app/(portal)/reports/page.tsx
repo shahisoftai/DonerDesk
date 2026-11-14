@@ -25,7 +25,7 @@ export default async function GlobalReportsPage() {
   const failed = periodResults.filter(({ result }) => !result.ok).length;
 
   return <div className="animate-fade-in">
-    <header><p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Cross-project pipeline</p><h1 className="mt-1 text-xl font-semibold tracking-tight">Reports</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Deadlines and readiness for every accessible project.</p></header>
+    <header><p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Cross-project pipeline</p><h1 className="mt-1 page-title">Reports</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Deadlines and readiness for every accessible project.</p></header>
     {failed > 0 && <div className="mt-5"><InlineError title={`${failed} project report ${failed === 1 ? "list is" : "lists are"} temporarily unavailable.`} /></div>}
     {rows.length === 0 ? <div className="mt-6"><EmptyState>No reporting periods are available. Open a project to create one.</EmptyState></div> : <ReportsList rows={rows} />}
   </div>;

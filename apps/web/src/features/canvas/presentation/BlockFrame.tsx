@@ -56,7 +56,7 @@ export function BlockFrame({ bounds, movable, selected, label, onBounds, onSelec
 
   const style: CSSProperties = gesture?.kind === "move" ? { transform: `translate(${gesture.dx}px, ${gesture.dy}px)`, zIndex: 30, opacity: 0.85 } : {};
   const sizing: CSSProperties = gesture?.kind === "size" ? { width: `calc(100% + ${gesture.dx}px)`, height: `calc(100% + ${gesture.dy}px)`, zIndex: 30 } : {};
-  const BTN = "absolute z-10 flex items-center justify-center rounded bg-sky-700 text-white shadow focus-visible:outline focus-visible:outline-2";
+  const BTN = "absolute z-10 flex items-center justify-center rounded bg-brand-700 text-white shadow focus-visible:outline focus-visible:outline-2";
 
   return (
     <div ref={frame} className="group relative h-full" style={{ ...style, ...sizing }} data-dragging={gesture?.kind}>

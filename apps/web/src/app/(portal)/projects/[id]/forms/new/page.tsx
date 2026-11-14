@@ -13,8 +13,8 @@ export default async function NewFormPage({ params }: { params: Promise<{ id: st
   const logframe = await gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/logframe`, LogframeResponseSchema, ctx.token);
   if (!logframe.ok) return <InlineError title={logframe.error.message} referenceId={logframe.error.referenceId} />;
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">New collection form</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">New collection form</h1>
       <FormDesigner projectId={id} indicators={logframe.value.indicators.map((i) => ({ id: i.id, label: `${i.code} ${i.name}` }))} />
     </div>
   );

@@ -36,7 +36,7 @@ export function CommandPalette({ state, onRun, onClose }: { state: EditorState; 
             const enabled = commandEnabled(c, state);
             return (
               <li key={c.id} id={`cmd-${c.id}`} role="option" aria-selected={i === index} aria-disabled={!enabled || undefined} onMouseEnter={() => setIndex(i)} onClick={() => choose(c)}
-                className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-2 text-sm ${i === index ? "bg-sky-50 dark:bg-slate-800" : ""} ${enabled ? "" : "opacity-50"}`}>
+                className={`flex cursor-pointer items-center justify-between gap-3 px-4 py-2 text-sm ${i === index ? "bg-brand-50 dark:bg-slate-800" : ""} ${enabled ? "" : "opacity-50"}`}>
                 <span>{nameOf(c)} <span className="text-xs text-slate-500">· {t(`editor.group.${c.group}` as never)}{enabled ? "" : ` · ${t("editor.palette.unavailable")}`}</span></span>
                 {c.shortcut && <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-xs text-slate-600 dark:border-slate-600 dark:text-slate-300">{shortcutLabel(c.shortcut, isMac())}</kbd>}
               </li>

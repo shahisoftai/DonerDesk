@@ -26,9 +26,9 @@ export default async function FinancePage({ params }: { params: Promise<{ id: st
   const canExpense = hasCapability(ctx, "workplan.update-own");
   const today = todayText(new Date());
   return (
-    <div className="animate-fade-in space-y-8">
+    <div className="page-stack animate-fade-in">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight">{C.title}</h1>
+        <h1 className="page-title">{C.title}</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{C.intro}</p>
         {!canEdit && !canApprove && !canExpense && <p className="mt-2 text-xs text-slate-500">{C.viewerNote}</p>}
       </div>

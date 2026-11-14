@@ -21,7 +21,7 @@ export function ConvertDialog({ block, onConvert, onClose }: { block: BlockInsta
         {lost.length > 0 && <p role="status" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">{t("editor.convert.drops", { names: lost.join(", ") })}</p>}
         <div className="flex justify-end gap-2">
           <button type="button" onClick={onClose} className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600">{t("editor.convert.cancel")}</button>
-          <button type="button" disabled={!kind} onClick={() => { onConvert(kind, lost.length > 0); onClose(); }} className="rounded bg-sky-700 px-3 py-1.5 text-sm text-white hover:bg-sky-800">{lost.length > 0 ? t("editor.convert.keepGoing") : t("editor.convert.apply")}</button>
+          <button type="button" disabled={!kind} onClick={() => { onConvert(kind, lost.length > 0); onClose(); }} className="rounded bg-brand-700 px-3 py-1.5 text-sm text-white hover:bg-brand-800">{lost.length > 0 ? t("editor.convert.keepGoing") : t("editor.convert.apply")}</button>
         </div>
       </div>
     </div>

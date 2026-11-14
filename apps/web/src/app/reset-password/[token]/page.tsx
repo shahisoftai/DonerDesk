@@ -1,4 +1,5 @@
 "use client";
+import { AuthFrame } from "@/components/layout/AuthFrame";
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -53,7 +54,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="mx-auto mt-24 max-w-md animate-fade-in px-6">
+    <AuthFrame>
+    <main className="w-full max-w-md animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Choose a new password</h1>
@@ -124,5 +126,6 @@ export default function ResetPasswordPage() {
         )}
       </div>
     </main>
+    </AuthFrame>
   );
 }

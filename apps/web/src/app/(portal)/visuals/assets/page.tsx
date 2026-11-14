@@ -17,8 +17,8 @@ export default async function VisualAssetsPage({ searchParams }: { searchParams:
   const items = [{ id: "portfolio", title: "Whole portfolio" }, ...projects.value.items.map((p) => ({ id: p.id, title: p.title }))];
   const portfolio = project === "portfolio";
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Visual Studio</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="assets" />
       <ProjectFilter projects={items} selected={project} action="/visuals/assets" />
       {!project

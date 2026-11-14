@@ -25,7 +25,7 @@ export function FormatTab({ blocks, expandAll, onExpandAll, onSet, ...ctx }: Pro
     <div className="space-y-2" data-testid="format-tab">
       <div className="flex items-center gap-2">
         <input type="search" aria-label={t("drawer.searchFormat")} placeholder={t("drawer.searchFormat")} value={query} onChange={(e) => setQuery(e.target.value)} className="min-w-0 flex-1 rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900" />
-        <button type="button" className="whitespace-nowrap text-xs text-sky-700 underline" onClick={() => { onExpandAll(!expandAll); setOpen({}); }}>{expandAll ? t("drawer.collapseAll") : t("drawer.expandAll")}</button>
+        <button type="button" className="whitespace-nowrap text-xs text-brand-700 underline" onClick={() => { onExpandAll(!expandAll); setOpen({}); }}>{expandAll ? t("drawer.collapseAll") : t("drawer.expandAll")}</button>
       </div>
       {blocks.length > 1 && <p className="text-xs text-slate-500">{t("drawer.sharedOnly")}</p>}
       {sections.length === 0 && <p className="text-sm text-slate-500">{t("drawer.noMatch")}</p>}

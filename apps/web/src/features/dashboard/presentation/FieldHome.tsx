@@ -32,7 +32,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
   const planned = week.ok ? week.value.planned.length : 0;
 
   const links: QuickLink[] = [];
-  links.push({ href: "/my-work", label: "Everything assigned to me" });
+  links.push({ href: "/inbox", label: "Everything assigned to me" });
   links.push({ href: "/projects", label: "My projects" });
 
   return (
@@ -41,7 +41,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
         eyebrow="My week"
         title={`Welcome back${firstName ? `, ${firstName}` : ""}. ${sentBack > 0 ? `${sentBack} activit${sentBack === 1 ? "y was" : "ies were"} sent back to you.` : planned > 0 ? `${planned} planned activit${planned === 1 ? "y" : "ies"} this week.` : "Nothing is planned for you this week."}`}
         subtitle="Your planned work, what needs fixing, and the quickest ways to record what you did."
-        actions={<Link className="btn-secondary" href="/my-work">Open My Work</Link>}
+        actions={<Link className="btn-secondary" href="/inbox">Open My Work</Link>}
       />
       <RecordCard capabilities={[...ctx.capabilities]} />
       {!week.ok && <InlineError title={week.error.message} referenceId={week.error.referenceId} />}
@@ -50,7 +50,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
 <BookmarksPanel />
       <QuickLinks links={links} />
       <section className="grid gap-6 lg:grid-cols-2">
-        <Panel title="Waiting for me" href="/my-work" linkLabel="View all →">
+        <Panel title="Waiting for me" href="/inbox" linkLabel="View all →">
           {items.length === 0 ? <p className="text-sm text-slate-500 dark:text-slate-400">Nothing is waiting for you.</p> : (
             <ul className="space-y-2">
               {items.slice(0, 5).map((i) => (
@@ -64,7 +64,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
             </ul>
           )}
         </Panel>
-        <Panel title="Notifications" href="/notifications" linkLabel="Open inbox →"><NotificationsList items={notifications} /></Panel>
+        <Panel title="Notifications" href="/inbox?tab=updates" linkLabel="Open inbox →"><NotificationsList items={notifications} /></Panel>
       </section>
     </div>
   );

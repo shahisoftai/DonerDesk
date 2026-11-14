@@ -110,7 +110,7 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
     <main className="mx-auto max-w-xl space-y-6 px-4 py-6">
       <header>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-xl font-semibold tracking-tight">{t("field.title")}</h1>
+          <h1 className="page-title">{t("field.title")}</h1>
           <LocaleSwitcher />
         </div>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{outbox.online ? t("field.online") : t("field.offline")}</p>

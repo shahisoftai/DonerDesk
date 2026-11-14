@@ -23,7 +23,7 @@ export default async function BeneficiariesPage({ params }: { params: Promise<{ 
   const { items, counts } = res.value;
   const canChange = hasCapability(ctx, "activity.create");
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <header>
         <h2 className="text-xl font-semibold tracking-tight">People reached</h2>
         <p className="mt-1 text-sm text-slate-500">{counts.total} people, each counted once by case code.</p>

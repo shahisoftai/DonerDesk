@@ -13,7 +13,7 @@ import { InlineValueEntry } from "./InlineValueEntry";
 export function NeedsYouSection({ items, projectId, today }: { items: NeedsYouItem[]; projectId: string; today?: string }) {
   if (items.length === 0) return null;
   return (
-    <OverviewSection kicker="Needs you" title="Waiting on your decision or review" href={`/my-work`} linkLabel="My work">
+    <OverviewSection kicker="Needs you" title="Waiting on your decision or review" href={`/inbox`} linkLabel="My work">
       <div className="card divide-y divide-slate-200/70 dark:divide-white/10">
         {items.map((item) => (
           <div key={item.id} className="flex flex-wrap items-center gap-3 py-3">

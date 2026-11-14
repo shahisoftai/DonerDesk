@@ -21,8 +21,8 @@ export default async function VisualAlertsPage({ searchParams }: { searchParams:
   if (!alerts.ok) return <InlineError title={alerts.error.message} referenceId={alerts.error.referenceId} />;
   const items = projects.ok ? projects.value.items : [];
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Visual Studio</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="alerts" />
       <p className="max-w-3xl text-sm text-slate-500">An alert watches one figure. You are told once when it crosses your rule, and again only after it has recovered and crossed again.</p>
       <ProjectFilter projects={items} selected={project} action="/visuals/alerts" />

@@ -17,7 +17,7 @@ export default async function SecurityPage() {
   const soon = mfa.ok && mfa.value.requirement === "REQUIRED_SOON";
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">Security</h1>
+      <h1 className="page-title">Security</h1>
       <div className="mt-6 max-w-xl space-y-4">
         {setupRequired && <p role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-500/40 dark:bg-amber-500/10">Your organization requires two-step sign-in. Set it up below to continue; you will sign in again afterwards.</p>}
         {soon && mfa.ok && mfa.value.requiredFrom && <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm dark:bg-amber-500/10">Your organization will require two-step sign-in from {new Date(mfa.value.requiredFrom).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}. Set it up now to avoid being interrupted.</p>}

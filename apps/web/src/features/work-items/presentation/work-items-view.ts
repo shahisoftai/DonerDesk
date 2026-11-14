@@ -47,7 +47,7 @@ export function workItemHref(item: WorkItem): string {
     case "activity":
       return `/projects/${item.projectId}/activities`;
     case "notification":
-      return "/notifications";
+      return "/inbox?tab=updates";
   }
 }
 

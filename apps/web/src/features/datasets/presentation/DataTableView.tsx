@@ -32,7 +32,7 @@ export function DataTableView({ table, ranked, onPick, selected }: { table: Visu
                   const bar = ranked && c.id === measure?.id && typeof v === "number" && max > 0;
                   return (
                     <td key={c.id} className={`px-2 py-1 ${c.role === "DIMENSION" ? "" : "text-end tabular-nums"}`}>
-                      {bar && <span aria-hidden className="me-2 inline-block h-2 rounded-sm bg-sky-600 align-middle" style={{ width: `${Math.max(2, (Number(v) / max) * 80)}px` }} />}
+                      {bar && <span aria-hidden className="me-2 inline-block h-2 rounded-sm bg-brand-600 align-middle" style={{ width: `${Math.max(2, (Number(v) / max) * 80)}px` }} />}
                       {text || (c.role === "DIMENSION" ? t("ds.notStated") : <span className="text-slate-400">{t("ds.notReported")}</span>)}
                     </td>
                   );

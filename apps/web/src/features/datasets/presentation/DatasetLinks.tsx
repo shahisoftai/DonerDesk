@@ -42,7 +42,7 @@ export function DatasetLinks({ dataset, indicators, onChanged }: { dataset: Data
       {dataset.canManage && dataset.links.length > 0 && <button type="button" className="text-sm underline" onClick={async () => { const r = await syncDatasetLinksAction(dataset.id); setMsg(r.ok ? { ok: true, text: [t("ds.links.written", { n: r.value.written }), ...r.value.notes].join(" ") } : { ok: false, text: r.error.message }); onChanged(); }}>{t("ds.links.sync")}</button>}
       {dataset.canManage && suggestions.length > 0 && (
         <section><h3 className="text-sm font-semibold">{t("ds.links.suggested")}</h3>
-          <ul className="space-y-1 text-sm">{suggestions.map((s) => <li key={`${s.column}-${s.indicatorId}`} className="flex flex-wrap items-center gap-2"><span>{cols.find((c) => c.key === s.column)?.label} → {s.indicator}</span><span className="text-xs text-slate-500">({s.reason})</span><button type="button" className="rounded border border-sky-700 px-2 py-0.5 text-xs text-sky-800" onClick={() => void link(s.column, s.indicatorId, false)}>{t("ds.links.use")}</button></li>)}</ul>
+          <ul className="space-y-1 text-sm">{suggestions.map((s) => <li key={`${s.column}-${s.indicatorId}`} className="flex flex-wrap items-center gap-2"><span>{cols.find((c) => c.key === s.column)?.label} → {s.indicator}</span><span className="text-xs text-slate-500">({s.reason})</span><button type="button" className="rounded border border-brand-700 px-2 py-0.5 text-xs text-brand-800" onClick={() => void link(s.column, s.indicatorId, false)}>{t("ds.links.use")}</button></li>)}</ul>
         </section>
       )}
       {dataset.canManage && (
@@ -50,7 +50,7 @@ export function DatasetLinks({ dataset, indicators, onChanged }: { dataset: Data
           <label className="space-y-1"><span className="block text-xs">{t("ds.links.figure")}</span><select className="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={figure} onChange={(e) => setFigure(e.target.value)}><option value="">—</option>{figures.map((f) => <option key={f.id} value={f.id}>{f.label}</option>)}</select></label>
           <label className="space-y-1"><span className="block text-xs">{t("ds.links.indicator")}</span><select className="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={indicator} onChange={(e) => setIndicator(e.target.value)}><option value="">—</option>{indicators.map((i) => <option key={i.id} value={i.id}>{i.code} {i.name}</option>)}</select></label>
           <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={byPlace} onChange={(e) => setByPlace(e.target.checked)} />{t("ds.links.byPlace")}</label>
-          <button type="button" disabled={!figure || !indicator} className="rounded bg-sky-700 px-3 py-1 text-white disabled:opacity-50" onClick={() => void link(figure, indicator, byPlace)}>{t("ds.links.add")}</button>
+          <button type="button" disabled={!figure || !indicator} className="rounded bg-brand-700 px-3 py-1 text-white disabled:opacity-50" onClick={() => void link(figure, indicator, byPlace)}>{t("ds.links.add")}</button>
         </div>
       )}
     </div>

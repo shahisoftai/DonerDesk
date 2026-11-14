@@ -25,10 +25,10 @@ function matchLength(pathname: string, item: TabItem): number {
 const linkClass = (active: boolean) =>
   cn(
     TOUCH.row,
-    "rounded-md px-3 py-1.5",
+    "relative px-3 py-2 font-medium transition-colors",
     active
-      ? "bg-brand-500/10 font-medium text-brand-700 dark:bg-brand-400/10 dark:text-brand-300"
-      : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5",
+      ? "text-slate-950 after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-full after:bg-brand-700 dark:text-white dark:after:bg-brand-300"
+      : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
   );
 
 export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
@@ -46,7 +46,7 @@ export function Tabs({ items, label }: { items: TabItem[]; label: string }) {
   const activeSecondary = secondary.find((item) => item.href === activeHref);
 
   return (
-    <nav aria-label={label} className="flex flex-wrap items-center gap-1 border-b border-slate-200 pb-2 text-sm dark:border-white/10">
+    <nav aria-label={label} className="flex flex-wrap items-center gap-1 border-b border-slate-200 text-sm dark:border-white/10">
       {items.map((tab) => {
         const active = activeHref === tab.href;
         return (

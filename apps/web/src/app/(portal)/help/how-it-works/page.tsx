@@ -7,7 +7,7 @@ export const metadata = { title: "How DonorDesk works" };
 export default function HowItWorksPage() {
   return (
     <div className="animate-fade-in max-w-3xl">
-      <h1 className="text-xl font-semibold tracking-tight">How DonorDesk works</h1>
+      <h1 className="page-title">How DonorDesk works</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">The order of work, and the rules that are easy to miss.</p>
 
       <section className="card mt-6" aria-label="Order of work">

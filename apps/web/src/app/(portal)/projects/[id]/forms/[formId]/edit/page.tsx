@@ -19,8 +19,8 @@ export default async function EditFormPage({ params }: { params: Promise<{ id: s
   if (!logframe.ok) return <InlineError title={logframe.error.message} referenceId={logframe.error.referenceId} />;
   if (form.value.status !== "DRAFT") return <InlineError title="A published form cannot be edited. Close it and make a new one." />;
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Edit {form.value.name}</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Edit {form.value.name}</h1>
       <FormDesigner projectId={id} form={form.value} indicators={logframe.value.indicators.map((i) => ({ id: i.id, label: `${i.code} ${i.name}` }))} />
     </div>
   );

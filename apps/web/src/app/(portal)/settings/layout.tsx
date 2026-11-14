@@ -2,43 +2,50 @@ import type { ReactNode } from "react";
 import { requireSession, hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { OrganizationProfileSchema } from "@/lib/server/schemas";
-import { Tabs } from "@/components/data/Tabs";
+import { SettingsNav, type SettingsGroup } from "@/features/settings/presentation/SettingsNav";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Settings (Version 4.000, plan F28/F29): one grouped list on the side instead of a row of eleven tabs. A page the person cannot
+ * use is not listed; a group with nothing in it is not shown.
+ */
 export default async function SettingsLayout({ children }: { children: ReactNode }) {
   const ctx = await requireSession();
-
-  const tabs: Array<{ label: string; href: string }> = [];
-  if (hasCapability(ctx, "project.create")) {
-    tabs.push({ label: "Setup", href: "/settings/setup" });
-  }
-  tabs.push({ label: "Settings", href: "/settings" });
-  tabs.push({ label: "Places", href: "/settings/places" });
-  tabs.push({ label: "Security", href: "/settings/security" });
-  if (hasCapability(ctx, "audit.view")) {
-    tabs.push({ label: "Audit log", href: "/settings/audit" });
-  }
-  if (hasCapability(ctx, "org.manage")) {
-    tabs.push({ label: "Finance", href: "/settings/finance" });
-    tabs.push({ label: "Starting answers", href: "/settings/setup-packs" });
-    tabs.push({ label: "Sector library", href: "/settings/sector-library" });
-    tabs.push({ label: "Integrations", href: "/settings/integrations" });
-    tabs.push({ label: "AI usage", href: "/settings/ai-usage" });
-  }
-  // Agent Memory (Phase 21) — hidden unless the viewer can manage it AND the
-  // platform rollout flag is on; there is nothing to configure otherwise.
-  if (hasCapability(ctx, "report.manage-agent-memory")) {
+  const can = (c: Parameters<typeof hasCapability>[1]) => hasCapability(ctx, c);
+  let aiStyle = false;
+  if (can("report.manage-agent-memory")) {
     const org = await gatewayRequest("/v1/organization", OrganizationProfileSchema, ctx.token);
-    if (org.ok && org.value.agentMemoryPlatformEnabled) {
-      tabs.push({ label: "AI Writing Style", href: "/settings/ai-style" });
-    }
+    aiStyle = org.ok && Boolean(org.value.agentMemoryPlatformEnabled);
   }
+  const groups: SettingsGroup[] = [
+    { label: "Organisation", items: [
+      { label: "General", href: "/settings" },
+      ...(can("project.create") ? [{ label: "Workspace setup", href: "/settings/setup" }] : []),
+      { label: "Places", href: "/settings/places" },
+      ...(can("org.manage") ? [{ label: "Finance", href: "/settings/finance" }] : []),
+    ] },
+    { label: "Data defaults", items: [
+      ...(can("org.manage") ? [{ label: "Starting answers", href: "/settings/setup-packs" }, { label: "Sector library", href: "/settings/sector-library" }] : []),
+      ...(can("template.edit") ? [{ label: "Donor requirements", href: "/settings/requirement-packs" }] : []),
+    ] },
+    { label: "AI", items: [
+      { label: "AI features", href: "/settings/ai" },
+      ...(can("org.manage") ? [{ label: "AI usage", href: "/settings/ai-usage" }] : []),
+      ...(aiStyle ? [{ label: "Writing style", href: "/settings/ai-style" }] : []),
+    ] },
+    { label: "Security", items: [
+      { label: "Sign-in and two-step", href: "/settings/security" },
+      ...(can("audit.view") ? [{ label: "Audit log", href: "/settings/audit" }] : []),
+    ] },
+    { label: "Billing", items: [{ label: "Plan and billing", href: "/settings/billing" }] },
+    { label: "Integrations", items: [...(can("org.manage") ? [{ label: "API keys and webhooks", href: "/settings/integrations" }] : [])] },
+  ].filter((g) => g.items.length > 0);
 
   return (
-    <div>
-      <Tabs items={tabs} label="Workspace setup, settings, and audit" />
-      <div className="mt-6">{children}</div>
+    <div className="mx-auto grid w-full max-w-[1280px] gap-8 lg:grid-cols-[13.5rem_minmax(0,1fr)]">
+      <SettingsNav groups={groups} />
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }

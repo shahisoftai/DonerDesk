@@ -60,10 +60,10 @@ export default async function PlannedActivityPage({ params }: { params: Promise<
   const canAddCompleted = showsButton(data.ctx.role, data.ctx.capabilities, "ADD_COMPLETED") && row.status !== "CANCELLED";
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <p className="text-sm"><Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${id}/activities?view=planned`}>Planned activities</Link></p>
       <header className="space-y-2">
-        <h1 className="text-xl font-semibold tracking-tight">{row.title}</h1>
+        <h1 className="page-title">{row.title}</h1>
         <p className="text-sm text-slate-600 dark:text-slate-300">
           {dates}{moved && <> · {WORKPLAN_COPY.movedFrom} {formatShortDate(row.originalStart!, data.today)}</>} · {lead}
           {row.location && <> · {row.location}</>}

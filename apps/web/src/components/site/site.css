@@ -1,19 +1,20 @@
 /* The public site (home, solutions, compare). Light first; dark only when the visitor chooses it. Everything is scoped under .sx. */
-.sx{--bg:#f5f9f8; --surface:#ffffff; --ink:#0d2829; --muted:#4a6264; --line:#d5e3e1; --wash:#e5f2ef;
-  --brand:#0a6b6b; --brand-ink:#ffffff; --brand-soft:#cfe9e4; --accent:#f2a900; --accent-ink:#2b1d00;
-  --good:#17803d; --warn:#a15c00; --bad:#b4281e; --shadow:0 1px 2px rgba(13,40,41,.06),0 10px 30px rgba(13,40,41,.08);
+/* Version 4.000 brand: Cobalt and Teal (memorybank/imp/phase55-new-ux.md §6). */
+.sx{--bg:#f6f7f9; --surface:#ffffff; --ink:#0f172a; --muted:#475569; --line:#e2e8f0; --wash:#eef2f9;
+  --brand:#1e40af; --brand-ink:#ffffff; --brand-soft:#dbe6fe; --accent:#0d9488; --accent-ink:#ffffff; --navy:#0f1b3d;
+  --good:#15803d; --warn:#b45309; --bad:#b42318; --shadow:0 1px 2px rgba(15,23,42,.05),0 12px 32px -8px rgba(15,23,42,.12);
   --display:var(--sx-font-display),"Segoe UI",system-ui,sans-serif; --body:var(--sx-font-body),"Segoe UI",system-ui,sans-serif; --mono:var(--sx-font-mono),ui-monospace,Menlo,Consolas,monospace;
   --r:14px;
   background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);-webkit-font-smoothing:antialiased;min-height:100vh;overflow-x:hidden}
-.sx[data-sx-theme="dark"]{--bg:#0a1a1b; --surface:#102829; --ink:#e8f1ef; --muted:#9db6b3; --line:#244242; --wash:#12302f;
-  --brand:#3fc1a6; --brand-ink:#04201b; --brand-soft:#1b4a44; --accent:#f2b544; --accent-ink:#2b1d00;
-  --good:#5fd08a; --warn:#f0b35a; --bad:#f08a72; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); color-scheme:dark}
+.sx[data-sx-theme="dark"]{--bg:#0b1220; --surface:#121a2b; --ink:#e7ecf4; --muted:#9aa6b8; --line:#243049; --wash:#16203a;
+  --brand:#93b2fb; --brand-ink:#0b1220; --brand-soft:#1d2a4f; --accent:#2dd4bf; --accent-ink:#04201b; --navy:#080e1b;
+  --good:#4ade80; --warn:#fbbf24; --bad:#f87171; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); color-scheme:dark}
 .sx,.sx *{box-sizing:border-box}
 :where(.sx a){color:inherit}
 .sx h1,.sx h2,.sx h3,.sx h4{font-family:var(--display);line-height:1.1;letter-spacing:-.02em;margin:0;text-wrap:balance}
 .sx p{margin:0}
 :where(.sx button){font:inherit;color:inherit;cursor:pointer}
-.sx :focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+.sx :focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:6px}
 .sx .sx-wrap{max-width:1200px;margin:0 auto;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px))}
 .sx .sx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .sx .sx-eyebrow{font:500 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--brand)}
@@ -24,7 +25,7 @@
 .sx .sx-mock-bar b{color:var(--accent)}
 .sx header.sx-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .sx .sx-nav{display:flex;align-items:center;gap:20px;min-height:64px}
-.sx .sx-logo{display:flex;align-items:center;gap:10px;font:800 20px var(--display);text-decoration:none;letter-spacing:-.03em}
+.sx .sx-logo{display:flex;align-items:center;gap:10px;font:700 19px var(--display);text-decoration:none;letter-spacing:-.03em}
 .sx .sx-logo i{width:30px;height:30px;border-radius:9px;background:var(--brand);display:grid;place-items:center}
 .sx .sx-logo i svg{width:18px;height:18px}
 .sx .sx-menu{display:flex;gap:4px;margin-inline-start:12px;flex:1}
@@ -33,9 +34,10 @@
 .sx .sx-tools{display:flex;align-items:center;gap:8px}
 .sx .sx-chip-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:14px;font-weight:500;display:inline-flex;gap:6px;align-items:center}
 .sx .sx-chip-btn:hover{border-color:var(--brand)}
-.sx .sx-btn{display:inline-flex;align-items:center;gap:8px;border-radius:12px;padding:12px 20px;font-weight:600;border:1px solid transparent;text-decoration:none;white-space:nowrap}
-.sx .sx-btn.sx-primary{background:var(--brand);color:var(--brand-ink)}
-.sx .sx-btn.sx-primary:hover{filter:brightness(1.08)}
+.sx .sx-btn{display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:11px 18px;font-weight:600;border:1px solid transparent;text-decoration:none;white-space:nowrap;transition:background-color .15s,box-shadow .15s,transform .15s}
+.sx .sx-btn:active{transform:translateY(1px)}
+.sx .sx-btn.sx-primary{background:var(--brand);color:var(--brand-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.14),0 1px 2px rgba(15,23,42,.2)}
+.sx .sx-btn.sx-primary:hover{background:color-mix(in srgb,var(--brand) 85%,#000);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 6px 16px -4px color-mix(in srgb,var(--brand) 55%,transparent)}
 .sx .sx-btn.sx-ghost{background:var(--surface);border-color:var(--line)}
 .sx .sx-btn.sx-ghost:hover{border-color:var(--brand)}
 .sx .sx-btn.sx-small{padding:8px 14px;font-size:14px;border-radius:10px}
@@ -54,7 +56,7 @@
 .sx .sx-hero{padding-block:clamp(36px,6vw,72px) clamp(40px,6vw,72px)}
 .sx .sx-hero-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:clamp(28px,4vw,56px);align-items:center}
 @media (max-width:980px){.sx .sx-hero-grid{grid-template-columns:1fr}}
-.sx .sx-hero h1{font-size:clamp(38px,5.4vw,66px);font-weight:800}
+.sx .sx-hero h1{font-size:clamp(36px,5vw,60px);font-weight:700;letter-spacing:-.03em}
 .sx .sx-hero h1 em{font-style:normal;background:linear-gradient(transparent 62%,color-mix(in srgb,var(--accent) 70%,transparent) 62%)}
 .sx .sx-hero .sx-lede{margin-top:20px}
 .sx .sx-cta-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}

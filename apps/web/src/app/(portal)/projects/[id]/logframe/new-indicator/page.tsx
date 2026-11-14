@@ -18,7 +18,7 @@ export default async function NewIndicatorPage({
   const result = await gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, ctx.token);
   return (
     <div className="animate-fade-in mx-auto max-w-2xl">
-      <h1 className="text-xl font-semibold tracking-tight">Add indicator</h1>
+      <h1 className="page-title">Add indicator</h1>
       {!result.ok ? (
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
       ) : result.value.items.length === 0 ? (

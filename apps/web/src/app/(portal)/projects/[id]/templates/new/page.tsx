@@ -79,7 +79,7 @@ export default function NewTemplatePage({ params }: { params: Promise<{ id: stri
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">Add donor template</h1>
+      <h1 className="page-title">Add donor template</h1>
       <p className="text-sm text-slate-600 dark:text-slate-400">
         Upload the donor&rsquo;s reporting template. DonorDesk extracts its sections, the donor&rsquo;s instructions and questions for each section,
         required tables, annexes and submission rules. You review and approve everything before it is used to write reports.

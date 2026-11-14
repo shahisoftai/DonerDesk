@@ -4,7 +4,6 @@ import { buildEditorModel, editorPhase, type EditorModelInput } from "../../src/
 import { buildReportChecks } from "../../src/features/report-editor/application/report-checks.ts";
 import { nextPrimaryAction } from "../../src/features/report-editor/application/primary-action.ts";
 import { parseEditorUrlState, serializeEditorUrlState } from "../../src/features/report-editor/application/url-state.ts";
-import { isReportEditorV2Enabled } from "../../src/lib/shared/feature-flags.ts";
 
 const caps = { canGenerate: true, canEdit: true, canApproveSection: true, canApproveReport: true, canExport: true };
 
@@ -143,13 +142,6 @@ test("url state parses, validates and round-trips while keeping other params", (
   assert.equal(serializeEditorUrlState({}), "");
 });
 
-test("report editor v2 flag: query overrides env", () => {
-  assert.equal(isReportEditorV2Enabled(undefined, undefined), false);
-  assert.equal(isReportEditorV2Enabled(undefined, "1"), true);
-  assert.equal(isReportEditorV2Enabled(undefined, "TRUE"), true);
-  assert.equal(isReportEditorV2Enabled("classic", "1"), false);
-  assert.equal(isReportEditorV2Enabled("v2", undefined), true);
-});
 
 import { generationWarning } from "../../src/features/report-editor/application/report-inputs.ts";
 

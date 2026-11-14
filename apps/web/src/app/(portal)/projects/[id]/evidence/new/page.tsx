@@ -23,7 +23,7 @@ export default async function NewEvidencePage({ params, searchParams }: { params
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">Upload evidence</h1>
+      <h1 className="page-title">Upload evidence</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         {driveMode
           ? "Add one or more files — each is saved into your project's Google Drive folder. You can also link a file that is already in your Drive."

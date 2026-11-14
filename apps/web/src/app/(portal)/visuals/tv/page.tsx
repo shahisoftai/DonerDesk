@@ -29,8 +29,8 @@ export default async function VisualTvPage({ searchParams }: { searchParams: Pro
   const list = await gatewayRequest("/v1/canvases", CanvasListSchema, ctx.token);
   if (!list.ok) return <InlineError title={list.error.message} referenceId={list.error.referenceId} />;
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Visual Studio</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="tv" />
       <p className="max-w-3xl text-sm text-slate-500">Show dashboards one after another on a wall screen. Choose up to {MAX_PLAYLIST}. The screen refreshes its figures every five minutes and shows only what you can see.{chosen.length > 0 ? " Some of the ones you chose could not be opened." : ""}</p>
       {list.value.length === 0 ? <p className="text-sm text-slate-500">Nothing to show yet.</p> : (
@@ -42,7 +42,7 @@ export default async function VisualTvPage({ searchParams }: { searchParams: Pro
           </ul>
           <div className="flex flex-wrap items-end gap-3 text-sm">
             <label className="flex flex-col gap-1">Seconds on each<input name="every" type="number" min={MIN_SECONDS} max={MAX_SECONDS} defaultValue={DEFAULT_SECONDS} className="w-24 rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" /></label>
-            <button type="submit" className="rounded bg-sky-700 px-3 py-2 font-medium text-white hover:bg-sky-800">Start the playlist</button>
+            <button type="submit" className="rounded bg-brand-700 px-3 py-2 font-medium text-white hover:bg-brand-800">Start the playlist</button>
           </div>
         </form>
       )}

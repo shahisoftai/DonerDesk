@@ -27,14 +27,14 @@ export default async function AiUsagePage() {
   }
   const { counts, runs, monthCostUsd } = result.value;
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="page-stack animate-fade-in">
       {result.value.alert && (
         <p role="alert" className="rounded-lg border border-warning-500/40 bg-warning-50 px-3 py-2 text-sm text-warning-800 dark:bg-warning-500/10 dark:text-warning-300">
           The AI writer needs attention: {result.value.alert.reason} Check the reasons below, then try the sections again.
         </p>
       )}
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">AI usage</h1>
+        <h1 className="page-title">AI usage</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           The last {runs.length} sections the AI writer worked on: {counts.WRITTEN} written, {counts.RECOVERED} written after a retry, {counts.STUB} with a basic version
           {counts.NO_INPUT > 0 ? `, ${counts.NO_INPUT} with nothing recorded to write from` : ""}.

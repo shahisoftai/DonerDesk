@@ -34,7 +34,7 @@ export function WellsEditor({ source, family, wells, onChange }: { source: Datas
       <ul className="flex max-h-36 flex-wrap gap-1 overflow-auto" aria-label={t("ds.wells.fields")}>
         {source.fields.map((f) => (
           <li key={f.id}><button type="button" draggable onDragStart={(e) => e.dataTransfer.setData(DRAG_TYPE, f.id)} onClick={() => setPicked(picked === f.id ? null : f.id)} aria-pressed={picked === f.id}
-            className={`rounded border px-2 py-0.5 text-xs ${picked === f.id ? "border-sky-700 bg-sky-50 dark:bg-sky-950" : "border-slate-300 dark:border-slate-600"}`} title={f.meaning}>
+            className={`rounded border px-2 py-0.5 text-xs ${picked === f.id ? "border-brand-700 bg-brand-50 dark:bg-brand-950" : "border-slate-300 dark:border-slate-600"}`} title={f.meaning}>
             {f.role === "MEASURE" ? "Σ " : ""}{f.label}</button></li>
         ))}
       </ul>
@@ -44,7 +44,7 @@ export function WellsEditor({ source, family, wells, onChange }: { source: Datas
           className="rounded border border-dashed border-slate-300 p-2 dark:border-slate-600" data-well={w.key}>
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold">{w.label}{w.required ? " *" : ""}</span>
-            {picked && <button type="button" className="rounded bg-sky-700 px-2 py-0.5 text-xs text-white" onClick={() => add(w.key, picked)}>{t("ds.wells.addHere")}</button>}
+            {picked && <button type="button" className="rounded bg-brand-700 px-2 py-0.5 text-xs text-white" onClick={() => add(w.key, picked)}>{t("ds.wells.addHere")}</button>}
           </div>
           {(wells[w.key] ?? []).length === 0 && <p className="text-[11px] text-slate-400">{t("ds.wells.drop")}</p>}
           {(wells[w.key] ?? []).map((f, i) => (

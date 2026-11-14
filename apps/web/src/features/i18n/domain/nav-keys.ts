@@ -2,11 +2,11 @@ import type { Translator } from "./translate.ts";
 
 /** The message for each left-navigation entry (by its address) and each group. Anything not listed keeps its English label. */
 const ENTRY: Readonly<Record<string, string>> = {
-  "/dashboard": "nav.home", "/my-work": "nav.myWork", "/portfolio": "nav.portfolio", "/visuals": "nav.visuals", "/projects": "nav.projects",
+  "/dashboard": "nav.home", "/inbox": "nav.inbox", "/my-work": "nav.myWork", "/portfolio": "nav.portfolio", "/visuals": "nav.visuals", "/projects": "nav.projects",
   "/reports": "nav.reports", "/evidence": "nav.evidence", "/compliance": "nav.compliance", "/programmes": "nav.programmes",
   "/downloads": "nav.downloads", "/team": "nav.team", "/settings": "nav.settings", "/settings/security": "nav.security",
 };
-const GROUP: Readonly<Record<string, string>> = { Overview: "nav.group.overview", Deliver: "nav.group.deliver", Report: "nav.group.report", Fund: "nav.group.fund", Admin: "nav.group.admin", Account: "nav.group.account" };
+const GROUP: Readonly<Record<string, string>> = { Work: "nav.group.work", Overview: "nav.group.overview", Deliver: "nav.group.deliver", Report: "nav.group.report", Fund: "nav.group.fund", Admin: "nav.group.admin", Account: "nav.group.account" };
 
 export function translateNav<T extends { href: string; label: string; group?: string }>(items: ReadonlyArray<T>, t: Translator["t"]): T[] {
   return items.map((item) => {

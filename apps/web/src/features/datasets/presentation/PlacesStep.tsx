@@ -30,14 +30,14 @@ export function PlacesStep({ check, steps, onApply, onBack, onNext }: { check: C
                 <span className="w-48 font-medium">{p.value}</span>
                 <span className="text-xs text-slate-500">{p.status === "AMBIGUOUS" ? t("ds.places.ambiguous") : t("ds.places.unknown")} · {t("ds.table.rows", { n: p.rows })}</span>
                 <input aria-label={t("ds.places.readAs", { value: p.value })} placeholder={t("ds.places.readAsPlaceholder")} className="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-600 dark:bg-slate-900" value={typed[p.value] ?? ""} onChange={(e) => setTyped({ ...typed, [p.value]: e.target.value })} />
-                <button type="button" disabled={!typed[p.value]?.trim()} className="rounded border border-sky-700 px-2 py-0.5 text-xs text-sky-800 disabled:opacity-50" onClick={() => onApply(readAs(steps, headerOf(check.columns, column), p.value, typed[p.value]!.trim()))}>{t("ds.places.remember")}</button>
+                <button type="button" disabled={!typed[p.value]?.trim()} className="rounded border border-brand-700 px-2 py-0.5 text-xs text-brand-800 disabled:opacity-50" onClick={() => onApply(readAs(steps, headerOf(check.columns, column), p.value, typed[p.value]!.trim()))}>{t("ds.places.remember")}</button>
               </li>
             ))}
           </ul>
           <p className="text-xs text-slate-500">{t("ds.places.addHint")} <a className="underline" href="/settings/places">{t("ds.places.openList")}</a></p>
         </>
       )}
-      <div className="flex gap-2"><button type="button" className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" onClick={onBack}>{t("ds.back")}</button><button type="button" className="rounded bg-sky-700 px-3 py-1.5 text-sm font-medium text-white" onClick={onNext}>{t("ds.next")}</button></div>
+      <div className="flex gap-2"><button type="button" className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" onClick={onBack}>{t("ds.back")}</button><button type="button" className="rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white" onClick={onNext}>{t("ds.next")}</button></div>
     </div>
   );
 }

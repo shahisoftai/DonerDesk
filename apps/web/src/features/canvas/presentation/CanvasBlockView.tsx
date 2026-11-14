@@ -86,7 +86,7 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
   return (
     <div role={editing ? "button" : undefined} tabIndex={editing ? 0 : undefined} onClick={editing ? onSelect : undefined} onKeyDown={keyDown} aria-pressed={editing ? selected : undefined} aria-label={editing ? `${label}${hidden ? " (hidden)" : ""}` : undefined}
       data-block={block.id} data-kind={block.kind} data-selected={selected || undefined} data-hidden={hidden || undefined}
-      className={`h-full rounded-xl ${visibility} ${editing ? "cursor-pointer" : ""} ${selected ? "outline outline-2 outline-offset-2 outline-sky-600" : ""} ${hidden ? "opacity-40" : ""}`}>
+      className={`h-full rounded-xl ${visibility} ${editing ? "cursor-pointer" : ""} ${selected ? "outline outline-2 outline-offset-2 outline-brand-600" : ""} ${hidden ? "opacity-40" : ""}`}>
       {ownFrame && hints
         ? <section aria-label={title} data-formatted className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-[var(--tile-border)] bg-[var(--tile-bg)] text-[var(--tile-title)] shadow-sm" style={frameCss(hints)}>
             {shownTitle && <header className="px-3 pt-2"><h3 style={titleCss(hints)}>{shownTitle}</h3>{hints.title.subtitle && <p className="text-xs text-[var(--tile-meta)]">{hints.title.subtitle}</p>}</header>}

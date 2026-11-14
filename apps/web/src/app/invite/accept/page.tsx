@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthFrame } from "@/components/layout/AuthFrame";
 import { AuthService } from "@/features/auth/application/auth-service";
 import { ROLE_LABEL } from "@/lib/labels";
 import InviteAcceptForm from "./InviteAcceptForm";
@@ -13,9 +14,9 @@ export default async function InviteAcceptPage({ searchParams }: { searchParams:
   const preview = token.length >= 10 ? await service.invitationPreview(token) : null;
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
+    <AuthFrame>
       <div className="card w-full max-w-md space-y-4">
-        <h1 className="text-xl font-semibold tracking-tight">Join your workspace</h1>
+        <h1 className="page-title">Join your workspace</h1>
         {!preview ? (
           <div className="space-y-3 text-sm text-slate-600 dark:text-slate-300">
             <p>
@@ -35,6 +36,6 @@ export default async function InviteAcceptPage({ searchParams }: { searchParams:
           </>
         )}
       </div>
-    </div>
+    </AuthFrame>
   );
 }

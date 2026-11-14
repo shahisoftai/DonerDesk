@@ -100,10 +100,10 @@ export default async function ActivityDetailPage({
   const demoMode = process.env.NODE_ENV !== "production";
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">{activity.activityTitle}</h1>
+          <h1 className="page-title">{activity.activityTitle}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {formatDate(activity.activityDate)}{activity.activityEndDate && activity.activityEndDate.slice(0, 10) !== activity.activityDate.slice(0, 10) ? ` – ${formatDate(activity.activityEndDate)}` : ""}
             {activity.location ? ` · ${activity.location}` : ""}
@@ -149,7 +149,7 @@ export default async function ActivityDetailPage({
       )}
 
       <section className="card" aria-label="Activity summary">
-        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Summary</h2>
+        <h2 className="section-title">Summary</h2>
         <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{cleanSummary}</p>
         {reviewerNotes.length > 0 && (
           <div role="note" className="mt-3 rounded-lg border border-warning-500/30 bg-warning-500/5 p-3 text-sm text-slate-700 dark:text-slate-200">
@@ -161,25 +161,25 @@ export default async function ActivityDetailPage({
 
       {activity.achievements && (
         <section className="card" aria-label="Achievements">
-          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Achievements</h2>
+          <h2 className="section-title">Achievements</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.achievements}</p>
         </section>
       )}
       {activity.challenges && (
         <section className="card" aria-label="Challenges">
-          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Challenges</h2>
+          <h2 className="section-title">Challenges</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.challenges}</p>
         </section>
       )}
       {activity.lessonsLearned && (
         <section className="card" aria-label="Lessons learned">
-          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Lessons learned</h2>
+          <h2 className="section-title">Lessons learned</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.lessonsLearned}</p>
         </section>
       )}
       {activity.nextSteps && (
         <section className="card" aria-label="Next steps">
-          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Next steps</h2>
+          <h2 className="section-title">Next steps</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{activity.nextSteps}</p>
         </section>
       )}
@@ -197,7 +197,7 @@ export default async function ActivityDetailPage({
 
       {!canManageEvidence && attachedEvidenceIds.length > 0 && (
         <section className="card" aria-label="Attached evidence">
-          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Attached evidence</h2>
+          <h2 className="section-title">Attached evidence</h2>
           <ul className="mt-2 space-y-1 text-sm">
             {attachedEvidenceIds.map((id) => (
               <li key={id}>
@@ -214,7 +214,7 @@ export default async function ActivityDetailPage({
       )}
 
       <div className="card">
-        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">Participants</h2>
+        <h2 className="section-title">Participants</h2>
         <dl className="mt-2 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           <div>
             <dt className="text-xs text-slate-500 dark:text-slate-400">Total</dt>

@@ -30,8 +30,8 @@ export function DataSlicerScreen({ model, frame }: { model: BlockModel<DataSlice
           const on = chosen.includes(o.value);
           return (
             <button key={o.value} type="button" aria-pressed={on} disabled={!filters} onClick={() => filters?.toggle(m.source, m.column, o.value, m.multi)}
-              className={`rounded-full border px-2 py-0.5 text-xs ${on ? "border-sky-700 bg-sky-700 text-white" : "border-slate-300 bg-white hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800"}`}>
-              {o.value} <span className={on ? "text-sky-100" : "text-slate-400"}>{o.rows}</span>
+              className={`rounded-full border px-2 py-0.5 text-xs ${on ? "border-brand-700 bg-brand-700 text-white" : "border-slate-300 bg-white hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800"}`}>
+              {o.value} <span className={on ? "text-brand-100" : "text-slate-400"}>{o.rows}</span>
             </button>
           );
         })}

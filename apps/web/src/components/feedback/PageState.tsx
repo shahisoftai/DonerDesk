@@ -10,8 +10,29 @@ export function InlineError({ title, referenceId }: { title: string; referenceId
   );
 }
 
-export function EmptyState({ children }: { children: React.ReactNode }) {
-  return <div className="card text-sm text-slate-600 dark:text-slate-300">{children}</div>;
+/**
+ * One empty state everywhere (v4): an icon, one sentence (or a title and a sentence) and at most one action. Older callers pass
+ * only children and still render as before, centred.
+ */
+export function EmptyState({
+  children,
+  title,
+  icon,
+  action,
+}: {
+  children?: React.ReactNode;
+  title?: React.ReactNode;
+  icon?: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="card flex flex-col items-center gap-2 border-dashed px-6 py-10 text-center text-sm text-slate-600 shadow-none dark:text-slate-300">
+      {icon && <div className="mb-1 grid h-10 w-10 place-items-center rounded-full bg-brand-50 text-brand-700 [&_svg]:h-5 [&_svg]:w-5 dark:bg-brand-300/10 dark:text-brand-300">{icon}</div>}
+      {title && <p className="text-[15px] font-semibold text-slate-900 dark:text-white">{title}</p>}
+      {children && <div className="max-w-md">{children}</div>}
+      {action && <div className="mt-2">{action}</div>}
+    </div>
+  );
 }
 
 export function ErrorState({

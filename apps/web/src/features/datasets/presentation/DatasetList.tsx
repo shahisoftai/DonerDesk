@@ -12,7 +12,7 @@ export function DatasetList({ datasets, kits, canCreate, projectId }: { datasets
     <div className="space-y-4" data-testid="dataset-list">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-300">{t("ds.list.intro")}</p>
-        {canCreate && <Link href={newHref} className="rounded bg-sky-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-sky-800">{t("ds.list.new")}</Link>}
+        {canCreate && <Link href={newHref} className="rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-800">{t("ds.list.new")}</Link>}
       </div>
       {datasets.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-300 p-6 text-sm dark:border-slate-600">
@@ -26,7 +26,7 @@ export function DatasetList({ datasets, kits, canCreate, projectId }: { datasets
               <Link href={`/visuals/datasets/${d.id}`} className="font-medium hover:underline">{d.name}</Link>
               <p className="mt-1 text-xs text-slate-500">{t("ds.list.rows", { rows: d.rowCount.toLocaleString(), columns: d.columns })}{d.scope === "ORGANISATION" ? ` · ${t("ds.list.org")}` : ""}</p>
               <div className="mt-2 flex flex-wrap gap-1 text-[11px]">
-                {d.kitKey && <span className="rounded-full bg-sky-50 px-2 py-0.5 text-sky-900 dark:bg-sky-950 dark:text-sky-100">{kits.find((k) => k.key === d.kitKey)?.title ?? d.kitKey}</span>}
+                {d.kitKey && <span className="rounded-full bg-brand-50 px-2 py-0.5 text-brand-900 dark:bg-brand-950 dark:text-brand-100">{kits.find((k) => k.key === d.kitKey)?.title ?? d.kitKey}</span>}
                 {d.pending > 0 && <span className="rounded-full bg-amber-50 px-2 py-0.5 text-amber-900">{t("ds.list.pending", { n: d.pending })}</span>}
                 {d.restricted && <span className="rounded-full bg-red-50 px-2 py-0.5 text-red-900">{t("ds.restricted")}</span>}
                 {d.connector && <span className="rounded-full bg-slate-100 px-2 py-0.5 dark:bg-slate-800">{d.connector}</span>}

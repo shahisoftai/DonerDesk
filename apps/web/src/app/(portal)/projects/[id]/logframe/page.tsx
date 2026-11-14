@@ -32,9 +32,9 @@ export default async function LogframePage({ params, searchParams }: { params: P
   if (view && isFrameworkLens(view)) {
     const framework = await gatewayRequest(`/v1/projects/${resolvedParams.id}/framework?lens=${view}`, FrameworkDocumentSchema, ctx.token);
     return (
-      <div className="animate-fade-in space-y-4">
+      <div className="page-stack animate-fade-in">
         <header className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold tracking-tight">{framework.ok ? framework.value.title : "Framework"}</h1>
+          <h1 className="page-title">{framework.ok ? framework.value.title : "Framework"}</h1>
           <div className="flex flex-wrap items-center gap-2">
             <FrameworkViewSwitch projectId={resolvedParams.id} current={view} />
             {framework.ok && hasCapability(ctx, "export.create") && (
@@ -59,7 +59,7 @@ export default async function LogframePage({ params, searchParams }: { params: P
     return (
       <div className="animate-fade-in">
         <header className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold tracking-tight">Logframe &amp; indicators</h1>
+          <h1 className="page-title">Logframe &amp; indicators</h1>
           <Link className="btn" href={`/projects/${resolvedParams.id}/logframe/new`}>Add item</Link>
         </header>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
@@ -95,7 +95,7 @@ export default async function LogframePage({ params, searchParams }: { params: P
   return (
     <div className="animate-fade-in" data-tour-id="logframe-indicator-list">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Logframe &amp; indicators</h1>
+        <h1 className="page-title">Logframe &amp; indicators</h1>
         <div className="flex flex-wrap items-center gap-2">
           <FrameworkViewSwitch projectId={resolvedParams.id} current="edit" />
           <a className="btn-secondary text-xs" href="/api/templates/logframe">Download template</a>

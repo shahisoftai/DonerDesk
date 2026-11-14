@@ -24,9 +24,9 @@ export default async function AdaptationsPage({ params }: { params: Promise<{ id
   const indicatorLabel = new Map(indicators.map((i) => [i.id, i.label]));
   const periodLabel = new Map(periodOptions.map((p) => [p.id, p.label]));
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Changes of plan</h1>
+        <h1 className="page-title">Changes of plan</h1>
         <p className="mt-1 text-sm text-slate-500">When something changes, write down what, why, and what it does to the results. The report can then explain it, and a statement about it can be checked.</p>
         <p className="mt-2"><Link className="btn-secondary" href={`/projects/${id}/management-report`}>Management report</Link></p>
       </header>

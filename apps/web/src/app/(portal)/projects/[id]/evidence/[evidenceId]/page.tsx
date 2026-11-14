@@ -61,10 +61,10 @@ export default async function EvidenceDetailPage({
   const driveLink = evidence.driveWebLink || evidence.fileUrl;
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">{evidence.title}</h1>
+          <h1 className="page-title">{evidence.title}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">{evidence.fileName}</p>
         </div>
         <div className="flex gap-2">
@@ -141,7 +141,7 @@ export default async function EvidenceDetailPage({
 
       {evidence.aiSummary && (
         <section className="card" aria-label="AI summary">
-          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">AI summary</h2>
+          <h2 className="section-title">AI summary</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{evidence.aiSummary}</p>
         </section>
       )}

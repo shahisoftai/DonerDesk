@@ -14,10 +14,10 @@ export default async function ManagementReportPage({ params }: { params: Promise
   if (!res.ok) return <InlineError title={res.error.message} referenceId={res.error.referenceId} />;
   const { sections, today, projectTitle } = res.value;
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Management report</h1>
+          <h1 className="page-title">Management report</h1>
           <p className="mt-1 text-sm text-slate-500">{projectTitle} · as of {today}</p>
         </div>
         <div className="flex gap-2">

@@ -11,13 +11,12 @@ import "./site.css";
 const THEME_KEY = "dd-site-theme";
 
 const MENU: Array<{ key: string; href: string; match: (p: string) => boolean }> = [
-  { key: "site.nav.platform", href: "/platform", match: (p) => p === "/platform" },
-  { key: "site.nav.features", href: "/features", match: (p) => p === "/features" },
+  // Version 4.000 (plan F87): five entries. Product covers the platform, features, comparison and tour pages.
+  { key: "site.nav.product", href: "/platform", match: (p) => ["/platform", "/features", "/compare", "/tour"].includes(p) },
   { key: "site.nav.solutions", href: "/solutions", match: (p) => p.startsWith("/solutions") },
   { key: "site.nav.pricing", href: "/pricing", match: (p) => p === "/pricing" },
-  { key: "site.nav.compare", href: "/compare", match: (p) => p === "/compare" },
-  { key: "site.nav.resources", href: "/support", match: (p) => p.startsWith("/support") },
   { key: "site.nav.security", href: "/security", match: (p) => p === "/security" },
+  { key: "site.nav.resources", href: "/support", match: (p) => p.startsWith("/support") },
 ];
 
 function Logo() {

@@ -29,12 +29,12 @@ export function ColumnsStep({ check, kits, kitKey, steps, onBack, onApply, onNex
         </div>
       )}
       {check.kitSuggestion && !kitKey && (
-        <div className="rounded border border-sky-300 bg-sky-50 p-3 text-sm dark:bg-sky-950">
+        <div className="rounded border border-brand-300 bg-brand-50 p-3 text-sm dark:bg-brand-950">
           <p>{check.kitSuggestion.sentence}</p>
-          <button type="button" className="mt-2 rounded bg-sky-700 px-3 py-1 text-white" onClick={() => onApply({ kitKey: check.kitSuggestion!.key, columns: undefined })}>{t("ds.columns.useKit", { kit: check.kitSuggestion.title })}</button>
+          <button type="button" className="mt-2 rounded bg-brand-700 px-3 py-1 text-white" onClick={() => onApply({ kitKey: check.kitSuggestion!.key, columns: undefined })}>{t("ds.columns.useKit", { kit: check.kitSuggestion.title })}</button>
         </div>
       )}
-      {check.kit && <p className="text-sm text-sky-900 dark:text-sky-100">{check.kit.sentence} {check.kit.reviewState === "UNREVIEWED" && <span className="text-amber-700">{t("ds.kit.unreviewed")}</span>}</p>}
+      {check.kit && <p className="text-sm text-brand-900 dark:text-brand-100">{check.kit.sentence} {check.kit.reviewState === "UNREVIEWED" && <span className="text-amber-700">{t("ds.kit.unreviewed")}</span>}</p>}
       {!check.kit && !check.kitSuggestion && kits.length > 0 && (
         <label className="flex items-center gap-2 text-sm">{t("ds.columns.kit")}
           <select className="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={kitKey ?? ""} onChange={(e) => onApply({ kitKey: e.target.value || undefined, columns: undefined })}>
@@ -68,8 +68,8 @@ export function ColumnsStep({ check, kits, kitKey, steps, onBack, onApply, onNex
       </div>
       <div className="flex gap-2">
         <button type="button" className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" onClick={onBack}>{t("ds.back")}</button>
-        {changed && <button type="button" className="rounded border border-sky-700 px-3 py-1.5 text-sm text-sky-800" onClick={() => onApply({ columns: cols })}>{t("ds.columns.recheck")}</button>}
-        <button type="button" className="rounded bg-sky-700 px-3 py-1.5 text-sm font-medium text-white" onClick={() => { if (changed) onApply({ columns: cols }); onNext(); }}>{t("ds.next")}</button>
+        {changed && <button type="button" className="rounded border border-brand-700 px-3 py-1.5 text-sm text-brand-800" onClick={() => onApply({ columns: cols })}>{t("ds.columns.recheck")}</button>}
+        <button type="button" className="rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white" onClick={() => { if (changed) onApply({ columns: cols }); onNext(); }}>{t("ds.next")}</button>
       </div>
     </div>
   );

@@ -159,7 +159,7 @@ export function DashboardView({ dashboard, charts: initialCharts, periods, proje
     <div ref={tv.ref} className={`space-y-4 ${tv.active ? "overflow-auto bg-white p-6 dark:bg-slate-950" : ""}`}>
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          {editing ? <Input aria-label="Dashboard name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} /> : <h1 className="truncate text-xl font-semibold tracking-tight">{dashboard.name}</h1>}
+          {editing ? <Input aria-label="Dashboard name" value={name} onChange={(e) => setName(e.target.value)} maxLength={120} /> : <h1 className="truncate page-title">{dashboard.name}</h1>}
           <p className="mt-1 text-xs text-slate-500">{SCOPE_LABEL[dashboard.scope]}{dashboard.projectId && projectNames[dashboard.projectId] ? ` · ${projectNames[dashboard.projectId]}` : ""} · {widgets.length} chart{widgets.length === 1 ? "" : "s"}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2" data-no-print>

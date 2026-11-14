@@ -51,10 +51,10 @@ export function ConditionalRulesField({ value, card, resolve, onChange }: Props)
           </div>
           {rule.kind === "GRADIENT" && (["min", "mid", "max"] as const).map((k) => <ColorField key={k} label={t(`rules.${k}` as never)} value={rule[k]} card={card} resolve={resolve} onChange={(c) => put(i, k === "mid" ? { ...rule, mid: c } : c ? { ...rule, [k]: c } : rule)} />)}
           {rule.kind === "DATA_BARS" && <ColorField label={t("format.f.color")} value={rule.color} card={card} resolve={resolve} onChange={(c) => c && put(i, { ...rule, color: c })} />}
-          {(rule.kind === "RULES" || rule.kind === "ICONS") && <><ul className="space-y-1">{rule.bands.map((_, j) => bandRow(rule, i, j))}</ul><button type="button" className="text-xs text-sky-700 underline" onClick={() => put(i, { ...rule, bands: [...rule.bands, { ...BAND, ...(rule.kind === "ICONS" ? { icon: "DOT" as const } : {}) }] })}>{t("rules.addBand")}</button></>}
+          {(rule.kind === "RULES" || rule.kind === "ICONS") && <><ul className="space-y-1">{rule.bands.map((_, j) => bandRow(rule, i, j))}</ul><button type="button" className="text-xs text-brand-700 underline" onClick={() => put(i, { ...rule, bands: [...rule.bands, { ...BAND, ...(rule.kind === "ICONS" ? { icon: "DOT" as const } : {}) }] })}>{t("rules.addBand")}</button></>}
         </div>
       ))}
-      {rules.length < 4 && <button type="button" className="text-xs text-sky-700 underline" onClick={() => onChange([...rules, fresh("RULES")])}>{t("rules.add")}</button>}
+      {rules.length < 4 && <button type="button" className="text-xs text-brand-700 underline" onClick={() => onChange([...rules, fresh("RULES")])}>{t("rules.add")}</button>}
       <p className="text-xs text-slate-500">{t("rules.gapNote")}</p>
     </div>
   );

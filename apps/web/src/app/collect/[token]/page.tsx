@@ -25,7 +25,7 @@ export default async function CollectPage({ params }: { params: Promise<{ token:
   if (!form) {
     return (
       <main className="mx-auto max-w-xl px-4 py-16 text-center">
-        <h1 className="text-xl font-semibold">{t("collect.unavailableTitle")}</h1>
+        <h1 className="page-title">{t("collect.unavailableTitle")}</h1>
         <p className="mt-2 text-sm text-slate-500">{t("collect.unavailableBody")}</p>
       </main>
     );

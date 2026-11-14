@@ -12,11 +12,11 @@ export function DeliveryPanel(d: PortfolioHomeData) {
   if (!d.overview.ok) return null;
   const late = sum(d, (r) => r.delivery.lateActivities);
   return (
-    <Panel title="Delivery this week" href="/my-work" linkLabel="Work plan →">
+    <Panel title="Delivery this week" href="/inbox" linkLabel="Work plan →">
       <div className="mb-3"><DeliverySparkline points={d.extra.deliveryWeeks} /></div>
       <StatList rows={[
-        { label: "Late planned activities", value: String(late), href: "/my-work", tone: late > 0 ? "danger" : undefined },
-        { label: "Completed activities to review", value: workCount(d, "activity"), href: "/my-work?type=activity" },
+        { label: "Late planned activities", value: String(late), href: "/inbox", tone: late > 0 ? "danger" : undefined },
+        { label: "Completed activities to review", value: workCount(d, "activity"), href: "/inbox?type=activity" },
         { label: "Projects with a delay", value: String(d.rows.filter((r) => r.delivery.band === "OFF_TRACK" || r.delivery.band === "AT_RISK").length), href: "/portfolio" },
       ]} />
     </Panel>
@@ -40,9 +40,9 @@ export function DataEvidencePanel(d: PortfolioHomeData) {
 }
 
 export function YourWorkPanel(d: PortfolioHomeData) {
-  if (d.items.length === 0) return <CollapsedPanel title="Your work" message="No urgent work items right now." href="/my-work" linkLabel="View all →" />;
+  if (d.items.length === 0) return <CollapsedPanel title="Your work" message="No urgent work items right now." href="/inbox" linkLabel="View all →" />;
   return (
-    <Panel title="Your work" href="/my-work" linkLabel="View all →">
+    <Panel title="Your work" href="/inbox" linkLabel="View all →">
       <ul className="space-y-2">
         {d.items.slice(0, 4).map((i) => (
           <li key={`${i.kind}-${i.id}`}>
@@ -58,8 +58,8 @@ export function YourWorkPanel(d: PortfolioHomeData) {
 }
 
 export function NotificationsPanel(d: PortfolioHomeData) {
-  if (d.notifications.length === 0) return <CollapsedPanel title="Notifications" message="Nothing new." href="/notifications" linkLabel="Open inbox →" />;
-  return <Panel title="Notifications" href="/notifications" linkLabel="Open inbox →"><NotificationsList items={d.notifications} /></Panel>;
+  if (d.notifications.length === 0) return <CollapsedPanel title="Notifications" message="Nothing new." href="/inbox?tab=updates" linkLabel="Open inbox →" />;
+  return <Panel title="Notifications" href="/inbox?tab=updates" linkLabel="Open inbox →"><NotificationsList items={d.notifications} /></Panel>;
 }
 
 export function GrantsPanel(d: PortfolioHomeData) {

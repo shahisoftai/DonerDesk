@@ -69,7 +69,7 @@ export default async function ProjectsList({
   return (
     <div className="animate-fade-in">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Projects</h1>
+        <h1 className="page-title">Projects</h1>
         <PermissionGate capabilities={ctx.capabilities} capability="project.create">
           <div className="flex gap-2"><Link className="btn-secondary" href="/programmes">Programmes and grants</Link><Link className="btn-secondary" href="/portfolio">Portfolio dashboard</Link><Link className="btn-secondary" href="/portfolio/indicators">Indicators across projects</Link><Link className="btn" href="/projects/new">New project</Link></div>
         </PermissionGate>

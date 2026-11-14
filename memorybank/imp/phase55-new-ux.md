@@ -1,6 +1,6 @@
 # Phase 55 — The new UX (Version 4.000)
 
-**DonorDesk Version 4.000** · plan written 2026-11-14 · branch: `0024-new-ux` (3.007 is tagged `v3.007`) · status: **PLAN, decisions taken 2026-11-14 (§4); not started; waiting for the owner's go-ahead per batch**
+**DonorDesk Version 4.000** · plan written 2026-11-14 · branch: `0024-new-ux` (3.007 is tagged `v3.007`) · status: **IMPLEMENTATION 2026-11-14 (§8 lists what is built and what is partial)**
 
 ## 0. Why
 
@@ -296,3 +296,20 @@ Every portal page is built from the same parts, top to bottom:
 Rules are pinned by tests where they can be (no nested `.card`, every page has one `PageHeader` and an `h1`, sections have
 headings), and by the `test:visuals` pictures where they cannot. Each later batch (55.3–55.9) converts the pages it touches;
 55.10 converts any left and fails the build on a portal page without `PageHeader`.
+
+## 8. Implementation status (2026-11-14)
+
+| Batch | Built | Partial or not built (reason) |
+|---|---|---|
+| 55.0 | Route map (`phase55-route-map.md`) + `route-map.test.mts` | Baseline screenshots and click counts: taken during the browser check after deploy |
+| 55.1 | Brand tokens (app, Tailwind, charts, site, OG images), IBM Plex, buttons/links/Drawer/PanelFrame, `Page.tsx` anatomy, `SplitButton`, `Kbd`, `EmptyState` v2, toasts v2, Lucide, quieter background, titles/sections applied to ~100 pages | F52 one-primary lint, F58 link/button audit (manual review), glossary copy-lint (F38) |
+| 55.2 | Command palette with search + actions + shortcuts (F6, F69, F70), Undo toasts (already supported, restyled) | F71 per-page skeletons, F72 optimistic updates, F74 hover cards, F75 row menus/bulk bar, F80 page crossfade |
+| 55.3 | Four groups, hubs (Home+Portfolio, Reports+Evidence+Compliance+Downloads), Inbox, field nav pinned | F37 partner landing (partners keep "My projects") |
+| 55.4 | `PROJECT_TABS` (7 tabs incl. Finance), sub-pages with "More", breadcrumbs, folded rare tools (F5) | F64/F65/F67 addressable panels with J/K and stacking beyond the work plan |
+| 55.5 | Classic form retired (F84) | F9 short wizard path, F10 Get started checklist (onboarding pages kept) |
+| 55.6 | Import is the project's Data › Import (F13), .xlsx templates beside uploads (F14, earlier commit) | F12 Record-only entry, F15 on-screen row fixes, F16, F17, F31, F34 |
+| 55.7 | Legacy report page retired (F83), Data tables rename (F20), final report from New report (F21) | F18 stepper / F19 Next step inside Report Editor v2 (it already guides by stage) |
+| 55.8 | Visuals home: designs as cards, templates/datasets tabs, Tools menu (F22) | F23 one chart editor, F24 one Add-to-dashboard, F25 one-action map |
+| 55.9 | Settings side list in six groups (F28), AI page (F29) | F26 places owner link, F27 invite-with-projects |
+| 55.9b | Site tokens + fonts (F85), five-entry nav (F87), shorter home (F86), AuthFrame for sign-in pages (F91), legal sticky contents + readable column (F92) | F88 screenshot script, F89 sector pages from the library, F90 pricing cards rework |
+| 55.10 | AGENTS.md invariants, route map | Remove redirects after a release (F39) |

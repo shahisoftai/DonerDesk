@@ -17,7 +17,11 @@ export default async function DataCenterPage({ params }: { params: Promise<{ id:
   const groups = await gatewayRequest(`/v1/projects/${encodeURIComponent(id)}/breakdown-progress`, BreakdownProgressSchema, ctx.token);
   return (
     <>
-      <p className="mb-3 flex flex-wrap items-center gap-4 text-sm">{ctx.capabilities.has("indicator.update") && <a className="btn-secondary py-1 text-xs" href={`/projects/${id}/import`}>Bring in data</a>}<a className="underline" href={`/projects/${id}/forms`}>Collection forms</a><a className="underline" href={`/visuals/charts/${id}`}>Chart Studio</a><a className="underline" href={`/projects/${id}/places`}>Where we work</a><a className="underline" href={`/visuals/maps/${id}`}>Maps</a><a className="underline" href={`/projects/${id}/report-builder`}>Report builder</a></p>
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        <a className="btn-secondary" href={`/visuals/charts/${id}`}>Chart Studio</a>
+        <a className="btn-secondary" href={`/visuals/maps/${id}`}>Map</a>
+        {ctx.capabilities.has("indicator.update") && <a className="btn-primary" href={`/projects/${id}/import`}>Bring in data</a>}
+      </div>
       <DataCenter projectId={id} sheet={result.value} canEdit={ctx.capabilities.has("indicator.update")} canEditReports={ctx.capabilities.has("reporting.edit")} canReopenReports={ctx.capabilities.has("report.approve")} />
       {groups.ok && <BreakdownProgressTable items={groups.value.items} />}
     </>

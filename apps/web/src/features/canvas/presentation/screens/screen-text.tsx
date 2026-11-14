@@ -31,7 +31,7 @@ export function readyOrNothing<M>(props: { model: BlockModel<M>; frame: PaintFra
 }
 
 /** A bar whose number is in the text beside it; the bar itself is decoration. */
-export function Bar({ fraction, tone = "bg-sky-600" }: { fraction: number; tone?: string }) {
+export function Bar({ fraction, tone = "bg-brand-600" }: { fraction: number; tone?: string }) {
   const pct = Math.max(2, Math.min(100, Math.round(fraction * 100)));
   return <span aria-hidden="true" className="block h-2 rounded bg-slate-100 dark:bg-slate-800"><span className={`block h-2 rounded ${tone}`} style={{ width: `${pct}%` }} /></span>;
 }

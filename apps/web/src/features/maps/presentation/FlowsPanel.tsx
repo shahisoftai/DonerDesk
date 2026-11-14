@@ -37,7 +37,7 @@ export function FlowsPanel({ projectId, places, flows, canEdit, limit }: { proje
           <label className="flex flex-col gap-1">What moves<input className={input} value={what} maxLength={60} placeholder="People, tents…" onChange={(e) => setWhat(e.target.value)} /></label>
           <label className="flex flex-col gap-1">How much<input className={`${input} w-28`} inputMode="decimal" value={quantity} onChange={(e) => setQuantity(e.target.value)} /></label>
           <label className="flex flex-col gap-1">Unit<input className={`${input} w-28`} value={unit} maxLength={24} placeholder="people" onChange={(e) => setUnit(e.target.value)} /></label>
-          <button type="submit" className="rounded bg-sky-700 px-3 py-1.5 font-medium text-white hover:bg-sky-800">Add movement</button>
+          <button type="submit" className="rounded bg-brand-700 px-3 py-1.5 font-medium text-white hover:bg-brand-800">Add movement</button>
         </form>
       )}
       {message && <p role="status" className="text-sm">{message}</p>}

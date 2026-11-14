@@ -22,6 +22,7 @@ export default function robots(): MetadataRoute.Robots {
           "/settings",
           "/team",
           "/my-work",
+          "/inbox",
           "/onboarding",
           "/login",
           "/logout",

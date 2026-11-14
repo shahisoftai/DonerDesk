@@ -3,76 +3,76 @@
 @tailwind utilities;
 
 :root {
-  --background: #f1f4f1;
-  --surface: rgba(255, 255, 255, 0.8);
+  --background: #f6f7f9;
+  --surface: #ffffff;
   --surface-strong: #ffffff;
-  --surface-muted: rgba(15, 23, 42, 0.04);
+  --surface-muted: rgba(15, 23, 42, 0.035);
   --border: rgba(15, 23, 42, 0.1);
   --border-strong: rgba(15, 23, 42, 0.18);
-  --text: #0e1a16;
-  --text-secondary: #3d4f48;
-  --text-muted: #586a62;
-  --brand-glow: rgba(242, 181, 68, 0.16);
-  --cyan-glow: rgba(63, 193, 166, 0.12);
-  --grid-line: rgba(15, 23, 42, 0.05);
-  --ring: rgba(242, 181, 68, 0.35);
+  --text: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #5b6575;
+  --brand-glow: rgba(30, 64, 175, 0.08);
+  --cyan-glow: rgba(13, 148, 136, 0.06);
+  --grid-line: rgba(15, 23, 42, 0.025);
+  --ring: rgba(59, 99, 235, 0.4);
 
   /* Data-surface tokens: the table is features/design/domain/tokens.ts (a test keeps them equal). */
   --tile-bg: #ffffff;
-  --tile-border: #d8e0db;
-  --tile-header-bg: #f4f7f5;
-  --tile-title: #0e1a16;
-  --tile-meta: #4f5f58;
-  --badge-bg: #8a5610;
+  --tile-border: #e3e6eb;
+  --tile-header-bg: #f8fafc;
+  --tile-title: #0f172a;
+  --tile-meta: #5b6575;
+  --badge-bg: #1e40af;
   --badge-text: #ffffff;
   --signal-good: #15803d;
   --signal-warn: #b45309;
-  --signal-bad: #b91c1c;
-  --signal-none: #5b6c64;
-  --viz-1: #0072B2;
-  --viz-2: #C25400;
-  --viz-3: #00855F;
-  --viz-4: #A8467F;
-  --viz-5: #9A6A00;
-  --viz-6: #2B7FB8;
-  --viz-7: #6A4C93;
-  --viz-8: #4D4D4D;
+  --signal-bad: #b42318;
+  --signal-none: #5b6575;
+  --viz-1: #1E40AF;
+  --viz-2: #0D9488;
+  --viz-3: #B45309;
+  --viz-4: #BE185D;
+  --viz-5: #0369A1;
+  --viz-6: #4D7C0F;
+  --viz-7: #7C3AED;
+  --viz-8: #475569;
 }
 
 .dark {
-  --background: #0b1614;
-  --surface: rgba(255, 255, 255, 0.04);
-  --surface-strong: rgba(255, 255, 255, 0.07);
+  --background: #0b1220;
+  --surface: #121a2b;
+  --surface-strong: #16203a;
   --surface-muted: rgba(255, 255, 255, 0.05);
   --border: rgba(255, 255, 255, 0.1);
   --border-strong: rgba(255, 255, 255, 0.16);
-  --text: #f1f5f9;
-  --text-secondary: #a3b5ad;
-  --text-muted: #7d918a;
-  --brand-glow: rgba(242, 181, 68, 0.32);
-  --cyan-glow: rgba(63, 193, 166, 0.2);
-  --grid-line: rgba(255, 255, 255, 0.04);
-  --ring: rgba(63, 193, 166, 0.4);
+  --text: #e7ecf4;
+  --text-secondary: #b6c0cf;
+  --text-muted: #8f9bad;
+  --brand-glow: rgba(59, 99, 235, 0.14);
+  --cyan-glow: rgba(45, 212, 191, 0.08);
+  --grid-line: rgba(255, 255, 255, 0.02);
+  --ring: rgba(147, 178, 251, 0.45);
 
-  --tile-bg: #12231f;
-  --tile-border: #2a3a35;
-  --tile-header-bg: #0f1d1a;
-  --tile-title: #f1f5f9;
-  --tile-meta: #a3b5ad;
-  --badge-bg: #f2b544;
-  --badge-text: #0b1614;
+  --tile-bg: #121a2b;
+  --tile-border: #243049;
+  --tile-header-bg: #0f1626;
+  --tile-title: #e7ecf4;
+  --tile-meta: #9aa6b8;
+  --badge-bg: #93b2fb;
+  --badge-text: #0b1220;
   --signal-good: #4ade80;
   --signal-warn: #fbbf24;
   --signal-bad: #f87171;
-  --signal-none: #9fb1a9;
-  --viz-1: #56B4E9;
-  --viz-2: #F28E2B;
-  --viz-3: #3DCCA0;
-  --viz-4: #E58FC0;
-  --viz-5: #F2C94C;
-  --viz-6: #8FC1EA;
-  --viz-7: #B39DDB;
-  --viz-8: #C9D1CE;
+  --signal-none: #9aa6b8;
+  --viz-1: #93B2FB;
+  --viz-2: #2DD4BF;
+  --viz-3: #FBBF24;
+  --viz-4: #F472B6;
+  --viz-5: #38BDF8;
+  --viz-6: #A3E635;
+  --viz-7: #C4B5FD;
+  --viz-8: #CBD5E1;
 }
 
 @layer base {
@@ -182,8 +182,8 @@
 
 .landing-tech {
   background-image:
-    radial-gradient(circle at 50% 12%, rgba(242, 181, 68, 0.08), transparent 30%),
-    linear-gradient(180deg, #0b1614 0%, #10221e 48%, #0b1614 100%);
+    radial-gradient(circle at 50% 12%, rgba(59, 99, 235, 0.12), transparent 32%),
+    linear-gradient(180deg, #0f1b3d 0%, #14244f 48%, #0f1b3d 100%);
 }
 
 .tech-orb {
@@ -206,13 +206,13 @@
 .tech-orb-left {
   left: -12rem;
   top: 18rem;
-  color: #f2b544;
+  color: #3b63eb;
 }
 
 .tech-orb-right {
   right: -11rem;
   top: 6rem;
-  color: #3fc1a6;
+  color: #0d9488;
   animation-delay: -4s;
 }
 
@@ -320,25 +320,94 @@
 }
 
 @layer components {
-  /* `btn-primary` is the name call sites use for the primary action; it was never defined, so those buttons rendered as plain text. */
+  /* Buttons (v4): one look for <Button> and the raw classes. A 1 px ring instead of a hard border, a top highlight on
+     filled buttons, a press that settles, a visible offset focus ring; motion is dropped for people who ask for less. */
+  .btn,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .btn-ghost,
+  .btn-soft {
+    @apply relative inline-flex select-none items-center justify-center gap-2 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium leading-5
+      transition-[background-color,box-shadow,color,transform] duration-150 ease-out
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--background)]
+      active:translate-y-px motion-reduce:transform-none motion-reduce:transition-none
+      disabled:pointer-events-none disabled:opacity-50 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0;
+  }
   .btn,
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply bg-brand-700 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_2px_rgba(15,23,42,0.2),0_0_0_1px_#1d358a]
+      hover:bg-brand-800 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_4px_12px_-3px_rgba(30,64,175,0.5),0_0_0_1px_#0f1b3d]
+      dark:bg-brand-500 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_0_0_1px_#2849d4] dark:hover:bg-brand-400;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-400 hover:bg-slate-50 hover:text-brand-700 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/15 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:border-brand-400/60 dark:hover:bg-white/5 dark:hover:text-brand-300;
+    @apply bg-white text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.05),0_0_0_1px_rgba(15,23,42,0.13)]
+      hover:bg-slate-50 hover:text-slate-950 hover:shadow-[0_2px_6px_-1px_rgba(15,23,42,0.1),0_0_0_1px_rgba(15,23,42,0.22)]
+      dark:bg-white/[0.06] dark:text-slate-100 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.05),0_0_0_1px_rgba(255,255,255,0.12)]
+      dark:hover:bg-white/10 dark:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.07),0_0_0_1px_rgba(255,255,255,0.22)];
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-danger-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-danger-700 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply bg-danger-700 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_1px_2px_rgba(15,23,42,0.2),0_0_0_1px_#991b1b]
+      hover:bg-danger-800 focus-visible:ring-danger-500;
   }
+  .btn-ghost {
+    @apply text-slate-600 hover:bg-slate-900/[0.05] hover:text-slate-950 dark:text-slate-300 dark:hover:bg-white/[0.07] dark:hover:text-white;
+  }
+  .btn-soft {
+    @apply bg-brand-50 text-brand-700 hover:bg-brand-100 dark:bg-brand-300/10 dark:text-brand-300 dark:hover:bg-brand-300/[0.16];
+  }
+  .btn-sm { @apply min-h-[30px] gap-1.5 rounded-md px-2.5 py-1 text-xs [&_svg]:h-3.5 [&_svg]:w-3.5; }
+  .btn-md { @apply min-h-[36px]; }
+  .btn-lg { @apply min-h-[44px] px-5 text-[15px]; }
+  .btn-touch { @apply min-h-[44px] px-4; }
+  .btn-icon { @apply h-9 w-9 p-0; }
+
+  /* Links (v4): a soft underline that firms up on hover. `.link` for any link in content; bare links inside text get it too. */
+  .link,
+  .prose-links a:not([class]),
+  main p a:not([class]),
+  main li a:not([class]),
+  main td a:not([class]) {
+    @apply rounded-sm font-medium text-[#1d4ed8] underline decoration-[#1d4ed8]/30 decoration-1 underline-offset-[3px] transition-colors duration-150
+      hover:text-brand-800 hover:decoration-brand-700
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-1
+      dark:text-brand-300 dark:decoration-brand-300/40 dark:hover:text-brand-200 dark:hover:decoration-brand-200;
+  }
+  /* A link in a table or a list of records: no underline until pointed at. */
+  .link-quiet {
+    @apply rounded-sm font-medium text-slate-900 transition-colors hover:text-brand-700 hover:underline hover:underline-offset-[3px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-slate-100 dark:hover:text-brand-300;
+  }
+  /* A call to go somewhere ("Open the report"): an arrow that nudges forward. */
+  .link-arrow {
+    @apply inline-flex items-center gap-1 rounded-sm text-sm font-medium text-[#1d4ed8] transition-colors hover:text-brand-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500
+      after:inline-block after:transition-transform after:duration-150 after:content-['→'] hover:after:translate-x-0.5 rtl:after:content-['←'] rtl:hover:after:-translate-x-0.5 motion-reduce:after:transition-none
+      dark:text-brand-300 dark:hover:text-brand-200;
+  }
+  /* A link that leaves DonorDesk or opens a new tab says so. */
+  a[target="_blank"].link::after,
+  a[target="_blank"].link-quiet::after {
+    content: "\2197";
+    @apply ms-0.5 inline-block text-[0.8em] no-underline opacity-70;
+  }
+
+  /* Page anatomy (v4, plan §7): one header, then separated sections on one surface each. */
   .card {
-    @apply rounded-lg border border-slate-200/70 bg-white p-4 shadow-sm transition-colors dark:border-white/10 dark:bg-slate-900/60;
+    @apply rounded-xl border border-slate-200 bg-white p-5 shadow-card transition-colors dark:border-white/10 dark:bg-[#121a2b] dark:shadow-none;
   }
+  .card .card {
+    @apply border-slate-200/80 bg-slate-50/60 p-4 shadow-none dark:bg-white/[0.03];
+  }
+  .page-stack { @apply flex flex-col gap-8; }
+  .page-title { @apply text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 [text-wrap:balance] dark:text-white; }
+  .section-head { @apply mb-4 flex flex-wrap items-start justify-between gap-3; }
+  .section-title { @apply text-base font-semibold tracking-[-0.01em] text-slate-950 dark:text-white; }
+  .section-desc { @apply mt-0.5 text-sm text-slate-500 dark:text-slate-400; }
+  .divider { @apply border-t border-slate-200 dark:border-white/10; }
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-brand-400/70;
+    @apply w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm hover:border-slate-400 text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-brand-400/70;
   }
   .label {
-    @apply mb-1.5 block text-xs font-medium text-slate-500 dark:text-slate-400;
+    @apply mb-1.5 block text-[13px] font-medium text-slate-700 dark:text-slate-300;
   }
   .tag {
     @apply inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium;
@@ -536,7 +605,7 @@
 
 /* A finger needs 44 px (Phase 44): on a touch screen every button style and the header's controls are at least that big. A mouse keeps the compact sizes. */
 @media (pointer: coarse) {
-  .btn, .btn-primary, .btn-secondary, .btn-danger { min-height: 44px; }
+  .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-ghost, .btn-soft { min-height: 44px; }
   header button, header summary, header select, header > div a { min-height: 44px; min-width: 44px; }
 }
 

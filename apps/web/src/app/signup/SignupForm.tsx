@@ -1,4 +1,5 @@
 "use client";
+import { AuthFrame } from "@/components/layout/AuthFrame";
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { signupAction } from "@/lib/auth-actions";
@@ -28,7 +29,8 @@ export default function SignupForm({ initialPlan }: { initialPlan: RequestedPlan
   const fields = state?.fields ?? {};
 
   return (
-    <main className="mx-auto mt-12 max-w-2xl animate-fade-in px-6">
+    <AuthFrame>
+    <main className="w-full max-w-2xl animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Create your workspace</h1>
@@ -135,6 +137,7 @@ export default function SignupForm({ initialPlan }: { initialPlan: RequestedPlan
         </Link>
       </p>
     </main>
+    </AuthFrame>
   );
 }
 

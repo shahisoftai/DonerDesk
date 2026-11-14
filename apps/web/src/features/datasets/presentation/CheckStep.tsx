@@ -57,7 +57,7 @@ export function CheckStep({ check, upload, steps, refresh, mode, onMode, project
       )}
       <div className="flex gap-2">
         <button type="button" className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" onClick={onBack}>{t("ds.back")}</button>
-        <button type="button" disabled={busy || blocking.length > 0 || (!refresh && !name.trim()) || check.personal.length > 0} className="rounded bg-sky-700 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50" onClick={() => onSave({ name: name.trim(), description, scope })} data-testid="dataset-save">
+        <button type="button" disabled={busy || blocking.length > 0 || (!refresh && !name.trim()) || check.personal.length > 0} className="rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50" onClick={() => onSave({ name: name.trim(), description, scope })} data-testid="dataset-save">
           {warnings.length ? t("ds.check.saveAnyway") : t("ds.check.save")}
         </button>
       </div>

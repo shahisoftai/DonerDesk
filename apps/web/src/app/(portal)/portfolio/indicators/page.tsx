@@ -19,7 +19,7 @@ export default async function PortfolioIndicatorsPage({ searchParams }: { search
   const donors = [...new Set(res.value.items.map((g) => g.donorName))].sort((a, b) => a.localeCompare(b));
   const groups = donor ? res.value.items.filter((g) => g.donorName === donor) : res.value.items;
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <header>
         <h2 className="text-xl font-semibold tracking-tight">Indicators across projects</h2>
         <p className="mt-1 text-sm text-slate-500">Verified values added up per donor. Projects you are not on are not shown.</p>

@@ -13,6 +13,8 @@ import {
 import { InlineError } from "@/components/feedback/PageState";
 import { loadProjectSetupAction } from "@/lib/actions/setup";
 import { NewReportingPeriodForm } from "@/features/reporting/presentation/NewReportingPeriodForm";
+import Link from "next/link";
+import { PageHeader } from "@/components/layout/Page";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +35,12 @@ export default async function NewReportingPeriodPage({ params }: { params: Promi
   const readiness: ProjectReadiness | null = setupResult.ok ? setupResult.value.setup.readiness : null;
 
   return (
-    <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">New reporting period</h1>
+    <div className="page-stack animate-fade-in">
+      <PageHeader
+        title="New report"
+        description="Choose the kind of report and the dates it covers. A final report is a guided closing report."
+        actions={<Link className="btn-secondary" href={`/projects/${resolvedParams.id}/reports/closing`}>Final (closing) report</Link>}
+      />
       {!templatesResult.ok && <div className="mt-4"><InlineError title={templatesResult.error.message} /></div>}
       <NewReportingPeriodForm
         projectId={resolvedParams.id}

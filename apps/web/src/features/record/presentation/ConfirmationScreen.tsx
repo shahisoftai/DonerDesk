@@ -22,7 +22,7 @@ export function ConfirmationScreen({
   const { t } = useI18n();
   return (
     <div role="status" className="flex flex-col items-center px-2 py-6 text-center">
-      <div className={`grid h-24 w-24 place-items-center rounded-full ${queued ? "bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-200" : "bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-300"}`} aria-hidden="true">
+      <div className={`grid h-24 w-24 place-items-center rounded-full ${queued ? "bg-brand-100 text-brand-800 dark:bg-brand-400/15 dark:text-brand-200" : "bg-success-50 text-success-700 dark:bg-success-500/15 dark:text-success-300"}`} aria-hidden="true">
         {queued ? (
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><path d="m9.8 12.3 1.7 1.7 3-3.6" /></svg>
         ) : (

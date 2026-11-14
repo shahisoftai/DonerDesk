@@ -40,7 +40,7 @@ export function FacilityTypesCard() {
           <select aria-label="Starting list" className="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-600 dark:bg-slate-900" value="" onChange={(e) => { const add = data.suggested[e.target.value] ?? []; setRows([...rows, ...add.filter((a) => !rows.some((r) => r.key === a.key)).map((a) => ({ key: a.key, label: a.label }))]); }}>
             <option value="">Add a starting list…</option>{Object.keys(data.suggested).map((k) => <option key={k} value={k}>{k.replace(/_/g, " ").toLowerCase()}</option>)}
           </select>
-          <button type="button" className="rounded bg-sky-700 px-3 py-1 text-xs text-white" onClick={() => void save(rows.filter((r) => r.key && r.label))}>Save</button>
+          <button type="button" className="rounded bg-brand-700 px-3 py-1 text-xs text-white" onClick={() => void save(rows.filter((r) => r.key && r.label))}>Save</button>
           {msg && <span role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-emerald-700" : "text-red-700"}>{msg.text}</span>}
         </div>
       )}

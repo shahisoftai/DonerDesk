@@ -34,7 +34,7 @@ export function ContainerView({ block, blocks, renderChild, items, editing }: Pr
     return (
       <div className="h-full overflow-auto rounded-xl border border-slate-200 p-3 dark:border-slate-700" data-container="TABS">
         <div role="tablist" className="mb-3 flex flex-wrap gap-1 border-b border-slate-200 dark:border-slate-700">
-          {titles.map((t, i) => <button key={i} type="button" role="tab" aria-selected={i === active} onClick={() => setTab(i)} className={`border-b-2 px-3 py-1.5 text-sm ${i === active ? "border-sky-600 font-semibold" : "border-transparent text-slate-600 dark:text-slate-300"}`}>{t}</button>)}
+          {titles.map((t, i) => <button key={i} type="button" role="tab" aria-selected={i === active} onClick={() => setTab(i)} className={`border-b-2 px-3 py-1.5 text-sm ${i === active ? "border-brand-600 font-semibold" : "border-transparent text-slate-600 dark:text-slate-300"}`}>{t}</button>)}
         </div>
         <div role="tabpanel" aria-label={titles[active]}>{held.length > 0 ? grid(held) : emptyHint && <p className="text-xs text-slate-500">{emptyHint}</p>}</div>
       </div>

@@ -99,7 +99,7 @@ export function CalloutLayer({ projection, cards, columns, numbers, accent, offs
               if (delta) { e.preventDefault(); e.stopPropagation(); place(b.key, { dx: b.x - b.anchorX + delta[0]!, dy: b.y - b.anchorY + delta[1]! }); }
               else if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); place(b.key, null); }
             } : undefined}
-            className={`absolute overflow-hidden rounded bg-white/95 p-1.5 text-slate-900 shadow dark:bg-slate-900/95 dark:text-slate-100 ${editable ? "pointer-events-auto cursor-move touch-none outline-sky-600 focus:outline focus:outline-2" : ""}`}
+            className={`absolute overflow-hidden rounded bg-white/95 p-1.5 text-slate-900 shadow dark:bg-slate-900/95 dark:text-slate-100 ${editable ? "pointer-events-auto cursor-move touch-none outline-brand-600 focus:outline focus:outline-2" : ""}`}
             style={{ left: b.x, top: b.y, width: b.w, height: b.h, borderTop: `3px solid ${accent}` }}>
             <h4 className="truncate text-xs font-bold">{c.name}</h4>
             {c.text !== undefined

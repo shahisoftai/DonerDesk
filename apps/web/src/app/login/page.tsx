@@ -1,4 +1,5 @@
 "use client";
+import { AuthFrame } from "@/components/layout/AuthFrame";
 import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import Link from "next/link";
@@ -31,7 +32,8 @@ export default function LoginPage() {
   const fields = state?.fields ?? {};
 
   return (
-    <main className="mx-auto mt-24 max-w-md animate-fade-in px-6">
+    <AuthFrame>
+    <main className="w-full max-w-md animate-fade-in">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Log in</h1>
@@ -92,6 +94,7 @@ export default function LoginPage() {
         </Link>
       </p>
     </main>
+    </AuthFrame>
   );
 }
 

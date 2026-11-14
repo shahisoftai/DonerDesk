@@ -100,7 +100,7 @@ export function TemplateEditor({ template: initial, updatedAt, canEdit }: { temp
   return (
     <div className="space-y-4">
       <header className="flex flex-wrap items-center gap-2">
-        <h1 className="text-xl font-semibold tracking-tight">{t.title}</h1>
+        <h1 className="page-title">{t.title}</h1>
         <span className="rounded-full border px-2 py-0.5 text-[11px]">{initial.origin === "BUILT_IN" ? "Draft template (built in)" : "Your template"}</span>
         <span className="ms-auto flex items-center gap-2">
           {!editable && canEdit && <button type="button" className="btn px-3 py-1.5 text-sm" onClick={() => void copy()} disabled={busy}>Copy and edit</button>}

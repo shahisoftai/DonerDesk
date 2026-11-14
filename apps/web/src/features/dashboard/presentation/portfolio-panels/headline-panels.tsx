@@ -17,7 +17,7 @@ export function HeadlinesPanel(d: PortfolioHomeData) {
       <HomeCard label="Reports due in 30 days" value={String(reportsDueWithin(rows, 30))} hint={totals.reportsOverdue > 0 ? `${totals.reportsOverdue} overdue` : "None overdue"} href="/reports" />
       <HomeCard label="Open problems and risks" value={String(totals.openRisks)} hint={`${totals.highRisks} serious`} href="/portfolio" />
       <HomeCard label="Evidence to verify" value={pendingEvidence} hint="awaiting review" href="/evidence" />
-      <HomeCard label="Late planned activities" value={String(lateActivities)} hint={`${valuesOverdue} indicator values overdue`} href="/my-work" />
+      <HomeCard label="Late planned activities" value={String(lateActivities)} hint={`${valuesOverdue} indicator values overdue`} href="/inbox" />
     </section>
   );
 }

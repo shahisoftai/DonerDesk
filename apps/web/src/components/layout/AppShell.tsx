@@ -18,6 +18,9 @@ import { BookmarkButton } from "@/features/bookmarks/presentation/BookmarkButton
 import { AcademyHeaderButton } from "@/features/tour/presentation/AcademyHeaderButton";
 import { useStartOrResumeTour } from "@/features/tour/presentation/useStartOrResumeTour";
 import { TOUR_INTENT_KEY } from "@/features/tour/presentation/TourIntentLink";
+import { CommandPalette, openCommandPalette } from "@/features/command/presentation/CommandPalette";
+import { HubTabs } from "./HubTabs";
+import { Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, X } from "lucide-react";
 
 const NAV_COLLAPSE_KEY = "donordesk:nav-collapsed";
 
@@ -29,6 +32,8 @@ export function AppShell({
   canRecord = false,
   phoneBar = false,
   bellItems,
+  hubTabs = [],
+  capabilities = [],
   children,
 }: {
   orgName: string;
@@ -40,12 +45,15 @@ export function AppShell({
   /** Show the phone's bottom bar (Today, Record, Waiting, More): for people whose home is the field home. */
   phoneBar?: boolean;
   bellItems: BellItem[];
+  /** Tabs across pages that share a sidebar entry (role-navigation.ts `hubTabsFor`). */
+  hubTabs?: ReadonlyArray<ReadonlyArray<{ href: string; label: string }>>;
+  /** What the person may do: the command palette offers only these. */
+  capabilities?: readonly string[];
   children: ReactNode;
 }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(false);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
-  const searchLinkRef = useRef<HTMLAnchorElement>(null);
   const desktopSidebarRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -82,17 +90,6 @@ export function AppShell({
   }, [navCollapsed]);
 
   useEffect(() => {
-    function focusSearch(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        searchLinkRef.current?.focus();
-      }
-    }
-    document.addEventListener("keydown", focusSearch);
-    return () => document.removeEventListener("keydown", focusSearch);
-  }, []);
-
-  useEffect(() => {
     if (!mobileOpen) return;
     const previousFocus = document.activeElement as HTMLElement | null;
     function onKeyDown(event: KeyboardEvent) {
@@ -108,108 +105,113 @@ export function AppShell({
     };
   }, [mobileOpen]);
 
+  const brand = (
+    <Link href="/dashboard" prefetch={false} className="flex min-w-0 items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-300">
+      <Image src="/brand/donordesk-logo.png" alt="" width={552} height={600} className="h-8 w-auto shrink-0 rounded-md bg-white/95 object-contain p-0.5" />
+      <span className="min-w-0">
+        <span className="block truncate text-sm font-semibold text-white">{orgName || "DonorDesk"}</span>
+        <span className="block truncate text-[11px] text-slate-400">DonorDesk</span>
+      </span>
+    </Link>
+  );
+
   return (
     <div className="min-h-screen text-sm leading-5">
       <SkipLink />
-      <header role="banner" className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80">
-        <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              ref={menuButtonRef}
-              type="button"
-              aria-label="Open navigation menu"
-              aria-expanded={mobileOpen}
-              className="grid h-10 w-10 place-items-center rounded-lg border border-slate-300 text-slate-600 lg:hidden dark:border-white/15 dark:text-slate-300"
-              onClick={() => setMobileOpen(true)}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-            </button>
-            <button
-              type="button"
-              aria-label={navCollapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
-              aria-pressed={!navCollapsed}
-              title={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className="hidden h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-300 text-slate-600 transition hover:border-brand-400 hover:text-brand-700 lg:grid dark:border-white/15 dark:text-slate-300 dark:hover:border-brand-400/60 dark:hover:text-brand-300"
-              onClick={() => setNavCollapsed((v) => !v)}
-            >
-              {navCollapsed ? (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 17l5-5-5-5M13 17l5-5-5-5"/></svg>
-              ) : (
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/></svg>
-              )}
-            </button>
-            <Link href="/dashboard" prefetch={false} className="flex min-w-0 items-center gap-2.5">
-              <Image
-                src="/brand/donordesk-logo.png"
-                alt="DonorDesk"
-                width={552}
-                height={600}
-                className="h-9 w-auto shrink-0 object-contain"
-              />
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-medium">{orgName || "DonorDesk"}</span>
-                <span className="block truncate text-xs text-slate-500 dark:text-slate-400">Donor reporting workspace</span>
-              </span>
-            </Link>
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              ref={searchLinkRef}
-              href="/projects?focus=search"
-              prefetch={false}
-              aria-label="Search workspace"
-              className="hidden h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 text-xs text-slate-500 hover:border-brand-400 hover:text-brand-700 sm:flex dark:border-white/15 dark:bg-white/5 dark:text-slate-300"
-            >
-              <span aria-hidden="true">⌕</span> Search <kbd className="rounded border border-slate-300 px-1.5 py-0.5 text-[10px] dark:border-white/15">⌘K</kbd>
-            </Link>
-            <BookmarkButton />
-            <AcademyHeaderButton />
-            <RecordMenu canCreate={canCreate} canRecord={canRecord} hideOnPhone={phoneBar} />
-            <LocaleSwitcher />
-            <ThemeToggle />
-            <NotificationBell items={bellItems} />
-            <UserMenu name={user?.name ?? ""} email={user?.email ?? ""} />
-          </div>
-        </div>
-      </header>
-
-      <div className="flex gap-6 px-4 sm:px-6">
+      <CommandPalette capabilities={capabilities} />
+      <div className="flex">
+        {/* The navy rail (v4). Collapsing it gives the page the full width. */}
         <aside
           ref={desktopSidebarRef}
           aria-hidden={navCollapsed}
           className={cn(
-            "sticky top-16 hidden h-[calc(100vh-4rem)] shrink-0 overflow-hidden transition-[width,opacity] duration-300 ease-in-out lg:block",
-            navCollapsed ? "w-0 opacity-0" : "w-56 opacity-100",
+            "sticky top-0 hidden h-screen shrink-0 overflow-hidden bg-[#0f1b3d] transition-[width] duration-300 ease-in-out motion-reduce:transition-none lg:block",
+            navCollapsed ? "w-0" : "w-60",
           )}
         >
-          <div className="h-full w-56 overflow-y-auto py-6">
-            <SideNav items={navItems} />
+          <div className="flex h-full w-60 flex-col">
+            <div className="flex h-16 items-center px-4">{brand}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-6 pt-2">
+              <SideNav items={navItems} />
+            </div>
           </div>
         </aside>
 
-        <main id="main-content" className={cn("min-w-0 flex-1 py-6", phoneBar && "pb-28 lg:pb-6")} tabIndex={-1}>
-          {children}
-        </main>
+        <div className="min-w-0 flex-1">
+          <header role="banner" className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur-xl dark:border-white/10 dark:bg-[#0b1220]/85">
+            <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+              <div className="flex min-w-0 items-center gap-2">
+                <button
+                  ref={menuButtonRef}
+                  type="button"
+                  aria-label="Open navigation menu"
+                  aria-expanded={mobileOpen}
+                  className="btn-ghost btn-icon lg:hidden"
+                  onClick={() => setMobileOpen(true)}
+                >
+                  <Menu aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={navCollapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
+                  aria-pressed={!navCollapsed}
+                  title={navCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                  className="btn-ghost btn-icon hidden lg:inline-flex"
+                  onClick={() => setNavCollapsed((v) => !v)}
+                >
+                  {navCollapsed ? <PanelLeftOpen aria-hidden="true" /> : <PanelLeftClose aria-hidden="true" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={openCommandPalette}
+                  aria-label="Search and commands (Ctrl K)"
+                  className="hidden h-9 w-[min(22rem,32vw)] items-center gap-2 rounded-lg bg-slate-100 px-3 text-[13px] text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-white hover:ring-slate-300 sm:flex dark:bg-white/5 dark:text-slate-400 dark:ring-white/10 dark:hover:bg-white/10"
+                >
+                  <Search aria-hidden="true" className="h-4 w-4" />
+                  <span className="flex-1 text-start">Search or jump to…</span>
+                  <kbd className="rounded border border-slate-300 bg-white px-1.5 text-[10px] font-medium dark:border-white/15 dark:bg-transparent">Ctrl K</kbd>
+                </button>
+                <button type="button" onClick={openCommandPalette} aria-label="Search and commands" className="btn-ghost btn-icon sm:hidden"><Search aria-hidden="true" /></button>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <BookmarkButton />
+                <AcademyHeaderButton />
+                <LocaleSwitcher />
+                <ThemeToggle />
+                <NotificationBell items={bellItems} />
+                <RecordMenu canCreate={canCreate} canRecord={canRecord} hideOnPhone={phoneBar} />
+                <UserMenu name={user?.name ?? ""} email={user?.email ?? ""} />
+              </div>
+            </div>
+          </header>
+
+          <main id="main-content" className={cn("min-w-0 px-4 py-6 sm:px-6 lg:px-8 lg:py-8", phoneBar && "pb-28 lg:pb-8")} tabIndex={-1}>
+            <div className="mx-auto w-full max-w-[1440px]">
+              <HubTabs hubs={hubTabs} />
+              {children}
+            </div>
+          </main>
+        </div>
       </div>
 
       {phoneBar && <PhoneTabBar />}
 
       {mobileOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" role="presentation">
-          <div className="absolute inset-0 bg-slate-900/60" onClick={() => setMobileOpen(false)} aria-hidden="true" />
+          <div className="absolute inset-0 bg-slate-950/50 backdrop-blur-[2px]" onClick={() => setMobileOpen(false)} aria-hidden="true" />
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className={cn("absolute left-0 top-0 h-full w-72 bg-white p-4 shadow-2xl dark:bg-slate-900")}
+            className="absolute inset-y-0 start-0 flex w-72 animate-[slide-in-right_0.2s_ease-out] flex-col bg-[#0f1b3d] p-3 shadow-panel rtl:animate-none"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">{orgName || "DonorDesk"}</span>
-              <button type="button" aria-label="Close navigation menu" className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-white/5" onClick={() => setMobileOpen(false)}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+            <div className="flex items-center justify-between gap-2 px-1 pb-3">
+              {brand}
+              <button type="button" aria-label="Close navigation menu" className="grid h-10 w-10 place-items-center rounded-lg text-slate-300 hover:bg-white/10 hover:text-white" onClick={() => setMobileOpen(false)}>
+                <X aria-hidden="true" className="h-5 w-5" />
               </button>
             </div>
-            <div className="mt-4">
+            <div className="min-h-0 flex-1 overflow-y-auto">
               <SideNav items={navItems} onNavigate={() => setMobileOpen(false)} />
             </div>
           </div>
@@ -229,22 +231,22 @@ function RecordMenu({ canCreate, canRecord, hideOnPhone }: { canCreate: boolean;
   const { t } = useI18n();
   const menu = useRef<HTMLDetailsElement>(null);
   const close = () => { if (menu.current) menu.current.open = false; };
-  const plus = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>;
+  const plus = <Plus aria-hidden="true" />;
 
   if (!canRecord && !canCreate) return null;
   if (canRecord && !canCreate) {
     return (
-      <button type="button" className={cn("btn min-h-11 gap-1.5 px-3 text-sm", hideOnPhone && "max-lg:hidden")} aria-label={t("record.button")} onClick={() => record.open()}>
+      <button type="button" className={cn("btn-primary min-h-9 gap-1.5 px-3", hideOnPhone && "max-lg:hidden")} aria-label={t("record.button")} onClick={() => record.open()}>
         {plus}<span className="hidden sm:inline">{t("record.button")}</span>
       </button>
     );
   }
   return (
     <details ref={menu} className={cn("group relative", hideOnPhone && "max-lg:hidden")}>
-      <summary className="btn min-h-11 cursor-pointer list-none gap-1.5 px-3 text-sm" aria-label={canRecord ? t("record.button") : "Create"}>
+      <summary className="btn-primary min-h-9 cursor-pointer list-none gap-1.5 px-3 [&::-webkit-details-marker]:hidden" aria-label={canRecord ? t("record.button") : "Create"}>
         {plus}<span className="hidden sm:inline">{canRecord ? t("record.button") : "Create"}</span>
       </summary>
-      <div className="absolute right-0 top-12 z-50 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-slate-900">
+      <div className="absolute end-0 top-11 z-50 w-64 animate-pop-in rounded-xl border border-slate-200 bg-white p-1.5 shadow-raised dark:border-white/10 dark:bg-[#16203a]">
         {canRecord && (
           <>
             <p className="px-3 pb-1 pt-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">{t("record.button")}</p>

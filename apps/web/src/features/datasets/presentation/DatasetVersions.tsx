@@ -21,13 +21,13 @@ export function DatasetVersions({ dataset, onChanged }: { dataset: DatasetDetail
               <span className="font-medium">{t("ds.page.version", { n: v.number })}</span>
               <span className="text-xs text-slate-500">{new Date(v.createdAt).toLocaleString()}</span>
               <span className={`rounded-full px-2 py-0.5 text-[11px] ${v.status === "PENDING" ? "bg-amber-50 text-amber-900" : v.status === "REJECTED" ? "bg-red-50 text-red-900" : "bg-slate-100 dark:bg-slate-800"}`}>{t(`ds.version.${v.status}`)}</span>
-              {dataset.current?.id === v.id && <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] text-sky-900">{t("ds.version.current")}</span>}
+              {dataset.current?.id === v.id && <span className="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] text-brand-900">{t("ds.version.current")}</span>}
             </div>
             <p className="text-xs text-slate-600">{v.summary}</p>
             {v.decisionNote && <p className="text-xs text-slate-500">{v.decisionNote}</p>}
             {dataset.canManage && v.status === "PENDING" && (
               <div className="mt-1 flex flex-wrap gap-2">
-                <button type="button" className="rounded bg-sky-700 px-2 py-0.5 text-xs text-white" onClick={() => void act(decideDatasetVersionAction(dataset.id, v.id, true))}>{t("ds.version.accept")}</button>
+                <button type="button" className="rounded bg-brand-700 px-2 py-0.5 text-xs text-white" onClick={() => void act(decideDatasetVersionAction(dataset.id, v.id, true))}>{t("ds.version.accept")}</button>
                 <input aria-label={t("ds.version.why")} placeholder={t("ds.version.why")} className="rounded border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-600 dark:bg-slate-900" value={note[v.id] ?? ""} onChange={(e) => setNote({ ...note, [v.id]: e.target.value })} />
                 <button type="button" className="rounded border border-red-700 px-2 py-0.5 text-xs text-red-700" onClick={() => void act(decideDatasetVersionAction(dataset.id, v.id, false, note[v.id]))}>{t("ds.version.reject")}</button>
               </div>

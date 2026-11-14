@@ -8,8 +8,8 @@ export default async function VisualMapStudioPage({ params, searchParams }: { pa
   const { projectId } = await params;
   const { indicator } = await searchParams;
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Visual Studio</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="maps" />
       <MapStudioPanel indicatorId={indicator} projectId={projectId} studioHref={`/visuals/charts/${projectId}`} />
     </div>

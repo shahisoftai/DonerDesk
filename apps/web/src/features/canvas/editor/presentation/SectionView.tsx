@@ -14,7 +14,7 @@ export function SectionView({ section, settings, open, onToggle, onChange, ...ct
   return (
     <details open={open} onToggle={(e) => onToggle((e.target as HTMLDetailsElement).open)} className="rounded border border-slate-200 dark:border-slate-700" data-section={section.capability}>
       <summary className="flex min-h-10 cursor-pointer items-center gap-2 px-3 py-2 text-sm font-medium">
-        {isSet && <span className="h-1.5 w-1.5 rounded-full bg-sky-600" aria-label={t("drawer.changed")} />}
+        {isSet && <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-label={t("drawer.changed")} />}
         <span className="flex-1">{t(section.labelKey as never)}</span>
       </summary>
       <div className="space-y-3 border-t border-slate-200 p-3 dark:border-slate-700">

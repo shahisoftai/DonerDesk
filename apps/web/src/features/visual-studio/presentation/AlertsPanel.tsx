@@ -46,7 +46,7 @@ export function AlertsPanel({ projectId, indicators, alerts, projectNames }: { p
             </select></label>
           {rule.needsValue && <label className="flex flex-col gap-1">Number
             <input inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} className="w-28 rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" /></label>}
-          <button type="submit" className="rounded bg-sky-700 px-3 py-1.5 font-medium text-white hover:bg-sky-800">Add alert</button>
+          <button type="submit" className="rounded bg-brand-700 px-3 py-1.5 font-medium text-white hover:bg-brand-800">Add alert</button>
         </form>
       )}
       {message && <p role="status" className="text-sm">{message}</p>}

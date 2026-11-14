@@ -99,7 +99,7 @@ export function TemplateWorkspace({
       <header className="space-y-2">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">{template.templateName}</h1>
+            <h1 className="page-title">{template.templateName}</h1>
             <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
               <span>{template.donorName} · {REPORT_TYPE_LABEL[template.reportType] ?? template.reportType} · v{version}</span>
               <TemplateStatusBadge status={template.status} />

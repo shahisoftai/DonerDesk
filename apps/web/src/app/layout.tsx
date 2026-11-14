@@ -3,15 +3,19 @@ import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
 import { ServiceWorkerRegistrar } from "@/features/offline/presentation/ServiceWorkerRegistrar";
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { GeistSans } from "geist/font/sans";
+import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ThemeScript } from "@/components/ThemeScript";
+
+/** Version 4.000 type: IBM Plex Sans for every word on screen, Plex Mono for codes and aligned figures. */
+const plexSans = IBM_Plex_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
+const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono", display: "swap" });
 
 const DESCRIPTION =
   "Manage your projects and programmes in one place: logframe, work plan, field data collection, indicators, maps, dashboards, evidence and compliance. Donor reports are drafted from that record, checked against it and approved by a person.";
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0b1614" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1220" },
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
   ],
 };
@@ -102,7 +106,7 @@ const structuredData = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={GeistSans.variable}>
+    <html lang="en" suppressHydrationWarning className={`${plexSans.variable} ${plexMono.variable}`}>
       <body>
         <ServiceWorkerRegistrar />
         <script

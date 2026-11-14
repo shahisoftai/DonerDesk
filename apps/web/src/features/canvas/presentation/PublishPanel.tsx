@@ -80,7 +80,7 @@ export function PublishPanel({ canvasId, canEdit, dirty, reviewStatus, reviewNot
         {canEdit && <div className="flex flex-wrap gap-2">{FORMATS.map(([format, name]) => <button key={format} type="button" className={BTN} data-publish={format} disabled={dirty || busy !== null} onClick={() => void run(`publish-${format}`, () => publishCanvasAction(canvasId, { format }), `A ${name} copy was kept.`)}>{busy === `publish-${format}` ? t("canvas.ui.saving") : t("canvas.ui.keepCopy", { format: name })}</button>)}</div>}
         {copies.length === 0 ? <p className="text-slate-500">{t("canvas.ui.noCopies")}</p> : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-            {copies.map((c) => <li key={c.id} className="flex items-center justify-between gap-2 py-1.5"><span>{c.format} · {new Date(c.createdAt).toLocaleString()} · {size(c.sizeBytes)}</span><a className="text-sky-700 underline" href={`/api/canvases/${encodeURIComponent(canvasId)}/exports/${encodeURIComponent(c.id)}/file`}>{t("canvas.ui.download")}</a></li>)}
+            {copies.map((c) => <li key={c.id} className="flex items-center justify-between gap-2 py-1.5"><span>{c.format} · {new Date(c.createdAt).toLocaleString()} · {size(c.sizeBytes)}</span><a className="text-brand-700 underline" href={`/api/canvases/${encodeURIComponent(canvasId)}/exports/${encodeURIComponent(c.id)}/file`}>{t("canvas.ui.download")}</a></li>)}
           </ul>
         )}
       </section>

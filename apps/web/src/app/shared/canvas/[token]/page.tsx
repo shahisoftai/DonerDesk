@@ -12,7 +12,7 @@ export default async function SharedCanvasPage({ params }: { params: Promise<{ t
   if (!shared) {
     return (
       <main className="mx-auto max-w-xl px-4 py-16 text-center">
-        <h1 className="text-xl font-semibold">This link is not available</h1>
+        <h1 className="page-title">This link is not available</h1>
         <p className="mt-2 text-sm text-slate-500">It may have expired or been withdrawn. Ask the person who sent it for a new one.</p>
       </main>
     );
@@ -23,7 +23,7 @@ export default async function SharedCanvasPage({ params }: { params: Promise<{ t
       <main className="mx-auto max-w-4xl px-4 py-6">
         <h1 className="text-2xl font-bold tracking-tight">{shared.title}</h1>
         <p className="mt-1 text-xs text-slate-500">A copy that was kept on purpose. It does not change when the figures do.</p>
-        <p className="mt-4"><a className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white hover:bg-sky-800" href={file}>Open the file</a></p>
+        <p className="mt-4"><a className="rounded bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800" href={file}>Open the file</a></p>
       </main>
     );
   }

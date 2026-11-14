@@ -23,7 +23,7 @@ export function needsYouItems(i: NeedsYouInput): NeedsYouItem[] {
     i.highRisks > 0 ? { key: "serious-risks", count: i.highRisks, title: i.highRisks === 1 ? "Serious problem or risk" : "Serious problems and risks", detail: "Across your portfolio", href: "/portfolio", tone: "danger" } : null,
     i.risksReviewOverdue > 0 ? { key: "risk-reviews", count: i.risksReviewOverdue, title: i.risksReviewOverdue === 1 ? "Risk review is overdue" : "Risk reviews are overdue", detail: "Review dates have passed", href: "/portfolio", tone: "warning" } : null,
     i.checklistBlockers ? { key: "checklist", count: i.checklistBlockers, title: i.checklistBlockers === 1 ? "Compliance blocker" : "Compliance blockers", detail: "Open checklist items", href: "/compliance", tone: "warning" } : null,
-    i.activitiesToReview ? { key: "activities", count: i.activitiesToReview, title: i.activitiesToReview === 1 ? "Activity to review" : "Activities to review", detail: "Completed work waiting for a decision", href: "/my-work?type=activity", tone: "warning" } : null,
+    i.activitiesToReview ? { key: "activities", count: i.activitiesToReview, title: i.activitiesToReview === 1 ? "Activity to review" : "Activities to review", detail: "Completed work waiting for a decision", href: "/inbox?type=activity", tone: "warning" } : null,
     i.evidenceToReview ? { key: "evidence", count: i.evidenceToReview, title: i.evidenceToReview === 1 ? "File to verify" : "Files to verify", detail: "Evidence waiting for review", href: "/evidence", tone: "info" } : null,
   ];
   return all.filter((x): x is NeedsYouItem => x !== null);

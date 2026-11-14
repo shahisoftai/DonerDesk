@@ -28,7 +28,7 @@ export async function PortfolioHome({ ctx, variant, filter = {} }: { ctx: Sessio
         eyebrow={director ? "Portfolio home" : "Project home"}
         title={`Welcome back${firstName ? `, ${firstName}` : ""}. ${homeHeadline(needs)}`}
         subtitle={totals ? `${totals.projects} live project${totals.projects === 1 ? "" : "s"} you can see. Missing data is shown as unavailable, never as zero.` : "Portfolio figures are unavailable right now."}
-        actions={<><Link className="btn-secondary" href="/portfolio">Open portfolio</Link><Link className="btn-secondary" href="/my-work">Open My Work</Link></>}
+        actions={<><Link className="btn-secondary" href="/portfolio">Open portfolio</Link><Link className="btn-secondary" href="/inbox">Open My Work</Link></>}
       />
 
       <div className="flex justify-end"><HomeLayoutEditor variant={variant} initial={[...layout]} version={saved.version} /></div>

@@ -30,7 +30,7 @@ export default async function TemplateMappingPage({ params }: { params: Promise<
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">Donor template mapping</h1>
+      <h1 className="page-title">Donor template mapping</h1>
       <p className="text-sm text-slate-600 dark:text-slate-400">
         {tpl.templateName} — detect the donor's DOCX structure, review the auto-mapped sections, approve, and lock to a
         reporting period so exports render directly into the donor's own template instead of the generic layout.

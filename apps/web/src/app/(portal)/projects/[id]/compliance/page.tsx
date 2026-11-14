@@ -38,7 +38,7 @@ export default async function CompliancePage({
   if (periods.length === 0) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-xl font-semibold tracking-tight">Compliance</h1>
+        <h1 className="page-title">Compliance</h1>
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">
           Compliance checklist items are shown per reporting period. Create a reporting period to get started.
         </div>
@@ -59,7 +59,7 @@ export default async function CompliancePage({
   return (
     <div className="animate-fade-in" data-tour-id="compliance-checklist">
       <div className="flex items-center gap-2">
-        <h1 className="text-xl font-semibold tracking-tight">Compliance</h1>
+        <h1 className="page-title">Compliance</h1>
         <HelpButton topic="compliance" />
       </div>
       {!checklistResult.ok && <div className="mt-4"><InlineError title={checklistResult.error.message} /></div>}

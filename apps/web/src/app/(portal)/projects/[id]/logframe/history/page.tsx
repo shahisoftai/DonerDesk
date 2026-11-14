@@ -34,10 +34,10 @@ export default async function LogframeHistoryPage({ params }: { params: Promise<
   }
   const changes = await Promise.all(shown.map((v) => gatewayRequest(`/v1/projects/${id}/logframe/versions/${v.version}/changes`, LogframeChangesResponseSchema, ctx.token)));
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="page-stack animate-fade-in">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Framework history</h1>
+          <h1 className="page-title">Framework history</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             Every change to the results framework is kept, so you can show what it said when a report was approved and why a target moved.
           </p>

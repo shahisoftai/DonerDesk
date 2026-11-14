@@ -36,7 +36,7 @@ export default async function DownloadCenterPage() {
   });
 
   return <div className="animate-fade-in">
-    <header><p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">All projects</p><h1 className="mt-1 text-xl font-semibold tracking-tight">Download Center</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Every report and file you have exported.</p></header>
+    <header><p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">All projects</p><h1 className="mt-1 page-title">Download Center</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Every report and file you have exported.</p></header>
     {failed > 0 && <div className="mt-5"><InlineError title={`${failed} project export ${failed === 1 ? "list is" : "lists are"} temporarily unavailable.`} /></div>}
     {rows.length === 0 ? <div className="mt-6"><EmptyState>Nothing has been exported yet. Export a report from its page and it will appear here.</EmptyState></div> : <DownloadCenter rows={rows} />}
   </div>;

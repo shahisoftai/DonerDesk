@@ -36,7 +36,7 @@ export interface DataChartSpec {
 
 /** Ready-made colour sets for the picker; the first is the app's standard palette. */
 export const CHART_PALETTES: ReadonlyArray<{ id: string; label: string; colors: string[] }> = [
-  { id: "STANDARD", label: "Standard", colors: ["#2f7be8", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444", "#06b6d4"] },
+  { id: "STANDARD", label: "Standard", colors: ["#1e40af", "#0d9488", "#d97706", "#be185d", "#0284c7", "#4d7c0f"] },
   { id: "COLOUR_BLIND", label: "Colour-blind safe", colors: ["#0072B2", "#E69F00", "#009E73", "#CC79A7", "#D55E00", "#56B4E9"] },
   { id: "OCEAN", label: "Ocean", colors: ["#0b3c5d", "#1d6fa5", "#328cc1", "#5aaed6", "#8fcae6", "#c3e4f2"] },
   { id: "FOREST", label: "Forest", colors: ["#1b4332", "#2d6a4f", "#40916c", "#52b788", "#74c69d", "#b7e4c7"] },

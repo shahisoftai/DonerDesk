@@ -39,7 +39,7 @@ export function ProgressRingsScreen(props: ScreenRendererPropsOf<typeof progress
         return (
           <li key={ring.id} className="text-center">
             <p className="text-2xl font-bold">{ring.percent !== null ? `${Math.round(ring.percent)}%` : `${shown}${ring.unit === "%" ? "%" : ""}`}</p>
-            {ring.percent !== null && <Bar fraction={Math.min(ring.percent / 100, 1)} tone={ring.percent >= 100 ? "bg-emerald-600" : "bg-sky-600"} />}
+            {ring.percent !== null && <Bar fraction={Math.min(ring.percent / 100, 1)} tone={ring.percent >= 100 ? "bg-emerald-600" : "bg-brand-600"} />}
             <p className="mt-1 text-sm font-semibold">{ring.code} {ring.name}</p>
             {ring.percent !== null && ring.target !== null ? <p className={`text-xs ${ring.verified ? "text-slate-500" : "text-amber-700"}`}>{shown} / {text.fmt(ring.target)}</p> : ring.isRate ? <p className="text-xs text-slate-500">{text.l.latest}</p> : null}
           </li>

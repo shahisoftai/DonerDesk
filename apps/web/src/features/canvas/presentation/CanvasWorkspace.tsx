@@ -196,7 +196,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
     <div ref={stage} style={editing ? { paddingInlineEnd: pinnedWidth(drawers) } : undefined} className="space-y-4 [&:fullscreen]:overflow-auto [&:fullscreen]:bg-white [&:fullscreen]:p-6 dark:[&:fullscreen]:bg-slate-950" data-testid="canvas-workspace" data-editing={editing || undefined} data-presenting={present.presenting || undefined}>
       <header className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
-          {editing ? <input aria-label="Name" className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xl font-semibold dark:border-slate-600 dark:bg-slate-900" value={canvas.title} onChange={(e) => ed.rename(e.target.value)} /> : <h1 className="truncate text-xl font-semibold tracking-tight">{canvas.title}</h1>}
+          {editing ? <input aria-label="Name" className="w-full rounded border border-slate-300 bg-white px-2 py-1 text-xl font-semibold dark:border-slate-600 dark:bg-slate-900" value={canvas.title} onChange={(e) => ed.rename(e.target.value)} /> : <h1 className="truncate page-title">{canvas.title}</h1>}
           <p className="text-xs text-slate-500">{SCOPE_LABEL[initial.scope]} · {canvas.mode === "LIVE" ? "Live: figures are read when you open it" : "Published: a design to share"}{initial.sourceKind ? ` · from an older ${initial.sourceKind.toLowerCase()}` : ""}{dirty ? ` · ${t("canvas.ui.unsaved")}` : ""}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 print:hidden">
@@ -205,7 +205,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
           {!editing && present.available && <button type="button" className={BTN} onClick={present.start}>{t("canvas.ui.present")}</button>}
           {canEdit && <button type="button" className={BTN} aria-pressed={editing} onClick={() => setEditing((v) => !v)}>{editing ? t("canvas.ui.doneEditing") : t("canvas.ui.edit")}</button>}
           {editing && <><button type="button" className={BTN} aria-pressed={drawers.addOpen} aria-controls="add-drawer-shell" aria-keyshortcuts="Control+Shift+A Meta+Shift+A" onClick={() => setDrawers({ addOpen: !drawers.addOpen })}>{t("drawer.add")}</button><button type="button" className={BTN} aria-pressed={drawers.editOpen} aria-controls="edit-drawer-shell" aria-keyshortcuts="Control+Shift+E Meta+Shift+E" onClick={() => setDrawers({ editOpen: !drawers.editOpen })}>{t("drawer.edit")}</button><button type="button" className={BTN} onClick={() => session.setPaletteOpen(true)} aria-keyshortcuts="Control+K Meta+K">{t("editor.palette.title")}</button><button type="button" className={BTN} onClick={() => session.setShortcutsOpen(true)} aria-label={t("editor.shortcuts.title")}>?</button><button type="button" className={BTN} onClick={ed.undo} disabled={!ed.canUndo}>{t("canvas.ui.undo")}</button><button type="button" className={BTN} onClick={ed.redo} disabled={!ed.canRedo}>{t("canvas.ui.redo")}</button></>}
-          {canEdit && <button type="button" className={`${BTN} bg-sky-700 text-white hover:bg-sky-800 dark:hover:bg-sky-800`} onClick={() => void save()} disabled={!dirty || busy !== null}>{busy === "save" ? t("canvas.ui.saving") : t("canvas.ui.save")}</button>}
+          {canEdit && <button type="button" className={`${BTN} bg-brand-700 text-white hover:bg-brand-800 dark:hover:bg-brand-800`} onClick={() => void save()} disabled={!dirty || busy !== null}>{busy === "save" ? t("canvas.ui.saving") : t("canvas.ui.save")}</button>}
           <details className="relative" ref={menu}>
             <summary className={`${BTN} cursor-pointer list-none`}>{t("canvas.ui.more")}</summary>
             <ul className="absolute end-0 z-20 mt-1 w-56 rounded-lg border border-slate-200 bg-white py-1 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900">
@@ -244,8 +244,8 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
       )}
 
       <nav aria-label="Pages" className="flex flex-wrap items-center gap-1 print:hidden">
-        {canvas.pages.map((p) => <button key={p.id} type="button" aria-current={p.id === ed.page.id ? "page" : undefined} onClick={() => { ed.setPageId(p.id); ed.setSelected(null); }} className={`rounded-t border-b-2 px-3 py-1.5 text-sm ${p.id === ed.page.id ? "border-sky-600 font-semibold" : "border-transparent text-slate-600 hover:border-slate-300"}`}>{p.title || "Page"}</button>)}
-        {editing && <button type="button" className="px-2 py-1 text-sm text-sky-700 underline" onClick={ed.addPage}>{t("canvas.ui.addPage")}</button>}
+        {canvas.pages.map((p) => <button key={p.id} type="button" aria-current={p.id === ed.page.id ? "page" : undefined} onClick={() => { ed.setPageId(p.id); ed.setSelected(null); }} className={`rounded-t border-b-2 px-3 py-1.5 text-sm ${p.id === ed.page.id ? "border-brand-600 font-semibold" : "border-transparent text-slate-600 hover:border-slate-300"}`}>{p.title || "Page"}</button>)}
+        {editing && <button type="button" className="px-2 py-1 text-sm text-brand-700 underline" onClick={ed.addPage}>{t("canvas.ui.addPage")}</button>}
         {editing && <label className="ms-3 flex items-center gap-1 text-xs">Rename<input aria-label="Page name" className="rounded border border-slate-300 bg-white px-1 py-0.5 text-sm dark:border-slate-600 dark:bg-slate-900" value={ed.page.title} onChange={(e) => ed.renamePage(ed.page.id, e.target.value)} /></label>}
         {editing && canvas.pages.length > 1 && <button type="button" className="ms-2 text-xs text-red-700 underline" onClick={() => ed.removePage(ed.page.id)}>{t("canvas.ui.removePage")}</button>}
       </nav>

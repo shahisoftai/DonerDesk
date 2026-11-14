@@ -25,7 +25,7 @@ export function AiDraftControl({ style, projectId, instruction, language, disabl
 
   return (
     <div className="space-y-1">
-      <button type="button" disabled={disabled || busy} onClick={() => void draft()} data-testid="ai-draft" className="rounded border border-sky-600 px-2 py-1 text-xs text-sky-800 hover:bg-sky-50 disabled:opacity-40 dark:text-sky-300 dark:hover:bg-slate-800">{busy ? t("canvas.ui.saving") : t("canvas.ui.draftFromRecords")}</button>
+      <button type="button" disabled={disabled || busy} onClick={() => void draft()} data-testid="ai-draft" className="rounded border border-brand-600 px-2 py-1 text-xs text-brand-800 hover:bg-brand-50 disabled:opacity-40 dark:text-brand-300 dark:hover:bg-slate-800">{busy ? t("canvas.ui.saving") : t("canvas.ui.draftFromRecords")}</button>
       {state && <p role={state.tone === "error" ? "alert" : "status"} className={`text-xs ${state.tone === "error" ? "text-red-700" : "text-slate-600 dark:text-slate-300"}`}>{state.text}</p>}
     </div>
   );

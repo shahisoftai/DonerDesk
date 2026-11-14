@@ -55,7 +55,7 @@ export function DatasetPage({ dataset, kits, indicators, isAdmin, initialTab }: 
           {kit && <p className="mt-1 text-xs text-slate-500">{kit.title}: {kit.reviewState === "UNREVIEWED" ? t("ds.kit.unreviewedLong", { source: kit.source }) : kit.source}</p>}
         </div>
         <div className="flex flex-wrap gap-2">
-          {kit && <button type="button" disabled={busy !== null} className="rounded bg-sky-700 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60" onClick={() => void dashboards(kit.key)} data-testid="make-kit-dashboards">{busy === "kit" ? t("ds.done.making") : t("ds.done.kit", { kit: kit.title })}</button>}
+          {kit && <button type="button" disabled={busy !== null} className="rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60" onClick={() => void dashboards(kit.key)} data-testid="make-kit-dashboards">{busy === "kit" ? t("ds.done.making") : t("ds.done.kit", { kit: kit.title })}</button>}
           {!kit && kits.length > 0 && dataset.current && (
             <select aria-label={t("ds.page.kitPick")} className="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-600 dark:bg-slate-900" value="" onChange={(e) => e.target.value && void dashboards(e.target.value)}>
               <option value="">{t("ds.page.kitPick")}</option>{kits.map((k) => <option key={k.key} value={k.key}>{k.title}</option>)}
@@ -68,7 +68,7 @@ export function DatasetPage({ dataset, kits, indicators, isAdmin, initialTab }: 
       </div>
       {notice && <p role={notice.ok ? "status" : "alert"} className={`rounded px-3 py-2 text-sm ${notice.ok ? "bg-emerald-50 text-emerald-900" : "bg-red-50 text-red-900"}`}>{notice.text}</p>}
       <nav role="tablist" className="flex gap-1 overflow-x-auto border-b border-slate-200 dark:border-slate-700">
-        {TABS.filter((x) => x !== "connector" || dataset.canManage).map((x) => <button key={x} type="button" role="tab" aria-selected={tab === x} onClick={() => setTab(x)} className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === x ? "border-sky-700 font-medium" : "border-transparent text-slate-500"}`}>{t(`ds.tab.${x}`)}{x === "versions" && dataset.pending > 0 ? ` (${dataset.pending})` : ""}</button>)}
+        {TABS.filter((x) => x !== "connector" || dataset.canManage).map((x) => <button key={x} type="button" role="tab" aria-selected={tab === x} onClick={() => setTab(x)} className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === x ? "border-brand-700 font-medium" : "border-transparent text-slate-500"}`}>{t(`ds.tab.${x}`)}{x === "versions" && dataset.pending > 0 ? ` (${dataset.pending})` : ""}</button>)}
       </nav>
       {tab === "overview" && <DatasetOverview dataset={dataset} />}
       {tab === "versions" && <DatasetVersions dataset={dataset} onChanged={refresh} />}

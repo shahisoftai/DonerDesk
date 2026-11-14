@@ -36,7 +36,7 @@ export function LayersPanel({ page, selection, onSelect, onToggle }: Props) {
       {rows.length === 0 && <p className="text-xs text-slate-500">{t("editor.layers.empty")}</p>}
       <ul className="max-h-64 space-y-0.5 overflow-auto">
         {shown.map(({ b, depth, parent }) => (
-          <li key={b.id} data-layer={b.id} className={`flex items-center justify-between gap-1 rounded ${chosen.has(b.id) ? "bg-sky-50 dark:bg-slate-800" : ""}`} style={{ paddingInlineStart: depth * 14 }}>
+          <li key={b.id} data-layer={b.id} className={`flex items-center justify-between gap-1 rounded ${chosen.has(b.id) ? "bg-brand-50 dark:bg-slate-800" : ""}`} style={{ paddingInlineStart: depth * 14 }}>
             <button type="button" aria-pressed={chosen.has(b.id)} onClick={(e) => onSelect(b.id, { shift: e.shiftKey, mod: e.ctrlKey || e.metaKey })} className={`min-w-0 flex-1 truncate px-1.5 py-1 text-start text-sm ${b.style?.hidden ? "opacity-50" : ""}`} title={parent ? t("editor.layers.inside", { name: name(parent) }) : undefined}>
               {name(b)}{definitionFor(b.kind) ? "" : " ?"}
             </button>

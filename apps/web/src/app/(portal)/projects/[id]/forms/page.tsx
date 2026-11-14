@@ -16,10 +16,10 @@ export default async function FormsPage({ params }: { params: Promise<{ id: stri
   if (!result.ok) return <InlineError title={result.error.message} referenceId={result.error.referenceId} />;
   const canEdit = ctx.capabilities.has("project.edit");
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">Collection forms</h1>
+          <h1 className="page-title">Collection forms</h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-500">Design the questions your team answers in the field. Accepted answers are counted or added up into indicator values for the right period, as drafts for you to review.</p>
         </div>
         <div className="flex gap-2">

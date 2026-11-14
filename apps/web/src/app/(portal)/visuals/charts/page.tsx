@@ -23,12 +23,12 @@ export default async function VisualChartsPage({ searchParams }: { searchParams:
   const charts = { value: { charts: lists.flatMap((l) => (l.ok ? l.value.charts : [])) } };
   const names = new Map(items.map((p) => [p.id, p.title]));
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Visual Studio</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="charts" />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ProjectFilter projects={items} selected={project} action="/visuals/charts" />
-        {project && <a className="rounded bg-sky-700 px-3 py-2 text-sm font-medium text-white hover:bg-sky-800" href={`/visuals/charts/${project}`}>New chart in this project</a>}
+        {project && <a className="rounded bg-brand-700 px-3 py-2 text-sm font-medium text-white hover:bg-brand-800" href={`/visuals/charts/${project}`}>New chart in this project</a>}
       </div>
       {!project && <p className="text-sm text-slate-500">Choose a project to start a new chart. A chart is drawn from that project&apos;s records.</p>}
       {charts.value.charts.length === 0 ? <p className="text-sm text-slate-500">No saved charts{project ? " in this project" : ""} yet.</p> : (

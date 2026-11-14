@@ -33,7 +33,7 @@ test("globals.css carries exactly the token table, in both modes", () => {
 });
 
 test("the page's muted text colour in the stylesheet is the checked one", () => {
-  assert.match(block(":root"), /--text-muted: #586a62;/);
+  assert.match(block(":root"), /--text-muted: #5b6575;/);
 });
 
 test("series colours are eight distinct colours per mode and the ninth wraps to the first", () => {

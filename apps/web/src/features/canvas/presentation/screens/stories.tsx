@@ -5,7 +5,7 @@ export function QuoteScreen(props: ScreenRendererPropsOf<typeof quoteModel>) {
   return readyOrNothing(props, (q) => {
     const portrait = q.assetId ? props.assetUrl?.(q.assetId) : undefined;
     return (
-      <figure className="flex gap-4 border-s-4 border-sky-600 p-4">
+      <figure className="flex gap-4 border-s-4 border-brand-600 p-4">
         {portrait && <img src={portrait} alt="" className="h-16 w-16 shrink-0 rounded-full object-cover" />}
         <blockquote className="text-lg italic">“{q.text}”{q.attribution && <footer className="mt-2 text-xs font-bold not-italic text-slate-600">— {q.attribution}</footer>}</blockquote>
       </figure>

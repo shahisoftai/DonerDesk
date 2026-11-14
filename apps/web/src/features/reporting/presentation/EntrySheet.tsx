@@ -36,7 +36,7 @@ const STATE_MARK: Record<CellState, string> = {
   empty: "", unsaved: "●", saved: "", submitted: "…", returned: "↩", verified: "✓", calculated: "ƒ", closed: "⏸", "read-only": "", "not-applicable": "n/a", invalid: "!",
 };
 const STATE_TINT: Record<CellState, string> = {
-  empty: "", saved: "", unsaved: "bg-amber-50 dark:bg-amber-400/10", submitted: "bg-sky-50 dark:bg-sky-400/10", returned: "bg-orange-50 dark:bg-orange-400/10",
+  empty: "", saved: "", unsaved: "bg-amber-50 dark:bg-amber-400/10", submitted: "bg-brand-50 dark:bg-brand-400/10", returned: "bg-orange-50 dark:bg-orange-400/10",
   verified: "bg-emerald-50 text-slate-700 dark:bg-emerald-400/10 dark:text-slate-200", calculated: "bg-slate-100 italic text-slate-600 dark:bg-white/5 dark:text-slate-300",
   closed: "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400", "read-only": "bg-slate-50 text-slate-600 dark:bg-white/[0.03] dark:text-slate-300",
   "not-applicable": "bg-slate-100 text-slate-500 dark:bg-white/5 dark:text-slate-400", invalid: "bg-red-50 dark:bg-red-400/10",

@@ -13,7 +13,7 @@ export default async function ProjectDatasetsPage({ params }: { params: Promise<
   if (!list.ok) return <InlineError title={list.error.message} referenceId={list.error.referenceId} />;
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Datasets</h2>
+      <h2 className="section-title">Datasets</h2>
       <DatasetList datasets={list.value.datasets} kits={kits.ok ? kits.value.kits : []} canCreate={list.value.canCreate} projectId={id} />
     </div>
   );

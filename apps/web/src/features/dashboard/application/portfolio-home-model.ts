@@ -96,7 +96,7 @@ function quickLinksFor(ctx: SessionContext, director: boolean): HomeLink[] {
   const can = (c: Capability) => ctx.capabilities.has(c);
   const links: HomeLink[] = [];
   if (can("report.approve")) links.push({ href: "/reports", label: "Approve reports", hint: "Reports in review" });
-  if (can("activity.review")) links.push({ href: "/my-work?type=activity", label: "Accept activities" });
+  if (can("activity.review")) links.push({ href: "/inbox?type=activity", label: "Accept activities" });
   if (can("evidence.verify")) links.push({ href: "/evidence", label: "Verify evidence" });
   links.push({ href: "/portfolio/indicators", label: "Indicators across projects" });
   if (director && can("org.manage")) links.push({ href: "/programmes", label: "Programmes and grants" });

@@ -24,7 +24,7 @@ export function DatasetSharing({ dataset, isAdmin, onChanged }: { dataset: Datas
         <ul className="grid gap-1 sm:grid-cols-2">{(dataset.current?.columns ?? []).map((c) => (
           <li key={c.key}><label className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={!dataset.canManage || always(c)} checked={always(c) || hidden.has(c.key)} onChange={(e) => { const n = new Set(hidden); if (e.target.checked) n.add(c.key); else n.delete(c.key); setHidden(n); }} />{c.label}{always(c) && <span className="text-xs text-slate-500">{t("ds.share.always")}</span>}</label></li>
         ))}</ul>
-        {dataset.canManage && <button type="button" className="rounded bg-sky-700 px-3 py-1 text-sm text-white" onClick={async () => done(await updateDatasetAction(dataset.id, { sharePolicy: { hidden: [...hidden] } }))}>{t("ds.save")}</button>}
+        {dataset.canManage && <button type="button" className="rounded bg-brand-700 px-3 py-1 text-sm text-white" onClick={async () => done(await updateDatasetAction(dataset.id, { sharePolicy: { hidden: [...hidden] } }))}>{t("ds.save")}</button>}
       </section>
       {isAdmin && (
         <section className="space-y-2"><h3 className="text-sm font-semibold">{t("ds.restrict.title")}</h3>

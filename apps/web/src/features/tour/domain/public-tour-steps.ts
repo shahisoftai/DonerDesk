@@ -43,7 +43,7 @@ const EXTRA: Record<string, TourStep> = {
     body: "Design a one-page infographic from your verified results in English, French, Spanish or Arabic. Export it as PNG, PDF or SVG, or share a link that expires.",
   },
   "my-work": {
-    id: "my-work", route: "/my-work", targetSelector: "",
+    id: "my-work", route: "/inbox", targetSelector: "",
     title: "Your work, by when it is due",
     body: "Everything that is yours in one list: planned activities, requests from colleagues, report deadlines and indicator values that are due.",
   },

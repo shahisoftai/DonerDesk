@@ -23,7 +23,7 @@ export default async function ClosingReportPage({ params }: { params: Promise<{ 
 
   return (
     <div className="animate-fade-in max-w-3xl">
-      <h1 className="text-xl font-semibold tracking-tight">Closing report</h1>
+      <h1 className="page-title">Closing report</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         The final report covers the project&apos;s whole life: project-wide figures, finance, evidence and sign-offs. {closingSummary(plan.todoCount, plan.canStart, Boolean(plan.existingFinalId))}
       </p>

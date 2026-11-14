@@ -123,7 +123,7 @@ export default async function ReportInputsPage({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {eyebrow && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{eyebrow}</p>}
-          <h1 className="mt-1 text-xl font-semibold tracking-tight">Report inputs</h1>
+          <h1 className="mt-1 page-title">Report inputs</h1>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">What the AI writes the report from. Changes here are picked up when you re-check or regenerate.</p>
         </div>
         <Link className="btn-secondary" href={reportHref}>

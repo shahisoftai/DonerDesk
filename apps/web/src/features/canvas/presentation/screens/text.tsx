@@ -46,14 +46,14 @@ export function IconScreen({ model, frame }: { model: BlockModel<{ iconId: strin
 export const DividerScreen = () => <hr className="my-3 border-slate-300 dark:border-slate-700" />;
 
 export function BannerScreen(props: ScreenRendererPropsOf<typeof bannerModel>) {
-  return readyOrNothing(props, (m) => <p className="rounded-lg bg-sky-700 px-4 py-4 text-center text-base font-bold text-white">{m.message}</p>);
+  return readyOrNothing(props, (m) => <p className="rounded-lg bg-brand-700 px-4 py-4 text-center text-base font-bold text-white">{m.message}</p>);
 }
 
 export function KeyMessagesScreen(props: ScreenRendererPropsOf<typeof keyMessagesModel>) {
   return readyOrNothing(props, (m) => (
     <ol className="space-y-3 p-4">
       {m.messages.map((msg, i) => (
-        <li key={i} className="flex gap-3 text-sm"><span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-100 font-bold text-sky-800">{i + 1}</span><span>{msg.text}</span></li>
+        <li key={i} className="flex gap-3 text-sm"><span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-100 font-bold text-brand-800">{i + 1}</span><span>{msg.text}</span></li>
       ))}
     </ol>
   ));
@@ -75,7 +75,7 @@ export function HeroScreen(props: ScreenRendererPropsOf<typeof heroModel>) {
   return readyOrNothing(props, (m) => {
     const picture = m.assetId ? props.assetUrl?.(m.assetId) : undefined;
     return (
-      <header className="relative overflow-hidden rounded-xl bg-sky-700 px-6 py-6 text-white" style={picture ? { backgroundImage: `linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(${picture})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
+      <header className="relative overflow-hidden rounded-xl bg-brand-700 px-6 py-6 text-white" style={picture ? { backgroundImage: `linear-gradient(rgba(0,0,0,.5), rgba(0,0,0,.5)), url(${picture})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}>
         {m.kicker && <p className="text-xs font-semibold uppercase tracking-widest opacity-90">{m.kicker}</p>}
         <h2 className="mt-1 text-3xl font-bold leading-tight">{m.title}</h2>
         {m.subtitle && <p className="mt-2 text-sm opacity-95">{m.subtitle}</p>}

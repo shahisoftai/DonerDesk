@@ -15,10 +15,10 @@ export default async function NewDatasetPage({ searchParams }: { searchParams: P
   const items = projects.ok ? projects.value.items.map((p) => ({ id: p.id, title: p.title, country: p.country })) : [];
   const target = existing && existing.ok ? existing.value : undefined;
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Visual Studio</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="datasets" />
-      <h2 className="text-lg font-semibold">{target ? `Add data to ${target.name}` : "Bring in a table"}</h2>
+      <h2 className="section-title">{target ? `Add data to ${target.name}` : "Bring in a table"}</h2>
       <UploadWizard projects={target?.projectId ? items.filter((p) => p.id === target.projectId) : items} kits={kits.ok ? kits.value.kits : []} projectId={projectId ?? target?.projectId}
         canCreateOrg={ctx.capabilities.has("org.manage")} {...(target ? { refresh: { datasetId: target.id, name: target.name } } : {})} />
     </div>

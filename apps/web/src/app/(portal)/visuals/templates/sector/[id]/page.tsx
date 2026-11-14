@@ -15,8 +15,8 @@ export default async function VisualSectorTemplatePage({ params }: { params: Pro
   const r = await gatewayRequest(`/v1/dashboard-templates/${encodeURIComponent(id)}`, TemplateDetailSchema, ctx.token);
   if (!r.ok) return <InlineError title={r.error.message} referenceId={r.error.referenceId} />;
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Visual Studio</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="templates" />
       <p className="text-sm"><Link className="underline" href="/visuals/templates">Templates</Link></p>
       <TemplateEditor template={r.value.template as never} updatedAt={r.value.updatedAt} canEdit={r.value.canEdit && ctx.capabilities.has("project.edit")} />

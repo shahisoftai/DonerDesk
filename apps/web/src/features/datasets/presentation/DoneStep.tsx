@@ -36,7 +36,7 @@ export function DoneStep({ datasetId, summary, kitKey, kits, refreshed }: { data
       <p className="rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:bg-emerald-950 dark:text-emerald-100">{refreshed ? t("ds.done.refreshed", { summary }) : t("ds.done.saved", { summary })}</p>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       <div className="flex flex-wrap gap-2">
-        {kit && <button type="button" disabled={busy} className="rounded bg-sky-700 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60" onClick={() => void make()} data-testid="make-kit-dashboards">{busy ? t("ds.done.making") : t("ds.done.kit", { kit: kit.title })}</button>}
+        {kit && <button type="button" disabled={busy} className="rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60" onClick={() => void make()} data-testid="make-kit-dashboards">{busy ? t("ds.done.making") : t("ds.done.kit", { kit: kit.title })}</button>}
         <button type="button" disabled={busy} onClick={() => void chart()} className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" data-testid="build-chart">{t("ds.done.chart")}</button>
         <Link href={`/visuals/datasets/${datasetId}?tab=links`} className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600">{t("ds.done.indicators")}</Link>
         <Link href={`/visuals/datasets/${datasetId}`} className="px-3 py-1.5 text-sm underline">{t("ds.done.open")}</Link>

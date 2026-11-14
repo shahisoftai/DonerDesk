@@ -6,7 +6,7 @@ import type { BlockModel, PaintFrame } from "@donordesk/domain/contexts/canvas/i
 import { NothingToShow, readyOrNothing, screenText } from "./screen-text";
 
 type Frame = { frame: PaintFrame };
-const TONE: Record<string, string> = { info: "bg-sky-50 text-sky-900 border-sky-300 dark:bg-sky-950 dark:text-sky-100", good: "bg-emerald-50 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100", warn: "bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-100" };
+const TONE: Record<string, string> = { info: "bg-brand-50 text-brand-900 border-brand-300 dark:bg-brand-950 dark:text-brand-100", good: "bg-emerald-50 text-emerald-900 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-100", warn: "bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950 dark:text-amber-100" };
 
 export function CalloutScreen({ model, frame }: Frame & { model: BlockModel<{ text: string; tone: string }> }) {
   if (model.state !== "ready") return <NothingToShow text={screenText(frame)} reason={model.reason} authoring />;
@@ -36,7 +36,7 @@ export function TabsScreen({ model }: Frame & { model: BlockModel<{ titles: stri
   return (
     <div className="px-3 py-2">
       <div role="tablist" className="flex gap-1 border-b border-slate-200 dark:border-slate-700">
-        {titles.map((t, i) => <button key={i} type="button" role="tab" aria-selected={i === active} onClick={() => setActive(i)} className={`border-b-2 px-3 py-1.5 text-sm ${i === active ? "border-sky-600 font-semibold" : "border-transparent text-slate-600"}`}>{t}</button>)}
+        {titles.map((t, i) => <button key={i} type="button" role="tab" aria-selected={i === active} onClick={() => setActive(i)} className={`border-b-2 px-3 py-1.5 text-sm ${i === active ? "border-brand-600 font-semibold" : "border-transparent text-slate-600"}`}>{t}</button>)}
       </div>
       <p role="tabpanel" className="px-1 py-3 text-xs text-slate-500">{titles[active]}</p>
     </div>

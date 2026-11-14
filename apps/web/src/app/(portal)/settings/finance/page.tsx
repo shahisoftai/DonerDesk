@@ -20,7 +20,7 @@ export default async function FinanceSettingsPage() {
   if (!sources.ok || !rates.ok || !categories.ok) return null;
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">{C.settingsTitle}</h1>
+      <h1 className="page-title">{C.settingsTitle}</h1>
       <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{C.settingsIntro}</p>
       <div className="mt-6">
         <FinanceSettingsPanel sources={sources.value.sources} rates={rates.value} categories={categories.value.categories} canEdit={hasCapability(ctx, "org.manage")} today={todayText(new Date())} />

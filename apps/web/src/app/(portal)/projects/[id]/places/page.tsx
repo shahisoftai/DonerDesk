@@ -23,8 +23,8 @@ export default async function WhereWeWorkPage({ params, searchParams }: { params
   if (!list.ok) return <InlineError title={list.error.message} referenceId={list.error.referenceId} />;
   const canEdit = list.value.canEdit && hasCapability(ctx, "project.edit");
   return (
-    <div className="animate-fade-in space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">Where we work</h1>
+    <div className="page-stack animate-fade-in">
+      <h1 className="page-title">Where we work</h1>
       <nav aria-label="Where we work" className="flex gap-4 border-b border-slate-200 text-sm dark:border-slate-700">
         {WHERE_WE_WORK_TABS.map((t) => (
           <Link key={t.key} href={`/projects/${id}/places?tab=${t.key}`} aria-current={t.key === tab ? "page" : undefined} className={`-mb-px border-b-2 px-1 py-2 ${t.key === tab ? "border-brand-600 font-semibold" : "border-transparent text-slate-600 dark:text-slate-300"}`}>

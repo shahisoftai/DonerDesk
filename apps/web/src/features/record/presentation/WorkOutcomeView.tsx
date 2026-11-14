@@ -140,7 +140,7 @@ export function WorkOutcomeView(props: KindViewProps & { plannedActivityId: stri
           <span><span className="block text-lg font-bold">{t("record.work.finished")}</span><span className="block text-sm text-slate-600 dark:text-slate-300">{t("record.work.finishedHint")}</span></span>
         </button>
         <Link className={OPTION} href={planPage} prefetch={false} onClick={onClose}>
-          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-sky-100 text-sky-800 dark:bg-sky-400/15 dark:text-sky-200" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 18h4V12H4zM10 18h4V8h-4zM16 18h4V4h-4z" /></svg></span>
+          <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-100 text-brand-800 dark:bg-brand-400/15 dark:text-brand-200" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 18h4V12H4zM10 18h4V8h-4zM16 18h4V4h-4z" /></svg></span>
           <span><span className="block text-lg font-bold">{t("record.work.progress")}</span><span className="block text-sm text-slate-600 dark:text-slate-300">{t("record.work.progressHint")}</span></span>
         </Link>
         {mayCancel && <button type="button" className={OPTION} onClick={() => setStep({ kind: "notHeld" })}>

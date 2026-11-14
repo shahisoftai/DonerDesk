@@ -2,6 +2,15 @@
 import { useEffect, useState } from "react";
 
 const STORAGE_KEY = "donordesk-theme";
+export const THEME_EVENT = "donordesk:theme";
+
+/** Switch light and dark from anywhere (the command palette); the toggle follows. */
+export function flipTheme(): void {
+  const dark = !document.documentElement.classList.contains("dark");
+  document.documentElement.classList.toggle("dark", dark);
+  try { localStorage.setItem(STORAGE_KEY, dark ? "dark" : "light"); } catch { /* private window */ }
+  window.dispatchEvent(new Event(THEME_EVENT));
+}
 
 function resolveInitial(): "light" | "dark" {
   if (typeof window === "undefined") return "dark";
@@ -15,6 +24,10 @@ export function ThemeToggle() {
 
   useEffect(() => {
     setTheme(resolveInitial());
+    // The command palette switches the theme too; follow it.
+    const follow = () => setTheme(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    window.addEventListener(THEME_EVENT, follow);
+    return () => window.removeEventListener(THEME_EVENT, follow);
   }, []);
 
   useEffect(() => {

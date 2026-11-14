@@ -12,9 +12,9 @@ export default async function AskPage({ params }: { params: Promise<{ id: string
   const enabled = org.ok && org.value.askAccess === "AVAILABLE" && !ctx.external;
   const notInPlan = org.ok && org.value.askAccess === "NOT_IN_PLAN";
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="page-stack animate-fade-in">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Ask about this project</h1>
+        <h1 className="page-title">Ask about this project</h1>
         <p className="mt-1 max-w-3xl text-sm text-slate-500">Put a question to the project&apos;s recorded values, accepted activities and evidence. Every sentence of the answer names the records it rests on.</p>
       </header>
       {enabled ? <AskPanel projectId={id} /> : (

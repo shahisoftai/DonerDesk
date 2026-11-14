@@ -1,0 +1,110 @@
+import Link from "next/link";
+import { requireSession } from "@/lib/server/auth-context";
+import { gatewayRequest } from "@/lib/server/api-gateway";
+import { NotificationsResponseSchema } from "@/lib/server/schemas";
+import { InlineError, EmptyState } from "@/components/feedback/PageState";
+import { Badge } from "@/components/data/Badge";
+import { MarkReadButton } from "./MarkReadButton";
+import { EmailPreference } from "@/features/tasks/presentation/EmailPreference";
+import { NotificationPreferencesSchema } from "@/lib/server/schemas";
+
+const TYPE_LABEL: Record<string, string> = {
+  ASSIGNMENT: "Assignment",
+  EVIDENCE_REVIEW: "Evidence review",
+  DEADLINE_REMINDER: "Reminder",
+  COMMENT_MENTION: "Mention",
+  CHECKLIST_ASSIGNED: "Compliance",
+  REPORT_APPROVED: "Report approved",
+  REPORT_RETURNED: "Report returned",
+  DATA_ALERT: "Data alert",
+  CANVAS_DIGEST: "Visual ready",
+  EXPORT_COMPLETED: "Export",
+  INVITATION: "Invitation",
+  PASSWORD_RESET: "Password",
+};
+
+type Notification = {
+  id: string;
+  type?: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt?: string;
+};
+
+export async function UpdatesView({ params, heading }: { params: Record<string, string | string[] | undefined>; heading: React.ReactNode }) {
+  const ctx = await requireSession();
+  const [result, prefs] = await Promise.all([
+    gatewayRequest("/v1/notifications", NotificationsResponseSchema, ctx.token),
+    gatewayRequest("/v1/me/notification-preferences", NotificationPreferencesSchema, ctx.token),
+  ]);
+
+  const raw = (key: string) => {
+    const v = params[key];
+    return typeof v === "string" ? v : "";
+  };
+  const filter = raw("filter") || "all";
+
+  const items = result.ok ? (result.value.items as Notification[]) : [];
+  const filtered = filter === "unread" ? items.filter((n) => !n.read) : filter === "read" ? items.filter((n) => n.read) : items;
+  const unreadCount = result.ok ? items.filter((n) => !n.read).length : 0;
+
+  const group = new Map<string, Notification[]>();
+  for (const n of filtered) {
+    const date = n.createdAt ? new Date(n.createdAt).toDateString() : "Unknown";
+    const list = group.get(date) ?? [];
+    list.push(n);
+    group.set(date, list);
+  }
+
+  const chip = (value: string, label: string) => {
+    const href = `/inbox?tab=updates${value === "all" ? "" : `&filter=${value}`}`;
+    return (
+      <Link href={href} className={`btn-sm ${filter === value ? "btn-soft" : "btn-ghost"}`}>
+        {label}
+      </Link>
+    );
+  };
+
+  return (
+    <div className="animate-fade-in">
+      {heading}
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-slate-600 dark:text-slate-400">{unreadCount} unread</p>
+        <div className="flex gap-2">
+          {chip("all", "All")}
+          {chip("unread", "Unread")}
+          {chip("read", "Read")}
+        </div>
+      </div>
+
+      {prefs.ok && <div className="mt-6"><EmailPreference initial={prefs.value.emailSummaryMode} /></div>}
+
+      <div className="mt-6 space-y-6">
+        {!result.ok && <div className="mt-4"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>}
+        {result.ok && filtered.length === 0 && <EmptyState>No notifications here.</EmptyState>}
+        {[...group.entries()].map(([date, list]) => (
+          <section key={date}>
+            <h2 className="text-xs font-medium text-slate-400">{date}</h2>
+            <ul className="mt-2 space-y-2">
+              {list.map((n) => (
+                <li key={n.id} className={`rounded-xl border px-4 py-3 ${n.read ? "border-slate-200/60 bg-white dark:border-white/10 dark:bg-white/[0.03]" : "border-brand-400/40 bg-white dark:bg-white/[0.05]"}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Badge tone={n.read ? "neutral" : "info"}>{TYPE_LABEL[n.type ?? ""] ?? (n.type ?? "Notification")}</Badge>
+                        <span className="font-medium">{n.title}</span>
+                      </div>
+                      {n.message && <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{n.message}</p>}
+                    </div>
+                    {!n.read && <MarkReadButton id={n.id} />}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}

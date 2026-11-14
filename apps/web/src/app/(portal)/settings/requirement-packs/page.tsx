@@ -13,9 +13,9 @@ export default async function RequirementPacksPage() {
   if (!hasCapability(ctx, "template.edit")) notFound();
   const result = await gatewayRequest("/v1/reporting-requirement-packs", RequirementPacksResponseSchema, ctx.token);
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="page-stack animate-fade-in">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Donor requirements</h1>
+        <h1 className="page-title">Donor requirements</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           List what a donor requires of a report. Once a pack is active, a report that is missing a mandatory item cannot be approved, and the report says which one.
         </p>

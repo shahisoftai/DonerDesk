@@ -47,7 +47,7 @@ export default async function GlobalEvidencePage({ searchParams }: { searchParam
     <div className="animate-fade-in">
       <header>
         <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Cross-project queue</p>
-        <h1 className="mt-1 text-xl font-semibold tracking-tight">Evidence</h1>
+        <h1 className="mt-1 page-title">Evidence</h1>
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review evidence across the projects you are allowed to access.</p>
       </header>
       <div className="mt-4">

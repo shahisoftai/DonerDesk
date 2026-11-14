@@ -71,7 +71,7 @@ export function UploadWizard({ projects, kits, projectId, canCreateOrg, refresh 
   return (
     <div className="space-y-4" data-testid="dataset-wizard">
       <ol className="flex flex-wrap gap-2 text-xs" aria-label={t("ds.wizard.progress")}>
-        {shown.map((s) => <li key={s} aria-current={s === stage ? "step" : undefined} className={`rounded-full px-2 py-0.5 ${s === stage ? "bg-sky-700 text-white" : WIZARD_STEPS.indexOf(s) < at ? "bg-sky-50 text-sky-900 dark:bg-sky-950 dark:text-sky-100" : "bg-slate-100 text-slate-500 dark:bg-slate-800"}`}>{t(`ds.step.${s}`)}</li>)}
+        {shown.map((s) => <li key={s} aria-current={s === stage ? "step" : undefined} className={`rounded-full px-2 py-0.5 ${s === stage ? "bg-brand-700 text-white" : WIZARD_STEPS.indexOf(s) < at ? "bg-brand-50 text-brand-900 dark:bg-brand-950 dark:text-brand-100" : "bg-slate-100 text-slate-500 dark:bg-slate-800"}`}>{t(`ds.step.${s}`)}</li>)}
       </ol>
       {refresh && <p className="text-sm">{t("ds.wizard.refreshing", { name: refresh.name })}</p>}
       {error && <p role="alert" className="rounded bg-red-50 px-3 py-2 text-sm text-red-900 dark:bg-red-950 dark:text-red-100">{error}</p>}

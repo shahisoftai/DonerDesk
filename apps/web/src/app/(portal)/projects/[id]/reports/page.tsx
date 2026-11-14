@@ -36,7 +36,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
     return (
       <div className="animate-fade-in">
         <header className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
+          <h1 className="page-title">Reports</h1>
           <div className="flex gap-2">
           <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/reports/closing`}>Closing report</Link>
           <Link className="btn" href={`/projects/${resolvedParams.id}/reports/new`}>Create reporting period</Link>
@@ -70,7 +70,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ id: st
   return (
     <div className="animate-fade-in" data-tour-id="reporting-period-list">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold tracking-tight">Reports</h1>
+        <h1 className="page-title">Reports</h1>
         <div className="flex gap-2">
           {ctx.capabilities.has("reporting.edit") && <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/templates`}>Donor templates</Link>}
           <Link className="btn-secondary" href={`/projects/${resolvedParams.id}/adaptations`}>Changes of plan</Link>

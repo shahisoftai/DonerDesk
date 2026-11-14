@@ -619,7 +619,6 @@ export function ReportEditor(props: ReportEditorProps) {
     menuItems.push({ label: "Download draft", hint: "Word or PDF, watermarked for internal review", onSelect: () => setExportOpen(true) });
   }
   menuItems.push({ label: "Export center", hint: "Past exports and downloads", href: `${base}/export` });
-  menuItems.push({ label: "Switch to classic view", hint: "The previous workspace layout", href: `${base}?editor=classic` });
 
   const approveBlocking = model.checks.filter((c) => c.severity === "BLOCKING").length;
   const inputsChanged = props.inputsChangedSince;

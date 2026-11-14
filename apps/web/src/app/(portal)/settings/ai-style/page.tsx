@@ -11,7 +11,7 @@ export default async function AiStyleSettingsPage() {
   if (!hasCapability(ctx, "report.manage-agent-memory")) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-xl font-semibold tracking-tight">AI Writing Style</h1>
+        <h1 className="page-title">AI Writing Style</h1>
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">
           You do not have permission to manage this setting.
         </div>
@@ -23,7 +23,7 @@ export default async function AiStyleSettingsPage() {
   if (!org.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-xl font-semibold tracking-tight">AI Writing Style</h1>
+        <h1 className="page-title">AI Writing Style</h1>
         <div className="mt-6"><InlineError title={org.error.message} referenceId={org.error.referenceId} /></div>
       </div>
     );
@@ -31,7 +31,7 @@ export default async function AiStyleSettingsPage() {
   if (!org.value.agentMemoryPlatformEnabled) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-xl font-semibold tracking-tight">AI Writing Style</h1>
+        <h1 className="page-title">AI Writing Style</h1>
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">This feature is not yet available for your account.</div>
       </div>
     );
@@ -39,7 +39,7 @@ export default async function AiStyleSettingsPage() {
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">AI Writing Style</h1>
+      <h1 className="page-title">AI Writing Style</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
         Let the AI reporter learn your team&apos;s preferred wording and structure from the edits reviewers make to AI-drafted sections.
       </p>

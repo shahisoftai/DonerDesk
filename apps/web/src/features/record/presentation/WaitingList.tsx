@@ -10,7 +10,7 @@ import { SyncNote } from "./SyncNote";
 
 const TONE: Record<SyncTone, string> = {
   neutral: "bg-slate-100 text-slate-800 dark:bg-white/10 dark:text-slate-100",
-  progress: "bg-sky-100 text-sky-900 dark:bg-sky-400/15 dark:text-sky-100",
+  progress: "bg-brand-100 text-brand-900 dark:bg-brand-400/15 dark:text-brand-100",
   good: "bg-success-50 text-success-800 dark:bg-success-500/15 dark:text-success-200",
   attention: "bg-warning-50 text-warning-900 dark:bg-warning-500/15 dark:text-warning-100",
 };

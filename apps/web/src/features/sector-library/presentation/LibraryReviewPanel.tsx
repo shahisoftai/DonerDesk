@@ -53,7 +53,7 @@ export function LibraryReviewPanel({ progress }: { progress: { sectors: SectorRe
   return (
     <div className="space-y-6" data-testid="library-review">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">{t("lib.settings.title")}</h1>
+        <h1 className="page-title">{t("lib.settings.title")}</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{t("lib.unreviewedNote")} {t("lib.settings.progress", { count: `${progress.reviewed} / ${progress.total}` })}</p>
       </header>
       <label className="block max-w-sm text-sm">

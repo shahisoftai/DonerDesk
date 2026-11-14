@@ -100,7 +100,7 @@ export function ReportBuilder({ projectId, indicators, periods, initialReports, 
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">{t("rb.title")}</h1>
+        <h1 className="page-title">{t("rb.title")}</h1>
         <p className="mt-1 text-sm text-slate-500">{t("rb.intro")}</p>
       </header>
 

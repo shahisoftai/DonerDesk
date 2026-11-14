@@ -11,9 +11,9 @@ export default async function ProgrammesPage() {
   const ctx = await requireSession();
   const result = await gatewayRequest("/v1/funding", FundingResponseSchema, ctx.token);
   return (
-    <div className="animate-fade-in space-y-4">
+    <div className="page-stack animate-fade-in">
       <header>
-        <h1 className="text-xl font-semibold tracking-tight">Programmes and grants</h1>
+        <h1 className="page-title">Programmes and grants</h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
           Group related awards and projects. Totals add up the projects you can see; budgets in different currencies are never added together.
         </p>

@@ -26,7 +26,7 @@ export default async function SharedInfographicPage({ params }: { params: Promis
   if (!info) {
     return (
       <main className="mx-auto max-w-xl px-4 py-16 text-center">
-        <h1 className="text-xl font-semibold">This link is not available</h1>
+        <h1 className="page-title">This link is not available</h1>
         <p className="mt-2 text-sm text-slate-500">It may have expired or been withdrawn. Ask the person who sent it for a new one.</p>
       </main>
     );

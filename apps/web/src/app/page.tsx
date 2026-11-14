@@ -17,15 +17,6 @@ const JOBS = [
   { key: "Report", title: "Report from the record", points: ["Upload a donor template once and reuse it across grants", "Drafts cite their sources; numbers come from verified data", "Checks before submission; a person approves and exports"], wide: false, full: true },
 ] as const;
 
-const ROLES = [
-  { face: "D", name: "Directors", text: "The whole portfolio at a glance: what is late, what is on target, what the funder will ask next." },
-  { face: "P", name: "Project managers", text: "Plan the work, review activities, watch delivery and sign off the report." },
-  { face: "M", name: "M&E officers", text: "Own the indicators, forms and values. Enter results in a sheet, build charts and reports." },
-  { face: "G", name: "Grants and compliance", text: "Deadlines, readiness, donor requirements, and claims backed by evidence." },
-  { face: "F", name: "Field officers", text: "Record activities and fill forms on a phone, offline, or by dictating." },
-  { face: "V", name: "Partners and boards", text: "Read the record without changing it. Viewers do not use a paid seat." },
-];
-
 const FAQ = [
   { q: "Is DonorDesk a fundraising tool?", a: "It helps you show results to supporters and funders: infographics, shareable dashboards and reports drawn from verified results. It does not hold donor records or take payments. If you need a donor database, keep yours and use DonorDesk for the programme side." },
   { q: "Does the AI write our reports?", a: "It drafts sections from your own record and cites the source of each statement. Numbers come from verified data, claims are checked, and a person approves before anything is exported." },
@@ -85,11 +76,11 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="sx-band" id="supporters">
+        <section id="supporters">
           <div className="sx-wrap sx-sup">
             <div>
               <p className="sx-eyebrow">Show supporters what their gift did</p>
-              <h2 style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 800, marginTop: 14 }}>Turn results into a page your supporters want to share.</h2>
+              <h2 style={{ fontSize: "clamp(28px,3.6vw,42px)", fontWeight: 700, marginTop: 14 }}>Turn results into a page your supporters want to share.</h2>
               <p className="sx-lede" style={{ marginTop: 16 }}>Make a one-page infographic from your verified results, in your colours and your language. Share it as a link or put it on your website. Use it in campaign updates and donor newsletters, and let funders see progress without waiting for the report.</p>
               <ul style={{ color: "var(--muted)", paddingInlineStart: 20, marginTop: 14 }}>
                 <li>Figures come from the record, so they match the report</li>
@@ -108,14 +99,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="roles">
-          <div className="sx-wrap">
-            <div className="sx-sec-head"><p className="sx-eyebrow">Who it is for</p><h2>Everyone sees the part of the record they need.</h2></div>
-            <div className="sx-grid sx-g3">
-              {ROLES.map((r) => <div className="sx-card sx-role" key={r.name}><span className="sx-face">{r.face}</span><h3>{r.name}</h3><p>{r.text}</p></div>)}
-            </div>
-          </div>
-        </section>
 
         <section className="sx-band" id="solutions">
           <div className="sx-wrap">
@@ -130,7 +113,7 @@ export default function HomePage() {
 
         <section id="trust">
           <div className="sx-wrap sx-grid sx-g2" style={{ alignItems: "start" }}>
-            <div><p className="sx-eyebrow">Trust and control</p><h2 style={{ fontSize: "clamp(30px,4vw,46px)", fontWeight: 800, marginTop: 14 }}>Built for work that must stand up to a funder, an auditor and a security review.</h2></div>
+            <div><p className="sx-eyebrow">Trust and control</p><h2 style={{ fontSize: "clamp(28px,3.6vw,42px)", fontWeight: 700, marginTop: 14 }}>Built for work that must stand up to a funder, an auditor and a security review.</h2></div>
             <div className="sx-card sx-trust">
               <ul>
                 <li><b>Separate by design.</b> Each organisation&apos;s data is isolated in the database itself.</li>
@@ -163,16 +146,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="resources">
-          <div className="sx-wrap">
-            <div className="sx-sec-head"><p className="sx-eyebrow">Learn more</p><h2>Look around before you decide.</h2></div>
-            <div className="sx-grid sx-g3">
-              <div className="sx-card"><h3>Product tour</h3><p>Walk through a project from logframe to donor report, with no sign-up.</p><Link className="sx-more" href="/tour">Take the tour →</Link></div>
-              <div className="sx-card"><h3>Support centre</h3><p>Step-by-step guides for every part of the product, written in plain words.</p><Link className="sx-more" href="/support">Open the guides →</Link></div>
-              <div className="sx-card"><h3>How we compare</h3><p>What other tools are built for, what they cost where they say so, and when each is the better fit.</p><Link className="sx-more" href="/compare">See the comparison →</Link></div>
-            </div>
-          </div>
-        </section>
 
         <section className="sx-band" id="faq">
           <div className="sx-wrap" style={{ maxWidth: 860 }}>

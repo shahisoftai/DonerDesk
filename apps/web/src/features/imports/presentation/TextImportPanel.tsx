@@ -94,7 +94,7 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
 
   return (
     <div className="animate-fade-in">
-      <h1 className="text-xl font-semibold tracking-tight">{props.title}</h1>
+      <h1 className="page-title">{props.title}</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{props.intro}</p>
 
       <div className="card mt-6 space-y-4">

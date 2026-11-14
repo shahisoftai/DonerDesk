@@ -27,12 +27,12 @@ export function useToast() {
 }
 
 const toastStyles: Record<Tone, string> = {
-  neutral: "border-slate-300 bg-white text-slate-800 dark:border-white/15 dark:bg-slate-800 dark:text-slate-100",
-  info: "border-brand-500/40 bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100",
-  success: "border-success-500/50 bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100",
-  warning: "border-warning-500/50 bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100",
-  danger: "border-danger-500/50 bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100",
-  ai: "border-ai-500/50 bg-white text-slate-800 dark:bg-slate-800 dark:text-slate-100",
+  neutral: "",
+  info: "",
+  success: "",
+  warning: "",
+  danger: "",
+  ai: "",
 };
 
 const dotStyles: Record<Tone, string> = {
@@ -63,13 +63,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ push }}>
       {children}
-      <div aria-live="polite" aria-atomic="false" className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2">
+      <div aria-live="polite" aria-atomic="false" className="pointer-events-none fixed bottom-4 end-4 z-[70] flex w-[calc(100%-2rem)] max-w-sm flex-col gap-2">
         {toasts.map((toast) => (
-          <div key={toast.id} role="status" className={`pointer-events-auto flex items-start gap-2 rounded-lg border p-3 shadow-lg ${toastStyles[toast.tone]}`}>
+          <div key={toast.id} role="status" className={`pointer-events-auto flex animate-pop-in items-start gap-2.5 rounded-xl bg-slate-900 px-3.5 py-3 text-white shadow-panel ring-1 ring-white/10 dark:bg-[#1d2a4f] ${toastStyles[toast.tone]}`}>
             <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dotStyles[toast.tone]}`} aria-hidden="true" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">{toast.title}</p>
-              {toast.description && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{toast.description}</p>}
+              {toast.description && <p className="mt-0.5 text-xs text-slate-300">{toast.description}</p>}
             </div>
             {toast.action && (
               <button
@@ -78,7 +78,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                   dismiss(toast.id);
                   toast.action?.onAction();
                 }}
-                className="-my-1 min-h-[36px] shrink-0 rounded-md px-2 text-sm font-semibold text-brand-700 hover:bg-brand-500/10 dark:text-brand-300"
+                className="-my-1 min-h-[36px] shrink-0 rounded-md px-2 text-sm font-semibold text-brand-300 hover:bg-white/10"
               >
                 {toast.action.label}
               </button>

@@ -42,7 +42,7 @@ export function DatasetConnector({ dataset, onChanged }: { dataset: DatasetDetai
       <label className="block space-y-1"><span>{t("ds.conn.schedule")}</span><select className={INPUT} value={f.schedule} onChange={(e) => setF({ ...f, schedule: e.target.value })}>{["MANUAL", "DAILY", "WEEKLY", "MONTHLY"].map((s) => <option key={s} value={s}>{t(`ds.conn.${s}`)}</option>)}</select></label>
       <label className="block space-y-1"><span>{t("ds.conn.key")}</span><input type="password" autoComplete="off" className={INPUT} value={f.credential} placeholder={dataset.connectorConfig ? t("ds.conn.keyKept") : ""} onChange={(e) => setF({ ...f, credential: e.target.value })} /></label>
       <div className="flex gap-2">
-        <button type="button" disabled={busy} className="rounded bg-sky-700 px-3 py-1 text-white disabled:opacity-60" onClick={() => void save()}>{t("ds.save")}</button>
+        <button type="button" disabled={busy} className="rounded bg-brand-700 px-3 py-1 text-white disabled:opacity-60" onClick={() => void save()}>{t("ds.save")}</button>
         {dataset.connectorConfig && <button type="button" disabled={busy} className="rounded border border-slate-300 px-3 py-1" onClick={() => void pull()}>{t("ds.conn.pull")}</button>}
         {dataset.connectorConfig && <button type="button" disabled={busy} className="px-2 text-red-700 underline" onClick={async () => { await saveDatasetConnectorAction(dataset.id, null); onChanged(); }}>{t("ds.tidy.remove")}</button>}
       </div>

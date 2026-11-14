@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { NOINDEX_METADATA } from "@/lib/seo";
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { homeVariantFor, navFor } from "@/features/navigation/domain/role-navigation";
+import { homeVariantFor, hubTabsFor, navFor } from "@/features/navigation/domain/role-navigation";
 import { translateNav } from "@/features/i18n/domain/nav-keys";
 import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
 import { getLocale, getTranslator } from "@/lib/server/locale";
@@ -65,7 +65,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   // Which entries appear is one table per role (role-navigation.ts); an outside partner sees only their projects.
   const [locale, translator] = [await getLocale(), await getTranslator()];
-  const navItems = translateNav(navFor({ role: ctx.role, capabilities: ctx.capabilities, external: ctx.external }), translator.t);
+  const navInput = { role: ctx.role, capabilities: ctx.capabilities, external: ctx.external };
+  const navItems = translateNav(navFor(navInput), translator.t);
+  const hubTabs = hubTabsFor(navInput).map((tabs) => translateNav(tabs, translator.t));
 
   return (
     <I18nProvider initialLocale={locale} initialMessages={locale === "en" ? undefined : MESSAGES[locale]}>
@@ -80,6 +82,8 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         canRecord={canRecord}
         phoneBar={canRecord && homeVariantFor(ctx.role) === "FIELD"}
         bellItems={bellItems}
+        hubTabs={hubTabs}
+        capabilities={[...ctx.capabilities]}
       >
         {mfaResult.ok && mfaResult.value.requirement === "REQUIRED_SOON" && mfaResult.value.requiredFrom && (
           <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm dark:bg-amber-500/10">

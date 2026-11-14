@@ -32,7 +32,7 @@ export default async function TemplatesPage({ params }: { params: Promise<{ id: 
     <header className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold tracking-tight">Donor templates</h1>
+          <h1 className="page-title">Donor templates</h1>
           <HelpButton topic="templates" />
         </div>
         <p className="text-sm text-slate-600 dark:text-slate-400">

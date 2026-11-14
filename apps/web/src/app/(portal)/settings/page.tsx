@@ -6,8 +6,7 @@ import { SettingsPanel } from "@/features/settings/presentation/SettingsPanel";
 import { MapLayerCard } from "@/features/settings/presentation/MapLayerCard";
 import { BoundaryLayersCard } from "@/features/settings/presentation/BoundaryLayersCard";
 import { BoundaryLayerListSchema } from "@/lib/server/schemas-boundary-layers";
-import { AskSettingsCard } from "@/features/ask/presentation/AskSettingsCard";
-import { SetupAssistSettingsCard } from "@/features/project-setup/presentation/SetupAssistSettingsCard";
+import { PageHeader } from "@/components/layout/Page";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +16,7 @@ export default async function SettingsPage() {
   if (!hasCapability(ctx, "settings.view") && !hasCapability(ctx, "org.manage")) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
+        <h1 className="page-title">Settings</h1>
         <div className="card mt-6 text-sm text-slate-600 dark:text-slate-300">
           You do not have permission to view settings.
         </div>
@@ -29,32 +28,19 @@ export default async function SettingsPage() {
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
+        <h1 className="page-title">Settings</h1>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
       </div>
     );
   }
 
   return (
-    <div className="animate-fade-in">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold tracking-tight">Settings</h1>
-        <Link
-          href="/settings/billing"
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-brand-400 hover:text-brand-700 dark:border-white/15 dark:bg-white/5 dark:text-slate-200 dark:hover:border-brand-400/60 dark:hover:text-brand-300"
-        >
-          Plan &amp; billing
-        </Link>
-      </div>
-      {ctx.capabilities.has("template.edit") && (
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-          <Link className="font-medium underline" href="/settings/requirement-packs">Donor requirements</Link>: list what a donor requires of a report so it is checked before approval.
-        </p>
-      )}
+    <div className="page-stack animate-fade-in">
+      <PageHeader title="General" description="Your organisation's name, country, language and the defaults every project starts from." actions={<Link href="/settings/billing" className="btn-secondary">Plan and billing</Link>} />
       <SettingsPanel org={result.value} capabilities={Array.from(ctx.capabilities)} />
       {ctx.capabilities.has("org.manage") && (
-        <section className="card mt-6 max-w-2xl" aria-labelledby="export-title">
-          <h2 id="export-title" className="text-sm font-semibold">Take your data with you</h2>
+        <section className="card" aria-labelledby="export-title">
+          <h2 id="export-title" className="section-title">Take your data with you</h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             Download everything your organization has put into DonorDesk — projects, results, activities, evidence records, reports and the audit trail — as one ZIP of readable data files. Passwords and sign-in links are never included.
           </p>
@@ -67,8 +53,6 @@ export default async function SettingsPage() {
           </p>
         </section>
       )}
-      <AskSettingsCard initialEnabled={result.value.askEnabled === true} canEdit={ctx.capabilities.has("org.manage")} inPlan={result.value.askAccess !== "NOT_IN_PLAN"} />
-      <SetupAssistSettingsCard initialEnabled={result.value.setupAssistEnabled === true} canEdit={ctx.capabilities.has("org.manage")} />
       {ctx.capabilities.has("org.manage") && (
         <>
           <BoundaryLayerSettings />

@@ -22,7 +22,7 @@ export function AddDrawer({ recent, onAdd, onStarter }: Props) {
     <li key={keyPrefix + kind}>
       <button type="button" draggable data-kind={kind} onClick={() => onAdd(kind)}
         onDragStart={(e) => { e.dataTransfer.setData(BLOCK_DRAG_TYPE, kind); e.dataTransfer.effectAllowed = "copy"; }}
-        className="flex min-h-11 w-full items-center rounded border border-slate-200 px-2 py-1.5 text-start text-xs hover:border-sky-400 hover:bg-sky-50 focus:outline-none focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:hover:bg-slate-800">
+        className="flex min-h-11 w-full items-center rounded border border-slate-200 px-2 py-1.5 text-start text-xs hover:border-brand-400 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-brand-500 dark:border-slate-700 dark:hover:bg-slate-800">
         {t(blockLabelKey(kind as never))}
       </button>
     </li>
@@ -37,7 +37,7 @@ export function AddDrawer({ recent, onAdd, onStarter }: Props) {
       {!q && (
         <section aria-label={t("drawer.starters")}>
           <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">{t("drawer.starters")}</h3>
-          <ul className="grid grid-cols-1 gap-1">{STARTER_SETS.map((s) => <li key={s.id}><button type="button" data-starter={s.id} onClick={() => onStarter(s.id)} className="min-h-11 w-full rounded border border-dashed border-slate-300 px-2 py-1.5 text-start text-xs hover:border-sky-400 hover:bg-sky-50 dark:border-slate-600 dark:hover:bg-slate-800">{t(s.labelKey as never)}</button></li>)}</ul>
+          <ul className="grid grid-cols-1 gap-1">{STARTER_SETS.map((s) => <li key={s.id}><button type="button" data-starter={s.id} onClick={() => onStarter(s.id)} className="min-h-11 w-full rounded border border-dashed border-slate-300 px-2 py-1.5 text-start text-xs hover:border-brand-400 hover:bg-brand-50 dark:border-slate-600 dark:hover:bg-slate-800">{t(s.labelKey as never)}</button></li>)}</ul>
         </section>
       )}
       {shownGroups.map((g) => (

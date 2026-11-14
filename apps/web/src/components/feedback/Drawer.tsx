@@ -1,38 +1,95 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { Maximize2, X } from "lucide-react";
 import { trapFocus } from "./Dialog";
 
-const PANEL_POSITION: Record<"left" | "right" | "bottom", string> = {
-  left: "left-0 top-0 h-full",
-  right: "right-0 top-0 h-full",
-  bottom: "inset-x-0 bottom-0 max-h-[85vh] rounded-t-2xl",
+type Side = "left" | "right" | "bottom";
+export type DrawerSize = "sm" | "md" | "lg" | "xl";
+
+/** Where the panel sits, open and shut. Side panels float 8 px in from the edges from the small breakpoint up. */
+const PANEL_POSITION: Record<Side, { base: string; shut: string }> = {
+  left: { base: "inset-y-0 start-0 sm:inset-y-2 sm:start-2 sm:rounded-2xl", shut: "-translate-x-[calc(100%+1rem)] rtl:translate-x-[calc(100%+1rem)]" },
+  right: { base: "inset-y-0 end-0 sm:inset-y-2 sm:end-2 sm:rounded-2xl", shut: "translate-x-[calc(100%+1rem)] rtl:-translate-x-[calc(100%+1rem)]" },
+  bottom: { base: "inset-x-0 bottom-0 max-h-[88vh] rounded-t-2xl", shut: "translate-y-full" },
 };
 
+export const DRAWER_WIDTH: Record<DrawerSize, string> = {
+  sm: "w-[22rem]",
+  md: "w-[28rem]",
+  lg: "w-[36rem]",
+  xl: "w-[52rem]",
+};
+
+/** How long the slide takes; the panel stays mounted this long after closing so it can leave. */
+export const DRAWER_EXIT_MS = 220;
+
+/** Shared look of every slide-over (the Drawer, the plan's panel route). */
+export const DRAWER_SURFACE =
+  "flex flex-col overflow-hidden bg-white shadow-panel outline-none transition-transform duration-[220ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none dark:bg-[#121a2b] dark:shadow-[0_24px_64px_-12px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.08)]";
+export const DRAWER_SCRIM =
+  "bg-slate-950/40 backdrop-blur-[3px] transition-opacity duration-200 motion-reduce:transition-none";
+
 /**
- * Modal side panel (or bottom sheet on small screens). Focus moves into it,
- * stays trapped while open and returns to the trigger on close; the body
- * scrolls when the content is long.
+ * Modal side panel (or bottom sheet on small screens). It slides in, focus moves into it, stays trapped while open
+ * and returns to the trigger on close; the body scrolls when the content is long and the footer stays in view. With
+ * `dirty`, closing first asks whether to discard the changes.
  */
 export function Drawer({
   open,
   onClose,
   title,
+  description,
+  footer,
   children,
   side = "right",
   wide = false,
+  size,
+  dirty = false,
+  pageHref,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
+  /** One line under the title. */
+  description?: ReactNode;
+  /** Actions kept at the bottom of the panel (Save, Cancel). */
+  footer?: ReactNode;
   children: ReactNode;
-  side?: "left" | "right" | "bottom";
-  /** A wider side panel (e.g. the report inspector). */
+  side?: Side;
+  /** A wider side panel (e.g. the report inspector). Same as `size="md"`. */
   wide?: boolean;
+  size?: DrawerSize;
+  /** Unsaved changes: closing asks first. */
+  dirty?: boolean;
+  /** The same content as a full page ("Open as page"). */
+  pageHref?: string;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
+  const descriptionId = useId();
+  const [mounted, setMounted] = useState(open);
+  const [shown, setShown] = useState(false);
+  const [asking, setAsking] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      setAsking(false);
+      const frame = requestAnimationFrame(() => setShown(true));
+      return () => cancelAnimationFrame(frame);
+    }
+    setShown(false);
+    const timer = window.setTimeout(() => setMounted(false), DRAWER_EXIT_MS);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  const requestClose = useCallback(() => {
+    if (dirty) setAsking(true);
+    else onClose();
+  }, [dirty, onClose]);
 
   useEffect(() => {
     if (!open) return;
@@ -44,7 +101,7 @@ export function Drawer({
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
-        onClose();
+        requestClose();
       } else if (panel) {
         trapFocus(panel, event);
       }
@@ -55,33 +112,62 @@ export function Drawer({
       document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus();
     };
-  }, [open, onClose]);
+  }, [open, requestClose]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
-  const width = side === "bottom" ? "" : wide ? "w-[26rem] max-w-[92vw]" : "w-80 max-w-[85vw]";
+  const width = side === "bottom" ? "" : `${DRAWER_WIDTH[size ?? (wide ? "md" : "sm")]} max-w-[100vw] sm:max-w-[calc(100vw-1rem)]`;
+  const position = PANEL_POSITION[side];
   return (
     <div className="fixed inset-0 z-50" role="presentation">
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+      <div className={`absolute inset-0 ${DRAWER_SCRIM} ${shown ? "opacity-100" : "opacity-0"}`} onClick={requestClose} aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
-        className={`absolute flex flex-col bg-white p-4 shadow-xl outline-none dark:bg-slate-900 ${PANEL_POSITION[side]} ${width}`}
+        className={`absolute ${DRAWER_SURFACE} ${position.base} ${width} ${shown ? "translate-x-0 translate-y-0" : position.shut}`}
       >
-        <div className="flex shrink-0 items-center justify-between">
-          <h2 id={titleId} className="text-sm font-medium">
-            {title}
-          </h2>
-          <button type="button" aria-label="Close" className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-white/5" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
-          </button>
+        {side === "bottom" && <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-slate-300 dark:bg-white/20" aria-hidden="true" />}
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-200 px-5 py-3.5 dark:border-white/10">
+          <div className="min-w-0 pt-1">
+            <h2 id={titleId} className="truncate text-[15px] font-semibold tracking-[-0.01em] text-slate-950 dark:text-white">
+              {title}
+            </h2>
+            {description && (
+              <p id={descriptionId} className="mt-0.5 text-[13px] text-slate-500 dark:text-slate-400">
+                {description}
+              </p>
+            )}
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            {pageHref && (
+              <Link href={pageHref} className="btn-ghost btn-icon max-sm:hidden" aria-label="Open as page" title="Open as page">
+                <Maximize2 aria-hidden="true" />
+              </Link>
+            )}
+            <button type="button" aria-label="Close" title="Close (Esc)" className="btn-ghost h-11 w-11 p-0 sm:h-9 sm:w-9" onClick={requestClose}>
+              <X aria-hidden="true" />
+            </button>
+          </div>
         </div>
-        <div className="mt-4 min-h-0 flex-1 overflow-y-auto">{children}</div>
+        {asking && (
+          <div role="alertdialog" aria-label="Discard changes?" className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-b border-amber-200 bg-amber-50 px-5 py-2.5 text-sm text-amber-900 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-200">
+            <span>You have changes that are not saved.</span>
+            <span className="flex gap-2">
+              <button type="button" className="btn-secondary btn-sm" onClick={() => setAsking(false)} autoFocus>Keep editing</button>
+              <button type="button" className="btn-danger btn-sm" onClick={() => { setAsking(false); onClose(); }}>Discard</button>
+            </span>
+          </div>
+        )}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">{children}</div>
+        {footer && (
+          <div className="flex shrink-0 items-center justify-end gap-2 border-t border-slate-200 bg-slate-50/80 px-5 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

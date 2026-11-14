@@ -36,7 +36,7 @@ export function EditDrawer({ tab, onTab, selectedCount, pageSettings, build, dat
         onKeyDown={(e) => { const i = tabs.indexOf(current); const step = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (step) { e.preventDefault(); const rtl = document.dir === "rtl" ? -1 : 1; onTab(tabs[(i + step * rtl + tabs.length) % tabs.length]!); } }}>
         {tabs.map((k) => (
           <button key={k} type="button" role="tab" id={`edit-tab-${k}`} aria-selected={k === current} aria-controls="edit-tab-panel" tabIndex={k === current ? 0 : -1} data-tab={k} onClick={() => onTab(k)}
-            className={`-mb-px min-h-9 border-b-2 px-2 text-xs ${k === current ? "border-sky-600 font-semibold" : "border-transparent text-slate-600 hover:border-slate-300 dark:text-slate-300"}`}>{t(`tab.${k}` as never)}</button>
+            className={`-mb-px min-h-9 border-b-2 px-2 text-xs ${k === current ? "border-brand-600 font-semibold" : "border-transparent text-slate-600 hover:border-slate-300 dark:text-slate-300"}`}>{t(`tab.${k}` as never)}</button>
         ))}
       </div>
       <div role="tabpanel" id="edit-tab-panel" aria-labelledby={`edit-tab-${current}`}>{body}</div>

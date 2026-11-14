@@ -21,8 +21,8 @@ function Sparkline({ points, target }: { points: Array<number | null>; target: n
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-24 w-full" role="img" aria-label="Trend">
       {target !== null && <line x1={PAD} x2={W - PAD} y1={y(target)} y2={y(target)} stroke="currentColor" strokeDasharray="4 3" className="text-slate-400" />}
-      {segments.map((d, i) => <path key={i} d={d} fill="none" stroke="currentColor" strokeWidth="2" className="text-sky-600" />)}
-      {points.map((p, i) => p === null ? null : <circle key={i} cx={x(i)} cy={y(p)} r="2.5" className="fill-sky-600" />)}
+      {segments.map((d, i) => <path key={i} d={d} fill="none" stroke="currentColor" strokeWidth="2" className="text-brand-600" />)}
+      {points.map((p, i) => p === null ? null : <circle key={i} cx={x(i)} cy={y(p)} r="2.5" className="fill-brand-600" />)}
     </svg>
   );
 }
@@ -51,7 +51,7 @@ export function ResultsChainScreen(props: ScreenRendererPropsOf<typeof resultsCh
       <ol className="space-y-2 p-3">
         {m.levels.map((group) => (
           <li key={group.level} className="flex gap-3 rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-            <p className="w-24 shrink-0 text-sm font-bold text-sky-800 dark:text-sky-300">{group.word ?? name(group.level)}</p>
+            <p className="w-24 shrink-0 text-sm font-bold text-brand-800 dark:text-brand-300">{group.word ?? name(group.level)}</p>
             <ul className="min-w-0 flex-1 space-y-1">
               {group.rows.map((lv) => (
                 <li key={lv.id} className="flex justify-between gap-3 text-sm">

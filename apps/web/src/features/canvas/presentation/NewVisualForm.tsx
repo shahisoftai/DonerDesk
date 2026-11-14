@@ -66,14 +66,14 @@ export function NewVisualForm({ projects, canShare }: { projects: ReadonlyArray<
         <div className="flex flex-wrap gap-2" data-testid="goals">
           {GOALS.map((g) => (
             <button key={g.key} type="button" title={g.help} aria-pressed={templateId === g.templateId} onClick={() => chooseTemplate(g.templateId)}
-              className={`rounded-full border px-3 py-1 text-sm ${templateId === g.templateId ? "border-sky-600 bg-sky-50 font-medium dark:bg-sky-950" : "border-slate-300 hover:border-slate-500 dark:border-slate-600"}`}>{g.label}</button>
+              className={`rounded-full border px-3 py-1 text-sm ${templateId === g.templateId ? "border-brand-600 bg-brand-50 font-medium dark:bg-brand-950" : "border-slate-300 hover:border-slate-500 dark:border-slate-600"}`}>{g.label}</button>
           ))}
         </div>
         <p className="text-xs text-slate-500">Or choose a starter below, or a blank page.</p>
         <p className="mb-1 mt-2 text-sm font-semibold">Start from</p>
         <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Template">
           {[...BUILT_IN_CANVAS_TEMPLATES.map((t) => ({ id: t.id, title: t.title, description: t.description })), { id: BLANK, title: "A blank page", description: "Add blocks one at a time." }].map((t) => (
-            <label key={t.id} className={`cursor-pointer rounded-lg border p-3 text-sm ${templateId === t.id ? "border-sky-600 bg-sky-50 dark:bg-sky-950" : "border-slate-200 hover:border-slate-400 dark:border-slate-700"}`}>
+            <label key={t.id} className={`cursor-pointer rounded-lg border p-3 text-sm ${templateId === t.id ? "border-brand-600 bg-brand-50 dark:bg-brand-950" : "border-slate-200 hover:border-slate-400 dark:border-slate-700"}`}>
               <input type="radio" name="template" className="sr-only" checked={templateId === t.id} onChange={() => chooseTemplate(t.id)} />
               <span className="block font-semibold">{t.title}</span><span className="mt-1 block text-xs text-slate-600 dark:text-slate-400">{t.description}</span>
             </label>
@@ -99,7 +99,7 @@ export function NewVisualForm({ projects, canShare }: { projects: ReadonlyArray<
             </select></label>
         ))}
         {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
-        <button type="submit" disabled={busy} className="rounded bg-sky-700 px-4 py-2 text-sm font-medium text-white hover:bg-sky-800 disabled:opacity-50">{busy ? "Making it…" : "Make it"}</button>
+        <button type="submit" disabled={busy} className="rounded bg-brand-700 px-4 py-2 text-sm font-medium text-white hover:bg-brand-800 disabled:opacity-50">{busy ? "Making it…" : "Make it"}</button>
       </div>
     </form>
   );

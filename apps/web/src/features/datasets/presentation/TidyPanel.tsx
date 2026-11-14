@@ -62,7 +62,7 @@ export function TidyPanel({ check, steps, onApply, onBack, onNext }: { check: Ch
         {adding === "RENAME" && <>{colSelect("from")}{text("to", t("ds.tidy.newName"))}</>}
         {adding === "SPLIT" && <>{colSelect("column")}{text("separator", t("ds.tidy.separator"))}{text("into", t("ds.tidy.into"))}</>}
         {adding === "RETYPE" && <>{colSelect("column")}<select aria-label={t("ds.columns.holds")} className={INPUT} value={f.kind ?? "COUNT"} onChange={(e) => setF({ ...f, kind: e.target.value })}>{COLUMN_KINDS.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}</select></>}
-        {adding && <button type="button" className="rounded bg-sky-700 px-2 py-1 text-xs text-white" onClick={() => { const p = params(); if (p) { apply([...steps, { id: stepId(), type: adding, params: p }]); setAdding(""); } }}>{t("ds.tidy.addStep")}</button>}
+        {adding && <button type="button" className="rounded bg-brand-700 px-2 py-1 text-xs text-white" onClick={() => { const p = params(); if (p) { apply([...steps, { id: stepId(), type: adding, params: p }]); setAdding(""); } }}>{t("ds.tidy.addStep")}</button>}
         {history.length > 0 && <button type="button" className="text-xs underline" onClick={() => { const prev = history[history.length - 1]!; setHistory(history.slice(0, -1)); onApply(prev); }}>{t("ds.tidy.undo")}</button>}
       </div>
       <p className="text-xs text-slate-500">{t("ds.tidy.hint")}</p>
@@ -71,7 +71,7 @@ export function TidyPanel({ check, steps, onApply, onBack, onNext }: { check: Ch
           <tbody>{check.preview.rows.map((r, i) => <tr key={i} className="border-t border-slate-100 dark:border-slate-800">{r.map((c, k) => <td key={k} className="whitespace-nowrap px-2 py-0.5">{c}</td>)}</tr>)}</tbody></table>
       </div>
       <p className="text-xs text-slate-500">{t("ds.tidy.rowCount", { n: check.rowCount })}</p>
-      <div className="flex gap-2"><button type="button" className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" onClick={onBack}>{t("ds.back")}</button><button type="button" className="rounded bg-sky-700 px-3 py-1.5 text-sm font-medium text-white" onClick={onNext}>{t("ds.next")}</button></div>
+      <div className="flex gap-2"><button type="button" className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" onClick={onBack}>{t("ds.back")}</button><button type="button" className="rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white" onClick={onNext}>{t("ds.next")}</button></div>
     </div>
   );
 }

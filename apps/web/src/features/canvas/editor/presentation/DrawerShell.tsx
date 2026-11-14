@@ -25,7 +25,7 @@ export function DrawerShell({ id, title, width, pinned, offset, onWidth, onPin, 
       style={{ ["--drawer-w" as string]: `${width}px`, ["--drawer-off" as string]: `${offset}px` }}
       className={`fixed inset-x-0 bottom-0 z-30 flex max-h-[70vh] flex-col border-t border-slate-200 bg-white shadow-xl print:hidden dark:border-slate-700 dark:bg-slate-900 sm:inset-x-auto sm:bottom-0 sm:top-[3.25rem] sm:max-h-none sm:w-[var(--drawer-w)] sm:border-s sm:border-t-0 sm:[inset-inline-end:var(--drawer-off)] ${pinned ? "sm:shadow-none" : ""}`}>
       <div role="separator" aria-orientation="vertical" aria-label={t("drawer.resize")} aria-valuemin={DRAWER_MIN} aria-valuemax={DRAWER_MAX} aria-valuenow={width} tabIndex={0}
-        className="absolute inset-y-0 start-0 hidden w-1.5 cursor-col-resize hover:bg-sky-300 focus:bg-sky-400 focus:outline-none sm:block"
+        className="absolute inset-y-0 start-0 hidden w-1.5 cursor-col-resize hover:bg-brand-300 focus:bg-brand-400 focus:outline-none sm:block"
         onPointerDown={(e) => { start.current = { x: e.clientX, w: width }; (e.target as HTMLElement).setPointerCapture(e.pointerId); }}
         onPointerMove={(e) => { if (start.current) onWidth(clamp(start.current.w + (rtl ? 1 : -1) * (e.clientX - start.current.x))); }}
         onPointerUp={() => { start.current = null; }}

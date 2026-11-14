@@ -66,10 +66,10 @@ export function CanvasPageGrid({ canvas, blocks, drawings, widgets, models, repe
   return (
     <div ref={gridRef} className={`relative grid grid-cols-1 gap-3 sm:grid-cols-12 sm:auto-rows-[5.5rem] ${showGrid ? "bg-[linear-gradient(to_right,rgba(14,116,144,0.08)_1px,transparent_1px)] bg-[length:calc((100%+0.75rem)/12)_100%]" : ""}`} dir={canvas.language === "ar" ? "rtl" : "ltr"} data-testid="canvas-grid" data-grid={showGrid || undefined}
       onPointerDownCapture={(e) => { modifiers.current = { shift: e.shiftKey, mod: e.ctrlKey || e.metaKey }; }} {...marquee.handlers}>
-      {marquee.box && <div aria-hidden className="pointer-events-none absolute z-40 rounded border border-sky-600 bg-sky-500/10" style={{ left: marquee.box.x, top: marquee.box.y, width: marquee.box.w, height: marquee.box.h }} data-testid="marquee" />}
+      {marquee.box && <div aria-hidden className="pointer-events-none absolute z-40 rounded border border-brand-600 bg-brand-500/10" style={{ left: marquee.box.x, top: marquee.box.y, width: marquee.box.w, height: marquee.box.h }} data-testid="marquee" />}
       {topLevel(blocks).map((b) => {
         const node = isContainerKind(b.kind)
-          ? <div data-block={b.id} data-kind={b.kind} data-selected={selectedIds.has(b.id) || undefined} onClick={editing ? () => onSelect(b.id, modifiers.current) : undefined} className={`h-full rounded-xl ${selectedIds.has(b.id) ? "outline outline-2 outline-offset-2 outline-sky-600" : ""} ${b.style?.hidden ? "opacity-40" : ""}`}>
+          ? <div data-block={b.id} data-kind={b.kind} data-selected={selectedIds.has(b.id) || undefined} onClick={editing ? () => onSelect(b.id, modifiers.current) : undefined} className={`h-full rounded-xl ${selectedIds.has(b.id) ? "outline outline-2 outline-offset-2 outline-brand-600" : ""} ${b.style?.hidden ? "opacity-40" : ""}`}>
               <ContainerView block={b} blocks={blocks} renderChild={renderBlock} items={repeats?.[b.id]} editing={editing} />
             </div>
           : renderBlock(b);

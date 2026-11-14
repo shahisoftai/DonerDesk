@@ -33,7 +33,7 @@ export default async function PortfolioDashboardPage() {
     ["Reports overdue", totals.reportsOverdue],
   ];
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="page-stack animate-fade-in">
       <header>
         <h2 className="text-xl font-semibold tracking-tight">Portfolio</h2>
         <p className="mt-1 text-sm text-slate-500">Delivery, problems and risks, and reporting for every live project you can see, most pressing first.</p>
