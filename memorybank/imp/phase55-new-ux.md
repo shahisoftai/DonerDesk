@@ -303,7 +303,7 @@ Deployed `20261114150000` (both) and `20261114180000` (web). Checked in a signed
 
 | Batch | Built | Still partial (reason) |
 |---|---|---|
-| 55.0 | Route map + `route-map.test.mts` | Screenshots per role need one account per role; only the admin account was used |
+| 55.0 | Route map + `route-map.test.mts` | — (screenshots for all seven roles in `phase55-baseline/`, taken 2026-11-14 with ZZ TEST users `mnpiracha+zz-<role>@gmail.com`; still active, because the app has no way to switch a user off) |
 | 55.1 | Brand everywhere, IBM Plex, buttons/links/Drawer/PanelFrame, page anatomy, SplitButton, Kbd, EmptyState v2, toasts v2, Lucide, quieter background, tables v4, glossary + `ux-glossary.test.mts` (F38), one primary per page (F52, fixed offenders), "beta"-free copy | F58 link/button misuse: reviewed by hand while converting pages, no automatic rule |
 | 55.2 | Command palette (search + actions + shortcuts), Undo toasts, layout skeletons (F71), optimistic plan status (F72), HoverCard (F74), RowMenu (F75), page crossfade (F80) | — (F75: floating `SelectionBar`; bulk actions already existed for evidence, checklist, activities and plan) |
 | 55.3 | Four groups, hubs, Inbox, field nav, partner landing (F37) | — |
