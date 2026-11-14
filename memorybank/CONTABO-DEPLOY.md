@@ -1,6 +1,6 @@
 # Deploy to Contabo — Fastest Path
 
-**DonorDesk Version 3.007**
+**DonorDesk Version 4.000**
 
 **Last deploy:** 2026-11-14 (UTC) — `releaseId=20261114122602` (`SCOPE=web`, branch `0023-datasets`, commit `ef89bbe2`): a map card reloads the level shown when its data changes, so a dataset slicer recolours the map. Before it the same day: **Phase 54 datasets and kits** — backup, migration `20261118090000_datasets`, RLS on `Dataset`, `DatasetVersion`, `DatasetRow`, `DatasetIndicatorLink` (all `t/t`), `run-reminders.sh` reinstalled (adds `/internal/datasets/pull`), releases `20261114090638` … `20261114105209` (`both` and `web`). Live-checked on the demo tenant (DEMO-14).
 

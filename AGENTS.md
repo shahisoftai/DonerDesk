@@ -1,6 +1,6 @@
 # DonorDesk
 
-**DonorDesk Version 3.007**
+**DonorDesk Version 4.000**
 
 Agent guidance for coding on DonorDesk.
 
@@ -582,9 +582,9 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - Not yet tried by a person: requiring two-step sign-in on a test organisation (turn on your own first), then signing in as a second account; the trial notices (need a trial to exist).
 
 ## Version numbering (2026-10-28)
-- The product is **DonorDesk Version 3.007**. The version label appears in the header of the living documents (AGENTS.md, README.md, LICENSE, the memory-bank index, feature specs, runbooks) and in the public legal pages (`apps/web/src/lib/legal-entity.ts`).
+- The product is **DonorDesk Version 4.000** (3.007 is tagged `v3.007`; 4.000 starts with the new UX on branch `0024-new-ux`). The version label appears in the header of the living documents (AGENTS.md, README.md, LICENSE, the memory-bank index, feature specs, runbooks) and in the public legal pages (`apps/web/src/lib/legal-entity.ts`).
 - Point-in-time records keep the version they were written under: phase and audit reports, demo verification records, architecture decision records and the "Version 2.00x" section headings above. Do not renumber them.
-- The npm `package.json` versions (`2.0.1`) are not the product version and are left alone; `3.007` is not a valid semver string.
+- The npm `package.json` versions (`2.0.1`) are not the product version and are left alone; `4.000` is not a valid semver string.
 
 ## Phase 34.0 invariants — chart spec v2 and dashboard templates (2026-10-28, branch `0015-compitition`; built and tested, no UI, not deployed; plan `memorybank/imp/phase34-devresults-parity-plan.md`)
 - **One description of a chart**: `ChartSpecV2` (`reporting/chart-spec-v2.ts`) is checked everywhere by `validateChartSpec` (problems carry a `code` and a `path`; screens translate from the code). `CHART_KINDS` is the one table of kinds: a kind is `BUILT` (the renderer draws it, and names its v1 `legacyType`) or `PLANNED` (catalogued, refused on save until Batch 34.1; the studio may preview with `allowPlanned`). A new kind is one row; the test walks the table.

@@ -1,6 +1,6 @@
 # Pending
 
-**DonorDesk Version 3.007**
+**DonorDesk Version 4.000**
 
 Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-22 (audited and host-verified; latest release 20261022115803; see the priority board below).
 
@@ -1203,7 +1203,7 @@ Status by batch: `imp/phase33-competitive-parity-plan.md`. Operator facts: `docs
 - [ ] ISO/IEC 27001: not certified; the gaps are in memo §3.
 
 **Known inconsistencies:**
-- [ ] Product version is 3.007 in headers and the legal pages; the npm `package.json` versions remain `2.0.1` (npm versions are separate; `3.007` is not valid semver).
+- [ ] Product version is 4.000 in headers and the legal pages; the npm `package.json` versions remain `2.0.1` (npm versions are separate; `4.000` is not valid semver).
 - [ ] Historical sentences "introduced in Version 1.93" are kept as they were written.
 
 ## Phase 34 (deployed 2026-10-28, `releaseId=20261028133938`; plan `imp/phase34-devresults-parity-plan.md`)

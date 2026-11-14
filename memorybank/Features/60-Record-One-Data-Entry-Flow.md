@@ -1,6 +1,6 @@
 # Feature 60: Record — one data-entry flow for phone and desktop
 
-**DonorDesk Version 3.007**
+**DonorDesk Version 4.000**
 
 Built 2026-11-06 (Phase 44, branch `0018-optimisation`, commits `912212fb`, `3a72c663`, `a38ee780`). Plan, mocks and decisions: [`../imp/phase44-data-entry.md`](../imp/phase44-data-entry.md). Deployed 2026-11-06 (`20261106091554`, then web-only `20261106145458`); no migration, no env. Browser-checked on the demo tenant as manager (desktop) and field officer (phone profile); the list of checks still owed is in the plan's status section.
 

@@ -1,6 +1,6 @@
 # Feature 22: DonorDesk Academy (guided tour, demo project, contextual help)
 
-**DonorDesk Version 3.007**
+**DonorDesk Version 4.000**
 
 **Author:** Claude (agent) · **Date:** 2026-09-29
 **Status:** Phases 0–2 IMPLEMENTED (demo project + guided tour); Phases 3–5 not started. See

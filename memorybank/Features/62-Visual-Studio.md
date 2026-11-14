@@ -1,6 +1,6 @@
 # Feature 62: Visual Studio
 
-**DonorDesk Version 3.007**
+**DonorDesk Version 4.000**
 
 Phase 48 (2026-11-09 to 2026-11-10, branch `0018-optimisation`). Plan `../imp/phase48-visual-studio.md` (log §14), parity `../imp/phase48-parity.md`, retirement `../imp/phase48-retirement.md`. Invariants: AGENTS.md "Phase 48" sections. Support article: `apps/web/content/support/how-to/how-to-use-the-visual-studio.md`.
 

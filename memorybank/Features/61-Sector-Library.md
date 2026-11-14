@@ -1,6 +1,6 @@
 # Feature 61: The sector library — comprehensive indicators and sector packs
 
-**DonorDesk Version 3.007**
+**DonorDesk Version 4.000**
 
 Built and deployed 2026-11-08 (Phase 46, branch `0018-optimisation`, commits `0c8e41bb`, `9e91372f`; releases `20261108093248` and the fixes release after it). Plan and decisions: [`../imp/phase46-sector-library.md`](../imp/phase46-sector-library.md). Content notes: `../sphere.md`. Invariants: AGENTS.md "Phase 46 invariants". Public article: `apps/web/content/support/basic-information-sector-library.md`.
 
