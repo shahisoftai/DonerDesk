@@ -297,19 +297,21 @@ Rules are pinned by tests where they can be (no nested `.card`, every page has o
 headings), and by the `test:visuals` pictures where they cannot. Each later batch (55.3–55.9) converts the pages it touches;
 55.10 converts any left and fails the build on a portal page without `PageHeader`.
 
-## 8. Implementation status (2026-11-14)
+## 8. Implementation status (2026-11-14, second pass)
 
-| Batch | Built | Partial or not built (reason) |
+Deployed `20261114150000` (both) and `20261114180000` (web). Checked in a signed-in browser on production (admin account).
+
+| Batch | Built | Still partial (reason) |
 |---|---|---|
-| 55.0 | Route map (`phase55-route-map.md`) + `route-map.test.mts` | Baseline screenshots and click counts: taken during the browser check after deploy |
-| 55.1 | Brand tokens (app, Tailwind, charts, site, OG images), IBM Plex, buttons/links/Drawer/PanelFrame, `Page.tsx` anatomy, `SplitButton`, `Kbd`, `EmptyState` v2, toasts v2, Lucide, quieter background, titles/sections applied to ~100 pages | F52 one-primary lint, F58 link/button audit (manual review), glossary copy-lint (F38) |
-| 55.2 | Command palette with search + actions + shortcuts (F6, F69, F70), Undo toasts (already supported, restyled) | F71 per-page skeletons, F72 optimistic updates, F74 hover cards, F75 row menus/bulk bar, F80 page crossfade |
-| 55.3 | Four groups, hubs (Home+Portfolio, Reports+Evidence+Compliance+Downloads), Inbox, field nav pinned | F37 partner landing (partners keep "My projects") |
-| 55.4 | `PROJECT_TABS` (7 tabs incl. Finance), sub-pages with "More", breadcrumbs, folded rare tools (F5) | F64/F65/F67 addressable panels with J/K and stacking beyond the work plan |
-| 55.5 | Classic form retired (F84) | F9 short wizard path, F10 Get started checklist (onboarding pages kept) |
-| 55.6 | Import is the project's Data › Import (F13), .xlsx templates beside uploads (F14, earlier commit) | F12 Record-only entry, F15 on-screen row fixes, F16, F17, F31, F34 |
-| 55.7 | Legacy report page retired (F83), Data tables rename (F20), final report from New report (F21) | F18 stepper / F19 Next step inside Report Editor v2 (it already guides by stage) |
-| 55.8 | Visuals home: designs as cards, templates/datasets tabs, Tools menu (F22) | F23 one chart editor, F24 one Add-to-dashboard, F25 one-action map |
-| 55.9 | Settings side list in six groups (F28), AI page (F29) | F26 places owner link, F27 invite-with-projects |
-| 55.9b | Site tokens + fonts (F85), five-entry nav (F87), shorter home (F86), AuthFrame for sign-in pages (F91), legal sticky contents + readable column (F92) | F88 screenshot script, F89 sector pages from the library, F90 pricing cards rework |
-| 55.10 | AGENTS.md invariants, route map | Remove redirects after a release (F39) |
+| 55.0 | Route map + `route-map.test.mts` | Screenshots per role need one account per role; only the admin account was used |
+| 55.1 | Brand everywhere, IBM Plex, buttons/links/Drawer/PanelFrame, page anatomy, SplitButton, Kbd, EmptyState v2, toasts v2, Lucide, quieter background, tables v4, glossary + `ux-glossary.test.mts` (F38), one primary per page (F52, fixed offenders), "beta"-free copy | F58 link/button misuse: reviewed by hand while converting pages, no automatic rule |
+| 55.2 | Command palette (search + actions + shortcuts), Undo toasts, layout skeletons (F71), optimistic plan status (F72), HoverCard (F74), RowMenu (F75), page crossfade (F80) | Bulk-select bar (F75): no bulk endpoint exists yet for any list |
+| 55.3 | Four groups, hubs, Inbox, field nav, partner landing (F37) | — |
+| 55.4 | Project tabs, "More", breadcrumbs, J/K in the plan panel (F65) | Stacked panels (F67) beyond a Drawer opened inside a panel |
+| 55.5 | Classic form retired, wizard short path "Only what is still needed" (F9), Get started checklist with progress (F10), Settings › Data defaults (F11) | — |
+| 55.6 | One Import page, templates beside uploads, on-screen fixes (F15), simple review chosen in the wizard's review step (F16), form drafts (F31), GPS "Here" (F34); Enter data and Record share `quickEnterValueAction` (F12) | Attach-then-verify in one dialog (F17): "Verify all" names the indicators without a file and links to evidence |
+| 55.7 | Legacy report retired, stepper + one Next step on report/inputs/export (F18/F19), Data tables (F20), final report from New report (F21) | — |
+| 55.8 | Visuals home + Tools, quick chart links to the Chart Studio (F23), map from an indicator via the Map button (F25, Phase 53) | One shared Add-to-dashboard dialog (F24): three panels remain (data center, studio, maps) |
+| 55.9 | Settings groups, AI page, Places pointer (F26), invite with projects for everyone (F27) | — |
+| 55.9b | Site tokens/fonts/hero, five-entry nav, shorter home, AuthFrame, legal contents, sector pages from the library (F89), sticky pricing table (F90) | Screenshot script (F88): the site uses drawn illustrations, not screenshots |
+| 55.10 | AGENTS.md, route map, tests | Remove redirects after one release (F39) |
