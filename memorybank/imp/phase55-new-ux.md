@@ -315,3 +315,8 @@ Deployed `20261114150000` (both) and `20261114180000` (web). Checked in a signed
 | 55.9 | Settings groups, AI page, Places pointer (F26), invite with projects for everyone (F27) | — |
 | 55.9b | Site tokens/fonts/hero, five-entry nav, shorter home, AuthFrame, legal contents, sector pages from the library (F89), sticky pricing table (F90) | Screenshot script (F88): the site uses drawn illustrations, not screenshots |
 | 55.10 | AGENTS.md, route map, tests | Remove redirects after one release (F39) |
+
+## 9. After the plan (2026-11-15)
+- **Team members**: Deactivate, Reactivate and Delete buttons (AGENTS.md, Version 4.000 invariants). Deployed `20261115090000`; used on production to clean up the seven role-screenshot users.
+- **Deploy script**: always re-links the api's dependencies on the host (a rolled-back deploy, `20261114230000`, was caused by stale links).
+- **Left over by design**: redirects removed after one release (F39); `ZZ Test Field/Partner/PM` users from earlier sessions are still on the Team page; one pending invitation to `mnpiracha+zz-pm@gmail.com` exists from the re-invite check (the app has no "cancel invitation" button yet).
