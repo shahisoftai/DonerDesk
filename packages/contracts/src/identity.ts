@@ -123,6 +123,10 @@ export const ChangeRoleSchema = z.object({
   role: RoleSchema,
 });
 
+/** Deactivate (reversible), reactivate, or delete (final) a team member. */
+export const SetUserStatusSchema = z.object({ action: z.enum(["DEACTIVATE", "REACTIVATE", "DELETE"]) });
+export type SetUserStatusInput = z.infer<typeof SetUserStatusSchema>;
+
 export const ChangePasswordSchema = z.object({
   currentPassword: z.string().min(1).max(200),
   newPassword: z.string().min(12).max(200),

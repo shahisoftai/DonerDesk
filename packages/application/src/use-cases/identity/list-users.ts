@@ -11,7 +11,8 @@ export class ListUsersHandler {
     if (!r.ok) return r;
     return {
       ok: true,
-      value: r.value.map((u) => ({
+      // A deleted person is gone from the directory (their records still name "Removed user").
+      value: r.value.filter((u) => u.status !== "REMOVED").map((u) => ({
         id: u.id.toString(),
         name: u.name,
         email: u.email.toString(),

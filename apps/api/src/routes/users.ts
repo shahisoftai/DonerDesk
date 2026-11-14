@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { InviteUserSchema, ChangeRoleSchema } from "@donordesk/contracts";
+import { InviteUserSchema, ChangeRoleSchema, SetUserStatusSchema } from "@donordesk/contracts";
 
 export async function registerUserRoutes(app: FastifyInstance) {
   app.get("/v1/users", async (req) => {
@@ -30,6 +30,15 @@ export async function registerUserRoutes(app: FastifyInstance) {
     const r = await req.container.handlers.resetUserMfa.handle(ctx, (req.params as { id: string }).id);
     if (!r.ok) throw r.error;
     return { reset: true };
+  });
+
+  // Deactivate, reactivate or delete a team member (Version 4.000). Delete is final and keeps the person's records.
+  app.post("/v1/users/:id/status", async (req) => {
+    const body = SetUserStatusSchema.parse(req.body);
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.setUserStatus.handle(ctx, { userId: (req.params as { id: string }).id, action: body.action });
+    if (!r.ok) throw r.error;
+    return r.value;
   });
 
   app.post("/v1/users/role", async (req) => {

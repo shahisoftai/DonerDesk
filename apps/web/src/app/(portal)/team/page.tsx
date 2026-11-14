@@ -1,4 +1,5 @@
 import { requireSession } from "@/lib/server/auth-context";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { hasCapability } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { PendingInvitationsResponseSchema, TeamResponseSchema, ProjectsResponseSchema } from "@/lib/server/schemas";
@@ -43,6 +44,7 @@ export default async function TeamPage() {
           pendingInvitations={pending.ok ? pending.value.items : []}
           members={result.value.items}
           capabilities={Array.from(ctx.capabilities)}
+          currentUserId={decodeSessionPayload(ctx.token)?.sub}
           projects={projects.ok ? projects.value.items.map((p) => ({ id: p.id, title: p.title })) : []}
         />
       </div>

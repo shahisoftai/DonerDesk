@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { changeRoleAction, inviteUserAction } from "@/lib/actions/team";
+import { changeRoleAction, inviteUserAction, setUserStatusAction } from "@/lib/actions/team";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { resetUserMfaAction } from "@/lib/actions/mfa";
 import { useActionState } from "@/lib/client/action-state";
 import { can, capabilitiesForRole, type Capability } from "@/lib/shared/capabilities";
@@ -22,8 +23,11 @@ export function TeamPanel({
   capabilities,
   pendingInvitations = [],
   projects = [],
+  currentUserId,
 }: {
   members: TeamMember[];
+  /** The person looking: they cannot deactivate or delete themselves. */
+  currentUserId?: string;
   /** Projects an outside partner can be given. */
   projects?: Array<{ id: string; title: string }>;
   pendingInvitations?: PendingInvitation[];
@@ -31,6 +35,12 @@ export function TeamPanel({
 }) {
   const router = useRouter();
   const actionState = useActionState();
+  const [statusChange, setStatusChange] = useState<{ user: TeamMember; action: "DEACTIVATE" | "REACTIVATE" | "DELETE" } | null>(null);
+  const STATUS_COPY = {
+    DEACTIVATE: { title: "Deactivate", label: "Deactivate", tone: "primary" as const, message: (n: string) => `${n} will not be able to sign in, and any open session ends on its next click. Nothing they did changes. You can reactivate them at any time; they keep their seat until deleted.` },
+    REACTIVATE: { title: "Reactivate", label: "Reactivate", tone: "primary" as const, message: (n: string) => `${n} can sign in again with their existing password and role.` },
+    DELETE: { title: "Delete", label: "Delete for good", tone: "danger" as const, message: (n: string) => `${n} is removed for good: they cannot sign in, they leave every project, and their name and email are erased from the team list, which frees their seat and the address. Everything they recorded stays, shown as "Removed user". This cannot be undone.` },
+  };
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [showInvite, setShowInvite] = useState(false);
@@ -226,6 +236,14 @@ export function TeamPanel({
                     >
                       Change role
                     </button>
+                    {u.id !== currentUserId && (u.status === "SUSPENDED" ? (
+                      <button type="button" className="btn-secondary ml-2 py-1 text-xs" onClick={() => setStatusChange({ user: u, action: "REACTIVATE" })}>Reactivate</button>
+                    ) : (
+                      <button type="button" className="btn-secondary ml-2 py-1 text-xs" onClick={() => setStatusChange({ user: u, action: "DEACTIVATE" })}>Deactivate</button>
+                    ))}
+                    {u.id !== currentUserId && (
+                      <button type="button" className="btn-ghost ml-2 py-1 text-xs text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10" onClick={() => setStatusChange({ user: u, action: "DELETE" })}>Delete</button>
+                    )}
                     {u.mfaEnabled && (
                       <button
                         type="button"
@@ -267,6 +285,21 @@ export function TeamPanel({
 
       {actionState.error && (
         <p role="alert" className="text-sm font-medium text-danger-700 dark:text-danger-400">{actionState.error}</p>
+      )}
+      {statusChange && (
+        <ConfirmDialog
+          open
+          onClose={() => setStatusChange(null)}
+          title={`${STATUS_COPY[statusChange.action].title} ${statusChange.user.name}?`}
+          message={STATUS_COPY[statusChange.action].message(statusChange.user.name)}
+          confirmLabel={STATUS_COPY[statusChange.action].label}
+          tone={STATUS_COPY[statusChange.action].tone}
+          pending={actionState.busy}
+          onConfirm={() => {
+            const { user, action } = statusChange;
+            void actionState.run(() => setUserStatusAction(user.id, action)).then((done) => { if (done) { setStatusChange(null); router.refresh(); } });
+          }}
+        />
       )}
     </div>
   );

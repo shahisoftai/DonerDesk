@@ -1,6 +1,7 @@
 "use server";
 
-import { ChangeRoleSchema, InviteUserSchema } from "@donordesk/contracts";
+import { ChangeRoleSchema, InviteUserSchema, SetUserStatusSchema } from "@donordesk/contracts";
+import { z } from "zod";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { flattenZodFields } from "@/lib/shared/validation";
@@ -42,4 +43,14 @@ export async function changeRoleAction(userId: string, role: string): Promise<Ch
   });
   if (!result.ok) return result;
   return { ok: true, value: undefined };
+}
+
+export type SetUserStatusResult = Result<{ status: string }, AppError>;
+
+/** Deactivate (reversible), reactivate, or delete (final; their records stay, named "Removed user") a team member. */
+export async function setUserStatusAction(userId: string, action: "DEACTIVATE" | "REACTIVATE" | "DELETE"): Promise<SetUserStatusResult> {
+  const context = await requireSession();
+  const parsed = SetUserStatusSchema.safeParse({ action });
+  if (!parsed.success) return { ok: false, error: { kind: "validation", message: "Unknown action.", fields: {} } };
+  return gatewayRequest(`/v1/users/${encodeURIComponent(userId)}/status`, z.object({ status: z.string() }), context.token, { method: "POST", body: parsed.data });
 }
