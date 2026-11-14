@@ -38,6 +38,8 @@ import { FilterSlotProvider } from "../filters/filter-slot";
 import { BlockEditProvider } from "@/components/editing/block-edit-context";
 import { useFilterAddress } from "../filters/use-filter-address";
 import { DatasetFilterProvider, type DatasetFilterApi } from "../filters/dataset-filters";
+import { DatasetMapProvider } from "@/features/datasets/presentation/dataset-map-slot";
+import { DatasetMapView } from "@/features/datasets/presentation/DatasetMapView";
 import { toggleDatasetFilter, datasetFilterValues } from "@donordesk/domain/contexts/canvas/index.js";
 
 export interface ProjectOption { id: string; name: string }
@@ -190,7 +192,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
   const selectedProblems = [...problems, ...serverProblems.filter((s) => !problems.some((p) => p.blockId === s.blockId && p.message === s.message))];
 
   return (
-    <DatasetFilterProvider api={datasetApi}>
+    <DatasetFilterProvider api={datasetApi}><DatasetMapProvider value={DatasetMapView}>
     <div ref={stage} style={editing ? { paddingInlineEnd: pinnedWidth(drawers) } : undefined} className="space-y-4 [&:fullscreen]:overflow-auto [&:fullscreen]:bg-white [&:fullscreen]:p-6 dark:[&:fullscreen]:bg-slate-950" data-testid="canvas-workspace" data-editing={editing || undefined} data-presenting={present.presenting || undefined}>
       <header className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
@@ -321,7 +323,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
       {editing && <EditorTour />}
       {session.shortcutsOpen && <ShortcutSheet onClose={() => session.setShortcutsOpen(false)} />}
     </div>
-    </DatasetFilterProvider>
+    </DatasetMapProvider></DatasetFilterProvider>
   );
 }
 
