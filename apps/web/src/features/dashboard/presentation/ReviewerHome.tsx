@@ -68,7 +68,7 @@ export async function ReviewerHome({ ctx, variant }: { ctx: Ctx; variant: "GRANT
         eyebrow={grants ? "Grants home" : "Compliance home"}
         title={`Welcome back${firstName ? `, ${firstName}` : ""}. ${grants ? `${reportsDueWithin(rows, 30)} report${reportsDueWithin(rows, 30) === 1 ? "" : "s"} due in 30 days.` : `${checklist.length} compliance blocker${checklist.length === 1 ? "" : "s"} open.`}`}
         subtitle={grants ? "Donor deadlines, what is still owed, and the awards that end soonest." : "Compliance blockers, files to verify, and reports close to submission."}
-        actions={<Link className="btn-secondary" href="/inbox">Open My Work</Link>}
+        actions={<Link className="btn-secondary" href="/inbox">Open Inbox</Link>}
       />
 
       <NeedsYouStrip items={needs} />

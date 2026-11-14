@@ -215,7 +215,7 @@ export const SECTIONS: MatrixSection[] = [
       sheet: n("No."),
     } },
     { label: "Ask a question across indicators", cells: {
-      dd: y("A report builder: ask in one sentence, break down by sex or age group, save it and put it on a dashboard."),
+      dd: y("A data-table builder: ask in one sentence, break down by sex or age group, save it and put it on a dashboard."),
       ai: y("Pivot tables across one or several forms, with sums, averages and counts."),
       dr: y("\"Create, save and share customized reports.\""),
       tola: u(),

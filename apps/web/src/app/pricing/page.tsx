@@ -280,10 +280,11 @@ export default function PricingPage() {
             <p className="text-sm font-bold uppercase tracking-widest text-brand-300">Full comparison</p>
             <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">Every detail, side by side</h2>
           </div>
-          <div className="mt-10 overflow-x-auto rounded-2xl border border-white/10">
+          {/* Plan F90: the plan names stay in view while the table scrolls. */}
+          <div className="mt-10 max-h-[75vh] overflow-auto rounded-2xl border border-white/10">
             <table className="w-full min-w-[760px] border-collapse text-left text-sm">
-              <thead>
-                <tr className="bg-white/[0.04] text-xs uppercase tracking-wider text-slate-400">
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-[#14244f] text-xs uppercase tracking-wider text-slate-300 shadow-[0_1px_0_rgba(255,255,255,0.1)]">
                   <th scope="col" className="px-5 py-4 font-semibold">Feature</th>
                   <th scope="col" className="px-5 py-4 font-semibold">Free</th>
                   <th scope="col" className="px-5 py-4 font-semibold text-brand-300">Team</th>

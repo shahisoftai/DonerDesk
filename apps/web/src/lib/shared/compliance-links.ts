@@ -60,7 +60,7 @@ export function complianceFixLink(input: {
     case "UNSUPPORTED_REPORT_CLAIM":
     case "MISSING_ANNEX":
     case "UNREVIEWED_AI_OUTPUT":
-      return { label: "Open report workspace", href: `/projects/${project}/reports/${period}` };
+      return { label: "Open the report", href: `/projects/${project}/reports/${period}` };
     case "CUMULATIVE_DATA_COMPLETE":
     case "VARIANCE_UNEXPLAINED":
     case "FINANCE_FIGURES_PROVIDED":

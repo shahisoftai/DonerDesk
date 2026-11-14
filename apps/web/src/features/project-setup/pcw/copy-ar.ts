@@ -69,6 +69,8 @@ export const PCW_AR: PcwBundle = {
   },
   copy: {
     title: "إنشاء مشروع",
+    quickPath: "ما زال ناقصاً فقط",
+    quickPathHint: "زر التالي يتخطى الخطوات المكتملة، فتنتقل مباشرة إلى ما ينقص ثم إلى الإطلاق.",
     startNewDraft: "ابدأ مشروعاً آخر بدلاً من ذلك",
     progress: (open) => (open === 0 ? "مكتمل" : `المتبقي للإجابة: ${open}`),
     inboxTitle: "ما زال بحاجة إلى إجابة",

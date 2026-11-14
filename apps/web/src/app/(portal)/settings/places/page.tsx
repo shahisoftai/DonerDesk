@@ -28,6 +28,8 @@ export default async function PlacesPage() {
   return (
     <div className="animate-fade-in">
       <h1 className="page-title">{PLACES_COPY.title}</h1>
+      {/* Plan F26: a project's own areas are chosen on the project (Plan › Where we work); this is the organisation's shared list. */}
+      <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-400">This is your organisation&apos;s shared list of places. To choose the areas one project works in, open the project and go to <b>Plan › Where we work</b>.</p>
       <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">{PLACES_COPY.intro}</p>
       <p className="mt-2 max-w-3xl text-sm text-slate-600 dark:text-slate-300">This is the whole organisation&apos;s list. To choose where one project works, open the project and go to <strong>Data → Where we work</strong>, where you tick areas on a map.</p>
       {list.value.canEdit && hasCapability(ctx, "project.edit") && <SeedPlacesCard />}

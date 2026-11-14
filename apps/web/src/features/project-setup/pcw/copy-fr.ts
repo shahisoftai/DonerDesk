@@ -67,6 +67,8 @@ export const PCW_FR: PcwBundle = {
   },
   copy: {
     title: "Créer un projet",
+    quickPath: "Seulement ce qui manque encore",
+    quickPathHint: "Suivant saute les étapes déjà complètes : vous allez directement à ce qui manque, puis au lancement.",
     startNewDraft: "Commencer plutôt un autre projet",
     progress: (open) => (open === 0 ? "Terminé" : `${open} à renseigner`),
     inboxTitle: "Reste à renseigner",

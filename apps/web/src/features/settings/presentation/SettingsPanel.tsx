@@ -73,7 +73,7 @@ export function SettingsPanel({
   }
 
   return (
-    <form onSubmit={save} className="card mt-6 max-w-2xl space-y-4" noValidate>
+    <form onSubmit={save} className="card max-w-3xl space-y-4" noValidate>
       <FormSummary errors={actionState.fields ?? {}} />
 
       <div className="grid gap-4 sm:grid-cols-2">

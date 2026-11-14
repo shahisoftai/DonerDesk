@@ -137,7 +137,7 @@ export function AppShell({
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 overflow-x-clip">
           <header role="banner" className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur-xl dark:border-white/10 dark:bg-[#0b1220]/85">
             <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
               <div className="flex min-w-0 items-center gap-2">
@@ -174,10 +174,13 @@ export function AppShell({
                 <button type="button" onClick={openCommandPalette} aria-label="Search and commands" className="btn-ghost btn-icon sm:hidden"><Search aria-hidden="true" /></button>
               </div>
               <div className="flex items-center gap-1.5">
-                <BookmarkButton />
-                <AcademyHeaderButton />
-                <LocaleSwitcher />
-                <ThemeToggle />
+                {/* On a phone the header keeps only search, the bell, Record and the person; the rest lives in the command palette. */}
+                <div className="hidden items-center gap-1.5 sm:flex">
+                  <BookmarkButton />
+                  <AcademyHeaderButton />
+                  <LocaleSwitcher />
+                  <ThemeToggle />
+                </div>
                 <NotificationBell items={bellItems} />
                 <RecordMenu canCreate={canCreate} canRecord={canRecord} hideOnPhone={phoneBar} />
                 <UserMenu name={user?.name ?? ""} email={user?.email ?? ""} />

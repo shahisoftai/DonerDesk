@@ -99,6 +99,7 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
 
       <div className="card mt-6 space-y-4">
         {props.children}
+        {!result && error && text.trim() && <p className="text-xs text-slate-600 dark:text-slate-400">Correct the text below and press the button again; nothing was saved.</p>}
 
         <div className="flex items-start justify-between gap-4">
           <Field label="Upload a file" htmlFor={`${props.kind}File`} description={props.fileHelp}>
@@ -161,7 +162,12 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
                 ))}
               </ul>
             )}
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              {/* Plan F15: fix the rows on screen. The text stays as it was: remove the rows already created, correct the ones the
+                  notes name, and import again. */}
+              {(result.warnings.length > 0 || result.skipped > 0) && (
+                <Button size="sm" variant="secondary" title="Remove the rows that were created, correct the others, and import again" onClick={() => { setResult(null); setError(null); }}>Edit the rows and import again</Button>
+              )}
               <Button size="sm" onClick={() => router.push(props.viewHref)}>{props.viewLabel}</Button>
             </div>
           </div>

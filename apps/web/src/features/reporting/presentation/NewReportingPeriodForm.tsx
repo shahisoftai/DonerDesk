@@ -1,5 +1,6 @@
 "use client";
 
+import { FormDraftKeeper } from "@/components/ui/FormDraftKeeper";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -206,7 +207,8 @@ export function NewReportingPeriodForm({
     <div>
       {notReady && readiness && <MissingSetupItems projectId={projectId} readiness={readiness} />}
       {periodOptions && <div className="mt-6"><PeriodTypeGuide options={periodOptions} selected={reportType} projectId={projectId} /></div>}
-      <form onSubmit={submit} className="card mt-6 max-w-2xl space-y-4" noValidate>
+      <form id="new-report-form" onSubmit={submit} className="card mt-6 max-w-2xl space-y-4" noValidate>
+        <FormDraftKeeper formId="new-report-form" storageKey={`new-report:${projectId}`} />
       <FormSummary errors={fields} count={errorCount} />
 
       <Field label="Report type" htmlFor="reportType" error={fields.reportType?.[0]}>

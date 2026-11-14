@@ -74,6 +74,8 @@ export const REQUIREMENT_SENTENCES: PcwSentences = {
 
 export const PCW_COPY = {
   title: "Create a project",
+  quickPath: "Only what is still needed",
+  quickPathHint: "Next skips the steps that are already complete, so you go straight to what is missing and then to launch.",
   startNewDraft: "Start a different project instead",
   progress: (open: number): string => (open === 0 ? "Complete" : `${open} to answer`),
   inboxTitle: "Still to answer",

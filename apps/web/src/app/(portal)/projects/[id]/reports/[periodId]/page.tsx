@@ -18,6 +18,7 @@ import { InlineError } from "@/components/feedback/PageState";
 import { ReportEditor } from "@/features/report-editor/presentation/ReportEditor";
 import { parseEditorUrlState } from "@/features/report-editor/application/url-state";
 import { countStoryAnswers } from "@/features/reporting/application/reporting-steps";
+import { ReportStepper } from "@/features/reporting/presentation/ReportStepper";
 import { formatDate } from "@/lib/shared/dates";
 import { reportHeading } from "@/lib/labels";
 
@@ -82,6 +83,18 @@ export default async function ReportWorkspacePage({
       <>
         {!draftResult.ok && <InlineError title={draftResult.error.message} />}
         {!checklistResult.ok && <InlineError title={checklistResult.error.message} />}
+        <div className="mb-4">
+          <ReportStepper
+            base={`/projects/${projectId}/reports/${periodId}`}
+            input={{
+              indicatorCount: indicatorsResult.ok ? indicatorsResult.value.indicators.length : 0,
+              unverifiedIndicatorCount,
+              storyAnswered: storyAnsweredCount,
+              hasDraft: Boolean(draftValue?.draft),
+              draftStatus: draftValue?.draft?.status ?? null,
+            }}
+          />
+        </div>
         {canLeadReport && reportPeople.length > 0 && period && (
           <div className="mb-3"><LeadPicker label="Report lead" current={period.responsibleOfficerId} people={reportPeople} canEdit target={{ type: "period", id: periodId }} /></div>
         )}

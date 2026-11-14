@@ -86,7 +86,7 @@ export const SECTOR_PAGES: SectorPage[] = [
     problems: [
       { title: "Sites report on different days", text: "Set an entry window for each period, hand values in for review, and see which sites are late at a glance." },
       { title: "Rates are easy to get wrong", text: "Rates are shown as recorded and are never added together or judged as a percent of a target. Formula indicators calculate a ratio from its parts, exactly." },
-      { title: "Donor reports ask for the same admissions in new tables", text: "Ask for results by site, by sex or by age group in one sentence with the report builder, then keep the report." },
+      { title: "Donor reports ask for the same admissions in new tables", text: "Ask for results by site, by sex or by age group in one sentence with the data-table builder, then keep the report." },
     ],
     metaDescription: "Manage a nutrition programme in one record: admissions, cure rates and sites by period, with donor reports drawn from the same data." },
   { slug: "education", name: "Education", indicatorExample: "enrolment, attendance, teachers trained, learning results",
@@ -94,7 +94,7 @@ export const SECTOR_PAGES: SectorPage[] = [
     lede: "Enrolment, attendance and learning results by school and term, with the evidence of training and activities kept beside them.",
     problems: [
       { title: "Attendance lives in each school's book", text: "Collect it with forms on a phone, offline, or enter it in a sheet that accepts a paste from Excel." },
-      { title: "Results are asked for by school, term and sex", text: "Record a split by sex or age group once, then break results down by it in charts and in the report builder." },
+      { title: "Results are asked for by school, term and sex", text: "Record a split by sex or age group once, then break results down by it in charts and in the data-table builder." },
       { title: "Teacher training is easy to count and hard to prove", text: "Link attendance lists and photos to the training they prove, and open them from any figure." },
     ],
     metaDescription: "Manage an education programme in one record: enrolment, attendance and results by school and term, with evidence and donor reports." },

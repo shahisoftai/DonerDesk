@@ -1,5 +1,6 @@
 "use client";
 
+import { FormDraftKeeper } from "@/components/ui/FormDraftKeeper";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { WORKPLAN_COPY, suggestRequiredFiles } from "@donordesk/domain/contexts/workplan/index.js";
@@ -86,7 +87,8 @@ export function PlanActivityForm({ projectId, leads, activities, country, custom
 
   const err = (k: string) => state.fields?.[k]?.[0];
   return (
-    <form onSubmit={submit} className="max-w-xl space-y-4" aria-busy={state.busy}>
+    <form id="plan-activity-form" onSubmit={submit} className="max-w-xl space-y-4" aria-busy={state.busy}>
+      <FormDraftKeeper formId="plan-activity-form" storageKey={`plan-activity:${projectId}`} />
       <fieldset disabled={!hydrated || state.busy} className="space-y-4">
         <Field label="Title" error={err("title")}><Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={300} required /></Field>
         <div className="grid grid-cols-2 gap-3">

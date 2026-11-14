@@ -81,7 +81,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
                     />
                   )}
                   <div className="min-w-0">
-                    <Link href={`/projects/${projectId}/activities/plan/${row.id}`} className="font-medium text-brand-700 hover:underline dark:text-brand-300">{row.title}</Link>
+                    <Link href={`/projects/${projectId}/activities/plan/${row.id}`} data-panel-item className="link-quiet">{row.title}</Link>
                     {waitingLine(row.waitingFor) && <p className="text-xs font-medium text-amber-700 dark:text-amber-400">{waitingLine(row.waitingFor)}</p>}
                     {(fieldChips[row.id] ?? []).length > 0 && <p className="text-xs text-slate-600 dark:text-slate-300">{(fieldChips[row.id] ?? []).join(" · ")}</p>}
                     <p className="text-xs text-slate-500">

@@ -8,7 +8,7 @@ import { FEATURE_GROUPS } from "@/components/landing/platform-content";
 export const metadata: Metadata = {
   title: "Every feature",
   description:
-    "Every DonorDesk feature in one place: logframe and indicators, work plan, field data collection and offline app, entry sheet, maps, evidence, Data Center, Chart Studio, dashboards, infographics, report builder, donor reporting, integrations and security. Each says who uses it and what to know before you rely on it.",
+    "Every DonorDesk feature in one place: logframe and indicators, work plan, field data collection and offline app, entry sheet, maps, evidence, Data Center, Chart Studio, dashboards, infographics, data-table builder, donor reporting, integrations and security. Each says who uses it and what to know before you rely on it.",
   alternates: { canonical: "/features" },
 };
 

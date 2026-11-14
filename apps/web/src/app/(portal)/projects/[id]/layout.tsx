@@ -44,8 +44,8 @@ export default async function ProjectLayout({ params, children }: { params: Prom
       <header className="space-y-4">
         <div>
           <ProjectCrumbs projectId={project.id} projectTitle={project.title} />
-          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-            <div className="min-w-0">
+          <div className="flex items-start justify-between gap-x-6 gap-y-3 max-sm:flex-wrap">
+            <div className="min-w-0 flex-1">
               {/* On a phone the header must not push the page's first field below the fold: two title lines, one meta line (Phase 44). */}
               <h1 className="line-clamp-2 text-[22px] font-semibold leading-tight tracking-[-0.02em] text-slate-950 sm:line-clamp-none dark:text-white">{project.title}</h1>
               <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500 dark:text-slate-400">
@@ -57,7 +57,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
                 <span className="hidden md:inline">{formatDate(project.startDate)} – {formatDate(project.endDate)} · {project.reportingFrequency.replace(/_/g, " ").toLowerCase()} reporting</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               {ctx.capabilities.has("indicator.update") && <RecordButton projectId={project.id} kind="NUMBER" />}
             </div>
           </div>

@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { homeVariantFor } from "@/features/navigation/domain/role-navigation";
 import { PortfolioHome } from "@/features/dashboard/presentation/PortfolioHome";
 import { FieldHome } from "@/features/dashboard/presentation/FieldHome";
 import { ReviewerHome } from "@/features/dashboard/presentation/ReviewerHome";
+import { PartnerHome } from "@/features/dashboard/presentation/PartnerHome";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +13,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
   const filter = { by: one(sp.by), key: one(sp.key), alert: one(sp.alert) };
   const ctx = await requireSession();
-  // An outside partner has no organisation-wide home: their projects are the page.
-  if (ctx.external) redirect("/projects");
+  // An outside partner has no organisation-wide home: their projects and what is next on each (plan F37).
+  if (ctx.external) return <PartnerHome ctx={ctx} />;
   switch (homeVariantFor(ctx.role)) {
     case "DIRECTOR": return <PortfolioHome ctx={ctx} variant="DIRECTOR" filter={filter} />;
     case "MANAGER": return <PortfolioHome ctx={ctx} variant="MANAGER" filter={filter} />;

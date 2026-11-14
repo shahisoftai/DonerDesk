@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { canApplyPlanAction, planActionFor, PLAN_STATUS_LABEL, WORKPLAN_COPY, type PlanStatus } from "@donordesk/domain/contexts/workplan/index.js";
 import { changePlanStatusAction } from "@/lib/actions/workplan";
@@ -30,10 +30,14 @@ export function PlanStatusControl({ itemId, status, suggested, canChange, queueO
   const state = useActionState();
   const outbox = useOutbox();
   const [queued, setQueued] = useState(false);
+  // Optimistic (Version 4.000, plan F72): the step lights at once; a refusal puts it back and says why.
+  const [shown, setShown] = useState<PlanStatus>(status);
+  useEffect(() => setShown(status), [status]);
 
   async function apply(to: PlanStatus) {
     const action = planActionFor(status, to);
     if (!action) return;
+    setShown(to);
     let offline: AppError | undefined;
     // A "Done" is dated to the day it was made, so one that waits offline and is sent later is not counted as finishing late.
     const completedOn = action === "COMPLETE" ? new Date().toISOString().slice(0, 10) : undefined;
@@ -46,7 +50,9 @@ export function PlanStatusControl({ itemId, status, suggested, canChange, queueO
     if (offline && queueOffline && outbox.supported) {
       await outbox.enqueue(planStatusEntry({ id: newIdempotencyKey(), title: queueOffline.title, payload: { itemId, action, ...(completedOn ? { completedOn } : {}) }, now: Date.now() }));
       setQueued(true);
+      return;
     }
+    setShown(status);
   }
 
   if (status === "CANCELLED") return <span className="text-xs text-slate-500">{PLAN_STATUS_LABEL.CANCELLED}</span>;
@@ -56,7 +62,7 @@ export function PlanStatusControl({ itemId, status, suggested, canChange, queueO
     <div className="flex flex-col gap-1">
       <div role="group" aria-label="Status" className="inline-flex overflow-hidden rounded-lg border border-slate-300 dark:border-white/15">
         {STEPS.map((step) => {
-          const current = step === status;
+          const current = step === shown;
           const reachable = current || planActionFor(status, step) !== undefined;
           return (
             <button

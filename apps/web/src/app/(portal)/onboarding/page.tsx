@@ -12,7 +12,7 @@ export default async function OnboardingPage() {
   if (!snapshot.ok) {
     return (
       <div className="animate-fade-in">
-        <h1 className="page-title">Set up your workspace</h1>
+        <h1 className="page-title">Get started</h1>
         <div className="mt-6">
           <InlineError title={snapshot.error.message} referenceId={snapshot.error.referenceId} />
         </div>

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { RowMenu } from "@/components/ui/RowMenu";
+import { HoverCard } from "@/components/ui/HoverCard";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ProjectsResponseSchema } from "@/lib/server/schemas";
@@ -120,7 +122,7 @@ export default async function ProjectsList({
           <input type="checkbox" name="archived" value="true" defaultChecked={filters.archived} className="mt-1" />
           Show archived
         </label>
-        <button className="btn" type="submit">Apply</button>
+        <button className="btn-secondary" type="submit">Apply</button>
         {filters.query || filters.status !== "all" || filters.sector !== "all" || filters.donor !== "all" || filters.country !== "all" || filters.archived ? (
           <Link className="btn-secondary" href="/projects">Clear</Link>
         ) : null}
@@ -143,15 +145,29 @@ export default async function ProjectsList({
                   <th className="px-3 py-2 text-left">Donor</th>
                   <th className="px-3 py-2 text-left">Status</th>
                   <th className="px-3 py-2 text-left">Days left</th>
+                  <th className="w-10 px-3 py-2"><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((p) => (
                   <tr key={p.id} className="trow">
-                    <td className="px-3 py-2"><Link className="font-medium hover:text-brand-700 dark:hover:text-brand-300" href={`/projects/${p.id}`} prefetch={false}>{p.title}</Link><div className="text-xs text-slate-400">{p.country} · {p.sector ? (SECTOR_LABEL[p.sector] ?? p.sector) : "—"}</div></td>
+                    <td className="px-3 py-2"><HoverCard trigger={<Link className="link-quiet" href={`/projects/${p.id}`} prefetch={false}>{p.title}</Link>}>
+                      <span className="block font-semibold text-slate-900 dark:text-white">{p.title}</span>
+                      <span className="mt-1 block text-xs text-slate-500">{[p.projectCode, p.donorName, p.country].filter(Boolean).join(" · ")}</span>
+                      <span className="mt-2 block">{p.status.toLowerCase()} · {p.reportingFrequency.replace(/_/g, " ").toLowerCase()} reporting · {p.daysRemaining} days left</span>
+                    </HoverCard><div className="text-xs text-slate-400">{p.country} · {p.sector ? (SECTOR_LABEL[p.sector] ?? p.sector) : "—"}</div></td>
                     <td className="px-3 py-2">{p.donorName}</td>
                     <td className="px-3 py-2"><Badge tone={projectStatusTone(p.status)}>{p.status}</Badge></td>
                     <td className="px-3 py-2">{p.daysRemaining}</td>
+                    <td className="px-3 py-2 text-end">
+                      <RowMenu label={p.title} actions={[
+                        { label: "Open", href: `/projects/${p.id}` },
+                        { label: "Results framework", href: `/projects/${p.id}/logframe` },
+                        { label: "Enter data", href: `/projects/${p.id}/enter` },
+                        { label: "Reports", href: `/projects/${p.id}/reports` },
+                        { label: "Project settings", href: `/projects/${p.id}/settings` },
+                      ]} />
+                    </td>
                   </tr>
                 ))}
               </tbody>

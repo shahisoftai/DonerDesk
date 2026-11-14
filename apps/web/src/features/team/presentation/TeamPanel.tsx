@@ -75,7 +75,7 @@ export function TeamPanel({
       return;
     }
     setLocalErrors({});
-    const result = await actionState.run(() => inviteUserAction({ email: inviteEmail.trim(), role: inviteExternal && inviteRole !== "VIEWER" ? "FIELD_OFFICER" : inviteRole, projectIds: inviteExternal ? inviteProjects : [], external: inviteExternal }));
+    const result = await actionState.run(() => inviteUserAction({ email: inviteEmail.trim(), role: inviteExternal && inviteRole !== "VIEWER" ? "FIELD_OFFICER" : inviteRole, projectIds: inviteProjects, external: inviteExternal }));
     if (result) {
       setInviteToken(result.token);
       setInviteEmail("");
@@ -124,8 +124,9 @@ export function TeamPanel({
               <input type="checkbox" className="mt-1" checked={inviteExternal} onChange={(e) => { setInviteExternal(e.target.checked); if (e.target.checked && inviteRole !== "VIEWER") setInviteRole("FIELD_OFFICER"); }} />
               <span><strong>Outside partner.</strong> Someone from another organization who reports on, or reads, only the projects you choose. They cannot see the rest of your organization.</span>
             </label>
-            {inviteExternal && (
-              <Field label="Projects they may see" htmlFor="invite-projects" error={fields.projects?.[0]}>
+            {/* Version 4.000 (plan F27): anyone can be added to projects in the same step; a partner must be. */}
+            {projects.length > 0 && (
+              <Field label={inviteExternal ? "Projects they may see" : "Add them to projects (optional)"} htmlFor="invite-projects" error={fields.projects?.[0]}>
                 <div id="invite-projects" role="group" className="max-h-40 space-y-1 overflow-auto rounded border border-slate-200 p-2 dark:border-white/10">
                   {projects.length === 0 && <p className="text-xs text-slate-500">There are no projects to choose from yet.</p>}
                   {projects.map((p) => (

@@ -1,0 +1,12 @@
+import { chromium } from "@playwright/test";
+const b = await chromium.connectOverCDP("http://127.0.0.1:9340");
+const ctx = b.contexts()[0]; const p = ctx.pages()[0] ?? await ctx.newPage();
+await p.goto("https://donordesk.online/login");
+await p.fill('input[name="email"]', process.env.DD_EMAIL);
+await p.fill('input[name="password"]', process.env.DD_PASS);
+await p.click('button[type="submit"]:has-text("Sign in")');
+await p.waitForURL(/dashboard|onboarding|projects/, { timeout: 30000 });
+await p.waitForLoadState("networkidle");
+await p.screenshot({ path: process.argv[2] + "/s-home.png" });
+console.log(p.url());
+await b.close();

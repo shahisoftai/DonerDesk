@@ -45,8 +45,8 @@ export default async function SettingsPage() {
             Download everything your organization has put into DonorDesk — projects, results, activities, evidence records, reports and the audit trail — as one ZIP of readable data files. Passwords and sign-in links are never included.
           </p>
           <div className="mt-3 flex flex-wrap gap-3">
-            <a className="btn" href="/api/organization/export">Download records</a>
-            <a className="btn" href="/api/organization/export?files=1">Download records and evidence files</a>
+            <a className="btn-secondary" href="/api/organization/export">Download records</a>
+            <a className="btn-secondary" href="/api/organization/export?files=1">Download records and evidence files</a>
           </div>
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             The version with files can be large and takes longer to prepare. Files kept in Google Drive stay in Drive and are listed in the download.

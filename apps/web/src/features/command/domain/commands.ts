@@ -28,7 +28,7 @@ export interface CommandDef {
 
 export const COMMANDS: readonly CommandDef[] = [
   { id: "go.home", label: "Go to Home", group: "GO", run: { kind: "HREF", href: "/dashboard" }, keywords: "dashboard start", shortcut: "G H" },
-  { id: "go.inbox", label: "Go to Inbox", group: "GO", run: { kind: "HREF", href: "/inbox" }, keywords: "my work tasks notifications to do", shortcut: "G I" },
+  { id: "go.inbox", label: "Go to Inbox", group: "GO", run: { kind: "HREF", href: "/inbox" }, keywords: "tasks notifications updates to do", shortcut: "G I" },
   { id: "go.projects", label: "Go to Projects", group: "GO", run: { kind: "HREF", href: "/projects" }, shortcut: "G P" },
   { id: "go.visuals", label: "Go to Dashboards and infographics", group: "GO", run: { kind: "HREF", href: "/visuals" }, keywords: "charts maps canvas", shortcut: "G D" },
   { id: "go.reports", label: "Go to Reports", group: "GO", run: { kind: "HREF", href: "/reports" }, shortcut: "G R" },

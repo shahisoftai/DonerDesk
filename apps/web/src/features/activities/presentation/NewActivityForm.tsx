@@ -1,5 +1,6 @@
 "use client";
 
+import { HereButton } from "@/components/ui/HereButton";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createActivityAction } from "@/lib/actions/activities";
@@ -439,6 +440,7 @@ function NewActivityFormInner({
         <Input id="location" name="location" className="min-h-[52px] text-base" list={places.length > 0 ? "activity-places" : undefined} value={location} onChange={(e) => setLocation(e.target.value)} invalid={Boolean(fields.location)} maxLength={200} />
         {places.length > 0 && <datalist id="activity-places">{places.map((p) => <option key={p} value={p} />)}</datalist>}
       </Field>
+      <HereButton onPlace={setLocation} />
 
       <Field label="What happened?" htmlFor="summary" error={fields.summary?.[0]}>
         <Textarea dictate id="summary" name="summary" value={summary} onChange={(e) => setSummary(e.target.value)} invalid={Boolean(fields.summary)} className="min-h-[120px] text-base" required maxLength={10000} />

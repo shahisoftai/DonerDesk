@@ -52,7 +52,11 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
     setCurrent(slide);
   };
   const prev = neighbourSlide(view, current, -1);
-  const next = neighbourSlide(view, current, 1);
+  // Short path (Version 4.000, plan F9): with "Only what is still needed" on, Next jumps to the next incomplete step, then launch.
+  const [quick, setQuick] = useState(false);
+  const here = rail.findIndex((r) => r.slide === current);
+  const quickNext = rail.slice(here + 1).find((r, i, rest) => !r.complete || i === rest.length - 1)?.slide;
+  const next = quick ? quickNext : neighbourSlide(view, current, 1);
   const index = rail.findIndex((r) => r.slide === current) + 1;
   const gaps = slideGaps(view, current, pcw.sentences);
 
@@ -76,7 +80,13 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
             </li>
           ))}
         </ol>
-        <p className="mt-2 text-xs"><a className="underline" href="/projects/new/wizard?new=1">{PCW_COPY.startNewDraft}</a></p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <a className="underline" href="/projects/new/wizard?new=1">{PCW_COPY.startNewDraft}</a>
+          <label className="inline-flex items-center gap-2" title={PCW_COPY.quickPathHint}>
+            <input type="checkbox" checked={quick} onChange={(e) => setQuick(e.target.checked)} className="h-4 w-4 accent-brand-700" />
+            <span className="font-medium">{PCW_COPY.quickPath}</span>
+          </label>
+        </div>
       </nav>
       <div className="space-y-4">
       <ReadingPopup view={view} />

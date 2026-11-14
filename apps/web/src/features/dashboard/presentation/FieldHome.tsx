@@ -41,7 +41,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
         eyebrow="My week"
         title={`Welcome back${firstName ? `, ${firstName}` : ""}. ${sentBack > 0 ? `${sentBack} activit${sentBack === 1 ? "y was" : "ies were"} sent back to you.` : planned > 0 ? `${planned} planned activit${planned === 1 ? "y" : "ies"} this week.` : "Nothing is planned for you this week."}`}
         subtitle="Your planned work, what needs fixing, and the quickest ways to record what you did."
-        actions={<Link className="btn-secondary" href="/inbox">Open My Work</Link>}
+        actions={<Link className="btn-secondary" href="/inbox">Open Inbox</Link>}
       />
       <RecordCard capabilities={[...ctx.capabilities]} />
       {!week.ok && <InlineError title={week.error.message} referenceId={week.error.referenceId} />}

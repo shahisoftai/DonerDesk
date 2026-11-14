@@ -54,7 +54,7 @@ export const RUN_MODULES: ModuleCard[] = [
   },
   {
     icon: "🧭",
-    title: "My Work",
+    title: "Inbox",
     tag: "Your queue across projects",
     description:
       "One list of what needs you: reports to review, checklist items, evidence to verify and activities to accept, across every project you are on.",
@@ -196,7 +196,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
           "Admin, Project Manager, M&E Officer, Grants Officer, Field Officer, Compliance Officer and Viewer.",
           "Invite people by email. Invited and suspended members count toward your seats.",
           "Viewers can browse and export but cannot edit, approve or use AI credits.",
-          "My Work gives each person one queue across all their projects.",
+          "The Inbox gives each person one queue across all their projects.",
         ],
         who: "Admin, Project Manager",
         goodToKnow:
@@ -230,7 +230,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       },
       {
         id: "my-work",
-        title: "My Work and My week",
+        title: "Inbox and My week",
         summary:
           "One queue of what you have to do, across every project, and a week view for field staff.",
         inPractice: [
@@ -506,7 +506,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
       },
       {
         id: "report-builder",
-        title: "Report builder and indicator views",
+        title: "Data tables and indicator views",
         summary:
           "Ask for results across indicators in one sentence, then keep the report or put it on a dashboard.",
         inPractice: [

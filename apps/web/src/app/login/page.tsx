@@ -43,12 +43,12 @@ export default function LoginPage() {
       </div>
       <form action={formAction} className="card mt-6 space-y-4">
         {process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true" && (
-          <a className="btn block w-full text-center" href="/api/auth/google/start">
+          <a className="btn-secondary block w-full text-center" href="/api/auth/google/start">
             Sign in with Google
           </a>
         )}
         {process.env.NEXT_PUBLIC_OIDC_ENABLED === "true" && (
-          <a className="btn block w-full text-center" href="/api/auth/oidc/start">
+          <a className="btn-secondary block w-full text-center" href="/api/auth/oidc/start">
             Sign in with organization SSO
           </a>
         )}

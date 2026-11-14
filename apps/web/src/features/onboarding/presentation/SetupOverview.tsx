@@ -7,13 +7,19 @@ import type { OnboardingSnapshot } from "../application/onboarding-status";
 export function SetupOverview({ snapshot }: { snapshot: OnboardingSnapshot }) {
   const steps = deriveOnboardingSteps(snapshot);
   const complete = allComplete(steps);
+  const done = steps.filter((s) => s.status === "complete").length;
 
   return (
     <div className="animate-fade-in mx-auto max-w-2xl">
-      <h1 className="page-title">Set up your workspace</h1>
+      {/* Version 4.000 (plan F10): one "Get started" checklist with its progress, instead of a row of setup pages. */}
+      <h1 className="page-title">Get started</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-        Complete the setup so your team can start reporting. Progress is saved automatically as you finish each step.
+        A few steps so your team can start. Each step is saved as you finish it; the optional ones can wait.
       </p>
+      <div className="mt-4" aria-label={`${done} of ${steps.length} steps done`}>
+        <div className="flex justify-between text-xs text-slate-500"><span>{done} of {steps.length} done</span><span>{Math.round((done / Math.max(1, steps.length)) * 100)}%</span></div>
+        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-white/10"><div className="h-full rounded-full bg-brand-600 transition-[width] duration-500" style={{ width: `${(done / Math.max(1, steps.length)) * 100}%` }} /></div>
+      </div>
 
       {complete && (
         <div className="mt-6">

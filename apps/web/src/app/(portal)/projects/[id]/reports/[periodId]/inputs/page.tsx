@@ -1,4 +1,5 @@
 import { loadProjectPeople } from "@/features/tasks/application/project-people";
+import { PeriodStepper } from "@/features/reporting/presentation/PeriodStepper";
 import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -120,6 +121,7 @@ export default async function ReportInputsPage({
 
   return (
     <div className="animate-fade-in space-y-5">
+      <PeriodStepper projectId={projectId} periodId={periodId} />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           {eyebrow && <p className="truncate text-xs text-slate-500 dark:text-slate-400">{eyebrow}</p>}
