@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the organisation's setup checklist is now called **Get started** (progress bar; open it from **Settings → Workspace setup**); organisation settings are the grouped **Settings** list (General, Workspace setup, Places, Finance, Starting answers, Sector library, Donor requirements, AI features, AI usage, Writing style, Sign-in and two-step, Audit log, Plan and billing, API keys and webhooks). See [66](66-New-UX-Version-4.md).
+
 ## Overview
 
 Each organization has a workspace with a profile and dashboard displaying key metrics, active projects, upcoming reports, and recent activity.

@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the wizard is the **only** way to create a project (the one-page classic form was retired); **Only what is still needed** makes Next skip completed slides; the project's Settings tab, Team tab and Setup page are now **Settings → Project settings**, **Settings → Team** and **Settings → Setup**. See [66](66-New-UX-Version-4.md).
+
 **Author:** Kilo (agent) · **Date:** 2026-08-15
 **Status:** IMPLEMENTED — backend (domain/contracts/application/infrastructure/API),
 frontend (setup checklist + profile form + redirect), migration

@@ -4,7 +4,7 @@ The field app lets you fill in a project's forms on a phone with no signal. Your
 
 ## Before you go
 
-1. Open **Work offline** on a project's **Collection forms** page (under **Data**), or go to `/field`, while you are online.
+1. Open **Work offline** on a project's **Data → Forms** page, or go to `/field`, while you are online.
 2. Choose a project under **Download for offline** and choose **Download or refresh**.
 
 The download holds the project's form questions and the list of places. It holds no records, figures or people. It is removed when you sign out. A download older than two weeks shows a reminder to refresh it, but still works.

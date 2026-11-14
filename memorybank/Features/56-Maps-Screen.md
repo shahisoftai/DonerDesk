@@ -1,6 +1,8 @@
 # Feature 56: The Maps screen (results by place)
 
 **DonorDesk Version 3.007 (Phase 34.4, first slice)**
+
+> **Version 4.000 layout (2026-11-14, Phase 55):** maps are under **Dashboards and infographics → Tools ▾ → Maps**, and in a project under **Data → Map** / **Data → More → Maps**; a project's places are chosen on **Plan → Where we work**. See [66](66-New-UX-Version-4.md).
 **Status:** built, tested and deployed 2026-10-28 (no migration). Not yet tried by a person in the signed-in app; the downloads have no browser-harness check yet.
 **Rules:** `AGENTS.md` → "Phase 34.0/34.1/34.3" (maps draw on the bundled geography only) and "Phase 30/33" (places).
 

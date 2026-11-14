@@ -253,3 +253,9 @@ Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project work
 | # | Feature | Doc |
 |---|---|---|
 | 65 | Upload a table (CSV/Excel, DHIS2, form records), tidy and check it, build pages from a sector kit, slicers, map by place, optional links to indicators | [65-Datasets-And-Kits.md](./65-Datasets-And-Kits.md) |
+
+## Phase 55 — the new UX, Version 4.000 (2026-11-14)
+
+| # | Feature | Doc |
+|---|---|---|
+| 66 | Cobalt and Teal brand, one button/link/panel system, page anatomy, Inbox, project tabs, command palette, grouped Settings, report stage bar, retired classic project form and legacy report workspace, team deactivate/delete | [66-New-UX-Version-4.md](./66-New-UX-Version-4.md) |

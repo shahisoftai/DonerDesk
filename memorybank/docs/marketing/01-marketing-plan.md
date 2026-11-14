@@ -93,7 +93,7 @@ Full copy is in `03-positioning-and-messaging.md`. In short:
 | Channel | Activity | Owner | Cadence |
 |---|---|---|---|
 | Website (home, Features, Pricing, Support) | Rebuild per `04-website-redesign-brief.md`; A/B test the first hero statement against the other two after launch | Marketing lead | Launch, then monthly review |
-| Support Center | Keep articles current with each release; add the management articles (Data Center, activity capture, My Work) | Product lead with support | Each release |
+| Support Center | Keep articles current with each release; add the management articles (Data Center, activity capture, the Inbox) | Product lead with support | Each release |
 | Product tour | Keep the narrated tour in step with the UI; tour is the main self-serve demo | Product lead | Each release |
 | LinkedIn company page | Two posts a week: one product-in-use post (screenshot or short clip of a real workflow, with sample data labelled), one practice post (how reporting works) | Marketing lead | Twice weekly |
 | Email (signed-up users) | Onboarding sequence: day 0 create a project; day 2 log your first activity; day 5 set up the logframe; day 10 build your first report section; day 14 review what is still open | Marketing lead | Automated |

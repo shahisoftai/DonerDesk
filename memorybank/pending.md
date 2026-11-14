@@ -2,7 +2,20 @@
 
 **DonorDesk Version 4.000**
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-10-22 (audited and host-verified; latest release 20261022115803; see the priority board below).
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-11-15 (Version 4.000 section added at the top; the priority board below was audited 2026-10-22).
+
+## The new UX (Version 4.000, Phase 55) — deployed 2026-11-14 to 2026-11-15; what is left
+- **Built and live:** see `Features/66-New-UX-Version-4.md` and `imp/phase55-new-ux.md` §8–§9. Branch `0024-new-ux` has about ten commits, **not pushed**.
+- Not exercised in a browser yet: the evidence **selection bar**, **Attach the files**, stacked panels, form-draft restore, the GPS **Here** button on a phone, the wizard's **Only what is still needed**, Arabic right-to-left on the new screens.
+- Translations of the new strings (navigation, Inbox, palette, Settings names) are drafts without native review (French, Spanish, Arabic).
+- Remove the redirects `/my-work`, `/notifications`, `/projects/new/classic` after a release with no hits (plan F39); then drop them from `phase55-route-map.md`.
+- Build the missing "cancel invitation" button (one pending test invitation, `mnpiracha+zz-pm@gmail.com`, remains).
+- Delete the three older test users on the Team page (`ZZ Test Field`, `ZZ Test Partner`, `ZZ Test PM`, `@example.invalid`) if they are no longer wanted.
+- The legal pages and the version label inside them still say 3.007: set the 4.000 release date and update `apps/web/src/lib/legal-entity.ts` together.
+- Automatic checks that were fixed by hand: "link vs button" misuse (F58) and "one primary button per page" (F52). A script that regenerates the marketing site's screenshots (F88) was not built (the site uses drawn illustrations).
+- The host's api systemd drop-in still sets `REPORT_EDITOR_V2=1` (no longer read; harmless).
+- One failing unit test not from this phase: `packages/domain/test/billing.test.mjs` "plan catalog version is stable" expects 3, catalog is 4.
+- Support: the evidence-selection and attach-files steps in `how-to-use-bulk-actions.md` and `how-to-update-indicator-values.md` describe the code; confirm them live when a project with files awaiting verification is available.
 
 ## Maps hardening (Phase 49) — deployed 2026-11-10; what is left
 - Fetch OCHA boundaries for Indonesia, Thailand, the Philippines and Chile (HDX stalls their zips; `build-ocha-boundaries.mjs --countries IDN,THA,PHL,CHL --levels 1,2,3,4`), then tile and sync.

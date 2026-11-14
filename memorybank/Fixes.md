@@ -2,7 +2,21 @@
 
 **DonorDesk Version 4.000**
 
-Record of fixes applied to DonorDesk. Last updated: 2026-11-03 (dashboards: Phase 39 and live checks, see the section of that date); previously 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
+Record of fixes applied to DonorDesk. Last updated: 2026-11-15 (the new UX, Version 4.000: see the section of that date); previously 2026-11-03 (dashboards: Phase 39 and live checks); previously 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
+
+## Version 4.000 (Phase 55) — defects found and fixed during and after the build (2026-11-14 to 2026-11-15)
+
+Found by the checks and by driving production with the owner's account; each is fixed and deployed (releases in `CONTABO-DEPLOY.md`).
+- **Deploy rolled back: the api crash-looped on `@sentry/node` (release `20261114230000`).** The api tar ships the local `apps/api/node_modules` symlinks; with an unchanged lockfile the host skipped its install, so the api named `@sentry/node` 10.70.0 while the host store held 10.72.0. `scripts/deploy-fast.sh` now regenerates the symlink farm on the host on every api ship. The script restored the snapshot on its own, so users never saw the broken release.
+- **The token script overwrote a text colour.** Setting the new palette also replaced `badge-text` with the page text colour, so code badges had contrast 2:1; the design-token test caught it before anything shipped.
+- **Marketing hero kept the old amber** (the hero has its own block in `site.css`); found on the live home page, fixed in the next release.
+- **Home still offered "Open My Work"** (three Home variants) and **Settings had an empty gap** under the title; both found on the live site.
+- **The project header pushed the Record button onto its own line** under long titles, and **the phone header was wider than the screen** (page scrolled sideways: 713 px content in 390 px). The language, light/dark, Academy and Bookmark buttons are now hidden on phones (language is on More; light/dark is in the search).
+- **Two keyboard clashes introduced by the command palette.** The app-wide "?" opened a second list over the report editor's own; Ctrl K opened the global palette over the design editor's own and over the report text editor's "add a link". The global keys now stand down on a report page, inside rich text and in the design editor (`document.body.dataset.ownPalette`).
+- **The Chart Studio harness could not load** after the shared "Add to a dashboard" control imported `next/link`; the control uses plain anchors.
+- **A stale TypeScript build cache** hid a new handler from the api's types (`apps/api/tsconfig.tsbuildinfo`); deleting it fixed the false error. Not a code bug.
+- **Team: a deleted person can be invited again** (the name and email are replaced on delete); verified on production.
+- **Still open from this phase:** the evidence selection bar, **Attach the files**, stacked panels, form-draft restore and the GPS button were built and typechecked but not exercised in a browser; one billing test (`plan catalog version is stable`) expects catalog 3 while the catalog is 4 (predates this phase).
 
 ## Demo 9 (Nepal CMAM, Phase 28 on production) — defects found and fixed (2026-10-18)
 

@@ -8,7 +8,7 @@ You need an authenticator app on your phone, such as Google Authenticator, Micro
 
 ## Turn it on
 
-1. Go to **Settings → Security**.
+1. Go to **Settings → Sign-in and two-step**.
 2. Select **Set up two-step sign-in**.
 3. In your authenticator app, add an account and either scan the code on screen or type the key shown.
 4. Enter the six-digit code the app shows, then select **Turn on**.
@@ -20,7 +20,7 @@ After your password, DonorDesk asks for the code from your app. If you have lost
 
 ## Turn it off
 
-1. Go to **Settings → Security** and select **Turn off**.
+1. Go to **Settings → Sign-in and two-step** and select **Turn off**.
 2. Enter your password and a current code, then confirm.
 
 ## Good to know

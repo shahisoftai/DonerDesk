@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the legacy report workspace (`ReportWorkspace`, `?editor=classic`) and the `REPORT_EDITOR_V2` flag are gone: Report Editor v2 is the only report page. A four-stage bar **Inputs → Story → Draft → Review and export** with one next-step button runs along the top of the report, inputs and export pages (`ReportStepper`). "Final (closing) report" is a button on **New report**. See [66](66-New-UX-Version-4.md).
+
 **Updated:** 2026-08-19
 **Status:** IMPLEMENTED — core (Phases 0–1 + foundation of 2–4) landed 2026-08-16: domain primitives, decimal-safe indicator analyst, semantics inference, generation-run snapshot, structured claim provenance with evidence-hash snapshots, deterministic tiered claim verifier, approval gates, reject/request-changes transition, report-plan/claim/run/mapping persistence, `DONOR_TEMPLATE` export type, API routes, RLS coverage, and tests. LLM-backed planner/writer/verifier are implemented; docxtpl rendering in Python workers was completed 2026-09-18 (see §20) and is dark-launched behind `DONOR_TEMPLATE_RENDER_ENABLED`. **2026-08-18:** the analyst/narrator contract was enriched for professional donor reports (indicator metadata + target/baseline, previous-period `comparisonValue`, deterministic `performanceEvaluation`, project/period/template context, per-section guidance) — see §17. **2026-08-19:** the full professional-reporting hardening plan (revision integrity, assertion coverage, structured numeric/evidence verification, requirement packs, submission snapshots, one shared gate, export intent, golden corpus) is IMPLEMENTED and shipped — see §18.
 
@@ -1040,7 +1042,7 @@ Releases `20260926164318` (both), `20260926171958` (api) and `20260926174726` (a
 
 ## Report Editor v2 — document-first workspace (2026-09-27)
 
-Full plan and per-phase notes: [`../imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md`](../imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md). Behind `REPORT_EDITOR_V2=1` (or `?editor=v2`; `?editor=classic` forces the old workspace).
+Full plan and per-phase notes: [`../imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md`](../imp/REPORT-EDITOR-V2-IMPLEMENTATION-PLAN.md). Rolled out behind `REPORT_EDITOR_V2=1` (or `?editor=v2`; `?editor=classic` forced the old workspace). **Since 2026-11-14 (Version 4.000) the flag, the query parameter and the old workspace are removed**: v2 is the only report page.
 
 **Web (`apps/web/src/features/report-editor/`):** one continuous document with statements marked in place (open / kept / left out / verified), evidence peek, rich-text editing (TipTap over the export-renderable markdown subset) with "Ask AI" on a selection, outline with approve-all-clean and comment counts, inspector (Statements · Sources · Chart · Comments · History) or the report Checks list, issue navigator, one primary action (generate → review statements → approve sections → finish checks → submit → approve / request changes → export). Inputs live at `/reports/[periodId]/inputs` (Indicators · Story · Import).
 

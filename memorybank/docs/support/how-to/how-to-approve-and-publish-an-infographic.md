@@ -4,21 +4,22 @@ A design moves through three states: **Draft**, **In review** and **Approved**. 
 
 ## Ask for a review
 
-1. Open the design and go to the **Publish** panel.
-2. Click **Ask for a review**. Add a note for the reviewer if you want to.
+1. Open the design and expand **Share and publish** below the canvas. It shows the state (*Draft*, *In review* or *Approved*).
+2. Click **Send for review**.
 
-The design is now **In review**. You can still read it, but you cannot change it until it is returned to draft.
+The design is now **In review**.
 
 ## Approve or send back
 
-A reviewer opens the design and chooses **Approve**, or **Send back to draft** with a reason. You cannot approve a design you asked to have reviewed when another approver exists; a different person must approve it.
+A person with approval rights opens the design and chooses **Approve**, or **Send back** with a **Note** (the note is needed to send it back). **Take back to draft** returns it to draft. Saving any change to an approved or in-review design takes it back to a draft.
 
 ## Publish
 
-1. In the **Publish** panel, choose the file type: **PNG** (you can choose the sharpness), **PDF**, **SVG**, **PowerPoint** or a **pack** (PNG sizes, a PDF, alt text, a caption and the sources).
-2. Click **Publish**. If the design check has something to fix, publishing is blocked and the panel says where to look. If the design is not yet approved, publishing asks you to get approval first.
+1. Under **Published copies**, click **Keep a PDF copy**, **Keep a PNG copy**, **Keep a PowerPoint copy** or **Keep a SVG copy**. The page confirms (for example *A PDF copy was kept.*).
+2. A design for a donor must be approved first (*A canvas for a donor must be approved before a copy or a link can be made*). If the **Design check** has something to fix, publishing is blocked.
+3. Each kept copy is listed with its date and size and a **Download** link. For a pack of all the files and the text, use **More → Make a pack**.
 
-Published files are listed under **Published files**. Download any of them there.
+A kept copy never changes; make another when the design changes.
 
 ## What you need
 

@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the security page is **Settings → Sign-in and two-step**. See [66](66-New-UX-Version-4.md).
+
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit findings H-12 and H-14). Two-step sign-in (TOTP) is built (see the addendum); multi-factor for outside partners is not. Builds on [Feature 01](01-Authentication-And-Onboarding.md) and [Feature 03](03-User-And-Role-Management.md).
 

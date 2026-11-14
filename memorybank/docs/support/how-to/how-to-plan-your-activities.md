@@ -2,13 +2,13 @@
 
 Planning is optional. If you plan your activities, DonorDesk can show what is due, what is late, and who leads what, while there is still time to act. If you do not, nothing changes: your project works as before.
 
-You plan activities on the **Activities** tab. It opens on the plan. A **Completed** filter shows the activities that are done or cancelled, and the **Completed activities** link above the plan opens the list of activities people have finished and entered.
+You plan activities on **Plan → Work plan** (the project's **Plan** tab, then **Work plan**). It opens on **Planned activities**. A **Completed** filter shows the activities that are done or cancelled, and the **Completed activities** link under the page title opens the list of activities people have finished and entered.
 
 ## Start from your logframe
 
 If your logframe already lists activities, this is the quickest way.
 
-1. Open **Activities** and select **Start from my logframe**.
+1. Open **Plan → Work plan** and select **Start from my logframe**.
 2. **Which activities.** All of your logframe's activities are ticked. Untick any you do not want to plan.
 3. **When.** Each activity gets suggested dates, spread across the project. Change any date. Tick **Monthly** for work that repeats every month; it then starts at the beginning of the project and repeats to its end.
 4. **Who leads.** Choose a lead for each, or leave **Skip for now**.
@@ -18,12 +18,14 @@ Nothing is saved until you select Create. You can only start from the logframe o
 
 ## Add one planned activity
 
-Select **Add planned activity**. You need a title and a start date. Leave the end date empty for a one-day activity (a milestone). You can also choose:
+Select **Add planned activity** (top right). You need a title and a start date. Leave the end date empty for a one-day activity (a milestone). You can also choose:
 
 - **Repeats**: every week or every month, until a date. Each repeat is its own activity, so you can move or cancel one without touching the others.
 - **Lead**: the person responsible. Only active members of the project can be chosen.
 - **Logframe activity**: links it to the logframe, so the output is filled in for you.
 - Under **More details**: place, notes, how many people you expect, and how many sessions you plan.
+
+The form keeps what you type on this device. If you close it by mistake, open it again and choose **Restore it**.
 
 ## See where things stand
 

@@ -2,6 +2,8 @@
 
 **DonorDesk Version 3.007 (in development)**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the project's **Activities** tab is **Plan → Work plan** (with **Completed activities** under the title); **My Work** is the **Inbox** (its **Team** tab holds "Ask for completed activity"); the project's **Team** tab is **Settings → Team**. Planned-activity details still open in a slide-over (now the shared `Drawer` look, with J/K previous-next). See [66](66-New-UX-Version-4.md).
+
 **Author:** Claude (agent) · **Date:** 2026-10-19
 **Status:** Batches 28.0–28.2 **deployed 2026-10-18** (release `20261018172624`, with 28.3–28.9). Demo 9 drove the main flows on production. The §16 items are **built (2026-10-23, needs a deploy)**: one Done action, the ask for a completed activity moved to My Work's Team tab, "Completed" as a filter on the plan, the planned-versus-actual toggle, and "moved from …" on the bar. **Still open:** the live-site check of the interactive screens with a real account and the offline status change. Plan and decisions: [`../imp/phase28-new-management.md`](../imp/phase28-new-management.md). Gap closure added dependencies, a progress log, budgets and bulk edit to this feature: [Feature 25](25-Gap-Closure.md).
 
@@ -9,7 +11,7 @@
 
 Until now DonorDesk recorded and evidenced delivery (completed activities, indicator values, files) and reported on it. It did not let a team *plan* work, give it a lead, or see what is late while it can still change. This feature adds that, **inside the existing Activities tab, Overview, Home and project Settings**: no new navigation item and no new project tab. A project that does not use it looks exactly as before.
 
-The Activities tab is one surface (plan §16d): when the project has a plan, everyone opens on it, for every role. A **Completed** filter (on the List and the Timeline) shows the done and cancelled activities; the records page keeps its address (`?view=completed`) behind a quiet "Completed activities" link and answers with the way back.
+The Activities page (now **Plan → Work plan**) is one surface (plan §16d): when the project has a plan, everyone opens on it, for every role. A **Completed** filter (on the List and the Timeline) shows the done and cancelled activities; the records page keeps its address (`?view=completed`) behind a quiet "Completed activities" link and answers with the way back.
 
 Two nouns, used everywhere and enforced by a copy test: a **planned activity** (work planned ahead) and a **completed activity** (the entry someone makes after doing it). A **milestone** is a planned activity with one date.
 
@@ -31,7 +33,7 @@ Buttons a role cannot use are not shown. One table (`ROLE_SURFACES`) decides, an
 - **Status** moves only through `PLAN_STATUS_TRANSITIONS`. Choosing **Done** is one action on the row or bar: it asks for the day it finished, the people reached and a note, and saves the completed activity and the status together (gap closure). A completed activity linked to a planned one may suggest that it is done; a person confirms. Cancelling needs a reason.
 - **"Why?" is asked only when it matters** (original end passed, or a report covers the activity). Every change is stored as an append-only revision: the project's decision history, shown on the activity page.
 - **Planned versus actual is a toggle** (plan §16): the moved activity's dashed original bar is on by default for the plan's managers (`managesPlan`), each person's choice remembered in local storage; off hides the ghost, the legend line and the "moved from …" on the bar.
-- **The ask for a completed activity lives in My Work's Team tab** (plan §16b), not on the item page: the manager picks one of the open activities there (`AskPanel` `subjects` picker); "Ask for a file" stays on the item page.
+- **The ask for a completed activity lives in the Inbox's Team tab (was My Work)** (plan §16b), not on the item page: the manager picks one of the open activities there (`AskPanel` `subjects` picker); "Ask for a file" stays on the item page.
 - **Dates are plain days.** The first dates saved are kept as the original dates ("moved from 12 Mar").
 - **Linking** a completed activity to a planned one fills an empty logframe link and never overwrites.
 - **Import:** any row that cannot be read blocks the whole import and is named; repeats of existing rows are skipped.

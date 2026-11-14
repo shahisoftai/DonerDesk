@@ -23,7 +23,7 @@ Operator notes for the Phase 34 release (`releaseId=20261028133938`, 2026-10-28)
 ## Checks after a release
 
 - `https://donordesk.online/` 200, `/dashboards` 307 to sign-in, `/api/v1/projects` 401 without a key, `/ready` ready.
-- Signed in: open a project's Data page → Charts, Maps, Report builder; the star in the header; a dashboard's Edit → Tabs.
+- Signed in: open a project's **Data** page → **More → Charts, Maps, Data tables** (was Report builder; Version 4.000); the star in the header; a dashboard's Edit → Tabs.
 
 ## Known limits
 

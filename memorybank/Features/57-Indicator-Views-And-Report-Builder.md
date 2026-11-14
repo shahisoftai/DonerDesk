@@ -1,6 +1,8 @@
 # Feature 57: Indicator views and the saved report builder
 
 **DonorDesk Version 3.007 (Phase 34.5)**
+
+> **Version 4.000 layout (2026-11-14, Phase 55):** the **Report builder** is now called **Data tables** (project **Data → More → Data tables**); the Data Center's chart tab is **Quick chart**, and every chart type is in the Chart Studio. See [66](66-New-UX-Version-4.md).
 **Status:** built, tested and deployed 2026-10-28 (migration `20261030120000_saved_reports`; the group split rides on the data sheet and needs none). Harness: `pnpm --filter @donordesk/web test:report-builder` (7 checks). Not yet tried by a person in the signed-in app.
 **Rules:** `AGENTS.md` → "Phase 34 saved reports" and "Breakdown in reports".
 

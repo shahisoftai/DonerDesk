@@ -122,3 +122,17 @@ Audit of every built feature (Features 01–42, portal routes, API routes) again
 | Selling points (`06`) | New file `06-selling-points.md`: 40 claims, each drawn from a `LIVE` or `LIVE-LIMIT` row. |
 | Open | 20% unexplained-shortfall threshold is not in the code (the rule fires on any unexplained variance). The inventory and website must not state 20% until it is confirmed. |
 | Open | Git: the work is on `0014-maps` (not on `master`). Anything marketed as live must match what is deployed from this branch. |
+
+## 2026-11-14 — Site rebrand for Version 4.000 (Phase 55, batch 55.9b)
+
+| Item | Change |
+|---|---|
+| Brand | The site uses the app's Cobalt and Teal palette (`.sx` tokens in `components/site/site.css`), IBM Plex Sans/Mono in place of Bricolage Grotesque and Public Sans, and a navy and cobalt hero with a teal call to action (the amber is gone). Open Graph and Twitter images are navy. |
+| Menu | Five entries: Product (platform, features, compare, tour), Solutions, Pricing, Security, Resources (support). |
+| Home | Two sections removed ("Who it is for", "Learn more"); the rest kept. |
+| Sign-in pages | One split layout (`AuthFrame`): the form and a navy brand panel; used by login, sign-up, password reset and invitation pages. |
+| Legal pages | Sticky contents list beside a 72-character column. The version label on the legal pages is still 3.007 until the 4.000 release date is set. |
+| Sector pages | List the sector library's headline indicators (from `headlineIndicators`), with the library's own definitions. |
+| Pricing | The comparison table keeps its plan names in view while it scrolls. |
+| Open | Screenshots on the site are still drawn illustrations; a script that regenerates real screenshots (plan F88) was not built. |
+

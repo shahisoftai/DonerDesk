@@ -1,6 +1,6 @@
 # How to Use the Timeline
 
-The Timeline shows planned activities as bars on a calendar, grouped by output, so you can see overlaps and gaps at a glance. Open **Activities**, then choose **Timeline**. On a phone the Timeline is not shown; you get the List instead.
+The Timeline shows planned activities as bars on a calendar, grouped by output, so you can see overlaps and gaps at a glance. Open **Plan → Work plan**, then choose **Timeline**. On a phone the Timeline is not shown; you get the List instead.
 
 ## Read it
 

@@ -28,7 +28,7 @@
 19. A review queue to accept, request changes on, or bulk-review activity records.
 20. Import a spreadsheet of activities. Rows without a code are reported, not dropped.
 21. One activity record can cover a span of dates.
-22. "My Work" shows what each person must do across all their projects.
+22. The Inbox shows what each person must do across all their projects.
 
 ## Indicators and data
 23. One data sheet holds every period and indicator. Missing values stay blank, never zero.

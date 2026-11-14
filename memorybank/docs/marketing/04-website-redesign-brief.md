@@ -69,7 +69,7 @@ public pages that still use the older blue `brand` scale are listed in `05-overh
 
 Hero: "Everything the programme needs, and the report it produces." Then, in order:
 
-1. **Run the programme:** Projects and setup; Logframe and indicators; Activities and field capture; Data Center; Team and roles; My Work.
+1. **Run the programme:** Projects and setup; Logframe and indicators; Activities and field capture; Data Center; Team and roles; the Inbox.
 2. **Keep the evidence:** Evidence library and verification; audit log.
 3. **Stay compliant:** Compliance checklist and readiness; the confidentiality gate.
 4. **Report from the record:** Donor templates; reporting periods and roll-ups; sourced AI drafting; report editor; review and approval; exports.

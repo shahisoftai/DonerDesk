@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the AI Writing Style page is **Settings → AI → Writing style**. See [66](66-New-UX-Version-4.md).
+
 **Version:** introduced in DonorDesk Version 3.007 as its headline addition, built on branch `0009-agent-memory`.
 **Status:** Implemented on branch `0009-agent-memory` (not yet merged to
 `master` — pending the user's review per the branch's stated purpose). See

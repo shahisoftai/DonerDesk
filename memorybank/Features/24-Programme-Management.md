@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** **My Work** and the **Notifications** page are the **Inbox** (To do, Team, Updates; the email setting is on Updates); the project's Team tab is **Settings → Team**. See [66](66-New-UX-Version-4.md).
+
 **Author:** Claude (agent) · **Date:** 2026-10-18
 **Status:** Batches 28.3–28.9 IMPLEMENTED and **deployed 2026-10-18** (`releaseId=20261018172624`, `SCOPE=both`; migrations `20261019110000_project_tasks`, `20261019120000_reminders`, `20261019130000_risk_register`; writer contract v6). Browser-verified in **demo 9** (`../demo/verification-demo-9.md`). Builds on [Feature 23](23-Work-Plan.md); plan: [`../imp/phase28-new-management.md`]. The gap-closure work after it is in [Feature 25](25-Gap-Closure.md).
 
@@ -11,7 +13,7 @@
 |---|---|---|
 | 28.3 Who does what | One list of everything that is yours, by when it is due; ask someone for a completed activity, an indicator value or a file in one click; a lead on indicators, reports and checklist items; a **Team** tab with each person's open work | *My Work* (Team tab: "Ask for completed activity", "Ask someone…"), planned-activity page ("Ask for a file"), indicator page, project **Team** |
 | 28.4 What is late | Three plain labels for delivery health (On track / Needs attention / Behind), indicator values due, plan slip and overdue values feeding the risk trend | Project Overview "Delivery", Home portfolio, indicator pages |
-| 28.5 Reminders | One morning summary per person, one escalation after 7 days late, one email setting | Notifications page (setting), bell, email |
+| 28.5 Reminders | One morning summary per person, one escalation after 7 days late, one email setting | Inbox → Updates (setting), bell, email |
 | 28.6 Files the work needs | Suggested kinds of file per planned activity ("Files we will need"), "Still needed" on the activity, one question when accepting without them | Planned-activity page, planned-activity form ("More details"), review panel |
 | 28.7 Problems and risks | A four-field form (what happened, how serious, what we are doing, who) and a short list; reviewed every 30 days; closed with how it ended | Project Overview "Problems and risks" |
 | 28.8 Comments | "Add a comment" on a planned activity, a completed activity, an indicator and a problem or risk; the people who own the thing are told | Those four pages, per risk on Overview |

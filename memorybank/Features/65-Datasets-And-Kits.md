@@ -1,6 +1,8 @@
 # 65 — Datasets and kits: bring in any table, build pages from it
 
 **DonorDesk Version 3.007 (Phase 54)**
+
+> **Version 4.000 layout (2026-11-14, Phase 55):** datasets are under **Dashboards and infographics → Datasets**, and in a project under **Data** (under **More → Datasets** until the project has one). See [66](66-New-UX-Version-4.md).
 **Status:** built and deployed 2026-11-14 (releases `20261114090638` … `20261114122602`); checked in a signed-in browser on production (demo tenant, DEMO-14, synthetic ZZ TEST data).
 **Plan:** `../imp/phase54-datasets-and-nutrition-kit.md` (§16.3 is the build record). **Rules:** `AGENTS.md` → "Phase 54 invariants — datasets and kits". Builds on [62](62-Visual-Studio.md) and [63](63-Maps-Hardening.md).
 

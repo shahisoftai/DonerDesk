@@ -18,7 +18,7 @@ its status. A claim that is not in this file should not be made publicly until i
 |---|---|---|---|---|
 | Project creation wizard | Creates a project with its reporting profile, dates, funder, sector and team. Sector and country are suggested and stay editable. | Project Manager, Admin | `apps/web/src/features/projects`, `apps/web/src/features/onboarding` | LIVE |
 | Copy setup from another project | Copies logframe and indicator definitions only (never values, evidence, activities, archived indicators or people) into an empty project. | Project Manager | `CopyProjectSetupHandler`, `planLogframeCopy` | LIVE |
-| Multiple donors | One project per grant; templates reused across projects; cross-project My Work and Data Center views. | Grants Officer | `support/advanced-features/multiple-donors` | LIVE |
+| Multiple donors | One project per grant; templates reused across projects; the cross-project Inbox and Data Center views. | Grants Officer | `support/advanced-features/multiple-donors` | LIVE |
 | Archive and restore | Completed projects stay readable, searchable and exportable; they do not count against the active-project limit. | Admin, Project Manager | `how-to-archive-a-project` | LIVE |
 | Demo project (Academy) | A pre-built sample project for learning. Uses no AI credits and does not count toward the project limit. | Everyone, on first sign-in | `apps/web/src/features/tour`, Academy docs | LIVE |
 
@@ -149,13 +149,16 @@ its status. A claim that is not in this file should not be made publicly until i
 | Donor-template layout | Word output follows the donor template's structure. | LIVE-LIMIT (donor-template Word export draws no charts) |
 | Direct submission to donors | DonorDesk does not send reports to donors. The user uploads the approved file. | NOT A FEATURE (by design) |
 
-## 13. Dashboard, My Work and notifications
+## 13. Home, Inbox, search and notifications (Version 4.000 layout)
 
 | Capability | What it does | Status |
 |---|---|---|
-| Home dashboard | What needs attention, deadlines (with a three-day band), readiness per project, recent projects. | LIVE |
-| My Work | One queue across all projects: reports, checklist items, evidence, activities, notifications. Filter by type. | LIVE |
-| Notifications | In-app notifications for reviews, comments and approvals. | LIVE |
+| Home dashboard | What needs attention, deadlines (with a three-day band), readiness per project, recent projects. A **Portfolio** tab sits beside it. Arrangeable per person. | LIVE |
+| Inbox | One queue across all projects (replaces My Work): **To do** (reports, checklist items, evidence, activities, requests), **Team** (managers) and **Updates** (notifications). The offline queue is **Waiting to send**. | LIVE |
+| Notifications | In-app notifications for reviews, comments and approvals, under **Inbox → Updates** and the bell. | LIVE |
+| Search and commands | **Ctrl K** finds projects, files and pages and runs actions the person's role allows (create a project, record, invite). Keyboard shortcuts (G + letter, R, ?). | LIVE |
+| Left menu and project tabs | Left menu in three groups; seven project tabs (Overview, Plan, Data, Evidence, Reports, Finance, Settings) with a second row of pages. | LIVE |
+| Partner Home | An outside partner lands on **Your projects**: next report due per project and buttons to enter values and add evidence. | LIVE |
 
 ## 14. Audit, security and privacy
 
@@ -187,7 +190,7 @@ The status here follows the browser checks recorded in `phase28-publish-pack.md`
 
 | Capability | What it does | Status |
 |---|---|---|
-| Planned activities | Work planned ahead, with dates, a lead, an optional place, people expected and number of sessions. One date makes a milestone. Sits inside the Activities tab (Planned / Completed). | LIVE (checked: plan list and wizard) |
+| Planned activities | Work planned ahead, with dates, a lead, an optional place, people expected and number of sessions. One date makes a milestone. Sits under **Plan → Work plan** (Planned / Completed). | LIVE (checked: plan list and wizard) |
 | Start from my logframe | Three steps (which activities, when, who leads); nothing is saved until the end; refused when a plan already exists. Dates are proposed. | LIVE (checked) |
 | On time / Late / Done | One signal per planned activity, worked out from its dates and the completed activities linked to it, with the reason in words. | LIVE (checked: "Late", "Done") |
 | Overview cards | How many planned activities are done, late and starting soon; per output, done of planned beside the indicator's % of target. | LIVE (checked: "Behind 1 of 6") |
@@ -207,7 +210,7 @@ The status here follows the browser checks recorded in `phase28-publish-pack.md`
 
 | Capability | What it does | Status |
 |---|---|---|
-| Who does what | One list of everything that is yours, by due day. Ask someone for a completed activity, an indicator value or a file. Leads on indicators, reports and checklist items. A Team tab per project. | LIVE |
+| Who does what | One list of everything that is yours, by due day. Ask someone for a completed activity, an indicator value or a file. Leads on indicators, reports and checklist items. A **Settings → Team** page per project and a **Team** tab in the Inbox. | LIVE |
 | Requests | A request to one person, with a due day, closed when the work is done (not by a button where data can say so). | LIVE |
 | Delivery health | Three plain labels for a project: On track, Needs attention, Behind. Worked out from late plan items and overdue indicator values. Shown on the project Overview, Home and the portfolio. | LIVE |
 | Reminders | One morning summary per person in the organisation's own 07:00 hour; one escalation after 7 days late; an email setting per person (always, urgent only, never). | LIVE-LIMIT (one summary per person; email follows each person's setting) |
@@ -267,7 +270,7 @@ The status here follows the browser checks recorded in `phase28-publish-pack.md`
 - Budget as a finance system: budget lines exist per activity, but there is no ledger, payments or donor-finance reconciliation.
 - Multi-factor sign-in for outside partners, and an organisation-wide requirement for two-step sign-in.
 - Enforced encryption at rest (code exists; off until `EVIDENCE_ENCRYPTION_KEYS` is set in production).
-- Assigned attestations in My Work.
+- Assigned attestations in the Inbox.
 - Server-side readiness history over time.
 - Saving a Data Center chart spec for reuse (charts are drawn from the data each time).
 - Direct submission or sending of reports to donors. Donor-portal signed links exist in code but are not wired to a route.

@@ -2,6 +2,8 @@
 
 **DonorDesk Version 3.007** · **Branch:** `0013-programme-management` · **Plan and build record:** [`../imp/phase28-1-gap-closure.md`](../imp/phase28-1-gap-closure.md)
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the project's **Team** tab is **Settings → Team**. See [66](66-New-UX-Version-4.md).
+
 ## 1. What a person gets
 
 | Feature | In plain words | Where it shows |

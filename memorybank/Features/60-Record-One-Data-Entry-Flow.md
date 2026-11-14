@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the Record button is the blue **+ Record** in the top bar (press **R**, or Ctrl K → *Record a value, activity, file or expense*); **My Work** is the **Inbox**; the GPS **Here** button on the activity form is built. See [66](66-New-UX-Version-4.md).
+
 Built 2026-11-06 (Phase 44, branch `0018-optimisation`, commits `912212fb`, `3a72c663`, `a38ee780`). Plan, mocks and decisions: [`../imp/phase44-data-entry.md`](../imp/phase44-data-entry.md). Deployed 2026-11-06 (`20261106091554`, then web-only `20261106145458`); no migration, no env. Browser-checked on the demo tenant as manager (desktop) and field officer (phone profile); the list of checks still owed is in the plan's status section.
 
 ## What a person gets
@@ -11,7 +13,7 @@ Built 2026-11-06 (Phase 44, branch `0018-optimisation`, commits `912212fb`, `3a7
 - **What happened?** from a planned item: *It is finished* / *Some progress* / *It did not happen* (needs a reason and `workplan.manage`; field leads are not offered it).
 - **Phone shell**: bottom bar Today / Record / Waiting / More; Waiting lists what is queued with Retry/Discard; More holds Ready for offline, My projects, Language, Help, Sign out.
 - **Offline**: the same forms run from the offline pack v2 (indicators, periods, own 14-day plan); entries go to the one outbox and send when signal returns.
-- **My Work → "To review"**: numbers handed in and records waiting for review, as ordinary work-queue rows.
+- **Inbox → To do ("To review")**: numbers handed in and records waiting for review, as ordinary work-queue rows.
 
 ## Rules (also in AGENTS.md)
 Ports/adapters under `features/record/` (composition is the only wiring); tables not branches; the same view runs online and offline; the pack only carries what the person may use (`GetOfflinePackHandler` `PACK_PERMISSIONS`).

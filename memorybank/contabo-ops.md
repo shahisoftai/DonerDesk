@@ -496,3 +496,11 @@ Recorded as they were left on the host after each release. The operator runbook 
 - **Offline cuts**: `/opt/donordesk/shared/bin/pmtiles` (go-pmtiles 1.28.0), `PMTILES_BIN` in `/opt/donordesk/shared/api.env` (dated backup beside it).
 - **Database**: migration `20261114090000_tenant_map_settings`; `TenantMapSettings` RLS forced, policy `tenant_isolation`.
 - **Not installed yet**: `infra/systemd/donordesk-cod-check.{service,timer}` (monthly OCHA release check; needs `check-cod-updates.mjs` in `/opt/donordesk/shared/bin/`).
+
+## Version 4.000 host facts (2026-11-14 to 2026-11-15, the new UX)
+- **Releases**: `20261114150000` (both), `20261114180000` (web), `20261114200000` (web), `20261115090000` (both, after the rolled-back `20261114230000`). No migration, no env, no RLS change, no nginx change. Web builds still run locally (they do not fit the host's 3 GB cap); the 15-minute local build of an `both` scope can be skipped with `SKIP_BUILD=1` when nothing changed since it.
+- **Rolled-back release `20261114230000`**: the api crash-looped on `Cannot find package '@sentry/node'` (the local symlink farm named 10.70.0, the host store 10.72.0). The deploy script restored the pre-deploy snapshot by itself; the failed tree is `/opt/donordesk/app.failed-20261114230000` (delete when disk matters). Fixed in `scripts/deploy-fast.sh`: the api symlink farm is regenerated on the host on every api ship.
+- **Pre-deploy snapshots** keep the last three (`/opt/donordesk/backups/app-pre-<release>`).
+- **Leftover env**: `REPORT_EDITOR_V2=1` is still in the api systemd drop-in; the flag no longer exists in the code (harmless).
+- **Production test data from this phase** (the Global Care Initiative demo tenant): the seven role-screenshot users (`mnpiracha+zz-<role>@gmail.com`) were deleted with the new Team button; `ZZ Test Field`, `ZZ Test Partner` and `ZZ Test PM` (`@example.invalid`) from earlier sessions remain; one pending invitation to `mnpiracha+zz-pm@gmail.com` (viewer) remains until it expires (no cancel button yet). Earlier test data (DEMO-13/14 `ZZ TEST` rows) is unchanged.
+

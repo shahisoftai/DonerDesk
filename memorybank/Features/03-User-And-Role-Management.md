@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the Team page is under **Admin → Team** in the left menu. Each member row now has **Change role**, **Deactivate** (suspends sign-in, reversible, keeps the seat), **Reactivate** and **Delete** (final: removed, memberships ended, name and email replaced so the address can be invited again, records kept as "Removed user"); handler `SetUserStatusHandler`, route `POST /v1/users/:id/status`, permission `users.manage`, audited, last active administrator protected. **Invite member** can add the person to projects (required for outside partners). A removed user is hidden from the list. See [66](66-New-UX-Version-4.md).
+
 ## Overview
 
 Admin users can invite users, assign roles, manage project assignments, and control user statuses.

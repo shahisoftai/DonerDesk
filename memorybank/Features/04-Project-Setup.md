@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the project's Setup page is **Settings → Setup** (the Settings tab of the project, then Setup). Project tabs are now Overview, Plan, Data, Evidence, Reports, Finance, Settings. See [66](66-New-UX-Version-4.md).
+
 ## Overview
 
 Users can create and manage donor-funded project workspaces with full metadata, team assignments, and project status tracking.

@@ -39,7 +39,7 @@ ssh contabo 'FORCE=true /opt/donordesk/shared/bin/run-reminders.sh'  # send now 
 
 ## People who get nothing
 
-- Notification setting "never" (Notifications page): in-app note only, no email.
+- Notification setting "never" (Inbox → Updates, **Email me**; the old Notifications page): in-app note only, no email.
 - "Only urgent": email only for urgent or late items.
 - Organisation time zone wrong (Settings): the 07:00 hour is in that zone.
 - No email provider configured: in-app notes still arrive; email is skipped without failing the run.

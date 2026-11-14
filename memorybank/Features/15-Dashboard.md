@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** Home is the first left-menu entry with two tabs, **Home** and **Portfolio**; **My Work** and **Notifications** became the **Inbox** (To do, Team, Updates); search is the **Ctrl K** command palette; a partner lands on **Your projects**. See [66](66-New-UX-Version-4.md).
+
 ## Overview
 
 Organization and project dashboards with actionable metrics, KPIs, and readiness scores.

@@ -2,6 +2,8 @@
 
 **DonorDesk Version 4.000**
 
+> **Version 4.000 layout (2026-11-14, Phase 55):** the shell's tabs are **Designs** (cards), **Templates**, **Datasets** and a **Tools ▾** menu (Chart Studio, Maps, Images and brand, Data alerts, TV display). "Add to a dashboard" is one control (`AddToDashboard`) used by the Data Center, the Chart Studio and maps. See [66](66-New-UX-Version-4.md).
+
 Phase 48 (2026-11-09 to 2026-11-10, branch `0018-optimisation`). Plan `../imp/phase48-visual-studio.md` (log §14), parity `../imp/phase48-parity.md`, retirement `../imp/phase48-retirement.md`. Invariants: AGENTS.md "Phase 48" sections. Support article: `apps/web/content/support/how-to/how-to-use-the-visual-studio.md`.
 
 ## What it is
