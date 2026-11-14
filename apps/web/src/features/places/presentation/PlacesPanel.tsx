@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useActionState } from "@/lib/client/action-state";
 import { createPlaceAction, importPlacesAction, setPlaceRetiredAction } from "@/lib/actions/places";
+import { parseFileAction } from "@/lib/actions/parse";
+import { isWorkbook, workbookRows } from "@/features/imports/domain/workbook-file";
 import type { PlaceImportPreview, PlaceItem, UnconfirmedLocations } from "@/lib/server/schemas-places";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
@@ -135,8 +137,11 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
 
   async function readFile(file: File | undefined) {
     if (!file) return;
-    setSheet(await file.text());
     setPreview(null);
+    if (!isWorkbook(file)) { setSheet(await file.text()); return; }
+    // A workbook is read by the API's file reader; the import skips the template's instructions sheet.
+    const out = await imp.run(() => parseFileAction("places", file));
+    if (out) setSheet(workbookRows(out.text));
   }
 
   return (
@@ -327,7 +332,8 @@ export function PlacesPanel({ places, canEdit, unconfirmed }: { places: PlaceIte
           <h2 id="import-title" className="text-sm font-semibold">{C.importTitle}</h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{C.importIntro}</p>
           <div className="mt-3 space-y-3">
-            <input type="file" accept=".csv,.tsv,.txt" onChange={(e) => readFile(e.target.files?.[0])} className="block w-full text-sm text-slate-700 dark:text-slate-200" disabled={busy} aria-label={C.importTitle} />
+            <a className="text-sm font-medium underline" href="/api/templates/places" download>{C.importTemplate}</a>
+            <input type="file" accept=".xlsx,.xls,.csv,.tsv,.txt" onChange={(e) => readFile(e.target.files?.[0])} className="block w-full text-sm text-slate-700 dark:text-slate-200" disabled={busy} aria-label={C.importTitle} />
             <Field label={C.importTitle}>
               <Textarea rows={6} value={sheet} onChange={(e) => { setSheet(e.target.value); setPreview(null); }} disabled={busy} dictate />
             </Field>

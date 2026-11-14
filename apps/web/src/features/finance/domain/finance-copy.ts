@@ -90,7 +90,8 @@ export const FINANCE_COPY = {
 
   importTitle: "Import from a spreadsheet",
   importIntro: "Add many expenses and amounts received at once. Download the template, fill it in, then check it. Nothing is stored until you confirm, and if any row has a problem none is stored: you get your sheet back with the rows to fix. Imported entries wait for approval like any other.",
-  importTemplate: "Download the template",
+  importTemplate: "Download the template (.xlsx)",
+  importTemplateCsv: "or as CSV",
   importFile: "Choose a file (.csv)",
   importPaste: "Or paste the rows here",
   importCheck: "Check the sheet",

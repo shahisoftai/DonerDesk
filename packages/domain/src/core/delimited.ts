@@ -59,3 +59,22 @@ export function findHeaderRow(
   }
   return null;
 }
+
+/** The name of a template's instructions sheet. A workbook read as text marks each sheet "# <name>"; this one is never data. */
+export const GUIDE_SHEET_NAME = "Instructions (not imported)";
+
+/** Text read from a workbook (or pasted) without the instructions sheet, so its examples are never imported. */
+export function withoutGuideSheet(text: string): string {
+  const out: string[] = [];
+  let inGuide = false;
+  for (const line of text.split(/\r?\n/)) {
+    if (/^# /.test(line)) inGuide = line.slice(2).trim() === GUIDE_SHEET_NAME;
+    if (!inGuide) out.push(line);
+  }
+  return out.join("\n");
+}
+
+/** The rows of a one-sheet import: the instructions sheet and the "# <sheet>" markers are left out. */
+export function dataSheetText(text: string): string {
+  return withoutGuideSheet(text.replace(/^﻿/, "")).split(/\r?\n/).filter((l) => !/^# /.test(l)).join("\n");
+}

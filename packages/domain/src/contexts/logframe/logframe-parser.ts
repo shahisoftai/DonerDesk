@@ -1,4 +1,4 @@
-import { findHeaderRow, normalizeHeader, splitDelimited } from "../../core/delimited.js";
+import { findHeaderRow, normalizeHeader, splitDelimited, withoutGuideSheet } from "../../core/delimited.js";
 import type { LogframeLevel } from "./logframe-item.js";
 import { INDICATOR_SHEET_HEADERS, LOGFRAME_ASSUMPTION_HEADERS, LOGFRAME_RATIONALE_HEADERS } from "./header-vocab.js";
 
@@ -266,11 +266,13 @@ function parseLineBased(text: string): { rows: ParsedLogframeRow[]; warnings: st
  * explicit level keywords, dotted codes, or indentation to infer the level.
  */
 export function parseLogframeText(text: string): ParseLogframeResult {
-  const cleaned = text.replace(/^\uFEFF/, "");
+  const cleaned = withoutGuideSheet(text.replace(/^\uFEFF/, ""));
   if (!cleaned.trim()) return { rows: [], warnings: [], structured: false };
 
   const tabular = parseTabular(cleaned);
   if (tabular.rows.length > 0) return tabular;
+  // Column names with no rows under them (an untouched template) are an empty sheet, never results titled "Level Code Title".
+  if (detectHeaderRow(cleaned.split(/\r?\n/))) return { rows: [], warnings: [...tabular.warnings, "The sheet has column names but no rows yet."], structured: false };
 
   return parseLineBased(cleaned);
 }

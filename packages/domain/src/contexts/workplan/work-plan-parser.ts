@@ -3,7 +3,7 @@
  * Sessions, Repeats). Pure: it only reads. Every row that cannot be understood is reported with its row number, and the
  * import applies only when there are no problems (the Data Center rule: any bad row blocks the whole import).
  */
-import { normalizeHeader, splitDelimited } from "../../core/delimited.js";
+import { normalizeHeader, splitDelimited, withoutGuideSheet } from "../../core/delimited.js";
 import { isPlainDate, toPlainDate, type PlainDate } from "./plain-date.js";
 
 export interface ParsedPlanRow {
@@ -46,7 +46,7 @@ function parseDay(value: string | undefined): PlainDate | undefined {
 }
 
 export function parseWorkPlanText(text: string): ParsedPlan {
-  const lines = text.replace(/^﻿/, "").split(/\r?\n/).filter((l) => l.trim() && !l.trim().startsWith("#"));
+  const lines = withoutGuideSheet(text.replace(/^﻿/, "")).split(/\r?\n/).filter((l) => l.trim() && !l.trim().startsWith("#"));
   // Lines are not trimmed: a leading tab is an empty first cell, and dropping it would shift every column.
   const first = lines[0];
   if (!first) return { rows: [], problems: ["There is nothing to import yet."] };

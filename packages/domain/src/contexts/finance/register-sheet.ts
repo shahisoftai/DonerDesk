@@ -3,7 +3,7 @@
  * same entry checks as a typed one; any bad row blocks the whole import, and the problems come back as the person's own sheet with a "Problems"
  * column, only the rows to fix. Rows land as DRAFT, to be approved like any other entry. Pure: text in, text out.
  */
-import { normalizeHeader, splitDelimited } from "../../core/delimited.js";
+import { dataSheetText, normalizeHeader, splitDelimited } from "../../core/delimited.js";
 import { checkDisbursement, checkRegisterExpense } from "./entry-checks.js";
 import type { Amount } from "./money.js";
 
@@ -56,7 +56,7 @@ function delimiterOf(line: string): string {
 const REQUIRED = ["Type", "Date", "Amount"] as const;
 
 export function parseRegisterSheet(text: string, ctx: SheetContext): SheetResult {
-  const lines = text.replace(/^﻿/, "").split(/\r?\n/);
+  const lines = dataSheetText(text).split(/\r?\n/);
   const first = lines.findIndex((l) => l.trim() !== "");
   const empty: SheetResult = { header: [], unknownColumns: [], missingColumns: [], rows: [], valid: 0, invalid: 0 };
   if (first < 0) return empty;

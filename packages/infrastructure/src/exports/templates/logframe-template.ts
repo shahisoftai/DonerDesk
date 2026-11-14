@@ -1,173 +1,66 @@
-import ExcelJS from "exceljs";
+import { FREQUENCY_CHOICES } from "@donordesk/domain";
+import type ExcelJS from "exceljs";
+import type { TemplateColumn } from "./template-kit.js";
+import { addDataSheet, addGuideSheet, cachedBuild, newWorkbook, toBuffer } from "./template-kit.js";
 
 export const LOGFRAME_TEMPLATE_FILENAME = "logframe-template.xlsx";
+export const INDICATORS_TEMPLATE_FILENAME = "indicators-template.xlsx";
 
-type ListValidation = {
-  type: "list";
-  allowBlank: boolean;
-  formulae: string[];
-  error?: string;
-  errorTitle?: string;
-  showErrorMessage?: boolean;
-};
-
-interface WorksheetWithDataValidations {
-  dataValidations: {
-    add(address: string, validation: ListValidation): void;
-  };
-}
-
-/**
- * exceljs 4.4 ships the runtime worksheet.dataValidations collection but its
- * published typings omit it. Cast through a minimal interface so the runtime
- * API is used without weakening type checks for the rest of the template.
- */
-function withDataValidations(sheet: ExcelJS.Worksheet): WorksheetWithDataValidations {
-  return sheet as unknown as WorksheetWithDataValidations;
-}
-
-const LOGFRAME_HEADERS = ["Level", "Code", "Title", "Description"] as const;
-const INDICATOR_HEADERS = [
-  "Code",
-  "Name",
-  "Type",
-  "Baseline",
-  "Target",
-  "Unit",
-  "Means of Verification",
-  "Data Source",
-  "Frequency",
-  "Disaggregation Required",
-  "Logframe Code",
-] as const;
-
-const EXAMPLE_ROWS: Array<{ level: string; code: string; title: string; description?: string }> = [
-  { level: "GOAL", code: "G1", title: "Example goal — replace this with your project goal statement", description: "The long-term development goal the project contributes to." },
-  { level: "OUTCOME", code: "O1.1", title: "Example outcome — replace this with your outcome statement", description: "The change expected at outcome level during the project." },
-  { level: "OUTPUT", code: "O1.1.1", title: "Example output — replace this with your output statement", description: "A concrete deliverable that contributes to the outcome." },
-  { level: "ACTIVITY", code: "A1.1.1.1", title: "Example activity — replace this with your activity statement", description: "The action undertaken to produce the output." },
+/** Headers the logframe import reads (`parseLogframeText`); a row needs a title or a code (the level is read from the code when empty). */
+export const LOGFRAME_COLUMNS: ReadonlyArray<TemplateColumn> = [
+  { header: "Level", width: 14, required: false, takes: "The result's level; empty reads it from the code", example: "OUTCOME", choices: ["GOAL", "OUTCOME", "OUTPUT", "ACTIVITY"] },
+  { header: "Code", width: 12, required: false, takes: "Short code such as G1, O1.1, O1.1.1, A1.1.1.1; nesting follows the code", example: "O1.1" },
+  { header: "Title", width: 60, required: true, takes: "The result statement", example: "Households practise safe hygiene" },
+  { header: "Description", width: 50, required: false, takes: "Text", example: "" },
 ];
 
-const EXAMPLE_INDICATORS: Array<{
-  code: string;
-  name: string;
-  type: string;
-  baseline: string;
-  target: string;
-  unit?: string;
-  disaggregationRequired?: string;
-  /** The item the indicator measures; leave empty to use the indicator's own code. Lets several indicators share one item. */
-  logframeCode?: string;
-}> = [
-  { code: "O1.1", name: "Example indicator for the outcome above — replace with your indicator", type: "PERCENTAGE", baseline: "0", target: "80", unit: "%", disaggregationRequired: "Yes" },
+/** Headers the indicator import reads (`parseIndicatorText`); Code and Name are required. */
+export const INDICATOR_COLUMNS: ReadonlyArray<TemplateColumn> = [
+  { header: "Code", width: 12, required: true, takes: "The indicator's code", example: "O1.1-IND1" },
+  { header: "Name", width: 50, required: true, takes: "What is measured", example: "% of households with a handwashing station" },
+  { header: "Type", width: 14, required: false, takes: "How the value is written; empty means NUMBER", example: "PERCENTAGE", choices: ["NUMBER", "PERCENTAGE", "YES_NO", "TEXT", "RATIO", "CURRENCY", "CUSTOM"] },
+  { header: "Baseline", width: 12, required: false, takes: "A number; empty when not known (never write 0 for unknown)", example: "35" },
+  { header: "Target", width: 12, required: false, takes: "A number", example: "80" },
+  { header: "Unit", width: 10, required: false, takes: "Text such as %, people, latrines", example: "%" },
+  { header: "Means of Verification", width: 30, required: false, takes: "Text", example: "Household survey" },
+  { header: "Data Source", width: 24, required: false, takes: "Text", example: "Baseline and endline survey" },
+  { header: "Frequency", width: 16, required: false, takes: "How often it is measured", example: "Per survey", choices: FREQUENCY_CHOICES.map((c) => c.value) },
+  { header: "Disaggregation Required", width: 20, required: false, takes: "Whether values must be broken down", example: "Yes", choices: ["Yes", "No"] },
+  { header: "Logframe Code", width: 16, required: false, takes: "Code of the result it measures (on the Logframe sheet or already in the project); empty uses the indicator's own code", example: "O1.1" },
 ];
 
-function styleHeaderRow(sheet: ExcelJS.Worksheet, columnCount: number): void {
-  const header = sheet.getRow(1);
-  header.font = { bold: true, color: { argb: "FFFFFFFF" } };
-  header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F4E79" } };
-  header.alignment = { vertical: "middle" };
-  header.height = 22;
-  for (let i = 1; i <= columnCount; i++) {
-    const cell = header.getCell(i);
-    cell.border = {
-      bottom: { style: "thin", color: { argb: "FFB0B0B0" } },
-    };
-  }
-}
+const LOGFRAME_EXAMPLES = [
+  { Level: "GOAL", Code: "G1", Title: "Reduced water-borne disease in the target districts" },
+  { Level: "OUTCOME", Code: "O1.1", Title: "Households practise safe hygiene" },
+  { Level: "OUTPUT", Code: "O1.1.1", Title: "Caregivers trained in hygiene promotion" },
+  { Level: "ACTIVITY", Code: "A1.1.1.1", Title: "Run hygiene promotion sessions" },
+];
 
-/**
- * Builds the download-able logframe workbook. Two sheets — Logframe and
- * Indicators — whose header rows use the exact vocabulary understood by the
- * logframe and indicator import parsers (Level/Code/Title/Description and
- * Code/Name/Type/Baseline/Target/...). Example rows demonstrate the format;
- * users replace them before uploading. The workbook is static content, so the
- * buffer is built once and reused for every download.
- */
-export async function buildLogframeTemplate(): Promise<Buffer> {
-  if (cachedLogframeTemplate) return cachedLogframeTemplate;
-  cachedLogframeTemplate = await renderLogframeTemplate();
-  return cachedLogframeTemplate;
-}
+const addLogframe = (wb: ExcelJS.Workbook) => addDataSheet(wb, "Logframe", LOGFRAME_COLUMNS, 300);
+const addIndicators = (wb: ExcelJS.Workbook) => addDataSheet(wb, "Indicators", INDICATOR_COLUMNS, 300);
 
-let cachedLogframeTemplate: Buffer | null = null;
+/** Both sheets, for a whole framework: results first, then their indicators. */
+export const buildLogframeTemplate = cachedBuild(async () => {
+  const wb = newWorkbook();
+  addLogframe(wb);
+  addIndicators(wb);
+  addGuideSheet(wb, [
+    "Logframe sheet: one result per row. Indicators sheet: one indicator per row, linked to a result by Logframe Code.",
+    "Upload the file on Logframe > Import (results) and on Logframe > Indicators > Import (indicators); each reads its own sheet.",
+  ], [...LOGFRAME_COLUMNS, ...INDICATOR_COLUMNS.map((c) => ({ ...c, header: `Indicators: ${c.header}` }))], [
+    { title: "Example rows for the Logframe sheet (this sheet is not imported)", columns: LOGFRAME_COLUMNS, rows: LOGFRAME_EXAMPLES },
+    { title: "Example rows for the Indicators sheet", columns: INDICATOR_COLUMNS, rows: [Object.fromEntries(INDICATOR_COLUMNS.map((c) => [c.header, c.example]))] },
+  ]);
+  return toBuffer(wb);
+});
 
-async function renderLogframeTemplate(): Promise<Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "DonorDesk";
-  wb.created = new Date();
-
-  const logframeSheet = wb.addWorksheet("Logframe");
-  logframeSheet.columns = [
-    { header: LOGFRAME_HEADERS[0], key: "level", width: 16 },
-    { header: LOGFRAME_HEADERS[1], key: "code", width: 14 },
-    { header: LOGFRAME_HEADERS[2], key: "title", width: 60 },
-    { header: LOGFRAME_HEADERS[3], key: "description", width: 50 },
-  ];
-  styleHeaderRow(logframeSheet, LOGFRAME_HEADERS.length);
-  logframeSheet.views = [{ state: "frozen", ySplit: 1 }];
-  logframeSheet.autoFilter = { from: "A1", to: "D1" };
-  for (const row of EXAMPLE_ROWS) {
-    logframeSheet.addRow({ level: row.level, code: row.code, title: row.title, description: row.description ?? "" });
-  }
-  withDataValidations(logframeSheet).dataValidations.add("A2:A200", {
-    type: "list",
-    allowBlank: true,
-    formulae: ['"GOAL,OUTCOME,OUTPUT,ACTIVITY"'],
-    error: "Level must be one of GOAL, OUTCOME, OUTPUT, ACTIVITY.",
-    errorTitle: "Invalid level",
-    showErrorMessage: true,
-  });
-
-  const indicatorSheet = wb.addWorksheet("Indicators");
-  indicatorSheet.columns = [
-    { header: INDICATOR_HEADERS[0], key: "code", width: 14 },
-    { header: INDICATOR_HEADERS[1], key: "name", width: 50 },
-    { header: INDICATOR_HEADERS[2], key: "type", width: 14 },
-    { header: INDICATOR_HEADERS[3], key: "baseline", width: 12 },
-    { header: INDICATOR_HEADERS[4], key: "target", width: 12 },
-    { header: INDICATOR_HEADERS[5], key: "unit", width: 10 },
-    { header: INDICATOR_HEADERS[6], key: "meansOfVerification", width: 30 },
-    { header: INDICATOR_HEADERS[7], key: "dataSource", width: 25 },
-    { header: INDICATOR_HEADERS[8], key: "frequency", width: 14 },
-    { header: INDICATOR_HEADERS[9], key: "disaggregationRequired", width: 22 },
-    { header: INDICATOR_HEADERS[10], key: "logframeCode", width: 18 },
-  ];
-  styleHeaderRow(indicatorSheet, INDICATOR_HEADERS.length);
-  indicatorSheet.views = [{ state: "frozen", ySplit: 1 }];
-  indicatorSheet.autoFilter = { from: "A1", to: "K1" };
-  for (const row of EXAMPLE_INDICATORS) {
-    indicatorSheet.addRow({
-      code: row.code,
-      name: row.name,
-      type: row.type,
-      baseline: row.baseline,
-      target: row.target,
-      unit: row.unit ?? "",
-      meansOfVerification: "",
-      dataSource: "",
-      frequency: "",
-      disaggregationRequired: row.disaggregationRequired ?? "No",
-      logframeCode: row.logframeCode ?? "",
-    });
-  }
-  withDataValidations(indicatorSheet).dataValidations.add("C2:C200", {
-    type: "list",
-    allowBlank: true,
-    formulae: ['"NUMBER,PERCENTAGE,YES_NO,TEXT,RATIO,CURRENCY,CUSTOM"'],
-    error: "Type must be one of NUMBER, PERCENTAGE, YES_NO, TEXT, RATIO, CURRENCY, CUSTOM.",
-    errorTitle: "Invalid indicator type",
-    showErrorMessage: true,
-  });
-  withDataValidations(indicatorSheet).dataValidations.add("J2:J200", {
-    type: "list",
-    allowBlank: true,
-    formulae: ['"Yes,No"'],
-    error: "Disaggregation Required must be Yes or No.",
-    errorTitle: "Invalid value",
-    showErrorMessage: true,
-  });
-
-  const buffer = await wb.xlsx.writeBuffer();
-  return Buffer.from(buffer as ArrayBuffer);
-}
+/** The Indicators sheet alone, for adding indicators to a framework that already exists. */
+export const buildIndicatorsTemplate = cachedBuild(async () => {
+  const wb = newWorkbook();
+  addIndicators(wb);
+  addGuideSheet(wb, [
+    "Fill the first sheet, one indicator per row, then upload it on Logframe > Indicators > Import.",
+    "Logframe Code links an indicator to a result that already exists in the project.",
+  ], INDICATOR_COLUMNS);
+  return toBuffer(wb);
+});

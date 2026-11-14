@@ -154,6 +154,10 @@
       "types": "./dist/contexts/infographics/index.d.ts",
       "import": "./dist/contexts/infographics/index.js"
     },
+    "./core/delimited.js": {
+      "types": "./dist/core/delimited.d.ts",
+      "import": "./dist/core/delimited.js"
+    },
     "./core/exhaustive.js": {
       "types": "./dist/core/exhaustive.d.ts",
       "import": "./dist/core/exhaustive.js"

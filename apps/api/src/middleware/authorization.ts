@@ -44,6 +44,7 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/finance\/(funding|disbursements|deliverables|advances|advances\/[^/]+\/accounting|deliverables\/[^/]+\/pay)$/, permission: "project.edit" },
   { method: "DELETE", route: /^\/v1\/projects\/[^/]+\/finance\/funding\/[^/]+$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/finance\/(budget-lines\/[^/]+\/expenses|import)$/, permission: "workplan.update-own" },
+  { method: "POST", route: /^\/v1\/finance\/parse-file$/, permission: "workplan.update-own" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/finance\/(expenses|disbursements)\/[^/]+\/decision$/, permission: "finance.approve" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/finance\/deliverables\/[^/]+\/approve$/, permission: "finance.approve" },
   { method: "GET", route: /^\/v1\/integrations\/(api-keys|webhooks)$/, permission: "org.manage" },
@@ -192,6 +193,7 @@ export const RULES: ReadonlyArray<{
   { method: "PUT", route: /^\/v1\/places\/[^/]+\/geometry$/, permission: "project.edit" },
   { method: "DELETE", route: /^\/v1\/places\/[^/]+\/geometry$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/places\/import$/, permission: "project.edit" },
+  { method: "POST", route: /^\/v1\/places\/parse-file$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/places\/seed-boundaries$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/places\/resolve$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/places\/unconfirmed$/, permission: "project.view" },
@@ -503,7 +505,7 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/agent-memory\/[^/]+\/deactivate$/, permission: "report.manage-agent-memory" },
 
   // ── Import templates and logframe copy ────────────────────────────────────
-  { method: "GET", route: /^\/api\/templates\/(logframe|activities|evidence)$/, permission: "project.view" },
+  { method: "GET", route: /^\/api\/templates\/(logframe|indicators|activities|evidence|work-plan|places|finance-register)$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/logframe\/template$/, permission: "project.view" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/copy-setup$/, permission: "project.edit" },
 

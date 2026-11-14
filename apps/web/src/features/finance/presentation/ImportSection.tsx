@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { importRegisterSheetAction } from "@/lib/actions/finance";
+import { parseFileAction } from "@/lib/actions/parse";
+import { isWorkbook, workbookRows } from "@/features/imports/domain/workbook-file";
 import { useActionState } from "@/lib/client/action-state";
 import type { RegisterImport } from "@/lib/server/schemas-finance";
 import { registerSheetTemplate } from "@donordesk/domain/contexts/finance/register-sheet.js";
@@ -19,6 +21,15 @@ export function ImportSection({ projectId }: { projectId: string }) {
   const [text, setText] = useState("");
   const [result, setResult] = useState<RegisterImport | null>(null);
 
+  async function readFile(file: File | undefined) {
+    if (!file) return;
+    setResult(null);
+    if (!isWorkbook(file)) { setText(await file.text()); return; }
+    // A workbook is read by the API's file reader; the import skips the template's instructions sheet.
+    const out = await act.run(() => parseFileAction("finance", file));
+    if (out) setText(workbookRows(out.text));
+  }
+
   async function run(apply: boolean) {
     const out = await act.run(() => importRegisterSheetAction(projectId, { text, apply }));
     if (!out) return;
@@ -31,9 +42,10 @@ export function ImportSection({ projectId }: { projectId: string }) {
       <h2 id="fin-import" className="text-base font-semibold">{C.importTitle}</h2>
       <p className="max-w-3xl text-sm text-slate-600 dark:text-slate-300">{C.importIntro}</p>
       <div className="flex flex-wrap items-center gap-4 text-sm">
-        <a className="font-medium underline" href={dataUrl(registerSheetTemplate())} download="finance-register-template.csv">{C.importTemplate}</a>
+        <a className="font-medium underline" href="/api/templates/finance-register" download>{C.importTemplate}</a>
+        <a className="underline" href={dataUrl(registerSheetTemplate())} download="finance-register-template.csv">{C.importTemplateCsv}</a>
         <label className="flex items-center gap-2">{C.importFile}
-          <input type="file" accept=".csv,.tsv,.txt" className="text-xs" disabled={act.busy} onChange={async (e) => { const f = e.target.files?.[0]; if (f) { setText(await f.text()); setResult(null); } }} />
+          <input type="file" accept=".xlsx,.xls,.csv,.tsv,.txt" className="text-xs" disabled={act.busy} onChange={(e) => void readFile(e.target.files?.[0])} />
         </label>
       </div>
       <label className="block text-sm font-medium">{C.importPaste}

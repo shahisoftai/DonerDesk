@@ -13,8 +13,8 @@ export default function ImportIndicatorsPage({ params }: { params: Promise<{ id:
       title="Import indicators"
       intro="Upload a file, or paste or dictate your indicators. Rows with Code, Name, Type, Baseline and Target become indicators linked to the matching logframe item."
       noun={["indicator", "indicators"]}
-      fileHelp="XLSX, CSV or TXT. The Indicators sheet of the logframe template works best."
-      templateHref="/api/templates/logframe"
+      fileHelp="XLSX, CSV or TXT. The indicators template (or the Indicators sheet of the logframe template) works best."
+      templateHref="/api/templates/indicators"
       pastePlaceholder={"Code,Name,Type,Baseline,Target\nOUT-1.1,Water points rehabilitated,NUMBER,0,40"}
       noneCreatedMessage="No new indicators were created. Existing codes are skipped; check that each indicator code matches a logframe item code in this project."
       createLabel="Create indicators"

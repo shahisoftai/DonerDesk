@@ -1,125 +1,31 @@
-import ExcelJS from "exceljs";
+import { CONFIDENTIALITY_LEVELS, EVIDENCE_TYPES } from "@donordesk/domain";
+import type { TemplateColumn } from "./template-kit.js";
+import { addDataSheet, addGuideSheet, cachedBuild, newWorkbook, toBuffer } from "./template-kit.js";
 
 export const EVIDENCE_TEMPLATE_FILENAME = "evidence-template.xlsx";
 
-export const EVIDENCE_HEADERS = [
-  "Title",
-  "File Name",
-  "Evidence Type",
-  "Confidentiality Level",
-  "Location",
-  "Activity Date",
-  "Notes",
-  "Drive Web Link",
-  "Activity Title",
-  "Indicator Code",
-] as const;
-
-const EXAMPLE_ROW: Record<string, string> = {
-  Title: "Example evidence — replace with the evidence title",
-  "File Name": "example-attendance-sheet.xlsx",
-  "Evidence Type": "ATTENDANCE_SHEET",
-  "Confidentiality Level": "INTERNAL",
-  Location: "",
-  "Activity Date": new Date().toISOString().slice(0, 10),
-  Notes: "Provide the Google Drive share link in the Drive Web Link column; each imported row needs one.",
-  "Drive Web Link": "https://drive.google.com/file/d/EXAMPLE/view",
-  "Activity Title": "",
-  "Indicator Code": "",
-};
-
-const EVIDENCE_TYPE_OPTIONS = [
-  "ATTENDANCE_SHEET",
-  "PHOTO",
-  "DISTRIBUTION_LIST",
-  "TRAINING_RECORD",
-  "FIELD_VISIT_REPORT",
-  "MONITORING_REPORT",
-  "KOBO_ODK_EXPORT",
-  "PROCUREMENT_DOCUMENT",
-  "APPROVAL_DOCUMENT",
-  "BENEFICIARY_LIST",
-  "MEETING_MINUTES",
-  "CASE_STUDY",
-  "FINANCIAL_DOCUMENT",
-  "SUPPLIER_DOCUMENT",
-  "DONOR_COMMUNICATION",
-  "OTHER",
+/** Headers the evidence import reads (`parseEvidenceText`). A row becomes a record only with a Google Drive share link (link-first storage). */
+export const EVIDENCE_COLUMNS: ReadonlyArray<TemplateColumn> = [
+  { header: "Title", width: 32, required: true, takes: "What the file is", example: "Attendance sheet, hygiene session Ward 4" },
+  { header: "File Name", width: 28, required: false, takes: "The file's name; empty uses the title", example: "attendance-ward4-2026-03-10.pdf" },
+  { header: "Evidence Type", width: 22, required: true, takes: "The kind of evidence", example: "ATTENDANCE_SHEET", choices: EVIDENCE_TYPES },
+  { header: "Confidentiality Level", width: 20, required: false, takes: "Who may open it; empty means INTERNAL", example: "INTERNAL", choices: CONFIDENTIALITY_LEVELS },
+  { header: "Location", width: 18, required: false, takes: "Where it was collected", example: "Ward 4" },
+  { header: "Activity Date", width: 14, required: false, takes: "YYYY-MM-DD", example: "2026-03-10" },
+  { header: "Notes", width: 30, required: false, takes: "Text", example: "" },
+  { header: "Drive Web Link", width: 40, required: true, takes: "The Google Drive share link of the file; a row without one is not imported", example: "https://drive.google.com/file/d/EXAMPLE/view" },
+  { header: "Activity Title", width: 30, required: false, takes: "Title of the completed activity it proves", example: "Hygiene promotion session, Ward 4" },
+  { header: "Indicator Code", width: 16, required: false, takes: "Code of the indicator it supports", example: "O1.1" },
 ];
 
-const CONFIDENTIALITY_OPTIONS = ["PUBLIC", "INTERNAL", "SENSITIVE", "HIGHLY_SENSITIVE"];
+/** Kept for callers that list the headers. */
+export const EVIDENCE_HEADERS = EVIDENCE_COLUMNS.map((c) => c.header);
 
-function styleHeaderRow(sheet: ExcelJS.Worksheet, columnCount: number): void {
-  const header = sheet.getRow(1);
-  header.font = { bold: true, color: { argb: "FFFFFFFF" } };
-  header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F4E79" } };
-  header.alignment = { vertical: "middle" };
-  header.height = 22;
-  for (let i = 1; i <= columnCount; i++) {
-    header.getCell(i).border = { bottom: { style: "thin", color: { argb: "FFB0B0B0" } } };
-  }
-}
-
-type ListValidation = {
-  type: "list";
-  allowBlank: boolean;
-  formulae: string[];
-  error?: string;
-  errorTitle?: string;
-  showErrorMessage?: boolean;
-};
-
-interface WorksheetWithDataValidations {
-  dataValidations: {
-    add(address: string, validation: ListValidation): void;
-  };
-}
-
-/**
- * Builds the download-able evidence workbook. Each imported row creates an
- * evidence record from metadata; a Google Drive share link in the Drive Web
- * Link column is required per row (link-first storage — no byte upload). The
- * workbook is static content, so the buffer is built once and reused for every
- * download.
- */
-export async function buildEvidenceTemplate(): Promise<Buffer> {
-  if (cachedEvidenceTemplate) return cachedEvidenceTemplate;
-  cachedEvidenceTemplate = await renderEvidenceTemplate();
-  return cachedEvidenceTemplate;
-}
-
-let cachedEvidenceTemplate: Buffer | null = null;
-
-async function renderEvidenceTemplate(): Promise<Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = "DonorDesk";
-  wb.created = new Date();
-
-  const sheet = wb.addWorksheet("Evidence");
-  sheet.columns = EVIDENCE_HEADERS.map((header) => ({ header, key: header, width: 30 }));
-  styleHeaderRow(sheet, EVIDENCE_HEADERS.length);
-  sheet.views = [{ state: "frozen", ySplit: 1 }];
-  sheet.autoFilter = { from: "A1", to: "J1" };
-  sheet.addRow(EXAMPLE_ROW);
-
-  const dv = (sheet as unknown as WorksheetWithDataValidations).dataValidations;
-  dv.add("C2:C200", {
-    type: "list",
-    allowBlank: true,
-    formulae: [`"${EVIDENCE_TYPE_OPTIONS.join(",")}"`],
-    error: "Evidence Type must be one of the listed values.",
-    errorTitle: "Invalid evidence type",
-    showErrorMessage: true,
-  });
-  dv.add("D2:D200", {
-    type: "list",
-    allowBlank: true,
-    formulae: [`"${CONFIDENTIALITY_OPTIONS.join(",")}"`],
-    error: "Confidentiality Level must be PUBLIC, INTERNAL, SENSITIVE, or HIGHLY_SENSITIVE.",
-    errorTitle: "Invalid confidentiality level",
-    showErrorMessage: true,
-  });
-
-  const buffer = await wb.xlsx.writeBuffer();
-  return Buffer.from(buffer as ArrayBuffer);
-}
+export const buildEvidenceTemplate = cachedBuild(async () => {
+  const wb = newWorkbook();
+  addDataSheet(wb, "Evidence", EVIDENCE_COLUMNS);
+  addGuideSheet(wb, [
+    "Put each file in Google Drive first and copy its share link. Then fill the first sheet, one file per row, and upload it on Evidence > Import.",
+  ], EVIDENCE_COLUMNS);
+  return toBuffer(wb);
+});

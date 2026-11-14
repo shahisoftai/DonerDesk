@@ -14,34 +14,41 @@ import {
 import { DomainError } from "@donordesk/domain";
 import {
   buildLogframeTemplate,
+  buildIndicatorsTemplate,
   buildActivityTemplate,
   buildEvidenceTemplate,
+  buildWorkPlanTemplate,
+  buildPlacesTemplate,
+  buildFinanceRegisterTemplate,
   LOGFRAME_TEMPLATE_FILENAME,
+  INDICATORS_TEMPLATE_FILENAME,
   ACTIVITY_TEMPLATE_FILENAME,
   EVIDENCE_TEMPLATE_FILENAME,
+  WORK_PLAN_TEMPLATE_FILENAME,
+  PLACES_TEMPLATE_FILENAME,
+  FINANCE_REGISTER_TEMPLATE_FILENAME,
 } from "@donordesk/infrastructure";
 
 export async function registerTemplateRoutes(app: FastifyInstance) {
-  app.get("/api/templates/logframe", async (_req, reply) => {
-    const buffer = await buildLogframeTemplate();
-    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    reply.header("content-disposition", `attachment; filename="${LOGFRAME_TEMPLATE_FILENAME}"`);
-    return buffer;
+  // Import templates: one workbook per import, each with a headers-only data sheet and an instructions sheet the import skips.
+  const XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  const IMPORT_TEMPLATES: Readonly<Record<string, { build: () => Promise<Buffer>; fileName: string }>> = {
+    logframe: { build: buildLogframeTemplate, fileName: LOGFRAME_TEMPLATE_FILENAME },
+    indicators: { build: buildIndicatorsTemplate, fileName: INDICATORS_TEMPLATE_FILENAME },
+    activities: { build: buildActivityTemplate, fileName: ACTIVITY_TEMPLATE_FILENAME },
+    evidence: { build: buildEvidenceTemplate, fileName: EVIDENCE_TEMPLATE_FILENAME },
+    "work-plan": { build: buildWorkPlanTemplate, fileName: WORK_PLAN_TEMPLATE_FILENAME },
+    places: { build: buildPlacesTemplate, fileName: PLACES_TEMPLATE_FILENAME },
+    "finance-register": { build: buildFinanceRegisterTemplate, fileName: FINANCE_REGISTER_TEMPLATE_FILENAME },
+  };
+  app.get("/api/templates/:kind(logframe|indicators|activities|evidence|work-plan|places|finance-register)", async (req, reply) => {
+    const template = IMPORT_TEMPLATES[(req.params as { kind: string }).kind];
+    if (!template) throw DomainError.notFound("Template", (req.params as { kind: string }).kind);
+    reply.header("content-type", XLSX);
+    reply.header("content-disposition", `attachment; filename="${template.fileName}"`);
+    return template.build();
   });
 
-  app.get("/api/templates/activities", async (_req, reply) => {
-    const buffer = await buildActivityTemplate();
-    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    reply.header("content-disposition", `attachment; filename="${ACTIVITY_TEMPLATE_FILENAME}"`);
-    return buffer;
-  });
-
-  app.get("/api/templates/evidence", async (_req, reply) => {
-    const buffer = await buildEvidenceTemplate();
-    reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-    reply.header("content-disposition", `attachment; filename="${EVIDENCE_TEMPLATE_FILENAME}"`);
-    return buffer;
-  });
   app.get("/v1/projects/:projectId/templates", async (req) => {
     const projectId = (req.params as { projectId: string }).projectId;
     const ctx = { tenant: req.tenant, requestId: req.id };

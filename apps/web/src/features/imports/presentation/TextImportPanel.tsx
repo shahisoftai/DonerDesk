@@ -3,6 +3,7 @@
 import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { parseFileAction } from "@/lib/actions/parse";
+import { withoutGuideSheet } from "@donordesk/domain/core/delimited.js";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
@@ -71,7 +72,7 @@ export function TextImportPanel<R extends ImportOutcome>(props: TextImportPanelP
       setError(parsed.error.message);
       return;
     }
-    setText(parsed.value.text);
+    setText(withoutGuideSheet(parsed.value.text).replace(/\n+$/, ""));
     setFileName(file.name);
     const note = parsed.value.metadata?.ocrNote;
     setScanNote(typeof note === "string" ? note : null);

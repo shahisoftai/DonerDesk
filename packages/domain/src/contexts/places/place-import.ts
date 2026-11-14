@@ -4,7 +4,7 @@
  * the whole import and names its row (the work-plan import's rule); a place already listed is
  * skipped, not duplicated. Pure: ids come from the caller.
  */
-import { normalizeHeader, splitDelimited } from "../../core/delimited.js";
+import { dataSheetText, normalizeHeader, splitDelimited } from "../../core/delimited.js";
 import { normalizeLocationKey } from "../workplan/location-key.js";
 import { normalizeFacilityTypeKey } from "./facility-types.js";
 import { ADMIN_LEVEL_LABEL, PlaceRegistry, placeKeys, validatePlace, type AdminLevel, type PlaceRecord } from "./place.js";
@@ -64,7 +64,7 @@ const facilityKey = (v: string): string => (/^(|no|false|0)$/i.test(v.trim()) ? 
 
 /** Reads the sheet's rows. Does not touch the existing list. A blank line is skipped; a missing Name or Level is a problem. */
 export function parsePlaceSheet(text: string): { rows: PlaceImportRow[]; problems: PlaceImportProblem[] } {
-  const lines = text.replace(/^﻿/, "").split(/\r?\n/);
+  const lines = dataSheetText(text).split(/\r?\n/);
   const first = lines.findIndex((l) => l.replace(/[,;\t\s]/g, "") !== "");
   if (first < 0) return { rows: [], problems: [{ row: 1, message: "The sheet is empty" }] };
   const delimiter = lines[first]!.includes("\t") ? "\t" : lines[first]!.split(";").length > lines[first]!.split(",").length ? ";" : ",";

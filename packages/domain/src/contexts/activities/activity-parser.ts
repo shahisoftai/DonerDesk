@@ -1,7 +1,9 @@
-import { findHeaderRow, normalizeHeader, splitDelimited } from "../../core/delimited.js";
+import { findHeaderRow, normalizeHeader, splitDelimited, withoutGuideSheet } from "../../core/delimited.js";
 export interface ParsedActivityRow {
   activityTitle: string;
   activityDate: string;
+  /** Last day of an activity that ran over several days; never before activityDate. */
+  activityEndDate?: string;
   location?: string;
   outputCode?: string;
   indicatorCode?: string;
@@ -26,7 +28,8 @@ export interface ParseActivityResult {
 }
 
 const TITLE_HEADERS: ReadonlyArray<string> = ["activitytitle", "title", "activity"];
-const DATE_HEADERS: ReadonlyArray<string> = ["activitydate", "date"];
+const DATE_HEADERS: ReadonlyArray<string> = ["activitydate", "date", "startdate", "activitystartdate"];
+const END_DATE_HEADERS: ReadonlyArray<string> = ["activityenddate", "enddate", "through", "until"];
 const LOCATION_HEADERS: ReadonlyArray<string> = ["location", "venue", "place"];
 /** The code of the logframe item a record belongs to: an output, or a planned activity (A1.1). */
 const OUTPUT_CODE_HEADERS: ReadonlyArray<string> = ["outputcode", "output", "outputitemcode", "logframecode", "logframecodeoutputoractivity", "logframeactivity", "activitycode", "plannedactivity"];
@@ -46,6 +49,7 @@ const NEXT_STEPS_HEADERS: ReadonlyArray<string> = ["nextsteps", "nextstep", "nex
 const ALL_HEADERS: ReadonlyArray<string> = [
   ...TITLE_HEADERS,
   ...DATE_HEADERS,
+  ...END_DATE_HEADERS,
   ...LOCATION_HEADERS,
   ...OUTPUT_CODE_HEADERS,
   ...INDICATOR_CODE_HEADERS,
@@ -103,7 +107,7 @@ function parseDate(value: string | undefined): string | undefined {
  */
 export function parseActivityText(text: string): ParseActivityResult {
   const warnings: string[] = [];
-  const cleaned = text.replace(/^\uFEFF/, "");
+  const cleaned = withoutGuideSheet(text.replace(/^\uFEFF/, ""));
   if (!cleaned.trim()) return { rows: [], warnings, structured: false };
 
   const lines = cleaned.split(/\r?\n/);
@@ -119,6 +123,7 @@ export function parseActivityText(text: string): ParseActivityResult {
   const headers = splitDelimited(lines[header.index]?.trim() ?? "", header.delimiter).map(normalizeHeader);
   const titleCol = headers.findIndex((h) => TITLE_HEADERS.includes(h));
   const dateCol = headers.findIndex((h) => DATE_HEADERS.includes(h));
+  const endDateCol = headers.findIndex((h) => END_DATE_HEADERS.includes(h));
   const locationCol = headers.findIndex((h) => LOCATION_HEADERS.includes(h));
   const outputCodeCol = headers.findIndex((h) => OUTPUT_CODE_HEADERS.includes(h));
   const indicatorCodeCol = headers.findIndex((h) => INDICATOR_CODE_HEADERS.includes(h));
@@ -165,6 +170,17 @@ export function parseActivityText(text: string): ParseActivityResult {
       continue;
     }
 
+    const rawEnd = endDateCol >= 0 ? (cells[endDateCol] ?? "").trim() : "";
+    const activityEndDate = rawEnd ? parseDate(rawEnd) : undefined;
+    if (rawEnd && !activityEndDate) {
+      warnings.push(`Row ${i + 1} (${title}): the end date "${rawEnd}" is not a date; skipped.`);
+      continue;
+    }
+    if (activityEndDate && activityEndDate < activityDate) {
+      warnings.push(`Row ${i + 1} (${title}): the end date is before the activity date; skipped.`);
+      continue;
+    }
+
     const summary = summaryCol >= 0 ? (cells[summaryCol] ?? "").trim() : "";
     if (!summary) {
       warnings.push(`Row ${i + 1} (${title}): missing summary; skipped.`);
@@ -174,6 +190,7 @@ export function parseActivityText(text: string): ParseActivityResult {
     rows.push({
       activityTitle: title,
       activityDate,
+      ...(activityEndDate && activityEndDate !== activityDate ? { activityEndDate } : {}),
       location: locationCol >= 0 ? (cells[locationCol] ?? "").trim() || undefined : undefined,
       outputCode: outputCodeCol >= 0 ? (cells[outputCodeCol] ?? "").trim() || undefined : undefined,
       indicatorCode: indicatorCodeCol >= 0 ? (cells[indicatorCodeCol] ?? "").trim() || undefined : undefined,

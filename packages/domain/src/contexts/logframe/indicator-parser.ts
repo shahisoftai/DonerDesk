@@ -1,4 +1,4 @@
-import { findHeaderRow, normalizeHeader, splitDelimited } from "../../core/delimited.js";
+import { findHeaderRow, normalizeHeader, splitDelimited, withoutGuideSheet } from "../../core/delimited.js";
 import { INDICATOR_TYPES, type IndicatorType } from "./indicator.js";
 import {
   INDICATOR_CODE_HEADERS,
@@ -97,7 +97,7 @@ function detectHeaderRow(lines: string[]): { index: number; delimiter: string } 
  */
 export function parseIndicatorText(text: string): ParseIndicatorResult {
   const warnings: string[] = [];
-  const cleaned = text.replace(/^\uFEFF/, "");
+  const cleaned = withoutGuideSheet(text.replace(/^\uFEFF/, ""));
   if (!cleaned.trim()) return { rows: [], warnings, structured: false };
 
   const lines = cleaned.split(/\r?\n/);

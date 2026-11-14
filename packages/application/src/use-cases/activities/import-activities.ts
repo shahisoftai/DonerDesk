@@ -129,6 +129,7 @@ export class ImportActivitiesHandler {
         reportingPeriodId,
         activityTitle: row.activityTitle,
         activityDate: new Date(row.activityDate),
+        ...(row.activityEndDate ? { activityEndDate: new Date(row.activityEndDate) } : {}),
         location: row.location,
         outputId,
         logframeActivityId,

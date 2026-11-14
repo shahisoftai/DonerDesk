@@ -1,10 +1,12 @@
 import type { FastifyInstance } from "fastify";
+import { registerParseFileRoute } from "./parse-file.js";
 import { createReadStream } from "node:fs";
 import { z } from "zod";
 import { AddPlaceFlowSchema, CreatePlaceSchema, ImportPlacesSchema, SeedPlacesFromBoundariesSchema, ListPlacesQuerySchema, ResolvePlacesSchema, SetPlaceGeometrySchema, UpdatePlaceSchema } from "@donordesk/contracts";
 
 /** The organisation's list of places (Phase 33.1). Thin: validate, call one handler, throw its error; permissions are in the handlers and the authorization table. */
 export async function registerPlaceRoutes(app: FastifyInstance) {
+  registerParseFileRoute(app, "/v1/places/parse-file");
   const ctx = (req: { tenant: unknown; id: string }) => ({ tenant: req.tenant as never, requestId: req.id });
   const param = (req: { params: unknown }, name: string) => (req.params as Record<string, string>)[name]!;
 

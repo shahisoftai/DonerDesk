@@ -15,6 +15,7 @@ export function ImportWorkPlanForm({ projectId }: { projectId: string }) {
       fileHelp="XLSX, CSV or TXT. Logframe codes and lead emails are matched against this project. In the Location column, separate several places with a semicolon: each one that is in your places list is linked, and any that is not is listed back."
       pastePlaceholder={"Logframe Code,Title,Start,End,Lead email,Location,Sessions,Repeats\nA1.1,Outreach visits,2026-03-10,2026-03-12,amina@example.org,Ward 4,4,Monthly"}
       noneCreatedMessage="No new planned activities were created. Rows that are already planned for the same dates are skipped."
+      templateHref="/api/templates/work-plan"
       createLabel="Create planned activities"
       viewHref={`/projects/${projectId}/activities?view=planned`}
       viewLabel="View planned activities"

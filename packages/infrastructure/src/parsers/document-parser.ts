@@ -74,12 +74,13 @@ async function readWithExcelJs(buffer: Buffer): Promise<string> {
     parts.push(`# ${sheet.name}`);
     sheet.eachRow((row) => {
       const cells: string[] = [];
-      row.eachCell((cell) => {
+      // Read by column number: `eachCell` skips empty cells, which moved every later value one column to the left.
+      for (let c = 1; c <= row.cellCount; c++) {
         let value = "";
-        try { value = cell.text ?? ""; } catch { value = ""; }
+        try { value = row.getCell(c).text ?? ""; } catch { value = ""; }
         // A line break inside a cell would split one row into two and shift every column after it.
         cells.push(value.replace(/\s*\r?\n\s*/g, " "));
-      });
+      }
       parts.push(cells.join("\t"));
     });
   });

@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { registerParseFileRoute } from "./parse-file.js";
 import {
   AccountForAdvanceSchema, AddAdvanceSchema, AddCurrencyRateSchema, AddDeliverableSchema, AddDisbursementSchema, AddProjectFundingSchema, AddRegisterExpenseSchema, CreateBudgetCategorySchema,
   CreateFundingSourceSchema, DecideEntrySchema, ImportRegisterSheetSchema, PayDeliverableSchema, SetFinanceCurrenciesSchema, SetSeparateApproverSchema, UpdateDraftDisbursementSchema, UpdateDraftExpenseSchema, UpdateFundingSourceSchema,
@@ -9,6 +10,7 @@ import {
  * every project-scoped record is addressed through its project, so the project boundary applies and a handler refuses a record of another project.
  */
 export async function registerFinanceRegisterRoutes(app: FastifyInstance) {
+  registerParseFileRoute(app, "/v1/finance/parse-file");
   const ctx = (req: { tenant: unknown; id: string }) => ({ tenant: req.tenant as never, requestId: req.id });
   const param = (req: { params: unknown }, name: string) => (req.params as Record<string, string>)[name]!;
   const send = <T>(r: { ok: true; value: T } | { ok: false; error: unknown }): T => { if (!r.ok) throw r.error; return r.value; };

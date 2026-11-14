@@ -1,4 +1,4 @@
-import { findHeaderRow, normalizeHeader, splitDelimited } from "../../core/delimited.js";
+import { findHeaderRow, normalizeHeader, splitDelimited, withoutGuideSheet } from "../../core/delimited.js";
 import { EVIDENCE_TYPES, CONFIDENTIALITY_LEVELS, type EvidenceType, type ConfidentialityLevel } from "./evidence-file.js";
 
 export interface ParsedEvidenceRow {
@@ -95,7 +95,7 @@ function parseDate(value: string | undefined): string | undefined {
  */
 export function parseEvidenceText(text: string): ParseEvidenceResult {
   const warnings: string[] = [];
-  const cleaned = text.replace(/^\uFEFF/, "");
+  const cleaned = withoutGuideSheet(text.replace(/^\uFEFF/, ""));
   if (!cleaned.trim()) return { rows: [], warnings, structured: false };
 
   const lines = cleaned.split(/\r?\n/);
