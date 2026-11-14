@@ -48,11 +48,12 @@ export function parseDelimited(text: string): CellValue[][] {
 }
 
 export class ExcelWorkbookReader implements IWorkbookReader {
-  async read(bytes: Buffer, fileName: string): Promise<Result<Workbook & { format: "XLSX" | "CSV" }>> {
+  async read(bytes: Buffer, _fileName: string): Promise<Result<Workbook & { format: "XLSX" | "CSV" }>> {
     const zip = bytes[0] === 0x50 && bytes[1] === 0x4b;
     if (!zip) {
       const text = bytes.toString("utf8").replace(/^﻿/, "");
-      return ok({ format: "CSV", sheets: [{ name: fileName.replace(/^.*[\\/]/, "").replace(/\.[^.]*$/, "") || "Sheet1", cells: parseDelimited(text) }] });
+      // A CSV has one sheet; its name never depends on the file name, so a re-read of the stored copy finds the same sheet.
+      return ok({ format: "CSV", sheets: [{ name: "Sheet1", cells: parseDelimited(text) }] });
     }
     try {
       const wb = new ExcelJS.Workbook();
