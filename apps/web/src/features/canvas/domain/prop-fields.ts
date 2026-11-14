@@ -17,7 +17,12 @@ export type Field =
   | { type: "indicators"; path: string; label: string }
   | { type: "choices"; path: string; label: string; options: ReadonlyArray<{ value: string; label: string }> }
   | { type: "lines"; path: string; label: string; hint?: string }
-  | { type: "list"; path: string; label: string; add: string; item: ReadonlyArray<Field>; blank: Record<string, unknown> };
+  | { type: "list"; path: string; label: string; add: string; item: ReadonlyArray<Field>; blank: Record<string, unknown> }
+  /** Phase 54: the dataset a block reads, a column of it (the dataset is read from `sourcePath`), and a visual's wells. */
+  | { type: "dataset"; path: string; label: string }
+  | { type: "datasetColumn"; path: string; label: string; sourcePath: string; role?: "DIMENSION" | "MEASURE" }
+  | { type: "datasetColumns"; path: string; label: string; sourcePath: string; role?: "DIMENSION" | "MEASURE" }
+  | { type: "wells"; path: string; label: string; sourcePath: string; familyPath: string };
 
 const opts = (values: readonly string[], label: (v: string) => string = (v) => v) => values.map((value) => ({ value, label: label(value) }));
 const words = (v: string): string => v.toLowerCase().split("_").map((w, i) => (i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w)).join(" ");
@@ -42,7 +47,27 @@ const AI_FIELDS: ReadonlyArray<Field> = [
   { type: "textarea", path: "instruction", label: "Note on what this should say (optional)" },
 ];
 
+const DATA_VISUAL_FIELDS: ReadonlyArray<Field> = [
+  { type: "dataset", path: "source", label: "Dataset" },
+  { type: "select", path: "family", label: "Kind of visual", options: [{ value: "BAR", label: "Bars" }, { value: "STACKED_BAR", label: "Stacked bars" }, { value: "LINE", label: "Line" }, { value: "AREA", label: "Area" }, { value: "PIE", label: "Pie or donut" }, { value: "TABLE", label: "Table" }, { value: "CARD", label: "Card" }, { value: "MAP", label: "Places ranked (map)" }] },
+  { type: "wells", path: "wells", label: "Fields", sourcePath: "source", familyPath: "family" },
+  title,
+  { type: "select", path: "sort", label: "Order", empty: "By name", options: [{ value: "VALUE_DESC", label: "Largest first" }, { value: "VALUE_ASC", label: "Smallest first" }] },
+  { type: "number", path: "topN", label: "Show only the largest (number)", min: 1, max: 100 },
+  { type: "list", path: "references", label: "Reference lines (a standard)", add: "Add a reference line", blank: { kind: "LINE", value: 0, label: "", role: "AT_LEAST" }, item: [
+    { type: "number", path: "value", label: "Value" }, { type: "text", path: "label", label: "Label" },
+    { type: "select", path: "role", label: "Meets it when the figure is", options: [{ value: "AT_LEAST", label: "At least this" }, { value: "AT_MOST", label: "At most this" }, { value: "INFO", label: "For information" }] },
+    { type: "text", path: "source", label: "Where it comes from (Sphere, national guideline…)" },
+  ] },
+  { type: "boolean", path: "crossFilter", label: "A click filters the page" },
+  { type: "text", path: "altText", label: "Description for people who cannot see it" },
+];
+
 export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
+  DATA_VISUAL: DATA_VISUAL_FIELDS,
+  DATA_SLICER: [{ type: "dataset", path: "source", label: "Dataset" }, { type: "datasetColumn", path: "column", label: "Filter by", sourcePath: "source", role: "DIMENSION" }, { type: "text", path: "label", label: "Label (empty = the column's name)" }, { type: "boolean", path: "multi", label: "Allow several choices" }],
+  DATA_COMPLETENESS: [{ type: "dataset", path: "source", label: "Dataset" }, title, { type: "datasetColumn", path: "unitColumn", label: "Who reports (place, facility or partner)", sourcePath: "source", role: "DIMENSION" }, { type: "datasetColumn", path: "groupColumn", label: "Grouped by (optional)", sourcePath: "source", role: "DIMENSION" }, { type: "datasetColumns", path: "figures", label: "A row counts as a report when it has one of (empty = any figure)", sourcePath: "source", role: "MEASURE" }],
+  DATA_DRIVERS: [{ type: "dataset", path: "source", label: "Dataset" }, title, { type: "text", path: "outcome.label", label: "Name of the figure compared" }, { type: "datasetColumn", path: "outcome.numerator", label: "Figure, or the part of a rate", sourcePath: "source", role: "MEASURE" }, { type: "datasetColumn", path: "outcome.denominator", label: "The whole of the rate (empty = compare the figure itself)", sourcePath: "source", role: "MEASURE" }, { type: "boolean", path: "outcome.percent", label: "As a percentage" }, { type: "datasetColumn", path: "unitColumn", label: "One row stands for (place or facility)", sourcePath: "source", role: "DIMENSION" }, { type: "datasetColumns", path: "candidates", label: "Groups to compare (up to 8)", sourcePath: "source", role: "DIMENSION" }],
   TEXT: [{ type: "textarea", path: "text", label: "Text", hint: "A line starting with # is a heading." }],
   BANNER: [{ type: "text", path: "text", label: "Words on the banner" }],
   SHAPE: [{ type: "select", path: "shape", label: "Shape", options: opts(SHAPE_NAMES, words) }, { type: "select", path: "tone", label: "Colour", options: opts(TONE_NAMES, words) }, { type: "text", path: "label", label: "Description (leave empty if it only decorates)" }],
@@ -140,6 +165,7 @@ function tidyItems(items: unknown): unknown {
 }
 const toNumbers = (v: unknown): unknown => (Array.isArray(v) ? v.map((x) => Number(String(x).trim())).filter((n) => Number.isInteger(n)) : v);
 
+const AFTER_DATASETS: Record<string, (props: unknown, path: string) => unknown> = {};
 const AFTER: Readonly<Record<string, (props: unknown, path: string) => unknown>> = {
   MULTI_CARD: (props, path) => (path === "items" ? setAt(props, "items", tidyItems(getAt(props, "items"))) : props),
   FILTER_BAR: (props, path) => {
@@ -163,4 +189,9 @@ const AFTER: Readonly<Record<string, (props: unknown, path: string) => unknown>>
     return setAt(props, "spec.dataset.template", ids > 1 ? "INDICATORS_OVER_TIME" : "INDICATOR_OVER_TIME");
   },
 };
-export const afterChange = (kind: string, props: unknown, path: string): unknown => AFTER[kind]?.(props, path) ?? props;
+// A drivers block compares a figure (numerator alone) or a rate (numerator over denominator): one figure is stored as `column`.
+AFTER_DATASETS.DATA_DRIVERS = (props) => {
+  const o = (getAt(props, "outcome") ?? {}) as { numerator?: string; denominator?: string; column?: string; label?: string; percent?: boolean };
+  return setAt(props, "outcome", o.denominator ? { label: o.label ?? "", numerator: o.numerator, denominator: o.denominator, percent: Boolean(o.percent) } : { label: o.label ?? "", column: o.numerator ?? o.column, numerator: o.numerator ?? o.column });
+};
+export const afterChange = (kind: string, props: unknown, path: string): unknown => (AFTER_DATASETS[kind] ?? AFTER[kind])?.(props, path) ?? props;

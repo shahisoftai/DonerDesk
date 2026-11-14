@@ -217,6 +217,13 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       return r.value;
     });
 
+    // Called by the same hourly timer: pulls the organisation's datasets whose connector schedule is due (Phase 54).
+    instance.post("/internal/datasets/pull", async (req) => {
+      const r = await req.container.handlers.runScheduledDatasetPulls.handle(req.tenant.tenantId);
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
+
     // Called by the same hourly timer: evaluates people's threshold alerts and tells each owner once when a figure crosses.
     instance.post("/internal/data-alerts/run", async (req) => {
       const r = await req.container.handlers.runDataAlerts.handle(req.tenant.tenantId);

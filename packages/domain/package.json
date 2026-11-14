@@ -301,6 +301,10 @@
     "./contexts/places/map-readiness.js": {
       "types": "./dist/contexts/places/map-readiness.d.ts",
       "import": "./dist/contexts/places/map-readiness.js"
+    },
+    "./contexts/datasets/browser.js": {
+      "types": "./dist/contexts/datasets/browser.d.ts",
+      "import": "./dist/contexts/datasets/browser.js"
     }
   },
   "scripts": {

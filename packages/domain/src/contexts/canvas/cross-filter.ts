@@ -7,7 +7,9 @@ import type { DataSheet } from "../reporting/data-sheet.js";
 import type { DatasetPlanRow } from "../reporting/dataset-query.js";
 
 /** `level` and `indicator` are the drill: a logframe level (Outcome, Output…) narrows to its indicators, and one indicator narrows to itself. */
-export interface CrossFilter { periodId: string; places: string[]; group: string; status: string; level: string; indicator: string; donors?: string[] | undefined; partners?: string[] | undefined }
+export interface CrossFilter { periodId: string; places: string[]; group: string; status: string; level: string; indicator: string; donors?: string[] | undefined; partners?: string[] | undefined; /** Slicer choices on dataset columns (Phase 54). */ datasets?: DatasetFilterChoice[] | undefined }
+/** One slicer choice on a dataset column: the rows whose value is one of `values`. */
+export interface DatasetFilterChoice { source: string; column: string; values: string[] }
 export const NO_FILTER: CrossFilter = { periodId: "", places: [], group: "", status: "", level: "", indicator: "", donors: [], partners: [] };
 export interface FilterChoices {
   periods: Array<{ id: string; label: string }>;
@@ -26,7 +28,7 @@ export interface FilterChoices {
 export const EMPTY_CHOICES: FilterChoices = { periods: [], places: [], groups: [], statuses: [], levels: [], indicators: [] };
 
 const fold = (s: string): string => s.normalize("NFD").replace(/\p{Diacritic}/gu, "").trim().toLowerCase();
-export const isFiltered = (f: CrossFilter): boolean => Boolean(f.periodId || f.places.length || f.group || f.status || f.level || f.indicator || f.donors?.length || f.partners?.length);
+export const isFiltered = (f: CrossFilter): boolean => Boolean(f.periodId || f.places.length || f.group || f.status || f.level || f.indicator || f.donors?.length || f.partners?.length || f.datasets?.some((d) => d.values.length > 0));
 
 /** What a clicked label means, in a fixed order (period, place, group, status), and the filter that results. An unknown label changes nothing. */
 export function pickToFilter(choices: FilterChoices, current: CrossFilter, clicked: string): CrossFilter {
@@ -126,3 +128,19 @@ export function drillUp(f: CrossFilter): CrossFilter {
   if (f.periodId) return { ...f, periodId: "" };
   return f;
 }
+
+/**
+ * A click on a slicer option or on a dataset visual's bar, slice or area (Phase 54, §3.7): toggles the value for that dataset column.
+ * A single-choice slicer replaces; a click on a bar adds or removes that one value. Choosing nothing clears the column. Pure.
+ */
+export function toggleDatasetFilter(current: CrossFilter, source: string, column: string, value: string, multi: boolean): CrossFilter {
+  const list = current.datasets ?? [];
+  const now = list.find((d) => d.source === source && d.column === column)?.values ?? [];
+  const has = now.includes(value);
+  const next = multi ? (has ? now.filter((v) => v !== value) : [...now, value]) : has ? [] : [value];
+  const others = list.filter((d) => !(d.source === source && d.column === column));
+  return { ...current, datasets: next.length ? [...others, { source, column, values: next }] : others };
+}
+
+export const datasetFilterValues = (current: CrossFilter, source: string, column: string): string[] => current.datasets?.find((d) => d.source === source && d.column === column)?.values ?? [];
+export const clearDatasetFilters = (current: CrossFilter): CrossFilter => ({ ...current, datasets: [] });

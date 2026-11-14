@@ -1,6 +1,7 @@
 import { evaluateCalculated } from "./calculated.js";
-import { resolveFieldRef, sourceOf } from "./catalogue.js";
-import type { Aggregate, VisualQuery } from "./query.js";
+import { resolveFieldRef, sourceOf, type Catalogue } from "./catalogue.js";
+import { aggregateDef, defaultAggregate, type Combined } from "./aggregates.js";
+import type { VisualQuery } from "./query.js";
 import type { FieldRole, FieldType } from "./types.js";
 
 /**
@@ -31,24 +32,14 @@ export interface JoinedInput { source: string; keyField: string; mainKeyField: s
 
 const num = (c: Cell | undefined): number | null => (typeof c === "number" && Number.isFinite(c) ? c : null);
 
-function modeOf(q: VisualQuery, ref: string, additive: boolean | undefined): Aggregate {
-  return q.aggregate?.[ref] ?? (additive ? "SUM" : "VALUE");
-}
-
-function combine(values: Array<number | null>, mode: Aggregate): { value: number | null; mixed: boolean; partial: boolean } {
-  const present = values.filter((v): v is number => v !== null);
-  const partial = present.length > 0 && present.length < values.length;
-  if (present.length === 0) return { value: null, mixed: false, partial: false };
-  if (mode === "SUM") return { value: Math.round(present.reduce((a, b) => a + b, 0) * 1e6) / 1e6, mixed: false, partial };
-  if (mode === "LATEST") return { value: present[present.length - 1]!, mixed: false, partial: false };
-  // VALUE: shown only when the rows agree; two different figures are never averaged into a third.
-  const distinct = new Set(present);
-  return distinct.size === 1 ? { value: present[0]!, mixed: false, partial: false } : { value: null, mixed: true, partial: false };
+/** Cells combined by an aggregate row (`aggregates.ts`); an unknown key falls back to the field's default. */
+function combineBy(key: string, cells: Cell[]): Combined {
+  return (aggregateDef(key) ?? aggregateDef("VALUE")!).combine(cells);
 }
 
 /** Rows of a source reduced to one per value of a key field: measures combined by their own rule, never added when they cannot be. */
-export function reduceByKey(source: string, keyField: string, rows: ReadonlyArray<VisualRow>): VisualRow[] {
-  const def = sourceOf(source);
+export function reduceByKey(source: string, keyField: string, rows: ReadonlyArray<VisualRow>, cat?: Catalogue): VisualRow[] {
+  const def = sourceOf(source, cat);
   const groups = new Map<string, VisualRow[]>();
   for (const r of rows) {
     const k = r.values[keyField];
@@ -59,14 +50,14 @@ export function reduceByKey(source: string, keyField: string, rows: ReadonlyArra
     const values: Record<string, Cell> = { [keyField]: key };
     for (const f of def?.fields ?? []) {
       if (f.id === keyField) continue;
-      if (f.role === "MEASURE") values[f.id] = combine(members.map((m) => num(m.values[f.id])), f.additive ? "SUM" : "VALUE").value;
+      if (f.role === "MEASURE") values[f.id] = combineBy(f.additive ? "SUM" : "VALUE", members.map((m) => num(m.values[f.id]))).value;
       else { const only = new Set(members.map((m) => m.values[f.id])); values[f.id] = only.size === 1 ? [...only][0] ?? null : null; }
     }
     return { values, verified: members.every((m) => m.verified !== false) };
   });
 }
 
-export function shapeTable(rows: ReadonlyArray<VisualRow>, q: VisualQuery, joined: ReadonlyArray<JoinedInput> = []): VisualTable {
+export function shapeTable(rows: ReadonlyArray<VisualRow>, q: VisualQuery, joined: ReadonlyArray<JoinedInput> = [], cat?: Catalogue): VisualTable {
   const notes: string[] = [];
   let work = rows.map((r) => ({ values: { ...r.values }, verified: r.verified }));
 
@@ -94,8 +85,13 @@ export function shapeTable(rows: ReadonlyArray<VisualRow>, q: VisualQuery, joine
 
   const columns: ColumnInfo[] = [];
   const info = (ref: string, role: "MEASURE" | "DIMENSION"): ColumnInfo | undefined => {
-    const hit = resolveFieldRef(ref, q.source);
-    return hit ? { id: ref, ref, label: hit.field.label, role, type: hit.field.type, ...(hit.field.unit ? { unit: hit.field.unit } : {}) } : undefined;
+    const hit = resolveFieldRef(ref, q.source, cat);
+    if (!hit) return undefined;
+    // A counted group field is a count, whatever it was (a district counted is a number of districts).
+    const counted = role === "MEASURE" && aggregateDef(q.aggregate?.[ref] ?? "")?.acceptsGroup === true;
+    const agg = aggregateDef(q.aggregate?.[ref] ?? "");
+    const label = counted && hit.field.role === "DIMENSION" ? `${hit.field.label} (${agg!.label.toLowerCase()})` : hit.field.label;
+    return { id: ref, ref, label, role, type: counted ? "COUNT" : hit.field.type, ...(hit.field.unit && !counted ? { unit: hit.field.unit } : {}) };
   };
   for (const g of q.groupBy) { const c = info(g, "DIMENSION"); if (c) columns.push(c); }
   for (const m of q.measures) { const c = info(m, "MEASURE"); if (c) columns.push(c); }
@@ -113,8 +109,9 @@ export function shapeTable(rows: ReadonlyArray<VisualRow>, q: VisualQuery, joine
     const row: Record<string, Cell> = {};
     for (const g of q.groupBy) row[g] = members[0]?.values[g] ?? null;
     for (const m of q.measures) {
-      const field = resolveFieldRef(m, q.source)?.field;
-      const c = combine(members.map((r) => num(r.values[m])), modeOf(q, m, field?.additive));
+      const field = resolveFieldRef(m, q.source, cat)?.field;
+      const mode = q.aggregate?.[m] ?? defaultAggregate(field);
+      const c = combineBy(mode, members.map((r) => (aggregateDef(mode)?.acceptsGroup ? r.values[m] ?? null : num(r.values[m]))));
       row[m] = c.value;
       mixedNote ||= c.mixed;
       partialNote ||= c.partial;

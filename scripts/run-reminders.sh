@@ -21,7 +21,7 @@ API="${API_URL:-http://127.0.0.1:${PORT:-4000}}"
 
 failed=0
 # Each organisation is called for each job: its reminders, then the scheduled copies of its canvases that are due.
-JOBS=("/internal/reminders/run|{\"force\":${FORCE}}" "/internal/canvas-snapshots/run|{}" "/internal/data-alerts/run|{}" "/internal/canvas-subscriptions/run|{}")
+JOBS=("/internal/reminders/run|{\"force\":${FORCE}}" "/internal/canvas-snapshots/run|{}" "/internal/data-alerts/run|{}" "/internal/canvas-subscriptions/run|{}" "/internal/datasets/pull|{}")
 
 mapfile -t TENANTS < <(sudo -u postgres psql -At -d "$DB" -c 'SELECT "tenantId" FROM "Organization" ORDER BY "tenantId"')
 for TENANT in "${TENANTS[@]}"; do

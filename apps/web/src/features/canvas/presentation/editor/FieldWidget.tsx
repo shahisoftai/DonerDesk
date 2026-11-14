@@ -3,6 +3,7 @@
 import { useId } from "react";
 import { getAt, setAt } from "../../domain/path";
 import type { Field } from "../../domain/prop-fields";
+import { DatasetFieldWidget } from "@/features/datasets/presentation/DatasetFieldWidget";
 
 export interface IndicatorOption { id: string; code: string; name: string }
 interface Props { field: Field; settings: unknown; onChange: (path: string, value: unknown) => void; indicators: ReadonlyArray<IndicatorOption> }
@@ -19,6 +20,7 @@ export function FieldWidget({ field, settings, onChange, indicators }: Props) {
   const hint = "hint" in field && field.hint ? <p className="text-xs text-slate-500">{field.hint}</p> : null;
 
   switch (field.type) {
+    case "dataset": case "datasetColumn": case "datasetColumns": case "wells": return <DatasetFieldWidget field={field} settings={settings} onChange={onChange} />;
     case "text": return <div className="space-y-1">{label}<input id={id} className={INPUT} value={asText(value)} onChange={(e) => onChange(field.path, e.target.value)} />{hint}</div>;
     case "textarea": return <div className="space-y-1">{label}<textarea id={id} rows={4} className={INPUT} value={asText(value)} onChange={(e) => onChange(field.path, e.target.value)} />{hint}</div>;
     case "number": return <div className="space-y-1">{label}<input id={id} type="number" className={INPUT} min={field.min} max={field.max} value={asText(value)} onChange={(e) => onChange(field.path, e.target.value === "" ? undefined : Number(e.target.value))} /></div>;

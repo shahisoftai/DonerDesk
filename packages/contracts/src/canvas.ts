@@ -68,12 +68,12 @@ export const SaveCanvasSchema = z.object({
 export type SaveCanvasInput = z.infer<typeof SaveCanvasSchema>;
 
 export const CanvasListQuerySchema = z.object({ projectId: z.string().max(80).optional() });
-export const CanvasResolveQuerySchema = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional(), donors: z.string().max(400).optional(), partners: z.string().max(400).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional(), level: z.string().max(80).optional(), indicator: z.string().max(80).optional() });
+export const CanvasResolveQuerySchema = z.object({ ds: z.string().max(4000).optional(), periodId: z.string().max(80).optional(), places: z.string().max(400).optional(), donors: z.string().max(400).optional(), partners: z.string().max(400).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional(), level: z.string().max(80).optional(), indicator: z.string().max(80).optional() });
 /** Places arrive as one comma-separated query value. */
 export const placeKeysOf = (places: string | undefined): string[] => (places ?? "").split(",").map((p) => p.trim()).filter(Boolean).slice(0, 20);
 
 /** An edited canvas that has not been saved, sent so the screen can show what it would say. Nothing is stored. */
-export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional(), placeKeys: z.array(z.string().max(80)).max(20).optional(), donors: z.array(z.string().max(120)).max(20).optional(), partners: z.array(z.string().max(120)).max(20).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional(), level: z.string().max(80).optional(), indicator: z.string().max(80).optional() });
+export const PreviewCanvasSchema = SaveCanvasSchema.omit({ expectedRevision: true }).extend({ projectId: z.string().max(80).optional(), periodId: z.string().max(80).optional(), placeKeys: z.array(z.string().max(80)).max(20).optional(), donors: z.array(z.string().max(120)).max(20).optional(), partners: z.array(z.string().max(120)).max(20).optional(), group: z.string().max(80).optional(), status: z.string().max(80).optional(), level: z.string().max(80).optional(), indicator: z.string().max(80).optional(), datasetFilters: z.array(z.object({ source: z.string().max(100), column: z.string().max(64), values: z.array(z.string().max(200)).max(50) })).max(20).optional() });
 export type PreviewCanvasInput = z.infer<typeof PreviewCanvasSchema>;
 
 export const CanvasExportQuerySchema = z.object({ format: z.enum(["PNG", "PDF", "SVG", "PPTX", "PACK"]), scale: z.coerce.number().int().min(1).max(3).optional() });

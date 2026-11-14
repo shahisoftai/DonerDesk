@@ -457,6 +457,8 @@ export * from "./use-cases/visual-data/source-readers.js";
 export * from "./use-cases/visual-data/visual-data-service.js";
 export * from "./use-cases/visual-data/handlers.js";
 export * from "./use-cases/visual-data/alert-handlers.js";
+export * from "./ports/datasets.js";
+export * from "./use-cases/datasets/index.js";
 export * from "./ports/data-alerts.js";
 export * from "./use-cases/canvas/build-data-workbook.js";
 export * from "./ports/tables-workbook.js";

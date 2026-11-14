@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { FastifyInstance } from "fastify";
 import { createContainer, type Container } from "@donordesk/infrastructure";
-import { PresenceUpdateSchema, SubscribeCanvasSchema, CanvasDataWorkbookSchema, CanvasExportQuerySchema, CanvasSnapshotsSchema, CreateCanvasShareSchema, DraftCanvasTextSchema, PublishCanvasSchema, ReviewCanvasSchema, placeKeysOf, CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
+import { PresenceUpdateSchema, SubscribeCanvasSchema, CanvasDataWorkbookSchema, CanvasExportQuerySchema, CanvasSnapshotsSchema, CreateCanvasShareSchema, DraftCanvasTextSchema, PublishCanvasSchema, ReviewCanvasSchema, placeKeysOf, datasetFiltersOf, CanvasListQuerySchema, CanvasResolveQuerySchema, CreateCanvasSchema, PreviewCanvasSchema, SaveCanvasSchema } from "@donordesk/contracts";
 
 /** Canvases (Phase 45): the merged dashboards and infographics. Thin: validate, call one handler, throw its error. The handlers apply who may see and change which canvas. */
 export async function registerCanvasRoutes(app: FastifyInstance) {
@@ -40,7 +40,7 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
   });
   app.get("/v1/canvases/:id/resolve", async (req) => {
     const q = CanvasResolveQuerySchema.parse(req.query);
-    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), { ...(q.periodId ? { periodId: q.periodId } : {}), placeKeys: placeKeysOf(q.places), ...(q.group ? { group: q.group } : {}), ...(q.status ? { status: q.status } : {}), ...(q.level ? { level: q.level } : {}), ...(q.indicator ? { indicator: q.indicator } : {}), donors: placeKeysOf(q.donors), partners: placeKeysOf(q.partners) });
+    const r = await req.container.handlers.resolveCanvas.handle(ctx(req), idOf(req), { ...(q.periodId ? { periodId: q.periodId } : {}), placeKeys: placeKeysOf(q.places), ...(q.group ? { group: q.group } : {}), ...(q.status ? { status: q.status } : {}), ...(q.level ? { level: q.level } : {}), ...(q.indicator ? { indicator: q.indicator } : {}), donors: placeKeysOf(q.donors), partners: placeKeysOf(q.partners), datasetFilters: datasetFiltersOf(q.ds) });
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -102,9 +102,9 @@ export async function registerCanvasRoutes(app: FastifyInstance) {
     return { ok: true };
   });
   app.post("/v1/canvases/preview", async (req) => {
-    const { projectId, periodId, placeKeys, donors, partners, group, status, level, indicator, title, ...rest } = PreviewCanvasSchema.parse(req.body);
+    const { projectId, periodId, placeKeys, donors, partners, group, status, level, indicator, title, datasetFilters, ...rest } = PreviewCanvasSchema.parse(req.body);
     const canvas = { id: "preview", title, scope: "MINE", mode: rest.mode ?? "LIVE", revision: 1, ...rest } as never;
-    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, { ...(periodId ? { periodId } : {}), ...(placeKeys?.length ? { placeKeys } : {}), ...(group ? { group } : {}), ...(status ? { status } : {}), ...(level ? { level } : {}), ...(indicator ? { indicator } : {}), ...(donors?.length ? { donors } : {}), ...(partners?.length ? { partners } : {}) });
+    const r = await req.container.handlers.resolveCanvas.preview(ctx(req), { canvas, projectId, title }, { ...(periodId ? { periodId } : {}), ...(placeKeys?.length ? { placeKeys } : {}), ...(group ? { group } : {}), ...(status ? { status } : {}), ...(level ? { level } : {}), ...(indicator ? { indicator } : {}), ...(donors?.length ? { donors } : {}), ...(partners?.length ? { partners } : {}), ...(datasetFilters?.length ? { datasetFilters } : {}) });
     if (!r.ok) throw r.error;
     return r.value;
   });
@@ -198,8 +198,8 @@ export async function registerPublicCanvasRoutes(app: FastifyInstance, admin: Co
     if (!found) { reply.code(404); return { title: "This link is not available" }; }
     if (found.link.kind === "FROZEN") return { kind: "FROZEN", title: "A published copy" };
     // A link holder may narrow the page by a period and by places; nothing else (never donors, partners or money).
-    const q = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional() }).safeParse(req.query ?? {});
-    const filters = q.success ? { ...(q.data.periodId ? { periodId: q.data.periodId } : {}), placeKeys: placeKeysOf(q.data.places) } : {};
+    const q = z.object({ periodId: z.string().max(80).optional(), places: z.string().max(400).optional(), ds: z.string().max(4000).optional() }).safeParse(req.query ?? {});
+    const filters = q.success ? { ...(q.data.periodId ? { periodId: q.data.periodId } : {}), placeKeys: placeKeysOf(q.data.places), datasetFilters: datasetFiltersOf(q.data.ds) } : {};
     const r = await found.tenant.handlers.publicCanvas.handle(found.link.tenantId, found.link.canvasId, filters);
     if (!r.ok) { reply.code(404); return { title: "This link is not available" }; }
     return { kind: "LIVE", ...r.value };

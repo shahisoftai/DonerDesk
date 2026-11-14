@@ -18,6 +18,10 @@ import { tableBlock } from "./table.js";
 import { projectListBlock } from "./project-list.js";
 import { INFOGRAPHIC_BLOCKS } from "./infographic-blocks.js";
 import { STRUCTURE_BLOCKS } from "./structure-blocks.js";
+import { dataVisualBlock } from "./data-visual.js";
+import { dataSlicerBlock } from "./data-slicer.js";
+import { dataCompletenessBlock } from "./data-completeness.js";
+import { dataDriversBlock } from "./data-drivers.js";
 
 type AnyBlock = BlockDefinition<never, unknown, never>;
 const any = (d: unknown): AnyBlock => d as AnyBlock;
@@ -33,6 +37,7 @@ export const BLOCK_KINDS = [
   "AI_SUMMARY", "AI_MESSAGES", "AI_ASK",
   "GROUP", "TABS", "REPEATER",
   "FILTER_BAR",
+  "DATA_VISUAL", "DATA_SLICER", "DATA_COMPLETENESS", "DATA_DRIVERS",
 ] as const;
 export type BlockKind = (typeof BLOCK_KINDS)[number];
 
@@ -48,6 +53,10 @@ export const BLOCK_REGISTRY: Readonly<Partial<Record<BlockKind, BlockDefinition<
   CHART: any(chartBlock),
   TABLE: any(tableBlock),
   PROJECT_LIST: any(projectListBlock),
+  DATA_VISUAL: any(dataVisualBlock),
+  DATA_SLICER: any(dataSlicerBlock),
+  DATA_COMPLETENESS: any(dataCompletenessBlock),
+  DATA_DRIVERS: any(dataDriversBlock),
   ...STRUCTURE_BLOCKS,
   ...Object.fromEntries(Object.entries(INFOGRAPHIC_BLOCKS).map(([k, d]) => [k, any(d)])),
 };

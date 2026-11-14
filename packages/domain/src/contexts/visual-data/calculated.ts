@@ -1,4 +1,4 @@
-import { resolveFieldRef } from "./catalogue.js";
+import { resolveFieldRef, type Catalogue } from "./catalogue.js";
 
 /**
  * A figure worked out from other figures of the same question (a ratio, a total, a difference, a share). It is part of the visual,
@@ -21,7 +21,7 @@ export interface CalculatedField {
 export interface CalculatedProblem { path: string; message: string }
 const MAX_TERMS = 8;
 
-export function calculatedProblems(fields: readonly CalculatedField[], measures: readonly string[], source: string): CalculatedProblem[] {
+export function calculatedProblems(fields: readonly CalculatedField[], measures: readonly string[], source: string, cat?: Catalogue): CalculatedProblem[] {
   const out: CalculatedProblem[] = [];
   const ids = new Set<string>();
   fields.forEach((f, i) => {
@@ -35,7 +35,7 @@ export function calculatedProblems(fields: readonly CalculatedField[], measures:
     }
     const kinds = new Set<string>();
     for (const t of f.terms) {
-      const hit = resolveFieldRef(t, source);
+      const hit = resolveFieldRef(t, source, cat);
       if (!hit || !measures.includes(t)) { out.push({ path: at, message: `"${t}" must be one of the figures chosen for this visual.` }); continue; }
       if (hit.field.type === "RATE") out.push({ path: at, message: `${hit.field.label} is a rate: rates are never added, subtracted or divided.` });
       kinds.add(hit.field.money ? "AMOUNT" : hit.field.type);

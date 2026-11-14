@@ -1,4 +1,7 @@
 export * from "./types.js";
+export * from "./aggregates.js";
+export * from "./wells.js";
+export * from "./references.js";
 export * from "./catalogue.js";
 export * from "./query.js";
 export * from "./calculated.js";

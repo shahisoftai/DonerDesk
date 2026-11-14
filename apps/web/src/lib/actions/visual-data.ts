@@ -10,9 +10,12 @@ import { OkResponseSchema } from "./_schemas";
 import { DataAlertSchema, type DataAlertView, CatalogueSchema, VersionsSchema, VisualAnswerSchema, type CatalogueView, type VersionsView, type VisualAnswerView } from "@/lib/server/schemas-visual-data";
 
 /** The Data panel's list of sources and fields (and a search over them). */
-export async function getVisualCatalogueAction(search?: string): Promise<Result<CatalogueView, AppError>> {
+export async function getVisualCatalogueAction(search?: string, projectId?: string): Promise<Result<CatalogueView, AppError>> {
   const context = await requireSession();
-  return gatewayRequest(`/v1/visual-data/catalogue${search ? `?search=${encodeURIComponent(search)}` : ""}`, CatalogueSchema, context.token);
+  const params = new URLSearchParams();
+  if (search) params.set("search", search);
+  if (projectId) params.set("projectId", projectId);
+  return gatewayRequest(`/v1/visual-data/catalogue${params.size ? `?${params}` : ""}`, CatalogueSchema, context.token);
 }
 
 /** One question about one project, answered as a table or as a sentence saying why not. */

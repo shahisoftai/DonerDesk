@@ -11,9 +11,10 @@ import type { GetProjectInfographicDataHandler } from "../infographics/infograph
 import type { GetPortfolioInfographicDataHandler } from "../infographics/portfolio-data.js";
 import { can, fail, loadCanvas, ok } from "./canvas-shared.js";
 import { heldByRepeater, repeatedWidgets, repeaterItems, type RepeatItems } from "./repeat-canvas.js";
+import type { DatasetFilter, DatasetSources } from "../datasets/dataset-sources.js";
 
 /** What a viewer may narrow a canvas by without changing it: a period and/or places. */
-export interface CanvasFilterOptions { periodId?: string | undefined; placeKeys?: string[] | undefined; /** Only projects with one of these donors or partners (Phase 50.3). */ donors?: string[] | undefined; partners?: string[] | undefined; group?: string | undefined; status?: string | undefined; level?: string | undefined; indicator?: string | undefined }
+export interface CanvasFilterOptions { /** A viewer's slicer choices on dataset columns (Phase 54): narrow dataset blocks only. */ datasetFilters?: DatasetFilter[] | undefined; periodId?: string | undefined; placeKeys?: string[] | undefined; /** Only projects with one of these donors or partners (Phase 50.3). */ donors?: string[] | undefined; partners?: string[] | undefined; group?: string | undefined; status?: string | undefined; level?: string | undefined; indicator?: string | undefined }
 
 export interface ResolvedCanvasDto {
   canvasId: string;
@@ -34,6 +35,7 @@ export class ResolveCanvasHandler {
     private readonly repo: ICanvasRepository, private readonly preview_: PreviewDashboardChartsHandler, private readonly sheets: GetProjectDataSheetHandler,
     private readonly infographicData: GetProjectInfographicDataHandler, private readonly visible: VisibleProjects, private readonly extras?: IDatasetExtras,
     private readonly portfolio?: GetPortfolioInfographicDataHandler, private readonly counts?: ICountFactsReader & Partial<IPlaceTreeReader>,
+    private readonly datasets?: Pick<DatasetSources, "blockData">,
   ) {}
 
   /** Reads what a saved canvas shows, for the person looking, under their own access: a project they cannot see yields "unavailable" blocks, never someone else's figures. */
@@ -94,10 +96,15 @@ export class ResolveCanvasHandler {
 
     for (const page of stored.canvas.pages) for (const block of page.blocks) {
       if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id] || held.has(block.id)) continue;
-      const def = definitionFor(block.kind) as unknown as { reads?: "FACTS" | "VIEWER_PROJECTS" | "PORTFOLIO"; resolve(props: unknown, data: unknown): BlockModel<unknown> } | undefined;
+      const def = definitionFor(block.kind) as unknown as { reads?: "FACTS" | "VIEWER_PROJECTS" | "PORTFOLIO" | "DATASET"; slicer?: boolean; resolve(props: unknown, data: unknown): BlockModel<unknown> } | undefined;
       if (!def) { models[block.id] = unavailable("This block is not one the product knows."); continue; }
       let data: unknown;
-      if (def.reads === "VIEWER_PROJECTS") data = list;
+      if (def.reads === "DATASET") {
+        // Each dataset is read once per open (versions are immutable and cached); a slicer is never narrowed by its own column's choice.
+        const props = block.props as { source?: string; column?: string };
+        const own = (options.datasetFilters ?? []).filter((f) => !(def.slicer && f.source === props.source && f.column === props.column));
+        data = props.source && this.datasets ? await this.datasets.blockData(ctx, props.source, own) : undefined;
+      } else if (def.reads === "VIEWER_PROJECTS") data = list;
       else if (def.reads === "PORTFOLIO") data = portfolio ? portfolioOnlyFacts(portfolio) : undefined;
       else if (def.reads === "FACTS") {
         const facts = await factsOf(projectOf(block.bindings) ?? stored.projectId);

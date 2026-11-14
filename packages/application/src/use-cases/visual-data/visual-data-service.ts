@@ -7,6 +7,13 @@ import type { IDataVersions } from "../../ports/visual-data.js";
 import type { VisibleProjects } from "../../services/visible-projects.js";
 import type { GetProjectDataSheetHandler } from "../data-center/data-sheet.js";
 import type { ReadScope, SourceReader } from "./source-readers.js";
+import { datasetIdOf, type Catalogue } from "@donordesk/domain";
+
+/** Datasets as sources (Phase 54): the catalogue rows a person may read and a dataset's rows, under their own access. */
+export interface DatasetSourceProvider {
+  catalogueFor(ctx: AuthenticatedContext, projectId?: string): Promise<Catalogue>;
+  blockData(ctx: AuthenticatedContext, sourceId: string, filters: ReadonlyArray<{ source: string; column: string; values: string[] }>, options?: { guest?: boolean }): Promise<{ rows: import("@donordesk/domain").VisualRow[] } | undefined>;
+}
 
 /**
  * Asks the catalogue (Phase 48.17). One question about one project: validated by the domain, checked against the asker's
@@ -33,11 +40,13 @@ export class VisualDataService {
     private readonly visible: Pick<VisibleProjects, "for">,
     private readonly versions: IDataVersions,
     private readonly now: () => Date = () => new Date(),
+    private readonly datasets?: DatasetSourceProvider,
   ) {
     this.readers = new Map(readers.map((r) => [r.source, r]));
   }
 
   async query(ctx: AuthenticatedContext, projectId: string, query: VisualQuery, options: VisualQueryOptions = {}): Promise<Result<VisualAnswer, DomainError>> {
+    if (datasetIdOf(query.source)) return this.datasetQuery(ctx, projectId, query, options);
     const problems = validateVisualQuery(query);
     if (problems.length > 0) return { ok: false, error: DomainError.validation(problems[0]!.message) };
     const sources = sourcesOf(query);
@@ -77,6 +86,23 @@ export class VisualDataService {
     const table = shapeTable(rows, query, joined);
     const state = await this.versions.read(ctx.tenant.tenantId.toString(), projectId);
     return { ok: true, value: { state: "ready", table, asOf: this.now().toISOString(), sources, versions: Object.fromEntries(sources.map((s) => [s, state.versions[s] ?? 0])), epoch: state.epoch } };
+  }
+
+  /**
+   * A question about a dataset: validated against the catalogue the person can see (the built-in sources plus their datasets), read from
+   * the dataset's current version and shaped by the same domain function. A dataset joins nothing, so the question names one source.
+   */
+  private async datasetQuery(ctx: AuthenticatedContext, projectId: string, query: VisualQuery, options: VisualQueryOptions): Promise<Result<VisualAnswer, DomainError>> {
+    if (!this.datasets) return { ok: true, value: unavailable("Datasets are not available here.") };
+    const cat = await this.datasets.catalogueFor(ctx, projectId || undefined);
+    if (!sourceOf(query.source, cat)) return { ok: true, value: unavailable("This dataset is not one you can see.") };
+    const problems = validateVisualQuery(query, cat);
+    if (problems.length > 0) return { ok: false, error: DomainError.validation(problems[0]!.message) };
+    if (sourcesOf(query, cat).length > 1) return { ok: true, value: unavailable("A dataset is drawn on its own: it is not combined with other sources.") };
+    const data = await this.datasets.blockData(ctx, query.source, [], { guest: options.guest === true });
+    if (!data) return { ok: true, value: unavailable("The dataset could not be read just now.") };
+    const table = shapeTable(data.rows, query, [], cat);
+    return { ok: true, value: { state: "ready", table, asOf: this.now().toISOString(), sources: [query.source], versions: {}, epoch: "dataset" } };
   }
 
   /** A field a reader does not fill yet is a sentence, not a blank column. */

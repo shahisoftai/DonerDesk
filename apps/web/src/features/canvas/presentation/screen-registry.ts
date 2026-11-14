@@ -9,6 +9,10 @@ import { PortfolioCountriesScreen, PortfolioHealthScreen, PortfolioSummaryScreen
 import { AiTextScreen, CalloutScreen, FilterBarScreen, GroupScreen, RepeaterScreen, TabsScreen } from "./screens/structure";
 import { MultiCardScreen } from "./screens/multi-card";
 import { ImageScreen, QuoteScreen, SectorGridScreen, ThreeWScreen, TimelineScreen } from "./screens/stories";
+import { DataVisualScreen } from "@/features/datasets/presentation/DataVisualScreen";
+import { DataSlicerScreen } from "@/features/datasets/presentation/DataSlicerScreen";
+import { DataCompletenessScreen } from "@/features/datasets/presentation/DataCompletenessScreen";
+import { DataDriversScreen } from "@/features/datasets/presentation/DataDriversScreen";
 
 /**
  * Screen renderers (Phase 45.2): one React component per block kind, looked up here and nowhere else - the canvas never branches on a
@@ -27,6 +31,7 @@ export const SCREEN_RENDERERS: Readonly<Partial<Record<BlockKind, ScreenRenderer
   PORTFOLIO_SUMMARY: as(PortfolioSummaryScreen), PORTFOLIO_TABLE: as(PortfolioTableScreen), PORTFOLIO_HEALTH: as(PortfolioHealthScreen), PORTFOLIO_COUNTRIES: as(PortfolioCountriesScreen),
   CALLOUT: as(CalloutScreen), AI_SUMMARY: as(AiTextScreen), AI_MESSAGES: as(AiTextScreen), AI_ASK: as(AiTextScreen),
   GROUP: as(GroupScreen), TABS: as(TabsScreen), REPEATER: as(RepeaterScreen), FILTER_BAR: as(FilterBarScreen),
+  DATA_VISUAL: as(DataVisualScreen), DATA_SLICER: as(DataSlicerScreen), DATA_COMPLETENESS: as(DataCompletenessScreen), DATA_DRIVERS: as(DataDriversScreen),
 };
 
 export const SCREEN_PENDING: readonly BlockKind[] = BLOCK_KINDS.filter((k) => SCREEN_RENDERERS[k] === undefined);

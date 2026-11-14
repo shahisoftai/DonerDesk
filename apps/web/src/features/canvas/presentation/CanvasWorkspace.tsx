@@ -37,6 +37,8 @@ import { FilterPane, type FilterBarProps } from "../filters/FilterPane";
 import { FilterSlotProvider } from "../filters/filter-slot";
 import { BlockEditProvider } from "@/components/editing/block-edit-context";
 import { useFilterAddress } from "../filters/use-filter-address";
+import { DatasetFilterProvider, type DatasetFilterApi } from "../filters/dataset-filters";
+import { toggleDatasetFilter, datasetFilterValues } from "@donordesk/domain/contexts/canvas/index.js";
 
 export interface ProjectOption { id: string; name: string }
 interface Props { /** How often the person is emailed that this is ready to open. */ subscription: "NONE" | "WEEKLY" | "MONTHLY"; initial: CanvasView; resolved: ResolvedCanvas | null; resolveError: string | null; projects: ReadonlyArray<ProjectOption>; indicatorsByProject: Readonly<Record<string, ReadonlyArray<IndicatorOption>>> }
@@ -100,12 +102,12 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
     if (!dirty) {
       setPreview(null); setPreviewError(null); savedSig.current = sig;
       // Narrowing a saved canvas reads it again with the viewer's period and places; nothing is saved.
-      if (isFiltered(filters) || filtered.current) { filtered.current = isFiltered(filters); void resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator, donors: filters.donors ?? [], partners: filters.partners ?? [] }).then((r) => { if (r.ok) setResolved(r.value); }); }
+      if (isFiltered(filters) || filtered.current) { filtered.current = isFiltered(filters); void resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator, donors: filters.donors ?? [], partners: filters.partners ?? [], datasets: filters.datasets ?? [] }).then((r) => { if (r.ok) setResolved(r.value); }); }
       return;
     }
     let current = true;
     const timer = setTimeout(async () => {
-      const r = await previewCanvasAction({ title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(initial.projectId ? { projectId: initial.projectId } : {}), ...(filters.periodId ? { periodId: filters.periodId } : {}), ...(filters.places.length ? { placeKeys: filters.places } : {}), ...(filters.group ? { group: filters.group } : {}), ...(filters.status ? { status: filters.status } : {}), ...(filters.level ? { level: filters.level } : {}), ...(filters.indicator ? { indicator: filters.indicator } : {}), ...(filters.donors?.length ? { donors: filters.donors } : {}), ...(filters.partners?.length ? { partners: filters.partners } : {}) });
+      const r = await previewCanvasAction({ title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(initial.projectId ? { projectId: initial.projectId } : {}), ...(filters.periodId ? { periodId: filters.periodId } : {}), ...(filters.places.length ? { placeKeys: filters.places } : {}), ...(filters.group ? { group: filters.group } : {}), ...(filters.status ? { status: filters.status } : {}), ...(filters.level ? { level: filters.level } : {}), ...(filters.indicator ? { indicator: filters.indicator } : {}), ...(filters.donors?.length ? { donors: filters.donors } : {}), ...(filters.partners?.length ? { partners: filters.partners } : {}), ...(filters.datasets?.length ? { datasetFilters: filters.datasets } : {}) });
       if (!current) return;
       if (r.ok) { setPreview({ sig, value: r.value }); setPreviewError(null); } else setPreviewError(r.error.message);
     }, 350);
@@ -154,13 +156,19 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
     ed.adoptRevision(saved.revision);
     setReviewNow("DRAFT");
     setServerProblems(r.value.problems);
-    const fresh = await resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator, donors: filters.donors ?? [], partners: filters.partners ?? [] });
+    const fresh = await resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator, donors: filters.donors ?? [], partners: filters.partners ?? [], datasets: filters.datasets ?? [] });
     if (fresh.ok) setResolved(fresh.value);
     setBusy(null);
     setNotice({ tone: "ok", text: r.value.problems.length ? `Saved. ${r.value.problems.length} block${r.value.problems.length === 1 ? " is" : "s are"} not set up yet.` : "Saved." });
   }
 
   saveRef.current = () => { if (dirty && busy === null) void save(); };
+  // Slicer choices on dataset columns (Phase 54): part of the viewer's filter, so the page is read again with them; never saved.
+  const datasetApi = useMemo<DatasetFilterApi>(() => ({
+    values: (source, column) => datasetFilterValues(filters, source, column),
+    toggle: (source, column, value, multi) => setFilters((f) => toggleDatasetFilter(f, source, column, value, multi)),
+    clear: (source, column) => setFilters((f) => ({ ...f, datasets: (f.datasets ?? []).filter((d) => !(d.source === source && d.column === column)) })),
+  }), [filters]);
 
   async function copy(): Promise<void> {
     setBusy("copy");
@@ -182,6 +190,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
   const selectedProblems = [...problems, ...serverProblems.filter((s) => !problems.some((p) => p.blockId === s.blockId && p.message === s.message))];
 
   return (
+    <DatasetFilterProvider api={datasetApi}>
     <div ref={stage} style={editing ? { paddingInlineEnd: pinnedWidth(drawers) } : undefined} className="space-y-4 [&:fullscreen]:overflow-auto [&:fullscreen]:bg-white [&:fullscreen]:p-6 dark:[&:fullscreen]:bg-slate-950" data-testid="canvas-workspace" data-editing={editing || undefined} data-presenting={present.presenting || undefined}>
       <header className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
@@ -312,6 +321,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
       {editing && <EditorTour />}
       {session.shortcutsOpen && <ShortcutSheet onClose={() => session.setShortcutsOpen(false)} />}
     </div>
+    </DatasetFilterProvider>
   );
 }
 

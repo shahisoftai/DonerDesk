@@ -1,5 +1,6 @@
 import type { MessageKey } from "./en.ts";
 import { recordFr } from "./record-fr.ts";
+import { datasetsFr } from "./datasets-fr.ts";
 import { libraryFr } from "./library-fr.ts";
 import { frameworkFr } from "./framework-fr.ts";
 import { canvasFr } from "./canvas-fr.ts";
@@ -885,6 +886,7 @@ export const fr: Record<MessageKey, string> = {
   "maps.boundary.uploading": "Téléversement…",
   "maps.sources.link": "Sources et licences des cartes",
   ...recordFr,
+  ...datasetsFr,
   ...canvasFr,
   ...editor50Fr,
   ...studioFr,

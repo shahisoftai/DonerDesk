@@ -3,6 +3,7 @@ import Link from "next/link";
 /** The one entry to every visual surface (Phase 48.5): designs, charts, maps and templates, each keeping the page it already had. */
 export const SHELL_TABS = [
   { key: "designs", label: "Designs", href: "/visuals" },
+  { key: "datasets", label: "Datasets", href: "/visuals/datasets" },
   { key: "charts", label: "Charts", href: "/visuals/charts" },
   { key: "maps", label: "Maps", href: "/visuals/maps" },
   { key: "templates", label: "Templates", href: "/visuals/templates" },

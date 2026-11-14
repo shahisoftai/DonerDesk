@@ -34,6 +34,7 @@ export const ORG_EXPORT_EXCLUDED: Readonly<Record<string, string>> = {
   BillingEventInbox: "payment-provider webhook log",
   TrialIdentity: "anti-abuse record",
   UsageCounter: "internal metering",
+  DatasetRow: "the rows are in the dataset versions' files, which are exported with the version (a 200,000-row table is not repeated as JSON)",
 };
 
 /** Columns left out of an exported table: a person's password hash, MFA secrets and an invitation's secret link token. */
@@ -41,6 +42,7 @@ export const ORG_EXPORT_OMITTED_FIELDS: Readonly<Record<string, readonly string[
   User: ["passwordHash", "mfaSecretEnc", "mfaPendingSecretEnc"],
   Invitation: ["token"],
   DataConnector: ["credentialEnc"],
+  Dataset: ["connectorSecretEnc"],
   // The stored setup document never leaves the tenant's storage (Phase 36); the proposal's other fields export.
   ProjectSetupProposal: ["sourceStorageKey"],
   // Where a drawn shape is kept is internal; the shape itself is exported as a file (files/places/<id>.geojson).

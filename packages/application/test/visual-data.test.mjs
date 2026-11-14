@@ -89,10 +89,10 @@ test("when the sheet cannot be read the answer says so instead of an empty table
   assert.deepEqual(r.value, { state: "unavailable", reason: "The data for this could not be read just now." });
 });
 
-test("the catalogue shows what is connected and what the role may open", () => {
+test("the catalogue shows what is connected and what the role may open", async () => {
   const readers = createSourceReaders(extras);
   const handler = new GetVisualDataCatalogueHandler(readers);
-  const r = handler.handle(ctxOf("VIEWER"), "people reached");
+  const r = await handler.handle(ctxOf("VIEWER"), "people reached");
   const byId = Object.fromEntries(r.value.sources.map((x) => [x.id, x]));
   assert.equal(byId["indicator-values"].connected, true);
   assert.equal(byId["risks"].connected, false);

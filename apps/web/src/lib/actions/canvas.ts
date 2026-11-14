@@ -41,9 +41,11 @@ export async function duplicateCanvasAction(id: string): Promise<Result<CanvasVi
 }
 
 /** Reads what the canvas shows now, for the signed-in person: used after a save and when the period filter changes. */
-export async function resolveCanvasAction(id: string, filters: { periodId?: string; places?: string[]; group?: string; status?: string; level?: string; indicator?: string; donors?: string[]; partners?: string[] } = {}): Promise<Result<ResolvedCanvas, AppError>> {
+export async function resolveCanvasAction(id: string, filters: { periodId?: string; places?: string[]; group?: string; status?: string; level?: string; indicator?: string; donors?: string[]; partners?: string[]; datasets?: Array<{ source: string; column: string; values: string[] }> } = {}): Promise<Result<ResolvedCanvas, AppError>> {
   const context = await requireSession();
   const params = new URLSearchParams();
+  const ds = (filters.datasets ?? []).filter((d) => d.values.length > 0);
+  if (ds.length) params.set("ds", JSON.stringify(ds));
   if (filters.periodId) params.set("periodId", filters.periodId);
   if (filters.places?.length) params.set("places", filters.places.join(","));
   if (filters.group) params.set("group", filters.group);

@@ -17,7 +17,7 @@ export type VisualAnswerView = z.infer<typeof VisualAnswerSchema>;
 
 export const CatalogueSchema = z.object({
   sources: z.array(z.object({
-    id: z.string(), label: z.string(), description: z.string(), grain: z.string(), guest: z.boolean(), allowed: z.boolean(), connected: z.boolean(),
+    id: z.string(), label: z.string(), description: z.string(), grain: z.string(), guest: z.boolean(), allowed: z.boolean(), connected: z.boolean(), dataset: z.boolean().optional(),
     fields: z.array(z.object({ id: z.string(), label: z.string(), meaning: z.string(), role: z.enum(["DIMENSION", "MEASURE"]), type: z.string(), unit: z.string().optional(), additive: z.boolean().optional(), money: z.boolean().optional(), available: z.boolean() })),
   })),
   hits: z.array(z.object({ source: z.string(), field: z.string(), score: z.number() })),

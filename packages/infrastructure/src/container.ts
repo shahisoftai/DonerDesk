@@ -763,11 +763,12 @@ export interface Container {
     retryBillingInbox: RetryBillingInboxHandler;
     runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
     runGrandfatherByoLlm: RunGrandfatherByoLlmHandler;
-  } & WorkplanHandlers & FinanceHandlers & SectorLibraryHandlers;
+  } & WorkplanHandlers & FinanceHandlers & SectorLibraryHandlers & DatasetsHandlers;
 }
 
 import { createWorkplanModule, type WorkplanHandlers } from "./container/workplan-module.js";
 import { createFinanceModule, type FinanceHandlers } from "./container/finance-module.js";
+import { createDatasetsModule, type DatasetsHandlers } from "./datasets/module.js";
 import { createSectorLibraryModule, type SectorLibraryHandlers } from "./container/sector-library-module.js";
 import { IndicatorLibraryLinkWriter } from "./project-setup/library-link-writer.js";
 import { IndicatorPlaceRecordingWriter } from "./project-setup/place-recording-writer.js";
@@ -1516,7 +1517,13 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials, finance.registerFinanceRows);
   const visualReaders = createSourceReaders(datasetExtras);
   const dataAlerts = new PrismaDataAlertRepository(prisma);
-  const visualData = new VisualDataService(visualReaders, getProjectDataSheet, visibleProjects, processDataVersions);
+  // Phase 54 datasets. The bulk indicator save and the canvas create are defined further down; the closures read them at request time.
+  const datasets = createDatasetsModule({
+    prisma, visible: visibleProjects, audit: audits, clock, ids, storage, places, indicators, updates: indicatorUpdates, periods, forms: { forms: collectionForms, records: collectionRecords },
+    bulkSave: { handle: (ctx, input) => bulkUpsertIndicatorUpdates.handle(ctx, input) },
+    createCanvas: { handle: (ctx, input) => createCanvasForDatasets.handle(ctx, input) },
+  });
+  const visualData = new VisualDataService(visualReaders, getProjectDataSheet, visibleProjects, processDataVersions, undefined, datasets.sources);
   const getProjectInfographicData = new GetProjectInfographicDataHandler(
     projects, periods, indicators, indicatorUpdates, financeInputs, periodFinancials,
     planBeneficiaries, planBeneficiaryLinks, plannedActivities, new PrismaDeliveryFactsReader(prisma), planContext, clock, reportingProfiles,
@@ -1582,11 +1589,13 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   // The sector library (phase 46) writes through the ordinary create handlers, so they are built once and shared.
   const createIndicatorHandler = new CreateIndicatorHandler(ids, indicators, audits);
   const createLogframeItemHandler = new CreateLogframeItemHandler(ids, logframe, audits);
+  const createCanvasForDatasets = new CreateCanvasHandler(ids, canvases, visibleProjects, audits, clock);
   const sectorLibrary = createSectorLibraryModule({ prisma, clock, audits, logframe, indicators, createIndicator: createIndicatorHandler, createLogframeItem: createLogframeItemHandler });
   const handlers: Container["handlers"] = {
     ...workplan.handlers,
     ...finance.handlers,
     ...sectorLibrary.handlers,
+    ...datasets.handlers,
     suggestPresenceRows: new SuggestPresenceRowsHandler(workplan.handlers.listWorkPlan, new ListProjectPeopleHandler(projectMembers, users)),
     signUp: new SignUpHandler(ids, organizations, users, auth, events, audits, provisionTenant),
     login: new LoginHandler(users, auth, audits, mfaService),
@@ -1765,7 +1774,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     addAlert: new AddAlertHandler(ids, dataAlerts, getProjectDataSheet, audits, clock),
     removeAlert: new RemoveAlertHandler(dataAlerts, audits),
     runDataAlerts: new RunDataAlertsHandler(dataAlerts, getProjectDataSheet, personNotifier, clock),
-    getVisualDataCatalogue: new GetVisualDataCatalogueHandler(visualReaders),
+    getVisualDataCatalogue: new GetVisualDataCatalogueHandler(visualReaders, datasets.sources),
     getVisualDataVersion: new GetVisualDataVersionHandler(processDataVersions, visibleProjects),
     listSavedCharts: new ListSavedChartsHandler(savedCharts, visibleProjects),
     listBookmarks: new ListBookmarksHandler(bookmarks),
@@ -1784,13 +1793,13 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     resetHomeLayout: new ResetHomeLayoutHandler(homeLayouts, audits),
     listCanvases: new ListCanvasesHandler(canvases),
     getCanvas: new GetCanvasHandler(canvases),
-    createCanvas: new CreateCanvasHandler(ids, canvases, visibleProjects, audits, clock),
+    createCanvas: createCanvasForDatasets,
     saveCanvas: new SaveCanvasHandler(canvases, audits, clock, canvasVersions),
     deleteCanvas: new DeleteCanvasHandler(canvases, audits),
     duplicateCanvas: new DuplicateCanvasHandler(ids, canvases, audits, clock),
     convertDashboard: new ConvertDashboardHandler(dashboards, canvases, ids, audits, clock),
     convertInfographic: new ConvertInfographicHandler(infographicRepository, canvases, visibleProjects, ids, audits, clock),
-    resolveCanvas: new ResolveCanvasHandler(canvases, new PreviewDashboardChartsHandler(getProjectDataSheet, visibleProjects, datasetExtras), getProjectDataSheet, getProjectInfographicData, visibleProjects, datasetExtras, getPortfolioInfographicData, countFacts),
+    resolveCanvas: new ResolveCanvasHandler(canvases, new PreviewDashboardChartsHandler(getProjectDataSheet, visibleProjects, datasetExtras), getProjectDataSheet, getProjectInfographicData, visibleProjects, datasetExtras, getPortfolioInfographicData, countFacts, datasets.sources),
     exportCanvas: new ExportCanvasHandler(canvases, infographicRender, infographicRenderer),
     buildDataWorkbook: new BuildDataWorkbookHandler(new ExcelTablesWorkbookWriter(), audits),
     publishCanvas,
@@ -1799,7 +1808,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createCanvasShare: new CreateCanvasShareHandler(canvases, canvasExports, canvasLinks, ids, audits, clock),
     listCanvasShares: new ListCanvasSharesHandler(canvases, canvasLinks, clock),
     revokeCanvasShare: new RevokeCanvasShareHandler(canvases, canvasLinks, audits, clock),
-    publicCanvas: new PublicCanvasHandler(canvases, getProjectDataSheet, getProjectInfographicData, datasetExtras, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects), countFacts),
+    publicCanvas: new PublicCanvasHandler(canvases, getProjectDataSheet, getProjectInfographicData, datasetExtras, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects), countFacts, datasets.sources),
     getCanvasShareFile: new GetCanvasShareFileHandler(canvasExports, storage),
     reviewCanvas: new ReviewCanvasHandler(canvases, audits, infographicNotifier),
     listCanvasVersions: new ListCanvasVersionsHandler(canvases, canvasVersions),

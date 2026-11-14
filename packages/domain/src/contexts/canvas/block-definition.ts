@@ -58,7 +58,10 @@ export interface BlockDefinition<P, M = unknown, D = unknown> {
   highlightable?: boolean | ((props: P) => boolean);
   /** The formatting sections this block offers (Phase 50.2); absent = its family's set (`FAMILY_FORMATS`). */
   formats?: readonly FormatCapability[];
-  reads?: "FACTS" | "VIEWER_PROJECTS" | "PORTFOLIO";
+  /** "DATASET": a Phase 54 dataset block, given `DatasetBlockData` (the dataset's rows under the viewer's access and filters). */
+  reads?: "FACTS" | "VIEWER_PROJECTS" | "PORTFOLIO" | "DATASET";
+  /** A slicer on a dataset column: the viewer's choice on that same column never narrows the slicer's own list. */
+  slicer?: boolean;
   defaults(): P;
   validate(props: P): BlockProblem[];
   slots: ReadonlyArray<SlotDef>;

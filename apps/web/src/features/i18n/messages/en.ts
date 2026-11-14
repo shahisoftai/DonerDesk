@@ -4,6 +4,7 @@
  * (a type check and a test enforce it), with the same `{placeholders}`.
  */
 import { recordEn } from "./record-en.ts";
+import { datasetsEn } from "./datasets-en.ts";
 import { libraryEn } from "./library-en.ts";
 import { frameworkEn } from "./framework-en.ts";
 import { canvasEn } from "./canvas-en.ts";
@@ -887,6 +888,7 @@ export const en = {
   "maps.boundary.uploading": "Uploading…",
   "maps.sources.link": "Map sources and licences",
   ...recordEn,
+  ...datasetsEn,
   ...canvasEn,
   ...editor50En,
   ...studioEn,

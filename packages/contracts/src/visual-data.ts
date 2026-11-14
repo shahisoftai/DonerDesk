@@ -39,5 +39,5 @@ export type AddDataAlertInput = z.infer<typeof AddDataAlertSchema>;
 export const QueryVisualDataSchema = z.object({ projectId: z.string().min(1).max(64), query: VisualQuerySchema });
 export type QueryVisualDataInput = z.infer<typeof QueryVisualDataSchema>;
 
-export const VisualDataCatalogueQuerySchema = z.object({ search: z.string().max(100).optional() });
+export const VisualDataCatalogueQuerySchema = z.object({ search: z.string().max(100).optional(), projectId: z.string().max(80).optional() });
 export const VisualDataVersionQuerySchema = z.object({ projects: z.string().min(1).max(2000) });

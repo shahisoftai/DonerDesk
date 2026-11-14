@@ -2874,3 +2874,86 @@ model CanvasSubscription {
   @@unique([canvasId, userId])
   @@index([tenantId, userId])
 }
+
+/// A table a person brought in (Phase 54): an upload, a connector pull or a form's records, used for visuals. Never indicator values:
+/// only an explicit link (`DatasetIndicatorLink`) writes drafts. `scope`: PROJECT or ORGANISATION. A restricted dataset holds person-level
+/// rows under a recorded lawful basis and is seen only by the people named in `restrictionJson`.
+model Dataset {
+  id                String   @id
+  tenantId          String
+  scope             String
+  projectId         String?
+  name              String
+  description       String   @default("")
+  kitKey            String?
+  /// Kit role → source header, so the next upload maps itself.
+  kitMappingJson    String   @default("{}")
+  currentVersionId  String?
+  sharePolicyJson   String   @default("{\"hidden\":[]}")
+  restricted        Boolean  @default(false)
+  restrictionJson   String?
+  /// A connector filling the dataset (kind, settings, last pull); its key is `connectorSecretEnc`, never returned.
+  connectorJson     String?
+  connectorSecretEnc String?
+  createdById       String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([tenantId, projectId])
+}
+
+/// One upload of a dataset (Phase 54). Content immutable: a refresh is a new version. `status`: PENDING (a contributor's upload waiting
+/// for a manager), ACCEPTED, REJECTED. The raw file is kept in storage under `fileKey` so the tidy steps can be replayed.
+model DatasetVersion {
+  id            String   @id
+  tenantId      String
+  datasetId     String
+  number        Int
+  columnsJson   String
+  stepsJson     String   @default("[]")
+  figuresJson   String   @default("[]")
+  checksJson    String   @default("[]")
+  rowCount      Int
+  fileKey       String?
+  fileName      String?
+  fileHash      String?
+  findingsJson  String   @default("[]")
+  summary       String   @default("")
+  status        String
+  decidedById   String?
+  decisionNote  String?
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId, datasetId])
+}
+
+/// The rows of a dataset version (Phase 54): typed values as jsonb, with the place and period resolved at save time.
+model DatasetRow {
+  tenantId   String
+  versionId  String
+  rowNo      Int
+  placeId    String?
+  periodKey  String?
+  valuesJson Json
+
+  @@id([versionId, rowNo])
+  @@index([versionId, placeId, periodKey])
+}
+
+/// A dataset figure used for an indicator (Phase 54 §3.9): drafts are written through the ordinary indicator save.
+model DatasetIndicatorLink {
+  id           String   @id
+  tenantId     String
+  datasetId    String
+  indicatorId  String
+  figureRef    String
+  filterJson   String   @default("[]")
+  byPlace      Boolean  @default(false)
+  lastSyncJson String?
+  createdById  String
+  createdAt    DateTime @default(now())
+
+  @@index([tenantId, datasetId])
+  @@index([tenantId, indicatorId])
+}

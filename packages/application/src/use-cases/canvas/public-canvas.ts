@@ -1,3 +1,4 @@
+import type { DatasetSources } from "../datasets/dataset-sources.js";
 import { DomainError, normalizeLocationKey, canvasToWidgets, definitionFor, isDashboardKind, projectOf, type BlockModel, type Canvas, type CanvasFacts, type DataSheet, type FilterChoices, type Result, type TenantId } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { ICanvasRepository } from "../../ports/canvas.js";
@@ -20,9 +21,9 @@ const unavailable = (reason: string): BlockModel<unknown> => ({ state: "unavaila
  * organisation's projects and the portfolio are not shown, and nothing names a person. Only the projects the canvas itself names are read.
  */
 export class PublicCanvasHandler {
-  constructor(private readonly repo: ICanvasRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly info: GetProjectInfographicDataHandler, private readonly extras?: IDatasetExtras, private readonly maps?: IShareMapReader, private readonly counts?: ICountFactsReader & Partial<IPlaceTreeReader>) {}
+  constructor(private readonly repo: ICanvasRepository, private readonly sheets: GetProjectDataSheetHandler, private readonly info: GetProjectInfographicDataHandler, private readonly extras?: IDatasetExtras, private readonly maps?: IShareMapReader, private readonly counts?: ICountFactsReader & Partial<IPlaceTreeReader>, private readonly datasets?: Pick<DatasetSources, "blockData">) {}
 
-  async handle(tenantId: TenantId, canvasId: string, filters: Pick<CanvasFilterOptions, "periodId" | "placeKeys"> = {}): Promise<Result<PublicCanvasDto, DomainError>> {
+  async handle(tenantId: TenantId, canvasId: string, filters: Pick<CanvasFilterOptions, "periodId" | "placeKeys" | "datasetFilters"> = {}): Promise<Result<PublicCanvasDto, DomainError>> {
     const found = await this.repo.findById(canvasId, tenantId);
     if (!found.ok || !found.value) return fail(DomainError.notFound("Canvas", "unavailable"));
     const stored = found.value;
@@ -49,8 +50,16 @@ export class PublicCanvasHandler {
     for (const page of stored.canvas.pages) for (const block of page.blocks) {
       // A repeater is shown on screen only: a link never lists the organisation's projects, so what a repeater holds is not drawn through one.
       if (block.style?.hidden || isDashboardKind(block.kind) || models[block.id] || block.container) continue;
-      const def = definitionFor(block.kind) as unknown as { reads?: string; resolve(p: unknown, d: unknown): BlockModel<unknown> } | undefined;
+      const def = definitionFor(block.kind) as unknown as { reads?: string; slicer?: boolean; resolve(p: unknown, d: unknown): BlockModel<unknown> } | undefined;
       if (!def) continue;
+      if (def.reads === "DATASET") {
+        // A link reads a dataset as an outside guest: never a restricted one, never its partner, donor, money or hidden columns (§1.3).
+        const props = block.props as { source?: string; column?: string };
+        const own = (filters.datasetFilters ?? []).filter((f) => !(def.slicer && f.source === props.source && f.column === props.column));
+        const data = props.source && this.datasets ? await this.datasets.blockData(guest, props.source, own, { guest: true }) : undefined;
+        models[block.id] = data ? def.resolve(block.props, data) : unavailable("This is not shown through a link.");
+        continue;
+      }
       if (def.reads !== "FACTS" && def.reads !== undefined) { models[block.id] = unavailable("This block is not shown through a link."); continue; }
       let data: unknown;
       if (def.reads === "FACTS") {

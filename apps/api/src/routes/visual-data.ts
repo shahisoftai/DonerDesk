@@ -9,8 +9,8 @@ export async function registerVisualDataRoutes(app: FastifyInstance) {
   const ctx = (req: { tenant: unknown; id: string }) => ({ tenant: req.tenant as never, requestId: req.id });
 
   app.get("/v1/visual-data/catalogue", async (req) => {
-    const { search } = VisualDataCatalogueQuerySchema.parse(req.query);
-    const r = req.container.handlers.getVisualDataCatalogue.handle(ctx(req), search);
+    const { search, projectId } = VisualDataCatalogueQuerySchema.parse(req.query);
+    const r = await req.container.handlers.getVisualDataCatalogue.handle(ctx(req), search, projectId);
     if (!r.ok) throw r.error;
     return r.value;
   });

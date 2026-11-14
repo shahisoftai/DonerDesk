@@ -7,8 +7,8 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   const url = new URL(request.url);
-  const periodId = url.searchParams.get("periodId"), places = url.searchParams.get("places");
-  const shared = await readPublicCanvas(token, { ...(periodId ? { periodId: periodId.slice(0, 80) } : {}), ...(places ? { places: places.slice(0, 400) } : {}) });
+  const periodId = url.searchParams.get("periodId"), places = url.searchParams.get("places"), ds = url.searchParams.get("ds");
+  const shared = await readPublicCanvas(token, { ...(periodId ? { periodId: periodId.slice(0, 80) } : {}), ...(places ? { places: places.slice(0, 400) } : {}), ...(ds ? { ds: ds.slice(0, 4000) } : {}) });
   if (!shared || shared.kind !== "LIVE") return NextResponse.json({ title: "This link is not available" }, { status: 404, headers: { "cache-control": "private, no-store" } });
   return NextResponse.json({ drawings: shared.drawings, models: shared.models, choices: shared.choices }, { headers: { "cache-control": "private, no-store", "x-robots-tag": "noindex, nofollow" } });
 }

@@ -14,6 +14,7 @@ import { paintIcon, paintShape } from "./painters/shapes.js";
 import { paintResultsChain, paintSmallMultiples } from "./painters/series.js";
 import { paintAiText, paintCallout, paintGroup, paintNothing, paintTabs } from "./painters/structure.js";
 import type { PrintPainter } from "./print-types.js";
+import { paintDataCompleteness, paintDataDrivers, paintDataVisual } from "./painters/datasets.js";
 
 /**
  * Print painters (Phase 45.2): one SVG painter per block kind, looked up here and nowhere else. A painter is given the block's
@@ -34,6 +35,7 @@ export const PRINT_PAINTERS: Readonly<Partial<Record<BlockKind, PrintPainter<nev
   SMALL_MULTIPLES: paintSmallMultiples, RESULTS_CHAIN: paintResultsChain,
   PORTFOLIO_SUMMARY: paintPortfolioSummary, PORTFOLIO_TABLE: paintPortfolioTable, PORTFOLIO_HEALTH: paintPortfolioHealth, PORTFOLIO_COUNTRIES: paintPortfolioCountries,
   CALLOUT: paintCallout, AI_SUMMARY: paintAiText, AI_MESSAGES: paintAiText, AI_ASK: paintAiText, GROUP: paintGroup, TABS: paintTabs, REPEATER: paintNothing, FILTER_BAR: paintNothing,
+  DATA_VISUAL: paintDataVisual as PrintPainter<never>, DATA_SLICER: paintNothing, DATA_COMPLETENESS: paintDataCompleteness as PrintPainter<never>, DATA_DRIVERS: paintDataDrivers as PrintPainter<never>,
 };
 
 export const PRINT_PENDING: readonly BlockKind[] = BLOCK_KINDS.filter((k) => PRINT_PAINTERS[k] === undefined);

@@ -42,7 +42,7 @@ test("no lint rule is a stub: every rule a block owns can fail", () => {
 
 test("blocks that are pictures declare it, and a public profile asks for a description of each", () => {
   const pictures = KINDS.filter((k) => definitionFor(k).needsAlt);
-  assert.deepEqual(pictures.sort(), ["CHART", "IMAGE", "MAP", "SMALL_MULTIPLES"]);
+  assert.deepEqual(pictures.sort(), ["CHART", "DATA_VISUAL", "IMAGE", "MAP", "SMALL_MULTIPLES"]);
   for (const kind of pictures) {
     const props = { ...BLOCK_FIXTURES[kind].props };
     delete props.altText;

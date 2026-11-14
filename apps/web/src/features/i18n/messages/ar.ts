@@ -1,5 +1,6 @@
 import type { MessageKey } from "./en.ts";
 import { recordAr } from "./record-ar.ts";
+import { datasetsAr } from "./datasets-ar.ts";
 import { libraryAr } from "./library-ar.ts";
 import { frameworkAr } from "./framework-ar.ts";
 import { canvasAr } from "./canvas-ar.ts";
@@ -901,6 +902,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.boundary.uploading": "جارٍ الرفع…",
   "maps.sources.link": "مصادر الخرائط وتراخيصها",
   ...recordAr,
+  ...datasetsAr,
   ...canvasAr,
   ...editor50Ar,
   ...studioAr,

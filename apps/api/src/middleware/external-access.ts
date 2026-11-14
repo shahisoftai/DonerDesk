@@ -9,6 +9,9 @@ import { DomainError } from "@donordesk/domain";
  * tomorrow is closed to partners until someone lists it here.
  */
 export const EXTERNAL_ALLOWED: ReadonlyArray<{ method: string; route: RegExp }> = [
+  // Phase 54: a partner may add data to a dataset of their project (a new month); the upload waits for a manager's acceptance.
+  { method: "POST", route: /^\/v1\/datasets\/uploads(\/check|\/problems)?$/ },
+  { method: "POST", route: /^\/v1\/datasets\/[^/]+\/versions$/ },
   { method: "GET", route: /^\/v1\/projects$/ },
   { method: "GET", route: /^\/v1\/projects\/[^/]+$/ },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/(logframe|activities|reporting-periods)$/ },

@@ -31,3 +31,4 @@ export * from "./finance-register.js";
 export * from "./project-setup.js";
 export * from "./project-setup-draft.js";
 export * from "./sector-library.js";
+export * from "./datasets.js";

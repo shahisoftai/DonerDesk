@@ -1,3 +1,4 @@
+import { FIXTURE_SOURCE_ID, fixtureDatasetData } from "./dataset-fixtures.js";
 /**
  * One sample per block (Phase 45): the props, and the data its `resolve` is given. The completeness, honesty and parity tests
  * walk this table, so a block cannot be added to the registry without a fixture (the type is exhaustive over `BlockKind`).
@@ -82,6 +83,7 @@ const titled = (title: string) => ({ props: { title } });
 /** Props that make a block's own lint rules fire (a rule that can never fail is a stub, so the contract test needs one for each rule that the plain fixture does not trigger). */
 export const LINT_PROBES: Readonly<Partial<Record<BlockKind, ReadonlyArray<unknown>>>> = {
   MULTI_CARD: [{ items: Array.from({ length: 10 }, (_, i) => ({ source: { kind: "INDICATOR", indicatorId: `i${i}`, measure: "PERIOD" } })), layout: "GRID", columns: 2, includeDraft: false }],
+  DATA_VISUAL: [{ source: "dataset:x", family: "BAR", wells: { AXIS: [{ ref: "a" }], VALUES: [{ ref: "b" }] } }],
   CHART: [
     { spec: { ...chartSpec, dataset: { ...chartSpec.dataset, indicatorIds: ["a", "b", "c", "d", "e"] } } },
     { spec: { ...chartSpec, colors: ["#ffff99"] } },
@@ -132,4 +134,8 @@ export const BLOCK_FIXTURES: Readonly<Record<BlockKind, BlockFixture>> = {
   TABS: { props: { titles: ["Results", "Plan"] } },
   REPEATER: { props: { over: "PROJECT", limit: 6 } },
   FILTER_BAR: { props: { dimensions: ["PERIOD"] } },
+  DATA_VISUAL: { props: { source: FIXTURE_SOURCE_ID, family: "BAR", wells: { AXIS: [{ ref: "province" }], VALUES: [{ ref: "admitted" }] }, altText: "Admissions by province", crossFilter: true }, data: fixtureDatasetData() },
+  DATA_SLICER: { props: { source: FIXTURE_SOURCE_ID, column: "partner", multi: true }, data: fixtureDatasetData() },
+  DATA_COMPLETENESS: { props: { source: FIXTURE_SOURCE_ID, unitColumn: "district", groupColumn: "province" }, data: fixtureDatasetData() },
+  DATA_DRIVERS: { props: { source: FIXTURE_SOURCE_ID, outcome: { numerator: "cured", denominator: "exits", percent: true, label: "Cure rate" }, unitColumn: "district", candidates: ["partner", "province"] }, data: fixtureDatasetData() },
 };

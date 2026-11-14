@@ -39,6 +39,7 @@ import { registerCollectionRoutes, registerPublicCollectionRoutes } from "./rout
 import { registerPublicCanvasRoutes } from "./routes/canvases.js";
 import { registerChartDashboardRoutes, registerPublicDashboardRoutes } from "./routes/chart-dashboards.js";
 import { registerVisualDataRoutes } from "./routes/visual-data.js";
+import { registerDatasetRoutes } from "./routes/datasets.js";
 import { registerHomeLayoutRoutes } from "./routes/home-layout.js";
 import { registerSectorLibraryRoutes } from "./routes/sector-library.js";
 import { registerCanvasRoutes } from "./routes/canvases.js";
@@ -223,6 +224,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerCollectionRoutes(instance);
     await registerChartDashboardRoutes(instance);
     await registerVisualDataRoutes(instance);
+    await registerDatasetRoutes(instance);
     await registerHomeLayoutRoutes(instance);
     await registerSectorLibraryRoutes(instance);
     await registerCanvasRoutes(instance);
