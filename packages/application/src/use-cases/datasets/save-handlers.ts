@@ -1,5 +1,5 @@
 import {
-  DomainError, MAX_DATASET_NAME, kitOf, restrictionProblems,
+  DomainError, MAX_DATASET_NAME, kitChecks, kitFigures, kitOf, matchKit, restrictionProblems,
   type CheckConfig, type ColumnDef, type DatasetFigure, type DatasetScope, type RefreshMode, type Restriction, type Result, type SharePolicy, type TidyStep,
 } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
@@ -55,7 +55,12 @@ export class SaveDatasetHandler {
     };
     const created = await this.deps.catalog.create(dataset);
     if (!created.ok) return created;
-    const v = await this.builder.build(ctx, dataset, { bytes: bytes.value, fileName: input.fileName, steps: input.steps, columns: input.columns, figures: input.figures ?? [], checks: input.checks ?? [], mode: "REPLACE", accepted: true, projectCountry: input.projectCountry });
+    // A kit brings its figures (rates from their parts) and its checks with it, so a refresh is checked the same way and a rate can feed an indicator.
+    const kit = input.kitKey ? kitOf(input.kitKey) : undefined;
+    const mapping = kit ? matchKit(input.columns, kit).mapping : {};
+    const figures = input.figures?.length ? input.figures : kit ? kitFigures(kit, mapping) : [];
+    const checks = input.checks?.length ? input.checks : kit ? kitChecks(kit, mapping) : [];
+    const v = await this.builder.build(ctx, dataset, { bytes: bytes.value, fileName: input.fileName, steps: input.steps, columns: input.columns, figures, checks, mode: "REPLACE", accepted: true, projectCountry: input.projectCountry });
     if (!v.ok) { await this.deps.catalog.delete(id, ctx.tenant.tenantId); return v; }
     await this.deps.catalog.update({ ...dataset, currentVersionId: v.value.id, updatedAt: now });
     await this.deps.storage.remove(input.fileKey).catch(() => undefined);
