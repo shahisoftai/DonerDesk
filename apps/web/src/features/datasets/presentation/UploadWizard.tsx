@@ -78,7 +78,7 @@ export function UploadWizard({ projects, kits, projectId, canCreateOrg, refresh 
       {busy && <p role="status" className="text-sm text-slate-500">{t("ds.wizard.reading")}</p>}
       {stage === "UPLOAD" && <UploadStep kits={kits} onUploaded={(u) => { setUpload(u); setSteps(withSource([], u.sheet, u.headerRow)); setStage("TABLE"); }} />}
       {stage === "TABLE" && upload && <TableStep upload={upload} onBack={() => setStage("UPLOAD")} onNext={(sheet, row) => void run({ steps: withSource(steps, sheet, row), columns: refresh ? undefined : undefined }, refresh ? "PLACES" : "COLUMNS")} />}
-      {stage === "COLUMNS" && check && <ColumnsStep check={check} kits={kits} kitKey={kitKey} steps={steps} onBack={() => setStage("TABLE")} onApply={(next) => void run(next)} onNext={() => setStage("PLACES")} />}
+      {stage === "COLUMNS" && check && <ColumnsStep key={JSON.stringify(check.columns.map((c) => [c.key, c.label, c.kind, c.semantic]))} check={check} kits={kits} kitKey={kitKey} steps={steps} onBack={() => setStage("TABLE")} onApply={(next) => void run(next)} onNext={() => setStage("PLACES")} />}
       {stage === "PLACES" && check && <PlacesStep check={check} steps={steps} onApply={(s) => void run({ steps: s })} onBack={() => setStage(refresh ? "TABLE" : "COLUMNS")} onNext={() => setStage(refresh ? "CHECK" : "TIDY")} />}
       {stage === "TIDY" && check && <TidyPanel check={check} steps={steps} onApply={(s) => void run({ steps: s })} onBack={() => setStage("PLACES")} onNext={() => setStage("CHECK")} />}
       {stage === "CHECK" && check && upload && (
