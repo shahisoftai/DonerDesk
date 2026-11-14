@@ -9,6 +9,7 @@ import { chartTheme } from "../domain/chart-theme";
 import { DataChart } from "./DataChart";
 import { DataTableView } from "./DataTableView";
 import { DataCardView } from "./DataCardView";
+import { DatasetMapView } from "./DatasetMapView";
 
 const CHART_FAMILIES = new Set(["BAR", "STACKED_BAR", "LINE", "AREA", "PIE"]);
 
@@ -32,6 +33,7 @@ export function DataVisualScreen({ model, frame }: { model: BlockModel<DataVisua
       <div className="min-h-0 flex-1">
         {option ? <DataChart option={option} label={m.title ?? t("ds.visual.label")} onPick={pick} />
           : m.family === "CARD" ? <DataCardView table={m.table} />
+          : m.map ? <div className="h-full overflow-auto"><DatasetMapView map={m.map} projectId={m.projectId} /></div>
           : <DataTableView table={m.table} ranked={m.family === "MAP"} onPick={pick} selected={selected} />}
       </div>
       {model.notes.length > 0 && <ul className="space-y-0.5 text-[11px] text-slate-500">{model.notes.map((n, i) => <li key={i}>{n}</li>)}</ul>}

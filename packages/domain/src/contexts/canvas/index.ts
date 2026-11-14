@@ -37,6 +37,7 @@ export * from "./blocks/structure-blocks.js";
 export * from "./blocks/dataset-data.js";
 export * from "./blocks/data-visual.js";
 export * from "./blocks/data-visual-option.js";
+export * from "./blocks/data-visual-map.js";
 export * from "./blocks/data-slicer.js";
 export * from "./blocks/data-completeness.js";
 export * from "./blocks/data-drivers.js";

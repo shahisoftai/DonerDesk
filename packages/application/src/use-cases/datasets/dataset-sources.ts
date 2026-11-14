@@ -4,6 +4,7 @@ import {
 } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IDatasetRowStore, StoredDataset, StoredDatasetVersion } from "../../ports/datasets.js";
+import type { MapPlace } from "@donordesk/domain";
 import { canSeeDataset, formColumns, formDatasetId, formIdOf, formRows } from "@donordesk/domain";
 import type { ICollectionFormRepository, ICollectionRecordRepository } from "../../ports/collection.js";
 
@@ -69,7 +70,21 @@ export class DatasetSources {
     if (options.guest) rows = rows.map((r) => ({ values: Object.fromEntries(Object.entries(r.values).filter(([k]) => allowed.has(k) || k === PLACE_ID_FIELD || k === PERIOD_KEY_FIELD)) as VisualRow["values"] }));
     const noted = rowsWithNotes(v.findings);
     const label = new Map(source.fields.map((f) => [f.id, f.label]));
-    return { source, rows, totalRows: all.length, notedRows: all.filter((r) => noted.has(r.rowNo)).length, filtered: mine.map((f) => `${label.get(f.column) ?? f.column}: ${f.values.slice(0, 3).join(", ")}${f.values.length > 3 ? "…" : ""}`) };
+    const places = await this.mapPlaces(ctx, all);
+    return { source, rows, totalRows: all.length, notedRows: all.filter((r) => noted.has(r.rowNo)).length, filtered: mine.map((f) => `${label.get(f.column) ?? f.column}: ${f.values.slice(0, 3).join(", ")}${f.values.length > 3 ? "…" : ""}`), ...(places.length ? { places } : {}), ...(d.projectId ? { projectId: d.projectId } : {}) };
+  }
+
+  /** The places the rows matched and every area above them (for a map): names, levels, parents and codes only. */
+  private async mapPlaces(ctx: AuthenticatedContext, rows: readonly DatasetRowValues[]): Promise<MapPlace[]> {
+    const ids = new Set(rows.map((r) => r.placeId).filter((x): x is string => Boolean(x)));
+    if (ids.size === 0) return [];
+    const listed = await this.deps.places.list(ctx.tenant.tenantId);
+    if (!listed.ok) return [];
+    const byId = new Map(listed.value.map((p) => [p.id, p]));
+    const keep = new Set<string>();
+    for (const id of ids) { let p = byId.get(id); for (let i = 0; p && i < 8 && !keep.has(p.id); i += 1) { keep.add(p.id); p = p.parentId ? byId.get(p.parentId) : undefined; } }
+    const path = (id: string): string => { const names: string[] = []; let p = byId.get(id); for (let i = 0; p && i < 8; i += 1) { names.unshift(p.name); p = p.parentId ? byId.get(p.parentId) : undefined; } return names.join(" › "); };
+    return [...keep].map((id) => byId.get(id)!).map((p) => ({ id: p.id, name: p.name, adminLevel: p.adminLevel, path: path(p.id), kind: p.kind, ...(p.parentId ? { parentId: p.parentId } : {}), ...(p.country ? { country: p.country } : {}), ...(p.code ? { code: p.code } : {}), ...(p.latitude !== undefined ? { latitude: p.latitude } : {}), ...(p.longitude !== undefined ? { longitude: p.longitude } : {}) }));
   }
 
   /** A form's accepted records, read now (nothing is copied); a link reads them as a guest only when the canvas names the project. */

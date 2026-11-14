@@ -234,3 +234,25 @@ test("a monthly export is offered its kit, and the kit's wording replaces raw he
   const applied = applyKit(columns, NUTRITION_KIT, best.match.mapping);
   assert.equal(applied.find((c) => c.sourceHeader === "TotalChildScreen").label, "Children screened");
 });
+
+test("a dataset on the map: counts add up the place tree, a rate is Σ part ÷ Σ whole per area, unmatched rows stay off the map", async () => {
+  const { datasetMap, mapFigures } = await import("../dist/index.js");
+  const places = [
+    { id: "c", name: "Country", adminLevel: 0, path: "Country", kind: "AREA" },
+    { id: "p1", name: "North", adminLevel: 1, parentId: "c", path: "Country › North", kind: "AREA" },
+    { id: "d1", name: "Alder", adminLevel: 2, parentId: "p1", path: "Country › North › Alder", kind: "AREA" },
+    { id: "d2", name: "Birch", adminLevel: 2, parentId: "p1", path: "Country › North › Birch", kind: "AREA" },
+  ];
+  const row = (pid, cured, exits) => ({ values: { _place_id: pid, cured, exits } });
+  const rows = [row("d1", 8, 10), row("d2", 1, 10), row(null, 5, 5)];
+  const fields = [{ id: "cured", label: "Cured", additive: true, type: "COUNT" }, { id: "exits", label: "Exits", additive: true, type: "COUNT" }];
+  const figs = mapFigures(["cured", "cure"], fields, [{ id: "cure", label: "Cure rate", op: "SHARE", terms: ["cured", "exits"], percent: true }]);
+  const m = datasetMap(rows, places, figs);
+  assert.deepEqual(m.byLevel["1"].levelsAvailable, [1, 2]);
+  assert.equal(m.firstLevel, 2);
+  assert.equal(m.unplacedRows, 1);
+  const prov = m.byLevel["1"].indicators;
+  assert.equal(prov[0].rollup.rows[0].value, "9");
+  assert.equal(prov[1].rollup.rows[0].value, "45", "45 %, not the average of 80 % and 10 %");
+  assert.deepEqual(m.byLevel["2"].indicators[1].rollup.rows.map((r) => r.value), ["80", "10"]);
+});

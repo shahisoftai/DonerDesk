@@ -15,6 +15,10 @@ export interface DatasetBlockData {
   notedRows: number;
   /** Filters the viewer chose, as sentences ("Province: Sindh"). */
   filtered: string[];
+  /** The places the rows matched and the areas above them, for a map (absent when the dataset has no place column). */
+  places?: import("./data-visual-map.js").MapPlace[] | undefined;
+  /** The project the dataset belongs to, so a map opens on its country. */
+  projectId?: string | undefined;
 }
 
 export const NOT_READ = { state: "unavailable", reason: "The dataset is read when this is opened." } as const;

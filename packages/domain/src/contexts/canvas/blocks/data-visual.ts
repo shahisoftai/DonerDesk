@@ -7,6 +7,7 @@ import { shapeTable, type VisualTable } from "../../visual-data/shape.js";
 import { VISUAL_FAMILIES, visualFamilyDef, wellGaps, wellsToQuery, type VisualFamily, type Wells } from "../../visual-data/wells.js";
 import { defineBlock } from "../block-definition.js";
 import { NOT_READ, rowsNote, type DatasetBlockData } from "./dataset-data.js";
+import { datasetMap, mapFigures, type DatasetMap } from "./data-visual-map.js";
 
 /**
  * A visual drawn from a dataset (Phase 54): fields dragged into wells become one catalogue question, validated by the same rules as
@@ -43,6 +44,9 @@ export interface DataVisualModel {
   drawn: string[];
   /** The group the series are split by (the LEGEND well), when there is one. */
   legend?: string | undefined;
+  /** The MAP family: results by place for every level, drawn by the Maps explorer. */
+  map?: DatasetMap | undefined;
+  projectId?: string | undefined;
 }
 
 
@@ -96,6 +100,10 @@ export const dataVisualBlock = defineBlock<DataVisualProps, DataVisualModel, Dat
     const notes = [rowsNote(data, data.rows.length), ...shaped.notes, ...(p.sourceNote ? [p.sourceNote] : [])];
     const drawn = [...(p.wells.VALUES ?? []), ...(p.wells.COLOUR ?? [])].map((f) => f.ref).filter((r) => query.measures.includes(r)).concat((p.calculated ?? []).map((c) => c.id));
     const legend = p.wells.LEGEND?.[0]?.ref;
-    return { state: "ready", model: { source: p.source, family: p.family, table: shaped, references: p.references ?? [], title: p.title, drawn, ...(legend ? { legend } : {}), ...(p.crossFilter !== false && dims[0] ? { crossFilterColumn: dims[0] } : {}) }, notes };
+    // A map draws the matched places; without any it says why rather than showing an empty map.
+    const map = visualFamilyDef(p.family)?.picture === "MAP" && data.places?.length ? datasetMap(data.rows, data.places, mapFigures(drawn, data.source.fields, p.calculated ?? []), p.wells.LOCATION?.[0]?.ref) : undefined;
+    if (map) { if (map.unplacedRows) notes.push(`${map.unplacedRows} ${map.unplacedRows === 1 ? "row's place is" : "rows' places are"} not in your places list and ${map.unplacedRows === 1 ? "is" : "are"} not on the map.`); }
+    else if (visualFamilyDef(p.family)?.picture === "MAP") notes.push("No place in this dataset matched your places list, so the places are listed instead of mapped. Read the place names as known places on the dataset's Fix places step, or add them to your places.");
+    return { state: "ready", model: { source: p.source, family: p.family, table: shaped, references: p.references ?? [], title: p.title, drawn, ...(legend ? { legend } : {}), ...(map ? { map } : {}), ...(data.projectId ? { projectId: data.projectId } : {}), ...(p.crossFilter !== false && dims[0] ? { crossFilterColumn: dims[0] } : {}) }, notes };
   },
 });
