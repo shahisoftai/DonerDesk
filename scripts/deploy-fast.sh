@@ -444,8 +444,11 @@ if [[ "${SCOPE}" == "api" || "${SCOPE}" == "both" ]]; then
     # drift between the local build and the host store). Non-silent so a
     # genuine failure surfaces instead of silently shipping a broken api.
     cd ${REMOTE_APP}/apps/api
-    # The install is skipped only when the lockfile is unchanged AND the workspace links are in place.
-    if [ -f package.json ] && { [ '${DEPS_UNCHANGED}' != '1' ] || [ ! -e ${REMOTE_APP}/packages/infrastructure/node_modules/@donordesk/domain ]; }; then
+    # Always regenerate the farm. The api tar carries the LOCAL machine's symlinks, which can name a package version the host's
+    # store does not hold (the host resolves its own install: local @sentry/node 10.70.0, host 10.72.0), so skipping the install
+    # when the lockfile is unchanged shipped an api that crashed on start (2026-11-14, release 20261114230000, rolled back).
+    # With the store already in place this takes seconds.
+    if [ -f package.json ]; then
       echo '  regenerating api symlink farm (pnpm install)'
       CI=true npx -y pnpm@10.34.5 install --no-frozen-lockfile --prefer-offline >/tmp/dd-api-pnpm-install.log 2>&1 \\
         || { echo '  WARNING: api pnpm install failed — deps may not resolve' >&2; cat /tmp/dd-api-pnpm-install.log >&2; }
