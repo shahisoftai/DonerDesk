@@ -4,7 +4,11 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { RETIRED_TERMS } from "../../src/features/design/domain/ux-glossary.ts";
 
-/** No user-visible string uses a retired name (plan F38). Comments are not scanned; the i18n key `nav.myWork` keeps old pages working. */
+/**
+ * No user-visible string uses a retired name (plan F38). Comments are not scanned; the i18n key `nav.myWork` keeps old pages working.
+ * A string that explains the change ("the old Report builder", "replaces My Work", "was Report builder") is allowed: people search by the old name.
+ */
+const EXPLAINS = /\b(old|older|replaces|replaced|was|formerly|before Version 4)\b/i;
 const SRC = join(process.cwd(), "src");
 
 function files(dir: string): string[] {
@@ -26,7 +30,7 @@ test("no retired word appears in a user-visible string", () => {
   for (const f of files(SRC)) {
     const rel = relative(SRC, f);
     for (const s of visible(readFileSync(f, "utf8"))) {
-      for (const t of RETIRED_TERMS) if (t.retired.test(s) && !/^nav\./.test(s)) hits.push(`${rel}: "${s.slice(0, 60)}" → use "${t.use}"`);
+      for (const t of RETIRED_TERMS) if (t.retired.test(s) && !/^nav\./.test(s) && !EXPLAINS.test(s)) hits.push(`${rel}: "${s.slice(0, 60)}" → use "${t.use}"`);
     }
   }
   assert.deepEqual(hits, []);
