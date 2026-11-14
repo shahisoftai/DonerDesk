@@ -115,9 +115,10 @@ export function ResultsMap({ projectId, places, initial, initialIndicatorId, per
       setIndicatorId((current) => (out.value.indicators.some((i) => i.id === current) ? current : firstIndicator(out.value, initialIndicatorId)));
     });
     return () => { live = false; };
-    // Asked again when the drawn level or the period changes; the levels available do not change what is asked.
+    // Asked again when the drawn level, the period or the caller's loader changes (a dataset map gets a new loader when a slicer
+    // narrows its rows; callers memoise it); the levels available do not change what is asked.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view.shown, view.status, projectId, periodId]);
+  }, [view.shown, view.status, projectId, periodId, loadResults]);
 
   useEffect(() => {
     setCredit(null);

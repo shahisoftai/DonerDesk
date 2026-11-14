@@ -39,9 +39,9 @@ export function LowDataResults({ projectId, places, initial, initialIndicatorId,
       setIndicatorId((current) => (out.value.indicators.some((i) => i.id === current) ? current : firstIndicator(out.value, initialIndicatorId)));
     });
     return () => { live = false; };
-    // Asked again when the level or the period changes.
+    // Asked again when the level, the period or the caller's (memoised) loader changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level, periodId, projectId]);
+  }, [level, periodId, projectId, loadResults]);
 
   const model = useMemo(() => (results ? buildExplorerModel(results, places, indicatorId) : null), [results, places, indicatorId]);
   const indicator = results?.indicators.find((i) => i.id === indicatorId);
