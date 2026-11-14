@@ -305,13 +305,13 @@ Deployed `20261114150000` (both) and `20261114180000` (web). Checked in a signed
 |---|---|---|
 | 55.0 | Route map + `route-map.test.mts` | Screenshots per role need one account per role; only the admin account was used |
 | 55.1 | Brand everywhere, IBM Plex, buttons/links/Drawer/PanelFrame, page anatomy, SplitButton, Kbd, EmptyState v2, toasts v2, Lucide, quieter background, tables v4, glossary + `ux-glossary.test.mts` (F38), one primary per page (F52, fixed offenders), "beta"-free copy | F58 link/button misuse: reviewed by hand while converting pages, no automatic rule |
-| 55.2 | Command palette (search + actions + shortcuts), Undo toasts, layout skeletons (F71), optimistic plan status (F72), HoverCard (F74), RowMenu (F75), page crossfade (F80) | Bulk-select bar (F75): no bulk endpoint exists yet for any list |
+| 55.2 | Command palette (search + actions + shortcuts), Undo toasts, layout skeletons (F71), optimistic plan status (F72), HoverCard (F74), RowMenu (F75), page crossfade (F80) | — (F75: floating `SelectionBar`; bulk actions already existed for evidence, checklist, activities and plan) |
 | 55.3 | Four groups, hubs, Inbox, field nav, partner landing (F37) | — |
-| 55.4 | Project tabs, "More", breadcrumbs, J/K in the plan panel (F65) | Stacked panels (F67) beyond a Drawer opened inside a panel |
+| 55.4 | Project tabs, "More", breadcrumbs, J/K in the plan panel (F65) | — (F67: `Drawer` keeps a stack; lower panels step back, the top one has Back) |
 | 55.5 | Classic form retired, wizard short path "Only what is still needed" (F9), Get started checklist with progress (F10), Settings › Data defaults (F11) | — |
-| 55.6 | One Import page, templates beside uploads, on-screen fixes (F15), simple review chosen in the wizard's review step (F16), form drafts (F31), GPS "Here" (F34); Enter data and Record share `quickEnterValueAction` (F12) | Attach-then-verify in one dialog (F17): "Verify all" names the indicators without a file and links to evidence |
+| 55.6 | One Import page, templates beside uploads, on-screen fixes (F15), simple review chosen in the wizard's review step (F16), form drafts (F31), GPS "Here" (F34); Enter data and Record share `quickEnterValueAction` (F12) | — (F17: `AttachAndVerify` panel from "Verify all") |
 | 55.7 | Legacy report retired, stepper + one Next step on report/inputs/export (F18/F19), Data tables (F20), final report from New report (F21) | — |
-| 55.8 | Visuals home + Tools, quick chart links to the Chart Studio (F23), map from an indicator via the Map button (F25, Phase 53) | One shared Add-to-dashboard dialog (F24): three panels remain (data center, studio, maps) |
+| 55.8 | Visuals home + Tools, quick chart links to the Chart Studio (F23), map from an indicator via the Map button (F25, Phase 53) | — (F24: `AddToDashboard` used by the Data Center, Chart Studio and maps) |
 | 55.9 | Settings groups, AI page, Places pointer (F26), invite with projects for everyone (F27) | — |
 | 55.9b | Site tokens/fonts/hero, five-entry nav, shorter home, AuthFrame, legal contents, sector pages from the library (F89), sticky pricing table (F90) | Screenshot script (F88): the site uses drawn illustrations, not screenshots |
 | 55.10 | AGENTS.md, route map, tests | Remove redirects after one release (F39) |
