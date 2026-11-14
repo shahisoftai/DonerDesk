@@ -247,3 +247,9 @@ Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project work
 | # | Feature | Doc |
 |---|---|---|
 | 64 | One set of results read as a results framework or a logframe, donor wording, assumptions and reasoning per result, change kinds, rules after sign-off, approved reports keep their targets | [64-Results-Framework-And-Logframe.md](./64-Results-Framework-And-Logframe.md) |
+
+## Phase 54 — datasets and kits (2026-11-14)
+
+| # | Feature | Doc |
+|---|---|---|
+| 65 | Upload a table (CSV/Excel, DHIS2, form records), tidy and check it, build pages from a sector kit, slicers, map by place, optional links to indicators | [65-Datasets-And-Kits.md](./65-Datasets-And-Kits.md) |
