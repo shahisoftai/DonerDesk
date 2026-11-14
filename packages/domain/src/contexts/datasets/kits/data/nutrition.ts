@@ -37,8 +37,8 @@ export const NUTRITION_KIT: Kit = {
     count("plw_mam_identified", "PLW with acute malnutrition identified", IDT, ["plw mam", "plw identified", "women mam", "plw malnourished", "femmes enceintes allaitantes malnutries"]),
 
     count("otp_admissions", "OTP admissions", ADM, ["new admin otp", "new admission otp", "otp admissions", "otp new admissions", "admissions otp", "admissions sam", "itp admissions", "admissions ptas", "ingresos"]),
-    count("otp_admissions_boys", "OTP admissions, boys", ADM, ["new admin otp b", "new admin otp boys", "otp admissions boys", "boys admitted otp"]),
-    count("otp_admissions_girls", "OTP admissions, girls", ADM, ["new admin otp g", "new admin otp girls", "otp admissions girls", "girls admitted otp"]),
+    count("otp_admissions_boys", "OTP admissions, boys", ADM, ["new admin otp b", "new admin otpb", "new admin otp boys", "otp admissions boys", "boys admitted otp"]),
+    count("otp_admissions_girls", "OTP admissions, girls", ADM, ["new admin otp g", "new admin otpg", "new admin otp girls", "otp admissions girls", "girls admitted otp"]),
     count("sc_admissions", "Stabilisation centre admissions", ADM, ["new admin sc", "sc admissions", "stabilisation centre admissions", "stabilization center admissions", "itfc admissions", "admissions sc"]),
     count("tsfp_admissions", "TSFP admissions", ADM, ["new admin tsfp", "new admin sfp", "tsfp admissions", "sfp admissions", "admissions mam", "bsfp admissions", "admissions tsfp"]),
     count("plw_admissions", "PLW admitted to supplementary feeding", ADM, ["new admin plw", "plw admissions", "plw sfp admissions", "plw admitted", "women admitted sfp"]),
