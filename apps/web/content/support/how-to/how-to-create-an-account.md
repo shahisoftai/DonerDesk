@@ -11,14 +11,14 @@ Creating an account also creates your organisation's **workspace**. You become i
    - **Country** and **Primary sector**
    - **Data residency** – restricts where your organisation's data may be written (platform default, EU, US, Africa, Asia)
    - **Plan** – Starter, or Team / Growth if you want to subscribe straight away (you are taken to secure checkout after signup)
-   - **AI-assisted tagging and report drafting** – on by default. You can change it later in Settings; manual reporting is never blocked.
+   - **AI-assisted tagging and report drafting** – on by default. You can change it later in **Settings → General**; manual reporting is never blocked.
 3. Click **Create workspace**.
 
 You can also **sign up or sign in with Google** on the sign-in page.
 
 ## After signup
 
-You land on **Set up your workspace**, the onboarding checklist:
+You land on **Get started**, the onboarding checklist, with a progress bar (for example *2 of 5 done*):
 
 1. **Accept Terms of Service** (required) – review and accept the Terms and Privacy Policy
 2. **Connect Google Drive** (recommended) – where evidence lives ([guide](/support/how-to/connect-google-drive))
@@ -26,7 +26,7 @@ You land on **Set up your workspace**, the onboarding checklist:
 4. **Default reporting profile** (optional) – default language, tone and rules for new projects
 5. **Invite your team** (optional)
 
-A banner shows **Setup complete** once the required step is done, and a **Create your first project** button appears. You can finish the optional steps any time from **Settings → Setup**.
+A banner shows **Setup complete** once the required step is done, and a **Create your first project** button appears. You can finish the optional steps any time from **Settings → Workspace setup**.
 
 Then create your first project. The [Academy tour](/tour) shows the whole workflow on a demo project.
 

@@ -6,7 +6,7 @@ Only an Admin can add or change programmes and grants.
 
 ## Add a programme
 
-1. Open **Programmes and grants** (from the Projects page).
+1. Open **Programmes and grants** (in the left menu under **REPORT** for Admins and Grants Officers, or the button on the Projects page).
 2. Under **New programme**, type a name and select **Add programme**.
 
 Programme names must be unique in your organisation.

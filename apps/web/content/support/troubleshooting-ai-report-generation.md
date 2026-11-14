@@ -6,7 +6,7 @@ DonorDesk always tries to give you a report. If the AI cannot write a section pr
 
 | Message | Meaning | What to do |
 |---|---|---|
-| AI writing is switched off for this workspace, so a basic version was used. | AI is disabled. | An Admin can enable **AI enabled** in **Settings → Settings**. |
+| AI writing is switched off for this workspace, so a basic version was used. | AI is disabled. | An Admin can enable **AI enabled** in **Settings → General**. |
 | AI writing is not set up for your organisation, so a basic version was used. | No AI provider is configured for your workspace. | Contact support@donordesk.online. |
 | **Written without AI** banner on a section **with a reason** (for example "figures not in your data: 33.3") | The reason is stored with the section when it is written, so you can read it any time. The banner offers the action that fits: **Try again** for a timeout or a service error, **Try again, quote recorded figures only** when the text used a figure that is not in your data, **Open AI settings** when AI is switched off or not set up. | Press the button in the banner. Before a basic version is used, the system already retried once by itself (naming the figure it must not state, or with a shorter brief after a timeout); the banner appears only if that retry failed too. |
 | **Written without AI** banner on a section (no reason shown) | The AI writer timed out, failed, or used a figure that is not in your verified data, so a basic version was used. | Open **Try AI again** and add a short instruction such as "quote only recorded figures; do not calculate totals or percentages", or write the section by hand. A section that fails every month is usually a validation failure on a derived figure. |
@@ -30,7 +30,7 @@ A report never names an evidence id, a record id or a file name: the system reje
 
 - You need a role that can generate reports: Admin, Project Manager, M&E Officer or Grants Officer.
 - A **Reviewed** donor template must be pinned to the period. Approve the template first.
-- You may have reached your monthly AI drafts. Check **Settings → Billing**, buy a top-up pack (Team/Growth) or wait for the reset. You can still write manually.
+- You may have reached your monthly AI drafts. Check **Settings → Plan and billing**, buy a top-up pack (Team/Growth) or wait for the reset. You can still write manually.
 - If a generation is already running, wait for it to finish.
 
 ## The draft is generic or thin

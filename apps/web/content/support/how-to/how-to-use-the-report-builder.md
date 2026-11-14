@@ -1,9 +1,9 @@
-# How to Build a Table of Results with the Report Builder
+# How to Build a Table of Results with Data Tables
 
-A saved report is a question, never the figures: which indicators, which periods, which measure. It is worked out again from the data each time.
+**Data tables** (called *Report builder* before Version 4.000) turns a question about your indicator data into a table. It is not the same as the project's **Reports**, which are the donor reports. A saved table is a question, never the figures: which indicators, which periods, which measure. It is worked out again from the data each time.
 
 ## Build one
-1. Open the project's **Data** area and choose **Report builder**.
+1. Open the project's **Data** tab, then **More → Data tables**.
 2. Tick the **indicators**, choose the **first and last period**, the **measure** (period value, cumulative or percent of target) and what goes in the rows (indicators or periods).
 3. Choose whether values that are **not verified yet** are included. They are counted in a note under the table.
 

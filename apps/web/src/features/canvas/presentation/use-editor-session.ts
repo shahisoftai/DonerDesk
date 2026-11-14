@@ -68,6 +68,14 @@ export function useEditorSession(ed: Editor, options: { enabled: boolean; save: 
     COMMAND_HANDLERS.paste!(port());
   }, [port]);
 
+  // While a design is being edited the editor has its own command palette and shortcut sheet; the app-wide ones (Ctrl K, G + letter, R, ?)
+  // stand down so a key never opens two things. The header's search button still opens the app-wide palette.
+  useEffect(() => {
+    if (!options.enabled) return undefined;
+    document.body.dataset.ownPalette = "canvas";
+    return () => { delete document.body.dataset.ownPalette; };
+  }, [options.enabled]);
+
   useEffect(() => {
     if (!options.enabled) return undefined;
     const onKey = (e: KeyboardEvent): void => {

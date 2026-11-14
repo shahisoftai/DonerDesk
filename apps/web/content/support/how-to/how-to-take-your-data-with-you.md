@@ -1,6 +1,6 @@
 # How to Take Your Data with You
 
-If you want a copy of everything your organisation has put into DonorDesk, an Admin can download it at any time from **Settings → Take your data with you**.
+If you want a copy of everything your organisation has put into DonorDesk, an Admin can download it at any time from **Settings → General → Take your data with you**.
 
 There are two downloads:
 

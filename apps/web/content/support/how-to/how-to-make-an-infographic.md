@@ -4,7 +4,7 @@ An infographic is a one-page (or multi-page) picture of your results. Every figu
 
 ## Start one
 
-1. Open the project and go to **Infographics** (or **Dashboards and infographics → Assets**, then pick the project). The page lists the project's infographics and your **Pictures** and **Brand kit**.
+1. Open the project and go to **Reports → More → Infographics** (or **Dashboards and infographics → Tools ▾ → Images and brand**, then pick the project). The page lists the project's infographics and your **Pictures** and **Brand kit**.
 2. Click **New infographic**. The gallery is headed **Start a new infographic**; it opens with **Suggested for this project** (based on the records, for example *Work is recorded in 5 locations*) and then groups such as **Snapshots and updates** and **Results and progress**.
 3. Click a template, or **Use** on a suggestion. The design is created at once and opens in the editor; there is no naming step, so rename it when you open it. Choose a template. Each one suits a different use: a humanitarian snapshot, a response at a glance, a funding snapshot, a donor one-pager, a social card and others. A template is only a starting point; you can change every block.
 

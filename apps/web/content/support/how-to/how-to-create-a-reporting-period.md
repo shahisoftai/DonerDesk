@@ -4,11 +4,11 @@ A **reporting period** is one report cycle for a project: for example "Q3 2026 p
 
 ## Before you start
 
-The project must be **Ready** on its Setup page (workspace folder, reviewed donor template, indicators with baseline/target/unit/frequency, and a reporting profile). Until then, creating a period is blocked and the Setup page tells you what is missing. Completed or archived projects cannot get new periods.
+The project must be **Ready** on its **Settings → Setup** page (workspace folder, reviewed donor template, indicators with baseline/target/unit/frequency, and a reporting profile). Until then, creating a period is blocked and the **Settings → Setup** page tells you what is missing. Completed or archived projects cannot get new periods.
 
 ## Steps
 
-1. Open **Projects → project → Reporting** and click to add a new period.
+1. Open **Projects → project → Reports** and click **Create reporting period**. The page is called **New report**; for the closing report use its **Final (closing) report** button ([how](/support/how-to/create-the-closing-report)).
 2. Read the **What you can create** panel at the top: it shows which report types are available now and, for the others, why and what to do instead. Then choose the **Report type**: Monthly, Quarterly, Semi-annual, Annual, Final, Activity, Situation or Custom. Activity, Situation and Custom reports ask what they cover: **Activity** — tick the activities the report is about; **Situation** — the event, the "as of" date, optionally the date the event started (the report then covers that window), location, summary, affected-population figures (who, figure, source, date; a half-filled row is flagged, not dropped) and main needs (one per line, 200 characters each); **Custom** — a title and optional purpose. These reports can sit inside a Monthly or Quarterly period.
 3. Check the **Donor template**. It is already chosen for you: an approved template written for exactly this report type, otherwise your project's default, otherwise the built-in structure. The choice says **· default for this type**. Change it, or pick **Built-in structure (no template)**; your choice is kept. Unapproved templates are marked "not approved yet". The template is pinned to the period (you can change it later, see [How to change a report's template](/support/how-to/change-a-reports-template)).
 4. **Start date** and **End date** are suggested from the report type and the project's dates. Each new period is chained after the previous one and clipped to the project's end date. Adjust if the donor uses different cut-offs.

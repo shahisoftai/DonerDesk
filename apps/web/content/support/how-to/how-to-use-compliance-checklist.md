@@ -1,6 +1,6 @@
 # How to Use the Compliance Checklist
 
-The compliance checklist lists what is missing or weak before a report can go out: missing evidence, unverified indicators, unsupported claims, missing annexes and so on. Open it from **Compliance** in the main menu (all projects) or the project's compliance page.
+The compliance checklist lists what is missing or weak before a report can go out: missing evidence, unverified indicators, unsupported claims, missing annexes and so on. Open it from **Reports → Compliance** in the left menu (all projects) or the project's **Reports → Compliance** page.
 
 Roles that can manage checklist items: Admin, Project Manager, M&E Officer, Grants Officer and Compliance Officer.
 

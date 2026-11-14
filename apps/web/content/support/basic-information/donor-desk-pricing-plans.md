@@ -40,12 +40,12 @@ A successful AI draft uses one credit. Fallback (non-AI) output is never billed 
 
 ## Nonprofit discount
 
-Verified nonprofits get 25% off paid plans for their first year. Submit your registration details in **Settings → Billing**; the team reviews the request and emails you when it is approved.
+Verified nonprofits get 25% off paid plans for their first year. Submit your registration details in **Settings → Plan and billing**; the team reviews the request and emails you when it is approved.
 
 ## How billing works
 
 1. You sign up and start on the free Starter plan.
-2. When you need more capacity, open **Settings → Billing** (Admins only), or choose a plan on the Pricing page.
+2. When you need more capacity, open **Settings → Plan and billing** (Admins only), or choose a plan on the Pricing page.
 3. Pick Team or Growth and monthly or annual billing (annual = two months free).
 4. Complete secure checkout, powered by Creem, our Merchant of Record. Tax is calculated at checkout.
 5. Your plan updates once the subscription is confirmed.

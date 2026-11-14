@@ -1,6 +1,6 @@
 # How to Archive or Complete a Project
 
-Use **Projects → your project → Settings**. Editing project settings requires Admin or Project Manager rights.
+Use **Projects → your project → Settings → Project settings**. Editing project settings requires Admin or Project Manager rights.
 
 ## Mark a project completed
 
@@ -21,7 +21,7 @@ Set the status to **Paused** to suppress reporting activity temporarily. Set it 
 
 ## Restore
 
-Open the archived project's Settings and click **Restore project** to make it editable again. Restoring counts toward your active project limit, so free a slot first if you are at the limit.
+Open the archived project's **Settings → Project settings** and click **Restore project** to make it editable again. Restoring counts toward your active project limit, so free a slot first if you are at the limit.
 
 ## Deleting
 

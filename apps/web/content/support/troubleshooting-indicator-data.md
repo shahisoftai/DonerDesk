@@ -22,7 +22,7 @@ The breakdown is a setting of the indicator. Open the indicator, tick **Record a
 
 ## An indicator disappeared
 
-It was probably removed and archived (it had values). Open **Logframe** and look under **Archived indicators**; click **Restore** to bring it back. If the restore says another indicator uses the same code, change one of the codes first.
+It was probably removed and archived (it had values). Open **Plan → Results framework** and look under **Archived indicators**; click **Restore** to bring it back. If the restore says another indicator uses the same code, change one of the codes first.
 
 ## Disaggregation errors
 

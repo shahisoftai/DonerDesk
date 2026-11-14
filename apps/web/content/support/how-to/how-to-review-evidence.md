@@ -4,7 +4,7 @@
 
 ## Open a file to review
 
-Go to **Evidence**, or to a project's **Evidence** tab, and open the file. The **Verification** panel shows what you can do from its current state.
+Go to **Reports → Evidence** (all projects), or to a project's **Evidence** tab, and open the file. The **Verification** panel shows what you can do from its current state.
 
 ## Your options
 

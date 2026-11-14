@@ -8,7 +8,7 @@ By default, DonerDesk maps draw the built-in world: country outlines and provinc
 
 ### Boundaries for a country and level
 
-1. Go to **Settings → Boundaries for a country and level**.
+1. Go to **Settings → General → Boundaries for a country and level**.
 2. Type the **Country** and its three-letter **Country code** (for example BTN), choose the **Level**, and choose the **Boundary file** (GeoJSON, up to 12 MB).
 3. Click **Upload boundaries**. The card then lists *Country · level · file* with the number of boundaries and whether they carry codes, and a **Remove** button.
 

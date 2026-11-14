@@ -8,7 +8,7 @@ Who can: anyone who can edit reports (Admin, Project Manager, M&E Officer, Grant
 
 ## Build the chart
 
-1. Open **Projects → your project → Data → Charts**.
+1. Open **Projects → your project → Data** and the **Quick chart** tab of the Data Center. (For every chart type and style use the **Chart Studio** button above the tabs; the quick chart is the one that goes into a report section.)
 2. Start from a **Quick start** (monthly achievement of an indicator, cumulative vs target, achievement vs target, progress of all indicators, budget vs expenditure) or pick a **Chart** yourself:
 
 | Chart | Shows |

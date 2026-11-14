@@ -29,7 +29,7 @@ The list is generated from your template, logframe, activities and evidence and 
 
 ## Where you see it
 
-- **Compliance** in the main menu (all projects) and each project's compliance page
+- **Reports → Compliance** in the left menu (all projects) and each project's **Reports → Compliance** page
 - **Report checks** in the report editor
 - The export gate
 

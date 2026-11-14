@@ -1,6 +1,6 @@
 # How to Manage Billing and Subscription
 
-Use **Settings → Billing** to see your plan and usage, upgrade, buy extra AI credits, and manage your subscription.
+Use **Settings → Plan and billing** to see your plan and usage, upgrade, buy extra AI credits, and manage your subscription.
 
 ## Who can open it
 
@@ -14,7 +14,7 @@ Only users with billing permission, which means workspace **Admins**, see the Bi
 
 ## Upgrade your plan
 
-1. Open **Settings → Billing**.
+1. Open **Settings → Plan and billing**.
 2. Choose **monthly** or **annual** (annual is two months free).
 3. Click the **Team** or **Growth** button.
 4. Complete the secure Creem checkout (tax is calculated there).

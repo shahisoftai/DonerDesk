@@ -2,7 +2,7 @@
 
 ## Where to look
 
-Open the project's **Setup** page. It shows the status (Not started, In progress, Ready, Action required), a checklist and a **Blockers** list with **Fix** links.
+Open the project's **Settings → Setup** page. It shows the status (Not started, In progress, Ready, Action required), a checklist and a **Blockers** list with **Fix** links.
 
 ## "New project" is blocked
 
@@ -35,8 +35,8 @@ Wizard progress is saved as a draft in your browser. Reopen **New project** on t
 
 ## Project workspace folder is pending or failed
 
-1. Make sure Google Drive is connected (**Settings → Setup**).
-2. On the project's Setup page click **Retry workspace**. If folders are partly there, click **Repair workspace**.
+1. Make sure Google Drive is connected (**Settings → Workspace setup**).
+2. On the project's **Settings → Setup** page click **Retry workspace**. If folders are partly there, click **Repair workspace**.
 3. If it still fails, reconnect Drive and retry, or email support@donordesk.online.
 
 ## Setup stays "Action required"
@@ -51,7 +51,7 @@ Team assignment is recommended but does not block.
 
 ## I can't edit dates or budget
 
-Use the project's **Settings** tab (Admin or Project Manager). Changing dates that would invalidate existing reporting periods is rejected.
+Use the project's **Settings → Project settings** (Admin or Project Manager). Changing dates that would invalidate existing reporting periods is rejected.
 
 ## Archived or completed projects
 

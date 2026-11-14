@@ -4,13 +4,13 @@ DonorDesk's **AI Reporter** writes the narrative of a donor report from the data
 
 ## Before you generate
 
-Open the reporting period. The workspace says **Ready to write this report** and lists what the AI will write from:
+Open the reporting period (**Projects → your project → Reports**). The page says **Ready to write this report** and lists what the AI will write from:
 
 1. **Indicator values** (**Review data** / **Enter data**) – values entered and verified, with how many are verified, for example *24 of 33 verified*. Unverified figures will be marked in the report.
 2. **Story answers** (**Answer now**) – answers to the story questions: what went well, challenges, why targets were over- or under-achieved, what changed or was adapted, and (optionally) a lesson or story. Reports read better when you explain challenges and changes.
 3. **Evidence** (**Add more**) – files uploaded and linked for the period.
 
-Then click **Generate report**. After the draft exists you review and submit it in the report editor. The ⋯ menu (**More actions**) has **Edit data & story**, **Scan for missing items**, **Export center** and **Switch to classic view** (the older layout with numbered steps, if you prefer it).
+Then click **Generate report**. After the draft exists you review and submit it in the report editor. The ⋯ menu (**More actions**) has **Edit data & story**, **Scan for missing items**, and **Export center**. A four-stage bar (**Inputs → Story → Draft → Review and export**) with one blue next-step button runs along the top; **Write the draft** is its third stage.
 
 You also need:
 - a **reviewed donor template** pinned to the period (see [How to upload a donor template](/support/how-to/upload-donor-template)), otherwise a standard outline is used and flagged;
@@ -19,7 +19,7 @@ You also need:
 
 ## Generate the first draft
 
-1. Go to **Projects → your project → Reporting** and open the reporting period.
+1. Go to **Projects → your project → Reports** and open the reporting period.
 2. In the report editor click **Generate report** (the single primary button at the top right). A launch card lists what will be used.
 3. Watch the progress. A short animated panel shows the AI working, and sections appear as they finish. Several sections are written in parallel, and the executive summary and conclusion are written last, from the other sections.
 4. If you leave the page, generation continues; come back and reopen the period.
@@ -68,7 +68,7 @@ The AI cannot invent numbers: any figure that is not in your verified inputs is 
 | Using your own AI provider (Growth/Enterprise, set up by the DonorDesk team) | No |
 | AI evidence tagging | No |
 
-Check usage in **Settings → Billing**.
+Check usage in **Settings → Plan and billing**.
 
 ## If generation does not work
 

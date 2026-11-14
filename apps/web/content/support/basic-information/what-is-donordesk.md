@@ -18,7 +18,7 @@ DonorDesk covers the whole life of a project or programme. Every part reads from
 
 **Plan and deliver**
 3. **Plan the work.** [Plan activities](/support/how-to/plan-your-activities) with dates and a lead, move them on the [Timeline](/support/how-to/use-the-timeline), and see what is late. Planning is optional.
-4. **Ask for work and follow it.** [My Work and requests](/support/how-to/ask-for-work-and-use-my-work) gather what each person has to do; [My week](/support/how-to/use-my-week) is the field officer's view. [Record problems and risks](/support/how-to/record-problems-and-risks).
+4. **Ask for work and follow it.** [The Inbox and requests](/support/how-to/ask-for-work-and-use-my-work) gather what each person has to do; [My week](/support/how-to/use-my-week) is the field officer's view. [Record problems and risks](/support/how-to/record-problems-and-risks).
 5. **Record activities.** Field staff log what happened: date, place, participants and a narrative, typed or dictated. Managers accept or send back records.
 6. **Collect data.** Build a [collection form](/support/how-to/collect-answers-with-a-form), use the [field app without a connection](/support/how-to/use-the-field-app-offline), or [bring in KoboToolbox or SurveyCTO submissions](/support/how-to/bring-in-kobotoolbox-or-surveycto-submissions).
 7. **Keep the evidence.** Files can stay in your own Google Drive or in DonorDesk storage. Link each file to the activity or indicator it proves.

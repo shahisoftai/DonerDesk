@@ -4,15 +4,15 @@ Connecting Google Drive is the first step of workspace setup. Your evidence stay
 
 ## Connect
 
-1. Go to **Settings → Setup** (or the onboarding checklist) and open **Connect Google Drive** ("Choose where your evidence lives").
+1. Go to **Settings → Workspace setup** (or the **Get started** checklist) and open **Connect Google Drive** ("Choose where your evidence lives").
 2. Click **Connect Google Drive** and sign in with the Google account that owns the files. Approve the permissions.
 3. You return to DonorDesk with a **Google Drive connected** message.
 
-The onboarding checklist marks the step complete once Drive is connected.
+The **Get started** checklist marks the step complete once Drive is connected.
 
 ## What DonorDesk creates
 
-For each project DonorDesk builds a **project folder tree** in the background (Evidence and related folders). Watch its status on the project's **Setup** page ("Project workspace folder"). If it says provisioning failed, click **Retry workspace** on that page; **Repair workspace** rebuilds a folder tree that is missing pieces.
+For each project DonorDesk builds a **project folder tree** in the background (Evidence and related folders). Watch its status on the project's **Settings → Setup** page ("Project workspace folder"). If it says provisioning failed, click **Retry workspace** on that page; **Repair workspace** rebuilds a folder tree that is missing pieces.
 
 ## Other options
 

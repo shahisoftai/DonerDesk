@@ -2,11 +2,11 @@
 
 The logframe (results framework) is the backbone of your reporting: goals, outcomes, outputs and activities, with indicators to measure them. Who can edit it: Admin, Project Manager and M&E Officer.
 
-Open **Projects → your project → Logframe**.
+Open **Projects → your project → Plan → Results framework**.
 
 ## Option A: Import from Excel or CSV (fastest)
 
-1. On the Logframe page click **Download template** and fill in the **Logframe** sheet (one row per item with its code, level, title and parent code).
+1. On the **Results framework** page click **Download template** and fill in the **Logframe** sheet (one row per item with its code, level, title and parent code).
 2. Click **Import logframe**, then **Upload Excel/CSV** and choose the file (XLSX, CSV or TXT).
 3. **Review the parsed content** shown on screen, then create the records.
 4. Items are created with their parent links. Rows whose **code already exists are skipped**, so re-importing is safe.
@@ -54,7 +54,7 @@ A value nobody has set shows as a dash, never as zero. **Download Word** and **D
 
 ## Use your donor's words
 
-In **Setup → Reporting profile → Results framework wording**, choose your donor's terms (for example USAID, FCDO, European Union, United Nations) or type your own. The levels, the page headings and the downloaded files then use those words. Your results and indicators are not changed; only the words on screen are.
+In **Settings → Setup → Reporting profile → Results framework wording**, choose your donor's terms (for example USAID, FCDO, European Union, United Nations) or type your own. The levels, the page headings and the downloaded files then use those words. Your results and indicators are not changed; only the words on screen are.
 
 ## Rearranging the hierarchy
 

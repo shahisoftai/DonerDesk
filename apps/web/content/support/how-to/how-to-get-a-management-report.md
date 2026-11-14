@@ -4,7 +4,7 @@
 
 ## Open it
 
-Open the project, go to **Reports**, and select **Management report**.
+Open the project, go to **Overview → More → Management report**.
 
 ## What is on it
 

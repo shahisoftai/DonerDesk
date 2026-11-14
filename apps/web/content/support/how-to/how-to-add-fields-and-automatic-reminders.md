@@ -19,7 +19,7 @@ A project can add up to 20 fields of its own to planned activities, for example 
 
 ## Automatic reminders
 
-On the **Team** tab, the **Automatic reminders** card lists two rules. Each has one sentence, one switch and the numbers it can be set to.
+Under **Settings → Team** in the project, the **Automatic reminders** card lists two rules. Each has one sentence, one switch and the numbers it can be set to.
 
 | Rule | What it does | Default | You can change |
 |---|---|---|---|
@@ -30,7 +30,7 @@ Turn a rule off with its switch. Nothing is sent for a rule that is off.
 
 ## Change many activities at once
 
-1. Open **Activities** and switch to the **List** view.
+1. Open **Plan → Work plan** and switch to the **List** view.
 2. Tick the activities to change.
 3. Choose what to change: move the dates, set the lead, set the start, or cancel.
 4. Check the preview. It shows every activity that will change before anything is saved.

@@ -6,7 +6,7 @@ This is the whole routine in one page. Do it once a month (or once per reporting
 
 ## Before the month starts
 
-1. **Create the periods.** On **Reporting**, use **Create all periods** to set up the whole calendar in one click. See [How to create a reporting period](/support/how-to/create-a-reporting-period).
+1. **Create the periods.** On the project's **Reports** tab, use **Create all periods** to set up the whole calendar in one click. See [How to create a reporting period](/support/how-to/create-a-reporting-period).
 2. **Check the template.** Each report type uses its approved donor template automatically. To use another one, see [How to change a report's template](/support/how-to/change-a-reports-template).
 
 ## During the month (the field team)

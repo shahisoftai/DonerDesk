@@ -1,6 +1,6 @@
 # Connect API keys, webhooks and AI assistants
 
-For administrators. **Settings → Integrations.**
+For administrators. **Settings → API keys and webhooks.**
 
 ## API keys
 

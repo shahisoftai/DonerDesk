@@ -2,12 +2,12 @@
 
 ## I can't create a reporting period
 
-Creating a period is blocked until the project is **Ready**. Open the project's **Setup** page and clear each blocker:
+Creating a period is blocked until the project is **Ready**. Open the project's **Settings → Setup** page and clear each blocker:
 
 | Blocker | Fix |
 |---|---|
 | Workspace pending or failed | Wait for the folder to be created, or use **Retry workspace** / **Repair workspace**. Check Google Drive is connected. |
-| Reporting profile missing | Create it on **Setup → Reporting profile**. |
+| Reporting profile missing | Create it on **Settings → Setup → Reporting profile**. |
 | Template has no reviewed required sections | Open the template, review sections and **Approve template**. |
 | No reportable indicators / indicator configuration incomplete | Add an indicator and set baseline, target, unit and frequency on every quantitative one. |
 

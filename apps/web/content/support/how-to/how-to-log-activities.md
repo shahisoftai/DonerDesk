@@ -2,20 +2,20 @@
 
 Activities are the field updates that tell the story behind your indicators: trainings held, distributions made, visits completed. Roles that can create activities: Admin, Project Manager, M&E Officer and Field Officer. Admin and Project Manager can approve them.
 
-Open **Projects → your project → Activities**. This tab has two views:
+Open **Projects → your project → Plan → Work plan**. The page has two parts:
 
-- **Planned activities** (opens first): the work plan, with **List**, **Timeline**, **Map**, **Week**, **Month** and **Quarter** views. See [How to plan your activities](/support/how-to/plan-your-activities).
-- **Activity updates** (also reachable as **Completed activities**): the work that was done. This is the list this guide is about.
+- **Planned activities** (opens first): the work plan, with **List**, **Timeline** and **Map** views and the **Week**, **Month**, **Quarter** and **Whole project** scales. See [How to plan your activities](/support/how-to/plan-your-activities).
+- **Completed activities** (the link under the page title; also called **Activity updates**): the work that was done. This is the list this guide is about.
 
 For a quick entry from anywhere, click **Record → Something we did** ([How to record data](/support/how-to/record-data)).
 
 ## Add an activity
 
-1. Open **Activity updates** and click **New activity**.
+1. Open **Completed activities** and click **New activity**.
 2. The form shows only the essentials first: **Activity title**, **Activity date** (**Today**, **Yesterday** or **Pick a day**), **Location**, **What happened?** and **Photos and files (optional)**. Open **Add detail** for everything else: **Start from an earlier record**, **Who came**, **Which planned activity is this?**, **Logframe activity**, **Through** (an end date), **Reporting period** and **More about it**. The rest of this list describes the fields:
    - **Activity title** and **Activity date**
    - **Reporting period** – the report this activity should feed. Once you have a date, DonorDesk states the period instead of asking: *Reporting period: Monthly · Mar 2026 (from the activity date)*, with a **Change** link if you need another. If no period contains the date, nothing is chosen for you: the list appears with a note and you must pick the period the record belongs to (or create the period first). A record is never put into a period just because it is listed first.
-   - **Location**
+   - **Location** – type a place, pick one from the list, or tap **Here** under the box to fill it from the phone's GPS (it writes the coordinates; you can type a place name instead).
    - **Logframe activity** (optional): the planned activity this record delivers. The logframe then shows what has been delivered against it (records, accepted records and participants), and the output is filled in for you.
    - **Summary** of what happened (you can [dictate it](/support/how-to/dictate-instead-of-typing))
    - **Total participants**, with **Female**, **Male**, **Children** and **Participants with disability** where relevant
@@ -83,7 +83,7 @@ If yours is **Needs revision**, the reviewer's note is shown next to the text. F
 
 ## Import many activities at once
 
-1. On the Activities page click **Download template** and fill it in.
+1. On **Completed activities** click **Download template** and fill it in.
 2. Click **Import activities from Excel** and upload it (XLSX, CSV or TXT).
 3. Add a **Logframe Code (Output or Activity)** column (for example `A1.1` for a planned activity, or `1.1` for an output) to link each row; rows without a code are imported but unlinked, and the result says how many. Each activity is placed in the reporting period that **contains its own date**, so one file can cover several months. If a row's date is in no period, it is skipped with a message, unless you chose a period under **If a row's date is in no reporting period**.
 4. You can also paste the rows (or dictate them) into the box instead of uploading a file. Review the text, then create the records. Output and indicator codes are matched to your logframe. Rows whose titles already exist in the project are skipped.

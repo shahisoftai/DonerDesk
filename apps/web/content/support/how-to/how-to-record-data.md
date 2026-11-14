@@ -1,12 +1,12 @@
 # How to Record a Number, an Activity, a File or an Expense
 
-**Record** is the quickest way to enter data by hand. It is the brown **Record** button in the top bar (and at the top of every project page), so you can use it from anywhere without hunting for the right screen. On a phone, field roles also find **Record** in the bottom bar.
+**Record** is the quickest way to enter data by hand. It is the blue **+ Record** button in the top bar (and at the top of every project page), so you can use it from anywhere without hunting for the right screen. You can also press **R** (when you are not typing in a box) or search for it with **Ctrl K**. On a phone, field roles also find **Record** in the bottom bar.
 
 Use Record when you have **one thing to enter**. To fill in many indicators for a whole month at once, use the [Report inputs sheet](/support/how-to/update-indicator-values) instead.
 
 ## Open Record
 
-1. Click **Record** in the top bar. A panel slides in from the right.
+1. Click **+ Record** in the top bar. A panel slides in from the right (from the bottom on a phone). **Esc** closes it.
 2. At the top, check **Project**. If you are inside a project it is already chosen; otherwise pick one.
 3. Under **What are you recording?**, choose one of the four options:
 
@@ -48,7 +48,7 @@ Use this for a completed activity: a training, a distribution, a visit.
 5. Optional: open **Add detail** for **Who came** (total, male, female, children, people with disability), the **planned activity** this delivers, the logframe activity, an end date (**Through**), and more notes.
 6. Click **Save**. The panel confirms (**Saved: *your title* was saved**) with **Record another activity** and **Done**. Under the date it says which period the activity counts toward, for example **Counts toward Final · Jul 2026**.
 
-The activity then goes to a reviewer, who sees it as *Submitted* and **1 waiting for review** on the Activity updates list. See [How to review and accept activities](/support/how-to/review-and-accept-activities). The full form is also on **Projects → project → Activities → Activity updates → New activity**; see [How to log activities](/support/how-to/log-activities).
+The activity then goes to a reviewer, who sees it as *Submitted* and **1 waiting for review** on the **Completed activities** list. See [How to review and accept activities](/support/how-to/review-and-accept-activities). The full form is also on **Projects → project → Plan → Work plan → Completed activities → New activity**; see [How to log activities](/support/how-to/log-activities).
 
 ## Record a photo or file
 

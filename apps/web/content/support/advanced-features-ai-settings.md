@@ -4,7 +4,7 @@ DonorDesk uses AI to **tag evidence**, **draft reports section by section** and 
 
 ## Turn AI on or off
 
-**Settings → Settings → AI-assisted reporting → AI enabled** (Admin only). When AI is off, generating a report creates a blank draft for manual writing. Manual editing always works.
+**Settings → General → AI-assisted reporting → AI enabled** (Admin only). When AI is off, generating a report creates a blank draft for manual writing. Manual editing always works.
 
 ## AI drafts and credits
 
@@ -19,11 +19,11 @@ If your organisation must use its own AI account, ask the DonorDesk team to conn
 **AI Writing Style** lets DonorDesk notice how your team consistently edits AI-written text and offer to apply those preferences in future drafts.
 
 - It learns **style only**: tone, structure, terminology, formatting and length. **It never learns numbers, dates, figures or facts.**
-- It is **off by default**. Admins and Project Managers can turn it on with **Learn from reviewer edits** in **Settings → AI Writing Style** (this tab appears only when the feature is enabled for your workspace).
+- It is **off by default**. Admins and Project Managers can turn it on with **Learn from reviewer edits** in **Settings → AI → Writing style** (this page appears only when the feature is enabled for your workspace).
 - When a reviewer edits an AI-drafted section, DonorDesk looks at the change and, if a pattern repeats, shows a **suggestion**: the AI's original wording next to your team's edit, how often it happened, and a **Why was this suggested?** link.
 - You choose to **Approve** (and pick where it applies: all reports, this donor/template, or this section type) or **Reject**.
 - Approved preferences appear under **Active style preferences**, where you can **Pause** or **Remove** each one.
-- The settings tab shows a count when suggestions are waiting.
+- The **Writing style** page shows a count when suggestions are waiting.
 
 Nothing on this page can change what a report *claims*; it only changes how it is worded.
 

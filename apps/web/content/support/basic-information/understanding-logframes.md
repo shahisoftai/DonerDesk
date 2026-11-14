@@ -18,11 +18,11 @@ Each item has a **code** (OUT-1), a title and a parent. Items form a tree you ca
 
 ## Your donor's words
 
-Donors name the levels differently: USAID speaks of a Goal, Intermediate Results and Sub-Intermediate Results; FCDO of Impact, Outcome and Output; the European Union of an Overall objective, Specific objectives and Results. Choose your donor's terms in **Setup → Reporting profile → Results framework wording** (or on the wizard's Start step). Only the words on screen and in downloaded files change; your results are the same.
+Donors name the levels differently: USAID speaks of a Goal, Intermediate Results and Sub-Intermediate Results; FCDO of Impact, Outcome and Output; the European Union of an Overall objective, Specific objectives and Results. Choose your donor's terms in **Settings → Setup → Reporting profile → Results framework wording** (or on the wizard's Start step). Only the words on screen and in downloaded files change; your results are the same.
 
 ## Two ways to read it
 
-On the Logframe page, switch between **Edit**, **Results framework** (the chain of results with their reasoning) and **Logframe** (every level with indicators, baselines, targets, means of verification and assumptions). Both can be downloaded as Word or PDF.
+On the **Plan → Results framework** page, switch between **Edit**, **Results framework** (the chain of results with their reasoning) and **Logframe** (every level with indicators, baselines, targets, means of verification and assumptions). Both can be downloaded as Word or PDF.
 
 ## Indicators
 

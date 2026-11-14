@@ -2,7 +2,7 @@
 
 The **Maps explorer** shows a project's results on a map, place by place: shaded areas for a figure, symbols for places and activities, and optional context such as population. It reads only what was recorded. A place with no figure is shown grey as **Not measured**, never as zero.
 
-Open **Dashboards and infographics → Maps**, choose the project (or open it from a project's own pages).
+Open **Dashboards and infographics → Tools ▾ → Maps**, choose the project (or open it from a project's own pages: **Data → Map**, **Data → More → Maps**, or the **Map** link beside an indicator recorded by place).
 
 ## What you need
 

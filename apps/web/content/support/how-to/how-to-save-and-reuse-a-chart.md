@@ -3,7 +3,7 @@
 A saved chart keeps your choices (data, chart type, look), never the figures. It is drawn again from the recorded values each time it is opened, so it cannot go out of date.
 
 ## Save a chart
-1. Build the chart in the **Charts** tab of the Visual Studio (see [build and style a chart](/support/how-to/use-the-chart-studio)).
+1. Build the chart in the **Chart Studio** (**Dashboards and infographics → Tools ▾ → Chart Studio**) (see [build and style a chart](/support/how-to/use-the-chart-studio)).
 2. Click **Save**, give it a name and choose who sees it: **Mine** (only you) or **Project** (everyone who can see the project).
 3. Making or changing a **Project** chart needs permission to edit the project. Anyone else can still save a personal one.
 

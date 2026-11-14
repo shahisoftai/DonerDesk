@@ -31,7 +31,7 @@ FCDO is strict about the output/outcome distinction:
 
 Your reports must demonstrate the **causal link** between outputs and outcomes, not just list activities.
 
-> **In DonorDesk:** choose **FCDO** in **Setup → Reporting profile → Results framework wording** (Impact, Outcome, Output). Write each result's assumptions on the Logframe page; the **Logframe** view and its Word/PDF download set them beside the indicators, baselines, targets and means of verification.
+> **In DonorDesk:** choose **FCDO** in **Settings → Setup → Reporting profile → Results framework wording** (Impact, Outcome, Output). Write each result's assumptions on the Logframe page; the **Logframe** view and its Word/PDF download set them beside the indicators, baselines, targets and means of verification.
 
 ## FCDO Reporting Requirements
 

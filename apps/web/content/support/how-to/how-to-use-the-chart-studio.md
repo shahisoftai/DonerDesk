@@ -1,6 +1,6 @@
 # Build and style a chart in the Chart Studio
 
-The Chart Studio turns a project's recorded figures into a chart you can restyle as much as you like. Open it from a project's **Data** tab, then **Charts** (maps of results by place are on the **Maps** page, which works the same way).
+The Chart Studio turns a project's recorded figures into a chart you can restyle as much as you like. Open it from **Dashboards and infographics → Tools ▾ → Chart Studio**, or from a project's **Data** tab (the **Chart Studio** button above the Data Center tabs, or **More → Charts**). Maps of results by place are under **Tools ▾ → Maps** and work the same way.
 
 A chart keeps only the choices you make, never the figures. Every time it is opened it is drawn again from the recorded values, so it cannot go out of date.
 

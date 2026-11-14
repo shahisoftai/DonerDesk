@@ -4,7 +4,7 @@ A collection form is a set of questions your team answers, or people answer thro
 
 ## Design a form
 
-1. Open the project's **Data** tab and choose **Collection forms**, then **New form**.
+1. Open the project's **Data** tab and choose **Forms** (a project with no form yet shows it under **More**), then **New form**.
 2. Name it. Add questions and choose each answer type: number, text, date, choice, yes/no, place, GPS point, or photo or document.
 3. For a question, you can tick **Always required**, or set **Ask this only when** or **Make it required when** based on an earlier question.
 4. Say which indicator the answers add up to: **Count the records**, or **Add up a number** from one question. Choose which date decides the reporting period (otherwise the day it was sent).

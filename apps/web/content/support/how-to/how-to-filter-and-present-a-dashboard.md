@@ -9,7 +9,7 @@ Click **Filters** at the top of the design. The panel offers **Up to period** (*
 
 ## Present and show on a screen
 - **Present** opens the design full screen.
-- The **TV** tab plays your designs one after another.
+- **Tools ▾ → TV display** plays your designs one after another.
 
 ## Print and download
 Open **More** at the top for everything below:

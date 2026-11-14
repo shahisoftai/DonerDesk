@@ -56,6 +56,6 @@ Plans limit seats: **Viewers** are counted separately and cheaply from full seat
 
 ## Project assignments
 
-On each project's **Team** tab you assign workspace members to that project with a **project role**. Access to a project's data follows these assignments as well as the workspace role.
+On each project's **Settings → Team** you assign workspace members to that project with a **project role**. Access to a project's data follows these assignments as well as the workspace role.
 
 See [How to invite team members](/support/how-to/invite-team-members) and [How to change a member's role](/support/how-to/manage-team-roles-permissions).

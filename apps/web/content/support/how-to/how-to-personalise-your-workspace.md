@@ -18,11 +18,11 @@ Good to know:
 
 ## Switch to dark mode
 
-Click the moon icon in the top bar (**Switch to dark mode**). Click it again to go back. The choice is kept on this device.
+Click the moon icon in the top bar (**Switch to dark mode**). Click it again to go back. The choice is kept on this device. On a phone the top bar is shorter: tap the search button and choose **Switch light or dark mode** (on a computer you can also press **Ctrl K**).
 
 ## Change the language
 
-Use the **Language** menu in the top bar: **English**, **Français**, **Español** or **العربية**. Arabic reads right to left. The choice is kept on this device, so it works offline too. See [How to change the interface language](/support/how-to/change-the-interface-language).
+Use the **Language** menu in the top bar (on a phone, on **More**): **English**, **Français**, **Español** or **العربية**. Arabic reads right to left. The choice is kept on this device, so it works offline too. See [How to change the interface language](/support/how-to/change-the-interface-language).
 
 ## Arrange Home
 
@@ -30,12 +30,12 @@ On **Home**, click **Arrange Home** to move, resize or hide panels, and pin dash
 
 ## Choose how you are emailed
 
-Open **Notifications** (the bell, then the full page) and use **Email me**: **Daily summary**, **Only urgent things** or **Never**. See [How to use notifications](/support/how-to/use-the-notification-system).
+Open **Inbox → Updates** (the bell, then the full list) and use **Email me**: **Daily summary**, **Only urgent things** or **Never**. See [How to use notifications](/support/how-to/use-the-notification-system).
 
 ## Jump anywhere with search
 
-Press **Ctrl+K** (**⌘K** on a Mac) or click **Search** to find projects and evidence quickly. See [How to search projects and evidence](/support/how-to/search-projects-and-evidence).
+Press **Ctrl K** (**⌘K** on a Mac) or click **Search or jump to…** at the top to find projects and files, open any page or start an action (create a project, record something, invite someone). **G** then a letter goes to a page (**G H** Home, **G I** Inbox) and **?** lists the shortcuts: see [Keyboard shortcuts](/support/reference-keyboard-shortcuts) and [How to search projects and evidence](/support/how-to/search-projects-and-evidence).
 
 ## Collapse the menu
 
-Click **«** (**Collapse navigation sidebar**) at the top left to give pages more room. On a phone the menu opens with **Open navigation menu**.
+Click **«** (**Collapse navigation sidebar**) at the top left to give pages more room; click it again to bring the menu back. On a phone the menu opens with **☰** (**Open navigation menu**).

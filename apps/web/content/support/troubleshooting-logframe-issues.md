@@ -55,7 +55,7 @@ A report that has been approved used this indicator. Write the reason (at least 
 
 ## The levels have the wrong names
 
-The level names follow the project's **Results framework wording** in **Setup → Reporting profile**. Choose your donor's terms there, or **My own words**.
+The level names follow the project's **Results framework wording** in **Settings → Setup → Reporting profile**. Choose your donor's terms there, or **My own words**.
 
 ## A downloaded logframe shows a dash in a cell
 

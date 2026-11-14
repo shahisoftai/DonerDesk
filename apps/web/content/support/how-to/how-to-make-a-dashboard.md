@@ -4,7 +4,7 @@ A dashboard is a page of charts from the Data Center. It keeps which charts you 
 
 ## Make one
 
-1. Click **Dashboards and infographics** in the left menu, then **New**.
+1. Click **Dashboards and infographics** in the left menu, then **New design** (or **Start from a template**).
 2. Under **What do you want to do?** click the goal closest to yours: **Show how a project is progressing**, **Give a donor a one-page summary**, **Send a quick update**, **Show who we have reached**, **Show funding and spending**, **Show who does what, where**, **Follow field operations** or **Score a sector's results**. (Or skip the goal and choose a starter or **A blank page** directly.)
 3. Choose **Start from**: a starter (general ones, and one set for each sector) or **A blank page** (*add blocks one at a time*). Starters name roles such as "headline indicator", never figures.
 4. Fill in the form under the starters:

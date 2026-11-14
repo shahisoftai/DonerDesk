@@ -9,7 +9,7 @@ The **Analyse** panel on a project's map answers three questions about the place
 
 ## Run an analysis
 
-1. Open **Dashboards and infographics → Maps** and choose the project.
+1. Open **Dashboards and infographics → Tools ▾ → Maps** and choose the project.
 2. Open the country and go down to the level where your figures are (click a place in **Places in this project**, then **Open its provinces** or **Open its districts**). The **Analyse** panel appears only when places that **have a figure** are also **pinned**; until then you will not see it.
 3. In the **Analyse** panel, type the distance under **Within … km** (0.1 to 100 km) and choose **Draw rings around N places with a figure**.
 

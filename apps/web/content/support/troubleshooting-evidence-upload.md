@@ -9,12 +9,12 @@ Uploading needs one of these roles: Admin, Project Manager, M&E Officer, Grants 
 - Files up to **100 MB** are accepted. Compress or split larger files, or link them from Google Drive.
 - Keep the tab open until the **Upload queue** finishes; upload fewer files at once if your connection is slow.
 - Make sure you filled in the required fields (title and type).
-- If you use DonorDesk-managed storage you may be at your storage limit. Check **Settings → Billing**, delete files you no longer need, or link from Drive instead.
+- If you use DonorDesk-managed storage you may be at your storage limit. Check **Settings → Plan and billing**, delete files you no longer need, or link from Drive instead.
 
 ## Google Drive upload or link problems
 
 - "Enter a valid Google Drive share link or file ID." – paste the file's share link (`https://drive.google.com/file/d/…/view`) or its ID.
-- Check that Drive is connected (**Settings → Setup**) and that the project's storage folder exists (project **Setup** page; use **Retry workspace** or **Repair workspace**).
+- Check that Drive is connected (**Settings → Workspace setup**) and that the project's storage folder exists (project **Settings → Setup** page; use **Retry workspace** or **Repair workspace**).
 - The Google account you connected must be able to open the file.
 
 ## Text was not extracted / the AI can't cite it

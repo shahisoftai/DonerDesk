@@ -6,7 +6,7 @@ There are two kinds of activity in DonorDesk. A **planned activity** is work you
 
 ## Activity vs logframe activity
 
-The **logframe** describes planned activities as part of the results framework. **Activities** in the Activities tab are the *records of what actually happened*, with dates, places, participants and narrative.
+The **logframe** describes planned activities as part of the results framework. **Completed activities** (under **Plan → Work plan**) are the *records of what actually happened*, with dates, places, participants and narrative.
 
 ## What you record
 

@@ -4,7 +4,7 @@ Every time someone changes the outputs, outcomes, indicators or targets on your 
 
 ## Read the history
 
-1. Open the project and go to **Logframe**.
+1. Open the project and go to **Plan → Results framework**.
 2. Select **Framework history**.
 
 Each version has a date and a plain sentence for what changed, for example *"Indicator IND-1: target changed from 100 to 120"*. The newest version is at the top. The page shows the latest 15 versions.

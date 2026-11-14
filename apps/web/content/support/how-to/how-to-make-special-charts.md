@@ -1,6 +1,6 @@
 # How to Draw Distribution, Flow and Composition Charts
 
-Pick these in the **Charts** tab, under **Chart type**. A type that your data cannot honestly show is greyed out; point at it to see why.
+Pick these in the **Chart Studio** (**Dashboards and infographics → Tools ▾ → Chart Studio**, or a project's **Data → More → Charts**), under **Chart type**. A type that your data cannot honestly show is greyed out; point at it to see why.
 
 | Chart | Use it to | It needs |
 |---|---|---|

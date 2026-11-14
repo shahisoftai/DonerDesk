@@ -50,15 +50,22 @@ export function CommandPalette({ capabilities }: { capabilities: readonly string
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // A screen with its own palette and shortcuts (the design editor) says so; the app-wide keys stand down there.
+      if (document.body.dataset.ownPalette) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        // In a rich-text field (the report editor) Ctrl K already means "add a link"; leave it to the editor.
+        if (e.defaultPrevented || (e.target instanceof HTMLElement && e.target.isContentEditable)) return;
         e.preventDefault();
         returnFocus.current = document.activeElement as HTMLElement | null;
         setOpen((v) => !v);
         return;
       }
       if (open || e.metaKey || e.ctrlKey || e.altKey || typing(e.target)) return;
-      if (e.key === "?") { e.preventDefault(); setSheet((v) => !v); return; }
       if (e.key === "Escape") { setSheet(false); return; }
+      // A report's page has its own single-key shortcuts (j, k, n, e, a and "?"): the global ones stay out of the way there.
+      // Ctrl K still works, and "Show keyboard shortcuts" is in it.
+      if (/^\/projects\/[^/]+\/reports\/(?!new$|closing$)[^/]+\/?$/.test(pathname)) return;
+      if (e.key === "?") { e.preventDefault(); setSheet((v) => !v); return; }
       const now = Date.now();
       const prev = lastKey.current;
       if (prev?.key === "g" && now - prev.at < 1000) {
@@ -77,7 +84,7 @@ export function CommandPalette({ capabilities }: { capabilities: readonly string
     document.addEventListener("keydown", onKey);
     window.addEventListener(OPEN_EVENT, onOpen);
     return () => { document.removeEventListener("keydown", onKey); window.removeEventListener(OPEN_EVENT, onOpen); };
-  }, [open, caps, router, record]);
+  }, [open, caps, router, record, pathname]);
 
   useEffect(() => { if (open) requestAnimationFrame(() => input.current?.focus()); }, [open]);
 

@@ -19,11 +19,11 @@ Only an **Admin** can invite people.
 - Evidence and files that belong to those projects.
 - The screens they need to report: adding activities, uploading evidence and entering indicator values.
 
-A partner has a short menu: **My projects** and **Security** in the side menu, and **Today**, **Waiting** and **More** in the bar on a phone. Their **Projects** list shows only the projects you chose, and the **Reports** page lists only those projects' reports. They cannot see your other projects, the team list, billing, the audit trail, exports, funding, or report approvals. A page outside their access says *"This page is not part of your account."*
+A partner has a short menu: **Home**, **My projects** and **Security** in the left menu, and **Today**, **Waiting** and **More** in the bar on a phone. Their **Home** is a page called **Your projects**: each project you gave them, the date of its next report (in red when late) and buttons to **Enter values**, **Add evidence** and **Open project**. Their **Projects** list shows only the projects you chose. They cannot see your other projects, the team list, billing, the audit trail, exports, funding, or report approvals. A page outside their access says *"This page is not part of your account."*
 
 ## Remove access
 
-On the Team page, change the person's role or remove them. Their access ends at their next page load.
+On the **Team** page use **Deactivate** (they cannot sign in; **Reactivate** brings them back) or **Delete** (final). Their access ends at their next page load. See [How to invite team members](/support/how-to/invite-team-members#deactivate-or-delete-someone).
 
 ## Limits
 

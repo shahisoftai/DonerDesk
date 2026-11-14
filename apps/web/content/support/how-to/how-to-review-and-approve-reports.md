@@ -17,7 +17,7 @@ Review happens in the document-style **report editor**. This guide covers the au
 
 ## Author: get the draft ready
 
-1. Open **Projects → project → Reporting → the period**.
+1. Open **Projects → project → Reports → the period**.
 2. Follow the **primary button** at the top right. It always shows the next step:
 
 | Button | What it means |
@@ -63,7 +63,7 @@ Click **Submit for review**. The report status becomes **Under review** and revi
 
 ## Reviewer: approve or request changes
 
-1. Open the report from **My Work** or **Reports**.
+1. Open the report from the **Inbox** or **Reports**.
 2. Read the sections; add comments in the section **Comments** tab.
 3. Choose:
    - **Approve report** – confirm the approval of this version. If blocking issues remain you are warned and can only approve anyway if you have the authority.
@@ -73,7 +73,7 @@ Users who cannot approve see "Waiting for review".
 
 ## Second approver
 
-In **Setup → Reporting profile → Approval**, "A second person must approve reports" stops the person who wrote a report from approving it; the message names what to do (assign a project manager or M&E officer under **Team**). It is off by default: if you work alone you may approve your own report, and the audit log records it as a self sign-off.
+In **Settings → Setup → Reporting profile → Approval**, "A second person must approve reports" stops the person who wrote a report from approving it; the message names what to do (assign a project manager or M&E officer under **Team**). It is off by default: if you work alone you may approve your own report, and the audit log records it as a self sign-off.
 
 ## After approval
 

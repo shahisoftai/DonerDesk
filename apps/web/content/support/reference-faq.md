@@ -6,7 +6,7 @@
 A project and programme management suite for grant-funded organisations. You keep the logframe, work plan, field data collection, indicators, activities, risks, evidence, maps, dashboards, compliance and team in one record, and donor reports are drafted from that record, checked against it and approved by a person. See [What is DonorDesk?](/support/getting-started/what-is-donordesk).
 
 ### Is DonorDesk just a reporting tool?
-No. Reporting is what the system produces. The working parts are the logframe, the work plan and Timeline, collection forms and the field app, the activity records, the indicator data in the Data Center, maps and dashboards, the evidence library, risks, My Work (your queue across projects) and the compliance checklist. Those are useful every month, not only when a report is due. See [Features](/features).
+No. Reporting is what the system produces. The working parts are the logframe, the work plan and Timeline, collection forms and the field app, the activity records, the indicator data in the Data Center, maps and dashboards, the evidence library, risks, the Inbox (your queue across projects) and the compliance checklist. Those are useful every month, not only when a report is due. See [Features](/features).
 
 ### Who is it for?
 Local and national NGOs, INGOs, UN implementing partners, consultancies and government programme units.
@@ -24,7 +24,7 @@ Yes. You upload the donor's template (Word, PDF, text, Markdown, Excel or CSV); 
 No. Tables, charts and comparisons come from verified indicator data, and any figure in the AI's text that is not in your inputs is rejected. Every factual statement is checked against evidence. See [AI in DonorDesk](/support/getting-started/ai-in-donordesk).
 
 ### Can I turn AI off?
-Yes, in **Settings → Settings**. You can always write reports manually.
+Yes, in **Settings → General**. You can always write reports manually.
 
 ## Account and access
 
@@ -49,7 +49,7 @@ Email privacy@donordesk.online. See [How DonorDesk handles your data](/support/s
 Active projects: Starter 1, Team 5, Growth 20. Archived projects and the demo project do not count.
 
 ### What is the difference between a results framework and a logframe?
-They describe the same results. A results framework explains the chain (what leads to what, and why); a logframe adds how each result is measured and what is assumed. DonorDesk stores one set of results and shows both: on the Logframe page choose **Results framework** or **Logframe**. Your donor's own words for the levels can be set in **Setup → Reporting profile**. See [Understanding logframes](/support/getting-started/understanding-logframes).
+They describe the same results. A results framework explains the chain (what leads to what, and why); a logframe adds how each result is measured and what is assumed. DonorDesk stores one set of results and shows both: on the Logframe page choose **Results framework** or **Logframe**. Your donor's own words for the levels can be set in **Settings → Setup → Reporting profile**. See [Understanding logframes](/support/getting-started/understanding-logframes).
 
 ### Can I import my logframe?
 Yes: Excel, CSV or TXT using the downloadable template. Indicators, activities and evidence records can be imported too. See [Data import and export](/support/advanced-features/data-import-export).
@@ -67,7 +67,7 @@ If it had values it was archived, not deleted: open **Logframe → Archived indi
 Withdraw it. A withdrawn record is left out of reports and no longer blocks the closing report. See [How to review and accept activities](/support/how-to/review-and-accept-activities).
 
 ### Can I accept all my activities at once?
-Yes. On the Activities list click **Select all waiting**, then **Accept n selected**.
+Yes. On **Plan → Work plan → Completed activities** click **Select all waiting**, then **Accept n selected**.
 
 ### Why did my evidence not count for the report?
 A monthly or quarterly report uses the files of its own period and its activities; link the file to its activity and it follows. Final, annual and semi-annual reports use all of the project's verified evidence. See [How to upload evidence](/support/how-to/upload-evidence).
@@ -122,7 +122,7 @@ An optional feature that learns your team's wording preferences from edits, neve
 ## Billing
 
 ### How do I upgrade, downgrade or cancel?
-In **Settings → Billing** (Admin only). See [Manage billing](/support/how-to/manage-billing-subscription).
+In **Settings → Plan and billing** (Admin only). See [Manage billing](/support/how-to/manage-billing-subscription).
 
 ### What payment methods are accepted?
 Cards through our payment partner Creem, which also handles tax. Enterprise customers can arrange other terms.
@@ -131,7 +131,7 @@ Cards through our payment partner Creem, which also handles tax. Enterprise cust
 Nothing is deleted. You keep read, export and delete access on Starter.
 
 ### Do you offer a nonprofit discount?
-Yes, 25% off Team and Growth for verified nonprofits, for their first year. Apply in **Settings → Billing**.
+Yes, 25% off Team and Growth for verified nonprofits, for their first year. Apply in **Settings → Plan and billing**.
 
 ## Technical
 

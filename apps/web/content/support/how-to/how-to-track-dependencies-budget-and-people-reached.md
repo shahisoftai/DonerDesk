@@ -21,7 +21,7 @@ On a planned activity, add **budget lines**: a code, a cost category, a donor, a
 
 ## People reached
 
-On the project's **People reached** page you can register people by **case code**, with sex, age group, location and the date they joined. DonorDesk stores no names, phone numbers or ID numbers. You must tick that consent was recorded before saving.
+On the project's **People reached** page (**Overview → More → People reached**) you can register people by **case code**, with sex, age group, location and the date they joined. DonorDesk stores no names, phone numbers or ID numbers. You must tick that consent was recorded before saving.
 
 - A case code already used in the project is refused.
 - A probable duplicate (same sex, age group and location, and a similar code) is flagged for you to decide. Nothing is merged for you.
@@ -29,8 +29,8 @@ On the project's **People reached** page you can register people by **case code*
 
 ## Workload
 
-On the project's **Team** tab you can see how many open planned activities each person leads, per week, against a limit you set. An overload is shown in words. It is a warning, not a block. Effort is counted in activities (you can give an activity a weight from 1 to 5); hours are not recorded.
+Under the project's **Settings → Team** you can see how many open planned activities each person leads, per week, against a limit you set. An overload is shown in words. It is a warning, not a block. Effort is counted in activities (you can give an activity a weight from 1 to 5); hours are not recorded.
 
 ## Automatic reminders
 
-The Team tab also lists two reminder rules, each on or off for the project: a planned activity starting soon with no lead (to the Project Manager), and a finished activity still needing its files (to its lead). Each rule shows what it sent and when.
+**Settings → Team** also lists two reminder rules, each on or off for the project: a planned activity starting soon with no lead (to the Project Manager), and a finished activity still needing its files (to its lead). Each rule shows what it sent and when.

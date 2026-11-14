@@ -2,7 +2,7 @@
 
 You do not have to type everything. The **Bring in data** page of a project takes you to the right import screen for the file or table you already have. **Every import checks each row before anything is saved**, so a bad file never half-loads.
 
-Open **Projects → your project → Bring in data**.
+Open **Projects → your project → Data → Import** (the page is called **Bring in data**).
 
 ## Option A: Let DonorDesk point you to the right import
 
@@ -19,12 +19,12 @@ Under **Or choose what you are bringing in**, click the card that matches:
 | Card | What it is | Where it takes you |
 |---|---|---|
 | **Indicator values** | The figures for each indicator and period, from a sheet or a copy of the Data Center table | The project's **Data** tab (the Data Center's **Import / export**) |
-| **Indicator definitions** | The indicators themselves: code, name, baseline, target, unit | **Logframe → indicator import** |
-| **Logframe structure** | Goals, outcomes, outputs and activities as a tree | **Logframe → import** |
-| **Completed activities** | Work that was done: date, place, participants, what happened | **Activities → import** |
-| **Planned activities (work plan)** | Work planned ahead with start and end dates and who leads it | **Activities → plan → import** |
-| **Evidence files** | Files or links that prove what was done | **Evidence → import** |
-| **Records for a collection form** | Rows filled in against a form's own questions | The project's **Forms** page |
+| **Indicator definitions** | The indicators themselves: code, name, baseline, target, unit | **Plan → Results framework → indicator import** |
+| **Logframe structure** | Goals, outcomes, outputs and activities as a tree | **Plan → Results framework → import** |
+| **Completed activities** | Work that was done: date, place, participants, what happened | **Plan → Work plan → Completed activities → import** |
+| **Planned activities (work plan)** | Work planned ahead with start and end dates and who leads it | **Plan → Work plan → Import a sheet** |
+| **Evidence files** | Files or links that prove what was done | **Evidence → Import** |
+| **Records for a collection form** | Rows filled in against a form's own questions | The project's **Data → Forms** page |
 | **Finance entries** | Expenses and money received | The **Finance** tab's import section |
 | **Places** | The project's list of places, with parents and pins | **Settings → Places** |
 

@@ -2,7 +2,7 @@
 
 ## I can't see a project
 
-Access follows your role and your project assignments. Ask an Admin or Project Manager to add you on the project's **Team** tab (**Assign member**).
+Access follows your role and your project assignments. Ask an Admin or Project Manager to add you under the project's **Settings → Team** (**Assign member**).
 
 ## I can't do something I could before
 
@@ -10,7 +10,7 @@ Your role may have changed. Ask an Admin to check **Team**. The role list is in 
 
 ## I can't open Billing, Team or Setup
 
-These are Admin pages: Billing and Team need the Admin role, and **Settings → Setup** needs permission to create projects (Admin).
+These are Admin pages: Billing and Team need the Admin role, and **Settings → Workspace setup** needs permission to create projects (Admin).
 
 ## I need to change my role or email
 
@@ -30,4 +30,4 @@ If nobody with the Admin role can sign in, email support@donordesk.online from t
 
 ## Account security concerns
 
-Change your password in **Settings → Security** and read [Security best practices](/support/security-privacy/security-best-practices).
+Change your password in **Settings → Sign-in and two-step** and read [Security best practices](/support/security-privacy/security-best-practices).

@@ -26,7 +26,7 @@ For the repeating monthly part on one page, see [How to run a reporting month](/
 ## Stage 1: Prepare your workspace (once)
 
 1. Create your account and organisation. See [Create an account](/support/how-to/create-an-account) and [Set up a new organisation](/support/how-to/set-up-new-organisation).
-2. Check the **organisation profile** and the **default reporting profile** (tone, language, rules) under **Settings → Setup**. See [Change the organisation profile](/support/how-to/change-organisation-profile).
+2. Check the **organisation profile** and the **default reporting profile** (tone, language, rules) under **Settings → Workspace setup**. See [Change the organisation profile](/support/how-to/change-organisation-profile).
 3. Decide where evidence is stored: your own Google Drive (recommended) or DonorDesk storage. See [Connect Google Drive](/support/how-to/connect-google-drive) and [Storage and file management](/support/getting-started/storage-file-management).
 4. Invite your team and give each person one role. Email is not sent, so copy the invitation link and share it yourself. See [Invite team members](/support/how-to/invite-team-members) and [Roles and permissions](/support/getting-started/user-roles-and-permissions).
 
@@ -34,19 +34,19 @@ For the repeating monthly part on one page, see [How to run a reporting month](/
 
 ## Stage 2: Create the project
 
-1. Click **New project** and fill the three steps: identity and donor, geography and dates, reporting frequency and budget. Your answers are saved as a draft if you leave.
-2. Choose the **reporting frequency** the donor actually requires (monthly, quarterly, and so on). It decides which periods DonorDesk offers later.
-3. The project starts as a **Draft**. Leave it as Draft until stage 5.
+1. Click **New project** (on **Projects**, or **+ Record → New project**). The **project wizard** opens: ten short slides (**Start**, **Project and team**, **Results framework**, **Indicators**, **Places**, **Work plan**, **Data entry**, **Reporting**, **Budget and finance**, **Review and launch**). Answer what you know now; your answers are saved as a draft, and **nothing is created until you press Start the project** on the last slide.
+2. On **Start**, choose the donor, the country and the main sector, and (optionally) let it read your proposal, logframe or budget. On **Reporting** choose the **reporting frequency** the donor actually requires (monthly, quarterly, and so on): it decides which periods DonorDesk offers later.
+3. Tick **Only what is still needed** to make **Next** skip slides that are already complete. The wizard creates the project as an **Active** project with its results, indicators, places and plan, so stages 3 and 5 below are mostly checking and finishing what it made.
 
 Detail: [Create a project](/support/how-to/create-a-project), [Understanding projects](/support/getting-started/understanding-projects).
 
-**Common slip:** a wrong start or end date. You can edit both under **Project → Settings**, but do it before you create periods.
+**Common slip:** a wrong start or end date. You can edit both under the project's **Settings → Project settings**, but do it before you create periods.
 
 ## Stage 3: Build the logframe and indicators
 
 Do the structure first, then the indicators, because an indicator belongs to a logframe item.
 
-1. **Logframe.** Import a CSV or Excel file (fastest) or add items by hand: Goal → Outcomes → Outputs → Activities. Keep short, stable codes (for example `O1`, `1.1`, `A1.1`).
+1. **Logframe.** Open **Plan → Results framework**. Import a CSV or Excel file (fastest) or add items by hand: Goal → Outcomes → Outputs → Activities. Keep short, stable codes (for example `O1`, `1.1`, `A1.1`).
 2. **Indicators.** Import them too. Add the optional **Logframe Code** column so several indicators can sit under one output.
 3. For every indicator set the **type**, **baseline**, **target**, **unit** and **frequency**. A quarterly indicator is only expected in the months it is due.
 4. Tick **Record a breakdown** for indicators that count people (sex, age, disability). It is ticked for you when the unit counts people.
@@ -59,7 +59,7 @@ Detail: [Build a logframe](/support/how-to/build-logframe), [Understanding logfr
 
 ## Stage 4: Add the donor templates
 
-1. On **Templates**, upload the donor's Word file for each report type you will submit (for example a **Monthly** report and a **Final** report). Use the right **Report type** when you upload.
+1. On **Reports → Donor templates**, upload the donor's Word file for each report type you will submit (for example a **Monthly** report and a **Final** report). Use the right **Report type** when you upload.
 2. Wait one to three minutes for the analysis, then **review** every section: wording, nesting, required tables and word limits. Mark sections reviewed and **Approve template**.
 3. Approved templates are chosen automatically: a template written for exactly that report type first, then the project default, then the built-in structure.
 
@@ -69,16 +69,16 @@ Detail: [Upload a donor template](/support/how-to/upload-donor-template), [Under
 
 ## Stage 5: Finish setup and activate
 
-1. Open the project's **Setup** page. Every line should be green: donor template, logframe and indicators, reporting profile.
-2. Open the **Reporting profile** and set tone, audience, formatting rules and special requirements (for example "disaggregate by sex"). Choose how financial figures are entered if the donor wants a financial summary.
-3. On **Team**, assign each person a **project role**. One person holds one role on a project.
+1. Open the project's **Settings → Setup** page. Every line should be green: donor template, logframe and indicators, reporting profile.
+2. Open the **Reporting profile** (on the same **Settings → Setup** page) and set tone, audience, formatting rules and special requirements (for example "disaggregate by sex"). Choose how financial figures are entered if the donor wants a financial summary.
+3. Under **Settings → Team**, assign each person a **project role**. One person holds one role on a project.
 4. Click **Mark setup complete**, then **Activate project**.
 
 Detail: [Create a project](/support/how-to/create-a-project), [Manage team roles and permissions](/support/how-to/manage-team-roles-permissions).
 
 ## Stage 6: Create the reporting calendar
 
-1. On **Reporting**, use **Create all periods**. It creates every regular period of the project in one click, each with its donor deadline.
+1. On the project's **Reports** tab, use **Create all periods**. It creates every regular period of the project in one click, each with its donor deadline.
 2. The **last block of the project is left out on purpose**: it belongs to the closing report (stage 12).
 3. If a period is wrong, you can cancel it or convert it before any report is approved. See [Create a reporting period](/support/how-to/create-a-reporting-period).
 
@@ -97,23 +97,23 @@ Detail: [Log activities](/support/how-to/log-activities), [Upload evidence](/sup
 
 ## Stage 8: Review activities and evidence (weekly)
 
-1. A reviewer opens **Activities** and uses **Select all waiting → Accept**, or **Request revision** with a note for a record that needs a fix. A duplicate is **withdrawn**.
-2. Open evidence and **verify** each file (or use bulk verify on the evidence list). Only verified evidence supports figures in a report.
+1. A reviewer opens **Plan → Work plan → Completed activities** and uses **Select all waiting → Accept**, or **Request revision** with a note for a record that needs a fix. A duplicate is **withdrawn**.
+2. Open evidence and **verify** each file (or tick files on the evidence list: a bar at the bottom shows **n files selected → Verify**). Only verified evidence supports figures in a report.
 
 Detail: [Review and accept activities](/support/how-to/review-and-accept-activities), [Evidence verification](/support/getting-started/evidence-verification), [Use bulk actions](/support/how-to/use-bulk-actions).
 
 ## Stage 9: Enter and verify the month's numbers
 
-1. Open the period and click **Review data** (or **Enter data**) beside **Indicator values**. Type each indicator's value for **this period** (and the cumulative figure if your donor wants it) in the **Sheet**, or use the **Form** view.
+1. Open the period (**Reports** tab) and click **Review data** (or **Enter data**) beside **Indicator values**, or click **Inputs** in the stage bar at the top. Type each indicator's value for **this period** (and the cumulative figure if your donor wants it) in the **Sheet**, or use the **Form** view.
 2. For breakdown indicators, click **Breakdown** and enter women and men (or the categories required). They must add up to the total.
 3. Leave an indicator empty in a month it was not measured (for example a quarterly survey). It is shown as **not measured**, never as zero.
-4. Click **Save all**, then **Submit for review**. If you may verify, click **Verify all**. Rows that cannot be verified are listed with the reason.
+4. Click **Save all**, then **Submit for review**. If you may verify, click **Verify all**. Rows that cannot be verified are listed with the reason; a value that needs a file has an **Attach the files** button that uploads, verifies and finishes it in one step.
 
 Detail: [Update indicator values](/support/how-to/update-indicator-values), [Use the Data Center](/support/how-to/use-the-data-center) (all months in one sheet, Excel import and charts), [Import from Google Sheets](/support/how-to/import-from-google-sheets), [Troubleshooting indicator data](/support/troubleshooting/indicator-data).
 
 ## Stage 10: Tell the story
 
-1. Answer the five story questions: what went well, challenges, why targets were over or under achieved, what changed, and a lesson or story. Be concrete, and state reasons for gaps.
+1. Click **Story** in the stage bar (or **Answer the story questions**) and answer the five story questions: what went well, challenges, why targets were over or under achieved, what changed, and a lesson or story. Be concrete, and state reasons for gaps.
 2. If the donor template has **compliance sections** (environmental, branding and marking, gender, coordination, safeguarding), a box appears for each. **What you write there is what the report says**, so state what was actually done. Use **Same as last month** or a **standing statement** for recurring text.
 3. Check the launch card: figures verified, story written, evidence linked.
 
@@ -121,7 +121,7 @@ Detail: [Tell the story and add inputs](/support/how-to/tell-the-story-and-add-i
 
 ## Stage 11: Generate, review, approve and export
 
-1. Click **Generate report**. A monthly report takes about a minute. If a section is marked **Written without AI**, it shows the reason and a **Try again** button. See [Generate an AI draft](/support/how-to/generate-ai-report-draft) and [Troubleshooting AI report generation](/support/troubleshooting/ai-report-generation).
+1. Click **Write the draft** (the third stage) or **Generate report**. A monthly report takes about a minute. If a section is marked **Written without AI**, it shows the reason and a **Try again** button. See [Generate an AI draft](/support/how-to/generate-ai-report-draft) and [Troubleshooting AI report generation](/support/troubleshooting/ai-report-generation).
 2. Read the flagged statements. For each: use the verified value, edit the wording, **keep with a note** (say why), or leave it out. Use **Approve all clean sections** once nothing is flagged.
 3. Open **Report checks**. Clear what blocks submission. Items that depend on your data close when the checklist refreshes; run **⋯ → Scan for missing items** if one stays open. Attestations (for example sign-off) need a person. See [Use the compliance checklist](/support/how-to/use-compliance-checklist).
 4. **Submit for review**, then **Approve report** (a different person from the author when your project requires a second approver). See [Review and approve reports](/support/how-to/review-and-approve-reports).
@@ -133,7 +133,7 @@ Detail: [Report editor](/support/how-to/use-the-report-editor), [Report readines
 
 ## Stage 12: Close the project
 
-1. When the last regular report is approved, open **Reporting → Closing report**. The page lists seven steps: calculations confirmed, earlier reports approved, project-wide figures complete, finance, activities accepted, donor template, and sign-offs.
+1. When the last regular report is approved, open **Reports → Closing report**. The page lists seven steps: calculations confirmed, earlier reports approved, project-wide figures complete, finance, activities accepted, donor template, and sign-offs.
 2. Click **Start the closing report**. It covers the last block of the project and uses the **life-of-project** value of each indicator and **all** of the project's verified evidence.
 3. Enter and **verify the final financial figures** (budget lines, spent, balance). Add the log of any procurement or close-out records the donor requires.
 4. Generate, review, approve and export exactly as in stage 11. Resolve the closing checklist (sign-off, sensitive data handling, procurement records, donor submission rule).

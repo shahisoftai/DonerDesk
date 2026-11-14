@@ -8,18 +8,19 @@ Title, project code, donor name, implementing and partner organisations, country
 
 ## Project pages
 
-| Tab | Purpose |
-|---|---|
-| **Reporting** | Reporting periods and the report workspace (the main working area). |
-| **Overview** | Summary, readiness and next actions. |
-| **Logframe** | Hierarchy and indicators. |
-| **Activities** | Field updates. |
-| **Evidence** | Project evidence library. |
-| **Templates** | Donor templates. |
-| **Team** | Project assignments and project roles. |
-| **Settings** | Details, dates, budget, status, archive. |
+A project has **seven tabs** across the top. Under the tab bar, a second row lists the pages inside the tab you are on; rarely used pages sit behind **More**.
 
-The **Setup** page (linked from the project) is the checklist for getting ready to report.
+| Tab | Pages inside | Purpose |
+|---|---|---|
+| **Overview** | Overview; **More**: Management report, Changes of plan, People reached, Ask DonorDesk | Summary, readiness, what needs you, the calendar and next actions. |
+| **Plan** | **Results framework**, **Work plan**, **Where we work** | The hierarchy and indicators; planned and completed activities (Timeline, List, Calendar, Map); the places the project works in. |
+| **Data** | **Data Center**, **Enter data**, **Import**, plus **Forms** and **Datasets** once the project has one (until then they are under **More**); **More** also holds Data tables, Charts and Maps | Every indicator value, entering and importing data, collection forms and tables you bring in. |
+| **Evidence** | the project's evidence library | Files that prove results. |
+| **Reports** | **Reports**, **Donor templates**, **Compliance**; **More**: Infographics | Reporting periods and each report (a four-stage bar: Inputs, Story, Draft, Review and export), donor templates, the evidence checklist. |
+| **Finance** | the finance register | What was promised, received and spent. |
+| **Settings** | **Project settings**, **Team**, **Setup** | Details, dates, budget, status and archive; project members, project roles and workload; the checklist for getting ready to report. |
+
+The path above the project title (for example *Projects › your project › Plan › Results framework*) shows where you are and takes you back up one level.
 
 ## Status
 

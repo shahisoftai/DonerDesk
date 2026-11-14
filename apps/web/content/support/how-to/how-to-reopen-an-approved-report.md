@@ -6,7 +6,7 @@ Who can: **Admin** and **Project Manager** (the people who can approve reports).
 
 ## Reopen
 
-1. Open the report (**Projects → project → Reporting → the period**).
+1. Open the report (**Projects → project → Reports → the period**).
 2. Click the **⋯** menu and choose **Reopen for changes**. (When you are adding a chart from the Data Center, the same button appears next to the message that the report is locked.)
 3. Write **why** the report is being reopened and click **Reopen report**. The reason is required.
 

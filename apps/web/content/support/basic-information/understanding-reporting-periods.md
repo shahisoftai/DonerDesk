@@ -28,7 +28,7 @@ For the project's last report, use the guided [closing report](/support/how-to/c
 
 ## Create them all at once
 
-On the **Reporting** page, **Create all periods** sets up the whole monthly or quarterly calendar in one click and leaves the last block to the closing report. See [How to create a reporting period](/support/how-to/create-a-reporting-period).
+On the project's **Reports** page, **Create all periods** sets up the whole monthly or quarterly calendar in one click and leaves the last block to the closing report. See [How to create a reporting period](/support/how-to/create-a-reporting-period).
 
 ## The period workspace
 
@@ -45,4 +45,4 @@ Not started → In progress → Evidence collection → Draft generated → Unde
 
 ## Deadlines
 
-The donor deadline is calculated from the template's deadline setting where it has one. Upcoming deadlines appear on **Home** and **My Work**.
+The donor deadline is calculated from the template's deadline setting where it has one. Upcoming deadlines appear on **Home** and in the **Inbox**.

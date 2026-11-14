@@ -4,11 +4,11 @@ For administrators. Two-step sign-in adds a code from an authenticator app after
 
 ## Before you require it
 
-Turn on two-step sign-in for your own account first, under **Settings → Security** (the **Two-step sign-in** panel). DonorDesk will not let you require it otherwise, so you cannot lock yourself out.
+Turn on two-step sign-in for your own account first, under **Settings → Sign-in and two-step** (the **Two-step sign-in** panel). DonorDesk will not let you require it otherwise, so you cannot lock yourself out.
 
 ## Require it
 
-1. Open **Settings → Security** and choose the day it starts: **From now**, **In a week**, **In two weeks** or **In a month**.
+1. Open **Settings → Sign-in and two-step** and choose the day it starts: **From now**, **In a week**, **In two weeks** or **In a month**.
 2. Choose **Require it**. The page shows how many people have not set it up yet.
 
 Until the day, people see a reminder. From the day, a person without two-step sign-in can only set it up, then sign in again with a code. Outside partners are included.

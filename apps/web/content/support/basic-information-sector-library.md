@@ -25,7 +25,7 @@ An indicator is placed under the result it measures when its wording fits that r
 
 ## On an existing project
 
-Open the project's **Logframe** page and choose **Choose from the library**. Pick a result in the box at the bottom to put the indicators there, or leave it on automatic: indicators whose wording fits no result are skipped with "Choose where it goes", and you can add them again with a result chosen. Indicators from the library show a **Sector library** label and, where there is one, the reference standard.
+Open the project's **Plan → Results framework** page and choose **Choose from the library**. Pick a result in the box at the bottom to put the indicators there, or leave it on automatic: indicators whose wording fits no result are skipped with "Choose where it goes", and you can add them again with a result chosen. Indicators from the library show a **Sector library** label and, where there is one, the reference standard.
 
 The library is updated from time to time. When an indicator you added has a newer version, the project shows what changed and lets you accept each change separately. Anything you do not tick stays as you set it.
 

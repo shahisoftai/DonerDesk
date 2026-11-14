@@ -6,11 +6,11 @@ Who can enter values: Admin, Project Manager and M&E Officer. Who can verify: Ad
 
 ## Quick way: one number from anywhere
 
-For a single figure, you do not need to open the report. Click **Record** in the top bar, choose **A number**, and follow [How to record a number, an activity, a file or an expense](/support/how-to/record-data). It works out the reporting period from the date you pick.
+For a single figure, you do not need to open the report. Click **+ Record** in the top bar (or use the project's **Data → Enter data** page), choose **A number**, and follow [How to record a number, an activity, a file or an expense](/support/how-to/record-data). It works out the reporting period from the date you pick.
 
 ## Open the full entry screen
 
-1. Go to **Projects → project → Reporting**. Each reporting period has an **Enter indicator data** link. Or open the period and, in **Ready to write this report**, click **Review data** beside **Indicator values**.
+1. Go to **Projects → project → Reports** and open the reporting period. The bar at the top of the report shows four stages: **Inputs → Story → Draft → Review and export**, with one blue button for the next step. Click **Inputs**, or, in **Ready to write this report**, click **Review data** beside **Indicator values**.
 2. The page is called **Report inputs**. It has three tabs: **Indicators** (with how many are verified), **Story** and **Files**. You are on **Indicators**.
 
 If there is no reporting period yet, create one first ([How to create a reporting period](/support/how-to/create-a-reporting-period)).
@@ -35,7 +35,7 @@ Under **View**, choose how you want to work.
    - For indicators whose values **add up** (calculation *Sum of period values*), the **Cumulative** box fills in by itself: last period's running total plus what you typed. If you type your own cumulative figure it is never replaced.
    - The **data source** carries forward from the last period, so you only change it when it changes.
 6. Click **Submit for review (n)** to hand in the values that have a figure. If your project uses **simple review**, hand-in and verification happen for you when you save and a file is attached.
-7. If you may verify values, click **Verify all (n)** (or **Verify selected**). Rows that cannot be verified are listed with the indicator code and the reason; the others are still verified. A verifier can also **send values back** with a reason, or use **Reopen verified (n)** to take verified values back to "needs correction" (the report must not be approved yet).
+7. If you may verify values, click **Verify all (n)** (or **Verify selected**). Rows that cannot be verified are listed with the indicator code and the reason; the others are still verified. If the reason is that a value needs a file behind it, the message has an **Attach the files** button: it opens a panel where you choose a file for each value; each file is uploaded for this period and indicator, verified (if you may verify files) and the value is verified in the same step. A verifier can also **send values back** with a reason, or use **Reopen verified (n)** to take verified values back to "needs correction" (the report must not be approved yet).
 
 Under each indicator the badge shows whether its **calculation is confirmed**. See [Understanding indicators and targets](/support/getting-started/indicators-and-targets).
 
@@ -49,7 +49,7 @@ The **Data Center** (**Projects → project → Data**) shows all periods in one
 
 - **Google Sheets:** click **Import from Google Sheet**, paste the sheet's URL. The sheet must be shared with the connected Google account and have a header row with the indicator code and period achievement (cumulative, comments and data source columns are optional). Values are applied to the grid; review them and press **Save all** to keep them. **Download Excel** and **Import Excel** do the same with a workbook: the workbook has dropdown checks, and an empty cell stays empty. See [How to import from Google Sheets](/support/how-to/import-from-google-sheets).
 - **Excel or CSV of all periods:** download the data sheet from the **Data Center**, fill the shaded columns and import it; a preview shows every change first. Verified values are never overwritten.
-- **Another file:** open **Projects → project → Bring in data**, choose **Indicator values**, and follow the screen. Every import checks each row before anything is saved. See [How to bring in data](/support/how-to/bring-in-data).
+- **Another file:** open **Projects → project → Data → Import**, choose **Indicator values**, and follow the screen. Every import checks each row before anything is saved. See [How to bring in data](/support/how-to/bring-in-data).
 
 ## Verify
 

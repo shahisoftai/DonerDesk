@@ -4,7 +4,7 @@ Every planned activity with a location can be shown on a map, so you can see at 
 
 ## The Map view
 
-Open your project and choose **Activities**. Next to **List** and **Timeline** there is a **Map** button.
+Open your project and choose **Plan → Work plan**. Next to **List** and **Timeline** there is a **Map** button.
 
 Each dot on the map is one place with planned activities. The colour says how the work there is going — the same words the plan list uses:
 

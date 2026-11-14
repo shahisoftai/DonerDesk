@@ -4,7 +4,7 @@
 
 ## Open the portfolio
 
-Select **Projects**, then **Portfolio dashboard**. You see only the projects you are a member of.
+Click **Home** in the left menu and then the **Portfolio** tab at the top (or **Projects**, then **Portfolio dashboard**). You see only the projects you are a member of.
 
 ## Read a row
 

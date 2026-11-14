@@ -4,7 +4,7 @@ DonorDesk subscriptions are billed through our payment partner **Creem**, which 
 
 ## Finding your invoices and receipts
 
-1. Go to **Settings → Billing**. Only workspace Admins can open it.
+1. Go to **Settings → Plan and billing**. Only workspace Admins can open it.
 2. Click **Manage subscription**. This opens the Creem billing portal.
 3. In the portal you can see your payment history, download invoices or receipts, and update your card.
 
@@ -12,7 +12,7 @@ Creem also emails a receipt to the billing email address after each successful p
 
 ## Updating payment details
 
-Use **Manage subscription** in **Settings → Billing** and update the card in the portal. The new card is used for future renewals.
+Use **Manage subscription** in **Settings → Plan and billing** and update the card in the portal. The new card is used for future renewals.
 
 ## Tax
 
@@ -28,6 +28,6 @@ Refunds are handled case by case. Email support@donordesk.online with your regis
 
 ## Something looks wrong
 
-- **Wrong plan or amount:** check your plan and usage in **Settings → Billing**, then see [Troubleshooting billing issues](/support/troubleshooting/billing-issues).
+- **Wrong plan or amount:** check your plan and usage in **Settings → Plan and billing**, then see [Troubleshooting billing issues](/support/troubleshooting/billing-issues).
 - **Nonprofit discount missing:** confirm your verification was approved (you will have received an email); discounted checkout only applies after approval.
 - **Payment failed:** the workspace keeps access during a short grace period while the payment is retried. Update your card in the billing portal to avoid a downgrade.

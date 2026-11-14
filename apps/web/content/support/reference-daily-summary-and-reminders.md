@@ -6,7 +6,7 @@ When an item has been late for 7 days, its owner and the project manager get one
 
 ## Your setting
 
-Open **Notifications** and choose how you want email: always, only for urgent or late items, or never. The note in the bell always arrives.
+Open **Inbox → Updates** and choose how you want email (**Email me**): always, only for urgent or late items, or never. The note in the bell always arrives.
 
 ## For administrators
 

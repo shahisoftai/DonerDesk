@@ -2,7 +2,7 @@
 
 Evidence is the proof behind your numbers: attendance sheets, photos, distribution lists, monitoring reports and so on. Roles that can upload: Admin, Project Manager, M&E Officer, Grants Officer, Field Officer and Compliance Officer.
 
-Open **Projects → your project → Evidence** (or **Evidence** in the main menu for all projects).
+Open **Projects → your project → Evidence** (or **Reports → Evidence** in the left menu for all projects; a Field Officer has **Evidence** in the left menu itself).
 
 ## Where files go
 

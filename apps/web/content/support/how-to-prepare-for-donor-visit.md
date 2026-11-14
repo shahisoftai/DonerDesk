@@ -4,8 +4,8 @@ Donor visits require preparation to showcase your work effectively. Here is how 
 
 ## Where DonorDesk helps
 
-- **Home and My Work** show deadlines, unverified items and compliance blockers.
-- **Compliance** lists what is missing across projects; use **Bulk actions** to clear items.
+- **Home and the Inbox** show deadlines, unverified items and compliance blockers.
+- **Reports → Compliance** lists what is missing across projects; use **Bulk actions** to clear items.
 - **Indicator grid** and each indicator's **progress card** show baseline, target and progress.
 - **Evidence library** filters by verification status and confidentiality.
 - **Export Center** produces the report, indicator table, evidence checklist and a ZIP evidence pack, and the **watermarked internal copy** is ideal for briefing colleagues.
@@ -91,7 +91,7 @@ Donor visits require preparation to showcase your work effectively. Here is how 
 
 ### 3. Organise Evidence
 
-1. Go to **Evidence**
+1. Go to **Reports → Evidence** (or a project's **Evidence** tab)
 2. Filter by donor requirements
 3. Verify key files are accessible
 4. Prepare evidence checklist
@@ -148,11 +148,11 @@ Use the dashboard to identify:
 
 | Document | Where to find | Status |
 |----------|--------------|--------|
-| Project summary | Overview tab | Ready? |
-| Logframe | Logframe tab | Verified? |
-| Latest indicator update | Indicators tab | Current? |
-| Evidence checklist | Compliance tab | Complete? |
-| Site-specific activities | Activities tab | Documented? |
+| Project summary | **Overview** | Ready? |
+| Logframe | **Plan → Results framework** | Verified? |
+| Latest indicator update | **Data → Data Center** | Current? |
+| Evidence checklist | **Reports → Compliance** | Complete? |
+| Site-specific activities | **Plan → Work plan** | Documented? |
 
 ### Field Staff Preparation
 

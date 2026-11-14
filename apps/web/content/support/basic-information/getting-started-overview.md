@@ -1,6 +1,6 @@
 # Getting Started with DonorDesk
 
-A complete first-time guide. The whole path takes an afternoon; the [Academy tour](/tour) shows it on a demo project in 10–15 minutes.
+A complete first-time guide. The whole path takes an afternoon; the [Academy tour](/tour) shows it on a demo project in 10–15 minutes. New to this layout? Read [How to find your way around](/support/how-to/find-your-way-around) first.
 
 ## 1. Create your workspace
 
@@ -8,7 +8,7 @@ Sign up at donordesk.online ([details](/support/how-to/create-an-account)). You 
 
 ## 2. Set up your workspace
 
-Complete the checklist on **Set up your workspace** ([details](/support/how-to/set-up-new-organisation)):
+Complete the **Get started** checklist ([details](/support/how-to/set-up-new-organisation)); you can come back to it from **Settings → Workspace setup**:
 
 1. **Connect Google Drive** for evidence (required)
 2. Organization profile (optional)
@@ -18,11 +18,11 @@ Complete the checklist on **Set up your workspace** ([details](/support/how-to/s
 
 ## 3. Create a project
 
-Use the three-step wizard: identity, geography and dates, reporting ([details](/support/how-to/create-a-project)).
+Click **New project** and use the project wizard: ten short slides (start, team, results, indicators, places, work plan, data entry, reporting, budget, launch). Nothing is created until you press **Start the project** ([details](/support/how-to/create-a-project)).
 
 ## 4. Finish project setup
 
-On the project's **Setup** page clear each item:
+On the project's **Settings → Setup** page clear each item:
 
 - **Donor template:** upload the donor's format, review it and approve it ([guide](/support/how-to/upload-donor-template)).
 - **Logframe and indicators:** import from Excel or build by hand ([guide](/support/how-to/build-logframe)).
@@ -43,7 +43,7 @@ For the whole monthly routine on one page, see [How to run a reporting month](/s
 
 ## 7. Write the report
 
-Open the period and work through **Indicator values → Story answers → Evidence → Generate report**, then review and submit ([AI draft](/support/how-to/generate-ai-report-draft), [editor](/support/how-to/use-the-report-editor)).
+Open the period (**Reports** tab) and follow the four-stage bar at the top, **Inputs → Story → Draft → Review and export**: indicator values, story answers, evidence, then **Generate report**, then review and submit ([AI draft](/support/how-to/generate-ai-report-draft), [editor](/support/how-to/use-the-report-editor)).
 
 ## 8. Review, approve, export
 

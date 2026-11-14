@@ -8,7 +8,7 @@ Use a schedule when the donor expects progress in steps, for example 100 by June
 
 ## Add the schedule
 
-1. Open the indicator (**Logframe → select the indicator**) and go to the section that edits its details.
+1. Open the indicator (**Plan → Results framework → select the indicator**) and go to the section that edits its details.
 2. Under **Target schedule (optional)**, write one line per date in this form:
 
    ```

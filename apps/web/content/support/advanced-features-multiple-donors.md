@@ -17,7 +17,7 @@ Set the **reporting period** and links on each evidence file. The same file can 
 
 ## Cross-project views
 
-**Reports**, **Evidence**, **Compliance** and **My Work** in the main menu show everything across projects, with deadlines on **Home**.
+**Reports** (with its **Evidence**, **Compliance** and **Download Center** tabs) and the **Inbox** show everything across projects, with deadlines on **Home**.
 
 ## Plan limits
 

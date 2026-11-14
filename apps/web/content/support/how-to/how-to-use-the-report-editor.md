@@ -2,7 +2,11 @@
 
 The report editor is where you read, edit, check and approve the report. It works like a normal document, with checks alongside.
 
-Open it from **Projects → project → Reporting →** the reporting period.
+Open it from **Projects → project → Reports →** the reporting period. This is the only report page: the older "classic view" of a report no longer exists, and old links to it open the editor.
+
+## The four stages
+
+Above the editor (and on the **Report inputs** and **Export center** pages) a bar shows where the report stands: **Inputs → Story → Draft → Review and export**. A stage is ticked when it is done, the current one is highlighted, and you can click any of them. One blue button on the right always names the next step: **Enter and verify the values**, **Answer the story questions**, **Write the draft**, or **Review, approve and export**. When every stage is done it says **Every stage is done**.
 
 ## Layout
 
@@ -39,7 +43,7 @@ Statements in the text that make factual claims are highlighted. In the **Statem
 
 ## The ⋯ menu
 
-Regenerate the whole draft, **Reopen for changes** (approvers, on an approved report; see [How to reopen an approved report](/support/how-to/reopen-an-approved-report)), **Edit data & story** (the inputs page), **Scan for missing items**, **Version history**, **Export center** and **Keyboard shortcuts**. Items you have no permission for are hidden.
+Regenerate the whole draft, **Reopen for changes** (approvers, on an approved report; see [How to reopen an approved report](/support/how-to/reopen-an-approved-report)), **Edit data & story** (the inputs page), **Scan for missing items**, **Version history**, **Export center** and **Keyboard shortcuts**. Items you have no permission for are hidden. (The "Switch to classic view" item is gone.)
 
 ## When inputs change
 
@@ -51,4 +55,4 @@ If you change indicator values, evidence or the story after generating, a banner
 
 ## Older workspace
 
-Some workspaces may still show the previous, more crowded report workspace. The steps are the same; the buttons are laid out differently.
+The previous, more crowded report workspace was retired in Version 4.000. Every workspace now opens this editor; a link ending in `?editor=classic` just opens it too.

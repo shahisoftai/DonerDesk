@@ -5,7 +5,7 @@ The seven workspace roles and the full capability matrix are in [User roles and 
 ## Workspace role vs project assignment
 
 - Your **workspace role** (set on the Team page by an Admin) defines what you can do.
-- Your **project assignments** (project → Team) define which projects you work on and your **project role** there.
+- Your **project assignments** (project → **Settings → Team**) define which projects you work on and your **project role** there.
 
 ## Seats
 

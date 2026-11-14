@@ -2,7 +2,7 @@
 
 A flow map draws movements you record. They are never worked out for you.
 
-1. Open the **Maps** tab and choose the project.
+1. Open **Dashboards and infographics**, then **Tools ▾ → Maps**, and choose the project.
 2. Scroll to **Movements between places** and add one: **From** place, **To** place (two different places), what moves in a few words (for example *People, tents…*), **How much** (above zero) and its **Unit**, then **Add movement**. You see *Movement recorded. Draw it with the Flow map chart.*
 3. Remove one with **Remove** beside it.
 

@@ -4,10 +4,10 @@ Practical steps to keep your DonorDesk workspace safe.
 
 ## Accounts and passwords
 
-- Use a long, unique password for DonorDesk (at least 12 characters, with a mix of letters, numbers and symbols) and store it in a password manager. Five wrong passwords in a row pause sign-in for 15 minutes. Change it in **Settings → Security**.
+- Use a long, unique password for DonorDesk (at least 12 characters, with a mix of letters, numbers and symbols) and store it in a password manager. Five wrong passwords in a row pause sign-in for 15 minutes. Change it in **Settings → Sign-in and two-step**.
 - Never share a login. Invite each person with their own role.
 - Sign out on shared computers.
-- Turn on two-step sign-in in **Settings → Security**. It asks for a code from an authenticator app after your password. Outside partners cannot use it yet, so protect their accounts with strong passwords and remove their access when the work ends.
+- Turn on two-step sign-in in **Settings → Sign-in and two-step**. It asks for a code from an authenticator app after your password. Outside partners cannot use it yet, so protect their accounts with strong passwords and remove their access when the work ends.
 - Protect the email account tied to your login (it is used for password resets). If you use Google sign-in, enable 2-step verification on your Google account.
 
 ## Give the least access needed

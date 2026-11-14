@@ -15,7 +15,7 @@
 
 ## Layout problems
 
-- The sidebar can be collapsed for more room.
+- The left menu can be collapsed with **«** at the top left for more room.
 - On small screens the outline and inspector collapse; use a larger window for review work.
 - Use the theme toggle if colours are hard to read (light and dark themes).
 
@@ -25,7 +25,7 @@ Large files take time. Upload fewer at once and keep the tab open. Files up to 1
 
 ## Things do not update
 
-Reload. The report editor auto-saves, but pages such as Home and My Work show data as of the last load.
+Reload. The report editor auto-saves, but pages such as Home and the Inbox show data as of the last load.
 
 ## Still slow
 

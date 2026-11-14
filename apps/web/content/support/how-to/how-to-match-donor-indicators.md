@@ -4,7 +4,7 @@
 
 ## Open the panel
 
-1. Go to **Projects → your project → Templates** and open the donor template.
+1. Go to **Projects → your project → Reports → Donor templates** and open the donor template.
 2. Scroll to **Indicators the donor asks for**. Each row is one requirement from the template.
 
 ## What the statuses mean

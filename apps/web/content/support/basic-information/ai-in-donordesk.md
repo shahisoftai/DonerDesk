@@ -32,7 +32,7 @@ Successful AI report drafts use monthly credits (Starter 5, Team 20, Growth 100)
 
 ## Control
 
-- Turn AI off in **Settings → Settings**. Manual reporting always works.
+- Turn AI off in **Settings → General**. Manual reporting always works.
 - Review everything the AI writes before approving.
 
 See [AI Settings](/support/advanced-features/ai-settings) and [How to generate an AI draft](/support/how-to/generate-ai-report-draft).

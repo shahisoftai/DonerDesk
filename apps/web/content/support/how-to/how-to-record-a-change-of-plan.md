@@ -8,7 +8,7 @@ Record a change when an activity moves, is dropped or replaced, when a target or
 
 ## Record it
 
-1. Open the project and go to **Reports → Changes of plan**.
+1. Open the project and go to **Overview → More → Changes of plan**.
 2. Under **Record a change**, fill in:
    - **Day it changed**: the date the change was made or took effect.
    - **What changed**: one or two sentences, for example "Moved borehole drilling to the dry season".

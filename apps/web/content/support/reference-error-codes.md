@@ -21,7 +21,7 @@ DonorDesk explains problems in plain language on the page. This guide lists the 
 
 ## Project setup blockers
 
-Shown on the project's **Setup** page with a **Fix** link.
+Shown on the project's **Settings → Setup** page with a **Fix** link.
 
 | Code | Meaning |
 |---|---|

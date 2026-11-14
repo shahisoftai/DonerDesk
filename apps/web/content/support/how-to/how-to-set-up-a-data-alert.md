@@ -1,6 +1,6 @@
 # How to Set Up an Alert on an Indicator
 
-1. Open **Dashboards and infographics**, then the **Alerts** tab.
+1. Open **Dashboards and infographics**, then **Tools ▾ → Data alerts**.
 2. Choose an indicator and a limit.
 3. Save.
 

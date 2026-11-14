@@ -2,7 +2,7 @@
 
 You no longer need to rebuild a project because of an indicator mistake. Open the indicator and change it. Who can: **Admin**, **Project Manager** and **M&E Officer**.
 
-Open **Projects → your project → Logframe**, then click the indicator to open its page. Below the calculation settings you will see **Edit indicator**.
+Open **Projects → your project → Plan → Results framework**, then click the indicator to open its page. Below the calculation settings you will see **Edit indicator**.
 
 ## Fix the wording or the numbers
 
@@ -48,7 +48,7 @@ Click **Remove indicator** and confirm.
 
 An archived indicator is hidden, not lost.
 
-1. Open **Logframe**. Below the indicators table, **Archived indicators (n)** lists each one with the date it was archived. (The list only appears when there is something archived.)
+1. Open **Plan → Results framework**. Below the indicators table, **Archived indicators (n)** lists each one with the date it was archived. (The list only appears when there is something archived.)
 2. Click **Restore** next to the indicator.
 
 It returns to the logframe, the values grid and new reports with all its values and history. If another indicator now uses the same **code**, the restore is refused and tells you which code; change one of the codes first, then restore.

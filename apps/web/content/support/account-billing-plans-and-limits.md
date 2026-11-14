@@ -51,7 +51,7 @@ Reading, exporting and deleting always keep working. Only actions that would add
 
 ## AI credit top-ups (Team and Growth)
 
-In **Settings → Billing** you can buy extra AI drafts without changing plan:
+In **Settings → Plan and billing** you can buy extra AI drafts without changing plan:
 
 | Pack | Available on | Price |
 |---|---|---|
@@ -66,13 +66,13 @@ Packs are used **after** your monthly plan allowance runs out, and unused credit
 
 Verified nonprofits pay **25% less** on paid plans for their first year (Team $59.25/month or $592.50/year, Growth $111.75/month or $1,117.50/year).
 
-1. Go to **Settings → Billing** and submit the nonprofit verification form (registration number and a link to your registration certificate).
+1. Go to **Settings → Plan and billing** and submit the nonprofit verification form (registration number and a link to your registration certificate).
 2. The DonorDesk team reviews it and emails you when it is approved.
 3. Approved workspaces are moved to the discounted price. If a submission is rejected, the discount flag is removed.
 
 ## Upgrading, downgrading and cancelling
 
-- **Upgrade:** choose Team or Growth (monthly or annual) in **Settings → Billing** and complete the secure checkout. New limits apply as soon as the subscription is confirmed. Annual billing is two months free.
+- **Upgrade:** choose Team or Growth (monthly or annual) in **Settings → Plan and billing** and complete the secure checkout. New limits apply as soon as the subscription is confirmed. Annual billing is two months free.
 - **Downgrade or cancel:** use **Manage subscription** to open the billing portal. The change takes effect at the end of the billing period, then the workspace returns to the Starter limits. Data is kept; anything over the Starter limits becomes read-only until you upgrade or reduce usage.
 - **Free trials:** DonorDesk does not currently run a standard trial; every new workspace starts on the free Starter plan.
 

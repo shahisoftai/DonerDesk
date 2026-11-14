@@ -4,7 +4,7 @@ Activity records only count in reports once someone with approval rights **accep
 
 Who can review: **Admin** and **Project Manager**. Who can write and resubmit: Admin, Project Manager, M&E Officer and Field Officer.
 
-Open **Projects → your project → Activities**.
+Open **Projects → your project → Plan → Work plan → Completed activities**.
 
 ## Accept one record
 
@@ -14,7 +14,7 @@ Open **Projects → your project → Activities**.
 
 ## Accept many at once
 
-1. On the Activities list, look for **"n waiting for review"** at the top.
+1. On the **Completed activities** list, look for **"n waiting for review"** at the top.
 2. Tick the records you want, or click **Select all waiting**.
 3. Optionally write one note for all of them.
 4. Click **Accept n selected**.

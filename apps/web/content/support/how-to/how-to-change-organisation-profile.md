@@ -1,6 +1,6 @@
 # How to Change Your Organisation Profile
 
-Go to **Settings → Settings**. Admins can edit; other roles see the page read-only ("You do not have permission to edit organization settings").
+Go to **Settings → General**. Admins can edit; other roles see the page read-only ("You do not have permission to edit organization settings").
 
 ## What you can edit
 
@@ -19,8 +19,8 @@ Click **Save settings**.
 
 ## Related settings
 
-- **Default reporting profile** (language, tone, rules for new projects) is in **Settings → Setup**.
-- **AI Writing Style** (learn from your team's edits) appears as its own tab when enabled for your workspace. See [AI Settings](/support/advanced-features/ai-settings).
-- **Storage** – reconnect or change in **Settings → Setup**.
+- **Default reporting profile** (language, tone, rules for new projects) is in **Settings → Workspace setup**.
+- **Writing style** (learn from your team's edits) is its own page under **Settings → AI** when enabled for your workspace. See [AI Settings](/support/advanced-features/ai-settings).
+- **Storage** – reconnect or change in **Settings → Workspace setup**.
 
 Changes are recorded in the audit log.

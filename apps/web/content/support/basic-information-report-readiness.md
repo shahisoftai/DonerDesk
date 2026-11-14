@@ -4,7 +4,7 @@ DonorDesk shows several readiness signals. They answer different questions.
 
 ## 1. Project setup readiness
 
-On the project's **Setup** page: *Not started, In progress, Ready, Action required*. It is computed from live project data (nothing is stored), so it can change back to **Action required** if you later remove something required.
+On the project's **Settings → Setup** page: *Not started, In progress, Ready, Action required*. It is computed from live project data (nothing is stored), so it can change back to **Action required** if you later remove something required.
 
 To be **Ready**, a project needs:
 

@@ -14,7 +14,7 @@ You need permission to enter indicator data (Admin, Project Manager or M&E Offic
 
 ## Steps
 
-1. Go to **Projects → project → Reporting** and open the reporting period.
+1. Go to **Projects → project → Reports** and open the reporting period.
 2. Click **Enter data** (or **Review data**) beside **Indicator values** to open the **Report inputs** page.
 3. Click **Import from Google Sheets**.
 4. Paste the sheet's URL (`https://docs.google.com/spreadsheets/d/...`) and read it.
@@ -27,4 +27,4 @@ Nothing is stored until you press Save all.
 - **"Could not read the spreadsheet"** – share the sheet with the connected Google account and check the URL.
 - **Rows do not appear** – check that the header row exists and that the indicator codes match the codes in DonorDesk exactly.
 
-You can also import from Excel: for indicators use **Import indicators from Excel** on the Logframe tab, and for period values use **Import Excel** on the report's **Report inputs** page (the **Indicators** tab), or the Data Center's **Import / export**. See [Data import and export](/support/advanced-features/data-import-export).
+You can also import from Excel: for indicators use **Import indicators from Excel** on **Plan → Results framework**, and for period values use **Import Excel** on the report's **Report inputs** page (the **Indicators** tab), or the Data Center's **Import / export**. See [Data import and export](/support/advanced-features/data-import-export).

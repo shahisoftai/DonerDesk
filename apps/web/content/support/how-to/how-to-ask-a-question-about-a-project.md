@@ -4,12 +4,12 @@ Ask DonorDesk answers a question from your project's own records and shows where
 
 ## Before you start
 
-- Your organisation's administrator must turn Ask DonorDesk on: **Settings → Ask DonorDesk → Allow Ask DonorDesk in this organisation**. It is off until then.
+- Your organisation's administrator must turn Ask DonorDesk on: **Settings → AI features → Allow Ask DonorDesk in this organisation**. It is off until then.
 - You need to be able to see the project.
 
 ## Ask
 
-1. Open the project and choose **Ask**.
+1. Open the project and choose **Overview → More → Ask DonorDesk**.
 2. Type your question in **Your question** (up to 500 characters), or choose one of the examples.
 3. Choose **Ask**.
 

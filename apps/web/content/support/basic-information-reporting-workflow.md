@@ -4,7 +4,7 @@ DonorDesk turns your project data into a donor-ready report in a repeatable cycl
 
 ## One-time project setup
 
-1. **Create the project** with the guided wizard (identity → geography → reporting). Progress is saved as a draft if you leave.
+1. **Create the project** with the project wizard (ten short slides: start, team, results, indicators, places, work plan, data entry, reporting, budget, launch). Progress is saved as a draft if you leave, and nothing exists until you press **Start the project**.
 2. **Finish setup** on the project's Setup checklist: project workspace folder (Google Drive), **donor template** reviewed and approved, **logframe and indicators**, **reporting profile** (language, tone, rules) and team assignment (recommended).
 3. When every blocker is cleared the project is **ready for reporting** and you can create reporting periods. Activate the project (a new project starts as a Draft) and confirm how each indicator is calculated; the Setup page lists indicators still waiting for that as a warning.
 

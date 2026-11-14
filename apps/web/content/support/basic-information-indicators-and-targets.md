@@ -49,7 +49,7 @@ DonorDesk suggests a calculation from the indicator's type, unit and name, but a
 
 A percentage that your team reports directly (for example an attendance rate from registers) is confirmed as **latest reported value**; no numerator or denominator is needed. A rate calculated from two other indicators needs both chosen. Confirming never picks a direction for you: unless you choose "higher is better" or "lower is better" the indicator stays neutral.
 
-Indicators that still need confirming appear as a warning on the project's Setup page and as checklist items that close themselves once you confirm.
+Indicators that still need confirming appear as a warning on the project's **Settings → Setup** page and as checklist items that close themselves once you confirm.
 
 ## Progress
 

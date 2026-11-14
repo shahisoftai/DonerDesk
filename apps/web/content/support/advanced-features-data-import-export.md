@@ -6,9 +6,9 @@ Every import screen works the same way: upload a file, **or paste or dictate** t
 
 | What | Where | Formats |
 |---|---|---|
-| **Logframe** | Project → Logframe → **Import logframe from Excel** | XLSX, CSV, TXT (Logframe sheet of the template) |
+| **Logframe** | Project → **Plan → Results framework** → **Import logframe from Excel** | XLSX, CSV, TXT (Logframe sheet of the template) |
 | **Indicators** | Logframe → **Import indicators from Excel** | XLSX, CSV, TXT (Indicators sheet). Codes must match logframe items. |
-| **Activities** | Project → Activities → **Import activities from Excel** | XLSX, CSV, TXT. Each row goes to the reporting period containing its date; a **Logframe Code (Output or Activity)** column links it to an output or planned activity. |
+| **Activities** | Project → **Plan → Work plan → Completed activities** → **Import activities from Excel** | XLSX, CSV, TXT. Each row goes to the reporting period containing its date; a **Logframe Code (Output or Activity)** column links it to an output or planned activity. |
 | **Evidence records** | Project → Evidence → import | Evidence template (XLSX/CSV) |
 | **Indicator values** | Reporting period → **Enter data** → **Import from Google Sheet** or **Import Excel**; or **Bring in data** | Google Sheets; CSV |
 | **Indicator values, all periods** | Project → **Data → Import / export** | XLSX or CSV from the downloaded data sheet. Preview first; verified values are never overwritten. See [How to use the Data Center](/support/how-to/use-the-data-center). |

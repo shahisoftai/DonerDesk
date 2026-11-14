@@ -4,7 +4,7 @@ The **closing report** (a **Final** report) closes your reporting cycle and cove
 
 ## Open it
 
-Go to **Projects → project → Reporting** and click **Closing report**. (The New reporting period page also links to it from the Final option.)
+Go to **Projects → project → Reports** and click **Closing report**. (The **New report** page also has a **Final (closing) report** button.)
 
 ## The steps
 

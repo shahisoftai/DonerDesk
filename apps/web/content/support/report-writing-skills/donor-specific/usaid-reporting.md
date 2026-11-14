@@ -16,7 +16,7 @@ The hierarchy:
 
 Your project sits within this hierarchy. Your reports must demonstrate how your outputs contribute to the IR and DO levels, even if your project is only directly responsible for the Activity-level outputs.
 
-> **In DonorDesk:** choose **USAID** in **Setup → Reporting profile → Results framework wording**. The levels then read Goal, Intermediate Result and Sub-Intermediate Result on screen and in the downloaded Results Framework (Logframe page → **Results framework** → **Download Word**). A report section titled "Intermediate Result 2" shows only that result's indicators.
+> **In DonorDesk:** choose **USAID** in **Settings → Setup → Reporting profile → Results framework wording**. The levels then read Goal, Intermediate Result and Sub-Intermediate Result on screen and in the downloaded Results Framework (Logframe page → **Results framework** → **Download Word**). A report section titled "Intermediate Result 2" shows only that result's indicators.
 
 ## Types of USAID Reports
 

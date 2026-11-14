@@ -4,7 +4,7 @@ Most of the time, typing a town in an activity's **Location** field is enough �
 
 ## Pin the place
 
-1. Open the project and choose **Activities → Add planned activity**.
+1. Open the project and choose **Plan → Work plan → Add planned activity**.
 2. Fill in the title and dates as usual.
 3. Open **More details** and next to the Location field choose **Place it on the map**.
 4. Click the map where the work happens. A red pin drops there, and the coordinates appear under the map.

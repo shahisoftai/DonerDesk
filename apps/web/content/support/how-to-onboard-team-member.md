@@ -9,7 +9,7 @@ A short checklist for bringing a new colleague up to speed.
 
 ## First session
 
-1. Sign in and look at **Home** (what needs attention) and **My Work** (items assigned to you).
+1. Sign in and look at **Home** (what needs attention) and the **Inbox** (items assigned to you).
 2. Start the **Academy** tour from the Help/Academy button. It walks through the real workflow on a demo project, so they can practise without touching live data.
 3. Read [Key concepts](/support/getting-started/key-concepts).
 

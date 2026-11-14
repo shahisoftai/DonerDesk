@@ -24,7 +24,7 @@ Invitation links are single-use and expire. If it says the link is invalid or ex
 
 ## I am signed in but pages are missing
 
-Your role decides what you see. For example **Team** and **Settings → Setup** are for Admins, and **Audit log** for Admin, Project Manager and Compliance Officer. See [User roles and permissions](/support/getting-started/user-roles-and-permissions).
+Your role decides what you see. For example **Team** and **Settings → Workspace setup** are for Admins, and **Audit log** for Admin, Project Manager and Compliance Officer. See [User roles and permissions](/support/getting-started/user-roles-and-permissions).
 
 ## Signed out unexpectedly
 

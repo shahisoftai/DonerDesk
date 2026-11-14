@@ -6,7 +6,7 @@ Who can manage templates: Admin, Project Manager and Grants Officer.
 
 ## Step 1: Add the template
 
-1. Open your project and go to **Templates** (in the project's secondary tabs), then click to create a new template.
+1. Open your project and go to **Reports → Donor templates**, then click to create a new template.
 2. Choose **how do you want to add it**:
    - **Upload the template file** – Word (.docx), PDF, text, Markdown, Excel or CSV, up to 20 MB. Word keeps headings and tables best. Scanned PDFs cannot be read; paste the text instead.
    - **Paste the template text** – useful when the donor sent instructions in an email or a scanned document. Extraction works from this text and you can correct it first.

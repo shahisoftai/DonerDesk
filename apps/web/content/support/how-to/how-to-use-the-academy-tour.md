@@ -5,7 +5,7 @@
 ## Take the tour
 
 - **Not signed up yet?** The public [product tour](/tour) shows real portal screenshots, step by step, with no account needed.
-- **In your workspace:** choose **Take the product tour** on Home or the setup page, or use the **Academy** button in the top bar. It takes about **10–15 minutes**. You can leave and **Resume the product tour** later; progress is remembered.
+- **In your workspace:** choose **Take the product tour** on Home or the **Get started** page, or use the **Academy** button in the top bar (on a computer; the phone's top bar is shorter, so start it from **Home**). It takes about **10–15 minutes**. You can leave and **Resume the product tour** later; progress is remembered.
 
 The tour has ten steps, in the order of the work: your sample project, project setup checklist, logframe and indicators, donor template, reporting periods, evidence library, AI-assisted draft, review and refine, compliance checklist and export. Several steps carry a **Good to know** note about a rule that is easy to miss (confirming indicator calculations, how reporting periods work, that attached evidence is proof, how readiness depends on the stage, and the difference between "needs fixing" and "could not confirm").
 

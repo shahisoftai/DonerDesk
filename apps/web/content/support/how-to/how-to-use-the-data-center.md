@@ -2,9 +2,9 @@
 
 The **Data Center** shows every indicator value of a project, across all its reporting periods, in one place. Use it to see all months at once, spot gaps, download the whole sheet, fill in many values in Excel and import them back, and build charts for your reports.
 
-Open **Projects → your project → Data**. Anyone who can see the project can view and download. Importing needs the right to enter indicator values (Admin, Project Manager, M&E Officer).
+Open **Projects → your project → Data** (the **Data Center** page is the first in the row under the tabs). Anyone who can see the project can view and download. Importing needs the right to enter indicator values (Admin, Project Manager, M&E Officer).
 
-The Data Center has four tabs: **Indicator data**, **By place**, **Charts** and **Import / export**. A bar above them links to the project's sister tools: **Collection forms**, **Chart Studio**, **Maps**, **Report builder** and the Data Center itself.
+The Data Center has these tabs: **Indicator data**, **By place**, **Quick chart**, **Finance** (when finance is on) and **Import / export**. Buttons above them open the project's sister tools: **Chart Studio**, **Map** and **Bring in data**. The other Data pages are in the row under the project tabs: **Enter data**, **Import**, **Forms** and **Datasets** (once the project has one), and under **More**: **Data tables** (the old *Report builder*), **Charts** and **Maps**.
 
 ## By place
 
@@ -57,4 +57,4 @@ Every saved value is recorded in the audit trail like any other entry.
 
 ## Build a chart
 
-The **Charts** tab turns the same data into charts. See [Build and style a chart in the Chart Studio](/support/how-to/use-the-chart-studio) for the 50 chart types, themes and style options, and [How to add a chart to a report](/support/how-to/add-a-chart-to-a-report) for putting a chart into a report section.
+The **Quick chart** tab turns the same data into a chart you can put straight into a report section or a dashboard. For every chart type and style, press **Chart Studio** above the tabs. See [Build and style a chart in the Chart Studio](/support/how-to/use-the-chart-studio) for the 50 chart types, themes and style options, and [How to add a chart to a report](/support/how-to/add-a-chart-to-a-report) for putting a chart into a report section.
