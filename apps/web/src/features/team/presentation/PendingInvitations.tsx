@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { cancelInvitationAction } from "@/lib/actions/team";
+import { useActionState } from "@/lib/client/action-state";
+import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import type { PendingInvitation } from "@/lib/server/schemas";
 import { Badge } from "@/components/data/Badge";
 import { Button } from "@/components/ui/Button";
@@ -10,6 +14,9 @@ import { formatDate } from "@/lib/shared/dates";
 /** People invited who have not joined yet, each with the link to send them again. */
 export function PendingInvitations({ invitations }: { invitations: PendingInvitation[] }) {
   const [copied, setCopied] = useState<string | null>(null);
+  const router = useRouter();
+  const state = useActionState();
+  const [cancelling, setCancelling] = useState<PendingInvitation | null>(null);
 
   async function copy(invitation: PendingInvitation) {
     const link = `${window.location.origin}${invitation.acceptPath}`;
@@ -34,7 +41,7 @@ export function PendingInvitations({ invitations }: { invitations: PendingInvita
               <th className="px-3 py-2 text-left">Email</th>
               <th className="px-3 py-2 text-left">Role</th>
               <th className="px-3 py-2 text-left">Link</th>
-              <th className="px-3 py-2 text-right">Share</th>
+              <th className="px-3 py-2 text-right">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -49,12 +56,30 @@ export function PendingInvitations({ invitations }: { invitations: PendingInvita
                   <Button size="sm" variant="secondary" disabled={inv.expired} onClick={() => void copy(inv)}>
                     {copied === inv.id ? "Copied" : "Copy link"}
                   </Button>
+                  <Button size="sm" variant="ghost" className="ms-2 text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10" onClick={() => setCancelling(inv)}>
+                    Cancel invite
+                  </Button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {state.error && <p role="alert" className="text-sm text-danger-600">{state.error}</p>}
+      {cancelling && (
+        <ConfirmDialog
+          open
+          onClose={() => setCancelling(null)}
+          title={`Cancel the invitation to ${cancelling.email}?`}
+          message="The link stops working at once and the seat it held is free again. You can invite them again later."
+          confirmLabel="Cancel invite"
+          pending={state.busy}
+          onConfirm={() => {
+            const inv = cancelling;
+            void state.run(() => cancelInvitationAction(inv.id)).then((done) => { if (done) { setCancelling(null); router.refresh(); } });
+          }}
+        />
+      )}
     </section>
   );
 }

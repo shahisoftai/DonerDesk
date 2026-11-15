@@ -54,3 +54,11 @@ export async function setUserStatusAction(userId: string, action: "DEACTIVATE" |
   if (!parsed.success) return { ok: false, error: { kind: "validation", message: "Unknown action.", fields: {} } };
   return gatewayRequest(`/v1/users/${encodeURIComponent(userId)}/status`, z.object({ status: z.string() }), context.token, { method: "POST", body: parsed.data });
 }
+
+export type CancelInvitationResult = Result<{ cancelled: true }, AppError>;
+
+/** Withdraw an invitation nobody has accepted: its link stops working and its seat is free. */
+export async function cancelInvitationAction(invitationId: string): Promise<CancelInvitationResult> {
+  const context = await requireSession();
+  return gatewayRequest(`/v1/users/invitations/${encodeURIComponent(invitationId)}`, z.object({ cancelled: z.literal(true) }), context.token, { method: "DELETE" });
+}

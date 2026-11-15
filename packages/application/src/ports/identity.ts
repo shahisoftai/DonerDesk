@@ -81,6 +81,8 @@ export interface IInvitationRepository {
   update(invitation: Invitation): Promise<Result<Invitation>>;
   /** Invitations of a workspace that nobody has accepted yet (expired ones included), newest first. */
   listOpenByTenant(tenantId: TenantId): Promise<Result<Invitation[]>>;
+  /** Withdraws an invitation nobody has accepted; true when one was there to withdraw. An accepted invitation is never touched. */
+  cancelOpen(id: string, tenantId: TenantId): Promise<Result<boolean>>;
 }
 
 export interface AuthenticatedUser {

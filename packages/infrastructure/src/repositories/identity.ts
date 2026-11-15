@@ -365,6 +365,11 @@ export class PrismaInvitationRepository implements IInvitationRepository {
     }
   }
 
+  async cancelOpen(id: string, tenantId: TenantId): Promise<Result<boolean, DomainError>> {
+    const gone = await this.prisma.invitation.deleteMany({ where: { id, tenantId: tenantId.toString(), acceptedAt: null } });
+    return ok(gone.count > 0);
+  }
+
   async listOpenByTenant(tenantId: TenantId): Promise<Result<Invitation[], DomainError>> {
     const rows = await this.prisma.invitation.findMany({
       where: { tenantId: tenantId.toString(), acceptedAt: null },

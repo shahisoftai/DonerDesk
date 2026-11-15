@@ -22,7 +22,6 @@ export const en = {
   "nav.inbox": "Inbox",
   "nav.group.work": "Work",
   "nav.home": "Home",
-  "nav.myWork": "Inbox",
   "nav.portfolio": "Portfolio",
   "nav.visuals": "Dashboards and infographics",
   "nav.projects": "Projects",

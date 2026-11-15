@@ -41,6 +41,14 @@ export async function registerUserRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  // Withdraw an invitation nobody has accepted (Version 4.000).
+  app.delete("/v1/users/invitations/:id", async (req) => {
+    const ctx = { tenant: req.tenant, requestId: req.id };
+    const r = await req.container.handlers.cancelInvitation.handle(ctx, (req.params as { id: string }).id);
+    if (!r.ok) throw r.error;
+    return r.value;
+  });
+
   app.post("/v1/users/role", async (req) => {
     const body = ChangeRoleSchema.parse(req.body);
     const ctx = { tenant: req.tenant, requestId: req.id };

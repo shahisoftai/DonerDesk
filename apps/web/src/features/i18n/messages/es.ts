@@ -20,7 +20,6 @@ export const es: Record<MessageKey, string> = {
   "nav.inbox": "Bandeja de entrada",
   "nav.group.work": "Trabajo",
   "nav.home": "Inicio",
-  "nav.myWork": "Mi trabajo",
   "nav.portfolio": "Cartera",
   "nav.visuals": "Paneles e infografías",
   "nav.projects": "Proyectos",
