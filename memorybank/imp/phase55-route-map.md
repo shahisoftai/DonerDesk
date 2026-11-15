@@ -1,6 +1,6 @@
 # Phase 55 route map (Version 4.000)
 
-**DonorDesk Version 4.000** · generated 2026-11-14 from `apps/web/src/app/**/page.tsx` · read by `apps/web/tests/unit/route-map.test.mts`
+**DonorDesk Version 4.01** · generated 2026-11-14 from `apps/web/src/app/**/page.tsx` · read by `apps/web/tests/unit/route-map.test.mts`
 
 Every page has one row. `KEPT` pages stay at their address (possibly under a new tab or menu); `REDIRECT` pages answer with a
 redirect to the target and must never be linked from the app. (Removed 2026-11-15, after a release with no hits: `/my-work`, `/notifications`, `/projects/new/classic`.) A new page needs a row, or the test fails.

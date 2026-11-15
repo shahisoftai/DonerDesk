@@ -1,6 +1,6 @@
 # Feature 20: Report Intelligence Engine — Implementation Plan
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 > **Version 4.000 layout (2026-11-14, Phase 55):** the legacy report workspace (`ReportWorkspace`, `?editor=classic`) and the `REPORT_EDITOR_V2` flag are gone: Report Editor v2 is the only report page. A four-stage bar **Inputs → Story → Draft → Review and export** with one next-step button runs along the top of the report, inputs and export pages (`ReportStepper`). "Final (closing) report" is a button on **New report**. See [66](66-New-UX-Version-4.md).
 

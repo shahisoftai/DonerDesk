@@ -1,6 +1,6 @@
 # Feature 60: Record — one data-entry flow for phone and desktop
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 > **Version 4.000 layout (2026-11-14, Phase 55):** the Record button is the blue **+ Record** in the top bar (press **R**, or Ctrl K → *Record a value, activity, file or expense*); **My Work** is the **Inbox**; the GPS **Here** button on the activity form is built. See [66](66-New-UX-Version-4.md).
 

@@ -1,6 +1,6 @@
 # Support articles: where they live
 
-**DonorDesk Version 4.000** · updated 2026-11-15
+**DonorDesk Version 4.01** · updated 2026-11-15
 
 - **Source of truth (served):** `apps/web/content/support/` is what the Support Center reads **and** where articles are edited. Its `INDEX.md` lists every article by category and says what to check when editing.
 - **Mirror (this folder):** `docs/support/how-to/` and the four `reference-*.md` beside this file are **copies** of the articles written for the gap-closure and later batches, kept here so the memory bank holds the text. They were re-synced from the served files on 2026-11-15 after the Version 4.000 review; if you change a served article, copy it back (`cp apps/web/content/support/how-to/<file> docs/support/how-to/`). Do not edit this mirror first.

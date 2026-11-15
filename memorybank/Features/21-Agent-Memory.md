@@ -1,6 +1,6 @@
 # Feature 21: Agent Memory (introduced in DonorDesk Version 3.007)
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 > **Version 4.000 layout (2026-11-14, Phase 55):** the AI Writing Style page is **Settings → AI → Writing style**. See [66](66-New-UX-Version-4.md).
 

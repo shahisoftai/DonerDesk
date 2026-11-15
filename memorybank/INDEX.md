@@ -1,6 +1,6 @@
 # DonorDesk MemoryBank Index
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 **Last updated:** 2026-11-15
 
@@ -409,6 +409,10 @@ memorybank/
 ## 2026-11-13: Phase 52 — results framework and logframe (Version 3.007)
 - Feature: [`Features/64-Results-Framework-And-Logframe.md`](Features/64-Results-Framework-And-Logframe.md). Plan and build record: [`imp/phase52-results-framework-and-logframe.md`](imp/phase52-results-framework-and-logframe.md).
 - Deployed 2026-11-13 (`20261113100000`, fixes `20261113130000`); migrations `20261116090000_framework_vocabulary`, `20261116100000_framework_logic`, `20261116110000_framework_change_kinds` (additive, no RLS change).
+
+## 2026-11-15: Version 4.01
+
+- Product version label moved to **4.01** in the living documents and the legal pages (4.000 is tagged `v4.000`; dated records and "since Version 4.000" references keep their version).
 
 ## 2026-11-14 to 2026-11-15: Phase 55 — the new UX (Version 4.000)
 - Feature: [`Features/66-New-UX-Version-4.md`](Features/66-New-UX-Version-4.md). Plan, decisions and status: [`imp/phase55-new-ux.md`](imp/phase55-new-ux.md). Route map (enforced by a test): [`imp/phase55-route-map.md`](imp/phase55-route-map.md). Brand options shown to the owner: [`imp/phase55-brand-options.html`](imp/phase55-brand-options.html).

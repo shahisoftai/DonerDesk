@@ -1,6 +1,6 @@
 # Feature 6: Logframe and Indicator Manager
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 > **Since Phase 52:** the same results can be read as a results framework or a logframe, in the donor's own words, with assumptions and reasoning per result. See [64](64-Results-Framework-And-Logframe.md).
 

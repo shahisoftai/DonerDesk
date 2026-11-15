@@ -1,6 +1,6 @@
 # Phase 55 translation review sheet (Version 4.000)
 
-**DonorDesk Version 4.000** · written 2026-11-15 · for a native reader of French, Spanish and Arabic
+**DonorDesk Version 4.01** · written 2026-11-15 · for a native reader of French, Spanish and Arabic
 
 A native review cannot be done by the build team; this sheet gives a reviewer exactly what to read. Fill the **Reviewer** column (OK, or the wording you would use) and send it back; the strings live in `apps/web/src/features/i18n/messages/{en,fr,es,ar}.ts`.
 

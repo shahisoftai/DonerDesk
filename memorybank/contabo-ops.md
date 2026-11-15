@@ -1,6 +1,6 @@
 # Contabo Operations — Hestia-Managed Shared Host and DonorDesk
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 **Last read-only verification:** 2026-09-07 (Hestia Control Panel cutover audit)
 **Host:** `109.123.248.253` — SSH alias `contabo` (root) — hostname `srv.gec5.com`

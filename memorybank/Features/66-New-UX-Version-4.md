@@ -1,6 +1,6 @@
 # 66 — The new UX (Version 4.000): one brand, fewer doors, clearer pages
 
-**DonorDesk Version 4.000 (Phase 55)**
+**DonorDesk Version 4.01 (Phase 55)**
 **Status:** built and deployed 2026-11-14 (releases `20261114150000` both, `20261114180000` web, `20261114200000` web, `20261115090000` both after a rolled-back attempt `20261114230000`); checked in a signed-in browser on production (admin account, plus seven short-lived test users, one per role, for screenshots).
 **Plan and build record:** [`../imp/phase55-new-ux.md`](../imp/phase55-new-ux.md) (findings F1–F92, batches 55.0–55.10, owner decisions §4, brand §6, page anatomy §7, status §8–§9). **Route map:** [`../imp/phase55-route-map.md`](../imp/phase55-route-map.md). **Brand options shown to the owner:** [`../imp/phase55-brand-options.html`](../imp/phase55-brand-options.html). **Rules:** `AGENTS.md` → "Version 4.000 invariants". **Support text:** [`../docs/support/ux-4000-map.md`](../docs/support/ux-4000-map.md) (the navigation map every article follows) and `apps/web/content/support/how-to/how-to-find-your-way-around.md`.
 Builds on [60](60-Record-One-Data-Entry-Flow.md), [62](62-Visual-Studio.md) and [65](65-Datasets-And-Kits.md). 3.007 is tagged `v3.007`; the version label in the living documents is 4.000.

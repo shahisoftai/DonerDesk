@@ -1,6 +1,6 @@
 # Deploy to Contabo — Fastest Path
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 **Last deploy:** 2026-11-15 (UTC) — `releaseId=20261115090000` (`SCOPE=both`, `SKIP_BUILD=1`, branch `0024-new-ux`, commit `ba5db9ee` plus the team deactivate/delete feature): **Version 4.000** — the new UX (Phase 55: Cobalt and Teal brand, Inbox, project tabs, command palette, grouped Settings, report stage bar) and Team Deactivate / Reactivate / Delete. Four releases carried it: `20261114150000` (`both`, the new UX), `20261114180000` and `20261114200000` (`web`, fixes and the partial items), `20261115090000` (`both`, after a rolled-back attempt). **No migration, no env, no RLS change.** `/ready` ok; worker env still `AI_REPORTER_CONTRACT_VERSION=6`. Details: `Features/66-New-UX-Version-4.md`.
 

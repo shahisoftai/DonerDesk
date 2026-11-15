@@ -1,6 +1,6 @@
 # Feature 17: Basic Settings
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 > **Version 4.000 layout (2026-11-14, Phase 55):** Settings is a grouped list on the left (Organisation, Data defaults, AI, Security, Billing, Integrations) instead of a row of tabs; the old pages were renamed: Setup → **Workspace setup**, Security → **Sign-in and two-step**, AI Writing Style → **Writing style**, Settings → **General**; the Ask and setup-assistant switches are on **AI features**. See [66](66-New-UX-Version-4.md).
 

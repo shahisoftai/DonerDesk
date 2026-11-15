@@ -1,6 +1,6 @@
 # Feature 4: Project Setup Module
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 > **Version 4.000 layout (2026-11-14, Phase 55):** the project's Setup page is **Settings → Setup** (the Settings tab of the project, then Setup). Project tabs are now Overview, Plan, Data, Evidence, Reports, Finance, Settings. See [66](66-New-UX-Version-4.md).
 

@@ -1,6 +1,6 @@
 # DonorDesk Features Index
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 This directory contains detailed documentation for DonorDesk's features: 01–21 are the MVP and its first additions, 23–25 are the programme-management batches, and 26–42 are the October 2026 audit and gap-closure batches (listed in the second table below), and 43–52 are the site maps, infographics and the Phase 33 competitive-parity features.
 

@@ -1,6 +1,6 @@
 # Phase 55 — The new UX (Version 4.000)
 
-**DonorDesk Version 4.000** · plan written 2026-11-14 · branch: `0024-new-ux` (3.007 is tagged `v3.007`) · status: **IMPLEMENTATION 2026-11-14 (§8 lists what is built and what is partial)**
+**DonorDesk Version 4.01** · plan written 2026-11-14 · branch: `0024-new-ux` (3.007 is tagged `v3.007`) · status: **IMPLEMENTATION 2026-11-14 (§8 lists what is built and what is partial)**
 
 ## 0. Why
 

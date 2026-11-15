@@ -1,6 +1,6 @@
 # Feature 32: Report locks and reopening — approved figures do not change under a report
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 **Author:** Claude (agent) · **Date:** 2026-10-21
 **Status:** Built, tested and deployed 2026-10-20 (batch 3, audit finding H-4; CG-08). Browser check pending. Builds on [Feature 10](10-Reporting-Period-Manager.md) and [Feature 13](13-Review-And-Approval-Workflow.md).

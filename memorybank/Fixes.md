@@ -1,6 +1,6 @@
 # Fixes
 
-**DonorDesk Version 4.000**
+**DonorDesk Version 4.01**
 
 Record of fixes applied to DonorDesk. Last updated: 2026-11-15 (the new UX, Version 4.000: see the section of that date); previously 2026-11-03 (dashboards: Phase 39 and live checks); previously 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
 

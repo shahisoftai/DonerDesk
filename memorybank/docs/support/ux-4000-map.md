@@ -1,6 +1,6 @@
 # Version 4.000 navigation map (for support articles)
 
-**DonorDesk Version 4.000** · written 2026-11-14 · source of truth: `apps/web/src/features/navigation/domain/role-navigation.ts`, `features/projects/domain/project-tabs.ts`, `components/layout/AppShell.tsx`, `features/command/domain/commands.ts`, settings layout. Every support article must use these names. Checked on the live site (admin account) on 2026-11-14.
+**DonorDesk Version 4.01** · written 2026-11-14 · source of truth: `apps/web/src/features/navigation/domain/role-navigation.ts`, `features/projects/domain/project-tabs.ts`, `components/layout/AppShell.tsx`, `features/command/domain/commands.ts`, settings layout. Every support article must use these names. Checked on the live site (admin account) on 2026-11-14.
 
 ## 1. The screen
 
@@ -81,4 +81,4 @@ Tabs: **Designs** (cards), **Templates**, **Datasets**, and **Tools ▾** = **Ch
 - **Imports:** after an import that skipped rows, **Edit the rows and import again** keeps your text.
 - **Projects list:** a **⋯** menu on each row; pointing at a title shows a small card.
 - **Data Center:** tabs **Indicator data · By place · Quick chart · Finance · Import / export**; buttons **Chart Studio**, **Map**, **Bring in data** above them. **Quick chart** is the one that goes into a report section.
-- **Version label:** DonorDesk Version 4.000.
+- **Version label:** DonorDesk Version 4.01.

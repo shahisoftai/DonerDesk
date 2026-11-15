@@ -1,6 +1,6 @@
 # How to Find Your Way Around DonorDesk
 
-DonorDesk Version 4.000 has a new layout. This page shows where things are, and where the things you used to open have gone.
+DonorDesk has had a new layout since Version 4.000 (current version: 4.01). This page shows where things are, and where the things you used to open have gone.
 
 ## The screen
 
