@@ -28,6 +28,7 @@
 .sx .sx-logo{display:flex;align-items:center;gap:10px;font:700 19px var(--display);text-decoration:none;letter-spacing:-.03em}
 .sx .sx-logo i{width:30px;height:30px;border-radius:9px;background:var(--brand);display:grid;place-items:center}
 .sx .sx-logo i svg{width:18px;height:18px}
+.sx .sx-logo .sx-logo-mark{width:30px;height:auto;display:block}
 .sx .sx-menu{display:flex;gap:4px;margin-inline-start:12px;flex:1}
 .sx .sx-menu button,.sx .sx-menu a{background:none;border:0;padding:8px 12px;border-radius:8px;font-weight:500;color:var(--muted);text-decoration:none}
 .sx .sx-menu button:hover,.sx .sx-menu a:hover,.sx .sx-menu [aria-current="page"]{color:var(--ink);background:var(--wash)}

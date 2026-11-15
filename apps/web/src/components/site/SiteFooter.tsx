@@ -7,7 +7,7 @@ export function SiteFooter() {
       <div className="sx-wrap sx-fgrid">
         <div>
           <Link className="sx-logo" href="/" aria-label="DonorDesk home" style={{ padding: 0 }}>
-            <i aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M4 18V9M10 18V5M16 18v-7M21 18H3" /></svg></i>
+            <img className="sx-logo-mark" src="/logo-mark.png" alt="" width={30} height={33} />
             DonorDesk
           </Link>
           <p style={{ marginTop: 10, maxWidth: "30ch" }}>Programme management for NGOs and the funders who back them.</p>

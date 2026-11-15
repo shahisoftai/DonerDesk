@@ -1,7 +1,8 @@
 [Unit]
 Description=DonorDesk SuperAdmin control plane
 After=network.target donordesk-api.service
-Requires=donordesk-api.service
+# Wants, not Requires: a deploy rollback stops the api, and Requires stopped this portal with it and never started it again (2026-11-14).
+Wants=donordesk-api.service
 
 [Service]
 Type=simple
