@@ -52,7 +52,7 @@ Builds on [60](60-Record-One-Data-Entry-Flow.md), [62](62-Visual-Studio.md) and 
 
 ## Known gaps
 
-- Redirects from the old addresses (`/my-work`, `/notifications`, `/projects/new/classic`) are kept for one release (F39).
-- The seven short-lived role test users were deleted; three older test users (`ZZ Test Field/Partner/PM`) and one pending invitation (`mnpiracha+zz-pm@gmail.com`) remain; the app has no "cancel invitation" button yet.
+- The redirects from the old addresses (`/my-work`, `/notifications`, `/projects/new/classic`) were removed on 2026-11-15 (F39: no hits in the access log since the release, no stored bookmarks, nothing links to them).
+- Team: a pending invitation has **Cancel invite** (`DELETE /v1/users/invitations/:id`, `CancelInvitationHandler`, audited without the address). The seven role test users were deleted.
 - No automatic rule for "link vs button" misuse (F58) or for "one primary button per page" (F52); both were fixed by hand while converting pages.
 - A billing test still expects plan catalog version 3 (the catalog is 4); unrelated to this phase.

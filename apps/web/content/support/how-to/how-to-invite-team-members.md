@@ -40,7 +40,7 @@ On **Team**, each member's row has **Change role**, **Deactivate** and **Delete*
 
 Both ask you to confirm in a box that says exactly what will happen. The organisation always keeps at least one active **Admin**: you cannot deactivate or delete the last one.
 
-A pending invitation you no longer want stays in **Invited, not joined yet** until its link expires; the person simply never joins.
+A pending invitation you no longer want can be withdrawn: in **Invited, not joined yet**, click **Cancel invite** on its row and confirm. The link stops working at once and the seat it held is free again; you can invite the person again later. (Someone who has already joined is deactivated or deleted instead, as above.)
 
 ## You can also invite during setup
 

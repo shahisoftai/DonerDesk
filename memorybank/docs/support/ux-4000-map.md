@@ -24,7 +24,7 @@
 
 - A **Field Officer** sees **Home**, **Inbox**, **Projects** and **Evidence** only (and the phone bar **Today · Record · Waiting · More**).
 - An **outside partner** sees **Home** (their **Your projects** page), **My projects** and **Security**.
-- **My Work** and **Notifications** no longer exist: they are the **Inbox** (**To do**, **Team**, **Updates**). Old links redirect.
+- **My Work** and **Notifications** no longer exist: they are the **Inbox** (**To do**, **Team**, **Updates**). The old addresses were removed on 2026-11-15 (no hits since the release).
 - **Portfolio**, **Evidence**, **Compliance** and **Download Center** are tabs on top of **Home** and **Reports**, not separate sidebar entries (except Evidence for a field officer).
 
 ## 3. A project (Projects → open a project)
@@ -73,7 +73,7 @@ Tabs: **Designs** (cards), **Templates**, **Datasets**, and **Tools ▾** = **Ch
 - **Create a project:** **New project** opens the **wizard** only (the one-page classic form is retired). Ten slides; tick **Only what is still needed** (under the slide tabs) so **Next** skips slides that are already complete. **Start from a document** is on the first slide.
 - **Get started** is the checklist (was "Set up your workspace") with a progress bar: **Settings → Workspace setup** or **/onboarding**.
 - **Record** is unchanged in steps (A number, An activity, A photo or file, An expense, A form answer); the button is blue.
-- **Team page:** each member row has **Change role**, **Deactivate** (or **Reactivate** when deactivated) and **Delete**. Deactivate stops sign-in and keeps the seat; delete is final, frees the seat and the address, and keeps their records as "Removed user". You cannot act on yourself, and one active administrator must remain. **Invite member** can add the person to projects (required for outside partners).
+- **Team page:** each member row has **Change role**, **Deactivate** (or **Reactivate** when deactivated) and **Delete**. Deactivate stops sign-in and keeps the seat; delete is final, frees the seat and the address, and keeps their records as "Removed user". You cannot act on yourself, and one active administrator must remain. **Invite member** can add the person to projects (required for outside partners). A pending invitation has **Cancel invite**.
 - **Evidence:** tick files (or **Select all … awaiting verification**); a bar at the bottom shows **n files selected → Verify**.
 - **Verify all** (report inputs): a value that needs a file shows **Attach the files**: choose a file for each value; it is uploaded, verified and the value verified in one step.
 - **Forms** you type in (new report, planned activity) keep your typing on this device; **Restore it** appears if you come back.
