@@ -266,7 +266,8 @@ test("usage counter reserve/consume/release math", () => {
 });
 
 test("plan catalog version is stable", () => {
-  assert.equal(PLAN_CATALOG_VERSION, 3);
+  // 4 since Ask became a Team+ plan feature (askAssistant, commit 335d4d40); bump deliberately with any catalog change.
+  assert.equal(PLAN_CATALOG_VERSION, 4);
 });
 
 test("stored limit overrides keep the plan's value for keys they lack (D5-5)", () => {

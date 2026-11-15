@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as echarts from "echarts";
-import { buildChart, resolveDataset, datasetQueryFor, CHART_KIND_ORDER, CHART_KINDS, applyChartStyle } from "@donordesk/domain";
+import { buildChart, resolveDataset, datasetQueryFor, CHART_KIND_ORDER, CHART_KINDS, CHART_PALETTES, applyChartStyle } from "@donordesk/domain";
 import { themedOption } from "../dist/infographics/blocks-core.js";
 import { CASES, EXTRA, ALL, sheet, spec, measureFor } from "../../domain/test/support/chart-fixtures.mjs";
 
@@ -63,7 +63,8 @@ test("styling an option leaves a decal pattern in the picture", () => {
 test("a file takes the brand colours for the product's default palette, and keeps a colour set a person chose", () => {
   const brand = ["#111111", "#222222", "#333333", "#444444"];
   const c = { ...ctx, t: { ...ctx.t, palette: brand } };
-  const standard = ["#2f7be8", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444", "#06b6d4"];
+  // The product's own default palette (whatever the brand is today), read from the domain rather than copied here.
+  const standard = CHART_PALETTES[0].colors;
   const plain = themedOption(c, { color: standard, series: [{ type: "bar", itemStyle: { color: "#ff0000" }, data: [1] }] });
   assert.deepEqual(plain.color, brand, "the default palette is replaced by the brand's");
   assert.equal(plain.series[0].itemStyle.color, undefined);

@@ -41,8 +41,10 @@ export function I18nProvider({ initialLocale, initialMessages, children }: { ini
   }, [loaded]);
 
   useEffect(() => {
-    const chosen = cookieLocale();
-    if (chosen && chosen !== locale) void switchTo(chosen);
+    // The person's cookie wins; otherwise the language the page opened in. Either is fetched when its words are not here yet
+    // (a page may open in Arabic without the server handing over the dictionary).
+    const target = cookieLocale() ?? locale;
+    if (target !== locale || (target !== "en" && !loaded[target])) void switchTo(target);
     // Only on opening: a later change is made through setLocale.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

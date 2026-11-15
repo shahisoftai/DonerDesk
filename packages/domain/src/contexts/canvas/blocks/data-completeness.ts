@@ -1,7 +1,7 @@
 import { completeness, type CompletenessCell } from "../../datasets/completeness.js";
 import { PERIOD_KEY_FIELD } from "../../datasets/to-source.js";
 import { defineBlock } from "../block-definition.js";
-import { NOT_READ, type DatasetBlockData } from "./dataset-data.js";
+import { NOT_READ, type DatasetBlockData } from "../datasets/dataset-data.js";
 
 /**
  * Who reported, by group and period (Phase 54, §3.11): the units (districts, facilities, partners) that sent at least one figure in a

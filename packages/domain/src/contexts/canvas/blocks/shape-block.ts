@@ -1,5 +1,4 @@
 import { SHAPE_NAMES, TONE_NAMES, type ShapeName, type ToneName } from "../../infographics/composition.js";
-import { iconById } from "../../infographics/icons.js";
 import { defineBlock } from "../block-definition.js";
 
 /**
@@ -8,7 +7,6 @@ import { defineBlock } from "../block-definition.js";
  * contrast stays checked. An icon that means something is described in `label`; one that only decorates is left without.
  */
 export interface ShapeProps { shape: ShapeName; tone: ToneName; label?: string | undefined }
-export interface IconProps { iconId: string; tone: ToneName; label?: string | undefined }
 
 export const shapeBlock = defineBlock<ShapeProps, ShapeProps, undefined>({
   kind: "SHAPE",
@@ -25,21 +23,4 @@ export const shapeBlock = defineBlock<ShapeProps, ShapeProps, undefined>({
   sizes: { min: { w: 1, h: 1 }, max: { w: 12, h: 12 }, default: { w: 4, h: 2 } },
   lint: [],
   resolve: (p) => ({ state: "ready", model: p, notes: [] }),
-});
-
-export const iconBlock = defineBlock<IconProps, IconProps, undefined>({
-  kind: "ICON",
-  family: "MEDIA",
-  bare: true,
-  labelKey: "canvas.block.ICON",
-  defaults: () => ({ iconId: "people", tone: "ACCENT" }),
-  validate: (p) => [
-    ...(iconById(p.iconId) ? [] : [{ message: "Choose an icon." }]),
-    ...((TONE_NAMES as readonly string[]).includes(p.tone) ? [] : [{ message: "Choose one of the offered colours." }]),
-    ...((p.label?.length ?? 0) > 120 ? [{ message: "Keep the description under 120 characters." }] : []),
-  ],
-  slots: [],
-  sizes: { min: { w: 1, h: 1 }, max: { w: 4, h: 4 }, default: { w: 2, h: 2 } },
-  lint: [],
-  resolve: (p) => (iconById(p.iconId) ? { state: "ready", model: p, notes: [] } : { state: "empty", reason: "Choose an icon.", authoring: true }),
 });

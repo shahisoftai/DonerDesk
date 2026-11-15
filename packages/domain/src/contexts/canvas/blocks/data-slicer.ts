@@ -1,5 +1,5 @@
 import { defineBlock } from "../block-definition.js";
-import { NOT_READ, type DatasetBlockData } from "./dataset-data.js";
+import { NOT_READ, type DatasetBlockData } from "../datasets/dataset-data.js";
 
 /**
  * A slicer on a dataset column (Phase 54, §3.7): lists the column's values with their row counts; the viewer's choice narrows every

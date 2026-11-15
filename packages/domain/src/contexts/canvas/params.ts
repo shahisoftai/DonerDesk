@@ -27,19 +27,33 @@ export const PARAM_TARGETS = ["period", "periodRange", "place", "group", "status
 export type ParamTarget = (typeof PARAM_TARGETS)[number];
 export interface ParamBinding { param: string; target: ParamTarget }
 
-const TARGET_FOR_KIND: Readonly<Record<ParameterKind, ParamTarget>> = { PERIOD: "period", PERIOD_RANGE: "periodRange", PLACE: "place", GROUP: "group", STATUS: "status", INDICATOR: "indicator", PROJECT: "project", TEXT: "text" };
-export const targetFor = (kind: ParameterKind): ParamTarget => TARGET_FOR_KIND[kind];
-const MULTI_KINDS: ReadonlySet<ParameterKind> = new Set(["PLACE", "GROUP", "STATUS", "INDICATOR"]);
+/** How each kind of parameter behaves: one table, so nothing branches on a kind's name. */
+interface ParameterKindRule {
+  target: ParamTarget;
+  /** Several values at once (places, groups, statuses, indicators). */
+  multi: boolean;
+  /** A list of offered values makes sense (a word typed freely or a range of periods has none). */
+  offersList: boolean;
+  /** The value's shape. */
+  fits: (v: Exclude<ParamValue, null>) => boolean;
+}
 export const MAX_PARAMETERS = 20;
 export const MAX_TEXT_PARAM = 100;
-
-export const isValueOfKind = (kind: ParameterKind, v: ParamValue): boolean => {
-  if (v === null) return true;
-  if (kind === "PERIOD_RANGE") return typeof v === "object" && !Array.isArray(v) && typeof v.from === "string" && typeof v.to === "string";
-  if (kind === "TEXT") return typeof v === "string" && v.length <= MAX_TEXT_PARAM;
-  if (MULTI_KINDS.has(kind)) return Array.isArray(v) ? v.every((x) => typeof x === "string") : typeof v === "string";
-  return typeof v === "string";
+const oneOrMany = (v: Exclude<ParamValue, null>) => (Array.isArray(v) ? v.every((x) => typeof x === "string") : typeof v === "string");
+const one = (v: Exclude<ParamValue, null>) => typeof v === "string";
+const PARAMETER_KIND_RULES: Readonly<Record<ParameterKind, ParameterKindRule>> = {
+  PERIOD: { target: "period", multi: false, offersList: true, fits: one },
+  PERIOD_RANGE: { target: "periodRange", multi: false, offersList: false, fits: (v) => typeof v === "object" && !Array.isArray(v) && typeof v.from === "string" && typeof v.to === "string" },
+  PLACE: { target: "place", multi: true, offersList: true, fits: oneOrMany },
+  GROUP: { target: "group", multi: true, offersList: true, fits: oneOrMany },
+  STATUS: { target: "status", multi: true, offersList: true, fits: oneOrMany },
+  INDICATOR: { target: "indicator", multi: true, offersList: true, fits: oneOrMany },
+  PROJECT: { target: "project", multi: false, offersList: true, fits: one },
+  TEXT: { target: "text", multi: false, offersList: false, fits: (v) => typeof v === "string" && v.length <= MAX_TEXT_PARAM },
 };
+export const targetFor = (kind: ParameterKind): ParamTarget => PARAMETER_KIND_RULES[kind].target;
+
+export const isValueOfKind = (kind: ParameterKind, v: ParamValue): boolean => v === null || PARAMETER_KIND_RULES[kind].fits(v);
 
 export interface ParamProblem { paramId: string; message: string }
 
@@ -53,11 +67,11 @@ export function parameterProblems(params: ReadonlyArray<CanvasParameter>, pageId
     if (seen.has(p.id)) at("Two parameters share a name.");
     seen.add(p.id);
     if (!p.label.trim() || p.label.length > 60) at("A parameter's label is 1 to 60 characters.");
-    if (!(PARAMETER_KINDS as readonly string[]).includes(p.kind)) { at("Unknown kind of parameter."); continue; }
+    if (!Object.hasOwn(PARAMETER_KIND_RULES, p.kind)) { at("Unknown kind of parameter."); continue; }
     if (p.default !== undefined && !isValueOfKind(p.kind, p.default)) at("The default does not fit this kind of parameter.");
-    if (p.multiple && !MULTI_KINDS.has(p.kind)) at("This kind of parameter takes one value.");
-    if (p.allowed && (p.kind === "TEXT" || p.kind === "PERIOD_RANGE")) at("This kind of parameter has no list of values.");
-    if (p.allowed && p.default && p.kind !== "PERIOD_RANGE") for (const v of Array.isArray(p.default) ? p.default : [p.default]) if (typeof v === "string" && !p.allowed.includes(v)) at("The default is not one of the offered values.");
+    if (p.multiple && !PARAMETER_KIND_RULES[p.kind].multi) at("This kind of parameter takes one value.");
+    if (p.allowed && !PARAMETER_KIND_RULES[p.kind].offersList) at("This kind of parameter has no list of values.");
+    if (p.allowed && p.default && PARAMETER_KIND_RULES[p.kind].offersList) for (const v of Array.isArray(p.default) ? p.default : [p.default]) if (typeof v === "string" && !p.allowed.includes(v)) at("The default is not one of the offered values.");
     if (p.pageId && pageIds.size > 0 && !pageIds.has(p.pageId)) at("The parameter belongs to a page that does not exist.");
   }
   return out;
@@ -69,7 +83,7 @@ export function paramBindingProblems(bindings: ReadonlyArray<ParamBinding>, para
     const p = params.find((x) => x.id === b.param);
     if (!p) { out.push(`This block reads a parameter (${b.param}) that does not exist.`); continue; }
     if (!(PARAM_TARGETS as readonly string[]).includes(b.target)) out.push("Unknown way of reading a parameter.");
-    else if (TARGET_FOR_KIND[p.kind] !== b.target) out.push(`"${p.label}" is a ${p.kind.toLowerCase().replace("_", " ")} and cannot be read as a ${b.target}.`);
+    else if (PARAMETER_KIND_RULES[p.kind].target !== b.target) out.push(`"${p.label}" is a ${p.kind.toLowerCase().replace("_", " ")} and cannot be read as a ${b.target}.`);
   }
   return out;
 }
@@ -79,7 +93,7 @@ export function effectiveValues(params: ReadonlyArray<CanvasParameter>, chosen: 
   const out: Record<string, ParamValue> = {};
   for (const p of params) {
     const pick = chosen[p.id];
-    const valid = pick !== undefined && isValueOfKind(p.kind, pick) && (!p.allowed || p.kind === "PERIOD_RANGE" || (Array.isArray(pick) ? pick : pick === null ? [] : [pick as string]).every((v) => p.allowed!.includes(v)));
+    const valid = pick !== undefined && isValueOfKind(p.kind, pick) && (!p.allowed || !PARAMETER_KIND_RULES[p.kind].offersList || (Array.isArray(pick) ? pick : pick === null ? [] : [pick as string]).every((v) => p.allowed!.includes(v)));
     out[p.id] = valid ? (pick as ParamValue) : (p.default ?? null);
   }
   return out;

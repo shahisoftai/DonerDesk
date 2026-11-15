@@ -16,7 +16,8 @@ import { TenantSetupLlm, withModel, withReplyMemory } from "../project-setup/set
 import { LlmSectionSurveyor } from "../project-setup/section-surveyor.js";
 import { LlmFieldVerifier } from "../project-setup/field-verifier.js";
 import { NominatimPlaceLookup } from "../project-setup/place-lookup.js";
-import { SingleReadAreaExtractor, SingleReadReader } from "../project-setup/single-read-extractor.js";
+import { SingleReadAreaExtractor } from "../project-setup/single-read-extractor.js";
+import { SingleReadReader } from "../project-setup/single-read-reader.js";
 import { createSetupExtractors } from "../project-setup/prompted-area-extractor.js";
 import { withSheetShortcuts } from "../project-setup/sheet-first-extractor.js";
 import { SETUP_EXTRACTION_SPECS } from "../project-setup/prompts/index.js";

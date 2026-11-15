@@ -5,6 +5,7 @@
  * No code outside this table branches on an area name.
  */
 import type { ProjectSetupProposal, Proposed } from "./proposal.js";
+import { isBudgetNotAppliedNote } from "./apply-sheets.js";
 
 export type SetupAreaKey =
   | "FACTS" | "LOGFRAME" | "INDICATORS" | "PERIODS" | "PLAN" | "PLACES" | "FUNDING_BUDGET" | "RISKS";
@@ -25,10 +26,24 @@ export interface SetupAreaDef {
   items: (p: ProjectSetupProposal) => number;
   /** Items that will be applied: accepted, or written by the person (EDITED is a decision). */
   accepted: (p: ProjectSetupProposal) => number;
+  /** What else changes when one of the area's items is rejected (`before` is the proposal before, `after` with the item rejected). */
+  afterReject?: (before: ProjectSetupProposal, after: ProjectSetupProposal, path: string) => ProjectSetupProposal;
+  /** Notes of the plain apply that the wizard's launch must not show for this area (the wizard does that part itself). */
+  launchNoteHidden?: (note: string) => boolean;
 }
 
 const willApply = (item: Proposed<unknown>): boolean => item.status === "ACCEPTED" || item.status === "EDITED";
 const countAccepted = (items: ReadonlyArray<Proposed<unknown>>): number => items.filter(willApply).length;
+
+/** What sat under a removed result is not left pointing at it (a dangling parent would look chosen but break the chain). */
+function unlinkChildrenOfRejectedResult(before: ProjectSetupProposal, after: ProjectSetupProposal, path: string): ProjectSetupProposal {
+  const index = Number(path.split(".")[1]);
+  const code = (before.logframe[index]?.value as { code?: string | null } | null | undefined)?.code ?? null;
+  if (!code) return after;
+  const unlink = <T extends { parentCode?: string | null }>(item: Proposed<T>): Proposed<T> =>
+    item.value && item.value.parentCode === code ? { ...item, value: { ...item.value, parentCode: null } } : item;
+  return { ...after, logframe: after.logframe.map(unlink) };
+}
 
 export const SETUP_AREAS: Record<SetupAreaKey, SetupAreaDef> = {
   FACTS: {
@@ -38,6 +53,7 @@ export const SETUP_AREAS: Record<SetupAreaKey, SetupAreaDef> = {
   LOGFRAME: {
     key: "LOGFRAME", labelKey: "setup.area.logframe", fields: ["logframe"], dependsOn: ["FACTS"], applyOrder: 2,
     items: (p) => p.logframe.length, accepted: (p) => countAccepted(p.logframe),
+    afterReject: unlinkChildrenOfRejectedResult,
   },
   INDICATORS: {
     key: "INDICATORS", labelKey: "setup.area.indicators", fields: ["indicators"], dependsOn: ["LOGFRAME"], applyOrder: 3,
@@ -61,6 +77,8 @@ export const SETUP_AREAS: Record<SetupAreaKey, SetupAreaDef> = {
     key: "FUNDING_BUDGET", labelKey: "setup.area.fundingBudget", fields: ["funding", "budget"], dependsOn: ["FACTS"], applyOrder: 7,
     items: (p) => p.funding.length + p.budget.length,
     accepted: (p) => countAccepted(p.funding) + countAccepted(p.budget),
+    // The wizard creates budget lines itself (its BUDGET_LINES step), so the plain apply's "not created automatically" note would contradict it.
+    launchNoteHidden: isBudgetNotAppliedNote,
   },
   RISKS: {
     key: "RISKS", labelKey: "setup.area.risks", fields: ["risks"], dependsOn: [], applyOrder: 8,

@@ -6,6 +6,8 @@ import { CANVAS_PROFILES, convertBlock, setFlag, altPack, definitionFor, canPubl
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { deleteCanvasAction, duplicateCanvasAction, previewCanvasAction, resolveCanvasAction, saveCanvasAction, subscribeCanvasAction } from "@/lib/actions/canvas";
 import type { CanvasView, ResolvedCanvas } from "@/lib/server/schemas-canvas";
+import { useCanvasPreview } from "./useCanvasPreview";
+import { BTN, FILE_FORMATS, PROFILE_LABEL, SCOPE_LABEL, SEVERITY, download } from "./workspace-labels";
 import { blockLabelKey } from "../domain/canvas-copy";
 import { BlockFrame } from "./BlockFrame";
 import { downloadPicture } from "./download-picture";
@@ -45,18 +47,6 @@ import { toggleDatasetFilter, datasetFilterValues } from "@donordesk/domain/cont
 export interface ProjectOption { id: string; name: string }
 interface Props { /** How often the person is emailed that this is ready to open. */ subscription: "NONE" | "WEEKLY" | "MONTHLY"; initial: CanvasView; resolved: ResolvedCanvas | null; resolveError: string | null; projects: ReadonlyArray<ProjectOption>; indicatorsByProject: Readonly<Record<string, ReadonlyArray<IndicatorOption>>> }
 
-const PROFILE_LABEL: Record<(typeof CANVAS_PROFILES)[number], string> = { LIVE_INTERNAL: "Live, for the team", SNAPSHOT: "A snapshot to share", DONOR_REPORT: "For a donor", SOCIAL: "For social media", INTERNAL: "Internal document" };
-const SCOPE_LABEL = { ORG: "Whole organisation", PROJECT: "One project", MINE: "Only me", PORTFOLIO: "Portfolio" } as const;
-const SEVERITY = { BLOCKER: "Must fix", WARN: "Should fix", TIP: "Tip" } as const;
-const FILE_FORMATS = [["PDF", "makePdf"], ["PNG", "makePng"], ["PPTX", "makePptx"], ["PACK", "makePack"]] as const;
-const BTN = "rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50 disabled:opacity-40 dark:border-slate-600 dark:hover:bg-slate-800";
-
-function download(name: string, mime: string, content: string): void {
-  const url = URL.createObjectURL(new Blob([content], { type: mime }));
-  const a = Object.assign(document.createElement("a"), { href: url, download: name });
-  document.body.append(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-}
-
 /** Looking at a canvas and changing it. The same page is a live dashboard and, once its design check passes, an infographic to share. */
 export function CanvasWorkspace({ subscription, initial, resolved: first, resolveError, projects, indicatorsByProject }: Props) {
   const router = useRouter();
@@ -94,30 +84,7 @@ export function CanvasWorkspace({ subscription, initial, resolved: first, resolv
   const present = usePresent(stage, canvas.pages.map((pg) => pg.id), ed.page.id, (id) => { ed.setPageId(id); ed.setSelected(null); });
   const dirty = snapshot(canvas) !== base.current.json;
   const savedBlocks = useRef(new Map(initial.canvas.pages.flatMap((p) => p.blocks).map((b) => [b.id, JSON.stringify(b.props) + JSON.stringify(b.bindings)])));
-  // An edited, unsaved canvas is read again as the person works (after a short pause), so each change shows its real figures at once.
-  const [preview, setPreview] = useState<{ sig: string; value: ResolvedCanvas } | null>(null);
-  const [previewError, setPreviewError] = useState<string | null>(null);
-  const sig = useMemo(() => JSON.stringify({ t: canvas.title, th: canvas.themeId, l: canvas.language, m: canvas.mode, pages: canvas.pages, o: canvas.options, f: filters }), [canvas, filters]);
-  const savedSig = useRef(sig);
-  const filtered = useRef(false);
-  useEffect(() => {
-    if (!dirty) {
-      setPreview(null); setPreviewError(null); savedSig.current = sig;
-      // Narrowing a saved canvas reads it again with the viewer's period and places; nothing is saved.
-      if (isFiltered(filters) || filtered.current) { filtered.current = isFiltered(filters); void resolveCanvasAction(initial.id, { ...(filters.periodId ? { periodId: filters.periodId } : {}), places: filters.places, group: filters.group, status: filters.status, level: filters.level, indicator: filters.indicator, donors: filters.donors ?? [], partners: filters.partners ?? [], datasets: filters.datasets ?? [] }).then((r) => { if (r.ok) setResolved(r.value); }); }
-      return;
-    }
-    let current = true;
-    const timer = setTimeout(async () => {
-      const r = await previewCanvasAction({ title: canvas.title, pages: canvas.pages, profile: canvas.profile, mode: canvas.mode, language: canvas.language, themeId: canvas.themeId, ...(canvas.options ? { options: canvas.options } : {}), ...(initial.projectId ? { projectId: initial.projectId } : {}), ...(filters.periodId ? { periodId: filters.periodId } : {}), ...(filters.places.length ? { placeKeys: filters.places } : {}), ...(filters.group ? { group: filters.group } : {}), ...(filters.status ? { status: filters.status } : {}), ...(filters.level ? { level: filters.level } : {}), ...(filters.indicator ? { indicator: filters.indicator } : {}), ...(filters.donors?.length ? { donors: filters.donors } : {}), ...(filters.partners?.length ? { partners: filters.partners } : {}), ...(filters.datasets?.length ? { datasetFilters: filters.datasets } : {}) });
-      if (!current) return;
-      if (r.ok) { setPreview({ sig, value: r.value }); setPreviewError(null); } else setPreviewError(r.error.message);
-    }, 350);
-    return () => { current = false; clearTimeout(timer); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sig, dirty]);
-  const live = dirty && preview ? preview.value : resolved;
-  const previewCurrent = !dirty || preview?.sig === sig;
+  const { live, previewCurrent, previewError } = useCanvasPreview({ canvas, id: initial.id, projectId: initial.projectId, filters, dirty, resolved, setResolved });
   const widgets = useMemo(() => new Map(canvasToWidgets(canvas, initial.projectId).widgets.map((w) => [w.id, w])), [canvas, initial.projectId]);
   const drawings = useMemo(() => new Map((live?.drawings ?? []).map((d) => [d.widgetId, d])), [live]);
   /** What the page shows as tables, ready to download (a picture that is not a table, such as a map, is left out). */

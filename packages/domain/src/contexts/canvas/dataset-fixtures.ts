@@ -1,6 +1,6 @@
 import { datasetRowsToVisual, datasetSourceId, datasetToSource } from "../datasets/to-source.js";
 import type { ColumnDef, DatasetRowValues } from "../datasets/model.js";
-import type { DatasetBlockData } from "./blocks/dataset-data.js";
+import type { DatasetBlockData } from "./datasets/dataset-data.js";
 
 /**
  * A small synthetic dataset for the dataset blocks' fixtures and tests (Phase 54): six districts in two provinces, four months, two

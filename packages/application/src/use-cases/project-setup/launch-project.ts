@@ -1,6 +1,6 @@
 import type { ProjectSetupProposal } from "@donordesk/domain";
 import type { SetupAreaKey, Result, SetupDraft } from "@donordesk/domain";
-import { DomainError, LAUNCH_STEPS, SETUP_AREA_KEYS, SETUP_REQUIREMENTS, canLaunch, evaluateRequirements, isBudgetNotAppliedNote, launchDeadlineOffset, notWrittenAtLaunch, projectInputFromDraft, proposalForLaunch } from "@donordesk/domain";
+import { DomainError, LAUNCH_STEPS, SETUP_AREAS, SETUP_AREA_KEYS, SETUP_REQUIREMENTS, canLaunch, evaluateRequirements, launchDeadlineOffset, notWrittenAtLaunch, projectInputFromDraft, proposalForLaunch } from "@donordesk/domain";
 import { CreateProjectSchema } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
@@ -106,8 +106,8 @@ export class LaunchProjectHandler {
       return applied;
     }
     await this.runs.finish(beginId, tenantId, { step: "BEGIN" }, this.clock.now());
-    // The wizard creates budget lines itself (the BUDGET_LINES step), so the plain apply's "not created automatically" note would contradict it.
-    const appliedAreas = applied.value.areas.map((a) => (a.area === "FUNDING_BUDGET" ? { ...a, notes: a.notes.filter((n) => !isBudgetNotAppliedNote(n)) } : a));
+    // Notes the wizard's own steps make untrue are hidden per area (`SETUP_AREAS[area].launchNoteHidden`).
+    const appliedAreas = applied.value.areas.map((a) => { const hide = SETUP_AREAS[a.area as SetupAreaKey]?.launchNoteHidden; return hide ? { ...a, notes: a.notes.filter((n) => !hide(n)) } : a; });
     const projectId = applied.value.projectId;
     const reports: LaunchStepReport[] = LAUNCH_STEPS.map((s) => ({ key: s.key, label: s.label, status: "NOT_RUN", done: 0, notes: [] }));
     if (applied.value.status !== "APPLIED") return { ok: true, value: this.report(projectId, "PARTIAL", appliedAreas, reports, draft) };

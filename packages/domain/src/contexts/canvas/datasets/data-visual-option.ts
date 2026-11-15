@@ -1,6 +1,6 @@
 import type { ColumnInfo } from "../../visual-data/shape.js";
 import { referenceLabel } from "../../visual-data/references.js";
-import type { DataVisualModel } from "./data-visual.js";
+import type { DataVisualModel } from "../blocks/data-visual.js";
 
 /**
  * The picture of a dataset visual as an ECharts option (Phase 54), pure, so the screen and a file draw the same thing. A gap is drawn as a

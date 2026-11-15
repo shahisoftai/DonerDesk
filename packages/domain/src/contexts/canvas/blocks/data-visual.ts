@@ -6,8 +6,8 @@ import { referenceProblems, type ChartReference } from "../../visual-data/refere
 import { shapeTable, type VisualTable } from "../../visual-data/shape.js";
 import { VISUAL_FAMILIES, visualFamilyDef, wellGaps, wellsToQuery, type VisualFamily, type Wells } from "../../visual-data/wells.js";
 import { defineBlock } from "../block-definition.js";
-import { NOT_READ, rowsNote, type DatasetBlockData } from "./dataset-data.js";
-import { datasetMap, mapFigures, type DatasetMap } from "./data-visual-map.js";
+import { NOT_READ, rowsNote, type DatasetBlockData } from "../datasets/dataset-data.js";
+import { datasetMap, mapFigures, type DatasetMap } from "../datasets/data-visual-map.js";
 
 /**
  * A visual drawn from a dataset (Phase 54): fields dragged into wells become one catalogue question, validated by the same rules as

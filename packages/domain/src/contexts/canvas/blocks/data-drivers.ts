@@ -1,7 +1,7 @@
 import { rankDrivers, type DriverResult } from "../../datasets/drivers.js";
 import { PERIOD_KEY_FIELD } from "../../datasets/to-source.js";
 import { defineBlock } from "../block-definition.js";
-import { NOT_READ, type DatasetBlockData } from "./dataset-data.js";
+import { NOT_READ, type DatasetBlockData } from "../datasets/dataset-data.js";
 
 /**
  * Which groups differ on a figure (Phase 54, §3.11, D4): rows are first combined per unit and period (a rate as Σ part ÷ Σ whole),
