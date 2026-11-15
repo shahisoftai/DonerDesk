@@ -55,6 +55,8 @@ export class ListLogframeHandler {
           countedElsewhere: i.countedElsewhere,
           recordByPlace: i.recordByPlace,
           placeLevel: i.placeLevel,
+          placeScope: i.placeScope,
+          placeIds: i.placeIds,
           library: libraryInfo(i.libraryJson),
           semantics: i.semantics,
           semanticsDescription: describeSemantics(effectiveIndicatorSemantics(i), i.type),

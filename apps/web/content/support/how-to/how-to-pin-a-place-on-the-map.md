@@ -15,7 +15,7 @@ You can drag the map to move around and zoom in for a closer spot, then click ag
 
 ## Pin a place in your places list
 
-Places in **Settings → Places** can be pinned too, which they need for distances, rings and the nearest-facility list:
+Places in **Where we work → Manage places** can be pinned too, which they need for distances, rings and the nearest-facility list:
 
 1. Find the place in **Your places** (use **Search places**, or the filters **With a pin** and **Facilities only**) and choose **Pin** (or **Change pin**). The pin editor opens below the list, headed *Pin for <place>*.
 2. Check **Inside** (the place it belongs to) and add **Other spellings** if people write the name differently.
@@ -25,7 +25,7 @@ Places in **Settings → Places** can be pinned too, which they need for distanc
 
 Areas (a district, a province) also have **Draw outline** in the same list, to draw their shape yourself when no official boundary exists.
 
-To add a new place with a pin in one go, use **Add a place** at the top of **Settings → Places**: fill **Name**, **What is it?**, **Inside**, then **Pin on the map (optional)**: **Latitude** and **Longitude** or **Place on map**.
+To add a new place with a pin in one go, use **Add a place** at the top of **Where we work → Manage places**: fill **Name**, **What is it?**, **Inside**, then **Pin on the map (optional)**: **Latitude** and **Longitude** or **Place on map**.
 
 If your device cannot draw maps, you type the coordinates instead; they are saved the same way.
 

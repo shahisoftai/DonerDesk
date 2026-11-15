@@ -6,7 +6,7 @@ import type { Capability, Role } from "@/lib/shared/capabilities";
  * point after sign-in; it renders the Home named here, so no role needs its own address.
  */
 export type NavKey =
-  | "HOME" | "INBOX" | "PORTFOLIO" | "VISUALS" | "PROJECTS" | "REPORTS" | "EVIDENCE" | "COMPLIANCE" | "FUNDING"
+  | "HOME" | "INBOX" | "PORTFOLIO" | "PLACES" | "VISUALS" | "PROJECTS" | "REPORTS" | "EVIDENCE" | "COMPLIANCE" | "FUNDING"
   | "DOWNLOADS" | "TEAM" | "SETTINGS";
 
 export interface NavEntry {
@@ -23,6 +23,8 @@ export const NAV_ENTRIES: Readonly<Record<NavKey, NavEntry>> = {
   PROJECTS: { href: "/projects", label: "Projects", group: "Work" },
   VISUALS: { href: "/visuals", label: "Dashboards and infographics", group: "Work" },
   PORTFOLIO: { href: "/portfolio", label: "Portfolio", group: "Work" },
+  // Phase 56: the organisation's map of its work, derived from every project (replaces Settings › Places).
+  PLACES: { href: "/where-we-work", label: "Where we work", group: "Work" },
   REPORTS: { href: "/reports", label: "Reports", group: "Report" },
   EVIDENCE: { href: "/evidence", label: "Evidence", group: "Report" },
   COMPLIANCE: { href: "/compliance", label: "Compliance", group: "Report" },
@@ -37,7 +39,7 @@ export const NAV_ENTRIES: Readonly<Record<NavKey, NavEntry>> = {
  * is the sidebar entry; the others are shown only as tabs. A role sees a tab only when its entries name it.
  */
 export const NAV_HUBS: ReadonlyArray<ReadonlyArray<NavKey>> = [
-  ["HOME", "PORTFOLIO"],
+  ["HOME", "PORTFOLIO", "PLACES"],
   ["REPORTS", "EVIDENCE", "COMPLIANCE", "DOWNLOADS"],
 ];
 
@@ -52,14 +54,14 @@ export interface RoleNavigation {
 }
 
 export const ROLE_NAVIGATION: Readonly<Record<Role, RoleNavigation>> = {
-  ADMIN: { home: "DIRECTOR", entries: ["HOME", "PORTFOLIO", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "EVIDENCE", "COMPLIANCE", "DOWNLOADS", "FUNDING", "TEAM", "SETTINGS"] },
-  PROJECT_MANAGER: { home: "MANAGER", entries: ["HOME", "PORTFOLIO", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "EVIDENCE", "DOWNLOADS", "TEAM", "SETTINGS"] },
-  ME_OFFICER: { home: "MANAGER", entries: ["HOME", "PORTFOLIO", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "EVIDENCE", "DOWNLOADS"] },
-  GRANTS_OFFICER: { home: "GRANTS", entries: ["HOME", "PORTFOLIO", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "DOWNLOADS", "FUNDING", "SETTINGS"] },
+  ADMIN: { home: "DIRECTOR", entries: ["HOME", "PORTFOLIO", "PLACES", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "EVIDENCE", "COMPLIANCE", "DOWNLOADS", "FUNDING", "TEAM", "SETTINGS"] },
+  PROJECT_MANAGER: { home: "MANAGER", entries: ["HOME", "PORTFOLIO", "PLACES", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "EVIDENCE", "DOWNLOADS", "TEAM", "SETTINGS"] },
+  ME_OFFICER: { home: "MANAGER", entries: ["HOME", "PORTFOLIO", "PLACES", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "EVIDENCE", "DOWNLOADS"] },
+  GRANTS_OFFICER: { home: "GRANTS", entries: ["HOME", "PORTFOLIO", "PLACES", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "DOWNLOADS", "FUNDING", "SETTINGS"] },
   COMPLIANCE_OFFICER: { home: "COMPLIANCE", entries: ["HOME", "INBOX", "PROJECTS", "REPORTS", "EVIDENCE", "COMPLIANCE", "DOWNLOADS"] },
   // Field officers keep a short list (plan F36): Home, Inbox, Projects and Evidence, nothing administrative.
   FIELD_OFFICER: { home: "FIELD", entries: ["HOME", "INBOX", "PROJECTS", "EVIDENCE"] },
-  VIEWER: { home: "DIRECTOR", entries: ["HOME", "PORTFOLIO", "PROJECTS", "VISUALS", "REPORTS", "DOWNLOADS"] },
+  VIEWER: { home: "DIRECTOR", entries: ["HOME", "PORTFOLIO", "PLACES", "PROJECTS", "VISUALS", "REPORTS", "DOWNLOADS"] },
 };
 
 export interface NavItemView { href: string; label: string; group: string }

@@ -50,6 +50,8 @@ export interface IndicatorLocationRow {
   key: string;
   /** The most frequent spelling the officers typed. */
   location: string;
+  /** Phase 56: the place the figures named by id, when they did. */
+  placeId?: string;
   /** Summed for additive indicators; the latest recorded value otherwise (never summed). */
   value: string;
   /** True when every contributing value is VERIFIED. */
@@ -75,6 +77,7 @@ interface ContributionBucket {
   location: string;
   series: Array<{ reportingPeriodId: string; value: string; verified: boolean }>;
   unverified: number;
+  placeId?: string;
 }
 
 function collectContributions(updates: readonly LocationUpdateInput[]): Map<string, ContributionBucket> | null {
@@ -85,12 +88,14 @@ function collectContributions(updates: readonly LocationUpdateInput[]): Map<stri
     const verified = update.verificationStatus === "VERIFIED";
     for (const entry of locationEntriesOf(update)) {
       entries += 1;
-      const key = normalizeLocationKey(entry.category);
+      // Phase 56: a figure that names its place by id is grouped by that place (renames and same-named places stay right).
+      const placeId = entry.placeId;
+      const key = placeId ? `#${placeId}` : normalizeLocationKey(entry.category);
       if (!key) continue;
       const spelling = entry.category.trim();
       let bucket = byKey.get(key);
       if (!bucket) {
-        bucket = { location: spelling, series: [], unverified: 0 };
+        bucket = { location: spelling, series: [], unverified: 0, ...(placeId ? { placeId } : {}) };
         byKey.set(key, bucket);
         votes.set(key, new Map());
       }
@@ -135,7 +140,7 @@ export function indicatorLocationRows(indicator: LocationIndicator, updates: rea
       }
       if (total) value = formatDecimal(total);
     }
-    rows.push({ key, location: bucket.location, value, verified: bucket.unverified === 0, unverified: bucket.unverified, series: bucket.series });
+    rows.push({ key, location: bucket.location, value, verified: bucket.unverified === 0, unverified: bucket.unverified, series: bucket.series, ...(bucket.placeId ? { placeId: bucket.placeId } : {}) });
   }
   rows.sort((a, b) => Number(b.value.replace(/,/g, "")) - Number(a.value.replace(/,/g, "")) || a.location.localeCompare(b.location));
   return additive ? { kind: "ADDITIVE", rows } : { kind: "RECORDED", rows };

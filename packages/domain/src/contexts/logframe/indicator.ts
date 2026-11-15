@@ -35,6 +35,9 @@ export interface IndicatorProps {
   /** Figures are entered one per place (Phase 53.2), at `placeLevel` (0 country … 4 site); the project's map is drawn from them. */
   recordByPlace?: boolean;
   placeLevel?: number | undefined;
+  /** Where it is measured (Phase 56): PROJECT, LEVEL or CHOSEN, and the chosen places. Read-only here: written by the place store. */
+  placeScope?: string | undefined;
+  placeIds?: string[] | undefined;
   /** Set when the value is calculated from other indicators (phase 33.3): nobody types a value for it. */
   formula?: IndicatorFormula | undefined;
   /** The sector library entry this indicator was copied from (phase 46), its version then, and what the entry said then (`LibraryLink`). */
@@ -139,6 +142,8 @@ export class Indicator extends Entity<string> {
   get countedElsewhere(): boolean { return this.props.countedElsewhere ?? false; }
   get recordByPlace(): boolean { return this.props.recordByPlace ?? false; }
   get placeLevel(): number | undefined { return this.props.placeLevel; }
+  get placeScope(): string { return this.props.placeScope ?? (this.props.recordByPlace ? "LEVEL" : "PROJECT"); }
+  get placeIds(): string[] { return this.props.placeIds ?? []; }
   get libraryId(): string | undefined { return this.props.libraryId; }
   get libraryVersion(): number | undefined { return this.props.libraryVersion; }
   get libraryJson(): string | undefined { return this.props.libraryJson; }

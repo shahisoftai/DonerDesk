@@ -34,7 +34,7 @@ export function PlacesStep({ check, steps, onApply, onBack, onNext }: { check: C
               </li>
             ))}
           </ul>
-          <p className="text-xs text-slate-500">{t("ds.places.addHint")} <a className="underline" href="/settings/places">{t("ds.places.openList")}</a></p>
+          <p className="text-xs text-slate-500">{t("ds.places.addHint")} <a className="underline" href="/where-we-work/manage">{t("ds.places.openList")}</a></p>
         </>
       )}
       <div className="flex gap-2"><button type="button" className="rounded border border-slate-300 px-3 py-1.5 text-sm dark:border-slate-600" onClick={onBack}>{t("ds.back")}</button><button type="button" className="rounded bg-brand-700 px-3 py-1.5 text-sm font-medium text-white" onClick={onNext}>{t("ds.next")}</button></div>

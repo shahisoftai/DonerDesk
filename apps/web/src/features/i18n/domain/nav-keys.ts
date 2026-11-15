@@ -2,7 +2,7 @@ import type { Translator } from "./translate.ts";
 
 /** The message for each left-navigation entry (by its address) and each group. Anything not listed keeps its English label. */
 const ENTRY: Readonly<Record<string, string>> = {
-  "/dashboard": "nav.home", "/inbox": "nav.inbox", "/portfolio": "nav.portfolio", "/visuals": "nav.visuals", "/projects": "nav.projects",
+  "/dashboard": "nav.home", "/inbox": "nav.inbox", "/portfolio": "nav.portfolio", "/where-we-work": "nav.whereWeWork", "/visuals": "nav.visuals", "/projects": "nav.projects",
   "/reports": "nav.reports", "/evidence": "nav.evidence", "/compliance": "nav.compliance", "/programmes": "nav.programmes",
   "/downloads": "nav.downloads", "/team": "nav.team", "/settings": "nav.settings", "/settings/security": "nav.security",
 };

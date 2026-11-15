@@ -36,7 +36,7 @@ export const IMPORT_OPTIONS: readonly ImportOption[] = [
   { kind: "EVIDENCE", title: "Evidence files", summary: "Files or links that prove what was done.", href: (id) => p(id, "/evidence/import"), signals: ["evidence", "file", "link", "url", "document", "filename"] },
   { kind: "COLLECTION_RECORDS", title: "Records for a collection form", summary: "Rows filled in against a form's own questions.", href: (id) => p(id, "/forms"), signals: ["record", "form", "submitted", "respondent"] },
   { kind: "FINANCE", title: "Finance entries", summary: "Expenses and money received for the finance register.", href: (id) => p(id, "/finance"), signals: ["amount", "currency", "category", "vendor", "expense", "disbursement", "budget"] },
-  { kind: "PLACES", title: "Places", summary: "The project's list of places, with their parents and pins.", href: () => "/settings/places", signals: ["place", "admin", "parent", "latitude", "longitude", "pcode"] },
+  { kind: "PLACES", title: "Places", summary: "The organisation's list of places, with their parents and pins.", href: () => "/where-we-work/manage", signals: ["place", "admin", "parent", "latitude", "longitude", "pcode"] },
 ];
 
 export interface ImportSuggestion {

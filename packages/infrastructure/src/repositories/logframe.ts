@@ -221,6 +221,8 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
     countedElsewhere: boolean;
     recordByPlace: boolean;
     placeLevel: number | null;
+    placeScope?: string;
+    placeIdsJson?: string | null;
     libraryId: string | null;
     libraryVersion: number | null;
     libraryJson: string | null;
@@ -252,6 +254,8 @@ export class PrismaIndicatorRepository implements IIndicatorRepository {
         countedElsewhere: row.countedElsewhere,
         recordByPlace: row.recordByPlace,
         ...(row.placeLevel !== null ? { placeLevel: row.placeLevel } : {}),
+        ...(row.placeScope ? { placeScope: row.placeScope } : {}),
+        ...(row.placeIdsJson ? { placeIds: parsePlaceIds(row.placeIdsJson) } : {}),
         ...(row.libraryId ? { libraryId: row.libraryId } : {}),
         ...(row.libraryVersion !== null ? { libraryVersion: row.libraryVersion } : {}),
         ...(row.libraryJson ? { libraryJson: row.libraryJson } : {}),
@@ -376,4 +380,9 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
       },
     });
   }
+}
+
+/** The chosen places of an indicator measured at chosen places (Phase 56); unreadable text reads as none. */
+function parsePlaceIds(json: string): string[] {
+  try { const v: unknown = JSON.parse(json); return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []; } catch { return []; }
 }

@@ -66,7 +66,7 @@ export function PhotosMapPanel({ projectId, photos, places, country }: { project
           <ul className="mt-2 list-disc space-y-1 pl-5">
             {data.unplaced.map((p) => <li key={p.id}><Link className="hover:underline" href={`/projects/${projectId}/evidence/${p.id}`}>{p.title || p.fileName}</Link> — “{p.location}”</li>)}
           </ul>
-          <p className="mt-1 text-xs text-slate-500">{t("maps.photos.fixHint")} <Link className="underline" href="/settings/places">{t("maps.photos.placesLink")}</Link></p>
+          <p className="mt-1 text-xs text-slate-500">{t("maps.photos.fixHint")} <Link className="underline" href="/where-we-work/manage">{t("maps.photos.placesLink")}</Link></p>
         </details>
       )}
     </section>

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { isLiveActivity } from "@donordesk/domain/contexts/activities/activity-transitions.js";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
+import { RecordPlacesEditor } from "@/features/places/presentation/picker/RecordPlacesEditor";
+import { getRecordPlaces, placeChoicesFor } from "@/lib/server/place-choices";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { EvidenceDetailSchema, CommentsResponseSchema } from "@/lib/server/schemas";
 import { hasCapability } from "@/lib/server/auth-context";
@@ -49,6 +51,11 @@ export default async function EvidenceDetailPage({
     return <InlineError title={detailResult.error.message} referenceId={detailResult.error.referenceId} />;
   }
   const evidence = detailResult.value;
+  // Phase 56: where the file was collected (its own places, or its activity's).
+  const [recordPlaces, placeChoices] = await Promise.all([
+    getRecordPlaces(resolvedParams.id, "EVIDENCE", evidence.id, ctx.token),
+    placeChoicesFor(resolvedParams.id, ctx.token),
+  ]);
   const sensitive = evidence.confidentialityLevel === "SENSITIVE" || evidence.confidentialityLevel === "HIGHLY_SENSITIVE";
   const canVerify = hasCapability(ctx, "evidence.verify");
   const demoMode = process.env.NODE_ENV !== "production";
@@ -151,6 +158,8 @@ export default async function EvidenceDetailPage({
           <p className="text-sm text-warning-700 dark:text-warning-400">{evidence.sensitivityWarning}</p>
         </div>
       )}
+
+      {recordPlaces.ok && <section className="card"><RecordPlacesEditor projectId={resolvedParams.id} kind="EVIDENCE" recordId={evidence.id} data={recordPlaces.value} choices={placeChoices.choices} projectIds={placeChoices.projectIds} /></section>}
 
       <EvidenceLinkPanel
         evidenceId={evidence.id}

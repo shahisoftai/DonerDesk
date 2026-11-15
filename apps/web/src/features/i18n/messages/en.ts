@@ -24,6 +24,7 @@ export const en = {
   "nav.group.work": "Work",
   "nav.home": "Home",
   "nav.portfolio": "Portfolio",
+  "nav.whereWeWork": "Where we work",
   "nav.visuals": "Dashboards and infographics",
   "nav.projects": "Projects",
   "nav.reports": "Reports",

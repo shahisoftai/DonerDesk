@@ -1,5 +1,6 @@
 import type { Result, EvidenceFile, IndicatorUpdate, ActivityUpdate } from "@donordesk/domain";
 import { DomainError, resolveEvidencePeriod } from "@donordesk/domain";
+import type { IRecordPlacesAfterCreate } from "../ports/place-tree.js";
 import type { AuthenticatedContext } from "../context.js";
 import type { IEvidenceRepository } from "../ports/evidence.js";
 import type { IActivityUpdateRepository } from "../ports/activities.js";
@@ -18,6 +19,7 @@ export class EvidenceLinkService implements IEvidenceLinker {
     private readonly indicatorUpdates: IIndicatorUpdateRepository,
     private readonly audit: IAuditLogger,
     private readonly tasks?: ITaskReconciliation,
+    private readonly places?: IRecordPlacesAfterCreate,
   ) {}
 
   async attachToActivity(ctx: AuthenticatedContext, evidenceId: string, activityId: string): Promise<Result<void, DomainError>> {
@@ -63,6 +65,8 @@ export class EvidenceLinkService implements IEvidenceLinker {
       projectId: evidence.projectId,
       systemNote: `Attached to activity: ${activity.id}`,
     });
+    // Phase 56: a file with no places of its own takes the activity's (never overwriting a choice).
+    await this.places?.afterCreate(ctx, { kind: "EVIDENCE", projectId: evidence.projectId, recordId: evidence.id, parentId: activity.id });
     return ok(undefined);
   }
 

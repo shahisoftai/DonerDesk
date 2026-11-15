@@ -479,6 +479,8 @@ model Indicator {
   countedElsewhere      Boolean  @default(false) // what it counts is also counted by another project: left out of portfolio totals
   recordByPlace         Boolean  @default(false) // figures are entered one per place (phase 53.2)
   placeLevel            Int?     // the admin level those places are at (0 country … 4 site)
+  placeScope            String   @default("PROJECT") // where it is measured (phase 56): PROJECT | LEVEL | CHOSEN
+  placeIdsJson          String?  // CHOSEN: the place ids, in order (JSON array)
   /// The sector library entry this indicator was copied from (phase 46): id, version, and the link that remembers what the entry said then.
   libraryId             String?
   libraryVersion        Int?
@@ -1719,6 +1721,84 @@ model Beneficiary {
 }
 
 /// An indicator a planned activity reports on. Its breakdown fields are shown in the progress log.
+/// A project's footprint (Phase 56): an area of the organisation's place tree the project works in. Closed = no new work there, history kept.
+model ProjectArea {
+  id           String    @id
+  tenantId     String
+  projectId    String
+  placeId      String
+  closedAt     DateTime?
+  closedReason String?
+  createdById  String
+  createdAt    DateTime  @default(now())
+
+  @@unique([projectId, placeId])
+  @@index([tenantId, placeId])
+  @@index([tenantId, projectId])
+}
+
+/// A place a completed activity happened at (Phase 56). INHERITED from its planned activity, CHOSEN, CONFIRMED from typed words, or GPS.
+model ActivityUpdatePlace {
+  id               String   @id
+  tenantId         String
+  projectId        String
+  activityUpdateId String
+  placeId          String
+  source           String   @default("CHOSEN")
+  createdById      String
+  createdAt        DateTime @default(now())
+
+  @@unique([activityUpdateId, placeId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, placeId])
+}
+
+/// A place a file was collected at (Phase 56); inherited from its activity unless chosen.
+model EvidencePlace {
+  id             String   @id
+  tenantId       String
+  projectId      String
+  evidenceFileId String
+  placeId        String
+  source         String   @default("CHOSEN")
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  @@unique([evidenceFileId, placeId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, placeId])
+}
+
+/// The place a person reached is registered at (Phase 56); one per person.
+model BeneficiaryPlace {
+  id            String   @id
+  tenantId      String
+  projectId     String
+  beneficiaryId String
+  placeId       String
+  source        String   @default("CHOSEN")
+  createdById   String
+  createdAt     DateTime @default(now())
+
+  @@unique([beneficiaryId, placeId])
+  @@index([tenantId, projectId])
+  @@index([tenantId, placeId])
+}
+
+/// A typed location word confirmed as a place for one project (Phase 56): records carrying the word are linked once, not matched on every read.
+model PlaceWordLink {
+  id            String   @id
+  tenantId      String
+  projectId     String
+  word          String
+  placeId       String
+  confirmedById String
+  confirmedAt   DateTime @default(now())
+
+  @@unique([projectId, word])
+  @@index([tenantId, placeId])
+}
+
 /// A place (from the organisation's places list) a planned activity takes place in. An activity may have several; the text `location` on the activity stays as typed.
 model PlannedActivityPlace {
   id                String   @id
@@ -2190,6 +2270,8 @@ model Place {
   geometryBytes Int?
   /// How the location came to be: TYPED, MAP_PIN, MAP_DRAWN, SNAPPED, IMPORT or GPS.
   placedBy      String?
+  /// Set when this place was merged into another (Phase 56): links moved there, this row stays retired so old ids resolve.
+  mergedIntoId  String?
   archivedAt  DateTime?
   createdById String
   createdAt   DateTime  @default(now())

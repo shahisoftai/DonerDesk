@@ -105,3 +105,52 @@ export const AddPlaceFlowSchema = z.object({
   note: z.string().max(500).optional(),
 });
 export type AddPlaceFlowInput = z.infer<typeof AddPlaceFlowSchema>;
+
+/* ---- Phase 56: one place tree ---- */
+
+const SeedUnitSchema = z.object({
+  ref: z.string().min(1).max(80),
+  parentRef: z.string().min(1).max(80).optional(),
+  level: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  name: z.string().trim().min(1).max(120),
+  code: z.string().trim().min(1).max(40).optional(),
+}).strict();
+
+/** An area from the built-in boundaries: the unit ticked and the units above it. */
+const BoundaryPickSchema = z.object({
+  country: z.object({ name: z.string().trim().min(1).max(120) }).strict(),
+  units: z.array(SeedUnitSchema).min(1).max(10),
+  targetRef: z.string().min(1).max(80),
+}).strict();
+
+export const TickProjectAreaSchema = z.union([z.object({ placeId: z.string().min(1).max(100) }).strict(), BoundaryPickSchema]);
+export type TickProjectAreaInput = z.infer<typeof TickProjectAreaSchema>;
+
+export const SetProjectAreaOpenSchema = z.object({ open: z.boolean(), reason: z.string().trim().max(300).optional() }).strict();
+
+export const RecordPlaceKindSchema = z.enum(["ACTIVITY", "EVIDENCE", "BENEFICIARY"]);
+export const SetRecordPlacesSchema = z.object({ placeIds: z.array(z.string().min(1).max(100)).max(20) }).strict();
+
+export const ConfirmPlaceWordSchema = z.object({ word: z.string().trim().min(1).max(200), placeId: z.string().min(1).max(100) }).strict();
+
+export const AddPlaceInlineSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  parent: z.union([z.object({ placeId: z.string().min(1).max(100) }).strict(), BoundaryPickSchema]),
+  adminLevel: z.number().int().min(1).max(4).optional(),
+  facility: z.boolean().optional(),
+  facilityType: z.string().trim().max(40).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  placedBy: z.enum(["TYPED", "MAP_PIN", "GPS"]).optional(),
+}).strict().refine((v) => (v.latitude === undefined) === (v.longitude === undefined), { message: "A pin needs both latitude and longitude", path: ["latitude"] });
+export type AddPlaceInlineBody = z.infer<typeof AddPlaceInlineSchema>;
+
+export const MergePlacesSchema = z.object({ keepId: z.string().min(1).max(100), mergeId: z.string().min(1).max(100) }).strict();
+
+export const WhereWeWorkQuerySchema = z.object({ level: z.coerce.number().int().min(1).max(4).optional() });
+
+export const SetIndicatorPlacesSchema = z.object({
+  scope: z.enum(["PROJECT", "LEVEL", "CHOSEN"]),
+  level: z.number().int().min(1).max(4).nullable().optional(),
+  placeIds: z.array(z.string().min(1).max(100)).max(50).optional(),
+}).strict();

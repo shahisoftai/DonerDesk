@@ -171,6 +171,8 @@ export const DisaggregationEntrySchema = z.object({
   dimension: DisaggregationDimensionSchema,
   category: z.string().trim().min(1).max(100),
   value: z.string().trim().min(1).max(50),
+  /** LOCATION only (Phase 56): the place this figure is for; the category keeps its name. */
+  placeId: z.string().min(1).max(100).optional(),
 });
 export type DisaggregationEntryInput = z.infer<typeof DisaggregationEntrySchema>;
 

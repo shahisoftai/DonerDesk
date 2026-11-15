@@ -371,6 +371,8 @@ export const IndicatorItemSchema = z.object({
   countedElsewhere: z.boolean().default(false),
   recordByPlace: z.boolean().default(false),
   placeLevel: z.number().int().nullable().optional(),
+  placeScope: z.string().optional(),
+  placeIds: z.array(z.string()).optional(),
   /** The sector library entry the indicator was copied from, with its reference standard (phase 46). */
   library: z.object({ id: z.string(), version: z.number(), adoptedOn: z.string(), referenceText: z.string().nullable(), referenceStandard: z.custom<import("@donordesk/domain").ReferenceStandard>().nullable() }).nullable().default(null),
   semantics: z

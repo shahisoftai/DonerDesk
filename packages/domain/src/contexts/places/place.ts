@@ -50,6 +50,8 @@ export interface PlaceRecord {
   geometryBytes?: number;
   /** How the location came to be (typed, pinned, drawn, snapped, imported, the device's own fix). */
   placedBy?: PlacedBy;
+  /** Set when this place was merged into another (Phase 56): every link now points at that place; this row stays retired so old ids still resolve. */
+  mergedIntoId?: string;
   archived: boolean;
 }
 

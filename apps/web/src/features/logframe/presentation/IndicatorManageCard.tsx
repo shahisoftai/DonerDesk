@@ -104,7 +104,6 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
   const [scheduleText, setScheduleText] = useState(formatTargetScheduleText(indicator.targetSchedule ?? []));
   const [scheduleMode, setScheduleMode] = useState<TargetEntryMode>("CUMULATIVE");
   const [countedElsewhere, setCountedElsewhere] = useState(indicator.countedElsewhere ?? false);
-  const [recordByPlace, setRecordByPlace] = useState(indicator.recordByPlace ?? false);
   const [calc, setCalc] = useState<NonNullable<ManagedIndicator["formula"]> | null>(indicator.formula ?? null);
   const [busy, setBusy] = useState<"save" | "move" | "remove" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
@@ -132,7 +131,6 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
       targetBreakdowns: completeBreakdownRows(breakdowns),
       targetSchedule: parsedSchedule.schedule,
       countedElsewhere,
-      recordByPlace,
       formula: calc,
       reason: reason.trim() || undefined,
     });
@@ -190,12 +188,7 @@ export function IndicatorManageCard({ indicator, items, others = [] }: { indicat
         <Checkbox checked={breakdown} onChange={(e) => setBreakdown(e.target.checked)} />
         <span>Record a breakdown by sex, age group and disability</span>
       </label>
-      {!calc && (
-        <label className="flex items-start gap-2 text-sm">
-          <Checkbox checked={recordByPlace} onChange={(e) => setRecordByPlace(e.target.checked)} />
-          <span>Record one figure for each place. The total is added up for you, and the map shows each place.</span>
-        </label>
-      )}
+      {/* Phase 56: where it is measured (by place or not) is set in "Where is this measured?" below, one control for one rule. */}
       <label className="flex items-start gap-2 text-sm">
         <Checkbox checked={countedElsewhere} onChange={(e) => setCountedElsewhere(e.target.checked)} />
         <span>Another project also counts these people or things. Show it in the portfolio but do not add it to the totals, so nobody is counted twice.</span>

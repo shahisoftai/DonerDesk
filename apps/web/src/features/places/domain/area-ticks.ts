@@ -33,3 +33,16 @@ export function seedUnitsFor(picks: readonly BoundaryPick[]): SeedUnit[] {
     ...(p.code ? { code: p.code } : {}),
   }));
 }
+
+/** Phase 56: which loaded unit each of the project's areas is (same rule as `listedRefs`: code when it names a unit, else name at the level). */
+export function areaRefs(units: ReadonlyMap<number, readonly BoundaryUnit[]>, areas: ReadonlyArray<ListedPlace & { id: string }>): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const [level, list] of units) {
+    for (const a of areas.filter((x) => !x.archived && x.adminLevel === level)) {
+      const byCode = a.code ? list.find((u) => u.pcode && u.pcode === a.code) : undefined;
+      const hit = byCode ?? list.find((u) => normalizeLocationKey(u.name) === normalizeLocationKey(a.name));
+      if (hit) out.set(hit.ref, a.id);
+    }
+  }
+  return out;
+}

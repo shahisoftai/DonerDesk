@@ -84,6 +84,7 @@ export function matchPlaceChoice(text: string, candidates: readonly PlaceRow[]):
 }
 
 /** The LOCATION breakdown entries for the places that have a typed figure (an empty box is left out, not stored as 0). */
-export function placeEntries(figures: ReadonlyArray<{ name: string; value: string }>): DisaggregationEntry[] {
-  return figures.filter((f) => f.value.trim() !== "").map((f) => ({ dimension: "LOCATION" as const, category: f.name, value: f.value.trim() }));
+export function placeEntries(figures: ReadonlyArray<{ name: string; value: string; placeId?: string | undefined }>): DisaggregationEntry[] {
+  // Phase 56: the place's id travels with its name, so a rename keeps history and two same-named places stay apart.
+  return figures.filter((f) => f.value.trim() !== "").map((f) => ({ dimension: "LOCATION" as const, category: f.name, value: f.value.trim(), ...(f.placeId ? { placeId: f.placeId } : {}) }));
 }

@@ -11,6 +11,8 @@ export interface DisaggregationEntry {
   dimension: DisaggregationDimension;
   category: string;
   value: string;
+  /** For LOCATION only (Phase 56): the place this figure is for. The category keeps the name as written; older entries have no id. */
+  placeId?: string;
 }
 
 export const MAX_DISAGGREGATION_ENTRIES = 50;
@@ -50,14 +52,14 @@ export function validateDisaggregation(
     }
     const category = entry.category.trim();
     if (!category) return { ok: false, error: DomainError.validation("Every breakdown value needs a category") };
-    const key = `${entry.dimension}:${category.toLowerCase()}`;
+    const key = entry.dimension === "LOCATION" && entry.placeId ? `LOCATION:#${entry.placeId}` : `${entry.dimension}:${category.toLowerCase()}`;
     if (seen.has(key)) return { ok: false, error: DomainError.validation(`"${category}" is listed twice`) };
     seen.add(key);
     const value = entry.value.trim();
     const numeric = toNumber(value);
     if (numeric === null) return { ok: false, error: DomainError.validation(`Breakdown value for "${category}" must be a number`) };
     sums.set(entry.dimension, (sums.get(entry.dimension) ?? 0) + numeric);
-    clean.push({ dimension: entry.dimension, category, value });
+    clean.push({ dimension: entry.dimension, category, value, ...(entry.dimension === "LOCATION" && entry.placeId ? { placeId: entry.placeId } : {}) });
   }
 
   const total = toNumber(context.periodAchievement);
@@ -91,7 +93,9 @@ export function parseDisaggregationJson(json: string | null | undefined): Disagg
         DISAGGREGATION_DIMENSIONS.includes((e as DisaggregationEntry).dimension) &&
         typeof (e as DisaggregationEntry).category === "string" &&
         typeof (e as DisaggregationEntry).value === "string",
-    );
+    ).map((e) => (e.dimension === "LOCATION" && typeof e.placeId === "string" && e.placeId
+      ? { dimension: e.dimension, category: e.category, value: e.value, placeId: e.placeId }
+      : { dimension: e.dimension, category: e.category, value: e.value }));
   } catch {
     return [];
   }

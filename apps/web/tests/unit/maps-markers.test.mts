@@ -43,7 +43,8 @@ test("the map-only page is one full-width map bound to the project", () => {
 });
 
 test("an unknown Where we work tab falls back to the first", () => {
-  assert.equal(tabOf("points"), "points");
+  assert.equal(tabOf("sites"), "sites");
+  assert.equal(tabOf("points"), "sites"); // Phase 56: the old "Points" address opens Sites
   assert.equal(tabOf("nonsense"), "areas");
   assert.equal(tabOf(undefined), "areas");
 });

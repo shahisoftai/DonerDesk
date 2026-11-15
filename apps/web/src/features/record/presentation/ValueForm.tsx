@@ -73,7 +73,10 @@ export function ValueForm(props: ValueFormProps) {
   const [saveWhenOpen, setSaveWhenOpen] = useState(false);
 
   const indicator = typable.find((i) => i.id === indicatorId);
-  const byPlace = indicator?.recordByPlace && summableType(indicator.type) && props.places ? canRecordByPlace({ calculated: false, placeLevel: indicator.placeLevel }, props.places, props.usedPlaceIds ?? []) : null;
+  // Phase 56: measured at chosen places = those places are the rows, whatever their level.
+  const byPlace = indicator?.recordByPlace && summableType(indicator.type) && props.places
+    ? (indicator.placeIds?.length ? { ok: true as const, level: -1 } : canRecordByPlace({ calculated: false, placeLevel: indicator.placeLevel }, props.places, props.usedPlaceIds ?? []))
+    : null;
   const landing = useMemo(() => dateLanding(date, periods), [date, periods]);
   const periodId = landing.kind === "FOUND" ? landing.periodId : undefined;
   const splitComplete = split.length > 0 && split.every((e) => e.category.trim() !== "" && e.value.trim() !== "");
@@ -153,7 +156,7 @@ export function ValueForm(props: ValueFormProps) {
       </div>
 
       {byPlace?.ok && props.places && indicator ? (
-        <PlaceFigures key={indicator.id} places={props.places} usedPlaceIds={props.usedPlaceIds ?? []} level={byPlace.level} type={indicator.type ?? "NUMBER"} figures={placeFigures}
+        <PlaceFigures key={indicator.id} chosenIds={indicator.placeIds} places={props.places} usedPlaceIds={props.usedPlaceIds ?? []} level={byPlace.level} type={indicator.type ?? "NUMBER"} figures={placeFigures}
           onChange={(figures, entries, total) => { setPlaceFigures(figures); setSplit(entries); setValue(total); setProblem(null); }} />
       ) : (
       <div className="space-y-2">

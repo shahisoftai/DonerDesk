@@ -8,6 +8,8 @@ export const CreateActivityUpdateSchema = z.object({
   /** Last day of the span the record covers (a whole month of outreach clinics); omit for a single day. */
   activityEndDate: z.string().datetime().optional(),
   location: z.string().max(200).optional(),
+  /** Phase 56: the places it happened at, from the place picker (the first is the main one). Omitted = the planned activity's places are copied. */
+  placeIds: z.array(z.string().min(1)).max(20).optional(),
   outputId: z.string().optional(),
   /** The logframe Activity-level item this record delivers; the output is derived from it. */
   logframeActivityId: z.string().optional(),

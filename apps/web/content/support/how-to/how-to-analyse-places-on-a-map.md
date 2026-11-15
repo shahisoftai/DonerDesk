@@ -4,7 +4,7 @@ The **Analyse** panel on a project's map answers three questions about the place
 
 ## Before you start
 
-- The places need a **pin**. Open **Settings → Places**, find the place and choose **Pin** (see [Pin a place on the map](./how-to-pin-a-place-on-the-map.md)).
+- The places need a **pin**. Open **Where we work → Manage places**, find the place and choose **Pin** (see [Pin a place on the map](./how-to-pin-a-place-on-the-map.md)).
 - To see the nearest facility, mark the clinics, hospitals or schools you work with as facilities: in the same **Pin** box tick **This place is a facility**.
 
 ## Run an analysis

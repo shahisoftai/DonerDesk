@@ -22,7 +22,6 @@ export default async function SettingsLayout({ children }: { children: ReactNode
     { label: "Organisation", items: [
       { label: "General", href: "/settings" },
       ...(can("project.create") ? [{ label: "Workspace setup", href: "/settings/setup" }] : []),
-      { label: "Places", href: "/settings/places" },
       ...(can("org.manage") ? [{ label: "Finance", href: "/settings/finance" }] : []),
     ] },
     { label: "Data defaults", items: [

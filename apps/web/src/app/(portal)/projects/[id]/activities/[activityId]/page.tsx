@@ -27,6 +27,8 @@ import { FileNeedsSchema } from "@/lib/server/schemas";
 import { stillNeededLine } from "@/features/workplan/domain/file-needs-view";
 import { ActivityEvidencePanel } from "@/features/activities/presentation/ActivityEvidencePanel";
 import { PlanLinkPanel } from "@/features/activities/presentation/PlanLinkPanel";
+import { RecordPlacesEditor } from "@/features/places/presentation/picker/RecordPlacesEditor";
+import { getRecordPlaces, placeChoicesFor } from "@/lib/server/place-choices";
 import { WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { dependencyLabel } from "@/features/workplan/domain/dependency-view";
 
@@ -50,6 +52,11 @@ export default async function ActivityDetailPage({
     return <InlineError title={result.error.message} referenceId={result.error.referenceId} />;
   }
   const activity = result.value;
+  // Phase 56: where it happened (its own places, or its planned activity's) and the picker's choices.
+  const [recordPlaces, placeChoices] = await Promise.all([
+    getRecordPlaces(resolvedParams.id, "ACTIVITY", activity.id, ctx.token),
+    placeChoicesFor(resolvedParams.id, ctx.token),
+  ]);
   const attachedEvidenceIds = activity.attachedEvidenceIds ?? [];
 
   const evidenceResult = await gatewayRequest("/v1/evidence/search", EvidenceResponseSchema, ctx.token, {
@@ -135,6 +142,8 @@ export default async function ActivityDetailPage({
           suggestedDue={suggestTaskDueDate("REVIEW_RECORD", { today: new Date().toISOString().slice(0, 10) })}
         />
       )}
+
+      {recordPlaces.ok && <RecordPlacesEditor projectId={resolvedParams.id} kind="ACTIVITY" recordId={activity.id} data={recordPlaces.value} choices={placeChoices.choices} projectIds={placeChoices.projectIds} />}
 
       {planResult.ok && (
         <PlanLinkPanel

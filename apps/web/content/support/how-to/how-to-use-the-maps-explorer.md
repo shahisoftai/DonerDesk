@@ -25,7 +25,7 @@ On the right, **Places in this project** lists the places that carry activities 
 2. Click **Open its districts** (or *provinces*, *sub-districts*, depending on the level) to see the next level down and its list of places.
 3. Click **Show every place** to list every place, not only those with figures.
 
-The line under the map says how many places have a figure, how many are pinned and how many are not on the map for lack of a pin. A note says which is the finest boundary level available for the country and whether places were matched to their boundary **by name only**; add their codes under **Settings → Places** for an exact match.
+The line under the map says how many places have a figure, how many are pinned and how many are not on the map for lack of a pin. A note says which is the finest boundary level available for the country and whether places were matched to their boundary **by name only**; add their codes under **Where we work → Manage places** for an exact match.
 
 ## Layers
 

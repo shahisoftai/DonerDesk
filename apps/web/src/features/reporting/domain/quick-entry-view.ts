@@ -15,6 +15,8 @@ export interface QuickIndicator {
   /** Figures are entered one per place (Phase 53.2), at this admin level when given. */
   recordByPlace?: boolean | undefined;
   placeLevel?: number | undefined;
+  /** Phase 56: measured at chosen places: these are the rows (not a level). */
+  placeIds?: readonly string[] | undefined;
   /** Calculated from other indicators: never typed. */
   formula?: unknown;
 }

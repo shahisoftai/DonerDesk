@@ -4,7 +4,7 @@ Context layers help people find their way on a map: where people live, where hea
 
 ## Choose which layers your maps offer (administrators)
 
-1. Open **Settings → Places** and go to **Map context layers**.
+1. Open **Where we work → Manage places** and go to **Map context layers**.
 2. Tick the layers your organisation wants:
    - **Where people live (population)** (WorldPop)
    - **Health facilities** (Healthsites.io and OpenStreetMap)

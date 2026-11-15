@@ -44,7 +44,7 @@ A report has its own four-stage bar: **Inputs → Story → Draft → Review and
 
 ## Settings
 
-**Settings** has a list on the left: **General**, **Workspace setup**, **Places**, **Finance**; **Starting answers**, **Sector library**, **Donor requirements**; **AI features**, **AI usage**, **Writing style**; **Sign-in and two-step**, **Audit log**; **Plan and billing**; **API keys and webhooks**.
+**Settings** has a list on the left: **General**, **Workspace setup**, **Finance**; **Starting answers**, **Sector library**, **Donor requirements**; **AI features**, **AI usage**, **Writing style**; **Sign-in and two-step**, **Audit log**; **Plan and billing**; **API keys and webhooks**.
 
 ## Where did it go?
 

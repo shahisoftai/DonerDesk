@@ -765,11 +765,12 @@ export interface Container {
     retryBillingInbox: RetryBillingInboxHandler;
     runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
     runGrandfatherByoLlm: RunGrandfatherByoLlmHandler;
-  } & WorkplanHandlers & FinanceHandlers & SectorLibraryHandlers & DatasetsHandlers;
+  } & WorkplanHandlers & FinanceHandlers & SectorLibraryHandlers & DatasetsHandlers & PlaceTreeHandlers;
 }
 
 import { createWorkplanModule, type WorkplanHandlers } from "./container/workplan-module.js";
 import { createFinanceModule, type FinanceHandlers } from "./container/finance-module.js";
+import { createPlaceTreeModule, type PlaceTreeHandlers } from "./container/place-tree-module.js";
 import { createDatasetsModule, type DatasetsHandlers } from "./datasets/module.js";
 import { createSectorLibraryModule, type SectorLibraryHandlers } from "./container/sector-library-module.js";
 import { IndicatorLibraryLinkWriter } from "./project-setup/library-link-writer.js";
@@ -1356,7 +1357,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const personNotifier = new PersonNotifier(ids, notifications, notify, notificationPreferences);
   const taskReconciler = new TaskReconciler(projectTasks, new PrismaTaskFactsReader(prisma), audits, clock);
   // The work plan: repositories, services and handlers are built in one module (see container/workplan-module.ts).
-  const workplan = createWorkplanModule({ prisma, ids, clock, audits, logframe, indicators, indicatorUpdates, periods, projects, activities, activityLinks, taskReconciler });
+  const visibleProjects = new VisibleProjects(projects, projectMembers);
+  const placeTree = createPlaceTreeModule({ prisma, ids, clock, audits, projects, visible: visibleProjects, places });
+  const workplan = createWorkplanModule({ prisma, ids, clock, audits, logframe, indicators, indicatorUpdates, periods, projects, activities, activityLinks, taskReconciler, recordPlaces: placeTree.recordPlaces });
   const { plannedActivities, planRevisions, planContext, planLinks, automationSettings, beneficiaries: planBeneficiaries, beneficiaryLinks: planBeneficiaryLinks } = workplan;
   const runAutomations = new RunAutomationsHandler(projects, plannedActivities, new PrismaDeliveryFactsReader(prisma), automationSettings, new PrismaReminderAudience(prisma), new PrismaReminderLedger(prisma), personNotifier, automationSettings);
   const projectRisks = new PrismaProjectRiskRepository(prisma);
@@ -1371,7 +1374,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     new ActivityFixAssignmentSource(prisma), new EvidenceReviewAssignmentSource(prisma), new ActivityReviewAssignmentSource(prisma), new ValueReviewAssignmentSource(prisma), new RecordReviewAssignmentSource(prisma),
     new IndicatorValueAssignmentSource(collectionFacts), new RiskReviewAssignmentSource(prisma),
   ]);
-  const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits, taskReconciler);
+  const evidenceLinker = new EvidenceLinkService(evidence, activities, indicatorUpdates, audits, taskReconciler, placeTree.recordPlaces);
   const indicatorAnalytics = new IndicatorAnalyticsService(periods, indicators, indicatorUpdates, logframe);
   const periodFinancials = new PrismaPeriodFinancialRepository(prisma);
   const financeInputs = new FinanceInputsService(reportingProfiles, periodFinancials);
@@ -1509,7 +1512,6 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const ensureAutoPeriodHandler = new EnsureAutoPeriodHandler(projects, reportingProfiles, periods, createReportingPeriodHandler);
 
   const periodContextBuilder = new ReportGenerationContextBuilder(periods, projects, organizations, new PeriodTemplateResolver(templates, periods), indicatorUpdates, activities, indicatorAnalytics, evidencePackageBuilder, getReportDraftGenerator, financeInputs, evidence, planDelivery, reportingProfiles);
-  const visibleProjects = new VisibleProjects(projects, projectMembers);
   const saveDashboard = new SaveDashboardHandler(ids, dashboards, visibleProjects, audits, clock);
   const placeResults = new GetProjectPlaceResultsHandler(projects, periods, indicators, indicatorUpdates, places);
   const listPlacesForExport = new ListPlacesHandler(places);
@@ -1596,6 +1598,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const handlers: Container["handlers"] = {
     ...workplan.handlers,
     ...finance.handlers,
+    ...placeTree.handlers,
     ...sectorLibrary.handlers,
     ...datasets.handlers,
     suggestPresenceRows: new SuggestPresenceRowsHandler(workplan.handlers.listWorkPlan, new ListProjectPeopleHandler(projectMembers, users)),
@@ -1947,7 +1950,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     bulkVerifyEvidence: new BulkVerifyEvidenceHandler(new VerifyEvidenceHandler(evidence, audits)),
     searchEvidence: new SearchEvidenceHandler(evidence),
     getEvidence: new GetEvidenceHandler(evidence),
-    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
+    createActivityUpdate: new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler, placeTree.recordPlaces),
     getPortfolioIndicators: new GetPortfolioIndicatorsHandler(projects, projectMembers, new PrismaPortfolioValueReader(prisma)),
     setWorkPlanningVisibility: new SetWorkPlanningVisibilityHandler(projects, audits),
     listProjectPeople: new ListProjectPeopleHandler(projectMembers, users),

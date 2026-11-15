@@ -23,7 +23,11 @@ test("H-15: every route a partner is allowed also has an ordinary authorisation 
   const samples = [["GET", "/v1/projects"], ["GET", "/v1/projects/p1"], ["GET", "/v1/projects/p1/logframe"], ["GET", "/v1/projects/p1/activities"], ["GET", "/v1/projects/p1/reporting-periods"],
     ["GET", "/v1/organization"], ["GET", "/v1/notifications"], ["GET", "/v1/me/week"], ["GET", "/v1/legal/consent"], ["POST", "/v1/legal/consent"], ["POST", "/v1/notifications/n1/read"],
     ["POST", "/v1/activities"], ["GET", "/v1/activities/a1"], ["POST", "/v1/evidence/upload"], ["GET", "/v1/evidence/e1"], ["GET", "/v1/files/k1"],
-    ["GET", "/v1/reporting-periods/per1/indicators"], ["POST", "/v1/indicator-updates"], ["POST", "/v1/indicator-updates/bulk"], ["POST", "/v1/reporting-periods/per1/indicator-updates/submit-all"]];
+    ["GET", "/v1/reporting-periods/per1/indicators"], ["POST", "/v1/indicator-updates"], ["POST", "/v1/indicator-updates/bulk"], ["POST", "/v1/reporting-periods/per1/indicator-updates/submit-all"],
+    // Phase 56: a partner reads its project's places, sets places on its own records and adds sites inside the project's areas.
+    ["GET", "/v1/projects/p1/places"], ["GET", "/v1/projects/p1/record-places/ACTIVITY/a1"], ["PUT", "/v1/projects/p1/record-places/ACTIVITY/a1"], ["POST", "/v1/projects/p1/places/inline"],
+    // Phase 54: a partner adds data to a dataset of their project.
+    ["POST", "/v1/datasets/uploads"], ["POST", "/v1/datasets/d1/versions"]];
   for (const [m, p] of samples) {
     assert.equal(isExternalAllowed(m, p), true, `${m} ${p} should be allowed for a partner`);
     assert.ok(RULES.some((r) => r.method === m && r.route.test(p)), `${m} ${p} has no authorisation rule`);

@@ -26,7 +26,7 @@ Under **Or choose what you are bringing in**, click the card that matches:
 | **Evidence files** | Files or links that prove what was done | **Evidence → Import** |
 | **Records for a collection form** | Rows filled in against a form's own questions | The project's **Data → Forms** page |
 | **Finance entries** | Expenses and money received | The **Finance** tab's import section |
-| **Places** | The project's list of places, with parents and pins | **Settings → Places** |
+| **Places** | The organisation's list of places, with parents and pins | **Where we work → Manage places** |
 
 ## What every import does
 

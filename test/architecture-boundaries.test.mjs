@@ -322,3 +322,32 @@ test("canvas: every print painter and screen renderer is keyed by a real block k
   const kinds = /\bBLOCK_KINDS\b/;
   for (const f of ["packages/infrastructure/src/canvas/print-registry.ts", "apps/web/src/features/canvas/presentation/screen-registry.ts"]) assert.match(readFileSync(join(ROOT, f), "utf8"), kinds, f);
 });
+
+// Phase 56: one place tree. The record kinds are a table (`PLACE_LINK_RULES` in the domain, `LINK_TABLES` in the repository); nothing else
+// branches on a kind's name, the domain stays browser-safe, and every file stays small.
+const PLACE_TREE_FILES = [
+  "packages/domain/src/contexts/places/place-tree.ts", "packages/domain/src/contexts/places/footprint.ts", "packages/domain/src/contexts/places/place-link.ts",
+  "packages/domain/src/contexts/places/place-merge.ts", "packages/domain/src/contexts/places/three-w.ts", "packages/domain/src/contexts/places/indicator-places.ts",
+  "packages/application/src/use-cases/places/project-areas.ts", "packages/application/src/use-cases/places/project-places.ts", "packages/application/src/use-cases/places/record-places.ts",
+  "packages/application/src/use-cases/places/inline-place.ts", "packages/application/src/use-cases/places/org-places.ts", "packages/application/src/use-cases/places/indicator-places.ts",
+  "packages/infrastructure/src/repositories/place-tree.ts", "packages/infrastructure/src/repositories/place-tree-readers.ts", "packages/infrastructure/src/container/place-tree-module.ts",
+  "apps/web/src/features/places/presentation/picker/PlacePicker.tsx", "apps/web/src/features/places/presentation/picker/RecordPlacesEditor.tsx",
+];
+const RECORD_KIND_TABLES = new Set(["packages/domain/src/contexts/places/place-link.ts", "packages/infrastructure/src/repositories/place-tree.ts"]);
+
+test("place tree: files are at most 300 lines and nothing but the two tables branches on a record kind", () => {
+  const problems = [];
+  for (const rel of PLACE_TREE_FILES) {
+    const text = readFileSync(join(ROOT, rel), "utf8");
+    if (text.split("\n").length > 300) problems.push(`${rel}: over 300 lines`);
+    if (!RECORD_KIND_TABLES.has(rel) && /(===|!==|case)\s*"(PLANNED_ACTIVITY|ACTIVITY|EVIDENCE|BENEFICIARY)"/.test(text)) problems.push(`${rel}: branches on a record kind`);
+  }
+  assert.deepEqual(problems, []);
+});
+
+test("place tree: the domain files the browser imports use no node-only code", () => {
+  for (const rel of PLACE_TREE_FILES.filter((f) => f.startsWith("packages/domain/"))) {
+    const text = readFileSync(join(ROOT, rel), "utf8");
+    assert.ok(!/from "node:|\bBuffer\b|\bprocess\./.test(text), `${rel} uses node-only code`);
+  }
+});

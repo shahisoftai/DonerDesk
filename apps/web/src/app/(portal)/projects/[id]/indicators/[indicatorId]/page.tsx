@@ -23,6 +23,9 @@ import { suggestTaskDueDate } from "@donordesk/domain/contexts/tasks/index.js";
 import { ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
 import { IndicatorViews } from "@/features/logframe/presentation/IndicatorViews";
 import { IndicatorHistoryPanel } from "@/features/logframe/presentation/IndicatorHistoryPanel";
+import { IndicatorPlacesCard } from "@/features/places/presentation/IndicatorPlacesCard";
+import { IndicatorPlacesSchema } from "@/lib/server/schemas-place-tree";
+import { placeChoicesFor } from "@/lib/server/place-choices";
 import { CreateFormFromIndicatorButton } from "@/features/collection/presentation/CreateFormFromIndicatorButton";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +33,11 @@ export const dynamic = "force-dynamic";
 export default async function IndicatorDetailPage({ params }: { params: Promise<{ id: string; indicatorId: string }> }) {
   const { id, indicatorId } = await params;
   const ctx = await requireSession();
+  // Phase 56: where this indicator is measured, and the picker's choices.
+  const [wherePlaces, placeChoices] = await Promise.all([
+    gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/places`, IndicatorPlacesSchema, ctx.token),
+    placeChoicesFor(id, ctx.token),
+  ]);
   const [result, history, support, placeList, placeResults, sheet] = await Promise.all([
     gatewayRequest(`/v1/projects/${id}/logframe`, LogframeResponseSchema, ctx.token),
     gatewayRequest(`/v1/indicators/${encodeURIComponent(indicatorId)}/updates`, IndicatorUpdateHistoryResponseSchema, ctx.token),
@@ -72,6 +80,7 @@ export default async function IndicatorDetailPage({ params }: { params: Promise<
         items={result.value.items}
       />
     )}
+    {wherePlaces.ok && <div className="mt-4"><IndicatorPlacesCard indicatorId={indicator.id} projectId={id} data={wherePlaces.value} choices={placeChoices.choices} projectIds={placeChoices.projectIds} /></div>}
     <section className="card mt-4 space-y-3" aria-label="Who collects this">
       <LeadPicker current={indicator.responsibleUserId} people={people} canEdit={canLead} target={{ type: "indicator", id: indicator.id }} />
       {canAsk && periodOptions.length > 0 && (

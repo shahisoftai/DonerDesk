@@ -23,6 +23,8 @@ export interface SeedUnit {
 
 export interface BoundarySeedPlan {
   create: PlaceRecord[];
+  /** The place each unit is (new or already listed), by the unit's ref; empty when the plan has problems. */
+  idByRef?: ReadonlyMap<string, string>;
   skipped: number;
   /** Units finer than the coarsest level asked for that sit directly under the country because no parent could be told. */
   underCountry: number;
@@ -73,5 +75,5 @@ export function planBoundarySeed(country: { name: string }, units: readonly Seed
     idByRef.set(unit.ref, id);
     if (unit.code?.trim()) byCode.set(codeKey(unit.code), valid.value);
   }
-  return { create: problems.length ? [] : created, skipped, underCountry, problems };
+  return { create: problems.length ? [] : created, skipped, underCountry, problems, idByRef: problems.length ? new Map() : idByRef };
 }

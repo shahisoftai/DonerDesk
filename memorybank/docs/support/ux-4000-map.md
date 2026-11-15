@@ -13,7 +13,7 @@
 
 | Group | Entry | What is inside | Who sees it |
 |---|---|---|---|
-| Work | **Home** | Tabs **Home** and **Portfolio** | everyone except outside partners (they get **Your projects**) |
+| Work | **Home** | Tabs **Home**, **Portfolio** and **Where we work** (Phase 56: who does what where; **Manage places** for administrators, formerly Settings → Places) | everyone except outside partners (they get **Your projects**) |
 | Work | **Inbox** | Tabs **To do**, **Team** (managers), **Updates**; button **Waiting to send** | everyone |
 | Work | **Projects** | the project list | everyone |
 | Work | **Dashboards and infographics** | Designs, Templates, Datasets, **Tools ▾** | Admin, Project Manager, M&E, Grants, Viewer |
@@ -49,7 +49,7 @@ Header: title, status, code, donor, country, sector, dates, **Record** button. B
 
 | Group | Pages |
 |---|---|
-| **Organisation** | **General** (name, country, language, sectors, export your data) · **Workspace setup** (the **Get started** checklist) · **Places** · **Finance** |
+| **Organisation** | **General** (name, country, language, sectors, export your data) · **Workspace setup** (the **Get started** checklist) · **Finance** |
 | **Data defaults** | **Starting answers** (default packs by sector) · **Sector library** · **Donor requirements** |
 | **AI** | **AI features** (Ask DonorDesk and the setup assistant switches) · **AI usage** · **Writing style** (only when enabled) |
 | **Security** | **Sign-in and two-step** · **Audit log** |

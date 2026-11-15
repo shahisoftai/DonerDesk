@@ -1,5 +1,6 @@
 import type { Result } from "@donordesk/domain";
 import { DomainError, ActivityUpdate } from "@donordesk/domain";
+import type { IRecordPlacesAfterCreate } from "../../ports/place-tree.js";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IActivityUpdateRepository } from "../../ports/activities.js";
 import type { IIdGenerator, IAuditLogger } from "../../ports/core.js";
@@ -9,7 +10,7 @@ import type { ITaskReconciliation } from "../../ports/tasks.js";
 import type { CreateActivityUpdateInput } from "@donordesk/contracts";
 
 export class CreateActivityUpdateHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly links?: ActivityLinkResolver, private readonly planLinks?: PlanLinkResolver, private readonly tasks?: ITaskReconciliation) {}
+  constructor(private readonly ids: IIdGenerator, private readonly repo: IActivityUpdateRepository, private readonly audit: IAuditLogger, private readonly links?: ActivityLinkResolver, private readonly planLinks?: PlanLinkResolver, private readonly tasks?: ITaskReconciliation, private readonly places?: IRecordPlacesAfterCreate) {}
 
   async handle(ctx: AuthenticatedContext, input: CreateActivityUpdateInput): Promise<Result<{ id: string }, DomainError>> {
     // The planned activity may fill an empty logframe link (fill, never overwrite); the pair is then validated as before.
@@ -62,6 +63,8 @@ export class CreateActivityUpdateHandler {
       projectId: input.projectId,
     });
     await this.tasks?.reconcileForCurrentUser(ctx);
+    // Phase 56: the places chosen in the form, else the planned activity's. Additive: a failure never undoes the record.
+    await this.places?.afterCreate(ctx, { kind: "ACTIVITY", projectId: input.projectId, recordId: id, parentId: plan.value.plannedActivityId ?? null, ...(input.placeIds ? { placeIds: input.placeIds } : {}) });
     return { ok: true, value: { id } };
   }
 }

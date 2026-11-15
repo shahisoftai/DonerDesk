@@ -4,7 +4,7 @@ You can take your places and your results by place into a spreadsheet or a GIS t
 
 ## The places list
 
-On **Settings → Places**, next to **Your places**, choose:
+On **Where we work → Manage places**, next to **Your places**, choose:
 
 - **CSV (spreadsheet)**: every place with its level, the place it sits inside, its code, its pin and its other spellings. The columns are the ones the places import reads, so you can edit the file and bring it back in through **Import places**. Importing adds new places; it does not change places that already exist.
 - **GeoJSON (for GIS tools)**: the places that have a pin. The file says how many were left out for having none.

@@ -34,6 +34,7 @@ import { registerWorkPlanRoutes } from "./routes/workplan.js";
 import { registerInfographicsRoutes } from "./routes/infographics.js";
 import { registerTaskRoutes } from "./routes/tasks.js";
 import { registerPlaceRoutes } from "./routes/places.js";
+import { registerPlaceTreeRoutes } from "./routes/place-tree.js";
 import { registerFinanceRegisterRoutes } from "./routes/finance-register.js";
 import { registerCollectionRoutes, registerPublicCollectionRoutes } from "./routes/collection.js";
 import { registerPublicCanvasRoutes } from "./routes/canvases.js";
@@ -220,6 +221,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     await registerInfographicsRoutes(instance);
     await registerTaskRoutes(instance);
     await registerPlaceRoutes(instance);
+    await registerPlaceTreeRoutes(instance);
     await registerFinanceRegisterRoutes(instance);
     await registerCollectionRoutes(instance);
     await registerChartDashboardRoutes(instance);

@@ -63,7 +63,7 @@ import {
   type ILogframeRepository,
   type IProjectRepository,
   type IReportingPeriodRepository,
-  type ITaskReconciliation,
+  type IRecordPlacesAfterCreate, type ITaskReconciliation,
 } from "@donordesk/application";
 import {
   PrismaAutomationSettings,
@@ -102,6 +102,8 @@ export interface WorkplanModuleDeps {
   activities: IActivityUpdateRepository;
   activityLinks: ActivityLinkResolver;
   taskReconciler: ITaskReconciliation;
+  /** Phase 56: stores or inherits a new completed activity's places. */
+  recordPlaces?: IRecordPlacesAfterCreate;
 }
 
 /**
@@ -109,7 +111,7 @@ export interface WorkplanModuleDeps {
  * takes `handlers` as they are and the few repositories other parts still read (activities, revisions, context, links, settings).
  */
 export function createWorkplanModule(deps: WorkplanModuleDeps) {
-  const { prisma, ids, clock, audits, logframe, indicators, indicatorUpdates, periods, projects, activities, activityLinks, taskReconciler } = deps;
+  const { prisma, ids, clock, audits, logframe, indicators, indicatorUpdates, periods, projects, activities, activityLinks, taskReconciler, recordPlaces } = deps;
   const plannedActivities = new PrismaPlannedActivityRepository(prisma);
   const planRevisions = new PrismaPlanRevisionRepository(prisma);
   const planDependencies = new PrismaPlanDependencyRepository(prisma);
@@ -167,7 +169,7 @@ export function createWorkplanModule(deps: WorkplanModuleDeps) {
     changeActivityPeople: new ChangeActivityPeopleHandler(planAccess, beneficiaryLinks, beneficiaries, audits, clock),
     completePlannedActivity: new CompletePlannedActivityHandler(
       planAccess, periods,
-      new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler),
+      new CreateActivityUpdateHandler(ids, activities, audits, activityLinks, planLinks, taskReconciler, recordPlaces),
       new ChangePlanStatusHandler(planAccess, plannedActivities, planRecorder, clock), clock),
     setCapacity: new SetCapacityHandler(memberCapacity, audits, clock),
     bulkPlanAction: bulkPlan,

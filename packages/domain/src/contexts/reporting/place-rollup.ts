@@ -63,7 +63,9 @@ export function rollupByPlace(view: IndicatorLocationView, registry: PlaceRegist
   const contributions: Contribution[] = [];
   const unplaced: PlaceRollupUnplaced[] = [];
   for (const row of view.rows) {
-    const r = resolvePlace(row.location, registry, options);
+    // Phase 56: a figure stored with its place's id is that place; only name-only figures are matched by words.
+    const byId = row.placeId ? registry.get(row.placeId) : undefined;
+    const r = byId ? { status: "RESOLVED" as const, place: byId } : resolvePlace(row.location, registry, options);
     if (r.status === "UNRESOLVED") { unplaced.push({ location: row.location, value: row.value, reason: "NOT_IN_LIST" }); continue; }
     if (r.status === "AMBIGUOUS") {
       unplaced.push({ location: row.location, value: row.value, reason: "MORE_THAN_ONE_PLACE", candidates: r.candidates.map((c) => registry.pathLabel(c.id)) });

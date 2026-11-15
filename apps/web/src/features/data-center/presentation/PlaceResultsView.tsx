@@ -46,7 +46,7 @@ export function PlaceResultsView({ projectId }: { projectId: string }) {
     return (
       <div className="card text-sm">
         <p>{C.noPlaces}</p>
-        <Link className="mt-2 inline-block font-medium underline" href="/settings/places">{C.noPlacesAction}</Link>
+        <Link className="mt-2 inline-block font-medium underline" href="/where-we-work/manage">{C.noPlacesAction}</Link>
       </div>
     );
   }
@@ -115,7 +115,7 @@ export function PlaceResultsView({ projectId }: { projectId: string }) {
         );
       })}
 
-      {anyUnplaced && <Link className="text-sm font-medium underline" href="/settings/places">{C.fixPlaces}</Link>}
+      {anyUnplaced && <Link className="text-sm font-medium underline" href="/where-we-work/manage">{C.fixPlaces}</Link>}
 
       {data.withoutLocation.length > 0 && (
         <section className="card" aria-labelledby="pr-without">

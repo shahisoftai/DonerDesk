@@ -12,7 +12,7 @@ Click **Dashboards and infographics** in the left menu, then the **Datasets** ta
 2. The steps are shown across the top: **Add data → Choose the table → Confirm columns → Fix places → Tidy → Check → Done**.
 3. **Choose the table**: if the workbook has several sheets, pick one.
 4. **Confirm columns**: DonorDesk guesses what each column is (a place, a month, a number, a rate, a category) and what it means. Change anything that is wrong. A rate is never added up.
-5. **Fix places**: place names are matched to your places list by code, then alias, then a name that is unique. A name that matches nothing, or several places, is shown for you to choose; nothing is guessed. Fix them under **Settings → Places** later if you prefer.
+5. **Fix places**: place names are matched to your places list by code, then alias, then a name that is unique. A name that matches nothing, or several places, is shown for you to choose; nothing is guessed. Fix them under **Where we work → Manage places** later if you prefer.
 6. **Tidy**: the cleaning steps applied to your table are listed in plain words. They are done again every time the dataset is refreshed with new data.
 7. **Check**: problems that stop the save are listed (for example two rows with the same key). Warnings do not stop it.
 8. **Done**: the dataset is saved. If its columns fit a sector kit, the **kit** is offered: it relabels the columns, adds its figures and checks, and can build a set of dashboard pages for you.

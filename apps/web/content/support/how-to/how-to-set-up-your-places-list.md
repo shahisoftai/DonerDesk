@@ -2,7 +2,7 @@
 
 Your organisation keeps one **list of places** where you work. When a project, activity or result names a place, DonorDesk can then read it at the places above it: a locality's figures count toward its state and its country, and maps can show it. Setting up the list once keeps place names spelled the same everywhere.
 
-Open **Settings → Places**. You need the **Admin** role to change the list.
+Open **Where we work → Manage places**. You need to be able to edit projects to change the list; merging duplicates needs the **Admin** role. To choose where one project works, use the project's **Plan → Where we work** instead.
 
 ## Add all the places of a country at once
 

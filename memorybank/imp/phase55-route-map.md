@@ -107,7 +107,10 @@ redirect to the target and must never be linked from the app. (Removed 2026-11-1
 | `/settings/billing` | Settings side list | KEPT |  |
 | `/settings/finance` | Settings side list | KEPT |  |
 | `/settings/integrations` | Settings side list | KEPT |  |
-| `/settings/places` | Settings side list | KEPT |  |
+| `/settings/places` | Settings side list | REDIRECT | /where-we-work/manage |
+| `/where-we-work` | Home hub tab (Phase 56) | KEPT |  |
+| `/where-we-work/manage` | Where we work (Phase 56) | KEPT |  |
+| `/places/[placeId]` | Where we work (Phase 56) | KEPT |  |
 | `/settings/requirement-packs` | Settings side list | KEPT |  |
 | `/settings/sector-library` | Settings side list | KEPT |  |
 | `/settings/security` | Settings side list | KEPT |  |
