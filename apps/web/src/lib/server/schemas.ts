@@ -1316,6 +1316,10 @@ export const DataSheetResponseSchema = z.object({
       verified: z.boolean(),
     }),
   ),
+  /** Per-period figures from the finance register (cumulative to each period end), sent when the register has any. */
+  registerFinance: z
+    .array(z.object({ periodId: z.string(), currency: z.string(), budget: z.string(), expenditure: z.string(), balance: z.string(), burnRatePercent: z.string().optional(), verified: z.boolean() }))
+    .optional(),
 });
 export type DataSheetResponse = z.infer<typeof DataSheetResponseSchema>;
 

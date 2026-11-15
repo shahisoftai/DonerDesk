@@ -78,6 +78,10 @@
       "types": "./dist/core/copy-lint.d.ts",
       "import": "./dist/core/copy-lint.js"
     },
+    "./core/message-blocks.js": {
+      "types": "./dist/core/message-blocks.d.ts",
+      "import": "./dist/core/message-blocks.js"
+    },
     "./core/plural.js": {
       "types": "./dist/core/plural.d.ts",
       "import": "./dist/core/plural.js"

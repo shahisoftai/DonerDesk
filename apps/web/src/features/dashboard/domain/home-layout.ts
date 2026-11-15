@@ -10,19 +10,21 @@
  */
 import type { HomeVariant } from "../../navigation/domain/role-navigation.ts";
 import { HOME_TILES_BY_VARIANT, type HomeTile } from "./home-tiles.ts";
+import {
+  PANEL_SPANS, defaultArrangement, isPanelSpan, movePlacement, resolveArrangement, sameArrangement, setPlacementHidden, setPlacementSpan, toStored,
+  type PanelSpan, type PanelWidths, type Placement as AnyPlacement,
+} from "./arrangement.ts";
+
+export { PANEL_SPANS, isPanelSpan, type PanelSpan };
 
 /** Parts that always sit above the layout (what needs the person, pins, bookmarks): not arranged. */
 export type FixedPanel = "NEEDS_YOU" | "PINNED" | "BOOKMARKS";
 export type LayoutPanel = Exclude<HomeTile, FixedPanel>;
 
-/** Widths on a 12-column grid. On a phone and a tablet every panel is full width. */
-export const PANEL_SPANS = [4, 6, 8, 12] as const;
-export type PanelSpan = (typeof PANEL_SPANS)[number];
-
-export interface Placement { readonly key: LayoutPanel; readonly span: PanelSpan; readonly hidden: boolean }
+export type Placement = AnyPlacement<LayoutPanel>;
 export type HomeLayout = ReadonlyArray<Placement>;
 
-interface PanelInfo { readonly defaultSpan: PanelSpan; readonly spans: ReadonlyArray<PanelSpan> }
+type PanelInfo = PanelWidths;
 const ALL: ReadonlyArray<PanelSpan> = PANEL_SPANS;
 
 /** One row per panel; exhaustive over `LayoutPanel`, so a new panel cannot be added without deciding its widths. */
@@ -51,13 +53,11 @@ export const DEFAULT_ORDER: ReadonlyArray<LayoutPanel> = [
 ];
 
 export const isLayoutPanel = (k: unknown): k is LayoutPanel => typeof k === "string" && Object.hasOwn(PANEL_INFO, k);
-export const isPanelSpan = (n: unknown): n is PanelSpan => typeof n === "number" && (PANEL_SPANS as ReadonlyArray<number>).includes(n);
 
 /** The panels a variant may show, in default order. */
 export const panelsFor = (variant: HomeVariant): LayoutPanel[] => DEFAULT_ORDER.filter((k) => HOME_TILES_BY_VARIANT[variant].has(k));
 
-export const defaultLayout = (variant: HomeVariant): HomeLayout =>
-  panelsFor(variant).map((key) => ({ key, span: PANEL_INFO[key].defaultSpan, hidden: false }));
+export const defaultLayout = (variant: HomeVariant): HomeLayout => defaultArrangement(PANEL_INFO, panelsFor(variant));
 
 const spanOk = (key: LayoutPanel, span: unknown): span is PanelSpan => isPanelSpan(span) && PANEL_INFO[key].spans.includes(span);
 
@@ -65,22 +65,7 @@ const spanOk = (key: LayoutPanel, span: unknown): span is PanelSpan => isPanelSp
  * Reads a stored layout for a variant. Never throws: an entry that is unknown, not allowed for the role, repeated or malformed is skipped;
  * a width the panel does not offer becomes its default; panels the stored value does not mention are added at the end, shown.
  */
-export function resolveLayout(variant: HomeVariant, stored: unknown): HomeLayout {
-  const allowed = new Set(panelsFor(variant));
-  const seen = new Set<LayoutPanel>();
-  const out: Placement[] = [];
-  if (Array.isArray(stored)) {
-    for (const raw of stored as unknown[]) {
-      if (typeof raw !== "object" || raw === null) continue;
-      const { key, span, hidden } = raw as Record<string, unknown>;
-      if (!isLayoutPanel(key) || !allowed.has(key) || seen.has(key)) continue;
-      seen.add(key);
-      out.push({ key, span: spanOk(key, span) ? span : PANEL_INFO[key].defaultSpan, hidden: hidden === true });
-    }
-  }
-  for (const key of panelsFor(variant)) if (!seen.has(key)) out.push({ key, span: PANEL_INFO[key].defaultSpan, hidden: false });
-  return out;
-}
+export const resolveLayout = (variant: HomeVariant, stored: unknown): HomeLayout => resolveArrangement(PANEL_INFO, panelsFor(variant), stored);
 
 /** Why a layout cannot be saved; empty when it can. The server and the edit mode ask this same function. */
 export function checkHomeLayout(variant: HomeVariant, layout: unknown): string[] {
@@ -100,26 +85,8 @@ export function checkHomeLayout(variant: HomeVariant, layout: unknown): string[]
   return problems;
 }
 
-/** Moves a panel one place earlier (-1) or later (+1) among all panels, hidden ones included. Unchanged at an end or for an unknown key. */
-export function movePanel(layout: HomeLayout, key: LayoutPanel, direction: -1 | 1): HomeLayout {
-  const i = layout.findIndex((p) => p.key === key);
-  const j = i + direction;
-  if (i < 0 || j < 0 || j >= layout.length) return layout;
-  const next = [...layout];
-  [next[i], next[j]] = [next[j]!, next[i]!];
-  return next;
-}
-
-/** Changes a panel's width; `null` when the panel does not offer it (the caller keeps the old layout). */
-export function setSpan(layout: HomeLayout, key: LayoutPanel, span: PanelSpan): HomeLayout | null {
-  if (!spanOk(key, span) || !layout.some((p) => p.key === key)) return null;
-  return layout.map((p) => (p.key === key ? { ...p, span } : p));
-}
-
-export const setHidden = (layout: HomeLayout, key: LayoutPanel, hidden: boolean): HomeLayout => layout.map((p) => (p.key === key ? { ...p, hidden } : p));
-
-/** What is stored: positions and flags only. */
-export const toStoredLayout = (layout: HomeLayout): Array<{ key: LayoutPanel; span: PanelSpan; hidden: boolean }> => layout.map((p) => ({ key: p.key, span: p.span, hidden: p.hidden }));
-
-export const sameLayout = (a: HomeLayout, b: HomeLayout): boolean =>
-  a.length === b.length && a.every((p, i) => p.key === b[i]!.key && p.span === b[i]!.span && p.hidden === b[i]!.hidden);
+export const movePanel = (layout: HomeLayout, key: LayoutPanel, direction: -1 | 1): HomeLayout => movePlacement(layout, key, direction);
+export const setSpan = (layout: HomeLayout, key: LayoutPanel, span: PanelSpan): HomeLayout | null => setPlacementSpan(PANEL_INFO, layout, key, span);
+export const setHidden = (layout: HomeLayout, key: LayoutPanel, hidden: boolean): HomeLayout => setPlacementHidden(layout, key, hidden);
+export const toStoredLayout = (layout: HomeLayout): Array<{ key: LayoutPanel; span: PanelSpan; hidden: boolean }> => toStored(layout);
+export const sameLayout = (a: HomeLayout, b: HomeLayout): boolean => sameArrangement(a, b);

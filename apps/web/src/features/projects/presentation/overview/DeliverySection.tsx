@@ -28,9 +28,9 @@ export function DeliverySection({ delivery, projectId }: { delivery: DeliveryDat
           </div>
           {health && health.reasons.length > 0 ? <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{health.reasons.join(" · ")}</p> : null}
           <ul className="mt-3 space-y-1 text-sm text-slate-600 dark:text-slate-300">
-            <li className="flex justify-between"><span>Under way</span><span className="tabular-nums">{counts.underWay}</span></li>
-            <li className="flex justify-between"><span>Starting within a week</span><span className="tabular-nums">{counts.dueSoon}</span></li>
-            <li className="flex justify-between"><span>Late</span><span className="tabular-nums text-danger-600 dark:text-danger-400">{counts.late}</span></li>
+            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities?view=planned`}>Under way</Link><span className="tabular-nums">{counts.underWay}</span></li>
+            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities?view=planned`}>Starting within a week</Link><span className="tabular-nums">{counts.dueSoon}</span></li>
+            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities?view=planned`}>Late</Link><span className="tabular-nums text-danger-600 dark:text-danger-400">{counts.late}</span></li>
           </ul>
         </div>
 
@@ -42,7 +42,7 @@ export function DeliverySection({ delivery, projectId }: { delivery: DeliveryDat
             <ul className="mt-2 divide-y divide-slate-200/70 dark:divide-white/10">
               {movements.slice(0, 4).map((movement) => (
                 <li key={movement.id} className="py-2 text-sm">
-                  <p className="font-medium leading-5">{movement.title}</p>
+                  <Link className="block font-medium leading-5 hover:underline" href={`/projects/${projectId}/activities/plan/${movement.id}`}>{movement.title}</Link>
                   <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
                     Moved from {formatDate(movement.from)} to {formatDate(movement.to)}
                     {movement.ownerUserId ? ` · ${nameOf(movement.ownerUserId) ?? "someone"}` : ""}
@@ -86,7 +86,7 @@ export function DeliverySection({ delivery, projectId }: { delivery: DeliveryDat
               {outputs.map((output) => (
                 <li key={output.outputId ?? "other"} className="py-2 text-sm">
                   <div className="flex items-baseline justify-between gap-2">
-                    <span className="min-w-0 truncate font-medium">{output.title}</span>
+                    <Link className="min-w-0 truncate font-medium hover:underline" href={`/projects/${projectId}/logframe`}>{output.title}</Link>
                     <span className="shrink-0 tabular-nums text-slate-600 dark:text-slate-300">
                       {output.done} of {output.planned} done
                     </span>

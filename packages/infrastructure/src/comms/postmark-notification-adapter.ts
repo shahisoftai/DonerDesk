@@ -2,6 +2,7 @@ import type { INotificationPort } from "@donordesk/application";
 import type { IUserRepository } from "@donordesk/application";
 import type { ILogger } from "@donordesk/application";
 import { EmailAdapter } from "./email.js";
+import { messageBlocks } from "@donordesk/domain";
 
 type NotifyInput = Parameters<INotificationPort["notify"]>[0];
 
@@ -30,7 +31,7 @@ export class PostmarkNotificationAdapter implements INotificationPort {
       const result = await this.email.send({
         to: recipient.email.toString(),
         subject: input.title,
-        html: `<p>${escapeHtml(input.message)}</p>`,
+        html: messageHtml(input.message),
       });
       if (!result.success) {
         this.logger.error("notification.email_failed", { type: input.type, recipient: input.recipientId, error: result.error });
@@ -39,6 +40,19 @@ export class PostmarkNotificationAdapter implements INotificationPort {
       this.logger.error("notification.email_exception", { type: input.type, recipient: input.recipientId, error: String(error) });
     }
   }
+}
+
+/** Headings, bullet lists and paragraphs, read by the same rule as the Inbox (`messageBlocks`). */
+function messageHtml(text: string): string {
+  return messageBlocks(text)
+    .map((b) =>
+      b.kind === "LIST"
+        ? `<ul>${b.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
+        : b.kind === "HEADING"
+          ? `<p><strong>${escapeHtml(b.text)}</strong></p>`
+          : `<p>${escapeHtml(b.text)}</p>`,
+    )
+    .join("");
 }
 
 function escapeHtml(text: string): string {

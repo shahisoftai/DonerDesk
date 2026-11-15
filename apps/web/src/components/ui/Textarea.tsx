@@ -6,7 +6,10 @@ import { insertAtCaret, useDictation } from "./useDictation";
 
 export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   invalid?: boolean;
-  /** Offer a microphone button that types what the user says (browsers with speech recognition only). */
+  /**
+   * A microphone button that types what the user says (browsers with speech recognition only). On by default, so every text box can be
+   * dictated into; pass `dictate={false}` for boxes that hold code, JSON or a template's source.
+   */
   dictate?: boolean;
 };
 
@@ -14,7 +17,7 @@ const BASE =
   "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-60 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-brand-400/70";
 
 export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
-  { invalid, dictate, className, ...props },
+  { invalid, dictate = true, className, ...props },
   ref,
 ) {
   const inner = useRef<HTMLTextAreaElement | null>(null);

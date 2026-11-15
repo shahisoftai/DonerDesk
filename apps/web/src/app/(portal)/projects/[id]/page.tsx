@@ -1,4 +1,12 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
+import { HomeGrid } from "@/features/dashboard/presentation/HomeGrid";
+import { ArrangeEditor } from "@/features/dashboard/presentation/HomeLayoutEditor";
+import { loadHomeLayout } from "@/features/dashboard/application/home-layout-read-model";
+import { OVERVIEW_SECTION_LABEL } from "@/features/projects/domain/overview-sections";
+import {
+  OVERVIEW_LAYOUT_VARIANT, OVERVIEW_PANEL_INFO, defaultOverviewLayout, resolveOverviewLayout, type OverviewPanel,
+} from "@/features/projects/domain/overview-layout";
 import { requireSession } from "@/lib/server/auth-context";
 import { loadProjectOverviewV2 } from "@/features/projects/application/overview-read-model";
 import { InlineError, EmptyState } from "@/components/feedback/PageState";
@@ -41,6 +49,7 @@ export default async function ProjectDetail({
   const ctx = await requireSession();
   const today = new Date().toISOString().slice(0, 10);
   const meId = decodeSessionPayload(ctx.token)?.sub ?? "";
+  const layoutCall = loadHomeLayout(ctx.token, OVERVIEW_LAYOUT_VARIANT);
   const load = await loadProjectOverviewV2(ctx.token, resolvedParams.id, {
     role: ctx.role,
     capabilities: ctx.capabilities,
@@ -63,6 +72,43 @@ export default async function ProjectDetail({
   // A failed read only means the risk form does not offer a result to raise a problem against.
   const results = has("RISKS") ? await gatewayRequest(`/v1/projects/${resolvedParams.id}/logframe`, LogframeResponseSchema, ctx.token) : null;
   const planPeople = data.delivery.ok ? data.delivery.value.people : [];
+  // The person's own arrangement; a failed read is the default order, so the page always opens.
+  const savedLayout = await layoutCall;
+  const layout = resolveOverviewLayout(sections, savedLayout.layout);
+
+  const renderPanel = (key: OverviewPanel): ReactNode | null => {
+    switch (key) {
+      case "PULSE": return data.pulse.ok ? <PulseSection pulse={data.pulse.value} projectId={identity.id} /> : null;
+      case "CALENDAR": return data.calendar.ok ? <CalendarSection items={data.calendar.value} projectId={identity.id} /> : null;
+      case "REPORTING": return data.reporting.ok ? <ReportingSection reporting={data.reporting.value} projectId={identity.id} /> : null;
+      case "DELIVERY": return data.delivery.ok ? <DeliverySection delivery={data.delivery.value} projectId={identity.id} /> : null;
+      case "LOCATION": return data.location.ok ? <LocationSection location={data.location.value} projectId={identity.id} /> : null;
+      case "RESULTS": return data.results.ok ? <ResultsMoneySection results={data.results.value} projectId={identity.id} /> : null;
+      case "TEAM":
+        return data.team.ok ? (
+          <TeamSection team={data.team.value} people={riskPeople} projectId={identity.id} today={today} periods={periods.map((p) => ({ id: p.id, label: p.title }))} />
+        ) : null;
+      case "RISKS":
+        return data.risks.ok ? (
+          <div className="mt-8">
+            <RisksCard
+              projectId={identity.id}
+              risks={data.risks.value.items}
+              people={riskPeople}
+              userId={meId}
+              canRaise={ctx.capabilities.has("risk.raise")}
+              today={today}
+              results={results?.ok ? results.value.items : []}
+            />
+            <div className="mt-4">
+              <DecisionLog risks={data.risks.value.items} people={riskPeople} />
+            </div>
+          </div>
+        ) : null;
+      case "CLOSEOUT": return data.closeOut.ok ? <CloseOutSection closeOut={data.closeOut.value} projectId={identity.id} /> : null;
+      case "SETUP": return data.setup.ok ? <SetupSection setup={data.setup.value} projectId={identity.id} vocabulary={vocabulary} /> : null;
+    }
+  };
 
   return (
     <div data-tour-id="demo-project-card">
@@ -109,50 +155,15 @@ export default async function ProjectDetail({
         <NeedsYouSection items={data.needsYou.value} projectId={identity.id} today={new Date().toISOString().slice(0, 10)} />
       ) : null}
 
-      {has("PULSE") && data.pulse.ok ? <PulseSection pulse={data.pulse.value} projectId={identity.id} /> : null}
-
-      {has("CALENDAR") && data.calendar.ok ? <CalendarSection items={data.calendar.value} projectId={identity.id} /> : null}
-
-      {has("REPORTING") && data.reporting.ok ? <ReportingSection reporting={data.reporting.value} projectId={identity.id} /> : null}
-
-      {has("DELIVERY") && data.delivery.ok ? <DeliverySection delivery={data.delivery.value} projectId={identity.id} /> : null}
-
-      {has("LOCATION") && data.location.ok ? <LocationSection location={data.location.value} projectId={identity.id} /> : null}
-
-      {has("RESULTS") && data.results.ok ? <ResultsMoneySection results={data.results.value} projectId={identity.id} /> : null}
-
-      {has("TEAM") && data.team.ok ? (
-        <TeamSection
-          team={data.team.value}
-          people={riskPeople}
-          projectId={identity.id}
-          today={today}
-          periods={periods.map((p) => ({ id: p.id, label: p.title }))}
+      <div className="mt-6 flex justify-end">
+        <ArrangeEditor
+          variant={OVERVIEW_LAYOUT_VARIANT} initial={[...layout]} defaults={defaultOverviewLayout(sections)} version={savedLayout.version}
+          info={OVERVIEW_PANEL_INFO} labels={OVERVIEW_SECTION_LABEL}
+          copy={{ open: "Arrange this page", title: "Arrange the project page", intro: "Choose the order and width of the parts, or hide the ones you do not use. Only you see this arrangement, and it applies to every project. On a phone, parts always stack in this order." }}
         />
-      ) : null}
+      </div>
 
-      {has("RISKS") && data.risks.ok ? (
-        <>
-          <div className="mt-8">
-            <RisksCard
-              projectId={identity.id}
-              risks={data.risks.value.items}
-              people={riskPeople}
-              userId={meId}
-              canRaise={ctx.capabilities.has("risk.raise")}
-              today={today}
-              results={results?.ok ? results.value.items : []}
-            />
-          </div>
-          <div className="mt-4">
-            <DecisionLog risks={data.risks.value.items} people={riskPeople} />
-          </div>
-        </>
-      ) : null}
-
-      {has("CLOSEOUT") && data.closeOut.ok ? <CloseOutSection closeOut={data.closeOut.value} projectId={identity.id} /> : null}
-
-      {has("SETUP") && data.setup.ok ? <SetupSection setup={data.setup.value} projectId={identity.id} vocabulary={vocabulary} /> : null}
+      <HomeGrid layout={layout} render={renderPanel} />
 
       {has("REPORTING") && !data.reporting.ok ? (
         <div className="mt-8">

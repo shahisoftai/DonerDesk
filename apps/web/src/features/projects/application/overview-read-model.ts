@@ -230,7 +230,8 @@ export const loadProjectOverviewV2 = cache(
     const periodLabels = new Map((sheet?.periods ?? []).map((p) => [p.id, p.label]));
     const pace = sheet ? budgetPace(sheet, periodLabels) : [];
     const nextPeriod = [...periods]
-      .filter((p) => p.daysUntilDeadline >= 0 && p.status !== "SUBMITTED" && p.status !== "CLOSED" && p.status !== "APPROVED")
+      // An overdue report that was never sent is the most pressing deadline, so it is not skipped for the next one.
+      .filter((p) => p.status !== "SUBMITTED" && p.status !== "CLOSED" && p.status !== "APPROVED")
       .sort((a, b) => a.daysUntilDeadline - b.daysUntilDeadline)[0];
     const openChecklist = (checklistResult && checklistResult.ok ? checklistResult.value.items : []).filter(
       (c) => c.status !== "RESOLVED" && c.status !== "ACCEPTED_RISK" && c.status !== "NOT_APPLICABLE",
@@ -268,7 +269,8 @@ export const loadProjectOverviewV2 = cache(
               })),
             }
           : null,
-        compliance: allChecklist.length > 0 || checklistResult
+        // A failed read is "not available", never "nothing open".
+        compliance: checklistResult && checklistResult.ok
           ? {
               open: openChecklist.length,
               needsPerson: openChecklist.filter((c) => c.type !== "STATE").length,

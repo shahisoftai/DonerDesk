@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { countOf } from "@donordesk/domain/core/plural.js";
 import { Badge } from "@/components/data/Badge";
 import type { ResultsData } from "@/features/projects/application/overview-view";
@@ -25,7 +26,7 @@ export function ResultsMoneySection({ results, projectId }: { results: ResultsDa
                 <li key={indicator.id} className="py-2.5 text-sm">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                     <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{indicator.code}</span>
-                    <span className="min-w-0 flex-1 truncate">{indicator.name}</span>
+                    <Link className="min-w-0 flex-1 truncate hover:underline" href={`/projects/${projectId}/indicators/${indicator.id}`}>{indicator.name}</Link>
                     {indicator.isRate ? (
                       <span className="tabular-nums text-slate-500">—</span>
                     ) : indicator.percent === null ? (
@@ -110,7 +111,7 @@ export function ResultsMoneySection({ results, projectId }: { results: ResultsDa
                   {results.finance.map((row) => (
                     <tr key={row.periodId}>
                       <td className="py-1.5 pr-3">
-                        {row.label}{" "}
+                        <Link className="hover:underline" href={`/projects/${projectId}/finance`}>{row.label}</Link>{" "}
                         <Badge tone={row.verified ? "success" : "warning"}>{row.verified ? "Verified" : "Draft"}</Badge>
                       </td>
                       <td className="py-1.5 pr-3 text-right font-mono tabular-nums">{row.budget || "—"}</td>
@@ -125,7 +126,7 @@ export function ResultsMoneySection({ results, projectId }: { results: ResultsDa
           {results.budgetPace.length > 0 ? (
             <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
               {results.budgetPace
-                .map((pace) => `${pace.currency}: ${pace.spentPercent ?? "—"}% spent${pace.verifiedThrough ? ` · verified through ${pace.verifiedThrough}` : ""}`)
+                .map((pace) => `${pace.currency}: ${pace.spentPercent === null ? "nothing recorded" : `${pace.spentPercent}% spent`}${pace.verifiedThrough ? ` · verified through ${pace.verifiedThrough}` : ""}`)
                 .join(" · ")}
             </p>
           ) : null}

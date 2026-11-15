@@ -190,27 +190,30 @@ function numeric(value: string | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-/** Budget against spending, one block per currency (currencies are never added together). */
+/**
+ * Budget against spending, one block per currency (currencies are never added together). Finance rows are cumulative to
+ * their period's end, so the latest period with a figure is the position today: rows are never added across periods.
+ * Period summaries come first; the finance register is read only when no period summary exists.
+ */
 export function budgetPace(sheet: DataSheet, periodLabels: ReadonlyMap<string, string>): BudgetPace[] {
-  const byCurrency = new Map<string, { budget: number; expenditure: number; verifiedThrough: string | null }>();
-  const ordered = [...sheet.periods].sort((a, b) => a.end.localeCompare(b.end));
-  for (const row of sheet.finance) {
-    const current = byCurrency.get(row.currency) ?? { budget: 0, expenditure: 0, verifiedThrough: null };
+  const rows = sheet.finance.length > 0 ? sheet.finance : (sheet.registerFinance ?? []);
+  const endOf = new Map(sheet.periods.map((p) => [p.id, p.end]));
+  const ordered = [...rows].sort((a, b) => (endOf.get(a.periodId) ?? "").localeCompare(endOf.get(b.periodId) ?? ""));
+  const byCurrency = new Map<string, { budget: number | null; expenditure: number | null; verifiedThrough: string | null }>();
+  for (const row of ordered) {
+    const current = byCurrency.get(row.currency) ?? { budget: null, expenditure: null, verifiedThrough: null };
     const budget = numeric(row.budget);
     const expenditure = numeric(row.expenditure);
-    if (budget !== null) current.budget += budget;
-    if (expenditure !== null) current.expenditure += expenditure;
-    if (row.verified) {
-      const label = periodLabels.get(row.periodId) ?? null;
-      current.verifiedThrough = label;
-    }
+    if (budget !== null) current.budget = budget;
+    if (expenditure !== null) current.expenditure = expenditure;
+    if (row.verified) current.verifiedThrough = periodLabels.get(row.periodId) ?? current.verifiedThrough;
     byCurrency.set(row.currency, current);
   }
   return [...byCurrency.entries()].map(([currency, totals]) => ({
     currency,
-    budget: totals.budget,
-    expenditure: totals.expenditure,
-    spentPercent: totals.budget > 0 ? Math.round((totals.expenditure / totals.budget) * 100) : null,
+    budget: totals.budget ?? 0,
+    expenditure: totals.expenditure ?? 0,
+    spentPercent: totals.budget !== null && totals.budget > 0 && totals.expenditure !== null ? Math.round((totals.expenditure / totals.budget) * 100) : null,
     verifiedThrough: totals.verifiedThrough,
   }));
 }

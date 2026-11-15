@@ -115,13 +115,21 @@ test("an indicator behind the clock is counted as behind", () => {
   assert.equal(onPace.atOrAhead, 1);
 });
 
+test("with no period summary the finance register is read", () => {
+  const s = { ...sheet(), finance: [], registerFinance: [{ periodId: "q1", currency: "EUR", budget: "500.00", expenditure: "125.00", balance: "375.00", verified: true }] };
+  const pace = budgetPace(s, new Map([["q1", "Q1 2025"]]));
+  assert.equal(pace[0]!.currency, "EUR");
+  assert.equal(pace[0]!.spentPercent, 25);
+});
+
 test("the money is read per currency and never added together", () => {
   const pace = budgetPace(sheet(), new Map([["q1", "Q1 2025"], ["q2", "Q2 2025"]]));
   assert.equal(pace.length, 1);
   assert.equal(pace[0]!.currency, "USD");
-  assert.equal(pace[0]!.budget, 200);
-  assert.equal(pace[0]!.expenditure, 140);
-  assert.equal(pace[0]!.spentPercent, 70);
+  // Rows are cumulative to the period end: the latest period is the position, never a sum of periods.
+  assert.equal(pace[0]!.budget, 100);
+  assert.equal(pace[0]!.expenditure, 60);
+  assert.equal(pace[0]!.spentPercent, 60);
   assert.equal(pace[0]!.verifiedThrough, "Q1 2025");
 });
 

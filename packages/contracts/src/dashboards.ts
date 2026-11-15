@@ -156,7 +156,8 @@ export const SetFeaturedSchema = z.object({ audiences: z.array(z.string().min(1)
  * A person's arrangement of Home (Phase 40). The server checks the shape only (known Home variant, a short list of well-formed entries, no repeats):
  * which panels a role may see is the web's rule and is applied again every time the layout is read, so a stored layout can never reveal anything.
  */
-export const HOME_VARIANTS = ["DIRECTOR", "MANAGER", "FIELD", "GRANTS", "COMPLIANCE"] as const;
+/** PROJECT is the arrangement of a project's Overview (one per person, the same for every project). */
+export const HOME_VARIANTS = ["DIRECTOR", "MANAGER", "FIELD", "GRANTS", "COMPLIANCE", "PROJECT"] as const;
 export const HomeVariantSchema = z.enum(HOME_VARIANTS);
 export const HomeLayoutEntrySchema = z.object({ key: z.string().regex(/^[A-Z][A-Z_]{1,30}$/), span: z.union([z.literal(4), z.literal(6), z.literal(8), z.literal(12)]), hidden: z.boolean() });
 export const HomeLayoutBodySchema = z.array(HomeLayoutEntrySchema).max(40).refine((l) => new Set(l.map((e) => e.key)).size === l.length, "A panel appears twice.");

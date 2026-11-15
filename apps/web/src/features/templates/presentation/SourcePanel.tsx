@@ -57,7 +57,7 @@ export function SourcePanel({
             {originalFile?.available && !changed ? " When the text is unchanged, the original file's layout is used." : ""}
           </p>
         </div>
-        <Textarea aria-label="Template text" className="min-h-[18rem] font-mono text-xs" value={text} onChange={(e) => setText(e.target.value)} disabled={readOnly} />
+        <Textarea dictate={false} aria-label="Template text" className="min-h-[18rem] font-mono text-xs" value={text} onChange={(e) => setText(e.target.value)} disabled={readOnly} />
         {error && <InlineAlert tone="danger" title={error} />}
         {!readOnly && (
           <div className="flex flex-wrap justify-end gap-2">

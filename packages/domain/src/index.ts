@@ -41,6 +41,7 @@ export * from "./contexts/tasks/index.js";
 export * from "./contexts/risks/index.js";
 export * from "./policies/index.js";
 export * from "./core/plural.js";
+export * from "./core/message-blocks.js";
 export * from "./core/copy-lint.js";
 export * from "./core/pii-firewall.js";
 export { GUIDE_SHEET_NAME, withoutGuideSheet, dataSheetText } from "./core/delimited.js";

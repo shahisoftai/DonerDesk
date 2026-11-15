@@ -49,7 +49,7 @@ export function TeamSection({
                         <span className="flex items-center gap-2">
                           <PersonMark name={row.name} late={row.late > 0} />
                           <span className="min-w-0">
-                            <span className="block truncate font-medium">{row.name}</span>
+                            <Link className="block truncate font-medium hover:underline" href={`/projects/${projectId}/team`}>{row.name}</Link>
                             {row.role ? <span className="block truncate text-xs text-slate-500 dark:text-slate-400">{row.role}</span> : null}
                           </span>
                         </span>

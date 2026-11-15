@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { countOf } from "@donordesk/domain/core/plural.js";
 import { Badge } from "@/components/data/Badge";
 import type { CloseOutData } from "@/features/projects/application/overview-view";
@@ -23,7 +24,7 @@ export function CloseOutSection({ closeOut, projectId }: { closeOut: CloseOutDat
             {closeOut.steps.map((step) => (
               <li key={step.key} className="rounded-lg border border-slate-200/70 p-3 text-sm dark:border-white/10">
                 <div className="flex items-start justify-between gap-2">
-                  <span className="min-w-0 font-medium">{step.label}</span>
+                  <Link className="min-w-0 font-medium hover:underline" href={`/projects/${projectId}/reports/closing`}>{step.label}</Link>
                   <Badge tone={stepTone(step.status)}>{stepLabel(step.status)}</Badge>
                 </div>
                 {step.detail ? <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{step.detail}</p> : null}

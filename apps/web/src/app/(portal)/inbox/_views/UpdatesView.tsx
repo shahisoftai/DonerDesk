@@ -1,3 +1,4 @@
+import { MessageBody } from "@/components/ui/MessageBody";
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -95,7 +96,7 @@ export async function UpdatesView({ params, heading }: { params: Record<string, 
                         <Badge tone={n.read ? "neutral" : "info"}>{TYPE_LABEL[n.type ?? ""] ?? (n.type ?? "Notification")}</Badge>
                         <span className="font-medium">{n.title}</span>
                       </div>
-                      {n.message && <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{n.message}</p>}
+                      {n.message && <MessageBody text={n.message} className="mt-1" />}
                     </div>
                     {!n.read && <MarkReadButton id={n.id} />}
                   </div>

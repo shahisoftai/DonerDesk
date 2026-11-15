@@ -5,6 +5,7 @@ import { columnKind, LAWFUL_BASES, SEMANTICS } from "@donordesk/domain/contexts/
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { setDatasetRestrictionAction, updateDatasetAction } from "@/lib/actions/datasets";
 import type { DatasetDetail } from "../domain/types";
+import { Textarea } from "@/components/ui/Textarea";
 
 /**
  * What a share link may show (§1.3) and the Restricted tier (§8.2). Partner, donor and money columns are never on a link; any other column
@@ -30,7 +31,7 @@ export function DatasetSharing({ dataset, isAdmin, onChanged }: { dataset: Datas
         <section className="space-y-2"><h3 className="text-sm font-semibold">{t("ds.restrict.title")}</h3>
           <p className="text-sm text-slate-600 dark:text-slate-300">{t("ds.restrict.intro")}</p>
           <label className="block text-sm">{t("ds.restrict.basis")} <select className="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={r.lawfulBasis} onChange={(e) => setR({ ...r, lawfulBasis: e.target.value })}>{LAWFUL_BASES.map((b) => <option key={b} value={b}>{t(`ds.basis.${b}`)}</option>)}</select></label>
-          <label className="block text-sm">{t("ds.restrict.purpose")}<textarea rows={2} className="w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={r.purpose} onChange={(e) => setR({ ...r, purpose: e.target.value })} /></label>
+          <label className="block text-sm">{t("ds.restrict.purpose")}<Textarea rows={2} value={r.purpose} onChange={(e) => setR({ ...r, purpose: e.target.value })} /></label>
           <label className="block text-sm">{t("ds.restrict.until")} <input type="date" className="rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={r.retainUntil} onChange={(e) => setR({ ...r, retainUntil: e.target.value })} /></label>
           <label className="block text-sm">{t("ds.restrict.viewers")}<input className="w-full rounded border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-slate-900" value={r.viewerIds.join(", ")} onChange={(e) => setR({ ...r, viewerIds: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })} /></label>
           <div className="flex gap-2">

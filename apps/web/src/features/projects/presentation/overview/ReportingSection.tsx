@@ -26,7 +26,7 @@ export function ReportingSection({ reporting, projectId }: { reporting: Reportin
                   period.current ? "border-brand-500/50 shadow-[0_0_0_3px_rgba(242,181,68,0.14)]" : "border-slate-200/70 dark:border-white/10"
                 }`}
               >
-                <p className="text-xs font-semibold">{period.title}</p>
+                <Link className="text-xs font-semibold hover:underline" href={`/projects/${projectId}/reports/${period.id}`}>{period.title}</Link>
                 <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400">due {period.deadline.slice(0, 10)}</p>
                 <div className="mt-1.5">
                   <Badge tone={statusTone(period.status)}>{statusLabel(period.status)}</Badge>
@@ -54,7 +54,7 @@ export function ReportingSection({ reporting, projectId }: { reporting: Reportin
                     <ul className="mt-2 space-y-1.5">
                       {reporting.blockers.slice(0, 4).map((blocker) => (
                         <li key={blocker.label} className="text-sm">
-                          <span className="font-medium">{blocker.label}</span>
+                          <Link className="font-medium hover:underline" href={`/projects/${projectId}/reports/${current.id}`}>{blocker.label}</Link>
                           {blocker.detail ? <span className="text-slate-500 dark:text-slate-400"> — {blocker.detail}</span> : null}
                         </li>
                       ))}
@@ -85,7 +85,7 @@ export function ReportingSection({ reporting, projectId }: { reporting: Reportin
             <ul className="mt-3 divide-y divide-slate-200/70 dark:divide-white/10">
               {reporting.compliance.slice(0, 5).map((item) => (
                 <li key={item.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                  <span className="min-w-0 break-words leading-5">{item.title}</span>
+                  <Link className="min-w-0 break-words leading-5 hover:underline" href={`/projects/${projectId}/compliance${current ? `?period=${current.id}` : ""}#check-${item.id}`}>{item.title}</Link>
                   <Badge tone={severityTone(item.severity)}>{item.severity.toLowerCase()}</Badge>
                 </li>
               ))}

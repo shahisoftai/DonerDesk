@@ -230,18 +230,20 @@ export function CompliancePanel({
           </h2>
           <div className="mt-2 space-y-3">
             {group.items.map((item) => (
-              <ChecklistCard
-                key={item.id}
-                projectId={projectId}
-                periodId={periodId}
-                item={item}
-                canResolve={canResolve}
-                people={people}
-                canAssign={can(capabilities, "checklist.manage")}
-                bulkMode={bulkMode}
-                selected={selectedIds.has(item.id)}
-                onToggle={toggleSelected}
-              />
+              // The anchor lets a link from the Overview land on this one item.
+              <div key={item.id} id={`check-${item.id}`} className="scroll-mt-24 rounded-xl target:ring-2 target:ring-brand-500/50">
+                <ChecklistCard
+                  projectId={projectId}
+                  periodId={periodId}
+                  item={item}
+                  canResolve={canResolve}
+                  people={people}
+                  canAssign={can(capabilities, "checklist.manage")}
+                  bulkMode={bulkMode}
+                  selected={selectedIds.has(item.id)}
+                  onToggle={toggleSelected}
+                />
+              </div>
             ))}
           </div>
         </section>

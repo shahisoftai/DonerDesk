@@ -1,3 +1,4 @@
+import { MessageBody } from "@/components/ui/MessageBody";
 import Link from "next/link";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
@@ -49,7 +50,7 @@ export async function TodoView({ tab, project, person, kind, heading: inboxHeadi
           <h2 id="mw-notes" className="section-title">Unread updates <span className="font-normal text-slate-500">({unread.length})</span></h2>
           <ul className="mt-2 divide-y divide-slate-200 rounded-xl border border-slate-200 dark:divide-white/10 dark:border-white/10">
             {unread.map((n) => (
-              <li key={n.id} className="p-3 text-sm"><span className="font-medium">{n.title}</span>{n.message ? <span className="text-slate-600 dark:text-slate-300"> · {n.message}</span> : null}</li>
+              <li key={n.id} className="p-3 text-sm"><span className="font-medium">{n.title}</span>{n.message ? <MessageBody text={n.message} className="mt-1" /> : null}</li>
             ))}
           </ul>
           <p className="mt-3 text-sm"><Link className="link-arrow" href="/inbox?tab=updates">All updates</Link></p>

@@ -40,24 +40,30 @@ export function OverviewSection({
   );
 }
 
-/** One number with its label and a line of context. */
+/** One number with its label and a line of context. With `href` the whole card opens the page that owns the figure. */
 export function StatCard({
   label,
   value,
   hint,
   badge,
+  href,
   children,
 }: {
   label: string;
   value: ReactNode;
   hint?: string;
   badge?: { tone: Tone; text: string };
+  href?: string;
   children?: ReactNode;
 }) {
   return (
-    <div className="card min-w-0">
+    <div className={`card relative min-w-0 ${href ? "transition hover:border-brand-400 focus-within:ring-2 focus-within:ring-brand-500/40" : ""}`}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
+        {href ? (
+          <a href={href} className="text-xs font-medium text-slate-500 outline-none after:absolute after:inset-0 after:content-[''] dark:text-slate-400">{label}</a>
+        ) : (
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
+        )}
         {badge ? <Badge tone={badge.tone}>{badge.text}</Badge> : null}
       </div>
       <div className="mt-1.5 text-2xl font-semibold tracking-tight tabular-nums">{value}</div>
