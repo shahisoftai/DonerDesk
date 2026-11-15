@@ -48,7 +48,7 @@ Builds on [60](60-Record-One-Data-Entry-Flow.md), [62](62-Visual-Studio.md) and 
 
 - Browser (production, admin): Home, Inbox, Projects, a project's seven tabs and their sub-pages and More menus, a report, Finance, Settings and its list, AI features, Visuals, Datasets, Where we work, Team (deactivate, reactivate, delete, re-invite), command palette (projects, files, shortcuts), phone width (no sideways scroll). Seven role screenshots (Home, project, Inbox, phone) in [`../imp/phase55-baseline/`](../imp/phase55-baseline/).
 - Tests: web unit suite (1033 at the first run; route map, glossary, design tokens, navigation), Chart Studio harness (all but one language check, a harness limit), API authorization coverage, three user-status handler tests.
-- Checked live 2026-11-15: the evidence **selection bar** (tick a file: "1 file selected · Verify"), form-draft restore (planned-activity form), Cancel invite. Stacked panels pass the `test:drawer` harness (5 checks). Not browser-checked: the **Attach the files** panel, the GPS **Here** button, the wizard's **Only what is still needed**, Arabic right-to-left on the new screens. Translations of the new strings are drafts without native review.
+- Checked live 2026-11-15: the evidence **selection bar** (tick a file: "1 file selected · Verify"), form-draft restore (planned-activity form), Cancel invite. Stacked panels pass the `test:drawer` harness (5 checks). Also checked live: the **Attach the files** panel, the GPS **Here** button, the wizard's **Only what is still needed**, and Arabic right to left on eleven main screens (layout mirrors; older screens' own text is still English). Translations of the new strings are drafts without native review.
 
 ## Known gaps
 

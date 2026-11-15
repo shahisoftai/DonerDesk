@@ -2,6 +2,8 @@ import type { Params, PcwBundle } from "./copy";
 
 const more = (p: Params): string => (Number(p.count ?? 1) > 1 ? ` و${Number(p.count) - 1} غيرها` : "");
 const first = (p: Params): string => String(p.first ?? "");
+const REPORT_WORDS: Record<string, string> = { MONTHLY: "الشهري", QUARTERLY: "الفصلي", SEMI_ANNUAL: "نصف السنوي", ANNUAL: "السنوي", FINAL: "النهائي", ACTIVITY: "عن النشاط", SITUATION: "عن الوضع", CUSTOM: "الآخر" };
+const reportWord = (p: Params): string => REPORT_WORDS[first(p)] ?? first(p).toLowerCase().replace(/_/g, "-");
 
 /**
  * مسودة ترجمة عربية تحتاج إلى مراجعة من متحدث أصلي. الجمل تتجنب تصريف العدد قدر الإمكان:
@@ -54,7 +56,7 @@ export const PCW_AR: PcwBundle = {
     windowRuleMissing: () => "حدّد متى يُفتح الإدخال ومتى يُغلق في كل فترة.",
     cadenceMissing: () => "اختر عدد مرات إعداد التقارير.",
     reportRulesMissing: () => "أضف نوع تقرير واحداً على الأقل مع تنسيقه وموعد استحقاقه.",
-    reportRuleIncomplete: (p) => `التقرير ${first(p)}${more(p)} يحتاج إلى تنسيق وموعد استحقاق.`,
+    reportRuleIncomplete: (p) => `التقرير ${reportWord(p)}${more(p)} يحتاج إلى تنسيق وموعد استحقاق.`,
     fundingMissing: () => "أدخل تمويل المشروع مع عملته، أو اذكر أن المالية غير مستخدمة.",
     budgetUndecided: (p) => `بنود ميزانية بانتظار قبولك أو رفضك: ${p.count}.`,
     budgetLineUnlinked: (p) => `اربط بند الميزانية ${first(p)}${more(p)} بنشاط، أو علّمه تكلفة دعم.`,

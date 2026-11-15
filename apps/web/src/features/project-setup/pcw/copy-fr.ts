@@ -2,6 +2,8 @@ import type { Params, PcwBundle } from "./copy";
 
 const more = (p: Params): string => (Number(p.count ?? 1) > 1 ? ` et ${Number(p.count) - 1} autre${Number(p.count) - 1 > 1 ? "s" : ""}` : "");
 const first = (p: Params): string => String(p.first ?? "");
+const REPORT_WORDS: Record<string, string> = { MONTHLY: "mensuel", QUARTERLY: "trimestriel", SEMI_ANNUAL: "semestriel", ANNUAL: "annuel", FINAL: "final", ACTIVITY: "d'activité", SITUATION: "de situation", CUSTOM: "autre" };
+const reportWord = (p: Params): string => REPORT_WORDS[first(p)] ?? first(p).toLowerCase().replace(/_/g, "-");
 const s = (n: number, one: string, many: string): string => (n > 1 ? many : one);
 
 /** Brouillon de traduction française, à faire relire par une personne dont c'est la langue. */
@@ -52,7 +54,7 @@ export const PCW_FR: PcwBundle = {
     windowRuleMissing: () => "Fixez l'ouverture et la fermeture de la saisie pour chaque période.",
     cadenceMissing: () => "Choisissez la fréquence des rapports du projet.",
     reportRulesMissing: () => "Ajoutez au moins un type de rapport avec sa mise en page et sa date d'échéance.",
-    reportRuleIncomplete: (p) => `Le rapport ${first(p)}${more(p)} a besoin d'une mise en page et d'une échéance.`,
+    reportRuleIncomplete: (p) => `Le rapport ${reportWord(p)}${more(p)} a besoin d'une mise en page et d'une échéance.`,
     fundingMissing: () => "Saisissez le financement du projet avec sa devise, ou indiquez que les finances ne sont pas utilisées.",
     budgetUndecided: (p) => `${p.count} ${s(Number(p.count), "ligne budgétaire attend", "lignes budgétaires attendent")} que vous l'acceptiez ou la refusiez.`,
     budgetLineUnlinked: (p) => `Rattachez la ligne budgétaire ${first(p)}${more(p)} à une activité, ou marquez-la comme coût de soutien.`,

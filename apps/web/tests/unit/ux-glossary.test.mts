@@ -21,7 +21,7 @@ function files(dir: string): string[] {
 
 const visible = (text: string): string[] => {
   const noComments = text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
-  const strings = [...noComments.matchAll(/"([^"\n]*)"|`([^`]*)`|>([^<>{}\n]+)</g)].map((m) => m[1] ?? m[2] ?? m[3] ?? "");
+  const strings = [...noComments.matchAll(/"([^"\n]*)"|`([^`]*)`|>([^<>{}]+)</g)].map((m) => (m[1] ?? m[2] ?? m[3] ?? "").replace(/\s+/g, " ").trim());
   return strings;
 };
 

@@ -6,13 +6,16 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/components/ui/cn";
 import { Breadcrumbs } from "@/components/layout/Page";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { uiLabel } from "@/features/i18n/domain/ui-labels";
 import { PROJECT_TABS, locateProjectPage, projectCrumbs, subNavFor, type ProjectFact } from "../domain/project-tabs";
 
 /** The project's tabs, the current tab's pages (with "More" for rare ones) and the breadcrumbs above the title. */
 export function ProjectCrumbs({ projectId, projectTitle }: { projectId: string; projectTitle: string }) {
   const pathname = usePathname();
   const sub = pathname.slice(`/projects/${projectId}`.length);
-  return <Breadcrumbs items={projectCrumbs(projectId, projectTitle, sub)} />;
+  const { t } = useI18n();
+  return <Breadcrumbs items={projectCrumbs(projectId, projectTitle, sub).map((c) => ({ ...c, label: uiLabel(c.label, t) }))} />;
 }
 
 export function ProjectNav({ projectId, facts, capabilities }: { projectId: string; facts: readonly ProjectFact[]; capabilities: readonly string[] }) {
@@ -20,6 +23,7 @@ export function ProjectNav({ projectId, facts, capabilities }: { projectId: stri
   const base = `/projects/${projectId}`;
   const { tab, page } = locateProjectPage(pathname.slice(base.length));
   const sub = subNavFor(tab, { facts: new Set(facts), capabilities: new Set(capabilities), current: page });
+  const { t: tr } = useI18n();
 
   return (
     <div className="space-y-3">
@@ -40,7 +44,7 @@ export function ProjectNav({ projectId, facts, capabilities }: { projectId: stri
                       : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
                   )}
                 >
-                  {t.label}
+                  {uiLabel(t.label, tr)}
                 </Link>
               </li>
             );
@@ -48,7 +52,7 @@ export function ProjectNav({ projectId, facts, capabilities }: { projectId: stri
         </ul>
       </nav>
       {(sub.shown.length > 1 || sub.more.length > 0) && (
-        <nav aria-label={`${tab.label} pages`} className="flex flex-wrap items-center gap-1">
+        <nav aria-label={`${uiLabel(tab.label, tr)}`} className="flex flex-wrap items-center gap-1">
           {sub.shown.map((p) => {
             const on = p === page;
             return (
@@ -62,7 +66,7 @@ export function ProjectNav({ projectId, facts, capabilities }: { projectId: stri
                   on ? "bg-brand-50 text-brand-800 ring-1 ring-inset ring-brand-200 dark:bg-brand-300/10 dark:text-brand-200 dark:ring-brand-300/20" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/5",
                 )}
               >
-                {p.label}
+                {uiLabel(p.label, tr)}
               </Link>
             );
           })}
@@ -75,6 +79,7 @@ export function ProjectNav({ projectId, facts, capabilities }: { projectId: stri
 
 function MoreMenu({ base, pages }: { base: string; pages: ReadonlyArray<{ label: string; path: string }> }) {
   const [open, setOpen] = useState(false);
+  const { t } = useI18n();
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -87,13 +92,13 @@ function MoreMenu({ base, pages }: { base: string; pages: ReadonlyArray<{ label:
   return (
     <div ref={root} className="relative">
       <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="inline-flex min-h-8 items-center gap-1 rounded-full px-3 text-[13px] font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5">
-        More <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
+        {uiLabel("More", t)} <ChevronDown aria-hidden="true" className="h-3.5 w-3.5" />
       </button>
       {open && (
         <div role="menu" className="absolute start-0 top-full z-30 mt-1 min-w-[12rem] animate-pop-in rounded-xl border border-slate-200 bg-white p-1 shadow-raised dark:border-white/10 dark:bg-[#16203a]">
           {pages.map((p) => (
             <Link key={p.path} role="menuitem" href={base + p.path} prefetch={false} onClick={() => setOpen(false)} className="flex min-h-10 items-center rounded-lg px-3 text-sm hover:bg-slate-100 dark:hover:bg-white/5">
-              {p.label}
+              {uiLabel(p.label, t)}
             </Link>
           ))}
         </div>

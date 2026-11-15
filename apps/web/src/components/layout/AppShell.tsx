@@ -13,6 +13,7 @@ import { UserMenu } from "./UserMenu";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { LocaleSwitcher } from "@/features/i18n/presentation/LocaleSwitcher";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
+import { uiLabel } from "@/features/i18n/domain/ui-labels";
 import { useRecordSheet } from "@/features/record/presentation/RecordHost";
 import { BookmarkButton } from "@/features/bookmarks/presentation/BookmarkButton";
 import { AcademyHeaderButton } from "@/features/tour/presentation/AcademyHeaderButton";
@@ -168,7 +169,7 @@ export function AppShell({
                   className="hidden h-9 w-[min(22rem,32vw)] items-center gap-2 rounded-lg bg-slate-100 px-3 text-[13px] text-slate-500 ring-1 ring-inset ring-slate-200 transition hover:bg-white hover:ring-slate-300 sm:flex dark:bg-white/5 dark:text-slate-400 dark:ring-white/10 dark:hover:bg-white/10"
                 >
                   <Search aria-hidden="true" className="h-4 w-4" />
-                  <span className="flex-1 text-start">Search or jump to…</span>
+                  <SearchLabel />
                   <kbd className="rounded border border-slate-300 bg-white px-1.5 text-[10px] font-medium dark:border-white/15 dark:bg-transparent">Ctrl K</kbd>
                 </button>
                 <button type="button" onClick={openCommandPalette} aria-label="Search and commands" className="btn-ghost btn-icon sm:hidden"><Search aria-hidden="true" /></button>
@@ -262,4 +263,9 @@ function RecordMenu({ canCreate, canRecord, hideOnPhone }: { canCreate: boolean;
       </div>
     </details>
   );
+}
+
+function SearchLabel() {
+  const { t } = useI18n();
+  return <span className="flex-1 text-start">{uiLabel("Search or jump to…", t)}</span>;
 }

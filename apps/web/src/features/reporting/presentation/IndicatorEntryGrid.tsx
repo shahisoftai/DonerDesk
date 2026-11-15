@@ -597,7 +597,7 @@ export function IndicatorEntryGrid({
             </Button>
           )}
           <Button variant="secondary" size="sm" onClick={() => router.push(`/projects/${projectId}/reports/${periodId}`)}>
-            Back to report workspace
+            Back to the report
           </Button>
         </div>
       </div>

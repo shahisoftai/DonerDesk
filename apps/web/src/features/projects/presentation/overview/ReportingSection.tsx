@@ -61,7 +61,7 @@ export function ReportingSection({ reporting, projectId }: { reporting: Reportin
                     </ul>
                   )}
                   <Link className="mt-3 inline-block text-sm font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${projectId}/reports/${current.id}`}>
-                    Open the report workspace →
+                    Open the report →
                   </Link>
                 </div>
               </div>

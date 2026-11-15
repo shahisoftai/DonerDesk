@@ -3,6 +3,7 @@ import { recordEs } from "./record-es.ts";
 import { datasetsEs } from "./datasets-es.ts";
 import { libraryEs } from "./library-es.ts";
 import { frameworkEs } from "./framework-es.ts";
+import { uiLabelsEs } from "./ui-labels-es.ts";
 import { canvasEs } from "./canvas-es.ts";
 import { editor50Es } from "./editor50-es.ts";
 import { studioEs } from "./studio-es.ts";
@@ -895,4 +896,5 @@ export const es: Record<MessageKey, string> = {
   ...editorEs,
   ...libraryEs,
   ...frameworkEs,
+  ...uiLabelsEs,
 };

@@ -2,6 +2,8 @@ import type { Params, PcwBundle } from "./copy";
 
 const more = (p: Params): string => (Number(p.count ?? 1) > 1 ? ` y ${Number(p.count) - 1} más` : "");
 const first = (p: Params): string => String(p.first ?? "");
+const REPORT_WORDS: Record<string, string> = { MONTHLY: "mensual", QUARTERLY: "trimestral", SEMI_ANNUAL: "semestral", ANNUAL: "anual", FINAL: "final", ACTIVITY: "de actividad", SITUATION: "de situación", CUSTOM: "otro" };
+const reportWord = (p: Params): string => REPORT_WORDS[first(p)] ?? first(p).toLowerCase().replace(/_/g, "-");
 const s = (n: number, one: string, many: string): string => (n > 1 ? many : one);
 
 /** Borrador de traducción al español, pendiente de revisión por una persona hablante nativa. */
@@ -52,7 +54,7 @@ export const PCW_ES: PcwBundle = {
     windowRuleMissing: () => "Fije cuándo se abre y se cierra la entrada de datos en cada periodo.",
     cadenceMissing: () => "Elija con qué frecuencia informa el proyecto.",
     reportRulesMissing: () => "Añada al menos un tipo de informe con su formato y fecha límite.",
-    reportRuleIncomplete: (p) => `El informe ${first(p)}${more(p)} necesita un formato y una fecha límite.`,
+    reportRuleIncomplete: (p) => `El informe ${reportWord(p)}${more(p)} necesita un formato y una fecha límite.`,
     fundingMissing: () => "Introduzca la financiación del proyecto con su moneda, o indique que no se usan las finanzas.",
     budgetUndecided: (p) => `${p.count} ${s(Number(p.count), "partida espera", "partidas esperan")} a que la acepte o la rechace.`,
     budgetLineUnlinked: (p) => `Vincule la partida ${first(p)}${more(p)} a una actividad, o márquela como coste de apoyo.`,

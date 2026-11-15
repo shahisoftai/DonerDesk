@@ -3,6 +3,7 @@ import { recordAr } from "./record-ar.ts";
 import { datasetsAr } from "./datasets-ar.ts";
 import { libraryAr } from "./library-ar.ts";
 import { frameworkAr } from "./framework-ar.ts";
+import { uiLabelsAr } from "./ui-labels-ar.ts";
 import { canvasAr } from "./canvas-ar.ts";
 import { editor50Ar } from "./editor50-ar.ts";
 import { studioAr } from "./studio-ar.ts";
@@ -911,4 +912,5 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   ...editorAr,
   ...libraryAr,
   ...frameworkAr,
+  ...uiLabelsAr,
 };

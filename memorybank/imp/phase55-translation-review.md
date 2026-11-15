@@ -31,4 +31,4 @@ These were built in Version 4.000 and follow the app's existing rule (navigation
 
 ## 3. Arabic right-to-left
 
-Arabic right-to-left on the new screens has NOT been checked in a browser yet (logical-direction classes are used on new screens, but the older physical `ml-`/`text-left` classes remain). A native reader should check the side rail, panels and tables. The wording of the English-only screens above is not translated, so an Arabic user sees English on them.
+Arabic right to left was checked in a browser on 2026-11-15 on eleven main screens: the page is right to left, the side rail is on the right, nothing scrolls sideways. The Version 4 navigation labels are now translated (`ui-labels-*.ts`, add them to this review). Many older screens still show English text inside the Arabic page. A native reader should check wording, the side rail, panels and tables. The wording of the English-only screens above is not translated, so an Arabic user sees English on them.

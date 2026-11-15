@@ -7,6 +7,7 @@ import { recordEn } from "./record-en.ts";
 import { datasetsEn } from "./datasets-en.ts";
 import { libraryEn } from "./library-en.ts";
 import { frameworkEn } from "./framework-en.ts";
+import { uiLabelsEn } from "./ui-labels-en.ts";
 import { canvasEn } from "./canvas-en.ts";
 import { editor50En } from "./editor50-en.ts";
 import { studioEn } from "./studio-en.ts";
@@ -897,6 +898,7 @@ export const en = {
   ...editorEn,
   ...libraryEn,
   ...frameworkEn,
+  ...uiLabelsEn,
 } as const;
 
 export type MessageKey = keyof typeof en;

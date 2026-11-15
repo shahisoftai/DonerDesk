@@ -8,6 +8,8 @@ import type { RequirementCode, SlideKey } from "@donordesk/domain";
 export type Params = Readonly<Record<string, string | number>>;
 const more = (p: Params): string => (Number(p.count ?? 1) > 1 ? ` and ${Number(p.count) - 1} more` : "");
 const first = (p: Params): string => String(p.first ?? "");
+const REPORT_WORDS: Record<string, string> = { MONTHLY: "monthly", QUARTERLY: "quarterly", SEMI_ANNUAL: "semi-annual", ANNUAL: "annual", FINAL: "final", ACTIVITY: "activity", SITUATION: "situation", CUSTOM: "other" };
+const reportWord = (p: Params): string => REPORT_WORDS[first(p)] ?? first(p).toLowerCase().replace(/_/g, "-");
 
 export type PcwSlides = Record<SlideKey, { label: string; lead: string }>;
 export type PcwSentences = Record<RequirementCode, (p: Params) => string>;
@@ -58,7 +60,7 @@ export const REQUIREMENT_SENTENCES: PcwSentences = {
   windowRuleMissing: () => "Set when entry opens and closes for each period.",
   cadenceMissing: () => "Choose how often the project reports.",
   reportRulesMissing: () => "Add at least one report type with its layout and due date.",
-  reportRuleIncomplete: (p) => `The ${first(p)}${more(p)} report needs a layout and a due date.`,
+  reportRuleIncomplete: (p) => `The ${reportWord(p)}${more(p)} report needs a layout and a due date.`,
   fundingMissing: () => "Enter the project's funding with its currency, or say finance is not used.",
   budgetUndecided: (p) => `${p.count} budget line${Number(p.count) > 1 ? "s are" : " is"} waiting for you to accept or reject.`,
   budgetLineUnlinked: (p) => `Tie budget line ${first(p)}${more(p)} to an activity, or mark it a support cost.`,

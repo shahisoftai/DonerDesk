@@ -489,7 +489,7 @@ function ExportIssueRow({
           )}
           {!item.navigateTo && item.resolution === "NONE" && (
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              No direct fix link — resolve in the report workspace.
+              No direct fix link: fix it on the report page.
             </p>
           )}
         </div>
