@@ -27,7 +27,8 @@ function rememberPlace(projectId: string, placeId: string) {
 /**
  * Place-first entry (Phase 57): choose a place once and a day (the period follows from it), then fill everything due there — the
  * person's planned work at that place and every figure measured there. Reads through the lookup and writes through the place sink, so it
- * is the same online and with no signal. The total of each indicator is never typed: the server adds up the places.
+ * is the same online and with no signal. The total of each indicator is never typed: the server adds up the places, and a
+ * figure someone else changed since the page opened is refused rather than overwritten.
  */
 export function PlaceFirstView(props: KindViewProps) {
   const { deps, projectId, today } = props;

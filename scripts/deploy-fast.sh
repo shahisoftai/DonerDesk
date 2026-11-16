@@ -153,22 +153,15 @@ phase "typecheck"
 # --------------------------------------------------------------------------- #
 
 if [[ "${SKIP_BUILD}" != "1" && "${HOST_BUILT}" != "1" ]]; then
-  # Build only what the scope ships: the web and superadmin builds take many minutes and an api-only change needs neither.
+  # Build only what the scope ships AND only what changed (scripts/build-changed.sh keeps stamps like host-build.sh does): a web-only
+  # deploy needs just contracts, domain and web, and an unchanged package is not recompiled (the four packages took ~85 s every time).
   # superadmin is not shipped by this script. SCOPE=auto is resolved after the build, so it builds api and web.
-  BUILD_FILTER=()
-  case "${SCOPE}" in
-    api)  BUILD_FILTER=(--filter '!@donordesk/web' --filter '!@donordesk/superadmin') ;;
-    web)  BUILD_FILTER=(--filter '!@donordesk/api' --filter '!@donordesk/superadmin') ;;
-    *)    BUILD_FILTER=(--filter '!@donordesk/superadmin') ;;
-  esac
   echo "==> Local build (scope=${SCOPE})"
   BUILD_LOG="${WORK}/build.log"
-  # pipefail so a failed build stops the deploy instead of being hidden by tee/tail.
   # The type-check has its own step (or the caller has just run it, see SKIP_TYPECHECK): `next build` repeating it costs minutes.
-  export DD_SKIP_NEXT_TYPECHECK=1
   # Measured 2026-11-13: the low-memory web build (no lint in the build, one worker) took 417 s here against 696 s. CI lints.
-  export DD_LOW_MEMORY_BUILD=1 NODE_OPTIONS="${NODE_OPTIONS:-} --max-old-space-size=2048"
-  if ! (set -o pipefail; pnpm -r "${BUILD_FILTER[@]}" build 2>&1 | tee "${BUILD_LOG}" | tail -3); then
+  # pipefail so a failed build stops the deploy instead of being hidden by tee/tail.
+  if ! (set -o pipefail; SCOPE="$([[ "${SCOPE}" == "auto" ]] && echo both || echo "${SCOPE}")" "${ROOT}/scripts/build-changed.sh" 2>&1 | tee "${BUILD_LOG}" | sed -nE '/^\s*\[build\]|error|Error|ERR_|Done$/p' | tail -8); then
     echo "ERROR: build failed — see ${BUILD_LOG}" >&2
     tail -40 "${BUILD_LOG}" >&2
     exit 1
@@ -357,8 +350,12 @@ if [[ "${SCOPE}" == "web" || "${SCOPE}" == "both" ]]; then
   # unit's expected path: <app>/apps/web/.next/standalone/apps/web/server.js.
   echo "==> Ship web artifact -> ${REMOTE_APP}/apps/web/.next/standalone/"
   ${SSH} "mkdir -p ${REMOTE_APP}/apps/web/.next/standalone"
-  rsync -a --delete --no-owner --no-group -e "ssh -o ConnectTimeout=15" \
-    "${WEB_STAGE}/" "contabo:${REMOTE_APP}/apps/web/.next/standalone/"
+  # -z: the changed files are JavaScript and compress about 4x over the WAN; --stats prints what actually travelled.
+  # The output goes to a file so a failed upload fails the deploy (a pipe into grep would hide rsync's exit status).
+  RSYNC_LOG="${WORK}/web-rsync.log"
+  rsync -az --delete --no-owner --no-group --stats -e "ssh -o ConnectTimeout=15" \
+    "${WEB_STAGE}/" "contabo:${REMOTE_APP}/apps/web/.next/standalone/" > "${RSYNC_LOG}"
+  sed -nE 's/^(Number of (regular )?files transferred|Total file size|Total bytes sent)/    \1/p' "${RSYNC_LOG}"
   ${SSH} "chown -R donordesk:donordesk ${REMOTE_APP}/apps/web"
 fi
 
