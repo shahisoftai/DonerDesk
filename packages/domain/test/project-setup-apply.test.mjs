@@ -90,3 +90,13 @@ test("amounts: one reading or none", () => {
     ["1,250", null], ["1.250", null], ["EUR 5", "5"], ["", null], ["1,25,000", null]];
   for (const [raw, want] of cases) assert.equal(normaliseAmountText(raw), want, raw);
 });
+
+test("a plan row that repeats keeps its Repeats column in the sheet the launch imports (Phase 58.7)", () => {
+  const p = proposal({
+    plan: [A({ title: "Monthly screening", logframeCode: "1.1", start: "2026-11-02", end: "2026-11-27", location: "Gulu", lead: null, repeats: "MONTH" }), A({ title: "Training", logframeCode: "1.1", start: "2026-11-09", end: "2026-11-20", location: "Gulu", lead: null })],
+  });
+  const plan = parseWorkPlanText(workPlanSheet(p).text);
+  assert.deepEqual(plan.problems, []);
+  assert.equal(plan.rows[0].repeats, "MONTH");
+  assert.equal(plan.rows[1].repeats, undefined);
+});

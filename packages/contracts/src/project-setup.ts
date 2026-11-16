@@ -116,6 +116,7 @@ const PlannedActivityDefSchema = z.object({
   lead: z.string().max(200).nullable(),
   group: z.string().max(300).nullable().optional(),
   planCode: z.string().max(40).nullable().optional(),
+  repeats: z.enum(["WEEK", "MONTH"]).optional(),
   key: z.string().max(80).optional(),
   linkSource: z.enum(["DOCUMENT", "SUGGESTED", "PERSON"]).optional(),
 });

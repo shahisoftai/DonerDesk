@@ -101,6 +101,7 @@ export function WorkPlanSlide({ id, view, onView }: { id: string; view: SetupDra
           <header className="flex flex-wrap items-center gap-2">
             <input key={`t-${item.value.title}`} aria-label={c.title} defaultValue={item.value.title ?? ""} className="min-w-[12rem] flex-1 bg-transparent font-medium outline-none focus:underline" onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== item.value.title && editPlan(item.path, { title: e.target.value })} />
             <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
+            {item.value.repeats ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium dark:bg-white/10" data-testid="plan-repeats">{item.value.repeats === "MONTH" ? c.repeatsMonth : c.repeatsWeek}</span> : null}
             {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{PCW_COPY.results.accept}</button> : null}
             <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${PCW_COPY.results.remove} ${item.value.title ?? ""}`}>{PCW_COPY.results.remove}</button>
           </header>

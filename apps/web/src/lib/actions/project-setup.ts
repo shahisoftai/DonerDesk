@@ -17,6 +17,12 @@ const invalid = (error: { issues: unknown[] } & Parameters<typeof flattenZodFiel
   error: { kind: "validation" as const, message: "Please correct the highlighted fields.", fields: flattenZodFields(error) },
 });
 
+/**
+ * Each file is staged to the organisation's Google Drive one after the other before the reply, about 4-8 s a file. The shared 15 s
+ * gateway limit made five files fail with "The request timed out" (Phase 58.8); a start with several files gets a longer one.
+ */
+const UPLOAD_TIMEOUT_MS = 100_000;
+
 /** A document upload (multipart) or pasted text; the server reads it and proposes the setup. Nothing is created here. */
 export async function startSetupAction(formData: FormData): Promise<Result<{ proposalId: string }, AppError>> {
   const context = await requireSession();
@@ -24,7 +30,7 @@ export async function startSetupAction(formData: FormData): Promise<Result<{ pro
   if (files.length > 0) {
     const body = new FormData();
     for (const file of files) body.append("file", file, file.name);
-    const r = await gatewayRequest("/v1/project-setup/proposals", SetupStartedSchema, context.token, { method: "POST", formData: body });
+    const r = await gatewayRequest("/v1/project-setup/proposals", SetupStartedSchema, context.token, { method: "POST", formData: body, timeoutMs: UPLOAD_TIMEOUT_MS });
     return r.ok ? { ok: true, value: { proposalId: r.value.proposalId } } : r;
   }
   const parsed = StartSetupTextSchema.safeParse({ text: String(formData.get("text") ?? ""), fileName: "Project description (pasted text).txt" });

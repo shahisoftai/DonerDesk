@@ -115,6 +115,7 @@ export const PCW_ES: PcwBundle = {
       suggestions: "Lugares que el mapa conoce", areaSection: "Área del proyecto y límites", remove: "Quitar", accept: "Confirmar",
     },
     plan: {
+      repeatsMonth: "Se repite cada mes hasta que termine el proyecto", repeatsWeek: "Se repite cada semana hasta que termine el proyecto",
       add: "Añadir una actividad", title: "Actividad", activity: "Forma parte de", dates: "Fechas", start: "Empieza", end: "Termina", places: "Dónde", projectWide: "Todo el proyecto",
       indicators: "Alimenta indicadores", lead: "Dirigida por", files: "Archivos necesarios (separar con comas)", participants: "Registra quién participó",
       empty: "Aún no hay actividades planificadas. Añada cada trabajo, o acepte los leídos de sus documentos.", choose: "— elegir —",

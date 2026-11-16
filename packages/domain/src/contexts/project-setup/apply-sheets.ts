@@ -58,9 +58,9 @@ export function workPlanSheet(p: ProjectSetupProposal): SheetForImport {
       notes.push(`"${a.title}" has no start date in the documents, so it was left out. Add it on the Work plan page once the project exists.`);
       return [];
     }
-    return [[a.logframeCode, a.title, a.start, a.end, a.location]];
+    return [[a.logframeCode, a.title, a.start, a.end, a.location, a.repeats === "MONTH" ? "Monthly" : a.repeats === "WEEK" ? "Weekly" : ""]];
   });
-  return sheet(["Logframe code", "Title", "Start", "End", "Location"], rows, notes);
+  return sheet(["Logframe code", "Title", "Start", "End", "Location", "Repeats"], rows, notes);
 }
 
 const LEVEL_NAME = ["Country", "State or province", "District or locality", "Sub-district", "Community or site"] as const;

@@ -127,6 +127,7 @@ export const PCW_COPY = {
     suggestions: "Places the map knows", areaSection: "Project area and boundaries", remove: "Remove", accept: "Confirm",
   },
   plan: {
+    repeatsMonth: "Repeats every month until the project ends", repeatsWeek: "Repeats every week until the project ends",
     add: "Add an activity", title: "Activity", activity: "Part of", dates: "Dates", start: "Starts", end: "Ends", places: "Where", projectWide: "Project-wide",
     indicators: "Feeds indicators", lead: "Led by", files: "Files needed (separate with commas)", participants: "Records who took part",
     empty: "No planned activities yet. Add each piece of work, or accept the ones read from your documents.", choose: "— choose —",

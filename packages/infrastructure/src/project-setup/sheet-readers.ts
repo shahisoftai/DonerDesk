@@ -66,10 +66,30 @@ const readLogframe: SheetReader = (blocks) => {
   return logframe.length >= 2 ? { logframe } : null;
 };
 
+/**
+ * A person named as the lead is never read from a document (`lead` stays null; a real person is assigned on the slide), and by the time a
+ * sheet reaches a reader its emails are redacted, so the importer's "lead must be an email address" would refuse every row and the plan
+ * would be left to the model, which also drops the Repeats column (Phase 58.7). The lead column is blanked before parsing.
+ */
+function withoutLeadColumn(lines: ReadonlyArray<string>): string[] {
+  const at = lines.findIndex((l) => /\b(lead email|lead|responsible|owner)\b/i.test(l) && /\b(start|title|activity)\b/i.test(l));
+  if (at < 0) return [...lines];
+  const header = lines[at]!.split(/\t|,/).map((c) => c.trim().toLowerCase());
+  const column = header.findIndex((c) => /^(lead email|lead|responsible|owner)$/.test(c));
+  if (column < 0) return [...lines];
+  const tabbed = lines[at]!.includes("\t");
+  return lines.map((line, i) => {
+    if (i <= at) return line;
+    const cells = tabbed ? line.split("\t") : line.split(",");
+    if (column < cells.length) cells[column] = "";
+    return cells.join(tabbed ? "\t" : ",");
+  });
+}
+
 const readWorkPlan: SheetReader = (blocks) => {
   const lines = allLines(blocks);
   if (!hasHeader(lines, [["title", "activity", "activitytitle", "plannedactivity"], ["start", "startdate", "starts", "from"]])) return null;
-  const parsed = parseWorkPlanText(lines.join("\n"));
+  const parsed = parseWorkPlanText(withoutLeadColumn(lines).join("\n"));
   if (parsed.problems.length > 0 || parsed.rows.length === 0) return null;
   const plan = parsed.rows.flatMap((row) => {
     const found = locate(blocks, row.title);
@@ -79,6 +99,7 @@ const readWorkPlan: SheetReader = (blocks) => {
       // The parser fills a missing end with the start: an end the sheet does not state stays Not stated.
       end: row.end !== row.start ? row.end : null,
       location: row.location ?? null, lead: null,
+      ...(row.repeats ? { repeats: row.repeats } : {}),
     };
     return [proposed(value, found)];
   });

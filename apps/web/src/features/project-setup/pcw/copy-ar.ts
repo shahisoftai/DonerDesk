@@ -117,6 +117,7 @@ export const PCW_AR: PcwBundle = {
       suggestions: "أماكن تعرفها الخريطة", areaSection: "منطقة المشروع والحدود", remove: "حذف", accept: "تأكيد",
     },
     plan: {
+      repeatsMonth: "يتكرر كل شهر حتى نهاية المشروع", repeatsWeek: "يتكرر كل أسبوع حتى نهاية المشروع",
       add: "إضافة نشاط", title: "النشاط", activity: "جزء من", dates: "التواريخ", start: "يبدأ", end: "ينتهي", places: "أين", projectWide: "كل المشروع",
       indicators: "يغذّي المؤشرات", lead: "بقيادة", files: "الملفات المطلوبة (افصل بفواصل)", participants: "يسجّل من شارك",
       empty: "لا توجد أنشطة مخططة بعد. أضف كل عمل، أو اقبل ما قُرئ من مستنداتك.", choose: "— اختر —",

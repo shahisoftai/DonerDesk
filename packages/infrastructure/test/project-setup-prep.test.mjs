@@ -240,9 +240,10 @@ test("an indicator table (PITT) is read by its headers, figures as written, miss
   assert.deepEqual(read.documentIds, ["source-2"]);
   assert.equal(read.combine, "APPEND");
   assert.deepEqual(read.fields.indicators.map((i) => [i.value.code, i.value.logframeCode, i.value.baseline, i.value.target, i.value.type, i.value.frequency]), [
-    ["IND1", "OP1", "0", "42", null, "Quarterly"],
+    // Phase 58.1: a plain numeric target gives the kind "NUMBER" (a suggestion the card shows and the person can change).
+    ["IND1", "OP1", "0", "42", "NUMBER", "Quarterly"],
     ["IND2", "OC1", "35%", "60%", "PERCENTAGE", "Annual"],
-    ["IND3", null, null, "1", null, null],
+    ["IND3", null, null, "1", "NUMBER", null],
   ]);
   assert.match(read.fields.indicators[0].sourceQuote, /^IND1 Number of health care providers trained on EmONC OP1/);
   assert.equal(readIndicatorSheet(blocksOf("Indicator\tNotes\nSomething long enough\tx")), null);
@@ -539,4 +540,27 @@ test("the labelled facts are read even when the model's answer has no facts at a
   const inner = { area: "FACTS", extract: async () => ({ ok: true, value: { fields: {} } }) };
   const facts = (await new FactsFromTextExtractor(inner).extract({ blocks })).value.fields.facts;
   assert.deepEqual([facts.name.value, facts.startDate.value, facts.endDate.value], ["Nutrition Programme 2027", "2027-01-01", "2027-06-30"]);
+});
+
+test("a work-plan sheet's Repeats column is carried to the plan row (Phase 58.7)", () => {
+  const sheet = [
+    "Logframe Code\tTitle\tStart\tEnd\tLocation\tRepeats",
+    "A1.1.1\tMonthly MUAC screening - Upper Dir\t2026-11-02\t2026-11-27\tUpper Dir\tMonthly",
+    "A3.2.1\tTraining of health staff\t2026-11-09\t2026-11-20\tUpper Dir\t",
+  ].join("\n");
+  const read = workPlanSheetReader(blocksOf(sheet));
+  assert.equal(read.plan[0].value.repeats, "MONTH");
+  assert.equal(read.plan[1].value.repeats, undefined);
+});
+
+test("a work-plan sheet whose lead emails were redacted is still read by the sheet reader, with its Repeats (Phase 58.7)", () => {
+  const sheet = [
+    "Logframe Code\tTitle\tStart\tEnd\tLead email\tLocation\tRepeats",
+    "A1.1.1\tMonthly MUAC screening\t2026-11-02\t2026-11-27\t[EMAIL]\tUpper Dir\tMonthly",
+    "A1.2.1\tOTP treatment of SAM\t2026-11-02\t2026-11-27\t[EMAIL]\tMardan\tMonthly",
+  ].join("\n");
+  const read = workPlanSheetReader(blocksOf(sheet));
+  assert.equal(read.plan.length, 2);
+  assert.equal(read.plan[0].value.repeats, "MONTH");
+  assert.equal(read.plan[0].value.lead, null, "a lead is never read from a document");
 });

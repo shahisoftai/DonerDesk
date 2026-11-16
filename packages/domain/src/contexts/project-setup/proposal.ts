@@ -107,6 +107,8 @@ export interface PlannedActivityDef {
   group?: string | null;
   /** The row's own code in the work plan ("7.1"); never a logframe code. */
   planCode?: string | null;
+  /** The sheet's Repeats column ("Weekly" / "Monthly"): the row repeats until the project ends. Carried to the launch so later months are planned too (Phase 58.7). */
+  repeats?: "WEEK" | "MONTH";
   /** The wizard's stable address for the row (set the first time a person edits it), so links already chosen survive a change of title or date. */
   key?: string;
   linkSource?: LinkSource;
