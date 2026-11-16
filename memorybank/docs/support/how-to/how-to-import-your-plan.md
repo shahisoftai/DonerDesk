@@ -21,6 +21,8 @@ The first row names the columns. **Title** and **Start** are required.
 | Sessions | A whole number of 1 or more |
 | Repeats | No, Weekly or Monthly (repeats run to the end of the project) |
 
+The same Repeats column works when you read a work-plan sheet in the project wizard: the Work plan slide shows "Repeats every month until the project ends" and the launch plans every month.
+
 ## If a row has a problem
 
 Nothing is imported. The message names every row to fix ("Row 3: end is before the start"), so you can correct the text and try again. A row that is already planned for the same dates is skipped, so importing the same file twice does not create duplicates.

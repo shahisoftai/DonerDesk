@@ -29,6 +29,15 @@ The wizard did not put a library indicator under a result because none of your r
 
 It fills only what is empty, so it does nothing when everything it offers is already answered. If another save was running at the same moment it tries again by itself. The button waits until the draft is ready (for example while documents are still being read).
 
+## "The request timed out" when I read my documents
+Each file is stored in your Google Drive one after the other before the wizard reads it, so several files take longer than one. The wizard now waits up to about 100 seconds. If it still times out, choose fewer files (three spreadsheets read well together), then enter the places and the budget on their own slides. Make sure Google Drive is still connected under Settings; an expired connection gives a different message and asks you to reconnect.
+
+## My work plan repeats every month but only the first month was made
+Put a **Repeats** column (Weekly or Monthly) in the work-plan sheet before you read it. The Work plan slide then says "Repeats every month until the project ends" on those rows and the launch plans every month to the end date. A repeat is not set by hand in the wizard yet; if a row lacks it, fix the sheet and read it again, or add the later months afterwards with **Plan → Work plan → Import a sheet** (use dates in the next month and Repeats = Monthly; rows that already exist are skipped, never doubled). Leads named in the sheet are not read from a document: choose each lead on the slide.
+
+## Setup says "44 reportable of 55"
+A quantitative indicator needs a starting value, a target, a unit and a frequency before it counts as reportable. The line now says what is missing, for example "11 need a starting value." Open the indicators and fill in the gap. Rates that you marked "No starting value" in the wizard are counted as missing a starting value until you give one.
+
 ## I lost my wizard answers
 
 Wizard progress is saved as a draft in your browser. Reopen **New project** on the same device and browser.

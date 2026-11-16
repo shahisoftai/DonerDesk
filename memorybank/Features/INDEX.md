@@ -270,4 +270,4 @@ Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project work
 
 | # | Feature | Doc |
 |---|---|---|
-| 68 | Suggested indicator settings (type, direction, owner) with reasons, indicator sheet Type / Break down by columns, delete a draft form, Setup explains "reportable of" | `memorybank/imp/phase58-simpler-for-everyone.md` |
+| 68 | Suggested indicator settings (type, direction, owner) with reasons, indicator sheet Type / Break down by columns, delete a draft form, Setup explains "reportable of" | [`Features/68-Simpler-Setup-Phase-58.md`](68-Simpler-Setup-Phase-58.md); plan `memorybank/imp/phase58-simpler-for-everyone.md` |

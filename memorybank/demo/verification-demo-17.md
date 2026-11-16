@@ -16,3 +16,6 @@
 8. 44 single-indicator draft forms could not be deleted (fixed: 58.3).
 9. The automation browser has no WebGL (maps show as tables).
 10. React #310 once when the wizard first opens.
+
+## Status after Phase 58 (2026-11-16)
+Fixed and checked live: 1 (several files, 100 s), 4 (work-plan Repeats reach the launch; the cause was redacted lead emails making the sheet reader give up), 3 in part (suggested settings: 52 of 55 directions, the type from the sheet), 7 (Setup says why), 8 (draft forms can be deleted), 6 in part (the ready note scrolls into view). Still open: 2, 5, 6 (listing), 9, 10 and the backlog items in the plan. Feature doc: `memorybank/Features/68-Simpler-Setup-Phase-58.md`.

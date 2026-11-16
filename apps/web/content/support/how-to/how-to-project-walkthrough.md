@@ -48,7 +48,7 @@ Do the structure first, then the indicators, because an indicator belongs to a l
 
 1. **Logframe.** Open **Plan → Results framework**. Import a CSV or Excel file (fastest) or add items by hand: Goal → Outcomes → Outputs → Activities. Keep short, stable codes (for example `O1`, `1.1`, `A1.1`).
 2. **Indicators.** Import them too. Add the optional **Logframe Code** column so several indicators can sit under one output.
-3. For every indicator set the **type**, **baseline**, **target**, **unit** and **frequency**. A quarterly indicator is only expected in the months it is due.
+3. For every indicator set the **type**, **baseline**, **target**, **unit** and **frequency**. In the project wizard, **Use suggested settings for all** fills the type, which way is better and the owner for every card that still has a gap (it never changes a choice you made). A quarterly indicator is only expected in the months it is due.
 4. Tick **Record a breakdown** for indicators that count people (sex, age, disability). It is ticked for you when the unit counts people.
 5. Open the percentage indicators and **confirm the calculation** (for a survey rate, "Reported directly (latest value)"). Counts that add up use "Sum of period values". Use **Confirm all** to do the suggested ones at once.
 6. Read the line **Indicator saved under …** after each save: it tells you where it went.
