@@ -32,6 +32,13 @@ export async function createFormFromIndicatorAction(indicatorId: string): Promis
   return gatewayRequest(`/v1/indicators/${enc(indicatorId)}/collection-form`, z.object({ id: z.string(), notes: z.array(z.string()).default([]) }), context.token, { method: "POST", body: {} });
 }
 
+/** Deletes a draft that was never published (a published form is closed instead). */
+export async function deleteDraftCollectionFormAction(formId: string): Promise<Result<undefined, AppError>> {
+  const context = await requireSession();
+  const result = await gatewayRequest(`/v1/collection-forms/${enc(formId)}`, OkResponseSchema, context.token, { method: "DELETE" });
+  return result.ok ? { ok: true, value: undefined } : result;
+}
+
 export async function setCollectionFormStatusAction(formId: string, to: "publish" | "close"): Promise<Result<undefined, AppError>> {
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/collection-forms/${enc(formId)}/${to}`, OkResponseSchema, context.token, { method: "POST", body: {} });

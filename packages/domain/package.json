@@ -294,6 +294,10 @@
       "types": "./dist/contexts/places/analysis/index.d.ts",
       "import": "./dist/contexts/places/analysis/index.js"
     },
+    "./contexts/project-setup/pcw/suggesters/indicator-defaults.js": {
+      "types": "./dist/contexts/project-setup/pcw/suggesters/indicator-defaults.d.ts",
+      "import": "./dist/contexts/project-setup/pcw/suggesters/indicator-defaults.js"
+    },
     "./contexts/logframe/framework-vocabulary.js": {
       "types": "./dist/contexts/logframe/framework-vocabulary.d.ts",
       "import": "./dist/contexts/logframe/framework-vocabulary.js"

@@ -1,0 +1,10 @@
+import { attach } from "../lib.mjs";
+const { page, type, browser } = await attach("s7b");
+const s = page.locator("main select").filter({ has: page.locator("option", { hasText: /^Full:/ }) }).first();
+await s.selectOption({ label: (await s.locator("option").allInnerTexts()).find(o => o.startsWith("Full")) }); await page.waitForTimeout(500);
+await type("Opens (days before the period ends)", "5"); await type("Closes (days after the period ends)", "10");
+await page.waitForTimeout(800);
+const t = await page.locator("main").innerText(); console.log(t.slice(t.indexOf("Still to answer")).slice(0, 200));
+await page.getByRole("button", { name: /^8\. / }).first().click(); await page.waitForTimeout(1200);
+const u = await page.locator("main").innerText(); console.log(u.slice(u.indexOf("8 / 10"), u.indexOf("8 / 10") + 1800));
+await browser.close();

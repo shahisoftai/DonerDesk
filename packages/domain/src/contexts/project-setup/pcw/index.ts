@@ -17,6 +17,7 @@ export * from "./schedule.js";
 export * from "./finance-summary.js";
 export * from "./finance-operations.js";
 export * from "./suggesters/budget-links.js";
+export * from "./suggesters/indicator-defaults.js";
 export * from "./risk-operations.js";
 export * from "./launch-review.js";
 export * from "./launch-plan.js";

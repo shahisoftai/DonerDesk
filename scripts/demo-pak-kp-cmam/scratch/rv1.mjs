@@ -1,0 +1,11 @@
+import { attach, BASE } from "../lib.mjs";
+import { readFileSync } from "node:fs";
+const { page, shot, browser } = await attach("rv1");
+page.setDefaultTimeout(20000);
+const pid = readFileSync(new URL("../pid.txt", import.meta.url), "utf8").trim();
+await page.goto(`${BASE}/projects/${pid}/setup`); await page.waitForTimeout(3000);
+await page.getByRole("link", { name: "Review", exact: true }).first().click().catch(async () => { await page.getByRole("button", { name: "Review", exact: true }).first().click(); });
+await page.waitForTimeout(3500); console.log(page.url());
+const t = await page.locator("main").innerText(); console.log(t.slice(t.indexOf("Settings") , t.indexOf("Settings") + 100)); console.log(t.slice(300, 2300));
+console.log(await page.getByRole("button").allInnerTexts().then(a => a.filter(x => x.length < 50 && /confirm|all|review|save/i.test(x))));
+await shot("rv1"); await browser.close();

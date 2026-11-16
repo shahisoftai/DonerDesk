@@ -167,6 +167,7 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/indicators\/[^/]+\/collection-form$/, permission: "project.edit" },
   { method: "GET", route: /^\/v1\/collection-forms\/[^/]+$/, permission: "project.view" },
   { method: "PUT", route: /^\/v1\/collection-forms\/[^/]+$/, permission: "project.edit" },
+  { method: "DELETE", route: /^\/v1\/collection-forms\/[^/]+$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/collection-forms\/[^/]+\/(publish|close)$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/collection-forms\/[^/]+\/records$/, permission: "indicator.update" },
   { method: "GET", route: /^\/v1\/collection-forms\/[^/]+\/records$/, permission: "indicator.update" },

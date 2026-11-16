@@ -101,6 +101,8 @@ export interface ProjectReadinessSnapshot {
     total: number;
     reportable: number;
     incomplete: number;
+    /** Why indicators are not reportable yet: how many lack each required field (a quantitative indicator needs all four). */
+    missing?: { baseline: number; target: number; unit: number; frequency: number };
   };
   /** Soft team recommendation (not a gate). */
   team: {

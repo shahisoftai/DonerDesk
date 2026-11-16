@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { TenantId } from "@donordesk/domain";
 import {
-  SaveCollectionFormHandler, SetCollectionFormStatusHandler, SubmitCollectionRecordHandler, ReviewCollectionRecordHandler,
+  SaveCollectionFormHandler, SetCollectionFormStatusHandler, DeleteDraftCollectionFormHandler, SubmitCollectionRecordHandler, ReviewCollectionRecordHandler,
   CreateCollectionLinkHandler, ResolveCollectionLinkHandler, RevokeCollectionLinkHandler, PublicSubmitCollectionRecordHandler, PublicCollectionFormHandler,
 } from "../dist/index.js";
 
@@ -19,7 +19,7 @@ function world() {
   const forms = new Map(), records = new Map(), links = new Map();
   return {
     stores: { forms, records, links },
-    forms: { create: async (f) => (forms.set(f.id, f), ok()), update: async (f) => (forms.set(f.id, f), ok()), findById: async (id) => ok(forms.get(id) ?? null), listByProject: async () => ok([...forms.values()]) },
+    forms: { create: async (f) => (forms.set(f.id, f), ok()), update: async (f) => (forms.set(f.id, f), ok()), findById: async (id) => ok(forms.get(id) ?? null), listByProject: async () => ok([...forms.values()]), deleteDraft: async (id) => { const f = forms.get(id); if (!f || f.status !== "DRAFT") return ok(false); forms.delete(id); return ok(true); } },
     records: {
       createOnce: async (r) => (records.has(r.id) ? ok({ record: records.get(r.id), created: false }) : (records.set(r.id, r), ok({ record: r, created: true }))),
       update: async (r) => (records.set(r.id, r), ok()), findById: async (id) => ok(records.get(id) ?? null),
@@ -272,4 +272,21 @@ test("a viewer still cannot take a pack", async () => {
   const w = world();
   const r = await new GetOfflinePackHandler(w.forms, { list: async () => ok([]) }, clock).handle(viewer, "p1");
   assert.equal(r.ok, false);
+});
+
+test("a draft form can be deleted by someone who can edit; a published one cannot (it keeps its records); a viewer cannot", async () => {
+  const w = world();
+  const save = new SaveCollectionFormHandler(ids, w.forms, w.indicators, audit, clock);
+  const publish = new SetCollectionFormStatusHandler(w.forms, audit, clock);
+  const del = new DeleteDraftCollectionFormHandler(w.forms, audit);
+  const a = await save.handle(manager, input); assert.ok(a.ok);
+  assert.equal((await del.handle(viewer, a.value.id)).ok, false);
+  const removed = await del.handle(manager, a.value.id); assert.ok(removed.ok);
+  assert.equal(w.stores.forms.has(a.value.id), false);
+  assert.ok(audit.events.includes("collection.form.deleted"));
+  const b = await save.handle(manager, input); assert.ok(b.ok);
+  assert.ok((await publish.handle(manager, b.value.id, "PUBLISHED")).ok);
+  const refused = await del.handle(manager, b.value.id);
+  assert.equal(refused.ok, false); assert.match(refused.error.message, /draft/i);
+  assert.equal(w.stores.forms.has(b.value.id), true);
 });

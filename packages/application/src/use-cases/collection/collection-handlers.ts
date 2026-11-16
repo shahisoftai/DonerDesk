@@ -173,6 +173,23 @@ export class SetCollectionFormStatusHandler {
   }
 }
 
+/** Removes a draft form that was never published (Phase 58.3). A published or closed form keeps its records, so it can only be closed. */
+export class DeleteDraftCollectionFormHandler {
+  constructor(private readonly forms: ICollectionFormRepository, private readonly audit: IAuditLogger) {}
+
+  async handle(ctx: AuthenticatedContext, formId: string): Promise<Result<void, DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot delete forms"));
+    const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
+    if (!form.ok) return form;
+    if (form.value.status !== "DRAFT") return fail(DomainError.conflict("Only a draft that was never published can be deleted. Close a published form instead."));
+    const removed = await this.forms.deleteDraft(formId, ctx.tenant.tenantId);
+    if (!removed.ok) return removed;
+    if (!removed.value) return fail(DomainError.conflict("This form was published meanwhile, so it was not deleted."));
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.form.deleted", entityType: "collection_form", entityId: formId, projectId: form.value.projectId });
+    return ok(undefined);
+  }
+}
+
 /** Shared by the member and public paths: validate against the form, then store once under the client's own id. */
 async function storeSubmission(
   repo: ICollectionRecordRepository, ids: IIdGenerator, clock: IClock, form: StoredCollectionForm,

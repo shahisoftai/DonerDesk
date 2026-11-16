@@ -94,6 +94,7 @@ export const PCW_ES: PcwBundle = {
       add: "Añadir un indicador", name: "Qué se medirá", result: "Mide", type: "Tipo de número", unit: "Unidad", baseline: "Valor inicial",
       noBaseline: "Sin valor inicial", target: "Meta", frequency: "Con qué frecuencia", frequencyRegular: "De forma regular", frequencyEvent: "Cuando ocurre", breakdown: "Desglosar por (separar con comas)", owner: "Responsable",
       direction: "Es mejor cuando es", higher: "Más alto", lower: "Más bajo", choose: "— elegir —",
+      suggest: "Usar los ajustes sugeridos para todos", suggestNote: "Solo completa lo que está vacío: el tipo de número, qué sentido es mejor y quién es responsable (la persona de seguimiento y evaluación). Cada sugerencia tiene su razón; cambie cualquier ficha después.", suggestNone: "No queda nada por sugerir.",
       bulk: "Completar todos los indicadores que aún no tienen nada", applyFrequency: "Con qué frecuencia", applyBreakdown: "Desglosar por", apply: "Completar",
       empty: "Aún no hay indicadores. Cada producto necesita al menos uno.",
     },

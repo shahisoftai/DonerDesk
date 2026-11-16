@@ -62,6 +62,11 @@ export class PrismaCollectionFormRepository implements ICollectionFormRepository
     const rows = await this.prisma.collectionForm.findMany({ where: { projectId, tenantId: tenantId.toString() }, orderBy: { createdAt: "desc" } });
     return ok(rows.map(formFrom));
   }
+
+  async deleteDraft(id: string, tenantId: TenantId): Promise<Result<boolean>> {
+    const removed = await this.prisma.collectionForm.deleteMany({ where: { id, tenantId: tenantId.toString(), status: "DRAFT" } });
+    return ok(removed.count > 0);
+  }
 }
 
 export class PrismaCollectionRecordRepository implements ICollectionRecordRepository {

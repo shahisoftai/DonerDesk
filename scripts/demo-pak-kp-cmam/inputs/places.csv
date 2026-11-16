@@ -1,0 +1,17 @@
+Name,Level,Parent,Code,Latitude,Longitude,Other spellings,Facility type
+Pakistan,Country,,,,,,
+K.P.,State or province,Pakistan,,,,Khyber Pakhtunkhwa; KP; KPK,
+Upper Dir,District or locality,K.P.,,,,Dir Upper,
+Dir,Sub-district,Upper Dir,,,,,
+Wari,Sub-district,Upper Dir,,,,,
+Sheringal,Sub-district,Upper Dir,,,,,
+DHQ Hospital Dir,Community or site,Dir,,35.2075,71.876,,Stabilisation centre
+RHC Wari,Community or site,Wari,,34.9667,71.8,,OTP site
+BHU Sheringal,Community or site,Sheringal,,35.3,71.75,,SFP site
+Mardan,District or locality,K.P.,,,,,
+Mardan City,Sub-district,Mardan,,,,,
+Takht Bhai,Sub-district,Mardan,,,,,
+Katlang,Sub-district,Mardan,,,,,
+Mardan Medical Complex,Community or site,Mardan City,,34.198,72.042,,Stabilisation centre
+RHC Takht Bhai,Community or site,Takht Bhai,,34.29,71.95,,OTP site
+BHU Katlang,Community or site,Katlang,,34.33,72.07,,SFP site

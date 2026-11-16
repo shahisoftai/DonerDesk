@@ -47,6 +47,8 @@ How you will know each result is reached.
 - **Choose from the library**: filter by result level, kind, **Recommended only** or **With a reference standard**; click **Select the recommended ones** (or **Select this group**, or tick single indicators), choose where they go under **Put them under** (**The result at each indicator's own level** is the default), then click **Add selected: N**. Or use **Add an indicator** (type **What will be measured**, choose what it **Measures**, click **Add an indicator**).
 - Each indicator then gets a card with: **Measures**, **Kind of number**, **Unit**, **Starting value** (or tick **No starting value**), **Target**, **How often**, **Break down by** (separate with commas), **Responsible** (someone from your team) and **Better when** (**Higher** or **Lower**).
 - Every indicator needs its kind, frequency, starting value and target, an owner and a direction before the slide is complete. **Fill in for all indicators with nothing yet** sets **How often** and **Break down by** for all cards at once.
+- **Use suggested settings for all (n)** appears when some cards still have a gap. It fills only what is empty: the **Kind of number** (a rate or percentage when the unit or name says so, a number when the target is a plain number), **Better when** (lower for deaths, defaulting, non-response and stock-outs, higher for work done and people reached; a name it cannot judge gets nothing) and **Responsible** (the monitoring and evaluation officer, only when exactly one is on the team). It never changes a choice you already made, and you can change any card afterwards.
+- If you read an indicator **sheet**, a **Type** column (Number, Percentage, Ratio) and a **Break down by** column are read too, so those cards arrive filled in.
 - Every result needs at least one indicator; the slide names any that has none.
 - Library indicators carry the label **From the sector library**, may show a **Reference** (for example *at most 20 people per toilet*) that is **not your target**, and start as **not yet reviewed**. Check each one before relying on it.
 
@@ -104,7 +106,7 @@ Open the project's **Settings → Setup** page. It is headed **Prepare your proj
 
 1. **Project workspace folder** – the folder tree in Google Drive.
 2. **Donor template** – usually the one item still to do after a wizard launch: [upload and approve one](/support/how-to/upload-donor-template). Without one, reports use the built-in structure.
-3. **Logframe and indicators** – for example *23 reportable of 23*.
+3. **Logframe and indicators** – for example *23 reportable of 23*. When some are not reportable yet it says why, for example *44 reportable of 55. 11 need a starting value.* A quantitative indicator needs a starting value, a target, a unit and a frequency before it counts as reportable.
 4. **Reporting profile** – language and tone.
 5. **Team assignment** (recommended).
 
@@ -114,7 +116,7 @@ Things you do **not** set in the wizard: who verifies, who approves reports and 
 
 ## Start from documents (optional)
 
-On slide 1 click **Choose files** (a proposal, logframe, work plan or budget, up to five), then **Read my documents**.
+On slide 1 click **Choose files** (a proposal, logframe, work plan or budget, up to five), then **Read my documents**. Spreadsheets (CSV or Excel) of the logframe, indicators and work plan are read fully and quickly; a Word proposal is read less completely. If **Read my documents** says "The request timed out", choose fewer files (three sheets read well together) and enter the places and the budget on their own slides.
 1. Files are kept in your organisation's Google Drive, so Drive must be connected ([Connect Google Drive](/support/how-to/connect-google-drive)). The AI features must be turned on for your organisation.
 2. Each slide then shows what was found, with **Show in the document** beside each item. Accept, edit or reject each one. Nothing is created until you launch.
 3. A section of your document that is blank stays blank. The wizard says so rather than inventing content. Items it could not place are listed as **left out**.

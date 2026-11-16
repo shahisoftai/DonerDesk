@@ -1,0 +1,10 @@
+import { attach, BASE } from "../lib.mjs";
+import { readFileSync } from "node:fs";
+const { page, shot, browser } = await attach("fm1");
+page.setDefaultTimeout(20000);
+const pid = readFileSync(new URL("../pid.txt", import.meta.url), "utf8").trim();
+await page.goto(`${BASE}/projects/${pid}/forms`); await page.waitForTimeout(3000);
+await page.getByRole("link", { name: /New form/ }).first().click().catch(async()=>{ await page.getByRole("button", { name: /New form/ }).first().click(); });
+await page.waitForTimeout(3000); console.log(page.url());
+const t = await page.locator("main").innerText(); console.log(t.slice(t.indexOf("Forms") , t.indexOf("Forms") + 2500));
+await shot("fm1"); await browser.close();

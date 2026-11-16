@@ -1,0 +1,25 @@
+Level,Code,Title
+GOAL,G,"Acute malnutrition among children 6-59 months and pregnant and lactating women (PLW) is reduced and infant and young child feeding (IYCF) practices are improved in Upper Dir and Mardan districts, Khyber Pakhtunkhwa"
+OUTCOME,OC1,Children 6-59 months with severe or moderate acute malnutrition are found early and recover through quality community-based management of acute malnutrition (CMAM) that meets Sphere standards
+OUTPUT,1.1,Children 6-59 months are screened for acute malnutrition by MUAC and oedema check and referred
+ACTIVITY,A1.1.1,Monthly community MUAC and oedema screening by lady health workers and community volunteers
+ACTIVITY,A1.1.2,"Refer screened SAM and MAM cases to OTP, SFP or stabilisation centre"
+OUTPUT,1.2,Children with SAM without complications are treated in outpatient therapeutic programme (OTP) sites
+ACTIVITY,A1.2.1,"Run OTP sites: admission, weekly RUTF distribution and follow-up"
+OUTPUT,1.3,Children with MAM are treated in supplementary feeding programme (SFP) sites
+ACTIVITY,A1.3.1,Run SFP sites: ration distribution and follow-up
+OUTPUT,1.4,Children with SAM and medical complications are treated in stabilisation centres (SC)
+ACTIVITY,A1.4.1,"Operate stabilisation centres: F-75, F-100 and ReSoMal treatment"
+OUTCOME,OC2,"Pregnant and lactating women are screened and treated, and caregivers practise optimal infant and young child feeding"
+OUTPUT,2.1,PLW are screened and malnourished PLW are enrolled in supplementary feeding
+ACTIVITY,A2.1.1,Screen PLW by MUAC at health facilities and in the community and enrol malnourished PLW in SFP
+OUTPUT,2.2,PLW and caregivers receive IYCF counselling
+ACTIVITY,A2.2.1,IYCF counselling sessions at health facilities
+ACTIVITY,A2.2.2,IYCF counselling sessions in communities
+OUTPUT,2.3,Children 6-23 months and PLW receive micronutrient supplements
+ACTIVITY,A2.3.1,"Distribute micronutrient powder (MNP) to children 6-23 months, and iron-folic acid (IFA) and multiple micronutrients (MMN) to PLW"
+OUTCOME,OC3,Nutrition supplies and monthly data systems are reliable so that services do not stop
+OUTPUT,3.1,"Nutrition supplies are received, stored and used without stock-outs"
+ACTIVITY,A3.1.1,"Manage nutrition supplies: RUTF, RUSF, F-75, F-100, ReSoMal, MNP, IFA and MUAC tapes"
+OUTPUT,3.2,"Monthly district nutrition data are complete, reviewed and reported on time"
+ACTIVITY,A3.2.1,"Monthly district data review, supportive supervision and training of health staff"

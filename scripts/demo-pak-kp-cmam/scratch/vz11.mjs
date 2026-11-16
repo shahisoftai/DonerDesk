@@ -1,0 +1,13 @@
+import { attach, BASE } from "../lib.mjs";
+const { page, shot, browser } = await attach("vz11");
+page.setDefaultTimeout(20000);
+await page.goto(`${BASE}/visuals/templates`); await page.waitForTimeout(3000);
+const btn = page.getByText("Nutrition: screening and treatment", { exact: true }).first().locator("xpath=ancestor::*[.//button[normalize-space()='Use this template']][1]").getByRole("button", { name: "Use this template" });
+await btn.click(); await page.waitForTimeout(2500);
+const S = page.locator("select");
+const pick = async (i, sw) => { const o = await S.nth(i).locator("option").allInnerTexts(); await S.nth(i).selectOption({ label: o.find(x => x.startsWith(sw)) }); await page.waitForTimeout(700); };
+await pick(1, "[DEMO-17]"); await pick(2, "Everyone"); await pick(3, "OP1.1-1 "); await pick(4, "OP1.2-1 "); await pick(5, "OP2.2-3 "); await pick(6, "OP1.2-7 "); await pick(7, "OC1-1 ");
+await page.getByRole("button", { name: "Create the dashboard" }).click(); await page.waitForTimeout(7000);
+const a = page.getByRole("link", { name: "Open it" }); console.log(await a.count(), await a.first().getAttribute("href"));
+await a.first().click(); await page.waitForTimeout(6000); console.log(page.url()); console.log((await page.locator("main").innerText()).slice(0, 700));
+await shot("dash-open"); await browser.close();

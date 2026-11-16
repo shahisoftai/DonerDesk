@@ -106,6 +106,7 @@ export const PCW_COPY = {
     add: "Add an indicator", name: "What will be measured", result: "Measures", type: "Kind of number", unit: "Unit", baseline: "Starting value",
     noBaseline: "No starting value", target: "Target", frequency: "How often", frequencyRegular: "Regularly", frequencyEvent: "When it happens", breakdown: "Break down by (separate with commas)", owner: "Responsible",
     direction: "Better when", higher: "Higher", lower: "Lower", choose: "— choose —",
+    suggest: "Use suggested settings for all", suggestNote: "Fills only what is empty: the kind of number, which way is better and who owns it (the monitoring and evaluation officer). Each suggestion has a reason; change any card afterwards.", suggestNone: "Nothing left to suggest.",
     bulk: "Fill in for all indicators with nothing yet", applyFrequency: "How often", applyBreakdown: "Break down by", apply: "Fill in",
     empty: "No indicators yet. Every output needs at least one.",
   },

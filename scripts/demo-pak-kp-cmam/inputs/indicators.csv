@@ -1,0 +1,56 @@
+Code,Indicator,Type,Baseline,Target,Unit,Frequency,Disaggregation,Logframe Code,Means of Verification,Better when
+OC1-1,OTP cure rate (SAM children discharged cured / total OTP exits),PERCENTAGE,,75,%,Monthly,Sex,OC1,OTP monthly exit registers,Higher
+OC1-2,OTP death rate,PERCENTAGE,,10,%,Monthly,Sex,OC1,OTP monthly exit registers,Lower
+OC1-3,OTP default rate,PERCENTAGE,,15,%,Monthly,Sex,OC1,OTP monthly exit registers,Lower
+OC1-4,OTP non-response rate,PERCENTAGE,,10,%,Monthly,Sex,OC1,OTP monthly exit registers,Lower
+OC1-5,SFP cure rate (MAM children discharged cured / total SFP exits),PERCENTAGE,,75,%,Monthly,Sex,OC1,SFP monthly exit registers,Higher
+OC1-6,SFP death rate,PERCENTAGE,,3,%,Monthly,Sex,OC1,SFP monthly exit registers,Lower
+OC1-7,SFP default rate,PERCENTAGE,,15,%,Monthly,Sex,OC1,SFP monthly exit registers,Lower
+OC1-8,SFP non-response rate,PERCENTAGE,,15,%,Monthly,Sex,OC1,SFP monthly exit registers,Lower
+OC1-9,Stabilisation centre cure rate,PERCENTAGE,,75,%,Monthly,Sex,OC1,SC monthly exit registers,Higher
+OC1-10,Stabilisation centre death rate,PERCENTAGE,,10,%,Monthly,Sex,OC1,SC monthly exit registers,Lower
+OC1-11,Stabilisation centre default rate,PERCENTAGE,,15,%,Monthly,Sex,OC1,SC monthly exit registers,Lower
+OP1.1-1,Children 6-59 months screened for acute malnutrition,NUMBER,0,150000,children,Monthly,Sex,1.1,MUAC screening registers,Higher
+OP1.1-2,Children screened with MUAC above 12.5 cm (healthy),NUMBER,0,130000,children,Monthly,Sex,1.1,MUAC screening registers,Higher
+OP1.1-3,Children screened with MAM (MUAC 11.5 to 12.5 cm),NUMBER,0,14000,children,Monthly,Sex,1.1,MUAC screening registers,Higher
+OP1.1-4,Children screened with SAM (MUAC below 11.5 cm),NUMBER,0,4800,children,Monthly,Sex,1.1,MUAC screening registers,Higher
+OP1.1-5,Children screened with bilateral pitting oedema,NUMBER,0,300,children,Monthly,Sex,1.1,MUAC screening registers,Higher
+OP1.2-1,New SAM admissions in OTP,NUMBER,0,4200,children,Monthly,Sex,1.2,OTP admission registers,Higher
+OP1.2-2,Children discharged cured from OTP,NUMBER,0,3350,children,Monthly,Sex,1.2,OTP exit registers,Higher
+OP1.2-3,Children who died in OTP,NUMBER,0,40,children,Monthly,Sex,1.2,OTP exit registers,Lower
+OP1.2-4,Children who defaulted from OTP,NUMBER,0,400,children,Monthly,Sex,1.2,OTP exit registers,Lower
+OP1.2-5,Children non-recovered (non-response) in OTP,NUMBER,0,250,children,Monthly,Sex,1.2,OTP exit registers,Lower
+OP1.2-6,Children moved out from OTP (transfers),NUMBER,0,160,children,Monthly,Sex,1.2,OTP exit registers,Lower
+OP1.2-7,Functional OTP sites,NUMBER,0,60,sites,Monthly,,1.2,Site lists,Higher
+OP1.3-1,New MAM admissions in SFP,NUMBER,0,11000,children,Monthly,Sex,1.3,SFP admission registers,Higher
+OP1.3-2,Children discharged cured from SFP,NUMBER,0,8800,children,Monthly,Sex,1.3,SFP exit registers,Higher
+OP1.3-3,Children who died in SFP,NUMBER,0,60,children,Monthly,Sex,1.3,SFP exit registers,Lower
+OP1.3-4,Children who defaulted from SFP,NUMBER,0,1000,children,Monthly,Sex,1.3,SFP exit registers,Lower
+OP1.3-5,Children non-recovered (non-response) in SFP,NUMBER,0,600,children,Monthly,Sex,1.3,SFP exit registers,Lower
+OP1.3-6,Children moved out from SFP (transfers),NUMBER,0,300,children,Monthly,Sex,1.3,SFP exit registers,Lower
+OP1.3-7,Functional SFP sites,NUMBER,0,70,sites,Monthly,,1.3,Site lists,Higher
+OP1.4-1,New admissions in stabilisation centres,NUMBER,0,450,children,Monthly,Sex,1.4,SC admission registers,Higher
+OP1.4-2,Children discharged cured from stabilisation centres,NUMBER,0,360,children,Monthly,Sex,1.4,SC exit registers,Higher
+OP1.4-3,Children who died in stabilisation centres,NUMBER,0,20,children,Monthly,Sex,1.4,SC exit registers,Lower
+OP1.4-4,Children who defaulted from stabilisation centres,NUMBER,0,50,children,Monthly,Sex,1.4,SC exit registers,Lower
+OP1.4-5,Functional stabilisation centres,NUMBER,0,4,sites,Monthly,,1.4,Site lists,Higher
+OP2.1-1,PLW screened by MUAC,NUMBER,0,40000,women,Monthly,,2.1,PLW screening registers,Higher
+OP2.1-2,Malnourished PLW enrolled in SFP,NUMBER,0,6000,women,Monthly,,2.1,PLW SFP registers,Higher
+OP2.1-3,PLW discharged cured from SFP,NUMBER,0,4500,women,Monthly,,2.1,PLW SFP registers,Higher
+OP2.1-4,PLW who defaulted from SFP,NUMBER,0,500,women,Monthly,,2.1,PLW SFP registers,Lower
+OP2.2-1,IYCF counselling sessions held at health facilities,NUMBER,0,1200,sessions,Monthly,,2.2,IYCF session records,Higher
+OP2.2-2,IYCF counselling sessions held in communities,NUMBER,0,2400,sessions,Monthly,,2.2,IYCF session records,Higher
+OP2.2-3,PLW and caregivers counselled on IYCF at health facilities,NUMBER,0,24000,people,Monthly,,2.2,Attendance sheets,Higher
+OP2.2-4,PLW and caregivers counselled on IYCF in communities,NUMBER,0,36000,people,Monthly,,2.2,Attendance sheets,Higher
+OP2.3-1,Children 6-23 months receiving micronutrient powder (MNP),NUMBER,0,30000,children,Monthly,Sex,2.3,MNP distribution registers,Higher
+OP2.3-2,PLW receiving iron-folic acid (IFA),NUMBER,0,20000,women,Monthly,,2.3,IFA distribution registers,Higher
+OP2.3-3,PLW receiving multiple micronutrients (MMN),NUMBER,0,8000,women,Monthly,,2.3,MMN distribution registers,Higher
+OP3.1-1,RUTF cartons received at district stores,NUMBER,0,4500,cartons,Monthly,,3.1,Stock receipts,Higher
+OP3.1-2,RUTF cartons consumed,NUMBER,0,3900,cartons,Monthly,,3.1,Stock registers,Higher
+OP3.1-3,RUSF cartons received at district stores,NUMBER,0,6500,cartons,Monthly,,3.1,Stock receipts,Higher
+OP3.1-4,RUSF cartons consumed,NUMBER,0,5800,cartons,Monthly,,3.1,Stock registers,Higher
+OP3.1-5,MNP sachet boxes received,NUMBER,0,900,boxes,Monthly,,3.1,Stock receipts,Higher
+OP3.1-6,MNP sachet boxes consumed,NUMBER,0,800,boxes,Monthly,,3.1,Stock registers,Higher
+OP3.2-1,District monthly nutrition reports submitted on time,NUMBER,0,12,reports,Monthly,,3.2,Report log,Higher
+OP3.2-2,Health staff trained in CMAM and IYCF,NUMBER,0,240,staff,Monthly,,3.2,Training attendance sheets,Higher
+OP3.2-3,Supportive supervision visits to nutrition sites,NUMBER,0,180,visits,Monthly,,3.2,Supervision reports,Higher

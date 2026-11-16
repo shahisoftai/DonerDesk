@@ -6,11 +6,11 @@
  * Spanish. The model still reads the documents the table does not come from (indicators named in the narrative).
  */
 import { FIELD_LIMITS, fit } from "./fit-text.js";
-import type { IndicatorDef, Proposed, SourceBlock } from "@donordesk/domain";
+import { suggestIndicatorSetup, type IndicatorDef, type Proposed, type SourceBlock } from "@donordesk/domain";
 import type { PartialSheetRead, PartialSheetReader } from "./budget-sheet-reader.js";
 import { parseLogframeMatrix } from "./logframe-matrix.js";
 
-type Column = "title" | "code" | "baseline" | "target" | "unit" | "frequency" | "verification" | "result" | "disaggregation";
+type Column = "title" | "code" | "baseline" | "target" | "unit" | "frequency" | "verification" | "result" | "disaggregation" | "type";
 
 /** Header words per column, folded (no accents, lower case); the first column a header matches wins. */
 const HEADERS: Readonly<Record<Column, readonly string[]>> = {
@@ -22,7 +22,8 @@ const HEADERS: Readonly<Record<Column, readonly string[]>> = {
   frequency: ["frequency", "reporting frequency", "frequence", "periodicite", "frecuencia"],
   verification: ["means of verification", "sources of verification", "data source", "source", "moyens de verification", "sources de verification", "fuentes de verificacion", "medios de verificacion"],
   result: ["result", "result code", "logframe code", "output", "outcome", "level", "resultat", "resultado"],
-  disaggregation: ["disaggregation", "disaggregated by", "desagregation", "desagregacion"],
+  disaggregation: ["disaggregation", "disaggregated by", "break down by", "breakdown", "desagregation", "desagregacion"],
+  type: ["type", "kind of number", "indicator type", "type of indicator", "kind", "type d indicateur", "tipo"],
 };
 
 const QUOTE_LIMIT = 1000;
@@ -51,6 +52,15 @@ const cell = (cells: ReadonlyArray<string>, at: number | undefined): string | nu
   return t === "" || /^(n\/?a|-|–|tbd|tbc)$/i.test(t) ? null : t;
 };
 
+/** A "type" column that names one of the wizard's kinds; anything else is ignored (the card asks). */
+const statedType = (word: string | null): string | null => {
+  const w = (word ?? "").toLowerCase();
+  if (/^(number|count|numeric|nombre|numero)$/.test(w)) return "NUMBER";
+  if (/^(percentage|percent|rate|%|pourcentage|porcentaje)$/.test(w)) return "PERCENTAGE";
+  if (/^ratio$/.test(w)) return "RATIO";
+  return null;
+};
+
 function readDocument(blocks: ReadonlyArray<SourceBlock>): Proposed<IndicatorDef>[] {
   const lines = blocks.flatMap((block) => block.text.split("\n").map((line) => ({ line, block })));
   const headerAt = lines.slice(0, HEADER_SCAN * 10).findIndex(({ line }) => columnsOf(line) !== null);
@@ -70,7 +80,7 @@ function readDocument(blocks: ReadonlyArray<SourceBlock>): Proposed<IndicatorDef
     const disaggregation = cell(cells, columns.disaggregation);
     const value: IndicatorDef = {
       code: fit(code, FIELD_LIMITS.code), title: fit(title, FIELD_LIMITS.title), logframeCode: result && CODE_LIKE.test(result) ? fit(result, FIELD_LIMITS.code) : null,
-      type: /%|percent|pourcent|porcentaje/i.test(`${unit ?? ""} ${title} ${target ?? ""}`) ? "PERCENTAGE" : null,
+      type: statedType(cell(cells, columns.type)) ?? (/%|percent|pourcent|porcentaje/i.test(`${unit ?? ""} ${title} ${target ?? ""}`) ? "PERCENTAGE" : suggestIndicatorSetup({ title, type: null, unit, target }).type?.value ?? null),
       unit: fit(unit, FIELD_LIMITS.unit), baseline: fit(baseline, FIELD_LIMITS.figure), target: fit(target, FIELD_LIMITS.figure), targetSchedule: null, frequency: fit(cell(cells, columns.frequency), FIELD_LIMITS.frequency), direction: null,
       disaggregation: disaggregation ? disaggregation.split(/[,;/]| and /).map((d) => d.trim()).filter(Boolean).slice(0, 10) : null,
       meansOfVerification: fit(cell(cells, columns.verification), FIELD_LIMITS.verification),

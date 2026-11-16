@@ -1,0 +1,84 @@
+{
+ "team": [
+  [
+   "Dr. Ayesha Khan",
+   "ayesha.khan@pak-cmam-demo.example",
+   "Project manager"
+  ],
+  [
+   "Imran Yousafzai",
+   "imran.yousafzai@pak-cmam-demo.example",
+   "Monitoring and evaluation officer"
+  ],
+  [
+   "Sadia Bibi",
+   "sadia.bibi@pak-cmam-demo.example",
+   "Grants officer"
+  ],
+  [
+   "Tariq Mehmood",
+   "tariq.mehmood@pak-cmam-demo.example",
+   "Compliance officer"
+  ],
+  [
+   "Gul Rehman",
+   "gul.rehman@pak-cmam-demo.example",
+   "Field officer"
+  ],
+  [
+   "Nasreen Akhtar",
+   "nasreen.akhtar@pak-cmam-demo.example",
+   "Field officer"
+  ],
+  [
+   "Zahid Ali",
+   "zahid.ali@pak-cmam-demo.example",
+   "Field officer"
+  ],
+  [
+   "Farah Naz",
+   "farah.naz@pak-cmam-demo.example",
+   "Field officer"
+  ],
+  [
+   "Dr. Mariam Shah",
+   "mariam.shah@pak-cmam-demo.example",
+   "Viewer"
+  ]
+ ],
+ "budget": [
+  [
+   "RUTF, RUSF, F-75, F-100 and ReSoMal (supplies)",
+   190000
+  ],
+  [
+   "MNP, IFA, MMN and MUAC tapes",
+   60000
+  ],
+  [
+   "Community screening and referral (LHW and volunteer support)",
+   85000
+  ],
+  [
+   "OTP, SFP and SC site support and incentives",
+   110000
+  ],
+  [
+   "IYCF counselling and mother support",
+   60000
+  ],
+  [
+   "Training and supportive supervision",
+   50000
+  ],
+  [
+   "Monitoring, data and reporting",
+   35000
+  ],
+  [
+   "Staff, vehicles and administration",
+   70000
+  ]
+ ],
+ "total": 660000
+}

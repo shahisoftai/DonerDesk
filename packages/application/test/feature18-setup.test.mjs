@@ -157,6 +157,9 @@ test("readiness: incomplete indicator -> INDICATOR_CONFIGURATION_INCOMPLETE", as
   const service = new ProjectReadinessService(repos.projects, repos.setup, repos.profiles, repos.templates, repos.indicators, repos.users, repos.providerResolver);
   const r = await service.compute("p1", tenantId);
   assert.ok(r.value.blockers.some((b) => b.code === "INDICATOR_CONFIGURATION_INCOMPLETE"));
+  // Phase 58.5: the snapshot says which field is missing, so Setup can explain the count in words.
+  const snap = await service.snapshot("p1", tenantId);
+  assert.deepEqual(snap.value.indicators.missing, { baseline: 0, target: 0, unit: 1, frequency: 1 });
 });
 
 test("readiness: template without reviewed required sections blocks", async () => {

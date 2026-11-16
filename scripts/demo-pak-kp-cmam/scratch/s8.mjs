@@ -1,0 +1,13 @@
+import { attach } from "../lib.mjs";
+const { page, shot, browser } = await attach("s8");
+page.setDefaultTimeout(15000);
+const freq = page.getByLabel("Reports are made", { exact: true });
+if (!(await freq.inputValue())) await freq.selectOption({ label: "Every month" });
+await page.getByLabel("Layout", { exact: true }).first().selectOption({ label: "The standard layout" }).catch(e=>console.log("layout",e.message.split("\n")[0]));
+const due = page.getByLabel("Due (days after the period ends)", { exact: true }); await due.first().fill("15"); await due.first().press("Tab"); await page.waitForTimeout(800);
+const add = page.locator("main select").filter({ has: page.locator("option", { hasText: "Quarterly report" }) }).last();
+await add.selectOption({ label: "Final report" }); await page.waitForTimeout(800);
+console.log(await page.getByRole("button", { name: /Add a kind of report/ }).count());
+await page.getByRole("button", { name: /Add a kind of report/ }).click().catch(()=>{}); await page.waitForTimeout(1500);
+const t = await page.locator("main").innerText(); console.log(t.slice(t.indexOf("Each kind of report"), t.indexOf("Each kind of report") + 700)); console.log(t.slice(t.indexOf("Still to answer")).slice(0, 300));
+await shot("s8"); await browser.close();

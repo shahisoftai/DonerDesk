@@ -1,0 +1,11 @@
+import { attach, BASE } from "../lib.mjs";
+const { page, shot, browser } = await attach("pl3");
+page.setDefaultTimeout(30000);
+const D = new URL("../inputs/", import.meta.url).pathname;
+await page.goto(`${BASE}/where-we-work/manage`); await page.waitForTimeout(3000);
+await page.getByText(/Facility types \(\d+\)/).click().catch(()=>{}); await page.waitForTimeout(800);
+let t = await page.locator("main").innerText(); const k = t.indexOf("Facility types"); console.log(t.slice(k, k + 500));
+await page.locator("input[type=file]").first().setInputFiles(D + "places.csv"); await page.waitForTimeout(1500);
+await page.getByRole("button", { name: "Check the sheet" }).click(); await page.waitForTimeout(5000);
+t = await page.locator("main").innerText(); const j = t.indexOf("Check the sheet"); console.log(t.slice(j, j + 1800));
+await shot("places-check"); await browser.close();

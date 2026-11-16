@@ -47,6 +47,12 @@ export async function registerCollectionRoutes(app: FastifyInstance) {
     return r.value;
   });
 
+  app.delete("/v1/collection-forms/:formId", async (req) => {
+    const r = await req.container.handlers.deleteDraftCollectionForm.handle(ctx(req), param(req, "formId"));
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
   app.post("/v1/collection-forms/:formId/publish", async (req) => {
     const r = await req.container.handlers.setCollectionFormStatus.handle(ctx(req), param(req, "formId"), "PUBLISHED");
     if (!r.ok) throw r.error;

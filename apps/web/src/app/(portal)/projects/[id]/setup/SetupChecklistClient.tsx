@@ -19,6 +19,12 @@ function toneForStatus(status: string): "success" | "warning" | "danger" | "neut
   }
 }
 
+/** "11 need a starting value." — the reason behind a "reportable of" count, in words (Phase 58.5). */
+function missingSentence(missing?: { baseline: number; target: number; unit: number; frequency: number }): string {
+  if (!missing) return "";
+  const parts = ([["a starting value", missing.baseline], ["a target", missing.target], ["a unit", missing.unit], ["a frequency", missing.frequency]] as const).filter(([, n]) => n > 0).map(([w, n]) => `${n} need${n === 1 ? "s" : ""} ${w}`);
+  return parts.length > 0 ? ` ${parts.join(", ")}.` : "";
+}
 export function SetupChecklistClient({
   projectId,
   initialReadiness,
@@ -84,7 +90,7 @@ export function SetupChecklistClient({
       description:
         snapshot.indicators.total === 0
           ? "No indicators yet."
-          : `${snapshot.indicators.reportable} reportable of ${snapshot.indicators.total}.`,
+          : `${snapshot.indicators.reportable} reportable of ${snapshot.indicators.total}.${missingSentence(snapshot.indicators.missing)}`,
     },
     {
       key: "profile",

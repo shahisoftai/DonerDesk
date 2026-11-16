@@ -1,5 +1,6 @@
 export type DraftItemOrigin = "DOCUMENT" | "SUGGESTED" | "USER";
 import type { IndicatorDef, LogframeNodeDef, SetupLogLevel } from "@donordesk/domain";
+import { suggestIndicatorSetup } from "@donordesk/domain/contexts/project-setup/pcw/suggesters/indicator-defaults.js";
 import { FREQUENCY_CHOICES } from "@donordesk/domain/contexts/reporting/indicator-frequency.js";
 import type { SetupDraftView } from "../../../../lib/server/schemas-project-setup-draft.ts";
 
@@ -99,4 +100,36 @@ export function indicatorRows(view: SetupDraftView): IndicatorRow[] {
 export function parseBreakdown(text: string): string[] | null {
   const parts = text.split(",").map((p) => p.trim()).filter(Boolean);
   return parts.length === 0 ? null : [...new Set(parts)];
+}
+
+export interface IndicatorSuggestion {
+  code: string;
+  path: string;
+  type: string | null;
+  direction: "HIGHER" | "LOWER" | null;
+  ownerKey: string | null;
+  reasons: string[];
+}
+
+/**
+ * What the wizard can fill in for every indicator that still has a gap (Phase 58.1): the kind of number, which way is better and an owner.
+ * It never overwrites a choice. The owner is the monitoring and evaluation officer, and only when exactly one is on the team.
+ */
+export function suggestIndicatorSettings(rows: readonly IndicatorRow[], team: ReadonlyArray<{ key: string; role: string }>): IndicatorSuggestion[] {
+  const me = team.filter((p) => p.role === "ME_OFFICER");
+  const owner = me.length === 1 ? me[0]!.key : null;
+  const out: IndicatorSuggestion[] = [];
+  for (const { item, value, ownerKey, direction } of rows) {
+    if (!value.code) continue;
+    const s = suggestIndicatorSetup({ title: value.title, type: value.type, unit: value.unit, target: value.target });
+    const entry: IndicatorSuggestion = {
+      code: value.code, path: item.path,
+      type: s.type?.value ?? null,
+      direction: direction === "" ? (s.direction?.value ?? null) : null,
+      ownerKey: ownerKey === "" ? owner : null,
+      reasons: [s.type?.reason, direction === "" ? s.direction?.reason : undefined].filter((r): r is string => !!r),
+    };
+    if (entry.type || entry.direction || entry.ownerKey) out.push(entry);
+  }
+  return out;
 }

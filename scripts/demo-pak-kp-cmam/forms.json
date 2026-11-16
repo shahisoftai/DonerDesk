@@ -1,0 +1,89 @@
+[
+  {
+    "name": "OTP monthly site report (SAM treatment)",
+    "about": "One record per OTP site per month: admissions and exits of children 6-59 months, boys and girls.",
+    "q": [
+      ["Reporting month end date", "Date"], ["OTP site", "Place"],
+      ["Functional OTP sites reporting", "Number"],
+      ["New SAM admissions - boys", "Number"], ["New SAM admissions - girls", "Number"], ["New SAM admissions - total", "Number"],
+      ["Discharged cured - boys", "Number"], ["Discharged cured - girls", "Number"], ["Discharged cured - total", "Number"],
+      ["Died - boys", "Number"], ["Died - girls", "Number"], ["Died - total", "Number"],
+      ["Defaulted - boys", "Number"], ["Defaulted - girls", "Number"], ["Defaulted - total", "Number"],
+      ["Non-responders - boys", "Number"], ["Non-responders - girls", "Number"], ["Non-responders - total", "Number"],
+      ["Moved out - boys", "Number"], ["Moved out - girls", "Number"], ["Moved out - total", "Number"]
+    ],
+    "m": [["OP1.2-7", "Functional OTP sites reporting"], ["OP1.2-1", "New SAM admissions - total"], ["OP1.2-2", "Discharged cured - total"], ["OP1.2-3", "Died - total"], ["OP1.2-4", "Defaulted - total"], ["OP1.2-5", "Non-responders - total"], ["OP1.2-6", "Moved out - total"]]
+  },
+  {
+    "name": "SFP monthly site report (MAM treatment)",
+    "about": "One record per SFP/TSFP site per month: admissions and exits of children 6-59 months, boys and girls.",
+    "q": [
+      ["Reporting month end date", "Date"], ["SFP site", "Place"],
+      ["Functional SFP sites reporting", "Number"],
+      ["New MAM admissions - boys", "Number"], ["New MAM admissions - girls", "Number"], ["New MAM admissions - total", "Number"],
+      ["Discharged cured - boys", "Number"], ["Discharged cured - girls", "Number"], ["Discharged cured - total", "Number"],
+      ["Died - boys", "Number"], ["Died - girls", "Number"], ["Died - total", "Number"],
+      ["Defaulted - boys", "Number"], ["Defaulted - girls", "Number"], ["Defaulted - total", "Number"],
+      ["Non-responders - boys", "Number"], ["Non-responders - girls", "Number"], ["Non-responders - total", "Number"],
+      ["Moved out - boys", "Number"], ["Moved out - girls", "Number"], ["Moved out - total", "Number"]
+    ],
+    "m": [["OP1.3-7", "Functional SFP sites reporting"], ["OP1.3-1", "New MAM admissions - total"], ["OP1.3-2", "Discharged cured - total"], ["OP1.3-3", "Died - total"], ["OP1.3-4", "Defaulted - total"], ["OP1.3-5", "Non-responders - total"], ["OP1.3-6", "Moved out - total"]]
+  },
+  {
+    "name": "Stabilisation centre monthly report (SAM with complications)",
+    "about": "One record per stabilisation centre per month: admissions and exits, boys and girls.",
+    "q": [
+      ["Reporting month end date", "Date"], ["Stabilisation centre", "Place"],
+      ["Functional stabilisation centres reporting", "Number"],
+      ["New admissions - boys", "Number"], ["New admissions - girls", "Number"], ["New admissions - total", "Number"],
+      ["Discharged cured - boys", "Number"], ["Discharged cured - girls", "Number"], ["Discharged cured - total", "Number"],
+      ["Died - boys", "Number"], ["Died - girls", "Number"], ["Died - total", "Number"],
+      ["Defaulted - boys", "Number"], ["Defaulted - girls", "Number"], ["Defaulted - total", "Number"]
+    ],
+    "m": [["OP1.4-5", "Functional stabilisation centres reporting"], ["OP1.4-1", "New admissions - total"], ["OP1.4-2", "Discharged cured - total"], ["OP1.4-3", "Died - total"], ["OP1.4-4", "Defaulted - total"]]
+  },
+  {
+    "name": "Community MUAC screening monthly report",
+    "about": "One record per tehsil or site per month: children 6-59 months screened by MUAC and oedema check, boys and girls.",
+    "q": [
+      ["Reporting month end date", "Date"], ["Tehsil or site", "Place"],
+      ["Children screened - boys", "Number"], ["Children screened - girls", "Number"], ["Children screened - total", "Number"],
+      ["MUAC above 12.5 cm - total", "Number"], ["MUAC 11.5 to 12.5 cm (MAM) - total", "Number"], ["MUAC below 11.5 cm (SAM) - total", "Number"], ["Bilateral pitting oedema - total", "Number"]
+    ],
+    "m": [["OP1.1-1", "Children screened - total"], ["OP1.1-2", "MUAC above 12.5 cm - total"], ["OP1.1-3", "MUAC 11.5 to 12.5 cm (MAM) - total"], ["OP1.1-4", "MUAC below 11.5 cm (SAM) - total"], ["OP1.1-5", "Bilateral pitting oedema - total"]]
+  },
+  {
+    "name": "PLW, IYCF and micronutrients monthly report",
+    "about": "One record per site or tehsil per month: PLW screening and SFP, IYCF counselling, MNP, IFA and MMN.",
+    "q": [
+      ["Reporting month end date", "Date"], ["Site or tehsil", "Place"],
+      ["PLW screened by MUAC", "Number"], ["Malnourished PLW enrolled in SFP", "Number"], ["PLW discharged cured from SFP", "Number"], ["PLW defaulted from SFP", "Number"],
+      ["IYCF sessions at health facilities", "Number"], ["IYCF sessions in communities", "Number"], ["PLW and caregivers counselled at health facilities", "Number"], ["PLW and caregivers counselled in communities", "Number"],
+      ["Children 6-23 months given MNP - boys", "Number"], ["Children 6-23 months given MNP - girls", "Number"], ["Children 6-23 months given MNP - total", "Number"],
+      ["PLW given IFA", "Number"], ["PLW given MMN", "Number"]
+    ],
+    "m": [["OP2.1-1", "PLW screened by MUAC"], ["OP2.1-2", "Malnourished PLW enrolled in SFP"], ["OP2.1-3", "PLW discharged cured from SFP"], ["OP2.1-4", "PLW defaulted from SFP"], ["OP2.2-1", "IYCF sessions at health facilities"], ["OP2.2-2", "IYCF sessions in communities"], ["OP2.2-3", "PLW and caregivers counselled at health facilities"], ["OP2.2-4", "PLW and caregivers counselled in communities"], ["OP2.3-1", "Children 6-23 months given MNP - total"], ["OP2.3-2", "PLW given IFA"], ["OP2.3-3", "PLW given MMN"]]
+  },
+  {
+    "name": "Nutrition supplies monthly stock report",
+    "about": "One record per district store per month: received, consumed and left over (RUTF, RUSF, MNP, F-75, F-100, ReSoMal, IFA, MUAC tapes).",
+    "q": [
+      ["Reporting month end date", "Date"], ["Store or site", "Place"],
+      ["RUTF cartons received", "Number"], ["RUTF cartons consumed", "Number"], ["RUTF cartons left over", "Number"],
+      ["RUSF cartons received", "Number"], ["RUSF cartons consumed", "Number"], ["RUSF cartons left over", "Number"],
+      ["MNP boxes received", "Number"], ["MNP boxes consumed", "Number"], ["MNP boxes left over", "Number"],
+      ["F-75 received", "Number"], ["F-75 consumed", "Number"], ["F-100 received", "Number"], ["F-100 consumed", "Number"],
+      ["ReSoMal sachets received", "Number"], ["ReSoMal sachets consumed", "Number"], ["IFA tablets received", "Number"], ["IFA tablets consumed", "Number"], ["MUAC tapes received", "Number"], ["MUAC tapes in use", "Number"]
+    ],
+    "m": [["OP3.1-1", "RUTF cartons received"], ["OP3.1-2", "RUTF cartons consumed"], ["OP3.1-3", "RUSF cartons received"], ["OP3.1-4", "RUSF cartons consumed"], ["OP3.1-5", "MNP boxes received"], ["OP3.1-6", "MNP boxes consumed"]]
+  },
+  {
+    "name": "District monthly report, training and supervision",
+    "about": "One record per district per month: report submitted on time, health staff trained and supervision visits.",
+    "q": [
+      ["Reporting month end date", "Date"], ["District", "Place"],
+      ["Monthly report submitted on time (1 = yes)", "Number"], ["Health staff trained this month", "Number"], ["Supportive supervision visits this month", "Number"]
+    ],
+    "m": [["OP3.2-1", "Monthly report submitted on time (1 = yes)"], ["OP3.2-2", "Health staff trained this month"], ["OP3.2-3", "Supportive supervision visits this month"]]
+  }
+]

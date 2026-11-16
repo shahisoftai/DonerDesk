@@ -12,6 +12,8 @@ A collection form is a set of questions your team answers, or people answer thro
 
 A published form cannot be changed. To change questions, close it and make a new form; earlier answers keep the questions they were given.
 
+A draft that was never published can be removed with **Delete this draft** (you are asked to confirm). A published or closed form cannot be deleted, because it keeps its answers.
+
 ## Answer a form
 
 Open the form and choose **Fill in**. Answers that do not fit the question are explained beside it. Photos are JPEG, PNG, WebP or PDF, up to 5 MB.

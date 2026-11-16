@@ -1,0 +1,21 @@
+import { attach, BASE } from "../lib.mjs";
+const { page, shot, browser } = await attach("v58a");
+page.setDefaultTimeout(20000);
+const pid = "f2a96a79-148d-4ec6-86d8-8bc58aeb90cb";
+await page.goto(`${BASE}/projects/${pid}/setup`); await page.waitForTimeout(3500);
+const t = await page.locator("main").innerText(); console.log("SETUP:", t.match(/\d+ reportable of \d+\.[^\n]*/)?.[0]);
+await page.goto(`${BASE}/projects/${pid}/forms`); await page.waitForTimeout(3000);
+const l = (await page.locator("main a[href*='/forms/']").evaluateAll(a => a.map(x => [x.innerText.split("\n")[0], x.href]))).filter(x => /^OP3\.2-3/.test(x[0]));
+console.log("draft to delete:", l[0]?.[0]);
+await page.goto(l[0][1]); await page.waitForTimeout(2500);
+page.once("dialog", d => d.accept());
+await page.getByRole("button", { name: "Delete this draft" }).click(); await page.waitForTimeout(4000);
+console.log(page.url());
+const t2 = await page.locator("main").innerText(); console.log("still listed:", /OP3\.2-3: Supportive/.test(t2));
+await shot("v58a");
+// a published form must not offer delete
+await page.goto(`${BASE}/projects/${pid}/forms`); await page.waitForTimeout(2500);
+const pub = (await page.locator("main a[href*='/forms/']").evaluateAll(a => a.map(x => [x.innerText.split("\n")[0], x.href]))).find(x => /^OTP monthly/.test(x[0]));
+await page.goto(pub[1]); await page.waitForTimeout(2500);
+console.log("published has delete button:", await page.getByRole("button", { name: "Delete this draft" }).count());
+await browser.close();

@@ -1,0 +1,13 @@
+import { attach } from "../lib.mjs";
+const { page, shot, browser } = await attach("vz6");
+page.setDefaultTimeout(20000);
+const S = page.locator("select");
+const pick = async (i, startsWith) => { const o = await S.nth(i).locator("option").allInnerTexts(); await S.nth(i).selectOption({ label: o.find(x => x.startsWith(startsWith)) }); await page.waitForTimeout(700); };
+await pick(1, "[DEMO-17]");
+console.log("who:", await S.nth(2).locator("option").allInnerTexts());
+await pick(2, (await S.nth(2).locator("option").allInnerTexts()).find(x => !/Only me/.test(x)).slice(0, 12));
+await pick(3, "OP1.1-1 "); await pick(4, "OP1.2-1 "); await pick(5, "OP2.2-3 "); await pick(6, "OP1.2-7 "); await pick(7, "OC1-1 ");
+await shot("vz6");
+await page.getByRole("button", { name: "Create the dashboard" }).click(); await page.waitForTimeout(8000);
+console.log(page.url()); const t = await page.locator("main").innerText(); console.log(t.slice(0, 600));
+await shot("vz6b"); await browser.close();

@@ -425,3 +425,6 @@ memorybank/
 - Feature: [`Features/67-Place-First-Entry-And-By-Place-Sheet.md`](Features/67-Place-First-Entry-And-By-Place-Sheet.md). Plan, decisions and audit: [`imp/phase57-place-first-entry.md`](imp/phase57-place-first-entry.md).
 - Deployed 2026-11-16 (`20261116120000`, fixes `20261116140000` and `20261116160000`); no migration, no env, no RLS change. Checked live on DEMO-16.
 - Support: `how-to-record-figures-by-place.md` (two new sections), `how-to-record-data.md`, `how-to-update-indicator-values.md`, `how-to-use-the-field-app-offline.md`.
+
+## Phase 58 — simpler for every level of user (2026-11-16)
+- Plan and status: [`imp/phase58-simpler-for-everyone.md`](imp/phase58-simpler-for-everyone.md). Suggested indicator settings with reasons, sheet Type / Break down by columns, delete a draft form, Setup explains "reportable of". Backlog 58.7-58.12 listed there. Demo record: [`demo/verification-demo-17.md`](demo/verification-demo-17.md).

@@ -1044,6 +1044,7 @@ export const ProjectReadinessSnapshotSchema = z.object({
     total: z.number(),
     reportable: z.number(),
     incomplete: z.number(),
+    missing: z.object({ baseline: z.number(), target: z.number(), unit: z.number(), frequency: z.number() }).optional(),
   }),
   team: z.object({
     assigned: z.boolean(),

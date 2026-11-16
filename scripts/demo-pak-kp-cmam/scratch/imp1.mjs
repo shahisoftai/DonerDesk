@@ -1,0 +1,11 @@
+import { attach, BASE } from "../lib.mjs";
+import { readFileSync } from "node:fs";
+const { page, shot, browser } = await attach("imp1");
+page.setDefaultTimeout(30000);
+const pid = readFileSync(new URL("../pid.txt", import.meta.url), "utf8").trim();
+const D = new URL("../inputs/", import.meta.url).pathname;
+await page.goto(`${BASE}/projects/${pid}/activities`); await page.waitForTimeout(3000);
+await page.getByRole("link", { name: "Import a sheet" }).first().click(); await page.waitForTimeout(3000); console.log(page.url());
+const t = await page.locator("main").innerText(); console.log(t.slice(0, 1500));
+console.log(await page.locator("input[type=file]").count());
+await shot("imp1"); await browser.close();

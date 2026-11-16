@@ -25,10 +25,15 @@ export function TemplateGallery({ templates, projects, canEdit }: { templates: T
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState<TemplateApplied | null>(null);
   const panelRef = useRef<HTMLElement | null>(null);
+  const readyRef = useRef<HTMLParagraphElement | null>(null);
   // The apply form opens below the whole gallery: bring it into view so the click visibly does something.
   useEffect(() => {
     if (open && !applied) panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [open, applied]);
+  // Once the dashboard exists the success note is the thing to see: bring it into view (it used to appear below a very long page, and people clicked Create again).
+  useEffect(() => {
+    if (applied) readyRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [applied]);
 
   const bySector = new Map<string, TemplateSummary[]>();
   for (const t of templates) bySector.set(t.sectorLabel, [...(bySector.get(t.sectorLabel) ?? []), t]);
@@ -134,8 +139,8 @@ export function TemplateGallery({ templates, projects, canEdit }: { templates: T
       )}
 
       {applied && (
-        <p role="status" data-testid="applied" className="rounded-lg bg-emerald-50 p-3 text-sm dark:bg-emerald-500/10">
-          Your dashboard is ready. <a className="underline" href={`/visuals/open/dashboard/${applied.dashboardId}`}>Open it</a>.
+        <p ref={readyRef} tabIndex={-1} role="status" data-testid="applied" className="rounded-lg bg-emerald-50 p-3 text-sm dark:bg-emerald-500/10">
+          Your dashboard is ready. <a className="btn px-3 py-1 text-sm" href={`/visuals/open/dashboard/${applied.dashboardId}`}>Open it</a>.
           {applied.chartsLeftOut.length > 0 ? ` ${applied.chartsLeftOut.length} chart${applied.chartsLeftOut.length === 1 ? " was" : "s were"} left out because ${applied.chartsLeftOut.length === 1 ? "it needs" : "they need"} an indicator you did not choose.` : ""}
         </p>
       )}

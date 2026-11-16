@@ -94,6 +94,7 @@ export const PCW_FR: PcwBundle = {
       add: "Ajouter un indicateur", name: "Ce qui sera mesuré", result: "Mesure", type: "Type de nombre", unit: "Unité", baseline: "Valeur de départ",
       noBaseline: "Pas de valeur de départ", target: "Cible", frequency: "Fréquence", frequencyRegular: "À intervalles réguliers", frequencyEvent: "Quand cela a lieu", breakdown: "Ventiler par (séparer par des virgules)", owner: "Responsable",
       direction: "Meilleur quand", higher: "Plus haut", lower: "Plus bas", choose: "— choisir —",
+      suggest: "Appliquer les réglages suggérés à tous", suggestNote: "Ne remplit que ce qui est vide : le type de nombre, le sens favorable et le responsable (le chargé de suivi et évaluation). Chaque suggestion a sa raison ; modifiez ensuite chaque fiche.", suggestNone: "Plus rien à suggérer.",
       bulk: "Renseigner tous les indicateurs encore vides", applyFrequency: "Fréquence", applyBreakdown: "Ventiler par", apply: "Renseigner",
       empty: "Aucun indicateur pour l'instant. Chaque produit en a besoin d'au moins un.",
     },

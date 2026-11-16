@@ -221,6 +221,7 @@ export class ProjectReadinessService implements IProjectReadinessService {
           total: projectIndicators.length,
           reportable: reportable.length,
           incomplete: projectIndicators.length - reportable.length,
+          missing: this.missingFields(projectIndicators),
         },
         team: {
           assigned: teamRoles.anyoneAssigned,
@@ -255,6 +256,17 @@ export class ProjectReadinessService implements IProjectReadinessService {
     const quantitative = ind.type !== "YES_NO" && ind.type !== "TEXT";
     if (quantitative) return hasBaseline && hasTarget && hasUnit && hasFrequency;
     return true;
+  }
+
+  /** How many quantitative indicators lack each field reporting needs, so Setup can say why (Phase 58.5). */
+  private missingFields(inds: ReadonlyArray<{ baseline: string; target: string; unit?: string; frequency?: string; type: string }>) {
+    const quantitative = inds.filter((i) => i.type !== "YES_NO" && i.type !== "TEXT");
+    return {
+      baseline: quantitative.filter((i) => !this.nonEmpty(i.baseline)).length,
+      target: quantitative.filter((i) => !this.nonEmpty(i.target)).length,
+      unit: quantitative.filter((i) => !this.nonEmpty(i.unit)).length,
+      frequency: quantitative.filter((i) => !this.nonEmpty(i.frequency)).length,
+    };
   }
 
   private nonEmpty(value: string | undefined): boolean {

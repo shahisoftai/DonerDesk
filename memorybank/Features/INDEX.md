@@ -265,3 +265,9 @@ Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project work
 | # | Feature | Doc |
 |---|---|---|
 | 67 | Record → Everything at a place (place + day → planned work and every figure measured there, splits inside a place), By place view of the Entry Sheet, Excel in the DevResults layout, offline pack v3 | [67-Place-First-Entry-And-By-Place-Sheet.md](./67-Place-First-Entry-And-By-Place-Sheet.md) |
+
+## Phase 58 — simpler for every level of user (2026-11-16)
+
+| # | Feature | Doc |
+|---|---|---|
+| 68 | Suggested indicator settings (type, direction, owner) with reasons, indicator sheet Type / Break down by columns, delete a draft form, Setup explains "reportable of" | `memorybank/imp/phase58-simpler-for-everyone.md` |

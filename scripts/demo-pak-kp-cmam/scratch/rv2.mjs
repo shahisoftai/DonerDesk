@@ -1,0 +1,11 @@
+import { attach, BASE } from "../lib.mjs";
+import { readFileSync } from "node:fs";
+const { page, shot, browser } = await attach("rv2");
+page.setDefaultTimeout(30000);
+const pid = readFileSync(new URL("../pid.txt", import.meta.url), "utf8").trim();
+await page.waitForTimeout(8000);
+await page.goto(`${BASE}/projects/${pid}/setup`); await page.waitForTimeout(3000);
+let t = await page.locator("main").innerText(); console.log(t.match(/\d+ reportable of \d+/)?.[0], /need their calculation/.test(t));
+await page.getByRole("button", { name: "Mark setup complete" }).click(); await page.waitForTimeout(3000);
+t = await page.locator("main").innerText(); console.log(t.slice(t.indexOf("Setup status"), t.indexOf("Setup status") + 200));
+await shot("rv2"); await browser.close();

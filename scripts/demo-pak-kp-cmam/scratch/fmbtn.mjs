@@ -1,0 +1,10 @@
+import { attach, BASE } from "../lib.mjs";
+import { readFileSync } from "node:fs";
+const { page, browser } = await attach("fmbtn");
+const pid = readFileSync(new URL("../pid.txt", import.meta.url), "utf8").trim();
+await page.goto(`${BASE}/projects/${pid}/forms`); await page.waitForTimeout(3000);
+const l = await page.locator("main a[href*='/forms/']").evaluateAll(a => a.map(x => [x.innerText.split("\n")[0].slice(0, 50), x.href.split("/").pop()]));
+console.log(l.length, l.slice(0, 3), l.slice(-3));
+await page.goto(l[10][1].length ? `${BASE}/projects/${pid}/forms/${l[10][1]}` : ""); await page.waitForTimeout(2500);
+console.log(await page.getByRole("button").allInnerTexts().then(a => a.filter(x => x.length < 40)));
+await browser.close();

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   applyCollectionTotalsAction, createCollectionLinkAction, getCollectionTotalsAction, listCollectionLinksAction, listCollectionRecordsAction,
-  getCollectionTemplateAction, importCollectionRecordsAction, reviewCollectionRecordAction, revokeCollectionLinkAction, setCollectionFormStatusAction, submitCollectionRecordAction,
+  getCollectionTemplateAction, importCollectionRecordsAction, reviewCollectionRecordAction, revokeCollectionLinkAction, setCollectionFormStatusAction, deleteDraftCollectionFormAction, submitCollectionRecordAction,
 } from "@/lib/actions/collection";
 import { useActionState } from "@/lib/client/action-state";
 import { newIdempotencyKey } from "@/lib/shared/create-retry";
@@ -46,11 +46,17 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: 
     if (await status.run(() => setCollectionFormStatusAction(form.id, to))) router.refresh();
   }
 
+  async function removeDraft() {
+    if (!window.confirm("Delete this draft form? It was never published, so no answers are lost.")) return;
+    if (await status.run(() => deleteDraftCollectionFormAction(form.id))) router.push(`/projects/${form.projectId}/forms`);
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <Badge tone={form.status === "PUBLISHED" ? "success" : "neutral"}>{STATUS_LABEL[form.status]}</Badge>
         {canEdit && form.status === "DRAFT" && <Button onClick={() => void setState("publish")} pending={status.busy}>Publish</Button>}
+        {canEdit && form.status === "DRAFT" && <Button variant="secondary" onClick={() => void removeDraft()} pending={status.busy}>Delete this draft</Button>}
         {canEdit && form.status === "PUBLISHED" && <Button variant="secondary" onClick={() => void setState("close")} pending={status.busy}>Close this form</Button>}
         {status.error && <span role="alert" className="text-sm text-danger-600">{status.error}</span>}
       </div>

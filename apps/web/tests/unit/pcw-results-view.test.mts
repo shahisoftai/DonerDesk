@@ -60,3 +60,28 @@ test("the kinds, frequencies and words on these slides are plain language", () =
   const texts = [...Object.values(INDICATOR_TYPE_LABEL), ...FREQUENCIES, ...BREAKDOWN_SUGGESTIONS, ...Object.values(PCW_COPY.indicators), ...Object.values(PCW_COPY.results).filter((v): v is string => typeof v === "string"), PCW_COPY.results.keepCodes(3)];
   for (const t of texts) assert.deepEqual(findRawTokens(t), [], t);
 });
+
+import { suggestIndicatorSettings } from "../../src/features/project-setup/pcw/domain/results-view.ts";
+
+const row = (code: string, title: string, over: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) =>
+  ({ item: { path: `indicators/${code}` }, value: { code, title, type: null, unit: null, target: null, ...over }, ownerKey: "", direction: "", baselineNone: false, ...extra }) as never;
+const team = [{ key: "p-imran", role: "ME_OFFICER" }, { key: "p-gul", role: "FIELD_OFFICER" }];
+
+test("suggested settings fill only the gaps: type, direction and the single M&E officer as owner", () => {
+  const out = suggestIndicatorSettings([row("A", "OTP death rate"), row("B", "Children screened", { target: "100" })], team as never);
+  assert.equal(out[0]!.direction, "LOWER");
+  assert.equal(out[0]!.type, "PERCENTAGE");
+  assert.equal(out[0]!.ownerKey, "p-imran");
+  assert.equal(out[1]!.type, "NUMBER");
+  assert.equal(out[1]!.direction, "HIGHER");
+});
+
+test("a choice the person already made is never suggested over", () => {
+  const out = suggestIndicatorSettings([row("A", "OTP death rate", { type: "PERCENTAGE" }, { direction: "HIGHER", ownerKey: "p-gul" })], team as never);
+  assert.equal(out.length, 0);
+});
+
+test("two M&E officers means no owner is suggested", () => {
+  const out = suggestIndicatorSettings([row("A", "Children screened", { target: "5" })], [...team, { key: "p-x", role: "ME_OFFICER" }] as never);
+  assert.equal(out[0]!.ownerKey, null);
+});

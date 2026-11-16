@@ -53,6 +53,8 @@ export interface ICollectionFormRepository {
   update(form: StoredCollectionForm): Promise<Result<void>>;
   findById(id: string, tenantId: TenantId): Promise<Result<StoredCollectionForm | null>>;
   listByProject(projectId: string, tenantId: TenantId): Promise<Result<StoredCollectionForm[]>>;
+  /** Removes a form only while it is still a draft (a published form keeps its records); true when a row was removed. */
+  deleteDraft(id: string, tenantId: TenantId): Promise<Result<boolean>>;
 }
 
 export interface ICollectionRecordRepository {

@@ -1,0 +1,12 @@
+import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
+const require = createRequire("/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/apps/web/package.json");
+const { chromium } = require("@playwright/test");
+const inv = JSON.parse(readFileSync(new URL("../invites.json", import.meta.url)));
+const b = await chromium.connectOverCDP("http://localhost:9333");
+const ctx = await b.newContext(); const page = await ctx.newPage(); page.setDefaultTimeout(20000);
+await page.goto("https://donordesk.online" + inv[0][2]); await page.waitForTimeout(4000);
+console.log(page.url()); console.log((await page.locator("body").innerText()).slice(0, 1200));
+console.log(await page.locator("input, select, button").evaluateAll(e => e.map(x => x.tagName + ":" + (x.getAttribute("aria-label") || x.name || x.type || x.innerText).slice(0, 30))));
+await page.screenshot({ path: new URL("../shots/accept1.png", import.meta.url).pathname });
+await b.close();

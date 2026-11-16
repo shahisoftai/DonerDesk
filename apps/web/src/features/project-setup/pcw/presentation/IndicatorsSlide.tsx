@@ -12,7 +12,7 @@ import { roleLabel } from "../domain/team-view";
 import { usePcwCopy } from "./usePcwCopy";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { presetVocabulary } from "@donordesk/domain/contexts/logframe/framework-vocabulary.js";
-import { BREAKDOWN_SUGGESTIONS, FREQUENCIES, FREQUENCY_GROUPS, INDICATOR_TYPES, INDICATOR_TYPE_LABEL, indicatorRows, indicatorTargets, parseBreakdown } from "../domain/results-view";
+import { BREAKDOWN_SUGGESTIONS, FREQUENCIES, FREQUENCY_GROUPS, INDICATOR_TYPES, INDICATOR_TYPE_LABEL, indicatorRows, indicatorTargets, parseBreakdown, suggestIndicatorSettings } from "../domain/results-view";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
 import { WizardLibraryPanel } from "@/features/sector-library/presentation/WizardLibraryPanel";
@@ -36,6 +36,17 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
+  const suggestions = suggestIndicatorSettings(rows, team);
+  const applySuggestions = () => startTransition(async () => {
+    let latest: SetupDraftView | null = null;
+    for (const s of suggestions) {
+      if (s.type) { const r = await changeResultsAction(id, { kind: "EDIT_INDICATOR", path: s.path, patch: { type: s.type } }); if (!r.ok) return setError(r.error.message); latest = r.value; }
+      const patch: Patch = { ...(s.direction ? { direction: s.direction, directionConfirmed: true } : {}), ...(s.ownerKey ? { ownerKey: s.ownerKey } : {}) };
+      if (Object.keys(patch).length > 0) { const r = await editDraftAction(id, { kind: "SET_INDICATOR_SETUP", code: s.code, patch }); if (!r.ok) return setError(r.error.message); latest = r.value; }
+    }
+    if (latest) take(latest);
+  });
+
   const take = (v: SetupDraftView) => { setError(null); onView(v); };
   const run = (work: () => Promise<{ ok: true; value: SetupDraftView } | { ok: false; error: { message: string } }>) =>
     startTransition(async () => { const r = await work(); if (r.ok) take(r.value); else setError(r.error.message); });
@@ -54,6 +65,12 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
     <div className="space-y-6">
       <WizardLibraryPanel id={id} view={view} onView={onView} />
       <AcceptAllWaiting id={id} area="INDICATORS" items={view.indicators} onView={onView} onError={setError} />
+      {suggestions.length > 0 ? (
+        <section className="space-y-2 rounded-xl border border-brand-200 bg-brand-50 p-4 dark:border-brand-900 dark:bg-brand-950/30" data-testid="suggest-defaults">
+          <p className="text-sm">{c.suggestNote}</p>
+          <button type="button" className="btn" disabled={pending} onClick={applySuggestions}>{c.suggest} ({suggestions.length})</button>
+        </section>
+      ) : null}
       {rows.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.empty}</p> : null}
       {rows.map(({ item, value, ownerKey, direction, baselineNone }) => (
         <article key={item.path} className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-white/10">
