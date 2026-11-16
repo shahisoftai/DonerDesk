@@ -13,7 +13,7 @@ To be **Ready**, a project needs:
 - at least one indicator, and every quantitative indicator with a baseline, target, unit and frequency;
 - a reporting profile.
 
-Team assignment is recommended but not blocking. Until the project is ready you cannot create a reporting period, but you can still work on evidence, activities, logframe, templates and team. The **readiness breakdown** lists each blocker with a **Fix** link. Click **Mark setup complete** once it is ready.
+Team assignment is recommended but not blocking. Until the project is ready you cannot create a reporting period, but you can still work on evidence, activities, logframe, templates and team. The **readiness breakdown** lists each blocker with a **Fix** link. Click **Mark setup complete** once it is ready. The **Logframe and indicators** line says how many indicators are reportable and why the rest are not, for example *44 reportable of 55. 11 need a starting value.* A quantitative indicator needs a starting value, a target, a unit and a frequency.
 
 ## 2. Report readiness (in the editor)
 

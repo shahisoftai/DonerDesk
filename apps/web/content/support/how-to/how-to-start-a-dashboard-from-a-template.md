@@ -4,7 +4,7 @@
 2. Choose **Look inside** to see what it holds, **Copy and edit** to make your own copy, or **Use this template**.
 3. In *Make a dashboard from “…”*, pick the **Project**, a **Name** and **Who sees it** (**Only me** or **Everyone on the project**).
 4. Match each **role** (for example "People with basic water access (needed)") to one of the project's indicators. DonorDesk suggests matches by shared words, never reuses an indicator and never guesses. You choose; leave one empty if none fits.
-5. Click **Create the dashboard**. The page says *Your dashboard is ready. Open it.*
+5. Click **Create the dashboard** once. The page scrolls to *Your dashboard is ready. Open it.*, where **Open it** is a button. Use it instead of clicking Create again, which makes a second copy. A dashboard made this way is a copy of the template for your project and is listed under **Your designs** once you have opened it.
 
 ## What you get
 - A headline row of up to four indicator tiles for the roles you matched, then the charts.

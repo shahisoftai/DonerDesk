@@ -591,3 +591,7 @@ fake Drive readiness; period creation validates readiness, ownership, dates, ove
 immutable snapshots; and existing work survives a controlled, reversible rollout; and project lifecycle (activation,
 archive, completion), post-create editability, and project-scoped access control are defined and
 enforced.
+
+
+## Phase 58 (2026-11-16): fewer things to type
+Full note: `Features/68-Simpler-Setup-Phase-58.md`. **Use suggested settings for all** on the Indicators slide (kind of number, which way is better, owner, each with a reason, never over a choice); an indicator sheet's Type and Break down by columns are read; a work-plan sheet's **Repeats** column (Weekly / Monthly) reaches the launch (`PlannedActivityDef.repeats`, written back by `workPlanSheet`) and the slide says "Repeats every month until the project ends"; a start with several files has a 100 s limit (`UPLOAD_TIMEOUT_MS`); the work-plan sheet reader blanks the lead column (`withoutLeadColumn`) because emails are redacted before a reader sees them and a lead is never read from a document. Not built: setting a repeat by hand in the wizard, a read-coverage report, adding files after the first read.

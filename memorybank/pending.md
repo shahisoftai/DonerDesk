@@ -2,11 +2,16 @@
 
 **DonorDesk Version 4.01**
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-11-15 (Version 4.000 section added at the top; the priority board below was audited 2026-10-22).
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-11-16 (Phase 58 section added) (Version 4.000 section added at the top; the priority board below was audited 2026-10-22).
+
+## Simpler setup (Phase 58) — deployed 2026-11-16; what is left
+- Built: suggested indicator settings, sheet Type / Break down by, plan Repeats, multi-file start limit, delete a draft form, Setup says why, dashboard-ready note (`Features/68-Simpler-Setup-Phase-58.md`).
+- Backlog (reasons in `imp/phase58-simpler-for-everyone.md`): set a repeat by hand in the wizard; a read-coverage report and adding files after the first read; asking "district or sub-area?" for an ambiguous place and treating "Khyber Pakhtunkhwa" and the boundary's "K.P." as one place; computed totals and sector form templates; editing a published form with versions; listing dashboards made at launch or from a template before they are opened; a lone work-plan CSV was read as 25 results (seen once, not investigated); whether a missing baseline should block "reportable" (product decision); role-based screens; a four-slide simple mode; plain-language labels with native review.
+- The Pakistan KP demo (`scripts/demo-pak-kp-cmam/`, `verification-demo-17.md`): `run-demo.mjs` was proven phase by phase, not as one run; 44 wizard draft forms and up to three duplicate dashboards remain on DEMO-17.
 
 ## Place-first entry and the by-place sheet (Phase 57) — deployed 2026-11-16; what is left
 
-- Commit and push the branch `0025-place-tree` (the deployed tree is uncommitted, including earlier wizard/LLM work).
+- ~~Commit and push the branch `0025-place-tree`~~ done 2026-11-16 (`5b23891e`, `ca3d6dec`, `a2b4a87a`).
 - Native review of the place-entry copy in French, Spanish and Arabic (drafts).
 - Splits inside a place are entered in place-first only: no splits column in By place or the Excel file yet.
 - A DB journey test for two concurrent place saves (covered today by the domain merge tests and the live check, not by an integration test).

@@ -38,3 +38,7 @@ Offline indicator-value entry; offline review; background sync while the app is 
 
 ## Phase 49 (2026-11-10): map for offline use
 The field app can keep a street map of the project's country (`OfflineMapCard`): size first (`GET /v1/projects/:id/offline-basemap?check=1`), cut on the host with `pmtiles extract`, kept in the Cache API per person, served by the service worker with byte ranges, wiped on sign-out. Public map data only.
+
+
+## Phase 58 (2026-11-16): delete a draft
+`DELETE /v1/collection-forms/:id` (`DeleteDraftCollectionFormHandler`, `project.edit`, audited `collection.form.deleted`) removes a form only while it is a DRAFT (the repository deletes `WHERE status = 'DRAFT'`, so a form published at the same moment survives); the form page offers **Delete this draft**. A published or closed form keeps its records and is closed, never deleted. Demo 17 (`scripts/demo-pak-kp-cmam/forms.json`) shows the pattern of one consolidated form per register (OTP, SFP, SC, screening, PLW/IYCF, supplies, district) with a total question per indicator, because a form cannot yet compute boys + girls = total.
