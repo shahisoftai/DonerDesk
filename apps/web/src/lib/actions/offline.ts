@@ -17,7 +17,11 @@ const PackSchema = z.object({
   // Pack v2: absent from an older server, so each part is optional.
   indicators: z.array(z.object({ id: z.string(), code: z.string(), name: z.string(), type: z.string(), disaggregationRequired: z.boolean(), recordByPlace: z.boolean().optional(), placeLevel: z.number().optional(), unit: z.string().optional(), frequency: z.string().optional() })).optional(),
   periods: z.array(z.object({ id: z.string(), reportType: z.string(), startDate: z.string(), endDate: z.string(), status: z.string() })).optional(),
-  plan: z.array(z.object({ id: z.string(), title: z.string(), plannedStart: z.string(), plannedEnd: z.string(), status: z.string(), location: z.string().optional() })).optional(),
+  plan: z.array(z.object({ id: z.string(), title: z.string(), plannedStart: z.string(), plannedEnd: z.string(), status: z.string(), location: z.string().optional(), placeIds: z.array(z.string()).optional() })).optional(),
+  // Pack v3 (Phase 57): place-first entry.
+  entryPlaces: z.array(z.object({ placeId: z.string(), name: z.string(), path: z.string() })).optional(),
+  indicatorPlaces: z.array(z.object({ indicatorId: z.string(), scope: z.string(), level: z.number().nullable().optional(), placeIds: z.array(z.string()).optional() })).optional(),
+  placeCells: z.array(z.object({ periodId: z.string(), indicatorId: z.string(), placeId: z.string(), value: z.string(), locked: z.boolean(), lockReason: z.string().optional() })).optional(),
 });
 
 /** The projects whose forms the signed-in person can fill, for the "download for offline" list. */
@@ -38,6 +42,6 @@ export async function downloadOfflinePackAction(projectId: string, projectName: 
   if (!result.ok) return result;
   return {
     ok: true,
-    value: packFromServer({ userId: payload.sub, userName: payload.name ?? "", projectId, projectName, generatedAt: result.value.generatedAt, forms: result.value.forms as never, places: result.value.places, indicators: result.value.indicators, periods: result.value.periods, plan: result.value.plan }),
+    value: packFromServer({ userId: payload.sub, userName: payload.name ?? "", projectId, projectName, generatedAt: result.value.generatedAt, forms: result.value.forms as never, places: result.value.places, indicators: result.value.indicators, periods: result.value.periods, plan: result.value.plan, entryPlaces: result.value.entryPlaces, indicatorPlaces: result.value.indicatorPlaces, placeCells: result.value.placeCells }),
   };
 }

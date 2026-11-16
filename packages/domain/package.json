@@ -122,6 +122,10 @@
       "types": "./dist/contexts/activities/activity-narrative.d.ts",
       "import": "./dist/contexts/activities/activity-narrative.js"
     },
+    "./contexts/logframe/place-cell.js": {
+      "types": "./dist/contexts/logframe/place-cell.d.ts",
+      "import": "./dist/contexts/logframe/place-cell.js"
+    },
     "./contexts/logframe/quick-entry.js": {
       "types": "./dist/contexts/logframe/quick-entry.d.ts",
       "import": "./dist/contexts/logframe/quick-entry.js"

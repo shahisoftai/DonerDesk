@@ -4,6 +4,7 @@
  * (a type check and a test enforce it), with the same `{placeholders}`.
  */
 import { recordEn } from "./record-en.ts";
+import { placeEntryEn } from "./place-entry-en.ts";
 import { datasetsEn } from "./datasets-en.ts";
 import { libraryEn } from "./library-en.ts";
 import { frameworkEn } from "./framework-en.ts";
@@ -72,7 +73,7 @@ export const en = {
   "field.downloadedNone": "Downloaded, but this project has no form open for answers yet.",
   "field.downloaded.one": "Downloaded {count} form. You can fill it with no connection.",
   "field.downloaded.other": "Downloaded {count} forms. You can fill them with no connection.",
-  "field.whatKept": "What is kept on the phone: the form questions and the list of places. No records or figures. It is removed when you sign out.",
+  "field.whatKept": "What is kept on the phone: the form questions, the list of places, your planned work for the next two weeks and the current figures of your project's places for the open periods. It is removed when you sign out.",
   "field.cannotKeep": "This browser cannot keep forms on the phone. Open this page in an up-to-date browser.",
 
   "pack.today": "Downloaded today.",
@@ -892,6 +893,7 @@ export const en = {
   "maps.boundary.uploading": "Uploading…",
   "maps.sources.link": "Map sources and licences",
   ...recordEn,
+  ...placeEntryEn,
   ...datasetsEn,
   ...canvasEn,
   ...editor50En,

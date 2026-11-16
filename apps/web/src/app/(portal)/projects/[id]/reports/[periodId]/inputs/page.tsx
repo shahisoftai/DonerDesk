@@ -13,6 +13,7 @@ import { loadReportingProfileAction } from "@/lib/actions/setup";
 import { InlineError } from "@/components/feedback/PageState";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 import { IndicatorEntryGrid } from "@/features/reporting/presentation/IndicatorEntryGrid";
+import { EntryViewSwitch } from "@/features/reporting/presentation/EntryViewSwitch";
 import { StoryInputs } from "@/features/report-editor/presentation/inputs/StoryInputs";
 import { getComplianceNotesAction } from "@/lib/actions/reporting";
 import { ComplianceNotes } from "@/features/report-editor/presentation/inputs/ComplianceNotes";
@@ -170,6 +171,7 @@ export default async function ReportInputsPage({
 
       {tab === "indicators" &&
         (indicatorsResult.ok ? (
+          <EntryViewSwitch projectId={projectId} periodId={periodId} canEdit={ctx.capabilities.has("indicator.update") && !figuresLocked}>
           <IndicatorEntryGrid
             projectId={projectId}
             periodId={periodId}
@@ -188,6 +190,7 @@ export default async function ReportInputsPage({
             places={placeNames}
             simpleReview={simpleReview}
           />
+          </EntryViewSwitch>
         ) : (
           <InlineError title={indicatorsResult.error.message} referenceId={indicatorsResult.error.referenceId} />
         ))}

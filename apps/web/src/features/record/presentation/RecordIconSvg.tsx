@@ -1,6 +1,7 @@
 import type { RecordIcon } from "../domain/record-kinds";
 
 const PATHS: Record<RecordIcon, string> = {
+  place: "M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21zM12 7.5a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
   number: "M5 9h14M5 15h14M10 4 8 20M16 4l-2 16",
   done: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zm-4 9 3 3 5-6",
   photo: "M4 8h3l2-3h6l2 3h3v11H4zM12 10.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7z",

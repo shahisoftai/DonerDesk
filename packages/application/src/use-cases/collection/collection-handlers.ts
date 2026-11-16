@@ -611,7 +611,14 @@ export interface OfflinePackDto {
    */
   indicators?: Array<{ id: string; code: string; name: string; type: string; disaggregationRequired: boolean; recordByPlace?: boolean; placeLevel?: number; unit?: string; frequency?: string }>;
   periods?: Array<{ id: string; reportType: string; startDate: string; endDate: string; status: string }>;
-  plan?: Array<{ id: string; title: string; plannedStart: string; plannedEnd: string; status: string; location?: string }>;
+  plan?: Array<{ id: string; title: string; plannedStart: string; plannedEnd: string; status: string; location?: string; placeIds?: string[] }>;
+  /**
+   * Pack v3 (Phase 57, place-first entry): the places a person can start from (the project's open areas and the places inside them),
+   * where each indicator is measured, and the current by-place figures of the open periods for those places only (no people, no files).
+   */
+  entryPlaces?: Array<{ placeId: string; name: string; path: string }>;
+  indicatorPlaces?: Array<{ indicatorId: string; scope: string; level?: number | null; placeIds?: string[] }>;
+  placeCells?: Array<{ periodId: string; indicatorId: string; placeId: string; value: string; locked: boolean; lockReason?: string }>;
 }
 
 /** The readers pack v2 needs. All optional: a handler built without them answers exactly as pack v1 did. */
@@ -619,7 +626,14 @@ export interface OfflinePackReaders {
   indicators?: Pick<IIndicatorRepository, "findByProject">;
   periods?: Pick<IReportingPeriodRepository, "findByProject">;
   myWeek?: Pick<IMyWeekReader, "openPlannedFor">;
+  /** Pack v3 (Phase 57). */
+  entryPlaces?: { handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<Array<{ placeId: string; name: string; path: string }>, DomainError>> };
+  placeSheet?: { handle(ctx: AuthenticatedContext, input: { projectId: string; periodId?: string }): Promise<Result<{ rows: Array<{ placeId: string }>; columns: Array<{ indicatorId: string; lock: string | null }>; cells: Array<Array<{ value: string } | string>> }, DomainError>> };
+  planPlaces?: { findFor(kind: "PLANNED_ACTIVITY", recordIds: readonly string[], tenantId: AuthenticatedContext["tenant"]["tenantId"]): Promise<Result<Map<string, Array<{ placeId: string }>>, DomainError>> };
 }
+
+/** Pack v3 carries by-place figures of open periods that have started, the latest two at most. */
+const PACK_PLACE_PERIODS = 2;
 
 /** What lets someone take a project pack: any way of recording. The parts they get follow the permission for each. */
 const PACK_PERMISSIONS = ["indicator.update", "activity.create", "evidence.upload", "workplan.update-own"] as const;
@@ -673,6 +687,36 @@ export class GetOfflinePackHandler {
           return { id: item.id, title: item.title, plannedStart: item.plannedStart, plannedEnd: item.plannedEnd, status: item.status, ...(location ? { location } : {}) };
         })
         .sort((a, b) => a.plannedStart.localeCompare(b.plannedStart) || a.title.localeCompare(b.title));
+      if (this.readers.planPlaces && dto.plan.length) {
+        const links = await this.readers.planPlaces.findFor("PLANNED_ACTIVITY", dto.plan.map((p) => p.id), ctx.tenant.tenantId);
+        if (!links.ok) return links;
+        dto.plan = dto.plan.map((p) => ({ ...p, placeIds: (links.value.get(p.id) ?? []).map((l) => l.placeId) }));
+      }
+    }
+    if (this.readers.entryPlaces) {
+      const entry = await this.readers.entryPlaces.handle(ctx, projectId);
+      if (!entry.ok) return entry;
+      dto.entryPlaces = entry.value.map((r) => ({ placeId: r.placeId, name: r.name, path: r.path }));
+    }
+    if (mayEnterNumbers && this.readers.indicators && this.readers.placeSheet && dto.periods) {
+      const found = await this.readers.indicators.findByProject(projectId, ctx.tenant.tenantId);
+      if (!found.ok) return found;
+      dto.indicatorPlaces = found.value.filter((i) => !i.formula && i.placeScope !== "PROJECT")
+        .map((i) => ({ indicatorId: i.id, scope: i.placeScope, level: i.placeLevel ?? null, ...(i.placeIds.length ? { placeIds: i.placeIds } : {}) }));
+      const today = this.clock.now().toISOString().slice(0, 10);
+      const open = dto.periods.filter((p) => p.startDate <= today && !["APPROVED", "SUBMITTED", "CLOSED"].includes(p.status))
+        .sort((a, b) => b.startDate.localeCompare(a.startDate)).slice(0, PACK_PLACE_PERIODS);
+      const cells: NonNullable<OfflinePackDto["placeCells"]> = [];
+      for (const period of open) {
+        const sheet = await this.readers.placeSheet.handle(ctx, { projectId, periodId: period.id });
+        if (!sheet.ok) continue;
+        sheet.value.rows.forEach((row, r) => sheet.value.columns.forEach((col, c) => {
+          const cell = sheet.value.cells[r]?.[c];
+          if (!cell || typeof cell === "string") return;
+          cells.push({ periodId: period.id, indicatorId: col.indicatorId, placeId: row.placeId, value: cell.value, locked: col.lock !== null, ...(col.lock ? { lockReason: col.lock } : {}) });
+        }));
+      }
+      dto.placeCells = cells;
     }
     return ok(dto);
   }

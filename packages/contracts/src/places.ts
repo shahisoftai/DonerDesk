@@ -154,3 +154,29 @@ export const SetIndicatorPlacesSchema = z.object({
   level: z.number().int().min(1).max(4).nullable().optional(),
   placeIds: z.array(z.string().min(1).max(100)).max(50).optional(),
 }).strict();
+
+/** Phase 57: place-first entry and the by-place sheet. A period is named, or found from the day (YYYY-MM-DD). */
+export const PlaceEntryQuerySchema = z.object({
+  periodId: z.string().min(1).max(100).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+});
+export const PlaceCellSplitSchema = z.object({
+  dimension: z.enum(["SEX", "AGE_GROUP", "DISABILITY", "OTHER"]),
+  category: z.string().trim().min(1).max(100),
+  value: z.string().trim().max(50),
+});
+export const SetPlaceCellsSchema = z.object({
+  periodId: z.string().min(1).max(100).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  /** An explicit save (never autosave): with simple review on, the values are handed in. */
+  handIn: z.boolean().optional(),
+  cells: z.array(z.object({
+    indicatorId: z.string().min(1).max(100),
+    placeId: z.string().min(1).max(100),
+    /** "" clears the place's figure. */
+    value: z.string().trim().max(50),
+    splits: z.array(PlaceCellSplitSchema).max(40).optional(),
+    expected: z.string().max(50).optional(),
+  })).min(1).max(2000),
+}).strict();
+export type SetPlaceCellsInput = z.infer<typeof SetPlaceCellsSchema>;

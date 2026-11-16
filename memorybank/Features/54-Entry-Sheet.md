@@ -17,6 +17,7 @@ On a reporting period's **indicator values** page, a **Sheet / Form** toggle. Th
 - **Locked cells** (verified, calculated, read-only, period closed) are never changed by paste, fill, clear or undo.
 - **Not applicable** is an answer with a reason, not a gap.
 - **Autosave** (drafts only, 2.5 s after the last change, never while a value is impossible; nothing is handed in or verified by it). **Offline**: a save made without a connection waits in the outbox and is sent later; a refusal is parked with the reason, never retried by itself.
+- **By indicator / By place** (Phase 57): a switch above the figures. By place shows rows = places, columns = indicators measured by place, a live total, paste from Excel, and **Download / Upload Excel** in the DevResults layout (one tab per level; any bad cell blocks the file). Each place's figure is merged on the server. See [67](67-Place-First-Entry-And-By-Place-Sheet.md).
 - **By-place table** for indicators that record locations; **comments**; **value history** for each cell from the audit trail; **verify selected**.
 - **Excel**: download a workbook with data validation (numbers, 0–100, Yes/No) and upload it back; rows match by the hidden id column, else by code; unknown rows are kept and named, locked rows shown and never applied.
 

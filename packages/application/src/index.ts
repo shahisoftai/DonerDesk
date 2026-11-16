@@ -478,3 +478,4 @@ export * from "./use-cases/places/record-places.js";
 export * from "./use-cases/places/inline-place.js";
 export * from "./use-cases/places/org-places.js";
 export * from "./use-cases/places/indicator-places.js";
+export * from "./use-cases/places/place-entry.js";

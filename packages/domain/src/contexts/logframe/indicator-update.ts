@@ -1,6 +1,6 @@
 import { Entity } from "../../core/entity.js";
 import { DomainError } from "../../core/domain-error.js";
-import type { DisaggregationEntry } from "./indicator-disaggregation.js";
+import { isPlaceSplit, placeSplitEntries, projectWideEntries, type DisaggregationEntry } from "./indicator-disaggregation.js";
 
 export type VerificationStatus = "DRAFT" | "SUBMITTED" | "VERIFIED" | "NEEDS_CORRECTION" | "REJECTED";
 
@@ -24,7 +24,7 @@ export interface IndicatorUpdateProps {
   /** Why this indicator does not apply to the period. When set the value is an answer in itself: no figure, never 0. */
   notApplicableReason?: string;
   attachedEvidenceIds: string[];
-  /** Validated by `validateDisaggregation` before it reaches the aggregate. */
+  /** Validated by `validateDisaggregation` before it reaches the aggregate. Holds the project-wide entries and (Phase 57) the splits inside places. */
   disaggregation?: DisaggregationEntry[];
   verificationStatus: VerificationStatus;
   verifiedById?: string;
@@ -93,7 +93,12 @@ export class IndicatorUpdate extends Entity<string> {
   get notApplicableReason(): string | undefined { return this.props.notApplicableReason; }
   get isNotApplicable(): boolean { return this.props.notApplicableReason !== undefined; }
   get attachedEvidenceIds(): string[] { return [...this.props.attachedEvidenceIds]; }
-  get disaggregation(): DisaggregationEntry[] { return (this.props.disaggregation ?? []).map((e) => ({ ...e })); }
+  /** The project-wide breakdown that reports, charts and exports read (splits inside places left out). */
+  get disaggregation(): DisaggregationEntry[] { return projectWideEntries(this.props.disaggregation ?? []).map((e) => ({ ...e })); }
+  /** The splits inside places (Phase 57): each adds up to its place's figure. */
+  get placeSplits(): DisaggregationEntry[] { return placeSplitEntries(this.props.disaggregation ?? []).map((e) => ({ ...e })); }
+  /** Everything stored: what the repository writes. */
+  get breakdown(): DisaggregationEntry[] { return (this.props.disaggregation ?? []).map((e) => ({ ...e })); }
   get verificationStatus(): VerificationStatus { return this.props.verificationStatus; }
   get verifiedById(): string | undefined { return this.props.verifiedById; }
   get verifiedAt(): Date | undefined { return this.props.verifiedAt; }
@@ -154,7 +159,11 @@ export class IndicatorUpdate extends Entity<string> {
     if (this.props.verificationStatus === "VERIFIED") {
       throw DomainError.invalidTransition("Verified updates cannot be edited");
     }
-    this.props = { ...this.props, ...patch };
+    // A breakdown sent without splits inside places keeps the stored splits of every place whose figure is unchanged.
+    const next = patch.disaggregation && !patch.disaggregation.some(isPlaceSplit)
+      ? { ...patch, disaggregation: [...patch.disaggregation, ...keptSplits(this.props.disaggregation ?? [], patch.disaggregation)] }
+      : patch;
+    this.props = { ...this.props, ...next };
     this.touch();
   }
 
@@ -169,4 +178,12 @@ export class IndicatorUpdate extends Entity<string> {
     this.props.attachedEvidenceIds = this.props.attachedEvidenceIds.filter((id) => id !== evidenceId);
     this.touch();
   }
+}
+
+/** The stored splits whose place still has the same figure in the new breakdown. */
+function keptSplits(before: readonly DisaggregationEntry[], after: readonly DisaggregationEntry[]): DisaggregationEntry[] {
+  const figure = (list: readonly DisaggregationEntry[]) => new Map(list.filter((e) => e.dimension === "LOCATION" && e.placeId).map((e) => [e.placeId!, e.value.trim()]));
+  const old = figure(before);
+  const now = figure(after);
+  return placeSplitEntries(before).filter((e) => now.has(e.placeId!) && now.get(e.placeId!) === old.get(e.placeId!));
 }

@@ -26,9 +26,9 @@ test("a kind marked as queued or packed names its outbox kind; online-only has n
 
 test("availableKinds follows capabilities and hides the form kind when the project has no published form", () => {
   const field = availableKinds({ has: caps("indicator.update", "activity.create", "evidence.upload"), hasForms: false }).map((k) => k.key);
-  assert.deepEqual(field, ["NUMBER", "ACTIVITY", "FILE"]);
+  assert.deepEqual(field, ["PLACE", "NUMBER", "ACTIVITY", "FILE"]);
   const withForms = availableKinds({ has: caps("indicator.update"), hasForms: true }).map((k) => k.key);
-  assert.deepEqual(withForms, ["NUMBER", "FORM"]);
+  assert.deepEqual(withForms, ["PLACE", "NUMBER", "FORM"]);
   assert.deepEqual(availableKinds({ has: caps(), hasForms: true }), []);
 });
 
@@ -40,13 +40,13 @@ test("a viewer sees no kinds; the expense kind needs the plan-entry permission",
 test("startingKind remembers the last kind only while it is still allowed", () => {
   const a = availableKinds({ has: caps("indicator.update", "activity.create"), hasForms: false });
   assert.equal(startingKind(a, "ACTIVITY")?.key, "ACTIVITY");
-  assert.equal(startingKind(a, "EXPENSE")?.key, "NUMBER");
+  assert.equal(startingKind(a, "EXPENSE")?.key, "PLACE");
   assert.equal(startingKind([], "NUMBER"), undefined);
 });
 
 test("the pack carries only what the person's kinds use", () => {
   const numbers = availableKinds({ has: caps("indicator.update"), hasForms: false });
-  assert.deepEqual(packPartsFor(numbers).sort(), ["indicators", "periods"]);
+  assert.deepEqual(packPartsFor(numbers).sort(), ["indicators", "periods", "placeEntry", "plan"]);
   assert.deepEqual(packPartsFor([]), []);
 });
 

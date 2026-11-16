@@ -208,6 +208,13 @@ export const RULES: ReadonlyArray<{
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/place-words\/confirm$/, permission: "project.edit" },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/places\/inline$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/where-we-work$/, permission: "project.view" },
+  // Phase 57: place-first entry and the by-place sheet; the save goes through the bulk save's own rules.
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/entry-places$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/places\/[^/]+\/agenda$/, permission: "project.view" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/place-sheet$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/place-cells$/, permission: "indicator.update" },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/place-sheet\/export$/, permission: "project.view" },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/place-sheet\/import$/, permission: "indicator.update" },
   { method: "GET", route: /^\/v1\/places\/[^/]+\/profile$/, permission: "project.view" },
   { method: "GET", route: /^\/v1\/places\/duplicates$/, permission: "org.manage" },
   { method: "POST", route: /^\/v1\/places\/merge$/, permission: "org.manage" },

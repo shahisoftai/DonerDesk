@@ -11,6 +11,8 @@ export interface NetworkSource {
   listProjects(): Promise<RecordProject[]>;
   /** The current pack for one project. Rejects when the server cannot be reached; the caller decides what to say. */
   fetchPack(projectId: string): Promise<OfflinePack>;
+  /** Phase 57: one place's current figures in any period, read fresh from the server (the pack carries only the open ones). */
+  fetchPlaceCells?(projectId: string, periodId: string, placeId: string): Promise<Array<{ indicatorId: string; value: string; locked: boolean; lockReason?: string }>>;
 }
 
 export function createNetworkLookup(source: NetworkSource): RecordLookup {
@@ -34,6 +36,8 @@ export function createNetworkLookup(source: NetworkSource): RecordLookup {
     plan: async (projectId) => (await view(projectId)).plan(projectId),
     places: async (projectId) => (await view(projectId)).places(projectId),
     forms: async (projectId) => (await view(projectId)).forms(projectId),
+    placeEntry: async (projectId) => (await view(projectId)).placeEntry(projectId),
+    placeCells: async (projectId, periodId, placeId) => (source.fetchPlaceCells ? source.fetchPlaceCells(projectId, periodId, placeId) : (await view(projectId)).placeCells(projectId, periodId, placeId)),
     refresh: (projectId) => void cache.delete(projectId),
   };
 }

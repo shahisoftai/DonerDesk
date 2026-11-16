@@ -10,6 +10,7 @@ import { useMemo, useRef } from "react";
 import { downloadOfflinePackAction, listFieldProjectsAction } from "@/lib/actions/offline";
 import { quickEnterValueAction } from "@/lib/actions/indicators";
 import { changePlanStatusAction, completePlannedActivityAction } from "@/lib/actions/workplan";
+import { getPlaceSheetAction, setPlaceCellsAction } from "@/lib/actions/place-entry";
 import { guardNetwork } from "@/lib/shared/connectivity";
 import type { OfflinePack } from "@/features/offline/domain/offline-pack";
 import { useOutbox } from "@/features/offline/presentation/OutboxProvider";
@@ -18,14 +19,16 @@ import { createPackLookup } from "./adapters/pack-lookup";
 import { createNetworkServices, offlineServices } from "./adapters/network-services";
 import { createValueSink } from "./adapters/value-sink";
 import { createWorkSink } from "./adapters/work-sink";
+import { createPlaceCellSink } from "./adapters/place-cell-sink";
 import type { RecordLookup } from "./ports/record-lookup";
 import type { PeriodOpener, ProjectFacts } from "./ports/record-services";
-import type { ValueSink, WorkSink } from "./ports/record-sink";
+import type { PlaceCellSink, ValueSink, WorkSink } from "./ports/record-sink";
 
 export interface RecordDeps {
   lookup: RecordLookup;
   valueSink: ValueSink;
   workSink: WorkSink;
+  placeSink: PlaceCellSink;
   periods: PeriodOpener;
   facts: ProjectFacts;
   online: boolean;
@@ -73,6 +76,24 @@ export function useRecordWorkSink(): WorkSink {
   );
 }
 
+/** Place-first cells (Phase 57): sent now, or kept on the phone and sent later. */
+export function useRecordPlaceSink(): PlaceCellSink {
+  const outbox = useOutbox();
+  const latest = useRef(outbox);
+  latest.current = outbox;
+  return useMemo(
+    () =>
+      createPlaceCellSink({
+        send: (projectId, input) => guardNetwork(() => setPlaceCellsAction(projectId, input)),
+        enqueue: (entry) => latest.current.enqueue(entry),
+        get canQueue() { return latest.current.supported; },
+        newId: () => crypto.randomUUID(),
+        now: () => Date.now(),
+      }),
+    [],
+  );
+}
+
 /** The signed-in app: the server is the source, fetched per project and kept for the visit. */
 export function useNetworkRecordDeps(): RecordDeps {
   const outbox = useOutbox();
@@ -92,10 +113,21 @@ export function useNetworkRecordDeps(): RecordDeps {
         if (!r.ok) throw new Error(r.error.message);
         return r.value;
       },
+      fetchPlaceCells: async (projectId, periodId, placeId) => {
+        const r = await getPlaceSheetAction(projectId, periodId);
+        if (!r.ok) throw new Error(r.error.message);
+        const row = r.value.rows.findIndex((x) => x.placeId === placeId);
+        if (row < 0) return [];
+        return r.value.columns.flatMap((col, c) => {
+          const cell = r.value.cells[row]?.[c];
+          return !cell || cell === "NOT_MEASURED_HERE" ? [] : [{ indicatorId: col.indicatorId, value: cell.value, locked: col.lock !== null, ...(col.lock ? { lockReason: col.lock } : {}) }];
+        });
+      },
     });
   }, []);
+  const placeSink = useRecordPlaceSink();
   const services = useNetworkServices();
-  return { lookup, valueSink, workSink, ...services, online: outbox.online };
+  return { lookup, valueSink, workSink, placeSink, ...services, online: outbox.online };
 }
 
 /** The field page: the packs on this phone are the source, so everything works with no signal. */
@@ -103,7 +135,8 @@ export function usePackRecordDeps(packs: readonly OfflinePack[]): RecordDeps {
   const outbox = useOutbox();
   const valueSink = useRecordValueSink();
   const workSink = useRecordWorkSink();
+  const placeSink = useRecordPlaceSink();
   const lookup = useMemo(() => createPackLookup(packs), [packs]);
   const services = useMemo(() => offlineServices(), []);
-  return { lookup, valueSink, workSink, ...services, online: outbox.online };
+  return { lookup, valueSink, workSink, placeSink, ...services, online: outbox.online };
 }

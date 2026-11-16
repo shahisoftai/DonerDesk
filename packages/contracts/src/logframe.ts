@@ -171,7 +171,7 @@ export const DisaggregationEntrySchema = z.object({
   dimension: DisaggregationDimensionSchema,
   category: z.string().trim().min(1).max(100),
   value: z.string().trim().min(1).max(50),
-  /** LOCATION only (Phase 56): the place this figure is for; the category keeps its name. */
+  /** LOCATION (Phase 56): the place this figure is for; the category keeps its name. Another dimension (Phase 57): the split inside that place. */
   placeId: z.string().min(1).max(100).optional(),
 });
 export type DisaggregationEntryInput = z.infer<typeof DisaggregationEntrySchema>;
@@ -186,7 +186,7 @@ export const CreateIndicatorUpdateSchema = z.object({
   /** A reason = "not applicable this period" (the figures are then ignored). */
   notApplicableReason: z.string().max(500).optional(),
   /** A breakdown of the value. It is validated against the indicator exactly as on the grid; it is never silently dropped. */
-  disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
+  disaggregation: z.array(DisaggregationEntrySchema).max(500).optional(),
   attachedEvidenceIds: z.array(z.string()).default([]),
 });
 export type CreateIndicatorUpdateInput = z.infer<typeof CreateIndicatorUpdateSchema>;
@@ -208,7 +208,7 @@ export const QuickEnterIndicatorValueSchema = z.object({
   comments: z.string().max(2000).optional(),
   dataSource: z.string().max(500).optional(),
   notApplicableReason: z.string().max(500).optional(),
-  disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
+  disaggregation: z.array(DisaggregationEntrySchema).max(500).optional(),
 });
 export type QuickEnterIndicatorValueInput = z.infer<typeof QuickEnterIndicatorValueSchema>;
 
@@ -224,7 +224,7 @@ export const UpsertIndicatorUpdateSchema = z.object({
   /** The version of the stored value the person was looking at (its `updatedAt`). When someone else has saved it since, the save is refused so their figure is not overwritten unseen. */
   expectedUpdatedAt: z.string().max(40).optional(),
   /** Omitted = keep the stored breakdown; [] = clear it. */
-  disaggregation: z.array(DisaggregationEntrySchema).max(50).optional(),
+  disaggregation: z.array(DisaggregationEntrySchema).max(500).optional(),
 });
 export type UpsertIndicatorUpdateInput = z.infer<typeof UpsertIndicatorUpdateSchema>;
 

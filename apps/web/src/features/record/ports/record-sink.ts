@@ -43,3 +43,13 @@ export interface WorkSink {
   /** A status step (under way, done, not held): sent now, or kept on the phone and sent later. */
   changeStatus(input: { itemId: string; title: string; action: "START" | "COMPLETE" | "CANCEL"; reason?: string | undefined; completedOn?: string | undefined }): Promise<SinkResult<{ queued: boolean }>>;
 }
+
+/** Place-first entry (Phase 57): the changed cells of one place, merged into each value on the server (or kept on the phone). */
+export interface PlaceCellSink {
+  saveCells(input: {
+    projectId: string;
+    periodId: string;
+    title: string;
+    cells: ReadonlyArray<{ indicatorId: string; placeId: string; value: string; expected: string; splits?: ReadonlyArray<{ dimension: string; category: string; value: string }> }>;
+  }): Promise<SinkResult<{ queued: boolean; notices: string[] }>>;
+}

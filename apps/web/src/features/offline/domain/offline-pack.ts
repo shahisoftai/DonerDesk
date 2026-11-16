@@ -51,11 +51,20 @@ export interface PackPlanItem {
   plannedEnd: string;
   status: string;
   location?: string;
+  /** Pack v3 (Phase 57): the places it is planned at (ids). */
+  placeIds?: string[];
 }
 
+/** Pack v3 (Phase 57): a place a person can start place-first entry from (the project's open areas and what is inside them). */
+export interface PackEntryPlace { placeId: string; name: string; path: string }
+/** Where an indicator is measured (only indicators measured by place). */
+export interface PackIndicatorPlace { indicatorId: string; scope: string; level?: number | null; placeIds?: string[] }
+/** The current figure of one indicator at one place in an open period. "" = nothing recorded (never 0). */
+export interface PackPlaceCell { periodId: string; indicatorId: string; placeId: string; value: string; locked: boolean; lockReason?: string }
+
 export interface OfflinePack {
-  /** 1 = forms and places only (Phase 33.6). 2 adds the parts below. A v1 pack still fills forms. */
-  version: 1 | 2;
+  /** 1 = forms and places only (Phase 33.6). 2 adds the parts below. 3 adds place-first entry. A v1 pack still fills forms. */
+  version: 1 | 2 | 3;
   /** Who downloaded it: a pack is only ever shown to, and sent by, this person. */
   userId: string;
   userName: string;
@@ -69,6 +78,10 @@ export interface OfflinePack {
   indicators?: PackIndicator[];
   periods?: PackPeriod[];
   plan?: PackPlanItem[];
+  /** v3 parts (Phase 57). */
+  entryPlaces?: PackEntryPlace[];
+  indicatorPlaces?: PackIndicatorPlace[];
+  placeCells?: PackPlaceCell[];
 }
 
 export interface PackStore {
@@ -97,15 +110,20 @@ export function describePackFreshness(pack: Pick<OfflinePack, "generatedAt">, no
 export function packFromServer(input: {
   userId: string; userName: string; projectId: string; projectName: string; generatedAt: string; forms: PackForm[]; places: PackPlace[];
   indicators?: PackIndicator[] | undefined; periods?: PackPeriod[] | undefined; plan?: PackPlanItem[] | undefined;
+  entryPlaces?: PackEntryPlace[] | undefined; indicatorPlaces?: PackIndicatorPlace[] | undefined; placeCells?: PackPlaceCell[] | undefined;
 }): OfflinePack {
   const at = Date.parse(input.generatedAt);
   const v2 = input.indicators !== undefined || input.periods !== undefined || input.plan !== undefined;
+  const v3 = input.entryPlaces !== undefined;
   return {
-    version: v2 ? 2 : 1, userId: input.userId, userName: input.userName, projectId: input.projectId, projectName: input.projectName,
+    version: v3 ? 3 : v2 ? 2 : 1, userId: input.userId, userName: input.userName, projectId: input.projectId, projectName: input.projectName,
     generatedAt: Number.isFinite(at) ? at : 0, forms: input.forms, places: input.places,
     ...(input.indicators !== undefined ? { indicators: input.indicators } : {}),
     ...(input.periods !== undefined ? { periods: input.periods } : {}),
     ...(input.plan !== undefined ? { plan: input.plan } : {}),
+    ...(input.entryPlaces !== undefined ? { entryPlaces: input.entryPlaces } : {}),
+    ...(input.indicatorPlaces !== undefined ? { indicatorPlaces: input.indicatorPlaces } : {}),
+    ...(input.placeCells !== undefined ? { placeCells: input.placeCells } : {}),
   };
 }
 

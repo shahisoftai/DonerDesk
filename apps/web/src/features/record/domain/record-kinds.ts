@@ -4,7 +4,7 @@
  */
 import type { Capability } from "../../../lib/shared/capabilities.ts";
 
-export type RecordKindKey = "NUMBER" | "ACTIVITY" | "FILE" | "EXPENSE" | "FORM";
+export type RecordKindKey = "PLACE" | "NUMBER" | "ACTIVITY" | "FILE" | "EXPENSE" | "FORM";
 
 /** How far a kind works without a connection. */
 export type OfflineLevel =
@@ -16,9 +16,9 @@ export type OfflineLevel =
   | "PACKED";
 
 /** What the offline pack must carry for a kind to work from it. */
-export type PackPart = "indicators" | "periods" | "places" | "plan" | "forms";
+export type PackPart = "indicators" | "periods" | "places" | "plan" | "forms" | "placeEntry";
 
-export type RecordIcon = "number" | "done" | "photo" | "money" | "form";
+export type RecordIcon = "place" | "number" | "done" | "photo" | "money" | "form";
 
 export interface RecordKind {
   key: RecordKindKey;
@@ -35,6 +35,8 @@ export interface RecordKind {
 }
 
 export const RECORD_KINDS: readonly RecordKind[] = [
+  // Phase 57: start from a place, then fill everything due there (offered to everyone who can record a number or an activity).
+  { key: "PLACE", labelKey: "record.kind.PLACE", hintKey: "record.kind.PLACE.hint", anyOf: ["indicator.update", "activity.create"], offline: "PACKED", outboxKind: "place-cells", packParts: ["placeEntry", "periods", "indicators", "plan"], icon: "place" },
   { key: "NUMBER", labelKey: "record.kind.NUMBER", hintKey: "record.kind.NUMBER.hint", anyOf: ["indicator.update"], offline: "PACKED", outboxKind: "indicator-values", packParts: ["indicators", "periods"], icon: "number" },
   { key: "ACTIVITY", labelKey: "record.kind.ACTIVITY", hintKey: "record.kind.ACTIVITY.hint", anyOf: ["activity.create"], offline: "PACKED", outboxKind: "activity", packParts: ["plan", "places"], icon: "done" },
   // A photo or file on its own has no outbox sender today: offline, photos travel with the activity or form they belong to.

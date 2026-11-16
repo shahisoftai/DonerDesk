@@ -21,6 +21,8 @@ export interface FieldSplit {
 }
 
 export const DEFAULT_FIELDS: Readonly<Record<RecordKindKey, FieldSplit>> = {
+  // Place first (Phase 57): the place and the day; the figures are the place's own list, the split waits behind each figure.
+  PLACE: { shown: ["where", "day", "value"], detail: ["breakdown"] },
   NUMBER: { shown: ["indicator", "value", "day"], detail: ["breakdown", "source", "note", "file"] },
   // The server requires an account of what happened, so it stays on the first screen; the optional counts of people wait under Add detail.
   ACTIVITY: { shown: ["title", "day", "where", "story", "photos"], detail: ["people", "groups", "planLink", "endDate"] },

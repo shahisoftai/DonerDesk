@@ -3,6 +3,7 @@ import {
   AddPlaceInlineHandler, ConfirmPlaceWordHandler, GetIndicatorPlacesHandler, GetPlaceProfileHandler, GetRecordPlacesHandler, GetWhereWeWorkHandler,
   ListDuplicatePlacesHandler, ListProjectPlacesHandler, MergePlacesHandler, RecordPlacesAfterCreate, SetIndicatorPlacesHandler, SetProjectAreaOpenHandler,
   SetRecordPlacesHandler, TickProjectAreaHandler, UntickProjectAreaHandler,
+  GetPlaceAgendaHandler, GetPlaceSheetHandler, ImportPlaceSheetHandler, ListAgendaPlacesHandler, SetPlaceCellsHandler, type PlaceEntryDeps,
   type IAuditLogger, type IClock, type IIdGenerator, type IPlaceRepository, type IProjectRepository, type VisibleProjects,
 } from "@donordesk/application";
 import { PrismaPlaceWordLinkRepository, PrismaProjectAreaRepository, PrismaRecordPlaceOwnerReader, PrismaRecordPlaceRepository } from "../repositories/place-tree.js";
@@ -52,3 +53,18 @@ export function createPlaceTreeModule(deps: PlaceTreeModuleDeps) {
 }
 
 export type PlaceTreeHandlers = ReturnType<typeof createPlaceTreeModule>["handlers"];
+
+/** Place-first entry and the by-place sheet (Phase 57): built once the plan and the bulk save exist. */
+export function createPlaceEntryHandlers(deps: PlaceEntryDeps) {
+  const getPlaceSheet = new GetPlaceSheetHandler(deps);
+  const setPlaceCells = new SetPlaceCellsHandler(deps);
+  return {
+    listAgendaPlaces: new ListAgendaPlacesHandler(deps),
+    getPlaceAgenda: new GetPlaceAgendaHandler(deps),
+    getPlaceSheet,
+    setPlaceCells,
+    importPlaceSheet: new ImportPlaceSheetHandler(getPlaceSheet, setPlaceCells),
+  };
+}
+
+export type PlaceEntryHandlers = ReturnType<typeof createPlaceEntryHandlers>;

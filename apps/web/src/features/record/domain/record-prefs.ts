@@ -9,7 +9,7 @@ export interface RecordPrefs {
   kind?: RecordKindKey;
 }
 
-const KINDS: readonly RecordKindKey[] = ["NUMBER", "ACTIVITY", "FILE", "EXPENSE", "FORM"];
+const KINDS: readonly RecordKindKey[] = ["PLACE", "NUMBER", "ACTIVITY", "FILE", "EXPENSE", "FORM"];
 export const RECORD_PREFS_KEY = "donordesk-record-prefs";
 
 export function parseRecordPrefs(text: string | null | undefined): RecordPrefs {

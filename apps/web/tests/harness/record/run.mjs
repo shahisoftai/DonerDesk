@@ -38,9 +38,9 @@ const pickNumber = async (page) => { await page.getByRole("button", { name: /A n
 
 await check("the chooser offers only what the role may record, in plain words", async () => {
   const page = await open("");
-  assert.deepEqual((await page.getByRole("button").allInnerTexts()).map((t) => t.split("\n")[0]), ["A number", "Something we did", "A photo or file", "An expense"]);
+  assert.deepEqual((await page.getByRole("button").allInnerTexts()).map((t) => t.split("\n")[0]), ["Everything at a place", "A number", "Something we did", "A photo or file", "An expense"]);
   const only = await open("caps=indicator.update");
-  assert.deepEqual((await only.getByRole("button").allInnerTexts()).map((t) => t.split("\n")[0]), ["A number"]);
+  assert.deepEqual((await only.getByRole("button").allInnerTexts()).map((t) => t.split("\n")[0]), ["Everything at a place", "A number"]);
   const none = await open("caps=project.view");
   assert.ok(await none.getByText("You cannot record anything on this project").isVisible());
 });

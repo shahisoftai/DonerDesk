@@ -4,6 +4,18 @@
 
 Record of fixes applied to DonorDesk. Last updated: 2026-11-15 (the new UX, Version 4.000: see the section of that date); previously 2026-11-03 (dashboards: Phase 39 and live checks); previously 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
 
+## Phase 57 — defects found by driving production after the deploy (2026-11-16)
+
+Found on DEMO-16 with the owner's demo account; fixed and deployed in `20261116140000` / `20261116160000`.
+- **The project header's Record button always opened "A number"** (`kind="NUMBER"`), so the new place-first entry was one tap away and hidden. It now opens the chooser, which lists "Everything at a place" first and marks the kind used last.
+- **A locked figure said only "Locked".** The reason now travels with the cell (pack and network) and is shown: verified, calculated, period closed, not applicable.
+- **After saving in By place, By indicator still showed the old figures** until a reload. Saving and applying a file now refresh the page; a refused (stale) save offers **Reload**.
+- **On the field page a saved figure jumped back to its old value** (the pack on the phone does not change by itself). The form now shows what was saved or kept on the phone at once.
+- **Offline, an older period said "Download this project again"** although downloading would not help (the pack keeps the latest two open periods). It now says so plainly.
+- **The field page said "No records or figures" are kept on the phone**, untrue since pack v3. The sentence now lists what is kept (four languages).
+- **A queued place entry was labelled "Saved record"**; it is now "Figures for a place".
+- **Save showed when every figure at a place was locked**; it is hidden then.
+
 ## Version 4.000 (Phase 55) — defects found and fixed during and after the build (2026-11-14 to 2026-11-15)
 
 Found by the checks and by driving production with the owner's account; each is fixed and deployed (releases in `CONTABO-DEPLOY.md`).

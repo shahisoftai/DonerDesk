@@ -26,6 +26,7 @@ Reporting: project-walkthrough, run-a-reporting-month, create-a-reporting-period
 Maps (updated 2026-11-10, Phase 49): see-your-work-on-a-map, pin-a-place-on-the-map (now also pins existing places and marks facilities), upload-your-own-map-boundaries, analyse-places-on-a-map, use-context-layers-on-a-map, download-places-and-map-results, keep-a-map-for-offline-use.
 Navigation: **find-your-way-around** (new, Version 4.000 map and where things moved), use-the-dashboard (Home and the Inbox), search-projects-and-evidence (Ctrl K), use-the-notification-system (Inbox Updates), use-the-academy-tour, manage-billing-subscription.
 Added 2026-11-15: **use-datasets** (bring in a table and chart it), **choose-where-you-work** (Plan → Where we work), **record-figures-by-place** (record by place and the map).
+Updated 2026-11-16 (Phase 57): **record-figures-by-place** (start from a place; By place sheet; Excel by place), **record-data** (Everything at a place), **update-indicator-values** (By indicator / By place), **use-the-field-app-offline** (place entry offline; what the download holds).
 
 ## Troubleshooting
 login, account access, billing, browser performance, data recovery, project setup, logframe, indicator data, evidence upload, report generation, AI report generation, export, storage, dashboard, compliance checklist.

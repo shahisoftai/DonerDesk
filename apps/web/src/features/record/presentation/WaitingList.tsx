@@ -15,7 +15,7 @@ const TONE: Record<SyncTone, string> = {
   attention: "bg-warning-50 text-warning-900 dark:bg-warning-500/15 dark:text-warning-100",
 };
 
-const KIND_KEYS = ["activity", "indicator-values", "collection-record", "plan-status", "progress-log"] as const;
+const KIND_KEYS = ["activity", "indicator-values", "collection-record", "plan-status", "progress-log", "place-cells"] as const;
 
 /** How many photos a queued record carries: only an activity or a form answer holds files, and only their count is shown. */
 function photoCount(entry: OutboxEntry): number {

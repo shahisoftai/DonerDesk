@@ -24,6 +24,14 @@ Under **View**, choose how you want to work.
 - **Sheet** is like a spreadsheet, best for many rows. Columns: **Code**, **Indicator**, earlier months, **Baseline**, **Target**, **Last period**, **This period**, **Cumulative**, **Notes**, **Data source**, **% of target**, **Status**. Click a cell and type. Arrow keys and Tab move between cells. You can paste a block of cells from Excel straight in, and use **Fill down**, **Clear**, **Undo** and **Redo**. **Find** and **Go to** jump to an indicator, **Show** filters rows (for example only figures still empty), and **Columns**, **Row height** and **Zoom** change how it looks. Tick **Save automatically** to have drafts saved a couple of seconds after your last change. Cells you cannot change (verified, calculated or closed) are locked.
 - **Form** is one row per indicator with **Period achievement**, **Cumulative**, **Comments**, **Data source**, a **Breakdown (n)** button and **Not applicable this period**.
 
+## By indicator or By place
+
+Above the figures, **By indicator** shows one row per indicator (the Sheet and Form views above). **By place** shows one row per place and one column per indicator measured by place, with a **Total** row at the bottom. Type in a cell, or paste a block copied from Excel: it fills to the right and down and skips grey cells. Grey cells are locked or not measured at that place (—). Click **Save changes**; only the cells you changed are sent, and each indicator's total is added up from the places.
+
+**Download Excel** gives the same layout as a workbook, one tab per level of places. Fill the shaded cells and use **Upload Excel**. The file is checked first: if any cell is wrong nothing is imported and every problem is listed. Otherwise you see how many figures will change, and nothing is saved until you click **Apply the file**. An empty cell leaves the stored figure as it is.
+
+If someone else changed a figure since you opened the page, your save is refused and names it; click **Reload** to see their figure. DonorDesk remembers on this device which view you used last. More in [How to record a figure for each place](/support/how-to/record-figures-by-place).
+
 ## Enter values
 
 1. Each row is an indicator. Type the value for **this period**, and, where relevant, the **data source** and a note.

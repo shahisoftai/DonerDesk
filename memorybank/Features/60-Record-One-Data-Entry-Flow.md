@@ -13,6 +13,7 @@ Built 2026-11-06 (Phase 44, branch `0018-optimisation`, commits `912212fb`, `3a7
 - **What happened?** from a planned item: *It is finished* / *Some progress* / *It did not happen* (needs a reason and `workplan.manage`; field leads are not offered it).
 - **Phone shell**: bottom bar Today / Record / Waiting / More; Waiting lists what is queued with Retry/Discard; More holds Ready for offline, My projects, Language, Help, Sign out.
 - **Offline**: the same forms run from the offline pack v2 (indicators, periods, own 14-day plan); entries go to the one outbox and send when signal returns.
+- **Everything at a place** (Phase 57, first in the chooser): a place and a day, then the person's planned work there and every figure measured there, with splits inside the place; offline from pack v3 (outbox kind `place-cells`). The project header's Record button now opens the chooser. See [67](67-Place-First-Entry-And-By-Place-Sheet.md).
 - **Inbox → To do ("To review")**: numbers handed in and records waiting for review, as ordinary work-queue rows.
 
 ## Rules (also in AGENTS.md)

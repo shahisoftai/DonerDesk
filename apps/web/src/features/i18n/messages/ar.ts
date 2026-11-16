@@ -1,5 +1,6 @@
 import type { MessageKey } from "./en.ts";
 import { recordAr } from "./record-ar.ts";
+import { placeEntryAr } from "./place-entry-ar.ts";
 import { datasetsAr } from "./datasets-ar.ts";
 import { libraryAr } from "./library-ar.ts";
 import { frameworkAr } from "./framework-ar.ts";
@@ -78,7 +79,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "field.downloaded.few": "تم تنزيل {count} نماذج. يمكنك ملؤها دون اتصال.",
   "field.downloaded.many": "تم تنزيل {count} نموذجاً. يمكنك ملؤها دون اتصال.",
   "field.downloaded.other": "تم تنزيل {count} نموذج. يمكنك ملؤها دون اتصال.",
-  "field.whatKept": "ما يُحفظ على الهاتف: أسئلة النماذج وقائمة الأماكن. لا سجلات ولا أرقام. يُحذف كل ذلك عند تسجيل الخروج.",
+  "field.whatKept": "ما يُحفظ على الهاتف: أسئلة النماذج وقائمة الأماكن وعملك المخطط للأسبوعين القادمين والأرقام الحالية لأماكن المشروع في الفترات المفتوحة. ويُحذف عند تسجيل الخروج.",
   "field.cannotKeep": "لا يستطيع هذا المتصفح حفظ النماذج على الهاتف. افتح هذه الصفحة في متصفح حديث.",
 
   "pack.today": "تم التنزيل اليوم.",
@@ -906,6 +907,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.boundary.uploading": "جارٍ الرفع…",
   "maps.sources.link": "مصادر الخرائط وتراخيصها",
   ...recordAr,
+  ...placeEntryAr,
   ...datasetsAr,
   ...canvasAr,
   ...editor50Ar,

@@ -9,6 +9,8 @@ import { createCollectionRecordSender } from "../domain/collection-outbox";
 import { createIndicatorValuesSender } from "../domain/indicator-values-outbox";
 import { createPlanStatusSender } from "../domain/plan-status-outbox";
 import { createProgressSender } from "../domain/progress-outbox";
+import { createPlaceCellsSender } from "../domain/place-cells-outbox";
+import { setPlaceCellsAction } from "@/lib/actions/place-entry";
 import type { OutboxSender } from "../domain/outbox";
 import type { OutboxKindName } from "../domain/outbox-kinds";
 
@@ -40,6 +42,7 @@ export const OUTBOX_SENDERS: Readonly<Record<OutboxKindName, () => OutboxSender>
       submit: (formId, input) => guardNetwork(() => submitCollectionRecordAction(formId, input)),
     }),
   "plan-status": () => createPlanStatusSender({ changeStatus: (itemId, input) => guardNetwork(() => changePlanStatusAction(itemId, input)) }),
+  "place-cells": () => createPlaceCellsSender({ save: (projectId, input) => guardNetwork(() => setPlaceCellsAction(projectId, input)) }),
   "indicator-values": () => createIndicatorValuesSender({ bulkSave: (periodId, rows) => guardNetwork(() => bulkSaveIndicatorUpdatesAction(periodId, rows as BulkSaveRow[])) }),
 };
 

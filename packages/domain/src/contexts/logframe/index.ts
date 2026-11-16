@@ -30,3 +30,4 @@ export * from "./framework-change-classifier.js";
 export * from "./framework-change-rules.js";
 export * from "./framework-lenses.js";
 export * from "./framework-pin.js";
+export * from "./place-cell.js";

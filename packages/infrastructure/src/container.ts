@@ -765,12 +765,12 @@ export interface Container {
     retryBillingInbox: RetryBillingInboxHandler;
     runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
     runGrandfatherByoLlm: RunGrandfatherByoLlmHandler;
-  } & WorkplanHandlers & FinanceHandlers & SectorLibraryHandlers & DatasetsHandlers & PlaceTreeHandlers;
+  } & WorkplanHandlers & FinanceHandlers & SectorLibraryHandlers & DatasetsHandlers & PlaceTreeHandlers & PlaceEntryHandlers;
 }
 
 import { createWorkplanModule, type WorkplanHandlers } from "./container/workplan-module.js";
 import { createFinanceModule, type FinanceHandlers } from "./container/finance-module.js";
-import { createPlaceTreeModule, type PlaceTreeHandlers } from "./container/place-tree-module.js";
+import { createPlaceEntryHandlers, createPlaceTreeModule, type PlaceEntryHandlers, type PlaceTreeHandlers } from "./container/place-tree-module.js";
 import { createDatasetsModule, type DatasetsHandlers } from "./datasets/module.js";
 import { createSectorLibraryModule, type SectorLibraryHandlers } from "./container/sector-library-module.js";
 import { IndicatorLibraryLinkWriter } from "./project-setup/library-link-writer.js";
@@ -1599,6 +1599,8 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     ...workplan.handlers,
     ...finance.handlers,
     ...placeTree.handlers,
+    // The bulk save is read lazily so the save runs through the wrapped (atomic) handler like every other caller.
+    ...createPlaceEntryHandlers({ projects, visible: visibleProjects, places, areas: placeTree.areas, links: placeTree.links, plan: plannedActivities, indicators, updates: indicatorUpdates, periods, bulk: { handle: (ctx, input) => handlers.bulkUpsertIndicatorUpdates.handle(ctx, input) } }),
     ...sectorLibrary.handlers,
     ...datasets.handlers,
     suggestPresenceRows: new SuggestPresenceRowsHandler(workplan.handlers.listWorkPlan, new ListProjectPeopleHandler(projectMembers, users)),
@@ -1767,7 +1769,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     }, places, collectionFiles),
     uploadCollectionFile: new UploadCollectionFileHandler(ids, collectionForms, collectionFiles, storage, clock),
     getCollectionFile: new GetCollectionFileHandler(collectionFiles, storage),
-    getOfflinePack: new GetOfflinePackHandler(collectionForms, places, clock, { indicators, periods, myWeek: new PrismaMyWeekReader(prisma) }),
+    getOfflinePack: new GetOfflinePackHandler(collectionForms, places, clock, { indicators, periods, myWeek: new PrismaMyWeekReader(prisma), entryPlaces: { handle: (ctx, projectId) => handlers.listAgendaPlaces.handle(ctx, projectId) }, placeSheet: { handle: (ctx, input) => handlers.getPlaceSheet.handle(ctx, input) }, planPlaces: placeTree.links }),
     listDashboards: new ListDashboardsHandler(dashboards),
     getDashboard: new GetDashboardHandler(dashboards),
     saveDashboard,

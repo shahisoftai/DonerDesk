@@ -420,3 +420,8 @@ memorybank/
 - Deployed over four releases (`20261114150000`, `20261114180000`, `20261114200000`, `20261115090000`); no migration, no env. A fifth attempt (`20261114230000`) rolled back on a deploy-script bug, fixed in `scripts/deploy-fast.sh` (see `Fixes.md` 2026-11-15).
 - Support: every article was reviewed against the new navigation (`docs/support/ux-4000-map.md`); four how-tos were added (find your way around, datasets, choose where you work, record figures by place) and `apps/web/content/support/INDEX.md` lists them.
 - Also new on production: Team **Deactivate / Reactivate / Delete** (`POST /v1/users/:id/status`).
+
+## 2026-11-16: Phase 57 — place-first entry and the by-place sheet (Version 4.01)
+- Feature: [`Features/67-Place-First-Entry-And-By-Place-Sheet.md`](Features/67-Place-First-Entry-And-By-Place-Sheet.md). Plan, decisions and audit: [`imp/phase57-place-first-entry.md`](imp/phase57-place-first-entry.md).
+- Deployed 2026-11-16 (`20261116120000`, fixes `20261116140000` and `20261116160000`); no migration, no env, no RLS change. Checked live on DEMO-16.
+- Support: `how-to-record-figures-by-place.md` (two new sections), `how-to-record-data.md`, `how-to-update-indicator-values.md`, `how-to-use-the-field-app-offline.md`.

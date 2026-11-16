@@ -1,5 +1,6 @@
 import type { MessageKey } from "./en.ts";
 import { recordFr } from "./record-fr.ts";
+import { placeEntryFr } from "./place-entry-fr.ts";
 import { datasetsFr } from "./datasets-fr.ts";
 import { libraryFr } from "./library-fr.ts";
 import { frameworkFr } from "./framework-fr.ts";
@@ -70,7 +71,7 @@ export const fr: Record<MessageKey, string> = {
   "field.downloadedNone": "Téléchargé, mais ce projet n'a pas encore de formulaire ouvert aux réponses.",
   "field.downloaded.one": "{count} formulaire téléchargé. Vous pouvez le remplir sans connexion.",
   "field.downloaded.other": "{count} formulaires téléchargés. Vous pouvez les remplir sans connexion.",
-  "field.whatKept": "Ce qui est gardé sur le téléphone : les questions des formulaires et la liste des lieux. Aucun enregistrement ni chiffre. Tout est effacé à la déconnexion.",
+  "field.whatKept": "Ce qui est gardé sur le téléphone : les questions des formulaires, la liste des lieux, votre travail prévu des deux prochaines semaines et les chiffres actuels des lieux du projet pour les périodes ouvertes. Tout est supprimé à la déconnexion.",
   "field.cannotKeep": "Ce navigateur ne peut pas garder de formulaires sur le téléphone. Ouvrez cette page dans un navigateur à jour.",
 
   "pack.today": "Téléchargé aujourd'hui.",
@@ -890,6 +891,7 @@ export const fr: Record<MessageKey, string> = {
   "maps.boundary.uploading": "Téléversement…",
   "maps.sources.link": "Sources et licences des cartes",
   ...recordFr,
+  ...placeEntryFr,
   ...datasetsFr,
   ...canvasFr,
   ...editor50Fr,

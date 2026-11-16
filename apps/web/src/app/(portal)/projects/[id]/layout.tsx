@@ -58,7 +58,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {ctx.capabilities.has("indicator.update") && <RecordButton projectId={project.id} kind="NUMBER" />}
+              {ctx.capabilities.has("indicator.update") && <RecordButton projectId={project.id} />}
             </div>
           </div>
         </div>

@@ -281,7 +281,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         notApplicableReason: u.notApplicableReason,
         dataSource: u.dataSource,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
-        disaggregationJson: JSON.stringify(u.disaggregation),
+        disaggregationJson: JSON.stringify(u.breakdown),
         verificationStatus: u.verificationStatus,
         verifiedById: u.verifiedById,
         verifiedAt: u.verifiedAt,
@@ -302,7 +302,7 @@ export class PrismaIndicatorUpdateRepository implements IIndicatorUpdateReposito
         dataSource: u.dataSource ?? null,
         notApplicableReason: u.notApplicableReason ?? null,
         attachedEvidenceIds: JSON.stringify(u.attachedEvidenceIds),
-        disaggregationJson: JSON.stringify(u.disaggregation),
+        disaggregationJson: JSON.stringify(u.breakdown),
         verificationStatus: u.verificationStatus,
         // null (not undefined) so a correction request actually clears the verifier.
         verifiedById: u.verifiedById ?? null,

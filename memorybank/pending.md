@@ -4,6 +4,14 @@
 
 Outstanding and in-progress items for DonorDesk. Last updated: 2026-11-15 (Version 4.000 section added at the top; the priority board below was audited 2026-10-22).
 
+## Place-first entry and the by-place sheet (Phase 57) — deployed 2026-11-16; what is left
+
+- Commit and push the branch `0025-place-tree` (the deployed tree is uncommitted, including earlier wizard/LLM work).
+- Native review of the place-entry copy in French, Spanish and Arabic (drafts).
+- Splits inside a place are entered in place-first only: no splits column in By place or the Excel file yet.
+- A DB journey test for two concurrent place saves (covered today by the domain merge tests and the live check, not by an integration test).
+- DEMO-16: OP1-1a and OC1a were switched to "measured per county" for the live check and left that way.
+
 ## The new UX (Version 4.000, Phase 55) — deployed 2026-11-14 to 2026-11-15; what is left
 - **Built, live and checked in a signed-in browser (2026-11-15):** see `Features/66-New-UX-Version-4.md` and `imp/phase55-new-ux.md` §8–§10. Branch `0024-new-ux` and tag `v3.007` are pushed.
 - **Done 2026-11-15:** evidence selection bar, **Attach the files** (upload, verify, value verified in one step), form-draft restore, GPS **Here**, the wizard's **Only what is still needed** (skipped a completed slide), stacked panels (`test:drawer`), Arabic right-to-left layout on eleven main screens (no sideways scroll, rail on the right); Cancel invite; old test users deleted; redirects removed; legal label 4.000; Version 4 navigation labels translated (`ui-labels-*.ts`).

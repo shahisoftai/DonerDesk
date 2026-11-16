@@ -6,7 +6,7 @@
  * A part the source does not carry (a v1 pack, an older server) is `null`, never an empty list: "none" and "not on this phone" are
  * different sentences for the person.
  */
-import type { PackForm, PackIndicator, PackPeriod, PackPlace, PackPlanItem } from "../../offline/domain/offline-pack.ts";
+import type { PackEntryPlace, PackForm, PackIndicator, PackIndicatorPlace, PackPeriod, PackPlace, PackPlanItem } from "../../offline/domain/offline-pack.ts";
 
 export interface RecordProject { id: string; name: string }
 
@@ -17,7 +17,14 @@ export interface PlanLookup { plan(projectId: string): Promise<PackPlanItem[] | 
 export interface PlaceLookup { places(projectId: string): Promise<PackPlace[]> }
 export interface FormLookup { forms(projectId: string): Promise<PackForm[]> }
 
-export interface RecordLookup extends ProjectLookup, IndicatorLookup, PeriodLookup, PlanLookup, PlaceLookup, FormLookup {
+/** Place-first entry (Phase 57): where a person can start, and where each indicator is measured. null = not on this phone. */
+export interface PlaceEntryLookup {
+  placeEntry(projectId: string): Promise<{ places: PackEntryPlace[]; indicatorPlaces: PackIndicatorPlace[] } | null>;
+  /** The current figures of one place in one period. null = not on this phone (an older period, or an older pack). */
+  placeCells(projectId: string, periodId: string, placeId: string): Promise<Array<{ indicatorId: string; value: string; locked: boolean; lockReason?: string }> | null>;
+}
+
+export interface RecordLookup extends ProjectLookup, IndicatorLookup, PeriodLookup, PlanLookup, PlaceLookup, FormLookup, PlaceEntryLookup {
   readonly source: "network" | "pack";
   /**
    * Forget what was read for a project so the next ask reads it again (a manager just opened a period). The pack on a phone cannot

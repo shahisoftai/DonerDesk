@@ -52,6 +52,7 @@ export { buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME } fr
 export { ExcelTablesWorkbookWriter } from "./exports/tables-workbook.js";
 export { buildFrameworkDocx, buildFrameworkPdf, FRAMEWORK_FILE_NAME } from "./exports/framework-document-files.js";
 export { buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME } from "./exports/indicator-entry-workbook.js";
+export { buildPlaceSheetWorkbook, readPlaceSheetWorkbook, PLACE_SHEET_FILE_NAME } from "./exports/place-sheet-workbook.js";
 export * from "./project-setup/prompted-area-extractor.js";
 export * from "./project-setup/single-read-extractor.js";
 export * from "./project-setup/single-read-reader.js";

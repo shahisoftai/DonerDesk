@@ -11,6 +11,11 @@ import { DomainError } from "@donordesk/domain";
 export const EXTERNAL_ALLOWED: ReadonlyArray<{ method: string; route: RegExp }> = [
   // Phase 56: a partner reads its project's places, sets where its own records happened and adds sites inside the project's areas (the handlers enforce it).
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/places$/ },
+  // Phase 57: place-first entry inside the project's areas (the handler refuses a place outside them).
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/entry-places$/ },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/places\/[^/]+\/agenda$/ },
+  { method: "GET", route: /^\/v1\/projects\/[^/]+\/place-sheet$/ },
+  { method: "POST", route: /^\/v1\/projects\/[^/]+\/place-cells$/ },
   { method: "GET", route: /^\/v1\/projects\/[^/]+\/record-places\/[^/]+\/[^/]+$/ },
   { method: "PUT", route: /^\/v1\/projects\/[^/]+\/record-places\/[^/]+\/[^/]+$/ },
   { method: "POST", route: /^\/v1\/projects\/[^/]+\/places\/inline$/ },

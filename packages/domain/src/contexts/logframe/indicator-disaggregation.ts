@@ -11,11 +11,33 @@ export interface DisaggregationEntry {
   dimension: DisaggregationDimension;
   category: string;
   value: string;
-  /** For LOCATION only (Phase 56): the place this figure is for. The category keeps the name as written; older entries have no id. */
+  /**
+   * LOCATION (Phase 56): the place this figure is for; the category keeps the name as written; older entries have no id.
+   * Any other dimension (Phase 57): the split is *within that place* (e.g. SEX / Female / 12 at Rabak) and adds up to the place's
+   * figure. Entries of another dimension without a place id are the project-wide split, as before.
+   */
   placeId?: string;
 }
 
+/** Project-wide entries (every dimension, plus one figure per place). */
 export const MAX_DISAGGREGATION_ENTRIES = 50;
+/** Every entry including splits inside places (places × categories). */
+export const MAX_BREAKDOWN_ENTRIES = 500;
+
+/** A split inside one place: an entry of a dimension other than LOCATION that names a place. */
+export function isPlaceSplit(entry: DisaggregationEntry): boolean {
+  return entry.dimension !== "LOCATION" && !!entry.placeId;
+}
+
+/** The project-wide breakdown (what every report, chart and export reads): splits inside places left out. */
+export function projectWideEntries(entries: readonly DisaggregationEntry[]): DisaggregationEntry[] {
+  return entries.filter((e) => !isPlaceSplit(e));
+}
+
+/** The splits inside places only. */
+export function placeSplitEntries(entries: readonly DisaggregationEntry[]): DisaggregationEntry[] {
+  return entries.filter(isPlaceSplit);
+}
 
 /** Types whose categories add up to the reported total (a percentage split does not). */
 const SUMMABLE_TYPES: ReadonlySet<IndicatorType> = new Set<IndicatorType>(["NUMBER", "CURRENCY"]);
@@ -40,9 +62,74 @@ export function validateDisaggregation(
   entries: readonly DisaggregationEntry[],
   context: { indicatorType: IndicatorType; periodAchievement: string },
 ): Result<DisaggregationEntry[], DomainError> {
-  if (entries.length > MAX_DISAGGREGATION_ENTRIES) {
+  if (entries.length > MAX_BREAKDOWN_ENTRIES) {
+    return { ok: false, error: DomainError.validation(`At most ${MAX_BREAKDOWN_ENTRIES} breakdown values are allowed`) };
+  }
+  const wide = projectWideEntries(entries);
+  if (wide.length > MAX_DISAGGREGATION_ENTRIES) {
     return { ok: false, error: DomainError.validation(`At most ${MAX_DISAGGREGATION_ENTRIES} breakdown values are allowed`) };
   }
+  const splits = placeSplitEntries(entries);
+  const checkedWide = validateProjectWide(wide, context);
+  if (!checkedWide.ok) return checkedWide;
+  if (splits.length === 0) return checkedWide;
+  const checkedSplits = validatePlaceSplits(splits, checkedWide.value, context.indicatorType);
+  if (!checkedSplits.ok) return checkedSplits;
+  return { ok: true, value: [...checkedWide.value, ...checkedSplits.value] };
+}
+
+/**
+ * Splits inside places: each names a place that has a figure, has a known dimension and a named category, is a number,
+ * is not listed twice for its place, and (for a type that adds up) each dimension of a place adds up to that place's figure.
+ */
+function validatePlaceSplits(
+  splits: readonly DisaggregationEntry[],
+  wide: readonly DisaggregationEntry[],
+  indicatorType: IndicatorType,
+): Result<DisaggregationEntry[], DomainError> {
+  const placeFigure = new Map(wide.filter((e) => e.dimension === "LOCATION" && e.placeId).map((e) => [e.placeId!, { name: e.category, value: toNumber(e.value) }]));
+  const seen = new Set<string>();
+  const sums = new Map<string, number>();
+  const clean: DisaggregationEntry[] = [];
+  for (const entry of splits) {
+    if (!DISAGGREGATION_DIMENSIONS.includes(entry.dimension)) {
+      return { ok: false, error: DomainError.validation(`Unknown breakdown dimension ${entry.dimension}`) };
+    }
+    const place = placeFigure.get(entry.placeId!);
+    if (!place) return { ok: false, error: DomainError.validation("A split inside a place needs that place's own figure first", { code: "PLACE_SPLIT_WITHOUT_FIGURE" }) };
+    const category = entry.category.trim();
+    if (!category) return { ok: false, error: DomainError.validation("Every breakdown value needs a category") };
+    const key = `${entry.placeId}|${entry.dimension}:${category.toLowerCase()}`;
+    if (seen.has(key)) return { ok: false, error: DomainError.validation(`"${category}" is listed twice for ${place.name}`) };
+    seen.add(key);
+    const value = entry.value.trim();
+    const numeric = toNumber(value);
+    if (numeric === null) return { ok: false, error: DomainError.validation(`Breakdown value for "${category}" at ${place.name} must be a number`) };
+    const sumKey = `${entry.placeId}|${entry.dimension}`;
+    sums.set(sumKey, (sums.get(sumKey) ?? 0) + numeric);
+    clean.push({ dimension: entry.dimension, category, value, placeId: entry.placeId! });
+  }
+  if (disaggregationMustSum(indicatorType)) {
+    for (const [sumKey, sum] of sums) {
+      const [placeId, dimension] = sumKey.split("|") as [string, DisaggregationDimension];
+      const place = placeFigure.get(placeId)!;
+      if (place.value !== null && Math.abs(sum - place.value) > 1e-9 * Math.max(1, Math.abs(place.value))) {
+        return {
+          ok: false,
+          error: DomainError.validation(`${dimension} at ${place.name} adds up to ${sum}, but the figure for ${place.name} is ${place.value}`, {
+            code: "PLACE_SPLIT_TOTAL_MISMATCH", dimension, placeId, sum, total: place.value,
+          }),
+        };
+      }
+    }
+  }
+  return { ok: true, value: clean };
+}
+
+function validateProjectWide(
+  entries: readonly DisaggregationEntry[],
+  context: { indicatorType: IndicatorType; periodAchievement: string },
+): Result<DisaggregationEntry[], DomainError> {
   const seen = new Set<string>();
   const clean: DisaggregationEntry[] = [];
   const sums = new Map<DisaggregationDimension, number>();
@@ -93,7 +180,7 @@ export function parseDisaggregationJson(json: string | null | undefined): Disagg
         DISAGGREGATION_DIMENSIONS.includes((e as DisaggregationEntry).dimension) &&
         typeof (e as DisaggregationEntry).category === "string" &&
         typeof (e as DisaggregationEntry).value === "string",
-    ).map((e) => (e.dimension === "LOCATION" && typeof e.placeId === "string" && e.placeId
+    ).map((e) => (typeof e.placeId === "string" && e.placeId
       ? { dimension: e.dimension, category: e.category, value: e.value, placeId: e.placeId }
       : { dimension: e.dimension, category: e.category, value: e.value }));
   } catch {
@@ -109,5 +196,5 @@ export function validateTargetBreakdowns(
   entries: readonly DisaggregationEntry[],
   context: { indicatorType: IndicatorType; target: string },
 ): Result<DisaggregationEntry[], DomainError> {
-  return validateDisaggregation(entries, { indicatorType: context.indicatorType, periodAchievement: context.target });
+  return validateDisaggregation(projectWideEntries(entries), { indicatorType: context.indicatorType, periodAchievement: context.target });
 }
