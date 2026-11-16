@@ -9,6 +9,7 @@ import { readBudgetSheet } from "./budget-sheet-reader.js";
 import { readIndicatorSheet } from "./indicator-sheet-reader.js";
 import { FactsFromTextExtractor } from "./facts-from-text.js";
 import { PartialSheetFirstExtractor } from "./partial-sheet-first-extractor.js";
+import { placeSheetReader } from "./place-sheet-reader.js";
 import { logframeSheetReader, workPlanSheetReader, type SheetReader } from "./sheet-readers.js";
 
 export const SHEET_PROMPT_VERSION = "sheet-reader-v1";
@@ -39,6 +40,7 @@ export class SheetFirstExtractor implements ISetupAreaExtractor {
 export const SHEET_READERS: Readonly<Partial<Record<SetupAreaKey, SheetReader>>> = {
   LOGFRAME: logframeSheetReader,
   PLAN: workPlanSheetReader,
+  PLACES: placeSheetReader,
 };
 
 /** Areas a sheet answers only in part: the sheet gives its fields, the model reads the rest of the documents. */

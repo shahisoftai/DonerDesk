@@ -45,9 +45,9 @@ export class FactsFromTextExtractor implements ISetupAreaExtractor {
   async extract(input: SetupExtractInput): Promise<Result<ExtractedArea, DomainError>> {
     const run = await this.inner.extract(input);
     if (!run.ok) return run;
+    // The labelled pairs are the documents' own statements: they are read even when the model gave no facts at all.
     const read = run.value.fields.facts as Record<string, Proposed<unknown>> | undefined;
-    if (!read) return run;
-    let facts = read;
+    let facts = read ?? {};
     // A labelled cell or line is the document's own statement: it is the primary reading, and what the model read differently
     // stays beside it as an alternative.
     for (const [key, pair] of Object.entries(readFactPairs(input.blocks))) {

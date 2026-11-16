@@ -11,7 +11,7 @@ type FactKey = "name" | "code" | "donor" | "countries" | "startDate" | "endDate"
 /** Folded labels per fact: one table, so a new language or wording is one more entry. */
 export const FACT_LABELS: Readonly<Record<FactKey, readonly string[]>> = {
   name: ["project title", "project name", "title of the project", "title of project", "grant title", "award title", "program title", "programme title", "titre du projet", "nom du projet", "titulo del proyecto", "nombre del proyecto"],
-  code: ["project code", "project number", "project no", "award number", "grant number", "agreement number", "project id", "code du projet", "numero du projet", "codigo del proyecto", "numero del proyecto"],
+  code: ["project code", "suggested code", "project number", "project no", "award number", "grant number", "agreement number", "project id", "code du projet", "numero du projet", "codigo del proyecto", "numero del proyecto"],
   donor: ["donor", "funder", "funding agency", "funded by", "funding source", "donateur", "bailleur", "bailleur de fonds", "donante", "financiador"],
   countries: ["country", "countries", "country of implementation", "implementing country", "pays", "pays d'intervention", "pais", "paises", "pais de ejecucion"],
   startDate: ["start date", "project start date", "commencement date", "date de debut", "date de demarrage", "fecha de inicio"],
@@ -25,7 +25,8 @@ const LABEL_TO_KEY: ReadonlyMap<string, FactKey> = new Map((Object.entries(FACT_
 
 /** The value of a label–value line: the cell after the label, or the text after the first colon. */
 function pairOf(line: string): { label: string; value: string } | null {
-  const cells = line.split("\t").map((c) => c.trim()).filter(Boolean);
+  // A sheet row is tab-separated; a Word table row is read as "label | value".
+  const cells = (line.includes("\t") ? line.split("\t") : line.split(" | ")).map((c) => c.trim()).filter(Boolean);
   if (cells.length >= 2) return { label: cells[0]!, value: cells.slice(1).join(" ") };
   const at = line.indexOf(":");
   return at > 0 && at < 50 ? { label: line.slice(0, at), value: line.slice(at + 1).trim() } : null;
@@ -53,6 +54,9 @@ function valueOf(key: FactKey, raw: string): unknown | null {
   }
 }
 
+/** A row that states both dates ("Period: 1 January 2027 – 30 June 2027") gives the start and the end when exactly two dates are in it. */
+const PERIOD_LABELS = new Set(["period", "project period", "implementation period", "project duration", "duration", "periode", "periode du projet", "periodo", "periodo del proyecto"]);
+
 export type FactPairs = Partial<Record<FactKey, Proposed<unknown>>>;
 
 /** The first labelled value of each fact in the documents' blocks (reading order), or nothing. */
@@ -62,6 +66,15 @@ export function readFactPairs(blocks: ReadonlyArray<SourceBlock>): FactPairs {
     if (block.docKind === "WORK_PLAN_GANTT") continue;
     for (const line of block.text.split("\n")) {
       const pair = pairOf(line);
+      if (pair && PERIOD_LABELS.has(fold(pair.label))) {
+        const dates = datesInText(pair.value);
+        if (dates.length === 2) {
+          const quote = { sourceQuote: line.replace(/\s+/g, " ").trim().slice(0, QUOTE_LIMIT), sourceRef: { documentId: block.documentId, block: block.index, ...(block.page !== undefined ? { page: block.page } : {}) }, confidence: "HIGH" as const, status: "PROPOSED" as const };
+          found.startDate ??= { value: dates[0]!, ...quote };
+          found.endDate ??= { value: dates[1]!, ...quote };
+        }
+        continue;
+      }
       const key = pair ? LABEL_TO_KEY.get(fold(pair.label)) : undefined;
       if (!pair || !key || found[key]) continue;
       const value = valueOf(key, pair.value);

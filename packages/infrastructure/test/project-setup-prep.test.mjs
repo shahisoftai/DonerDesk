@@ -499,3 +499,44 @@ test("what a file feeds: a specialised file feeds the parts that read its kind, 
   const sources = describeSources(blocks, [], feeds);
   assert.deepEqual(sources.map((s) => s.feeds?.length), [3, 2, 2]);
 });
+
+import { placeSheetReader } from "../dist/project-setup/place-sheet-reader.js";
+
+test("a places sheet (the places import's columns) is read without the model; prose is not a places sheet", () => {
+  const sheet = [
+    "Name\tLevel\tParent\tCode\tLatitude\tLongitude\tOther spellings",
+    "Pakistan\tCountry\t\tPK\t\t\t",
+    "Punjab\tState or province\tPakistan\t\t\t\t",
+    "Attock\tDistrict or locality\tPunjab\t\t33.77\t72.36\t",
+  ].join("\n");
+  const read = placeSheetReader(blocksOf(sheet, "source-3"));
+  assert.deepEqual(read.places.map((p) => [p.value.name, p.value.adminLevel, p.value.parentName, p.value.latitude]), [
+    ["Pakistan", 0, null, null], ["Punjab", 1, "Pakistan", null], ["Attock", 2, "Punjab", 33.77],
+  ]);
+  assert.match(read.places[2].sourceQuote, /^Attock\tDistrict or locality\tPunjab/, "the quote is the sheet line exactly, so grounding finds it");
+  assert.equal(placeSheetReader(blocksOf("The project works in Attock and Multan districts of Punjab.")), null);
+});
+
+test("the indicator import template's own header (Name) is read as the indicator title", () => {
+  const sheet = ["Code\tName\tType\tBaseline\tTarget\tUnit\tLogframe Code", "IND-1\tChildren screened for malnutrition\tNUMBER\t\t2400000\tchildren\tOP1.1", "IND-2\tSAM cure rate (OTP)\tPERCENTAGE\t\t75\t%\tOC1"].join("\n");
+  const read = readIndicatorSheet(blocksOf(sheet));
+  assert.deepEqual(read.fields.indicators.map((i) => [i.value.code, i.value.title, i.value.target, i.value.logframeCode]), [
+    ["IND-1", "Children screened for malnutrition", "2400000", "OP1.1"], ["IND-2", "SAM cure rate (OTP)", "75", "OC1"],
+  ]);
+});
+
+test("a Word cover table (label | value) and a Period row give the facts without the model", () => {
+  const text = ["Field | Value", "Project title | Nutrition Programme, Pakistan 2027", "Suggested code | PAK-CMAM-2027", "Period | 1 January 2027 – 30 June 2027 (6 months)"].join("\n");
+  const pairs = readFactPairs(blocksOf(text));
+  assert.equal(pairs.name.value, "Nutrition Programme, Pakistan 2027");
+  assert.equal(pairs.code.value, "PAK-CMAM-2027");
+  assert.deepEqual([pairs.startDate.value, pairs.endDate.value], ["2027-01-01", "2027-06-30"]);
+  assert.match(pairs.endDate.sourceQuote, /^Period \| 1 January 2027/);
+});
+
+test("the labelled facts are read even when the model's answer has no facts at all", async () => {
+  const blocks = blocksOf("Project title | Nutrition Programme 2027\nPeriod | 1 January 2027 – 30 June 2027");
+  const inner = { area: "FACTS", extract: async () => ({ ok: true, value: { fields: {} } }) };
+  const facts = (await new FactsFromTextExtractor(inner).extract({ blocks })).value.fields.facts;
+  assert.deepEqual([facts.name.value, facts.startDate.value, facts.endDate.value], ["Nutrition Programme 2027", "2027-01-01", "2027-06-30"]);
+});

@@ -178,6 +178,9 @@ function createOllamaAdapter(config: { baseUrl: string; model: string; timeoutMs
   };
 }
 
+/** OpenAI models that take only the default temperature (the reasoning models: o1, o3, o4, gpt-5 and later). */
+export const OPENAI_DEFAULT_TEMPERATURE_ONLY = /^(o\d|gpt-([5-9]|\d{2}))/i;
+
 /** OpenAI Chat Completions, also used for OpenAI-compatible providers (Gemini). */
 function createOpenAIAdapter(config: { name: "openai" | "gemini"; apiKey: string; model: string; baseUrl?: string; timeoutMs?: number }): ILLMProvider {
   if (!config.apiKey) {
@@ -201,14 +204,18 @@ function createOpenAIAdapter(config: { name: "openai" | "gemini"; apiKey: string
             ...(input.systemPrompt ? [{ role: "system" as const, content: input.systemPrompt }] : []),
             { role: "user" as const, content: input.userPrompt },
           ],
-          max_tokens: input.maxTokens ?? 2048,
-          temperature: input.temperature ?? 0.3,
+          // OpenAI's current models accept only max_completion_tokens (max_tokens is refused), and its reasoning models only the
+          // default temperature; OpenAI-compatible providers (Gemini) keep the older names.
+          ...(config.name === "openai" ? { max_completion_tokens: input.maxTokens ?? 2048 } : { max_tokens: input.maxTokens ?? 2048 }),
+          ...(config.name === "openai" && OPENAI_DEFAULT_TEMPERATURE_ONLY.test(config.model) ? {} : { temperature: input.temperature ?? 0.3 }),
         }),
         signal: AbortSignal.timeout(Math.max(input.timeoutMs ?? 0, config.timeoutMs ?? 60000)),
       });
 
       if (!response.ok) {
-        throw new Error(`${config.name} API error: ${response.status}`);
+        // The provider's own reason (a model the key cannot use, a wrong path) is what an administrator needs to fix it.
+        const reason = await response.text().catch(() => "");
+        throw new Error(`${config.name} API error: ${response.status}${reason ? ` (${reason.replace(/\s+/g, " ").trim().slice(0, 200)})` : ""}`);
       }
 
       const data = await response.json() as {

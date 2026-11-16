@@ -78,11 +78,12 @@ export class SetupExtractionOrchestrator {
     const readArea = async (area: SetupAreaKey): Promise<void> => {
       const extractor = byArea.get(area)!;
       // After the AI service has refused with a rate limit, only areas this document can answer without it still run.
-      if (state.aiLimited && !extractor.canReadWithoutModel?.(redacted)) return;
+      const withoutModel = (extractor.canReadWithoutModel?.(redacted) ?? false) || (extractor.readsPartWithoutModel?.(redacted) ?? false);
+      if (state.aiLimited && !withoutModel) return;
       const runId = this.ids.generate();
       await this.runs.start({ id: runId, tenantId: input.tenantId, proposalId: input.proposalId, kind: "EXTRACT", area, status: "RUNNING", detail: {}, startedAt: this.clock.now() });
       // A part whose every section is blank stays empty and is highlighted: nothing is asked, so nothing can be filled in.
-      if (survey.findings.get(area)?.state === "EMPTY" && !extractor.canReadWithoutModel?.(redacted)) {
+      if (survey.findings.get(area)?.state === "EMPTY" && !withoutModel) {
         await serial(async () => { state.okAreas += 1; await this.runs.finish(runId, input.tenantId, { checked: 0, dropped: 0, emptySection: true }, this.clock.now()); });
         return;
       }

@@ -1094,9 +1094,12 @@ async function testProvider(category: string, provider: string, config: Record<s
     // "/v1/models" or "/v1/messages" for anthropic/MiniMax) doesn't produce a
     // double "/v1" like ".../v1/v1/models" → 404.
     const baseUrl = typeof config.baseUrl === "string" && config.baseUrl.trim()
-      ? config.baseUrl.trim().replace(/\/+$/, "").replace(/\/(chat\/completions|models)$/, "").replace(/\/(v1)\/?$/, "").replace(/\/+$/, "")
+      ? config.baseUrl.trim().replace(/\/+$/, "").replace(/\/(chat\/completions|models)$/, "").replace(/\/+$/, "")
       : "";
-    url = String(config.testUrl || (baseUrl ? `${baseUrl}${paths[provider] ?? ""}` : defaults[provider] || ""));
+    // Only the providers whose test path already starts with "/v1" lose a trailing "/v1"; OpenAI, Gemini, DeepSeek and GLM keep it
+    // (https://api.openai.com/v1 + /models; without the /v1 the test called https://api.openai.com/models, which is always 404).
+    const testBase = paths[provider]?.startsWith("/v1/") ? baseUrl.replace(/\/v1$/, "") : baseUrl;
+    url = String(config.testUrl || (testBase ? `${testBase}${paths[provider] ?? ""}` : defaults[provider] || ""));
     const key = secrets.apiKey;
     if (!key) throw new Error("API key is required");
     headers = provider === "anthropic" ? { "x-api-key": key, "anthropic-version": "2023-06-01" } : { authorization: `Bearer ${key}` };

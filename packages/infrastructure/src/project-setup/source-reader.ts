@@ -3,6 +3,7 @@ import { buildDocumentMap } from "./document-map.js";
 import { compactSheetText, dropNearDuplicates } from "./document-prep.js";
 import { driveFileIdsOf, type ISetupDocumentStore, type ISourceDocumentReader, type ParseUploadedFileHandler, type SetupSourceRef } from "@donordesk/application";
 
+import { parseCsv } from "../parsers/structured/readers.js";
 import { readPdfLayout, type ScannedPageReader } from "./pdf-layout.js";
 
 const BLOCK_CHARS = 1600;
@@ -34,7 +35,9 @@ export class StoredSetupDocumentReader implements ISourceDocumentReader {
       if (pdf) { parsedDocuments.push({ n, name, text: pdf }); continue; }
       const parsed = await this.parse.handle({ buffer: file.value.bytes, fileName: name, fileType });
       if (!parsed.ok) return { ok: false, error: DomainError.validation(fileIds.length > 1 ? `${name}: ${parsed.error.message}` : parsed.error.message) };
-      parsedDocuments.push({ n, name, text: compactSheetText(parsed.value.text) });
+      // A CSV is read as tab-separated rows like any other sheet, so every sheet reader sees its columns (quoted commas stay in their cell).
+      const text = /\.csv$/i.test(name) || fileType === "text/csv" ? parseCsv(parsed.value.text.replace(/^\uFEFF/, "")).map((row) => row.join("\t")).join("\n") : parsed.value.text;
+      parsedDocuments.push({ n, name, text: compactSheetText(text) });
     }
     // A draft and its revision say the same thing: read it once.
     const { kept } = dropNearDuplicates(parsedDocuments);

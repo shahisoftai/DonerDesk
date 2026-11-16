@@ -20,6 +20,11 @@ export class PartialSheetFirstExtractor implements ISetupAreaExtractor {
     return false;
   }
 
+  // ...but it can still give the sheet's part when the model cannot answer (no credit, rate limited, a blank section).
+  readsPartWithoutModel(blocks: ReadonlyArray<SourceBlock>): boolean {
+    return this.read(blocks) !== null;
+  }
+
   feeds(block: SourceBlock): boolean {
     return this.fallback.feeds?.(block) ?? false;
   }

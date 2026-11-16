@@ -70,6 +70,31 @@ def test_gemini_uses_openai_compatible_endpoint_without_json_mode(worker_env, mo
     assert content == '{"content":"ok"}' and telemetry["inputTokens"] == 5
 
 
+def test_openai_max_completion_tokens_and_reasoning_temperature(worker_env, monkeypatch) -> None:
+    bodies: list = []
+
+    class FakeResp:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def read(self):
+            return json.dumps({"choices": [{"message": {"content": "{}"}}], "usage": {}}).encode()
+
+    def fake_urlopen(req, timeout):
+        bodies.append(json.loads(req.data))
+        return FakeResp()
+
+    monkeypatch.setattr(llm_gateway.urllib.request, "urlopen", fake_urlopen)
+    _chat("sys", "user", model=ModelConfig(provider="openai", model="gpt-4o-mini", apiKey="k"), max_tokens=100)
+    _chat("sys", "user", model=ModelConfig(provider="openai", model="gpt-6-luna", apiKey="k"), max_tokens=100)
+    assert bodies[0]["max_completion_tokens"] == 100 and "max_tokens" not in bodies[0]
+    assert bodies[0]["temperature"] == 0.3
+    assert bodies[1]["max_completion_tokens"] == 100 and "temperature" not in bodies[1]
+
+
 class _FakeAnthropic:
     last_kwargs: dict = {}
     response: object = None

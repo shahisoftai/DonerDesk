@@ -329,6 +329,16 @@ test("after a rate limit only areas the document answers without the AI still ru
   assert.equal(stored.proposal.logframe.length, 1);
 });
 
+test("after a rate limit an area a sheet answers in part (an indicator table) still runs", async () => {
+  let asked = [];
+  const limited = (area) => ({ area, extract: async () => { asked.push(area); return { ok: false, error: Object.assign(new Error("busy (error 429)"), { name: "DomainError", code: "RATE_LIMITED" }) }; } });
+  const partial = { area: "INDICATORS", canReadWithoutModel: () => false, readsPartWithoutModel: () => true, extract: async () => { asked.push("INDICATORS"); return ok({ fields: { indicators: [] }, partlyRead: true }); } };
+  const w = world({ extractors: [limited("FACTS"), partial] });
+  await w.start.handle(creator, { fileName: "p.csv", fileType: "text/csv", buffer: Buffer.from(DOCUMENT) });
+  await w.flush();
+  assert.deepEqual(asked, ["FACTS", "INDICATORS"]);
+});
+
 test("a rate-limited AI service stops the run after the first refusal instead of asking for every other area", async () => {
   let calls = 0;
   const limited = (area) => ({ area, extract: async () => { calls += 1; return { ok: false, error: Object.assign(new Error("The AI service is busy (error 429)."), { name: "DomainError", code: "RATE_LIMITED" }) }; } });

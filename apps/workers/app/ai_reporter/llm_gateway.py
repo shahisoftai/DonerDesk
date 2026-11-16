@@ -204,6 +204,10 @@ def _chat(
     )
 
 
+# OpenAI models that take only the default temperature (o1, o3, o4, gpt-5 and later); same rule as the API's factory.
+_OPENAI_DEFAULT_TEMPERATURE_ONLY = re.compile(r"^(o\d|gpt-([5-9]|\d{2}))", re.IGNORECASE)
+
+
 def _chat_openai_compatible(
     system: str,
     user: str,
@@ -224,9 +228,16 @@ def _chat_openai_compatible(
     body: dict[str, Any] = {
         "model": model_name,
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
-        "temperature": temperature,
-        "max_tokens": max_tokens,
     }
+    # OpenAI's current models refuse max_tokens (they take max_completion_tokens) and its reasoning models take only the
+    # default temperature; other OpenAI-compatible providers keep the older names. Mirrors the API's OpenAI adapter.
+    if provider == "openai":
+        body["max_completion_tokens"] = max_tokens
+        if not _OPENAI_DEFAULT_TEMPERATURE_ONLY.match(model_name):
+            body["temperature"] = temperature
+    else:
+        body["temperature"] = temperature
+        body["max_tokens"] = max_tokens
     if json_mode:
         body["response_format"] = {"type": "json_object"}
     if provider in _THINKING_TOGGLE_PROVIDERS and not _thinking_enabled():

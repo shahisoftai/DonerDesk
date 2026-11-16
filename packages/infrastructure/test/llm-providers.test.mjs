@@ -149,3 +149,19 @@ test("AI Reporter sends the resolved provider to the worker; the key never enter
   );
   assert.deepEqual(sent.model, config);
 });
+
+test("openai sends max_completion_tokens, leaves temperature out for reasoning models, and reports OpenAI's own reason", async () => {
+  const bodies = [];
+  const reply = () => new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }), { status: 200 });
+  await withFetch(async (_url, init) => { bodies.push(JSON.parse(init.body)); return reply(); }, async () => {
+    await createLLMProvider({ provider: "openai", model: "gpt-4o-mini", apiKey: "k" }).complete(input);
+    await createLLMProvider({ provider: "openai", model: "gpt-6-luna", apiKey: "k" }).complete(input);
+    await createLLMProvider({ provider: "gemini", model: "gemini-x", apiKey: "k" }).complete(input);
+  });
+  assert.deepEqual([bodies[0].max_completion_tokens, bodies[0].max_tokens, bodies[0].temperature], [4096, undefined, 0.3]);
+  assert.deepEqual([bodies[1].max_completion_tokens, bodies[1].temperature], [4096, undefined]);
+  assert.deepEqual([bodies[2].max_tokens, bodies[2].max_completion_tokens], [4096, undefined], "Gemini keeps the older name");
+  await withFetch(async () => new Response('{"error":{"message":"The model `x` does not exist"}}', { status: 404 }), async () => {
+    await assert.rejects(createLLMProvider({ provider: "openai", model: "x", apiKey: "k" }).complete(input), /404 .*does not exist/);
+  });
+});

@@ -14,7 +14,7 @@ type Column = "title" | "code" | "baseline" | "target" | "unit" | "frequency" | 
 
 /** Header words per column, folded (no accents, lower case); the first column a header matches wins. */
 const HEADERS: Readonly<Record<Column, readonly string[]>> = {
-  title: ["indicator", "indicators", "indicator name", "indicator title", "performance indicator", "indicateur", "indicateurs", "indicador", "indicadores", "ovi"],
+  title: ["indicator", "indicators", "indicator name", "name", "indicator title", "performance indicator", "indicateur", "indicateurs", "indicador", "indicadores", "ovi"],
   code: ["indicator code", "code", "no", "no.", "ref", "#", "id", "code indicateur", "codigo"],
   baseline: ["baseline", "baseline value", "base line", "valeur de reference", "situation de reference", "reference", "linea de base", "linea base"],
   target: ["target", "targets", "end target", "lop target", "life of project target", "final target", "cible", "valeur cible", "meta", "metas"],
