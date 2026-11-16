@@ -1,0 +1,22 @@
+Level,Code,Title,Description
+GOAL,G1,Reduced child and maternal undernutrition in Pakistan,"Contribute to lower acute malnutrition among children 6-59 months and pregnant and lactating women (PLW) in priority districts of Punjab, Sindh, Balochistan, Khyber Pakhtunkhwa and AJK."
+OUTCOME,OC1,Children 6-59 months with acute malnutrition are detected early and treated to recovery,"CMAM: community screening, OTP (SAM), TSFP/SFP (MAM) and stabilisation centres (SAM with complications) meet Sphere performance standards."
+OUTCOME,OC2,PLW and caregivers adopt recommended maternal and infant and young child feeding practices,"IYCF counselling, micronutrient supplementation and screening of PLW."
+OUTPUT,OP1.1,Children 6-59 months screened for acute malnutrition by MUAC/oedema,
+OUTPUT,OP1.2,Children with SAM without complications admitted and treated in OTP,
+OUTPUT,OP1.3,Children with MAM admitted and treated in SFP/TSFP,
+OUTPUT,OP1.4,Children with SAM with complications treated in stabilisation centres (NSC/SC),
+OUTPUT,OP2.1,PLW screened and malnourished PLW enrolled in supplementary feeding,
+OUTPUT,OP2.2,PLW and caregivers reached with IYCF counselling sessions,
+OUTPUT,OP2.3,"Children 6-23 months and PLW receive micronutrient supplements (MNP, MMN, IFA)",
+ACTIVITY,A1.1.1,Monthly community MUAC screening by LHWs and community volunteers,
+ACTIVITY,A1.1.2,"Refer screened SAM/MAM cases to OTP, TSFP or SC",
+ACTIVITY,A1.2.1,"Run OTP sites: admission, weekly RUTF distribution and follow-up",
+ACTIVITY,A1.3.1,Run TSFP/SFP sites: RUSF distribution and follow-up,
+ACTIVITY,A1.4.1,Operate stabilisation centres: F-75/F-100 and ReSoMal treatment,
+ACTIVITY,A1.5.1,"Manage nutrition supplies (RUTF, RUSF, F-75, F-100, ReSoMal, MNP, IFA, MUAC tapes)",
+ACTIVITY,A2.1.1,Screen PLW by MUAC and enrol malnourished PLW in SFP,
+ACTIVITY,A2.2.1,Conduct IYCF counselling sessions at health facilities,
+ACTIVITY,A2.2.2,Conduct IYCF counselling sessions in communities,
+ACTIVITY,A2.3.1,Distribute MNP to children 6-23 months and MMN/IFA to PLW,
+ACTIVITY,A3.1.1,Monthly district reporting and data quality review,
