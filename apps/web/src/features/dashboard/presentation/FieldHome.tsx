@@ -36,7 +36,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
   links.push({ href: "/projects", label: "My projects" });
 
   return (
-    <div className="animate-fade-in space-y-6">
+    <div data-tour-id="field-home" className="animate-fade-in space-y-6">
       <HomeHeader
         eyebrow="My week"
         title={`Welcome back${firstName ? `, ${firstName}` : ""}. ${sentBack > 0 ? `${sentBack} activit${sentBack === 1 ? "y was" : "ies were"} sent back to you.` : planned > 0 ? `${planned} planned activit${planned === 1 ? "y" : "ies"} this week.` : "Nothing is planned for you this week."}`}

@@ -91,7 +91,7 @@ async function PlannedActivitiesView({ projectId, otherSide }: { projectId: stri
   const rows = plan.ok ? plan.value.items : [];
   const actor = { userId: data.userId, role: (data.ctx.role ?? "VIEWER") as Role };
   return (
-    <div className="animate-fade-in">
+    <div data-tour-id="work-plan" className="animate-fade-in">
       <header className="flex items-center justify-between">
         <h1 className="page-title">Planned activities</h1>
         {canPlan && rows.length > 0 && (

@@ -56,9 +56,11 @@ export function FieldApp() {
   if (userId === null) return <p className="p-4 text-sm text-slate-500">Loading…</p>;
   // The outbox is the device's: it is scoped to whoever last downloaded a pack here; with none, there is nothing to send yet.
   return (
-    <OutboxProvider scope={userId || "nobody"}>
-      <FieldScreens userId={userId} onUser={setUserId} />
-    </OutboxProvider>
+    <div data-tour-id="field-app">
+      <OutboxProvider scope={userId || "nobody"}>
+        <FieldScreens userId={userId} onUser={setUserId} />
+      </OutboxProvider>
+    </div>
   );
 }
 

@@ -1,0 +1,13 @@
+import { createRequire } from "node:module";
+const require = createRequire("/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/apps/web/package.json");
+const { chromium } = require("@playwright/test");
+const PID = "f2a96a79-148d-4ec6-86d8-8bc58aeb90cb";
+const b = await chromium.connectOverCDP("http://localhost:9333"); const page = b.contexts()[0].pages()[0];
+await page.goto(`https://donordesk.online/projects/${PID}/settings`); await page.waitForTimeout(3500);
+const set = async (l, v) => { const f = page.getByLabel(l, { exact: true }).first(); await f.fill(v); };
+await set("Project title", "Community Nutrition in Upper Dir and Mardan");
+await set("Donor name", "Northfield Child Nutrition Fund");
+await set("Implementing organization", "Hope Valley Relief");
+await page.getByRole("button", { name: "Save changes" }).click(); await page.waitForTimeout(4000);
+console.log((await page.locator("main").innerText()).slice(0, 400));
+await b.close();

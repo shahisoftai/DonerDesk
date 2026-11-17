@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function VisualChartStudioPage({ params }: { params: Promise<{ projectId: string }> }) {
   const { projectId } = await params;
   return (
-    <div className="page-stack animate-fade-in">
+    <div data-tour-id="chart-studio" className="page-stack animate-fade-in">
       <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="charts" />
       <ChartStudioPanel projectId={projectId} />

@@ -357,3 +357,33 @@
 .sx .sx-draft{display:flex;flex-direction:column}
 .sx .sx-draft-foot{margin-top:auto}
 .sx .sx-trail{align-content:space-between}
+
+/* Product tour (Version 4.01): role chips, chapter strip, screenshot stage with a spotlight. */
+.sx .sx-tour-roles{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:22px}
+.sx .sx-tour-roles>span{color:var(--muted);font-size:14px;margin-inline-end:4px}
+.sx .sx-tour-roles button{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 16px;font:600 14px var(--body);cursor:pointer}
+.sx .sx-tour-roles button:hover{border-color:var(--brand)}
+.sx .sx-tour-roles button[aria-pressed="true"]{background:var(--brand);color:var(--brand-ink);border-color:var(--brand)}
+.sx .sx-tour-chapters{display:flex;flex-wrap:wrap;gap:8px;padding-block:12px}
+.sx .sx-tour-chapters button{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 16px;font:600 14px var(--body);cursor:pointer}
+.sx .sx-tour-chapters button span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--wash);font:600 12px var(--mono)}
+.sx .sx-tour-chapters button[aria-current="true"]{border-color:var(--brand)}
+.sx .sx-tour-chapters button[aria-current="true"] span{background:var(--brand);color:var(--brand-ink)}
+.sx .sx-tour-stage{display:grid;gap:20px;grid-template-columns:minmax(0,1fr);align-items:start}
+@media(min-width:1000px){.sx .sx-tour-stage{grid-template-columns:minmax(0,1.9fr) minmax(300px,1fr)}}
+.sx .sx-tour-frame{margin:0;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden;min-width:0}
+.sx .sx-tour-frame.is-phone{max-width:360px;margin-inline:auto;padding:12px;border-radius:28px}
+.sx .sx-tour-bar{display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--wash);border-bottom:1px solid var(--line)}
+.sx .sx-tour-bar i{width:10px;height:10px;border-radius:50%;background:var(--line)}
+.sx .sx-tour-bar span{margin-inline-start:10px;font:12px var(--mono);color:var(--muted)}
+.sx .sx-tour-shot{position:relative;width:100%;overflow:hidden;background:var(--wash)}
+.sx .sx-tour-shot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.sx .sx-tour-spot{position:absolute;pointer-events:none;border-radius:8px;outline:3px solid var(--brand);box-shadow:0 0 0 9999px rgba(15,23,42,.45);transition:all .3s}
+.sx .sx-tour-missing{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+.sx .sx-tour-card h2{font-size:24px;margin-top:8px}
+.sx .sx-tour-card p{margin-top:10px}
+.sx .sx-tour-actions{display:flex;justify-content:space-between;gap:12px;margin-top:18px}
+.sx .sx-tour-actions button:disabled{opacity:.4;cursor:default}
+.sx .sx-tour-list{margin-top:22px}
+.sx .sx-tour-list ul{margin:10px 0 0;padding-inline-start:18px;display:grid;gap:8px}
+@media(prefers-reduced-motion:reduce){.sx .sx-tour-spot{transition:none}}

@@ -1,0 +1,12 @@
+import { createRequire } from "node:module"; import fs from "node:fs";
+const require = createRequire("/home/najeeb/Linux-Dev/Humanetarian/DonerDesk/apps/web/package.json");
+const { chromium } = require("@playwright/test");
+const PID = "f2a96a79-148d-4ec6-86d8-8bc58aeb90cb"; const id = fs.readFileSync(process.argv[2] + ".period", "utf8");
+const b = await chromium.connectOverCDP("http://localhost:9333"); const page = b.contexts()[0].pages()[0]; page.setDefaultTimeout(30000);
+await page.goto(`https://donordesk.online/projects/${PID}/reports/${id}/inputs?tab=indicators`); await page.waitForTimeout(4500);
+await page.locator("input[type=file][aria-label='Import Excel']").setInputFiles(process.argv[3]); await page.waitForTimeout(5000);
+const ap = page.getByRole("button", { name: /^Apply \d+ to grid/ }); console.log("apply:", await ap.innerText()); await ap.click(); await page.waitForTimeout(3000);
+const click = async (name) => { const x = page.getByRole("button", { name }).first(); if (await x.isEnabled().catch(() => false)) { await x.click(); await page.waitForTimeout(7000); return true; } return false; };
+console.log("save", await click("Save all")); console.log("submit", await click(/^Submit for review/)); console.log("verify", await click(/^Verify all/));
+console.log((await page.locator("main").innerText()).match(/All \d+ values verified|[^\n]*not verified[^\n]*|[^\n]*evidence[^\n]*/gi)?.slice(0, 4));
+await b.close();

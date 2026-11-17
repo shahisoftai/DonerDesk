@@ -1,97 +1,117 @@
 #!/usr/bin/env node
 /**
- * Captures one screenshot per product-tour step from a real tenant and writes
- * `public/tour/{stepId}.jpg` + `src/features/tour/domain/tour-shots.json`
- * (spotlight rect per step, as fractions of the viewport). The public /tour
- * page renders these so visitors see the real portal behind each step.
+ * Captures one screenshot per public-tour scene (`src/features/tour/domain/public-tour-scenes.ts`) from the clean tour tenant and
+ * writes `public/tour/<scene>.jpg` + `src/features/tour/domain/tour-shots.json` (spotlight rectangle per scene, as fractions of the
+ * viewport). The /tour page draws these, so what visitors see is the real portal.
  *
- * Usage:
- *   TOUR_EMAIL=... TOUR_PASSWORD=... [TOUR_BASE_URL=https://donordesk.online] \
- *   [TOUR_PROJECT="Nutrition Resilience"] node apps/web/scripts/capture-tour.mjs
- * Re-run whenever the UI of a tour step changes.
+ * Run it with `node --experimental-strip-types`, credentials from the environment only (never commit them):
+ *   TOUR_EMAIL=… TOUR_PASSWORD=…            the project manager of the tour tenant (desktop scenes)
+ *   TOUR_FIELD_EMAIL=… TOUR_FIELD_PASSWORD=…  a field officer of the same tenant (phone scenes)
+ *   [TOUR_BASE_URL=https://donordesk.online] [TOUR_PROJECT="<project title>"] [TOUR_ONLY=entry-sheet,forms]
+ *   [TOUR_FALLBACK=1]                       use each page's root element while the data-tour-id hooks are not deployed yet
+ *   [TOUR_FORBID='regex']                   extra strings that must not appear on any captured page
+ * Re-run whenever a tour screen changes. A scene whose page shows a forbidden string, or whose spotlight element is missing, is NOT
+ * captured and is reported; the manifest is marked `captured` only when every scene succeeded.
  */
 import { chromium } from "@playwright/test";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { TOUR_SCENES } from "../src/features/tour/domain/public-tour-scenes.ts";
 
 const BASE = process.env.TOUR_BASE_URL ?? "https://donordesk.online";
-const EMAIL = process.env.TOUR_EMAIL;
-const PASSWORD = process.env.TOUR_PASSWORD;
-const PROJECT = process.env.TOUR_PROJECT ?? "Nutrition Resilience";
-const CDP = process.env.TOUR_CDP; // attach to a visible browser the user already logged in
-if (!CDP && (!EMAIL || !PASSWORD)) throw new Error("Set TOUR_EMAIL and TOUR_PASSWORD");
+const PROJECT = process.env.TOUR_PROJECT;
+const ONLY = process.env.TOUR_ONLY ? new Set(process.env.TOUR_ONLY.split(",")) : null;
+const FORBID = new RegExp(`DEMO-\\d|P25-CHECK|ZZ TEST|Najeeb|shahisoft|@gmail\\.com${process.env.TOUR_FORBID ? `|${process.env.TOUR_FORBID}` : ""}`, "i");
+const LOGINS = {
+  manager: { email: process.env.TOUR_EMAIL, password: process.env.TOUR_PASSWORD },
+  field: { email: process.env.TOUR_FIELD_EMAIL, password: process.env.TOUR_FIELD_PASSWORD },
+};
+const SIZE = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } };
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(here, "../public/tour");
 const MANIFEST = path.join(here, "../src/features/tour/domain/tour-shots.json");
-const W = 1440, H = 900;
+if (!PROJECT) throw new Error("Set TOUR_PROJECT to the tour tenant's project title");
 
-// id, route suffix, selector to spotlight, optional fallback selector
-const STEPS = [
-  ["dashboard-demo-project", "@dashboard", '[data-tour-id="demo-project-card"]', "main"],
-  ["project-setup", "/setup", '[data-tour-id="project-setup-checklist"]'],
-  ["donor-template", "/templates", '[data-tour-id="donor-template-review"]'],
-  ["logframe-indicators", "/logframe", '[data-tour-id="logframe-indicator-list"]'],
-  ["evidence", "/evidence", '[data-tour-id="evidence-upload"]'],
-  ["reporting-period", "/reports", '[data-tour-id="reporting-period-list"]'],
-  ["ai-draft", "/reports/{P}", '[data-tour-id="generate-ai-draft"]', "#report-draft-actions, button:has-text('Regenerate')"],
-  ["report-editor", "/reports/{P}", '[data-tour-id="report-editor"]'],
-  ["activity-capture", "/activities/new", "main"],
-  ["indicator-entry", "/reports/{P}/indicators", "main"],
-  ["closing-report", "/reports/closing", "main"],
-  ["team", "/team", "main"],
-  ["compliance", "/compliance", '[data-tour-id="compliance-checklist"]'],
-  ["export", "/reports/{P}/export", '[data-tour-id="export-report"]'],
-  ["plan-timeline", "/activities", "main"],
-  ["data-center", "/data", "main"],
-  ["infographics", "/infographics", "main"],
-  ["my-work", "@/my-work", "main"],
-  ["portfolio", "@/portfolio", "main"],
-];
-
-const browser = CDP ? await chromium.connectOverCDP(CDP) : await chromium.launch();
-const page = CDP
-  ? (browser.contexts()[0].pages()[0] ?? (await browser.contexts()[0].newPage()))
-  : await (await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })).newPage();
-await page.setViewportSize({ width: W, height: H });
-const settle = () => page.waitForLoadState("networkidle").catch(() => {});
-
-if (!CDP) {
+const browser = await chromium.launch();
+const sessions = {};
+async function sessionFor(who, viewport) {
+  const key = `${who}:${viewport}`;
+  if (sessions[key]) return sessions[key];
+  const { email, password } = LOGINS[who];
+  if (!email || !password) return null;
+  const size = SIZE[viewport];
+  const ctx = await browser.newContext({ viewport: size, deviceScaleFactor: viewport === "phone" ? 2 : 1, colorScheme: "light", locale: "en-GB" });
+  const page = await ctx.newPage();
   await page.goto(`${BASE}/login`);
-  await page.fill("#email", EMAIL);
-  await page.fill("#password", PASSWORD);
+  await page.fill("#email", email);
+  await page.fill("#password", password);
   await Promise.all([page.waitForURL((u) => !u.pathname.startsWith("/login")), page.click("button[type=submit]")]);
+  return (sessions[key] = page);
 }
+const settle = (page) => page.waitForLoadState("networkidle").catch(() => {});
 
-await page.goto(`${BASE}/projects`);
-await settle();
-const href = await page.locator(`a[href*="/projects/"]:has-text("${PROJECT}")`).first().getAttribute("href");
+// Ids from the manager's session: the project, its first reporting period and the first dashboard.
+const mgr = await sessionFor("manager", "desktop");
+if (!mgr) throw new Error("Set TOUR_EMAIL and TOUR_PASSWORD");
+await mgr.goto(`${BASE}/projects`); await settle(mgr);
+const href = await mgr.locator(`a[href*="/projects/"]:has-text("${PROJECT}")`).first().getAttribute("href");
 const projectId = href?.match(/\/projects\/([0-9a-f-]{36})/)?.[1];
 if (!projectId) throw new Error(`Project "${PROJECT}" not found`);
-await page.goto(`${BASE}/projects/${projectId}/reports`);
-await settle();
-const periodId = (await page.locator('a[href*="/reports/"]').evaluateAll((as) => as.map((a) => a.getAttribute("href")))).map((h) => h?.match(/\/reports\/([0-9a-f-]{36})/)?.[1]).find(Boolean);
-if (!periodId) throw new Error("No reporting period found");
+await mgr.goto(`${BASE}/projects/${projectId}/reports`); await settle(mgr);
+const hrefs = await mgr.locator('a[href*="/reports/"]').evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+// The list is newest first; the tour reads the earliest period (the one with figures).
+const periodId = hrefs.map((h) => h?.match(/\/reports\/([0-9a-f-]{36})/)?.[1]).filter(Boolean).at(-1);
+await mgr.goto(`${BASE}/visuals`); await settle(mgr);
+const vh = await mgr.locator('a[href^="/visuals/"]').evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+const canvasId = vh.map((h) => h?.match(/^\/visuals\/([0-9a-f-]{36})/)?.[1]).find(Boolean);
+const ids = { projectId, periodId, canvasId };
 
 await mkdir(OUT, { recursive: true });
-const shots = {};
-for (const [id, route, selector, fallback] of STEPS) {
-  await page.goto(route === "@dashboard" ? `${BASE}/dashboard` : route.startsWith("@") ? `${BASE}${route.slice(1)}` : `${BASE}/projects/${projectId}${route.replace("{P}", periodId)}`);
-  await settle();
-  let el = page.locator(selector).first();
-  if (!(await el.count()) && fallback) el = page.locator(fallback).first();
-  if (!(await el.count())) { console.warn(`! ${id}: target missing, skipped`); continue; }
+let manifest;
+try { manifest = JSON.parse(await readFile(MANIFEST, "utf8")); } catch { manifest = { shots: {} }; }
+manifest.size = SIZE;
+const failed = [];
+
+for (const scene of TOUR_SCENES) {
+  if (ONLY && !ONLY.has(scene.id)) continue;
+  const route = scene.route.replace(/\{(\w+)\}/g, (_, k) => ids[k] ?? `MISSING-${k}`);
+  if (route.includes("MISSING-")) { failed.push(`${scene.id}: ${route}`); continue; }
+  const page = await sessionFor(scene.as, scene.viewport);
+  if (!page) { failed.push(`${scene.id}: no ${scene.as} login`); continue; }
+  const size = SIZE[scene.viewport];
+  await page.goto(`${BASE}${route}`); await settle(page);
+  let el = page.locator(`[data-tour-id="${scene.hook}"]`).first();
+  // TOUR_FALLBACK=1: before the hooks are deployed, use the page's root element, which is where each hook sits.
+  if (!(await el.count()) && process.env.TOUR_FALLBACK) el = page.locator("main .animate-fade-in, main .page-stack, main, body").first();
+  if (!(await el.count())) { failed.push(`${scene.id}: no [data-tour-id="${scene.hook}"] on ${route}`); continue; }
   await el.evaluate((n) => n.scrollIntoView({ block: "nearest" }));
-  await page.waitForTimeout(400);
-  const box = await el.boundingBox();
-  await page.screenshot({ path: path.join(OUT, `${id}.jpg`), type: "jpeg", quality: 80 });
-  const pad = fallback ? 12 : 0;
-  const x = Math.max(0, box.x - pad), y = Math.max(0, box.y - pad);
-  const w = Math.min(box.width + 2 * pad, W - x), h = Math.min(box.height + 2 * pad, H - y);
-  // A target that fills the viewport carries no information as a spotlight.
-  shots[id] = w * h > 0.6 * W * H ? null : { x: x / W, y: y / H, w: w / W, h: h / H };
-  console.log(`ok ${id}`, shots[id]);
+  await page.waitForTimeout(600);
+  const text = await page.locator("body").innerText();
+  const bad = text.match(FORBID);
+  if (bad) { failed.push(`${scene.id}: page shows "${bad[0]}"`); continue; }
+  await page.screenshot({ path: path.join(OUT, `${scene.id}.jpg`), type: "jpeg", quality: 82 });
+  // The spotlight is the target itself when it fits the screen; a page-sized target is narrowed to the largest block inside it that does.
+  const rect = await el.evaluate((root, size) => {
+    const vis = (n) => { const r = n.getBoundingClientRect(); const x = Math.max(0, r.left), y = Math.max(0, r.top), w = Math.min(r.right, size.width) - x, h = Math.min(r.bottom, size.height) - y; return w > 0 && h > 0 ? { x, y, w, h } : null; };
+    const area = (r) => r.w * r.h, screen = size.width * size.height;
+    const own = vis(root); if (!own) return null;
+    if (area(own) <= 0.55 * screen) return own;
+    let best = null;
+    for (const n of root.querySelectorAll(":scope > *, :scope > * > *, :scope > * > * > *")) {
+      const r = vis(n); if (!r || area(r) < 0.1 * screen || area(r) > 0.55 * screen || r.w < 0.4 * size.width) continue;
+      if (!best || area(r) > area(best)) best = r;
+    }
+    return best ?? { x: own.x, y: own.y, w: own.w, h: Math.min(own.h, 140) };
+  }, size);
+  if (!rect) { failed.push(`${scene.id}: spotlight target is off screen`); continue; }
+  manifest.shots[scene.id] = { x: rect.x / size.width, y: rect.y / size.height, w: rect.w / size.width, h: rect.h / size.height };
+  console.log(`ok ${scene.id}`);
 }
-await writeFile(MANIFEST, JSON.stringify({ width: W, height: H, shots }, null, 2) + "\n");
-if (!CDP) await browser.close(); // keep a visible window open for the user
+
+manifest.captured = TOUR_SCENES.every((s) => manifest.shots[s.id]) && failed.length === 0;
+await writeFile(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
+await browser.close();
+if (failed.length) { console.error(`\nNot captured:\n - ${failed.join("\n - ")}`); process.exit(1); }
+console.log("\nAll scenes captured.");

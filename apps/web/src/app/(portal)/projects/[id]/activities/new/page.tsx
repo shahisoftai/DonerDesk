@@ -53,7 +53,7 @@ export default async function NewActivityPage({ params, searchParams }: { params
   const evidence = evidenceResult.ok ? evidenceResult.value.items : [];
 
   return (
-    <div className="animate-fade-in">
+    <div data-tour-id="record-activity" className="animate-fade-in">
       <h1 className="page-title">New activity update</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Submitting an activity update sends it for review by your project team.

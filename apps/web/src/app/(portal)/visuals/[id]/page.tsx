@@ -28,7 +28,7 @@ export default async function VisualPage({ params }: { params: Promise<{ id: str
   const sheets = await Promise.all(pickers.map((pid) => gatewayRequest(`/v1/projects/${encodeURIComponent(pid)}/data-sheet`, DataSheetResponseSchema, ctx.token)));
   const indicatorsByProject = Object.fromEntries(pickers.map((pid, i) => [pid, (sheets[i]!.ok ? sheets[i]!.value.indicators : []).map((x) => ({ id: x.id, code: x.code, name: x.name }))]));
   return (
-    <div className="animate-fade-in space-y-3">
+    <div data-tour-id="dashboard-canvas" className="animate-fade-in space-y-3">
       <p className="text-xs print:hidden"><a className="hover:underline" href="/visuals">Dashboards and infographics</a></p>
       <CanvasWorkspace initial={canvas.value} resolved={resolved.ok ? resolved.value : null} resolveError={resolved.ok ? null : resolved.error.message} projects={projectList} indicatorsByProject={indicatorsByProject}  subscription={(subscriptions.ok ? subscriptions.value.subscriptions.find((x) => x.canvasId === id)?.every : undefined) ?? "NONE"} />
     </div>

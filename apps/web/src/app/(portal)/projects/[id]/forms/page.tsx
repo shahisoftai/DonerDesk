@@ -16,7 +16,7 @@ export default async function FormsPage({ params }: { params: Promise<{ id: stri
   if (!result.ok) return <InlineError title={result.error.message} referenceId={result.error.referenceId} />;
   const canEdit = ctx.capabilities.has("project.edit");
   return (
-    <div className="page-stack animate-fade-in">
+    <div data-tour-id="forms" className="page-stack animate-fade-in">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="page-title">Collection forms</h1>

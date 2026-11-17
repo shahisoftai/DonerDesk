@@ -30,7 +30,7 @@ export async function AuditLogPageContent({ heading = "Audit log" }: { heading?:
   }
 
   return (
-    <div className="animate-fade-in">
+    <div data-tour-id="audit" className="animate-fade-in">
       <h1 className="page-title">{heading}</h1>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Sensitive values are redacted in the change summaries below.

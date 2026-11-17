@@ -32,7 +32,7 @@ export default async function ProjectTeamPage({ params }: { params: Promise<{ id
   const today = new Date().toISOString().slice(0, 10);
 
   return (
-    <div className="animate-fade-in">
+    <div data-tour-id="team" className="animate-fade-in">
       <h2 className="text-xl font-semibold tracking-tight">Project team</h2>
       <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
         Roles here are scoped to this project. Changes are audited.

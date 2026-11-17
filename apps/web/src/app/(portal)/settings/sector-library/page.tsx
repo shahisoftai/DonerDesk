@@ -12,7 +12,7 @@ export default async function SectorLibrarySettingsPage() {
   const progress = await gatewayRequest("/v1/sector-library/review/progress", ReviewProgressSchema, ctx.token);
   if (!progress.ok) return <InlineError title={progress.error.message} referenceId={progress.error.referenceId} />;
   return (
-    <div className="animate-fade-in">
+    <div data-tour-id="sector-library" className="animate-fade-in">
       <LibraryReviewPanel progress={progress.value} />
     </div>
   );

@@ -7,7 +7,7 @@ import { SiteFooter } from "@/components/site/SiteFooter";
 export const metadata: Metadata = {
   alternates: { canonical: "/tour" },
   title: "Product Tour",
-  description: "See how DonorDesk manages a project from logframe and work plan to field data, evidence and donor-ready reports. No signup required.",
+  description: "Tour DonorDesk in six steps, or by role: plan from your documents, collect offline in the field, track results by place, build dashboards, prove every figure and report to donors. No signup required.",
 };
 
 export default function TourPage() {

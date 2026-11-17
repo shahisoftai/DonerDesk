@@ -24,5 +24,5 @@ export default async function WizardPage({ searchParams }: { searchParams: Promi
   }
   const view = await getDraftAction(id);
   if (!view.ok) return <p role="alert" className="mx-auto max-w-xl p-6 text-sm">{view.error.message}</p>;
-  return <PcwShell key={id} id={id} initial={view.value} />;
+  return <div data-tour-id="wizard"><PcwShell key={id} id={id} initial={view.value} /></div>;
 }

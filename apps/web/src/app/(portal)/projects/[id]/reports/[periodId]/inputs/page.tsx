@@ -121,7 +121,7 @@ export default async function ReportInputsPage({
   ];
 
   return (
-    <div className="animate-fade-in space-y-5">
+    <div data-tour-id="entry-sheet" className="animate-fade-in space-y-5">
       <PeriodStepper projectId={projectId} periodId={periodId} />
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">

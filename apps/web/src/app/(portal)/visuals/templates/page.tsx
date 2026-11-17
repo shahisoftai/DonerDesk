@@ -16,7 +16,7 @@ export default async function VisualTemplatesPage() {
     gatewayRequest("/v1/projects", ProjectsResponseSchema, ctx.token),
   ]);
   return (
-    <div className="page-stack animate-fade-in">
+    <div data-tour-id="dashboard-templates" className="page-stack animate-fade-in">
       <h1 className="page-title">Visual Studio</h1>
       <ShellTabs active="templates" />
       <ul className="grid gap-3 sm:grid-cols-2">

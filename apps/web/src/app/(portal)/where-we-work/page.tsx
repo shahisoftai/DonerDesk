@@ -18,7 +18,7 @@ export default async function OrganisationWhereWeWorkPage({ searchParams }: { se
   if (!r.ok) return <InlineError title={r.error.message} referenceId={r.error.referenceId} />;
   const v = r.value;
   return (
-    <div className="page-stack animate-fade-in">
+    <div data-tour-id="where-we-work" className="page-stack animate-fade-in">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="page-title">Where we work</h1>
