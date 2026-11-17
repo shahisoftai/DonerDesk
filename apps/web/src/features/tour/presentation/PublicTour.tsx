@@ -29,8 +29,10 @@ export function PublicTour() {
   const last = index === scenes.length - 1;
 
   useEffect(() => {
-    const fromHash = sceneForHash(window.location.hash);
-    if (fromHash) setSceneId(fromHash.id);
+    const fromHash = () => { const hit = sceneForHash(window.location.hash); if (hit) setSceneId(hit.id); };
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
   }, []);
 
   const go = (id: string) => {

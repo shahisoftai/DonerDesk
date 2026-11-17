@@ -24,7 +24,7 @@ export interface TourScene {
   hook: string;
   viewport: TourViewport;
   /** Which demo person the capture signs in as. */
-  as: "manager" | "field";
+  as: "manager" | "field" | "admin";
   /** The roles whose "Show me my part" path includes this scene. */
   roles: readonly TourRole[];
   /** A `#id` on /features that goes deeper. */
@@ -33,8 +33,8 @@ export interface TourScene {
 
 export const TOUR_SCENES: readonly TourScene[] = [
   // Plan
-  { id: "wizard", chapter: "plan", route: "/projects/new/wizard", hook: "wizard", viewport: "desktop", as: "manager", roles: ["manager", "me", "grants"], feature: "plan" },
-  { id: "sector-library", chapter: "plan", route: "/settings/sector-library", hook: "sector-library", viewport: "desktop", as: "manager", roles: ["manager", "me"], feature: "logframe" },
+  { id: "wizard", chapter: "plan", route: "/projects/new/wizard", hook: "wizard", viewport: "desktop", as: "admin", roles: ["manager", "me", "grants"], feature: "plan" },
+  { id: "sector-library", chapter: "plan", route: "/settings/sector-library", hook: "sector-library", viewport: "desktop", as: "admin", roles: ["manager", "me"], feature: "logframe" },
   { id: "framework", chapter: "plan", route: "/projects/{projectId}/logframe", hook: "logframe-indicator-list", viewport: "desktop", as: "manager", roles: ["director", "manager", "me", "grants"], feature: "logframe" },
   { id: "work-plan", chapter: "plan", route: "/projects/{projectId}/activities", hook: "work-plan", viewport: "desktop", as: "manager", roles: ["manager", "field"], feature: "workplan" },
   // Collect
@@ -53,11 +53,9 @@ export const TOUR_SCENES: readonly TourScene[] = [
   { id: "portfolio", chapter: "see", route: "/portfolio", hook: "portfolio", viewport: "desktop", as: "manager", roles: ["director", "grants"], feature: "portfolio" },
   // Prove
   { id: "evidence", chapter: "prove", route: "/projects/{projectId}/evidence", hook: "evidence-upload", viewport: "desktop", as: "manager", roles: ["manager", "me", "field"], feature: "evidence" },
-  { id: "audit", chapter: "prove", route: "/audit", hook: "audit", viewport: "desktop", as: "manager", roles: ["director", "grants"], feature: "security" },
-  { id: "team", chapter: "prove", route: "/projects/{projectId}/team", hook: "team", viewport: "desktop", as: "manager", roles: ["director", "manager"], feature: "team" },
+  { id: "team", chapter: "prove", route: "/projects/{projectId}/team", hook: "team", viewport: "desktop", as: "admin", roles: ["director", "manager"], feature: "team" },
   // Report
   { id: "donor-template", chapter: "report", route: "/projects/{projectId}/templates", hook: "donor-template-review", viewport: "desktop", as: "manager", roles: ["manager", "grants"], feature: "templates" },
-  { id: "ai-draft", chapter: "report", route: "/projects/{projectId}/reports/{periodId}", hook: "generate-ai-draft", viewport: "desktop", as: "manager", roles: ["manager", "me", "grants"], feature: "drafting" },
   { id: "report-editor", chapter: "report", route: "/projects/{projectId}/reports/{periodId}", hook: "report-editor", viewport: "desktop", as: "manager", roles: ["manager", "me", "grants"], feature: "editor" },
   { id: "export", chapter: "report", route: "/projects/{projectId}/reports/{periodId}/export", hook: "export-report", viewport: "desktop", as: "manager", roles: ["director", "manager", "grants"], feature: "approval" },
   { id: "closing-report", chapter: "report", route: "/projects/{projectId}/reports/closing", hook: "closing-report", viewport: "desktop", as: "manager", roles: ["manager", "grants"], feature: "reporting" },

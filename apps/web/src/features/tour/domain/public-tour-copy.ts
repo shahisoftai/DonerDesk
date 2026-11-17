@@ -127,30 +127,20 @@ export const PUBLIC_TOUR_EN: PublicTourBundle = {
       body: "Upload photos, receipts and documents against an activity or an indicator value. Each file shows the report statements that cite it, and confidentiality levels decide who can open it.",
       note: "A file counts as proof only once it is attached. Restricted files stay closed to roles without the permission, in lists and downloads alike.",
     },
-    audit: {
-      title: "A record of every change",
-      body: "Every change to figures, reports and settings is written to an audit log that is append-only and checked on a schedule for tampering.",
-      note: "A correction is a new event, never an edit. DonorDesk does not claim an external security certification.",
-    },
     team: {
       title: "The right people, the right access",
-      body: "Invite colleagues, partners and viewers per project. Roles decide who can write, review, approve and export, and a second approver can be required.",
-      note: "Outside partners reach only the projects and routes you name. Two-step sign-in can be required of the whole organisation.",
+      body: "Invite colleagues, partners and viewers per project. Roles decide who can write, review, approve and export, and a second approver can be required. Every change is written to an append-only audit log.",
+      note: "Outside partners reach only the projects and routes you name. Two-step sign-in can be required of the whole organisation. DonorDesk does not claim an external security certification.",
     },
     "donor-template": {
       title: "Teach it your donor's report once",
       body: "Upload the donor's template. DonorDesk extracts the sections, questions, tables and word limits for you to review and approve; that becomes the skeleton of every report.",
       note: "Extraction is checked against the document and flagged where it is unsure. You approve it before anything is drafted.",
     },
-    "ai-draft": {
-      title: "A first draft written from your record",
-      body: "Generate a draft from verified results, activities and evidence. Tables and charts are built from the data; the writer only writes prose around them.",
-      note: "A number that is not in your inputs is rejected. When a section cannot be written safely, you get the plain version and a reason, not an invented one.",
-    },
     "report-editor": {
-      title: "Review every claim before it goes out",
-      body: "Edit the draft, see the source of each statement, resolve the claims that need a decision, and leave out what does not apply.",
-      note: "A person approves; the author cannot approve alone when a second approver is required. Any later change returns the report to review.",
+      title: "A draft written from your record, then checked claim by claim",
+      body: "Generate a first draft from verified results, activities and evidence: tables and charts are built from the data and the writer only writes prose around them. Then edit, see the source of each statement, resolve the claims that need a decision and leave out what does not apply.",
+      note: "A number that is not in your inputs is rejected, and a section that cannot be written safely gets the plain version with a reason. A person approves; the author cannot approve alone when a second approver is required. Any later change returns the report to review.",
     },
     export: {
       title: "Export for review or for the donor",

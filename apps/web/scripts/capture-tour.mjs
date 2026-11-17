@@ -26,6 +26,7 @@ const FORBID = new RegExp(`DEMO-\\d|P25-CHECK|ZZ TEST|Najeeb|shahisoft|@gmail\\.
 const LOGINS = {
   manager: { email: process.env.TOUR_EMAIL, password: process.env.TOUR_PASSWORD },
   field: { email: process.env.TOUR_FIELD_EMAIL, password: process.env.TOUR_FIELD_PASSWORD },
+  admin: { email: process.env.TOUR_ADMIN_EMAIL, password: process.env.TOUR_ADMIN_PASSWORD },
 };
 const SIZE = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } };
 
@@ -89,6 +90,8 @@ for (const scene of TOUR_SCENES) {
   await el.evaluate((n) => n.scrollIntoView({ block: "nearest" }));
   await page.waitForTimeout(600);
   const text = await page.locator("body").innerText();
+  const refused = text.match(/lacks permission|do not have permission|only an administrator|could not be loaded|page could not be found|something went wrong/i);
+  if (refused) { failed.push(`${scene.id}: page says "${refused[0]}"`); continue; }
   const bad = text.match(FORBID);
   if (bad) { failed.push(`${scene.id}: page shows "${bad[0]}"`); continue; }
   await page.screenshot({ path: path.join(OUT, `${scene.id}.jpg`), type: "jpeg", quality: 82 });
@@ -99,8 +102,8 @@ for (const scene of TOUR_SCENES) {
     const own = vis(root); if (!own) return null;
     if (area(own) <= 0.55 * screen) return own;
     let best = null;
-    for (const n of root.querySelectorAll(":scope > *, :scope > * > *, :scope > * > * > *")) {
-      const r = vis(n); if (!r || area(r) < 0.1 * screen || area(r) > 0.55 * screen || r.w < 0.4 * size.width) continue;
+    for (const n of root.querySelectorAll(":scope > *, :scope > * > *, :scope > * > * > *, :scope > * > * > * > *")) {
+      const r = vis(n); if (!r || area(r) < 0.05 * screen || area(r) > 0.55 * screen || r.w < 0.4 * size.width || r.y < 0.08 * size.height) continue;
       if (!best || area(r) > area(best)) best = r;
     }
     return best ?? { x: own.x, y: own.y, w: own.w, h: Math.min(own.h, 140) };
