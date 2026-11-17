@@ -8,6 +8,8 @@ import { capabilitiesForRole, can, type Capability } from "@/lib/shared/capabili
 export type AuthContext = {
   token: string;
   role: string | null;
+  /** The signed-in person (the session's subject), used to keep remembered choices apart per person on a shared device. */
+  userId: string | null;
   /** An outside partner: the menu and home page are trimmed to their projects (the API enforces it). */
   external: boolean;
   capabilities: ReadonlySet<Capability>;
@@ -20,7 +22,7 @@ export async function requireSession(): Promise<AuthContext> {
   }
   const payload = decodeSessionPayload(token);
   const role = payload?.role ?? null;
-  return { token, role, external: payload?.ext === true, capabilities: capabilitiesForRole(role ?? undefined) };
+  return { token, role, userId: payload?.sub ?? null, external: payload?.ext === true, capabilities: capabilitiesForRole(role ?? undefined) };
 }
 
 async function currentPath(): Promise<string> {

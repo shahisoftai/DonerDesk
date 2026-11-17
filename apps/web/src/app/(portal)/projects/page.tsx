@@ -18,6 +18,7 @@ import {
   type PortfolioProject,
 } from "@/features/projects/presentation/project-portfolio";
 import { SECTOR_LABEL } from "@/lib/labels";
+import { RememberFilters } from "@/components/data/RememberFilters";
 
 export const dynamic = "force-dynamic";
 
@@ -68,8 +69,11 @@ export default async function ProjectsList({
     return `/projects${url.toString() ? `?${url.toString()}` : ""}`;
   };
 
+  const currentQuery = new URLSearchParams(Object.entries(params).flatMap(([k, v]): Array<[string, string]> => (typeof v === "string" ? [[k, v]] : []))).toString();
+
   return (
     <div className="animate-fade-in">
+      <RememberFilters scope="projects" userId={ctx.userId} baseUrl="/projects" current={currentQuery} />
       <header className="flex items-center justify-between">
         <h1 className="page-title">Projects</h1>
         <PermissionGate capabilities={ctx.capabilities} capability="project.create">

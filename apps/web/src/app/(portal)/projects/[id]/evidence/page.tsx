@@ -18,6 +18,8 @@ import { Badge } from "@/components/data/Badge";
 import { Pagination } from "@/components/data/Pagination";
 import { verificationStatusTone, confidentialityTone } from "@/lib/shared/tone";
 import { EVIDENCE_TYPE_LABEL, EVIDENCE_VERIFICATION_LABEL, CONFIDENTIALITY_LABEL } from "@/lib/labels";
+import { RememberFilters } from "@/components/data/RememberFilters";
+import { EmptyStateFor } from "@/components/feedback/EmptyStateFor";
 import { EvidenceFilterBar } from "@/features/evidence/presentation/EvidenceFilterBar";
 import { DriveFolderPanel } from "@/features/evidence/presentation/DriveFolderPanel";
 import { periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
@@ -131,20 +133,14 @@ export default async function EvidencePage({
       </header>
 
       <div className="mt-4">
+        <RememberFilters scope={`evidence:${resolvedParams.id}`} userId={ctx.userId} baseUrl={baseUrl} current={queryString} />
         <EvidenceFilterBar baseUrl={baseUrl} current={queryString} options={{ periods: periodOptions, location: true }} />
       </div>
 
       <p className="mt-4 text-sm text-slate-600 dark:text-slate-400">{total} file(s).</p>
 
       {items.length === 0 ? (
-        <div className="card mt-4 text-sm text-slate-600 dark:text-slate-300">
-          No evidence matches these filters.{" "}
-          {Object.keys(filters).length > 0 ? (
-            <Link className="text-brand-600 hover:underline dark:text-brand-400" href={baseUrl}>Clear filters</Link>
-          ) : (
-            "Upload your first file to get started."
-          )}
-        </div>
+        <div className="mt-4"><EmptyStateFor kind={Object.keys(filters).length > 0 ? "PROJECT_EVIDENCE_FILTERED" : "PROJECT_EVIDENCE_NONE"} capabilities={ctx.capabilities} projectId={resolvedParams.id} /></div>
       ) : (
         <EvidenceSelectionProvider>
           <EvidenceBulkBar pendingIds={items.filter((e) => isAwaitingVerification(e.verificationStatus)).map((e) => e.id)} canVerify={ctx.capabilities.has("evidence.verify")} />

@@ -9,6 +9,7 @@ import { Breadcrumbs } from "@/components/layout/Page";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { uiLabel } from "@/features/i18n/domain/ui-labels";
 import { PROJECT_TABS, locateProjectPage, projectCrumbs, subNavFor, type ProjectFact } from "../domain/project-tabs";
+import { tabsFor } from "../domain/role-project-tabs";
 
 /** The project's tabs, the current tab's pages (with "More" for rare ones) and the breadcrumbs above the title. */
 export function ProjectCrumbs({ projectId, projectTitle }: { projectId: string; projectTitle: string }) {
@@ -18,18 +19,20 @@ export function ProjectCrumbs({ projectId, projectTitle }: { projectId: string; 
   return <Breadcrumbs items={projectCrumbs(projectId, projectTitle, sub).map((c) => ({ ...c, label: uiLabel(c.label, t) }))} />;
 }
 
-export function ProjectNav({ projectId, facts, capabilities }: { projectId: string; facts: readonly ProjectFact[]; capabilities: readonly string[] }) {
+export function ProjectNav({ projectId, facts, capabilities, role }: { projectId: string; facts: readonly ProjectFact[]; capabilities: readonly string[]; role?: string | null }) {
   const pathname = usePathname();
   const base = `/projects/${projectId}`;
   const { tab, page } = locateProjectPage(pathname.slice(base.length));
   const sub = subNavFor(tab, { facts: new Set(facts), capabilities: new Set(capabilities), current: page });
   const { t: tr } = useI18n();
+  const bar = tabsFor(PROJECT_TABS, role, tab.key);
 
   return (
     <div className="space-y-3">
-      <nav aria-label="Project sections" className="overflow-x-auto border-b border-slate-200 dark:border-white/10">
+    <div className="flex items-center gap-2 border-b border-slate-200 dark:border-white/10">
+      <nav aria-label="Project sections" className="min-w-0 flex-1 overflow-x-auto">
         <ul className="flex min-w-max gap-1">
-          {PROJECT_TABS.map((t) => {
+          {bar.shown.map((t) => {
             const on = t.key === tab.key;
             return (
               <li key={t.key}>
@@ -51,6 +54,8 @@ export function ProjectNav({ projectId, facts, capabilities }: { projectId: stri
           })}
         </ul>
       </nav>
+      {bar.more.length > 0 && <MoreMenu base={base} pages={bar.more.map((t) => ({ label: t.label, path: t.pages[0]!.path }))} />}
+    </div>
       {(sub.shown.length > 1 || sub.more.length > 0) && (
         <nav aria-label={`${uiLabel(tab.label, tr)}`} className="flex flex-wrap items-center gap-1">
           {sub.shown.map((p) => {

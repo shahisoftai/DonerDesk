@@ -17,7 +17,7 @@ You only see what your role may open: someone who cannot create projects is not 
 3. Narrow with the **status**, **sector**, **donor** and **country** filters and change the sort (for example **Soonest deadline**), then press **Apply**.
 4. Each row has a **⋯** menu with shortcuts (open, results framework, enter data, reports, project settings). Pointing at a title shows a small card with its code, donor, status and days left.
 
-Filters are kept in the page address, so you can bookmark or share a filtered view.
+Filters are kept in the page address, so you can bookmark or share a filtered view. The filters you last used on **Projects** and on the **Evidence** lists are also remembered on this device, for your sign-in only: open the list without filters and it comes back as you left it, and clearing the filters clears what was remembered. A page number is never remembered.
 
 ## Evidence
 

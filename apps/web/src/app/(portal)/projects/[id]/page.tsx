@@ -15,6 +15,8 @@ import { PeriodSwitcher } from "@/features/projects/presentation/PeriodSwitcher"
 import { projectStatusTone } from "@/lib/shared/tone";
 import { LifecycleStrip } from "@/features/projects/presentation/overview/LifecycleStrip";
 import { NeedsYouSection } from "@/features/projects/presentation/overview/NeedsYouSection";
+import { NextStepStrip } from "@/features/projects/presentation/overview/NextStepStrip";
+import { nextStep } from "@/features/projects/domain/next-step";
 import { PulseSection } from "@/features/projects/presentation/overview/PulseSection";
 import { CalendarSection } from "@/features/projects/presentation/overview/CalendarSection";
 import { ReportingSection } from "@/features/projects/presentation/overview/ReportingSection";
@@ -138,6 +140,8 @@ export default async function ProjectDetail({
           <PeriodSwitcher periods={periods.map((p) => ({ id: p.id, label: p.title, status: p.status }))} value={activePeriodId ?? ""} />
         </section>
       ) : null}
+
+      <NextStepStrip step={nextStep({ needsYou: has("NEEDS_YOU") && data.needsYou.ok ? data.needsYou.value : [], hasPeriods: periods.length > 0, canCreatePeriod: ctx.capabilities.has("project.edit"), projectId: identity.id })} />
 
       {!has("REPORTING") ? (
         <section className="mt-6">

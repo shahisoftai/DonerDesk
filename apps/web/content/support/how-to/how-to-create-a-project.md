@@ -17,6 +17,10 @@ It helps to have to hand: the donor's name, the project dates, your results (goa
 3. The bar **Still to answer (n)** lists every missing answer. Click one to go to it.
 4. Under the tabs, tick **Only what is still needed** if you want **Next →** to skip slides that are already complete (for example after the starting answers filled most of them) and take you straight to what is missing, then to the last slide.
 
+When you start from documents, slide 1 opens with **What we found in your documents**: a line per part (for example *Indicators: 12 found, 12 waiting for you*), a button **Confirm all N that are waiting** and a button **Go to the first step that needs you**. Nothing is accepted until you click, and you can still change or remove any item on its own slide.
+
+Slides reuse what you already told the wizard. A box headed **Already given, used here** appears on **Places** (the country), **Indicators** (your team), **Work plan** (your team, your places and the project dates) and **Budget and finance** (the currency), each value followed by where it came from, for example *(from Start)*. Change a value on the slide it came from.
+
 Read the yellow notice at the top once. The wizard reads documents with an AI that can miss information or misread a figure, so **check each item against your documents. You are responsible for what you accept.**
 
 ## Step 2: Go through the ten slides
@@ -45,8 +49,9 @@ What the project will achieve, from goal down to activities.
 ### 4. Indicators
 How you will know each result is reached.
 - **Choose from the library**: filter by result level, kind, **Recommended only** or **With a reference standard**; click **Select the recommended ones** (or **Select this group**, or tick single indicators), choose where they go under **Put them under** (**The result at each indicator's own level** is the default), then click **Add selected: N**. Or use **Add an indicator** (type **What will be measured**, choose what it **Measures**, click **Add an indicator**).
-- Each indicator then gets a card with: **Measures**, **Kind of number**, **Unit**, **Starting value** (or tick **No starting value**), **Target**, **How often**, **Break down by** (separate with commas), **Responsible** (someone from your team) and **Better when** (**Higher** or **Lower**).
-- Every indicator needs its kind, frequency, starting value and target, an owner and a direction before the slide is complete. **Fill in for all indicators with nothing yet** sets **How often** and **Break down by** for all cards at once.
+- Each indicator is one row, closed to keep the page short. A closed row shows the code, the name and the kind, target and frequency, plus **Needs: …** when something is still missing (for example *Needs: owner, direction*). Click the row to open it; the first row that needs something opens by itself. **Expand all** and **Collapse all** sit above the list. **Accept** and **Remove** stay on the closed row.
+- An open row has: **Name** and **Measures**, **Kind of number**, **Unit**, **Starting value** (or tick **No starting value**), **Target**, **How often**, **Break down by** (separate with commas), **Responsible** (someone from your team) and **Better when** (**Higher** or **Lower**).
+- Every indicator needs its kind, frequency, starting value and target, an owner and a direction before the slide is complete. **Owner for all indicators without one** and **Better direction for all indicators without one** let you pick a value once and click **Fill N empty**: only rows with nothing yet are filled, and a choice you already made is never changed. **Fill in for all indicators with nothing yet** sets **How often** and **Break down by** for all cards at once.
 - **Use suggested settings for all (n)** appears when some cards still have a gap. It fills only what is empty: the **Kind of number** (a rate or percentage when the unit or name says so, a number when the target is a plain number), **Better when** (lower for deaths, defaulting, non-response and stock-outs, higher for work done and people reached; a name it cannot judge gets nothing) and **Responsible** (the monitoring and evaluation officer, only when exactly one is on the team). It never changes a choice you already made, and you can change any card afterwards.
 - If you read an indicator **sheet**, a **Type** column (Number, Percentage, Ratio) and a **Break down by** column are read too, so those cards arrive filled in.
 - Every result needs at least one indicator; the slide names any that has none.
@@ -62,13 +67,14 @@ Where the project works.
 When and where each activity happens.
 - **Add an activity**: type the **Activity** and choose which logframe activity it is **Part of**, then click **Add an activity**. The slide counts *Activities with planned work: n of N*; **every activity in your logframe needs planned work**.
 - **Links we suggest** lists indicators the activity probably feeds, each with a reason. Click **Accept all** (or tick some and **Accept n selected**), or **Not this one**. Nothing is linked until you accept.
+- Each planned activity is one closed row showing its name and dates, with **Needs: …** when dates, a place or a lead is missing. Click it to open its options; **Expand all** and **Collapse all** sit above the list. **Lead for all activities without one** picks a team member and **Fill N empty** gives that person every activity that has no lead yet.
 - Each planned activity needs **Starts**, **Ends**, **Led by** (a team member), a place (**Project-wide** or the areas you ticked) and the indicators it **Feeds**. A note appears if some work **feeds no indicator**.
 - Each indicator must be fed by at least one activity, or it has no way of being collected.
 
 ### 7. Data entry
 How the numbers will be collected, checked and proven.
 - **How each indicator is collected**: choose **A form in the field**, **Another tool (KoboToolbox or SurveyCTO)**, **Typed in** or **Worked out from other indicators**. The wizard suggests one, with its reason; click **Use this** or **Not this one**.
-- **How values are checked**: **Simple** (values are handed in as they are saved, and a person who can verify checks them when a file is attached) or **Full** (every value is handed in, then a reviewer verifies it). Who verifies follows each person's role.
+- **How values are checked**: **Simple** (values are handed in as they are saved, and a person who can verify checks them when a file is attached) or **Full** (every value is handed in, then a reviewer verifies it). Who verifies follows each person's role. If your team has fewer than three people and you have not chosen, **Simple** is chosen for you and a sentence under the choice says so; choose **Full** to review every value separately.
 - **When values can be entered**: **Opens (days before the period ends)** and **Closes (days after the period ends)**. Reviewers can always enter a late value.
 
 ### 8. Reporting

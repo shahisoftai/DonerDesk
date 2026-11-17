@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { editDraftAction } from "@/lib/actions/project-setup-draft";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { usePcwCopy } from "./usePcwCopy";
+import { isSmallTeam, reviewDefaultFor } from "../domain/review-default";
 import { METHODS, METHOD_LABEL, REVIEW_LABEL, REVIEW_MODES, formCount, methodRows, participantActivities, windowPatch } from "../domain/entry-view";
 
 type Work = () => Promise<{ ok: true; value: SetupDraftView } | { ok: false; error: { message: string } }>;
@@ -27,6 +28,14 @@ export function DataEntrySlide({ id, view, onView }: { id: string; view: SetupDr
   const [pending, startTransition] = useTransition();
   const run = (work: Work) => startTransition(async () => { const r = await work(); if (r.ok) { setError(null); onView(r.value); } else setError(r.error.message); });
   const setCollection = (patch: Record<string, unknown>) => run(() => editDraftAction(id, { kind: "SET_COLLECTION", patch }));
+  // A small team gets simple review as the starting answer, once, and only while nothing was chosen; the sentence below says so.
+  const defaultMode = reviewDefaultFor(view);
+  const applied = useRef(false);
+  useEffect(() => {
+    if (defaultMode === null || applied.current) return;
+    applied.current = true;
+    setCollection({ reviewMode: defaultMode });
+  }, [defaultMode]); // eslint-disable-line react-hooks/exhaustive-deps
   const saveWindow = () => {
     const w = windowPatch(opens, closes);
     if (!w.ok) return setError(w.reason);
@@ -73,6 +82,7 @@ export function DataEntrySlide({ id, view, onView }: { id: string; view: SetupDr
             {REVIEW_MODES.map((m) => <option key={m} value={m}>{REVIEW_LABEL[m]}</option>)}
           </Select>
         </Field>
+        {col.reviewMode === "SIMPLE" && isSmallTeam(view.extras.team.length) ? <p role="status" data-testid="review-default" className="text-sm text-slate-700 dark:text-slate-200 sm:col-span-2">{PCW_COPY.simple.reviewDefault(view.extras.team.length)}</p> : null}
         <p className="text-sm text-slate-600 dark:text-slate-300 sm:col-span-2">{c.rolesNote}</p>
       </section>
 

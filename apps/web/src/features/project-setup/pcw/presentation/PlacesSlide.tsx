@@ -6,6 +6,7 @@ import { NotUsedToggle } from "./NotUsedToggle";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OtherPlaces } from "./OtherPlaces";
 import { PlacePicker } from "./PlacePicker";
+import { CarriedFacts } from "./CarriedFacts";
 
 /**
  * Slide 5: where the project works. One step: tick the country's areas in the list or on the map (ticking an area includes everything
@@ -17,6 +18,7 @@ export function PlacesSlide({ id, view, onView }: { id: string; view: SetupDraft
   const [find, setFind] = useState<{ text: string; nonce: number } | null>(null);
   return (
     <div className="space-y-8">
+      <CarriedFacts view={view} slide="PLACES" />
       <AcceptAllWaiting id={id} area="PLACES" items={view.places} onView={onView} onError={setError} />
       <PlacePicker id={id} view={view} onView={onView} onError={setError} find={find} />
       <OtherPlaces id={id} view={view} onView={onView} onError={setError} onFind={(text) => setFind({ text, nonce: Date.now() })} />

@@ -266,6 +266,12 @@ Left in Phase 34: Maps Studio proper, linked forms, finance (34.6), project work
 |---|---|---|
 | 67 | Record → Everything at a place (place + day → planned work and every figure measured there, splits inside a place), By place view of the Entry Sheet, Excel in the DevResults layout, offline pack v3 | [67-Place-First-Entry-And-By-Place-Sheet.md](./67-Place-First-Entry-And-By-Place-Sheet.md) |
 
+## Phase 59 — simpler wizard lists and a calmer workspace (2026-11-17)
+
+| # | Feature | Doc |
+|---|---|---|
+| 69 | Collapsible rows on the wizard's Indicators and Work plan slides, reused facts, "What we found", apply to all, review default for small teams, "Next:" line, tabs by role, remembered filters, plain empty pages | [`Features/69-Simpler-Wizard-Lists-And-Workspace-Phase-59.md`](69-Simpler-Wizard-Lists-And-Workspace-Phase-59.md); plan `memorybank/imp/phase59-simpler-wizard-and-workspace.md` |
+
 ## Phase 58 — simpler for every level of user (2026-11-16)
 
 | # | Feature | Doc |

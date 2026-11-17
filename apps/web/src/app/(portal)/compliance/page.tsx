@@ -1,7 +1,8 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ProjectsResponseSchema, ReportingPeriodsResponseSchema, ChecklistResponseSchema } from "@/lib/server/schemas";
-import { InlineError, EmptyState } from "@/components/feedback/PageState";
+import { InlineError } from "@/components/feedback/PageState";
+import { EmptyStateFor } from "@/components/feedback/EmptyStateFor";
 import { ComplianceList } from "@/features/reports/presentation/ComplianceList";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,6 @@ export default async function GlobalCompliancePage() {
   return <div className="animate-fade-in">
     <header><p className="text-[10px] font-medium uppercase tracking-[0.12em] text-brand-600 dark:text-brand-400">Cross-project queue</p><h1 className="mt-1 page-title">Compliance</h1><p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Open requirements across accessible reporting periods.</p></header>
     {failures > 0 && <div className="mt-5"><InlineError title="Some compliance data is temporarily unavailable; available items are shown below." /></div>}
-    {rows.length === 0 ? <div className="mt-6"><EmptyState>No open compliance gaps are available.</EmptyState></div> : <ComplianceList rows={rows} />}
+    {rows.length === 0 ? <div className="mt-6"><EmptyStateFor kind="COMPLIANCE_NONE" capabilities={ctx.capabilities} /></div> : <ComplianceList rows={rows} />}
   </div>;
 }

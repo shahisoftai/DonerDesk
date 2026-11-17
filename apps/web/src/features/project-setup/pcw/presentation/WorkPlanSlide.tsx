@@ -15,6 +15,10 @@ import { NotUsedToggle } from "./NotUsedToggle";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
 import { PlanTimeline } from "./PlanTimeline";
+import { ExpandableList } from "@/components/ui/ExpandableList";
+import { ApplyAll } from "./ApplyAll";
+import { CarriedFacts } from "./CarriedFacts";
+import { planSummary } from "../domain/row-summary";
 
 type Work = () => Promise<{ ok: true; value: SetupDraftView } | { ok: false; error: { message: string } }>;
 
@@ -35,6 +39,7 @@ export function WorkPlanSlide({ id, view, onView }: { id: string; view: SetupDra
   const pcw = usePcwCopy();
   const PCW_COPY = pcw.c;
   const c = PCW_COPY.plan;
+  const sc = PCW_COPY.simple;
   const rows = planRows(view);
   const activities = activityOptions(view);
   const places = placeNames(view);
@@ -95,55 +100,77 @@ export function WorkPlanSlide({ id, view, onView }: { id: string; view: SetupDra
         </section>
       ) : null}
 
+      <CarriedFacts view={view} slide="WORK_PLAN" />
+      {rows.length > 1 ? <ApplyAll id={id} view={view} field="lead" label={sc.applyAll.lead} options={team.map((p) => ({ value: p.key, label: `${p.name} · ${roleLabel(p.role)}` }))} onView={onView} onError={setError} /> : null}
       {rows.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.empty}</p> : null}
-      {rows.map(({ item, setup: s }) => (
-        <article key={item.path} className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-white/10">
-          <header className="flex flex-wrap items-center gap-2">
-            <input key={`t-${item.value.title}`} aria-label={c.title} defaultValue={item.value.title ?? ""} className="min-w-[12rem] flex-1 bg-transparent font-medium outline-none focus:underline" onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== item.value.title && editPlan(item.path, { title: e.target.value })} />
-            <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
-            {item.value.repeats ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium dark:bg-white/10" data-testid="plan-repeats">{item.value.repeats === "MONTH" ? c.repeatsMonth : c.repeatsWeek}</span> : null}
-            {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{PCW_COPY.results.accept}</button> : null}
-            <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${PCW_COPY.results.remove} ${item.value.title ?? ""}`}>{PCW_COPY.results.remove}</button>
-          </header>
-          <div className="grid gap-3 sm:grid-cols-4">
-            <Field label={c.activity}>
-              <Select value={item.value.logframeCode ?? ""} onChange={(e) => editPlan(item.path, { logframeCode: e.target.value || null })}>
-                <option value="">{c.choose}</option>
-                {activities.map((a) => <option key={a.code} value={a.code}>{a.label}</option>)}
-              </Select>
-            </Field>
-            <Field label={c.start}><Input type="date" key={`s-${item.value.start}`} defaultValue={item.value.start ?? ""} onBlur={(e) => e.target.value !== (item.value.start ?? "") && editPlan(item.path, { start: e.target.value || null })} /></Field>
-            <Field label={c.end}><Input type="date" key={`e-${item.value.end}`} defaultValue={item.value.end ?? ""} onBlur={(e) => e.target.value !== (item.value.end ?? "") && editPlan(item.path, { end: e.target.value || null })} /></Field>
-            <Field label={c.lead}>
-              <Select value={s.leadKey ?? ""} onChange={(e) => e.target.value && setup(item.planKey, { leadKey: e.target.value })}>
-                <option value="">{c.choose}</option>
-                {team.map((p) => <option key={p.key} value={p.key}>{p.name} · {roleLabel(p.role)}</option>)}
-              </Select>
-            </Field>
-          </div>
-          <fieldset className="text-sm">
-            <legend className="mb-1 font-medium">{c.places}</legend>
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              <label className="flex items-center gap-1"><Checkbox checked={s.projectWide} onChange={(e) => setup(item.planKey, projectWidePatch(e.target.checked))} /> {c.projectWide}</label>
-              {places.length === 0 ? <span className="text-slate-600 dark:text-slate-300">{c.noneNoPlaces}</span> : places.map((name) => (
-                <label key={name} className="flex items-center gap-1"><Checkbox checked={s.placeNames.includes(name)} onChange={(e) => setup(item.planKey, placePatch(s, name, e.target.checked))} /> {name}</label>
-              ))}
-            </div>
-          </fieldset>
-          <fieldset className="text-sm">
-            <legend className="mb-1 font-medium">{c.indicators}</legend>
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
-              {indicators.length === 0 ? <span className="text-slate-600 dark:text-slate-300">{c.noneNoIndicators}</span> : indicators.map((i) => (
-                <label key={i.code} className="flex items-center gap-1"><Checkbox checked={s.indicatorCodes.includes(i.code)} onChange={(e) => setup(item.planKey, indicatorPatch(s, i.code, e.target.checked))} /> {i.label}</label>
-              ))}
-            </div>
-          </fieldset>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label={c.files}><Input key={`f-${s.requiredFiles.join()}`} defaultValue={s.requiredFiles.join(", ")} onBlur={(e) => setup(item.planKey, { requiredFiles: parseFiles(e.target.value) })} /></Field>
-            <label className="flex items-center gap-2 self-end text-sm"><Checkbox checked={s.recordsParticipants} onChange={(e) => setup(item.planKey, { recordsParticipants: e.target.checked })} /> {c.participants}</label>
-          </div>
-        </article>
-      ))}
+      <ExpandableList
+        testId="plan-list"
+        labels={{ expandAll: sc.expandAll, collapseAll: sc.collapseAll, needs: sc.needs, open: sc.open, close: sc.close }}
+        items={rows.map((row) => {
+          const { item, setup: s } = row;
+          const sum = planSummary(row);
+          return {
+            id: item.path,
+            needs: sum.gaps.map((g) => sc.planGap[g] ?? g),
+            summary: (
+              <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                <span className="font-medium">{item.value.title ?? ""}</span>
+                {sum.facts.length > 0 ? <span className="text-xs text-slate-500 dark:text-slate-400">{sum.facts.join(" · ")}</span> : null}
+                {item.value.repeats ? <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium dark:bg-white/10" data-testid="plan-repeats">{item.value.repeats === "MONTH" ? c.repeatsMonth : c.repeatsWeek}</span> : null}
+              </span>
+            ),
+            actions: (
+              <span className="flex flex-wrap items-center gap-2">
+                <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
+                {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{PCW_COPY.results.accept}</button> : null}
+                <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${PCW_COPY.results.remove} ${item.value.title ?? ""}`}>{PCW_COPY.results.remove}</button>
+              </span>
+            ),
+            body: (
+              <>
+                <Field label={c.title}><Input key={`t-${item.value.title}`} defaultValue={item.value.title ?? ""} onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== item.value.title && editPlan(item.path, { title: e.target.value })} /></Field>
+                <div className="grid gap-3 sm:grid-cols-4">
+                  <Field label={c.activity}>
+                    <Select value={item.value.logframeCode ?? ""} onChange={(e) => editPlan(item.path, { logframeCode: e.target.value || null })}>
+                      <option value="">{c.choose}</option>
+                      {activities.map((a) => <option key={a.code} value={a.code}>{a.label}</option>)}
+                    </Select>
+                  </Field>
+                  <Field label={c.start}><Input type="date" key={`s-${item.value.start}`} defaultValue={item.value.start ?? ""} onBlur={(e) => e.target.value !== (item.value.start ?? "") && editPlan(item.path, { start: e.target.value || null })} /></Field>
+                  <Field label={c.end}><Input type="date" key={`e-${item.value.end}`} defaultValue={item.value.end ?? ""} onBlur={(e) => e.target.value !== (item.value.end ?? "") && editPlan(item.path, { end: e.target.value || null })} /></Field>
+                  <Field label={c.lead}>
+                    <Select value={s.leadKey ?? ""} onChange={(e) => e.target.value && setup(item.planKey, { leadKey: e.target.value })}>
+                      <option value="">{c.choose}</option>
+                      {team.map((p) => <option key={p.key} value={p.key}>{p.name} · {roleLabel(p.role)}</option>)}
+                    </Select>
+                  </Field>
+                </div>
+                <fieldset className="text-sm">
+                  <legend className="mb-1 font-medium">{c.places}</legend>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <label className="flex items-center gap-1"><Checkbox checked={s.projectWide} onChange={(e) => setup(item.planKey, projectWidePatch(e.target.checked))} /> {c.projectWide}</label>
+                    {places.length === 0 ? <span className="text-slate-600 dark:text-slate-300">{c.noneNoPlaces}</span> : places.map((name) => (
+                      <label key={name} className="flex items-center gap-1"><Checkbox checked={s.placeNames.includes(name)} onChange={(e) => setup(item.planKey, placePatch(s, name, e.target.checked))} /> {name}</label>
+                    ))}
+                  </div>
+                </fieldset>
+                <fieldset className="text-sm">
+                  <legend className="mb-1 font-medium">{c.indicators}</legend>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    {indicators.length === 0 ? <span className="text-slate-600 dark:text-slate-300">{c.noneNoIndicators}</span> : indicators.map((i) => (
+                      <label key={i.code} className="flex items-center gap-1"><Checkbox checked={s.indicatorCodes.includes(i.code)} onChange={(e) => setup(item.planKey, indicatorPatch(s, i.code, e.target.checked))} /> {i.label}</label>
+                    ))}
+                  </div>
+                </fieldset>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label={c.files}><Input key={`f-${s.requiredFiles.join()}`} defaultValue={s.requiredFiles.join(", ")} onBlur={(e) => setup(item.planKey, { requiredFiles: parseFiles(e.target.value) })} /></Field>
+                  <label className="flex items-center gap-2 self-end text-sm"><Checkbox checked={s.recordsParticipants} onChange={(e) => setup(item.planKey, { recordsParticipants: e.target.checked })} /> {c.participants}</label>
+                </div>
+              </>
+            ),
+          };
+        })}
+      />
 
       <fieldset className="grid gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:grid-cols-3 dark:border-white/20">
         <legend className="px-1 text-sm font-semibold">{c.add}</legend>

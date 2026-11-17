@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { usePcwCopy } from "./usePcwCopy";
+import { CarriedFacts } from "./CarriedFacts";
 import { SUPPORT, activityChoices, currencyNote, money, suggestedCurrency, suggestionFor, targetLabel } from "../domain/finance-view";
 import { notUsedAnswer } from "../domain/pcw-view";
 import { NotUsedToggle } from "./NotUsedToggle";
@@ -58,6 +59,7 @@ export function FinanceSlide({ id, view, onView }: { id: string; view: SetupDraf
 
   return (
     <div className="space-y-8">
+      <CarriedFacts view={view} slide="FINANCE" />
       <AcceptAllWaiting id={id} area="FUNDING_BUDGET" items={[...view.funding, ...view.budget]} onView={onView} onError={setError} />
       <section aria-labelledby="pcw-funding" className="space-y-3">
         <h2 id="pcw-funding" className="text-lg font-semibold">{c.fundingTitle}</h2>

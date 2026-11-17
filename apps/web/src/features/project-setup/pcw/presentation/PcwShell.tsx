@@ -25,6 +25,7 @@ import { ReportingSlide } from "./ReportingSlide";
 import { ResultsSlide } from "./ResultsSlide";
 import { WorkPlanSlide } from "./WorkPlanSlide";
 import { StartSlide } from "./StartSlide";
+import { FoundCard } from "./FoundCard";
 
 /**
  * The ten-slide wizard shell (Phase 38). It owns only which slide is open; each slide's rules and sentences come from the
@@ -92,6 +93,7 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
       <ReadingPopup view={view} />
       {reading === "READING" ? <p role="status" className="rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm dark:border-brand-500/30 dark:bg-brand-900/20">{PCW_COPY.documents.reading}</p> : null}
       {reading === "FAILED" ? <p role="alert" className="rounded-xl border border-danger-300 p-3 text-sm">{PCW_COPY.documents.failed} <a className="underline" href="/projects/new/wizard">{PCW_COPY.documents.startOver}</a></p> : null}
+      {current === "START" ? <FoundCard id={id} view={view} onView={setView} onOpen={go} /> : null}
       <SlideFrame
         slideKey={current}
         direction={direction}

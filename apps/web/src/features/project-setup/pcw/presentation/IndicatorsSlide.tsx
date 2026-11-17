@@ -15,6 +15,10 @@ import { presetVocabulary } from "@donordesk/domain/contexts/logframe/framework-
 import { BREAKDOWN_SUGGESTIONS, FREQUENCIES, FREQUENCY_GROUPS, INDICATOR_TYPES, INDICATOR_TYPE_LABEL, indicatorRows, indicatorTargets, parseBreakdown, suggestIndicatorSettings } from "../domain/results-view";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
+import { ExpandableList } from "@/components/ui/ExpandableList";
+import { ApplyAll } from "./ApplyAll";
+import { CarriedFacts } from "./CarriedFacts";
+import { indicatorSummary } from "../domain/row-summary";
 import { WizardLibraryPanel } from "@/features/sector-library/presentation/WizardLibraryPanel";
 
 type Patch = Record<string, unknown>;
@@ -25,6 +29,7 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
   const { t } = useI18n();
   const PCW_COPY = pcw.c;
   const c = PCW_COPY.indicators;
+  const sc = PCW_COPY.simple;
   const rows = indicatorRows(view);
   const chosen = view.extras.start.wording ? presetVocabulary(view.extras.start.wording) : undefined;
   const targets = indicatorTargets(view.logframe, chosen?.levels);
@@ -71,61 +76,88 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
           <button type="button" className="btn" disabled={pending} onClick={applySuggestions}>{c.suggest} ({suggestions.length})</button>
         </section>
       ) : null}
+      <CarriedFacts view={view} slide="INDICATORS" />
+      {rows.length > 1 ? (
+        <div className="grid gap-3 md:grid-cols-2">
+          <ApplyAll id={id} view={view} field="owner" label={sc.applyAll.owner} options={team.map((p) => ({ value: p.key, label: `${p.name} · ${roleLabel(p.role)}` }))} onView={onView} onError={setError} />
+          <ApplyAll id={id} view={view} field="direction" label={sc.applyAll.direction} options={[{ value: "HIGHER", label: sc.applyAll.higher }, { value: "LOWER", label: sc.applyAll.lower }]} onView={onView} onError={setError} />
+        </div>
+      ) : null}
       {rows.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.empty}</p> : null}
-      {rows.map(({ item, value, ownerKey, direction, baselineNone }) => (
-        <article key={item.path} className="space-y-3 rounded-xl border border-slate-200 p-4 dark:border-white/10">
-          <header className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs text-slate-500">{value.code}</span>
-            <input key={`n-${value.title}`} aria-label={c.name} defaultValue={value.title ?? ""} className="min-w-[12rem] flex-1 bg-transparent font-medium outline-none focus:underline" onBlur={text(item.path, "title", value.title)} />
-            {value.libraryId ? <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-900 dark:bg-brand-900/40 dark:text-brand-100" data-testid="library-badge">{t("lib.badge")}</span> : <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />}
-            {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{PCW_COPY.results.accept}</button> : null}
-            <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${PCW_COPY.results.remove} ${value.title ?? ""}`}>{PCW_COPY.results.remove}</button>
-          </header>
-          {value.referenceText ? <p className="text-xs text-slate-600 dark:text-slate-300" data-testid="reference-tag">{t("lib.reference", { text: value.referenceText })}. {t("lib.referenceNote")}</p> : null}
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Field label={c.result}>
-              <Select value={value.logframeCode ?? ""} onChange={(e) => edit(item.path, { logframeCode: e.target.value || null })}>
-                <option value="">{c.choose}</option>
-                {targets.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
-              </Select>
-            </Field>
-            <Field label={c.type}>
-              <Select value={value.type ?? ""} onChange={(e) => edit(item.path, { type: e.target.value || null })}>
-                <option value="">{c.choose}</option>
-                {INDICATOR_TYPES.map((t) => <option key={t} value={t}>{INDICATOR_TYPE_LABEL[t]}</option>)}
-              </Select>
-            </Field>
-            <Field label={c.unit}><Input key={`u-${value.unit}`} defaultValue={value.unit ?? ""} onBlur={text(item.path, "unit", value.unit)} /></Field>
-            <Field label={c.baseline}><Input key={`b-${value.baseline}`} defaultValue={value.baseline ?? ""} disabled={baselineNone} onBlur={text(item.path, "baseline", value.baseline)} /></Field>
-            <Field label={c.target}><Input key={`t-${value.target}`} defaultValue={value.target ?? ""} onBlur={text(item.path, "target", value.target)} /></Field>
-            <Field label={c.frequency}>
-              <Select value={value.frequency ?? ""} onChange={(e) => edit(item.path, { frequency: e.target.value || null })}>
-                <option value="">{c.choose}</option>
-                <optgroup label={c.frequencyRegular}>{FREQUENCY_GROUPS.periodic.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup>
-                <optgroup label={c.frequencyEvent}>{FREQUENCY_GROUPS.event.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup>
-                {value.frequency && !FREQUENCIES.includes(value.frequency) ? <option value={value.frequency}>{value.frequency}</option> : null}
-              </Select>
-            </Field>
-            <Field label={c.breakdown}>
-              <Input key={`d-${(value.disaggregation ?? []).join()}`} defaultValue={(value.disaggregation ?? []).join(", ")} list="pcw-breakdowns" onBlur={(e) => edit(item.path, { disaggregation: parseBreakdown(e.target.value) })} />
-            </Field>
-            <Field label={c.owner}>
-              <Select value={ownerKey} onChange={(e) => e.target.value && setup(value.code, { ownerKey: e.target.value })}>
-                <option value="">{c.choose}</option>
-                {team.map((p) => <option key={p.key} value={p.key}>{p.name} · {roleLabel(p.role)}</option>)}
-              </Select>
-            </Field>
-            <Field label={c.direction}>
-              <Select value={direction} onChange={(e) => e.target.value && setup(value.code, { direction: e.target.value, directionConfirmed: true })}>
-                <option value="">{c.choose}</option>
-                <option value="HIGHER">{c.higher}</option>
-                <option value="LOWER">{c.lower}</option>
-              </Select>
-            </Field>
-            <label className="flex items-center gap-2 self-end text-sm"><Checkbox checked={baselineNone} onChange={(e) => setup(value.code, { baselineNone: e.target.checked })} /> {c.noBaseline}</label>
-          </div>
-        </article>
-      ))}
+      <ExpandableList
+        testId="indicator-list"
+        labels={{ expandAll: sc.expandAll, collapseAll: sc.collapseAll, needs: sc.needs, open: sc.open, close: sc.close }}
+        items={rows.map((row) => {
+          const { item, value, ownerKey, direction, baselineNone } = row;
+          const sum = indicatorSummary(row);
+          return {
+            id: item.path,
+            needs: sum.gaps.map((g) => sc.indicatorGap[g] ?? g),
+            summary: (
+              <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+                <span className="font-mono text-xs text-slate-500">{value.code}</span>
+                <span className="font-medium">{value.title ?? ""}</span>
+                {sum.facts.length > 0 ? <span className="text-xs text-slate-500 dark:text-slate-400">{sum.facts.join(" · ")}</span> : null}
+              </span>
+            ),
+            actions: (
+              <span className="flex flex-wrap items-center gap-2">
+                {value.libraryId ? <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-900 dark:bg-brand-900/40 dark:text-brand-100" data-testid="library-badge">{t("lib.badge")}</span> : <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />}
+                {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{PCW_COPY.results.accept}</button> : null}
+                <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${PCW_COPY.results.remove} ${value.title ?? ""}`}>{PCW_COPY.results.remove}</button>
+              </span>
+            ),
+            body: (
+              <>
+                <Field label={c.name}><Input key={`n-${value.title}`} defaultValue={value.title ?? ""} onBlur={text(item.path, "title", value.title)} /></Field>
+                {value.referenceText ? <p className="text-xs text-slate-600 dark:text-slate-300" data-testid="reference-tag">{t("lib.reference", { text: value.referenceText })}. {t("lib.referenceNote")}</p> : null}
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Field label={c.result}>
+                    <Select value={value.logframeCode ?? ""} onChange={(e) => edit(item.path, { logframeCode: e.target.value || null })}>
+                      <option value="">{c.choose}</option>
+                      {targets.map((t) => <option key={t.code} value={t.code}>{t.label}</option>)}
+                    </Select>
+                  </Field>
+                  <Field label={c.type}>
+                    <Select value={value.type ?? ""} onChange={(e) => edit(item.path, { type: e.target.value || null })}>
+                      <option value="">{c.choose}</option>
+                      {INDICATOR_TYPES.map((t) => <option key={t} value={t}>{INDICATOR_TYPE_LABEL[t]}</option>)}
+                    </Select>
+                  </Field>
+                  <Field label={c.unit}><Input key={`u-${value.unit}`} defaultValue={value.unit ?? ""} onBlur={text(item.path, "unit", value.unit)} /></Field>
+                  <Field label={c.baseline}><Input key={`b-${value.baseline}`} defaultValue={value.baseline ?? ""} disabled={baselineNone} onBlur={text(item.path, "baseline", value.baseline)} /></Field>
+                  <Field label={c.target}><Input key={`t-${value.target}`} defaultValue={value.target ?? ""} onBlur={text(item.path, "target", value.target)} /></Field>
+                  <Field label={c.frequency}>
+                    <Select value={value.frequency ?? ""} onChange={(e) => edit(item.path, { frequency: e.target.value || null })}>
+                      <option value="">{c.choose}</option>
+                      <optgroup label={c.frequencyRegular}>{FREQUENCY_GROUPS.periodic.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup>
+                      <optgroup label={c.frequencyEvent}>{FREQUENCY_GROUPS.event.map((f) => <option key={f} value={f}>{f}</option>)}</optgroup>
+                      {value.frequency && !FREQUENCIES.includes(value.frequency) ? <option value={value.frequency}>{value.frequency}</option> : null}
+                    </Select>
+                  </Field>
+                  <Field label={c.breakdown}>
+                    <Input key={`d-${(value.disaggregation ?? []).join()}`} defaultValue={(value.disaggregation ?? []).join(", ")} list="pcw-breakdowns" onBlur={(e) => edit(item.path, { disaggregation: parseBreakdown(e.target.value) })} />
+                  </Field>
+                  <Field label={c.owner}>
+                    <Select value={ownerKey} onChange={(e) => e.target.value && setup(value.code, { ownerKey: e.target.value })}>
+                      <option value="">{c.choose}</option>
+                      {team.map((p) => <option key={p.key} value={p.key}>{p.name} · {roleLabel(p.role)}</option>)}
+                    </Select>
+                  </Field>
+                  <Field label={c.direction}>
+                    <Select value={direction} onChange={(e) => e.target.value && setup(value.code, { direction: e.target.value, directionConfirmed: true })}>
+                      <option value="">{c.choose}</option>
+                      <option value="HIGHER">{c.higher}</option>
+                      <option value="LOWER">{c.lower}</option>
+                    </Select>
+                  </Field>
+                  <label className="flex items-center gap-2 self-end text-sm"><Checkbox checked={baselineNone} onChange={(e) => setup(value.code, { baselineNone: e.target.checked })} /> {c.noBaseline}</label>
+                </div>
+              </>
+            ),
+          };
+        })}
+      />
       <datalist id="pcw-breakdowns">{BREAKDOWN_SUGGESTIONS.map((b) => <option key={b} value={b} />)}</datalist>
 
       <fieldset className="grid gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:grid-cols-3 dark:border-white/20">

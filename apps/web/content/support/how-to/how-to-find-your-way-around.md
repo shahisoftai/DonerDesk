@@ -20,7 +20,9 @@ Press **Ctrl K** to find a project, a file or a page, or to do something: **Crea
 
 ## Inside a project
 
-A project has seven tabs. Under the tabs a second row shows the pages inside; rarely used ones are under **More**.
+A project has up to seven tabs. Which ones sit in the bar depends on your role; the others are under **More** at the end of the tab row (a field officer, for example, sees **Overview**, **Plan**, **Data** and **Evidence**, and finds **Reports**, **Finance** and **Settings** under **More**). Under the tabs a second row shows the pages inside; rarely used ones are under **More** there too. Nothing is removed: **Ctrl K** and links still open every page.
+
+At the top of a project's **Overview**, a line starting **Next:** names the one thing that waits on you (the most urgent first, with how many more are below) and has an **Open** button. With nothing waiting, and when you may create one, it offers **Create period** for a project that has no reporting period.
 
 | Tab | What is in it |
 |---|---|

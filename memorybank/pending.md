@@ -2,7 +2,12 @@
 
 **DonorDesk Version 4.01**
 
-Outstanding and in-progress items for DonorDesk. Last updated: 2026-11-16 (Phase 58 section added) (Version 4.000 section added at the top; the priority board below was audited 2026-10-22).
+Outstanding and in-progress items for DonorDesk. Last updated: 2026-11-17 (Phase 59 section added) (Version 4.000 section added at the top; the priority board below was audited 2026-10-22).
+
+## Simpler wizard lists and workspace (Phase 59) — deployed 2026-11-17; what is left
+- Built and deployed (`20261117052426`, web only): see `Features/69-Simpler-Wizard-Lists-And-Workspace-Phase-59.md`.
+- **Owed:** a check in a signed-in browser on production (wizard steps 4 and 6, Start with a document, the Overview "Next:" line, a field officer's tabs, a remembered filter, an empty page); native review of the French, Spanish and Arabic text.
+- Not built: apply to all outside the wizard (frequency, places, reviewers on other pages); remembered choices on lists beyond Projects and Evidence; the review default applies when the Data entry slide is opened, not as soon as the team is set.
 
 ## Simpler setup (Phase 58) — deployed 2026-11-16; what is left
 - Built: suggested indicator settings, sheet Type / Break down by, plan Repeats, multi-file start limit, delete a draft form, Setup says why, dashboard-ready note (`Features/68-Simpler-Setup-Phase-58.md`).

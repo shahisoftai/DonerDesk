@@ -63,7 +63,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
           </div>
         </div>
         <ProjectLifecycleBanner projectId={project.id} status={project.status} canEdit={ctx.capabilities.has("project.edit")} />
-        <ProjectNav projectId={project.id} facts={facts} capabilities={[...ctx.capabilities]} />
+        <ProjectNav projectId={project.id} facts={facts} capabilities={[...ctx.capabilities]} role={ctx.role} />
       </header>
       <div className="mt-8"><FrameworkVocabularyProvider vocabulary={vocabulary}>{children}</FrameworkVocabularyProvider></div>
     </div>

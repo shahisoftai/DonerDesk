@@ -22,6 +22,7 @@
 | Admin | **Team** | members, invitations | Admin, PM (invite or manage) |
 | Admin | **Settings** | grouped list (section 4) | Admin, PM, Grants |
 
+- **Project tabs by role (Phase 59):** the tab row shows the tabs the role needs and puts the rest under a **More** menu at the end of the row (`features/projects/domain/role-project-tabs.ts`). Ask for the tab by name; do not say it is "hidden".
 - A **Field Officer** sees **Home**, **Inbox**, **Projects** and **Evidence** only (and the phone bar **Today · Record · Waiting · More**).
 - An **outside partner** sees **Home** (their **Your projects** page), **My projects** and **Security**.
 - **My Work** and **Notifications** no longer exist: they are the **Inbox** (**To do**, **Team**, **Updates**). The old addresses were removed on 2026-11-15 (no hits since the release).

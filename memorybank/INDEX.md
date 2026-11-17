@@ -426,5 +426,9 @@ memorybank/
 - Deployed 2026-11-16 (`20261116120000`, fixes `20261116140000` and `20261116160000`); no migration, no env, no RLS change. Checked live on DEMO-16.
 - Support: `how-to-record-figures-by-place.md` (two new sections), `how-to-record-data.md`, `how-to-update-indicator-values.md`, `how-to-use-the-field-app-offline.md`.
 
+## Phase 59 — simpler wizard lists and a calmer workspace (2026-11-17)
+
+Collapsible rows on the wizard's Indicators and Work plan slides, reused facts with their source, "What we found", apply to all, simple review for small teams, a "Next:" line on the Overview, tabs by role, remembered filters, plain empty pages. Deployed `20261117052426` (web only). Plan `imp/phase59-simpler-wizard-and-workspace.md`; feature doc `Features/69-Simpler-Wizard-Lists-And-Workspace-Phase-59.md`.
+
 ## Phase 58 — simpler for every level of user (2026-11-16)
 - Plan and status: [`imp/phase58-simpler-for-everyone.md`](imp/phase58-simpler-for-everyone.md). Suggested indicator settings with reasons, sheet Type / Break down by columns, delete a draft form, Setup explains "reportable of". Backlog 58.7-58.12 listed there. Demo record: [`demo/verification-demo-17.md`](demo/verification-demo-17.md).

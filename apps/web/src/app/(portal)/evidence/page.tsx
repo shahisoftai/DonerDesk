@@ -1,8 +1,10 @@
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { EvidenceResponseSchema, ProjectsResponseSchema } from "@/lib/server/schemas";
-import { InlineError, EmptyState } from "@/components/feedback/PageState";
+import { InlineError } from "@/components/feedback/PageState";
 import { EvidenceList } from "@/features/reports/presentation/EvidenceList";
+import { RememberFilters } from "@/components/data/RememberFilters";
+import { EmptyStateFor } from "@/components/feedback/EmptyStateFor";
 import { EvidenceFilterBar } from "@/features/evidence/presentation/EvidenceFilterBar";
 import { parseEvidenceFilters, projectIdsFor } from "@/lib/shared/evidence-filters";
 
@@ -51,6 +53,7 @@ export default async function GlobalEvidencePage({ searchParams }: { searchParam
         <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">Review evidence across the projects you are allowed to access.</p>
       </header>
       <div className="mt-4">
+        <RememberFilters scope="evidence" userId={ctx.userId} baseUrl="/evidence" current={queryString} />
         <EvidenceFilterBar
           baseUrl="/evidence"
           current={queryString}
@@ -59,7 +62,7 @@ export default async function GlobalEvidencePage({ searchParams }: { searchParam
       </div>
       {!result.ok && <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>}
       {result.ok && items.length === 0 && (
-        <div className="mt-6"><EmptyState>{filtered ? "No evidence matches these filters." : "No evidence yet. Open a project to upload evidence."}</EmptyState></div>
+        <div className="mt-6"><EmptyStateFor kind={filtered ? "EVIDENCE_FILTERED" : "EVIDENCE_NONE"} capabilities={ctx.capabilities} /></div>
       )}
       {result.ok && items.length > 0 && <>
         <EvidenceList rows={items.map((i) => ({ id: i.id, projectId: i.projectId, projectTitle: (i.projectId && titles.get(i.projectId)) || "", title: i.title, fileName: i.fileName, evidenceType: i.evidenceType, verificationStatus: i.verificationStatus, confidentialityLevel: i.confidentialityLevel }))} />
