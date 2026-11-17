@@ -63,6 +63,8 @@ Old names: "Setup" tab → **Workspace setup**; "AI Writing Style" tab → **Wri
 
 Tabs: **Designs** (cards), **Templates**, **Datasets**, and **Tools ▾** = **Chart Studio**, **Maps**, **Images and brand**, **Data alerts**, **TV display**. Buttons: **Start from a template**, **New design**. "Add to a dashboard" is one control everywhere: pick the dashboard, then **Add the chart**, **Add as a KPI tile** or **Add the map** (or make a new one).
 
+**Phase 61 (2026-11-17), what to say about Visuals:** a new canvas is a **free page** (blocks go anywhere, any size; page size is chosen at **New** and in the **About this canvas** box). **Edit → Add** lists **Your project's data** (**Show as a number**, **Show as a chart**, **Chart of N**), has **Upload a picture** (kept in the organisation's Google Drive), and the **Edit** panel has tabs **Build** (**Position and size**, **Kind of chart**, **Numbers on the chart**), **Data**, **Format** (**Words**, **Text**, **Title**…) and **Interactions**. The **Look**/**Tone** is enforced on every block; blocks that differ are listed with **Use the theme** / **Reset all to the theme**. Article: *Dashboards and Infographics* (`/support/getting-started/dashboards-and-infographics`).
+
 ## 6. Command palette and shortcuts
 
 - **Ctrl K** (Mac **⌘K**), or click **Search or jump to…**: type to find a project, a file or a page, or run an action (for example **Create a project**, **Record a value, activity, file or expense**, **Invite a person**, **Go to Inbox**, **Switch light or dark mode**, **Show keyboard shortcuts**). Only what your role may do is listed. **↑ ↓** move, **Enter** runs, **Esc** closes.
