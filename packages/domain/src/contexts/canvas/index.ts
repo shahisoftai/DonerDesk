@@ -1,4 +1,5 @@
 export * from "./canvas.js";
+export * from "./funnel-stage.js";
 export * from "./binding.js";
 export * from "./block-definition.js";
 export * from "./validate-canvas.js";
@@ -52,6 +53,8 @@ export * from "./document.js";
 export * from "./access.js";
 export * from "./to-widgets.js";
 export * from "./templates-builtin.js";
+export { HOUSE_THEME } from "./template-kit.js";
+export { HUMANITARIAN_PRODUCTS } from "./templates-humanitarian.js";
 export * from "./edit/layout.js";
 export * from "./legacy/to-infographic.js";
 export * from "./review.js";

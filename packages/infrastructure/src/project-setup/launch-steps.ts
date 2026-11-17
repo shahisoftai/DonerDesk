@@ -129,7 +129,7 @@ export function createLaunchSteps(deps: () => LaunchStepDeps, extras: LaunchStep
     indicators: async (ctx, projectId) => {
       const r = await d.listIndicators.handle(ctx, projectId);
       if (!r.ok) return r;
-      return ok((r.value as Array<{ id: string; code: string; name: string; type: string; unit?: string | null }>).map((i) => ({ id: i.id, code: i.code, name: i.name, type: i.type, isRate: isRateIndicator({ type: i.type, ...(i.unit ? { unit: i.unit } : {}) }) })));
+      return ok((r.value as Array<{ id: string; code: string; name: string; type: string; unit?: string | null; libraryId?: string | null }>).map((i) => ({ id: i.id, code: i.code, name: i.name, type: i.type, ...(i.libraryId ? { libraryId: i.libraryId } : {}), isRate: isRateIndicator({ type: i.type, ...(i.unit ? { unit: i.unit } : {}) }) })));
     },
     apply: (ctx, templateId, input) => d.applyDashboardTemplate.handle(ctx, templateId, { projectId: input.projectId, name: input.name, scope: "PROJECT", mapping: input.mapping }),
   };

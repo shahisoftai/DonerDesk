@@ -21,7 +21,7 @@ import {
   IndicatorUpdateReviewReasonSchema,
 } from "@donordesk/contracts";
 import { buildLogframeTemplate, LOGFRAME_TEMPLATE_FILENAME, buildDataSheetWorkbook, readDataSheetWorkbook, DATA_SHEET_FILENAME, buildIndicatorEntryWorkbook, readIndicatorEntryWorkbook, ENTRY_FILE_NAME, buildFrameworkDocx, buildFrameworkPdf, FRAMEWORK_FILE_NAME } from "@donordesk/infrastructure";
-import { DomainError, parseCsv } from "@donordesk/domain";
+import { DomainError, hxlSheetCsv, parseCsv } from "@donordesk/domain";
 
 export async function registerLogframeRoutes(app: FastifyInstance) {
   app.get("/v1/logframe/template", async (_req, reply) => {
@@ -363,6 +363,12 @@ export async function registerLogframeRoutes(app: FastifyInstance) {
     const ctx = { tenant: req.tenant, requestId: req.id };
     const r = await req.container.handlers.getProjectDataSheet.handle(ctx, projectId);
     if (!r.ok) throw r.error;
+    // `?format=hxl`: the same rows with a row of HXL hashtags under the headers (Phase 60.7).
+    if ((req.query as { format?: string }).format === "hxl") {
+      reply.header("content-type", "text/csv; charset=utf-8");
+      reply.header("content-disposition", 'attachment; filename="donordesk-data-sheet-hxl.csv"');
+      return hxlSheetCsv(r.value);
+    }
     reply.header("content-type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     reply.header("content-disposition", `attachment; filename="${DATA_SHEET_FILENAME}"`);
     return buildDataSheetWorkbook(r.value);

@@ -56,6 +56,7 @@ export * from "./ai-run-summary.js";
 export * from "./section-notes.js";
 export * from "./finding-match.js";
 export * from "./data-sheet.js";
+export * from "./hxl-sheet.js";
 export * from "./data-charts.js";
 export * from "./chart-spec-v2.js";
 export * from "./chart-split.js";

@@ -2,6 +2,7 @@
 import type { BigNumberItem, BigNumberSource } from "../../infographics/composition.js";
 import { parseFigure } from "../../infographics/grounding.js";
 import { chosenIndicators, latestById, latestFinance, type CanvasFacts } from "../facts.js";
+import { funnelStageAmount, type FunnelFacts } from "../funnel-stage.js";
 import { empty, prompt, ready, records, strings, unavailable, NO_FACTS, type SectionProps } from "./props.js";
 
 export interface Figure { amount: number | null; text: string; prefix?: string; suffix?: string; unverified: boolean }
@@ -58,9 +59,11 @@ export const progressRingsModel = (props: SectionProps, facts: CanvasFacts | und
 };
 
 export const funnelModel = (props: SectionProps, facts: CanvasFacts | undefined) => {
-  const stages = records<{ label?: string; value?: number; bind?: string; sourceNote?: string }>(props.stages).map((s) => ({ ...s, label: typeof s.label === "string" ? s.label : "" }));
+  const stages = records<{ label?: string; value?: number; bind?: string; indicatorId?: string; sourceNote?: string }>(props.stages).map((s) => ({ ...s, label: typeof s.label === "string" ? s.label : "" }));
   if (stages.length === 0) return prompt("Add people in need, targeted and reached.");
-  const amounts = stages.map((s) => (s.bind === "REACH_UNIQUE" ? facts?.reach.overallUnique || null : s.bind === "REACH_REGISTERED" ? facts?.reach.registeredTotal || null : s.value ?? null));
+  const funnelFacts: FunnelFacts | undefined = facts && { reach: facts.reach, latest: (id) => latestById(facts, id) };
+  const resolved = stages.map((s) => (funnelFacts ? funnelStageAmount(s, funnelFacts) : { amount: s.bind ? null : s.indicatorId ? null : s.value ?? null, verified: true }));
+  const amounts = resolved.map((r) => r.amount);
   let prev: number | null = null;
   const notes: string[] = [];
   const out = stages.map((s, i) => {
@@ -70,6 +73,7 @@ export const funnelModel = (props: SectionProps, facts: CanvasFacts | undefined)
     if (amount !== null) prev = amount;
     return { label: s.label, amount, percentOfPrevious, ...(s.sourceNote ? { sourceNote: s.sourceNote } : {}) };
   });
+  if (resolved.some((r) => !r.verified)) notes.push("Some figures are not verified yet.");
   return ready({ recorded: amounts.some((a) => a !== null), stages: out, sources: [...new Set(stages.map((s) => s.sourceNote).filter((x): x is string => Boolean(x)))] }, notes);
 };
 

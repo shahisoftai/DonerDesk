@@ -46,6 +46,8 @@ export interface IndicatorRole {
   keywords: string[];
   types: RoleIndicatorType[];
   required: boolean;
+  /** Sector-library indicators this role stands for; an indicator adopted from one of them is matched exactly (Phase 60.6). */
+  libraryIds?: readonly string[];
 }
 
 export type TemplateWidgetKind = "CHART" | "TEXT";
@@ -221,7 +223,12 @@ export interface ProjectIndicatorFacts {
   name: string;
   type: string;
   isRate: boolean;
+  /** Set when the indicator was adopted from the sector library. */
+  libraryId?: string | undefined;
 }
+
+/** An exact library match outranks any amount of keyword overlap. */
+export const LIBRARY_MATCH_SCORE = 100;
 
 const words = (s: string): string[] => s.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 1);
 
@@ -243,6 +250,7 @@ export function suggestRoleMapping(roles: ReadonlyArray<IndicatorRole>, indicato
       if (!typeFits(r, i)) continue;
       const hay = new Set(words(`${i.code} ${i.name}`));
       let score = 0;
+      if (i.libraryId && r.libraryIds?.includes(i.libraryId)) score += LIBRARY_MATCH_SCORE;
       for (const k of keys) if (hay.has(k)) score += 2;
       // A whole keyword phrase inside the name is a stronger sign than scattered words.
       for (const phrase of r.keywords) if (phrase.includes(" ") && i.name.toLowerCase().includes(phrase)) score += 2;

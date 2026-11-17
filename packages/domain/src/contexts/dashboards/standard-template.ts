@@ -4,18 +4,21 @@
  */
 import type { IndicatorRole, DashboardTemplate, SectorKey, TemplateAudience, TemplateWidget } from "./dashboard-templates.js";
 
-export const role = (key: string, label: string, hint: string, keywords: string[], o: { types?: IndicatorRole["types"]; required?: boolean } = {}): IndicatorRole => ({
+export const role = (key: string, label: string, hint: string, keywords: string[], o: { types?: IndicatorRole["types"]; required?: boolean; libraryIds?: readonly string[] } = {}): IndicatorRole => ({
   key,
   label,
   hint,
   keywords,
   types: o.types ?? ["COUNT"],
   required: o.required ?? true,
+  ...(o.libraryIds?.length ? { libraryIds: o.libraryIds } : {}),
 });
 
 /**
  * The standard shape of a results dashboard: progress of every role against target, the first two over time, the third against its
- * baseline and target, the fourth by period, and how much of the data is verified. Positions are on the 12-column grid.
+ * baseline and target and the fourth by period. Positions are on the 12-column grid. (Phase 60.4: the "how much of the data is
+ * verified" pie is gone, because it is an internal data-quality view that does not belong on a donor- or coordination-facing page;
+ * the verified/unverified mark stays on every figure.)
  */
 export function standardTemplate(input: { id: string; sector: SectorKey; title: string; description: string; audience: TemplateAudience; roles: IndicatorRole[] }): DashboardTemplate {
   const [r1, r2, r3, r4] = input.roles;
@@ -27,7 +30,6 @@ export function standardTemplate(input: { id: string; sector: SectorKey; title: 
     chart("trend-2", r2!.label, 6, 4, 6, 4, { kind: "LINE", template: "INDICATOR_OVER_TIME", roleKeys: [r2!.key], measure: "CUMULATIVE", showTarget: true }),
     chart("vs-target", `${r3!.label}: baseline, target and result`, 0, 8, 6, 4, { kind: "BAR", template: "INDICATOR_VS_TARGET", roleKeys: [r3!.key], measure: "CUMULATIVE", showTarget: false }),
     chart("by-period", `${r4!.label} by period`, 6, 8, 6, 4, { kind: "BAR", template: "INDICATOR_OVER_TIME", roleKeys: [r4!.key], measure: "PERIOD", showTarget: false }),
-    chart("data-status", "How much of the data is verified", 0, 12, 6, 4, { kind: "PIE", template: "STATUS_DISTRIBUTION", roleKeys: [], measure: "PERIOD", showTarget: false }),
   ];
   return { id: input.id, sector: input.sector, title: input.title, description: input.description, audience: input.audience, status: "DRAFT", origin: "BUILT_IN", revision: 1, roles: input.roles, widgets };
 }

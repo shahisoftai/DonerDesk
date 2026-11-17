@@ -60,7 +60,7 @@ test("a template works with no, some or all roles chosen: it says what is missin
   const states = Object.fromEntries(none.widgets.map((w) => [w.widget.id, w.state]));
   assert.equal(states.progress, "NEEDS_INDICATOR");
   assert.equal(states["trend-1"], "NEEDS_INDICATOR");
-  assert.equal(states["data-status"], "READY");
+  assert.equal(states["data-status"], undefined, "the internal verification pie is no longer on a standard template");
   assert.ok(none.widgets.find((w) => w.widget.id === "trend-1").missingRoles.includes("people_basic_water"));
 
   const some = applyTemplate(wash, { people_basic_water: "i1" });

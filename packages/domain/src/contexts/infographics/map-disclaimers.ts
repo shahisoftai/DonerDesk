@@ -54,6 +54,36 @@ export const BORDER_NOTES: readonly BorderNote[] = [
       ar: "لم يتم بعد تحديد الوضع النهائي لمنطقة أبيي.",
     },
   },
+  {
+    id: "WESTERN_SAHARA",
+    countries: ["western sahara", "morocco"],
+    text: {
+      en: "The final status of Western Sahara has not yet been determined.",
+      fr: "Le statut définitif du Sahara occidental n'a pas encore été déterminé.",
+      es: "La situación definitiva del Sáhara Occidental aún no se ha determinado.",
+      ar: "لم يتحدد بعد الوضع النهائي للصحراء الغربية.",
+    },
+  },
+  {
+    id: "KOSOVO",
+    countries: ["kosovo", "serbia"],
+    text: {
+      en: "References to Kosovo shall be understood to be in the context of Security Council resolution 1244 (1999).",
+      fr: "Toute référence au Kosovo doit être comprise dans le contexte de la résolution 1244 (1999) du Conseil de sécurité.",
+      es: "Toda referencia a Kosovo debe entenderse en el contexto de la resolución 1244 (1999) del Consejo de Seguridad.",
+      ar: "يجب أن تُفهم أي إشارة إلى كوسوفو في سياق قرار مجلس الأمن 1244 (1999).",
+    },
+  },
+  {
+    id: "FALKLANDS_MALVINAS",
+    countries: ["falkland islands", "malvinas", "argentina"],
+    text: {
+      en: "A dispute exists between the Governments of Argentina and the United Kingdom of Great Britain and Northern Ireland concerning sovereignty over the Falkland Islands (Malvinas).",
+      fr: "Un différend oppose le Gouvernement argentin et le Gouvernement du Royaume-Uni de Grande-Bretagne et d'Irlande du Nord au sujet de la souveraineté sur les îles Falkland (Malvinas).",
+      es: "Existe una controversia entre los Gobiernos de la Argentina y del Reino Unido de Gran Bretaña e Irlanda del Norte acerca de la soberanía sobre las Islas Malvinas (Falkland).",
+      ar: "ثمة نزاع بين حكومتي الأرجنتين والمملكة المتحدة لبريطانيا العظمى وأيرلندا الشمالية حول السيادة على جزر فوكلاند (مالفيناس).",
+    },
+  },
 ];
 
 const fold = (value: string): string =>

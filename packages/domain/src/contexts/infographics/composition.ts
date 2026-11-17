@@ -119,6 +119,8 @@ export interface FunnelStage {
   value?: number;
   /** Or a figure the records give. */
   bind?: "REACH_UNIQUE" | "REACH_REGISTERED";
+  /** Or the latest recorded value of one indicator (a count of people; a rate is never a stage). */
+  indicatorId?: string;
   sourceNote?: string;
 }
 
@@ -362,9 +364,10 @@ function cleanSection(section: InfographicSectionConfig): { ok: true; value: Inf
       if (tooLong(stage.label, 40) || tooLong(stage.sourceNote, 80)) return fail("A funnel stage's text is too long");
       if (stage.value !== undefined && (!Number.isFinite(stage.value) || stage.value < 0 || stage.value > 1e10)) return fail("A funnel figure must be zero or more");
       if (stage.bind && stage.bind !== "REACH_UNIQUE" && stage.bind !== "REACH_REGISTERED") return fail("A funnel stage has an unknown source");
+      if (stage.indicatorId !== undefined && (typeof stage.indicatorId !== "string" || stage.indicatorId.length === 0 || stage.indicatorId.length > 80)) return fail("A funnel stage has an unknown indicator");
       stages.push({
         label: stage.label.trim(),
-        ...(stage.bind ? { bind: stage.bind } : stage.value !== undefined ? { value: Math.round(stage.value) } : {}),
+        ...(stage.bind ? { bind: stage.bind } : stage.indicatorId ? { indicatorId: stage.indicatorId } : stage.value !== undefined ? { value: Math.round(stage.value) } : {}),
         ...(cleanText(stage.sourceNote, 80) ? { sourceNote: cleanText(stage.sourceNote, 80) } : {}),
       });
     }

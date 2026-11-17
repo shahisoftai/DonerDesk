@@ -86,6 +86,7 @@ export function DataSheetTable({ projectId, sheet, canEdit }: { projectId: strin
         <div className="ml-auto flex flex-wrap gap-2">
           <Button variant="secondary" size="sm" onClick={exportCsv}>Download CSV</Button>
           <a className="btn-secondary" href={`/api/projects/${projectId}/data-sheet/export`}>Download Excel</a>
+          <a className="btn-secondary" href={`/api/projects/${projectId}/data-sheet/export?format=hxl`} title="CSV with a row of HXL hashtags under the headers, ready for the Humanitarian Data Exchange">Download HXL CSV</a>
         </div>
       </div>
 

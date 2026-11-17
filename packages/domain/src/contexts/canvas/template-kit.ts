@@ -2,6 +2,8 @@
 import type { BlockInstance, CanvasPage } from "./canvas.js";
 import type { TemplateRole } from "./template.js";
 
+/** The one house style every starter uses, so a dashboard and an infographic made from the same starter look alike. */
+export const HOUSE_THEME = "HUMANITARIAN_BLUE";
 export type At = [x: number, y: number, w: number, h: number];
 export const block = (id: string, kind: string, [x, y, w, h]: At, props: unknown): BlockInstance => ({ id, kind, bounds: { x, y, w, h }, props, bindings: [] });
 export const page = (blocks: BlockInstance[], format = "WEB_FLUID"): CanvasPage[] => [{ id: "page-1", title: "Page 1", format, blocks }];

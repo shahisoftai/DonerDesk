@@ -5,7 +5,7 @@
  * "Not yet reported"; an authored block with nothing in it is left out of an export (the Studio
  * preview shows a hint). Percent of target is drawn only where the domain allows one.
  */
-import { buildDataChart, type InfographicSectionConfig, type BigNumberItem } from "@donordesk/domain";
+import { buildDataChart, funnelStageAmount, type FunnelFacts, type InfographicSectionConfig, type BigNumberItem } from "@donordesk/domain";
 import { arcPath, flipBack, fmt, icon, framed, headingHeight, heading, notReported, panelRect, paragraph, parseFigure, previewHint, r, text, textWidth, wrapText, mixHex, esc, onColor, type RenderCtx, type Slot } from "./kit.js";
 import { chartSvg, titleFor } from "./blocks-core.js";
 import { ageLabel, chosenIndicators, latestById, latestFinance, periodsInRange, sexLabel, sortedAgeGroups, type LatestValue } from "./facts.js";
@@ -139,7 +139,8 @@ export function funnelBlock(c: RenderCtx, section: InfographicSectionConfig, wid
   const stages = section.stages ?? [];
   if (stages.length === 0) return previewHint(c, title, width, "Add people in need, targeted and reached");
   const { t, s } = c;
-  const resolved = stages.map((stage) => ({ ...stage, n: stage.bind === "REACH_UNIQUE" ? c.data.reach.overallUnique || null : stage.bind === "REACH_REGISTERED" ? c.data.reach.registeredTotal || null : stage.value ?? null }));
+  const funnelFacts: FunnelFacts = { reach: c.data.reach, latest: (id) => latestById(c, id) };
+  const resolved = stages.map((stage) => ({ ...stage, n: funnelStageAmount(stage, funnelFacts).amount }));
   if (resolved.every((x) => x.n === null) && !c.preview) return undefined;
   const max = Math.max(1, ...resolved.map((x) => x.n ?? 0));
   const rowH = 54 * s;
