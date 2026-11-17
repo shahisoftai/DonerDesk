@@ -1,4 +1,3 @@
-import { CHART_KINDS, kindsForTemplate } from "@donordesk/domain/contexts/reporting/chart-spec-v2.js";
 import { METRICS, TILE_COLORS, MAP_SHADINGS, MAP_VIEWS, MAP_GROUNDS, MAP_COLOR_MODES, MAP_AREA_LABELS, PROJECT_LIST_AFFILIATIONS, COUNT_METRICS, MULTI_CARD_LAYOUTS } from "@donordesk/domain/contexts/dashboards/index.js";
 import { BIG_NUMBER_SOURCES, INFOGRAPHIC_ICONS, SHAPE_NAMES, TONE_NAMES } from "@donordesk/domain/contexts/infographics/index.js";
 import { FILTER_DIMENSIONS, FILTER_CONTROL_STYLES } from "@donordesk/domain/contexts/canvas/index.js";
@@ -13,6 +12,9 @@ export type Field =
   | { type: "number"; path: string; label: string; min?: number; max?: number }
   | { type: "boolean"; path: string; label: string }
   | { type: "select"; path: string; label: string; options: ReadonlyArray<{ value: string; label: string }>; empty?: string }
+  | { type: "media"; path: string; label: string }
+  | { type: "chartKind"; path: string; label: string }
+  | { type: "chartLabels"; path: string; label: string }
   | { type: "indicator"; path: string; label: string }
   | { type: "indicators"; path: string; label: string }
   | { type: "choices"; path: string; label: string; options: ReadonlyArray<{ value: string; label: string }> }
@@ -28,7 +30,6 @@ const opts = (values: readonly string[], label: (v: string) => string = (v) => v
 const words = (v: string): string => v.toLowerCase().split("_").map((w, i) => (i === 0 ? w.charAt(0).toUpperCase() + w.slice(1) : w)).join(" ");
 const title: Field = { type: "text", path: "title", label: "Heading", hint: "Shown above the block. Leave empty for the usual one." };
 const MEASURES = [{ value: "PERIOD", label: "This period" }, { value: "CUMULATIVE", label: "Cumulative" }, { value: "PERCENT_OF_TARGET", label: "% of target" }];
-const CHART_KIND_OPTIONS = [...new Set([...kindsForTemplate("INDICATOR_OVER_TIME"), ...kindsForTemplate("INDICATORS_OVER_TIME")])].map((k) => ({ value: k, label: CHART_KINDS[k].label }));
 
 /** One figure of a figure card: an indicator, a count, or a money or activity figure. */
 const CARD_ITEM: ReadonlyArray<Field> = [
@@ -77,12 +78,13 @@ export const PROP_FIELDS: Readonly<Record<string, ReadonlyArray<Field>>> = {
   KEY_MESSAGES: [title, { type: "list", path: "messages", label: "Messages", add: "Add a message", blank: { text: "" }, item: [{ type: "textarea", path: "text", label: "Message" }] }],
   QUOTE: [{ type: "textarea", path: "text", label: "Quotation" }, { type: "text", path: "attribution", label: "Who said it" }, { type: "boolean", path: "consentConfirmed", label: "The person agreed to be quoted" }],
   LEGEND_NOTES: [title, { type: "lines", path: "notes", label: "Notes", hint: "One note per line. The source line is added for you." }],
-  IMAGE: [title, { type: "text", path: "assetId", label: "Image id", hint: "The id of an image in the infographic library." }, { type: "text", path: "altText", label: "Description for people who cannot see it" }, { type: "text", path: "caption", label: "Caption" }, { type: "text", path: "credit", label: "Photo credit" }, { type: "select", path: "fit", label: "Fit", options: [{ value: "COVER", label: "Fill the space" }, { value: "CONTAIN", label: "Show all of it" }] }, { type: "boolean", path: "consentConfirmed", label: "The people shown agreed to appear" }],
+  IMAGE: [title, { type: "media", path: "assetId", label: "Picture" }, { type: "text", path: "altText", label: "Description for people who cannot see it" }, { type: "text", path: "caption", label: "Caption" }, { type: "text", path: "credit", label: "Photo credit" }, { type: "select", path: "fit", label: "Fit", options: [{ value: "COVER", label: "Fill the space" }, { value: "CONTAIN", label: "Show all of it" }] }, { type: "boolean", path: "consentConfirmed", label: "The people shown agreed to appear" }],
   TIMELINE: [title, { type: "list", path: "events", label: "Events", add: "Add an event", blank: { date: "", label: "" }, item: [{ type: "text", path: "date", label: "Date (YYYY-MM-DD)" }, { type: "text", path: "label", label: "What happened" }, { type: "text", path: "detail", label: "Detail" }] }],
   KPI: [{ type: "indicator", path: "indicatorId", label: "Indicator" }, { type: "boolean", path: "includeDraft", label: "Include values not yet verified" }, { type: "text", path: "title", label: "Name of the tile" }, { type: "select", path: "measure", label: "Figure shown", empty: "This period", options: [{ value: "CUMULATIVE", label: "Total to date" }] }, { type: "select", path: "color", label: "Colour", empty: "Plain", options: opts(TILE_COLORS, words) }],
   METRIC: [{ type: "select", path: "metric", label: "Figure", options: Object.entries(METRICS).map(([value, m]) => ({ value, label: m.label })) }, { type: "text", path: "title", label: "Name of the tile" }, { type: "select", path: "color", label: "Colour", empty: "Usual for this figure", options: opts(TILE_COLORS, words) }],
   CHART: [
-    { type: "select", path: "spec.kind", label: "Kind of chart", options: CHART_KIND_OPTIONS },
+    { type: "chartKind", path: "spec.kind", label: "Kind of chart" },
+    { type: "chartLabels", path: "spec.labels", label: "Numbers on the chart" },
     { type: "indicators", path: "spec.dataset.indicatorIds", label: "Indicators" },
     { type: "select", path: "spec.dataset.measure", label: "Show", options: MEASURES },
     { type: "boolean", path: "spec.dataset.showTarget", label: "Draw the target" },

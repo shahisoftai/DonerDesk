@@ -46,6 +46,10 @@
       "types": "./dist/contexts/reporting/data-tables.d.ts",
       "import": "./dist/contexts/reporting/data-tables.js"
     },
+    "./contexts/reporting/chart-reshape.js": {
+      "types": "./dist/contexts/reporting/chart-reshape.d.ts",
+      "import": "./dist/contexts/reporting/chart-reshape.js"
+    },
     "./contexts/reporting/data-charts.js": {
       "types": "./dist/contexts/reporting/data-charts.d.ts",
       "import": "./dist/contexts/reporting/data-charts.js"

@@ -38,10 +38,10 @@ export function FilterDropdown({ label, options, chosen, multi, search, selected
   );
   return (
     <div className="min-w-0 flex-1" data-filter={label}>
-      <p id={id} className="truncate rounded-t px-2 py-0.5 text-xs font-bold" style={{ background: tone.strip, color: tone.ink }}>{label}</p>
+      <p id={id} className="break-words rounded-t px-2 py-0.5 text-xs font-bold" style={{ background: tone.strip, color: tone.ink }}>{label}</p>
       {style === "DROPDOWN"
         ? <details className="relative">
-            <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between rounded-b border border-t-0 border-slate-300 bg-white px-2 text-xs dark:border-slate-600 dark:bg-slate-900"><span className="truncate">{summary}</span><span aria-hidden>▾</span></summary>
+            <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between rounded-b border border-t-0 border-slate-300 bg-white px-2 text-xs dark:border-slate-600 dark:bg-slate-900"><span className="break-words">{summary}</span><span aria-hidden>▾</span></summary>
             <div className="absolute start-0 z-20 mt-1 w-64 max-w-[80vw] rounded border border-slate-200 bg-white p-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">{list}</div>
           </details>
         : <div className="rounded-b border border-t-0 border-slate-300 bg-white p-2 dark:border-slate-600 dark:bg-slate-900">{list}</div>}

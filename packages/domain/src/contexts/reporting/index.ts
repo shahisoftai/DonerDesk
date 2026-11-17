@@ -78,3 +78,5 @@ export * from "./chart-screen.js";
 export * from "./places-export.js";
 export * from "./report-query.js";
 export * from "./breakdown-chart.js";
+export * from "./chart-reshape.js";
+export * from "./chart-value-labels.js";

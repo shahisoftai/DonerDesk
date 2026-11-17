@@ -57,3 +57,9 @@ export function applyCanvasTemplate(t: CanvasTemplate, mapping: Readonly<Record<
 
 /** An organisation's copy of a template; built-ins are never changed in place. */
 export const copyCanvasTemplate = (t: CanvasTemplate, id: string): CanvasTemplate => ({ ...structuredClone(t), id, origin: "ORGANISATION", basedOn: t.id, revision: 1 });
+
+/** The standard products a person is offered first (Phase 61.9): each is a starting point on a free page, not a constraint. Every other starter is under "More templates". */
+export const STANDARD_TEMPLATE_IDS: readonly string[] = [
+  "builtin-response-dashboard", "builtin-flash-update", "builtin-country-brief", "builtin-results-table",
+  "builtin-3w-coverage", "builtin-donor-one-pager", "builtin-funding-coverage", "builtin-results-glance",
+];

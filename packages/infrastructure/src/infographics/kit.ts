@@ -104,8 +104,12 @@ export function textWidth(value: string, size: number, bold = false): number {
   return em * size * (bold ? 1.06 : 1);
 }
 
-/** Wraps to a pixel width. A word longer than the line is cut at the width rather than overflowing. */
-export function wrapText(value: string, maxWidth: number, size: number, maxLines: number, bold = false): string[] {
+/**
+ * Wraps to a pixel width. Text always wraps (Phase 61.5): it is never cut short and never ends in "…", so `maxLines` is the height a block planned
+ * for, not a limit. A longer text takes more lines and the Design check names a block whose words no longer fit. A word longer than the line is split at the width.
+ */
+export function wrapText(value: string, maxWidth: number, size: number, _plannedLines: number, bold = false): string[] {
+  const maxLines = Number.POSITIVE_INFINITY;
   const words = value.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let current = "";

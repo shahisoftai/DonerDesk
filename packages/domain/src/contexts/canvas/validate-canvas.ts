@@ -9,6 +9,7 @@ import { paramBindingProblems, parameterProblems } from "./params.js";
 import { definitionFor, pictureOfBlock } from "./blocks/registry.js";
 import { animationProblems } from "./motion.js";
 import { formatProblems } from "./format/capabilities.js";
+import { freeFrameProblems, pageExtent } from "./pages.js";
 import { interactionProblems } from "./interactions.js";
 import { importThemeSpec } from "./theme-kit/theme-json.js";
 import { CANVAS_MODES, CANVAS_PROFILES, CANVAS_SCOPES, CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, CANVAS_MAX_TITLE, type BlockInstance, type CanvasBounds, type Canvas } from "./canvas.js";
@@ -19,17 +20,14 @@ const whole = (n: unknown): n is number => typeof n === "number" && Number.isInt
 const boundsOk = (b: CanvasBounds): boolean => [b.x, b.y, b.w, b.h].every(whole) && b.x >= 0 && b.y >= 0 && b.w > 0 && b.h > 0 && b.x + b.w <= CANVAS_GRID_COLUMNS;
 
 /** What would break the page if it were stored or drawn: an unknown kind, a position outside the grid. */
-function blockStructure(block: BlockInstance, pageId: string): CanvasProblem[] {
+function blockStructure(block: BlockInstance, pageId: string, pageSize?: { w: number; h: number }): CanvasProblem[] {
   const out: CanvasProblem[] = [];
   const add = (message: string) => out.push({ pageId, blockId: block.id, message });
   const def = definitionFor(block.kind);
   if (!def) { add("This block is not one the product knows."); return out; }
   if (!boundsOk(block.bounds)) add("A block's place and size must be whole cells inside the page.");
-  else {
-    const { min, max } = def.sizes;
-    if (block.bounds.w < min.w || block.bounds.h < min.h) add(`This block is at least ${min.w} wide and ${min.h} high.`);
-    if (block.bounds.w > max.w || block.bounds.h > max.h) add(`This block is at most ${max.w} wide and ${max.h} high.`);
-  }
+  // Any size is the person's choice (Phase 61.3): a block's own minimum and maximum are no longer checked; only its place on the page is.
+  if (block.free && pageSize) for (const m of freeFrameProblems(block.free, pageSize)) add(m);
   for (const alt of [block.tablet, block.phone]) if (alt && !boundsOk(alt)) add("A tablet or phone position must stay inside the page.");
   return out;
 }
@@ -68,7 +66,7 @@ export function canvasStructureProblems(canvas: Canvas): CanvasProblem[] {
     for (const block of page.blocks) {
       if (blockIds.has(block.id)) out.push({ pageId: page.id, blockId: block.id, message: "Two blocks share an id." });
       blockIds.add(block.id);
-      out.push(...blockStructure(block, page.id));
+      out.push(...blockStructure(block, page.id, pageExtent(page) ?? undefined));
       for (const message of containerProblems(page, block)) out.push({ pageId: page.id, blockId: block.id, message });
       for (const message of paramBindingProblems(block.paramBindings ?? [], params)) out.push({ pageId: page.id, blockId: block.id, message });
       for (const message of formatProblems(block.kind, block.format)) out.push({ pageId: page.id, blockId: block.id, message });

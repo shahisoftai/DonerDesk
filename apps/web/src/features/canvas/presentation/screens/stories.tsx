@@ -18,8 +18,8 @@ export function ImageScreen(props: ScreenRendererPropsOf<typeof imageModel>) {
     const url = props.assetUrl?.(m.assetId);
     const caption = [m.caption, m.credit ? `${text.l.photoCredit}: ${m.credit}` : ""].filter(Boolean).join(" · ");
     return (
-      <figure className="p-3">
-        {url ? <img src={url} alt={m.altText ?? ""} className={`w-full rounded-lg ${m.fit === "CONTAIN" ? "object-contain" : "object-cover"}`} /> : <p className="rounded-lg bg-slate-100 p-4 text-sm text-slate-600">{m.altText ?? m.caption ?? ""}</p>}
+      <figure className="flex h-full flex-col p-3">
+        {url ? <img src={url} alt={m.altText ?? ""} className={`min-h-0 w-full flex-1 rounded-lg ${m.fit === "CONTAIN" ? "object-contain" : "object-cover"}`} /> : <p className="rounded-lg bg-slate-100 p-4 text-sm text-slate-600">{m.altText ?? m.caption ?? ""}</p>}
         {caption && <figcaption className="mt-1 text-xs text-slate-500">{caption}</figcaption>}
       </figure>
     );

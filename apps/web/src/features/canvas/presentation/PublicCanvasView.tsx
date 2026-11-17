@@ -6,6 +6,7 @@ import type { ChartDrawing } from "@/lib/server/schemas-dashboards";
 import { PublicChoicesSchema } from "@/lib/server/schemas-canvas";
 import { z } from "zod";
 import { CanvasPageGrid } from "./CanvasPageGrid";
+import { AssetUrlProvider, linkAssetUrl } from "./asset-url-context";
 import { FilterPane, type FilterBarProps } from "../filters/FilterPane";
 import { FilterSlotProvider } from "../filters/filter-slot";
 import { useFilterAddress } from "../filters/use-filter-address";
@@ -64,6 +65,7 @@ export function PublicCanvasView({ canvas, drawings: first, models: firstModels,
   const slot = bar ? <FilterPane bar={bar} choices={{ ...choices, groups: [], statuses: [], levels: [], indicators: [] }} filters={filters} tone={{ strip: theme.accentSoft, ink: theme.accent, on: theme.accent }} onChange={setFilters} onClear={() => setFilters(NO_FILTER)} /> : null;
   return (
     <MapServicesProvider value={publicMapServices()}>
+    <AssetUrlProvider value={token ? linkAssetUrl(token) : (id) => `/api/shared/canvas/none/assets/${encodeURIComponent(id)}`}>
     <DatasetFilterProvider api={datasetApi}><DatasetMapProvider value={DatasetMapView}>
     <div className="space-y-6" dir={canvas.language === "ar" ? "rtl" : "ltr"}>
       {failed && <p role="status" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-900">The page could not be refreshed for that choice just now. What you see is the last page that loaded.</p>}
@@ -71,12 +73,13 @@ export function PublicCanvasView({ canvas, drawings: first, models: firstModels,
         {canvas.pages.map((page) => (
           <section key={page.id} aria-label={page.title}>
             {canvas.pages.length > 1 && <h2 className="mb-2 text-lg font-semibold">{page.title}</h2>}
-            <CanvasPageGrid canvas={canvas} blocks={page.blocks.filter((b) => b.style?.hidden !== true)} drawings={byId} widgets={widgets} models={models} repeats={repeats} editing={false} selectedIds={NO_SELECTION} onSelect={() => undefined} isChanged={() => false} />
+            <CanvasPageGrid canvas={canvas} blocks={page.blocks.filter((b) => b.style?.hidden !== true)} drawings={byId} widgets={widgets} models={models} repeats={repeats} editing={false} page={page} onFrame={() => undefined} selectedIds={NO_SELECTION} onSelect={() => undefined} isChanged={() => false} />
           </section>
         ))}
       </FilterSlotProvider>
     </div>
     </DatasetMapProvider></DatasetFilterProvider>
+    </AssetUrlProvider>
     </MapServicesProvider>
   );
 }

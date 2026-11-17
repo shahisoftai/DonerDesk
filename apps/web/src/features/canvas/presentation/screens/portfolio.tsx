@@ -45,7 +45,7 @@ export function PortfolioCountriesScreen(props: ScreenRendererPropsOf<typeof por
       <ul className="space-y-2 p-4">
         {m.countries.map((c) => (
           <li key={c.country} className="flex items-center gap-3 text-sm">
-            <span className="w-28 shrink-0 truncate">{c.country}</span>
+            <span className="w-28 shrink-0 break-words">{c.country}</span>
             <span className="flex h-4 flex-1" aria-hidden="true">
               {([["ON_TRACK", c.onTrack], ["AT_RISK", c.atRisk], ["OFF_TRACK", c.offTrack], ["NO_PLAN", c.noPlan]] as const).filter(([, n]) => n > 0).map(([band, n]) => <span key={band} className={BAND_TONE[band]} style={{ width: `${(n / max) * 100}%` }} />)}
             </span>

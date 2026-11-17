@@ -30,7 +30,7 @@ export function groupBlocks(c: Canvas, ids: readonly string[], groupId: string):
   const box = boundsOf(blocks)!;
   const def = definitionFor(kind)!;
   const group: BlockInstance = { id: groupId, kind, bounds: { x: box.x, y: box.y, w: box.w, h: box.h }, props: def.defaults(), bindings: [] };
-  let next: Canvas = { ...c, pages: c.pages.map((p) => (p.id === page.id ? { ...p, blocks: settleBlocks([...p.blocks, group], groupId) } : p)) };
+  let next: Canvas = { ...c, pages: c.pages.map((p) => (p.id === page.id ? { ...p, blocks: settleBlocks([...p.blocks, group], groupId, p.mode) } : p)) };
   for (const b of blocks) {
     const r = setContainer(next, b.id, { id: groupId });
     if (!r.ok) return fail(r.reason);
@@ -46,7 +46,7 @@ export function ungroup(c: Canvas, containerId: string): ArrangeResult {
   if (!page || !holder || !isContainerKind(holder.kind)) return fail("That is not a group.");
   if (holder.style?.locked) return fail("That block is locked.");
   const rest = page.blocks.filter((b) => b.id !== containerId).map((b) => (b.container?.id === containerId ? { ...b, container: undefined } : b));
-  return { ok: true, canvas: { ...c, pages: c.pages.map((p) => (p.id === page.id ? { ...p, blocks: settleBlocks(rest) } : p)) }, skipped: [] };
+  return { ok: true, canvas: { ...c, pages: c.pages.map((p) => (p.id === page.id ? { ...p, blocks: settleBlocks(rest, undefined, page.mode) } : p)) }, skipped: [] };
 }
 
 /** The settings of the old block a new kind has no place for, as the names a person would read. */
@@ -79,6 +79,6 @@ export function convertBlock(c: Canvas, id: string, newKind: string, acceptLoss 
   const { min, max } = target.sizes;
   const w = Math.min(max.w, Math.max(min.w, block.bounds.w)), h = Math.min(max.h, Math.max(min.h, block.bounds.h));
   const next: BlockInstance = { ...block, kind: newKind, props, bounds: { ...block.bounds, w, h, x: Math.min(block.bounds.x, 12 - w) } };
-  const blocks = settleBlocks(page.blocks.map((b) => (b.id === id ? next : b)), id);
+  const blocks = settleBlocks(page.blocks.map((b) => (b.id === id ? next : b)), id, page.mode);
   return { ok: true, canvas: { ...c, pages: c.pages.map((p) => (p.id === page.id ? { ...p, blocks } : p)) }, skipped: [] };
 }

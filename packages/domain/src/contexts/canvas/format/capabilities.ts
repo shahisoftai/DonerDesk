@@ -6,7 +6,8 @@ import { definitionFor } from "../blocks/registry.js";
 import type { BlockFamily } from "../block-definition.js";
 import { colourChoiceProblem, conditionalProblems } from "./conditional.js";
 import { numbersProblems } from "./number-format.js";
-import { TEXT_ALIGNMENTS, DISPLAY_UNITS, SIDES, TOTAL_FUNCTIONS, type BlockFormat, type FormatCapability } from "./types.js";
+import { fontById } from "../theme-kit/fonts.js";
+import { TEXT_ALIGNMENTS, TEXT_SLOTS, TEXT_TRANSFORMS, FONT_WEIGHTS, DISPLAY_UNITS, SIDES, TOTAL_FUNCTIONS, type BlockFormat, type FormatCapability } from "./types.js";
 
 type Checker<K extends FormatCapability> = (settings: NonNullable<BlockFormat[K]>, ctx: FormatContext) => string[];
 export interface FormatContext { isRate: boolean }
@@ -40,9 +41,16 @@ export const CAPABILITY_DEFS: { [K in FormatCapability]: CapabilityDef<K> } = {
   tooltip: { labelKey: "format.tooltip", check: (s) => ((s.indicatorIds?.length ?? 0) > 6 ? ["A tooltip shows at most 6 extra figures."] : []) },
   emptyData: { labelKey: "format.emptyData", check: (s) => (s.message && s.message.length > 120 ? ["The empty message is at most 120 characters."] : []) },
   visibility: { labelKey: "format.visibility", check: () => [] },
+  typography: { labelKey: "format.typography", check: (s) => [
+    ...(s.sizePx !== undefined && (!Number.isFinite(s.sizePx) || s.sizePx < 6 || s.sizePx > 400) ? ["Text is 6 to 400 px."] : []),
+    ...(s.letterSpacingPx !== undefined && (!Number.isFinite(s.letterSpacingPx) || Math.abs(s.letterSpacingPx) > 20) ? ["Letter spacing is -20 to 20 px."] : []),
+    ...(s.lineHeight !== undefined && (!Number.isFinite(s.lineHeight) || s.lineHeight < 0.8 || s.lineHeight > 3) ? ["Line height is 0.8 to 3."] : []),
+    ...(s.fontId !== undefined && !fontById(s.fontId) ? ["That font is not one the product knows."] : []),
+    ...oneOf(s.transform, TEXT_TRANSFORMS, "Unknown text case."), ...oneOf(s.weight, FONT_WEIGHTS, "Unknown weight."), ...oneOf(s.align, TEXT_ALIGNMENTS, "Unknown alignment."), ...colours(s.color)] },
+  texts: { labelKey: "format.texts", check: (s) => Object.entries(s).flatMap(([k, v]) => (!(TEXT_SLOTS as readonly string[]).includes(k) ? [`"${k}" is not a text a block has.`] : typeof v !== "string" ? [`The ${k} text is words.`] : v.length > 600 ? [`The ${k} text is at most 600 characters.`] : [])) },
 };
 
-const COMMON: readonly FormatCapability[] = ["title", "frame", "visibility"];
+const COMMON: readonly FormatCapability[] = ["title", "frame", "visibility", "typography", "texts"];
 /** What a block of each family offers when its definition does not say. */
 export const FAMILY_FORMATS: Readonly<Record<BlockFamily, readonly FormatCapability[]>> = {
   TEXT: [...COMMON, "accentBar"],
@@ -53,7 +61,7 @@ export const FAMILY_FORMATS: Readonly<Record<BlockFamily, readonly FormatCapabil
   AI: [...COMMON, "accentBar"],
   MEDIA: COMMON,
   CONTAINERS: [...COMMON, "accentBar"],
-  CONTROLS: ["frame", "visibility"],
+  CONTROLS: ["frame", "visibility", "typography"],
 };
 
 export function formatsOf(kind: string): readonly FormatCapability[] {

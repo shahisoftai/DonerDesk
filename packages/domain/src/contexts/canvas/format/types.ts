@@ -6,7 +6,7 @@
  */
 export const FORMAT_CAPABILITIES = [
   "title", "frame", "accentBar", "numbers", "callout", "referenceLabels", "labels", "legend", "colors", "conditional",
-  "table", "tooltip", "emptyData", "visibility",
+  "table", "tooltip", "emptyData", "visibility", "typography", "texts",
 ] as const;
 export type FormatCapability = (typeof FORMAT_CAPABILITIES)[number];
 
@@ -21,7 +21,7 @@ export type Side = (typeof SIDES)[number];
 export const TEXT_ALIGNMENTS = ["start", "center", "end"] as const;
 export type TextAlignment = (typeof TEXT_ALIGNMENTS)[number];
 
-export interface TitleFormat { show?: boolean; subtitle?: string; size?: "S" | "M" | "L" | "XL"; weight?: "regular" | "bold"; color?: ColourChoice; align?: TextAlignment; rule?: boolean }
+export interface TitleFormat { show?: boolean; subtitle?: string; size?: "S" | "M" | "L" | "XL"; /** Any size in px (6 to 400); wins over `size`. */ sizePx?: number; weight?: "regular" | "bold"; color?: ColourChoice; align?: TextAlignment; rule?: boolean }
 export interface FrameFormat { borderSide?: "all" | Side; borderWidth?: number; borderColor?: ColourChoice; padding?: { top: number; end: number; bottom: number; start: number } }
 export interface AccentBarFormat { show?: boolean; side?: Side; thickness?: number; color?: ColourChoice }
 export const DISPLAY_UNITS = ["AUTO", "NONE", "K", "M", "B"] as const;
@@ -55,7 +55,18 @@ export interface TooltipFormat { show?: boolean; indicatorIds?: string[] }
 export interface EmptyDataFormat { showItemsWithNoData?: boolean; message?: string }
 export interface VisibilityFormat { hideOnPhone?: boolean; hideOnPrint?: boolean; hideOnShareLink?: boolean }
 
+/** Type for the whole block (Phase 61.4): any size, a bundled font, weight, case and spacing. Unset = the theme's own. */
+export const TEXT_TRANSFORMS = ["none", "uppercase", "lowercase", "capitalize"] as const;
+export type TextTransform = (typeof TEXT_TRANSFORMS)[number];
+export const FONT_WEIGHTS = ["300", "400", "500", "600", "700", "800"] as const;
+export interface TypographyFormat { fontId?: string; sizePx?: number; weight?: (typeof FONT_WEIGHTS)[number]; italic?: boolean; transform?: TextTransform; letterSpacingPx?: number; lineHeight?: number; align?: TextAlignment; color?: ColourChoice }
+export const TEXT_SLOTS = ["title", "subtitle", "caption", "source", "asOf", "empty"] as const;
+export type TextSlot = (typeof TEXT_SLOTS)[number];
+/** Words a person wrote in place of the ones the block writes for itself. An absent slot is automatic. */
+export type TextsFormat = Partial<Record<TextSlot, string>>;
+
 export interface BlockFormat {
+  typography?: TypographyFormat; texts?: TextsFormat;
   title?: TitleFormat; frame?: FrameFormat; accentBar?: AccentBarFormat; numbers?: NumbersFormat; callout?: CalloutFormat;
   referenceLabels?: ReferenceLabelsFormat; labels?: LabelsFormat; legend?: LegendFormat; colors?: ColorsFormat;
   conditional?: ConditionalFormat; table?: TableFormat; tooltip?: TooltipFormat; emptyData?: EmptyDataFormat; visibility?: VisibilityFormat;

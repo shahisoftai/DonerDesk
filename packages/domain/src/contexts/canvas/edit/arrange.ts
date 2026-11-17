@@ -8,6 +8,7 @@ import { CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, type BlockInstance, ty
 import { definitionFor } from "../blocks/registry.js";
 import { settleBlocks } from "./edit.js";
 import { boundsOf, pageOf } from "./selection.js";
+import { alignFrames, distributeFrames, isFreePage, matchFrameSize, moveFrames } from "./free-edit.js";
 
 export type ArrangeResult = { ok: true; canvas: Canvas; skipped: string[] } | { ok: false; reason: string };
 const fail = (reason: string): ArrangeResult => ({ ok: false, reason });
@@ -35,12 +36,16 @@ function withBounds(c: Canvas, scope: Scope, bounds: ReadonlyMap<string, CanvasB
   const changed = scope.movable.filter((b) => { const n = bounds.get(b.id); return n && (n.x !== b.bounds.x || n.y !== b.bounds.y || n.w !== b.bounds.w || n.h !== b.bounds.h); });
   if (changed.length === 0) return fail("Nothing would change.");
   const next = scope.page.blocks.map((b) => (bounds.has(b.id) && changed.some((m) => m.id === b.id) ? { ...b, bounds: bounds.get(b.id)! } : b));
-  return { ok: true, canvas: replacePage(c, scope.page, settleBlocks(next, changed.map((b) => b.id))), skipped: scope.skipped };
+  return { ok: true, canvas: replacePage(c, scope.page, settleBlocks(next, changed.map((b) => b.id), scope.page.mode)), skipped: scope.skipped };
 }
 
 const within = (b: CanvasBounds): boolean => b.x >= 0 && b.y >= 0 && b.x + b.w <= CANVAS_GRID_COLUMNS;
 
+const onFree = (c: Canvas, ids: readonly string[]): boolean => isFreePage(pageOf(c, ids[0] ?? ""));
+
 export function moveMany(c: Canvas, ids: readonly string[], dx: number, dy: number): ArrangeResult {
+  // On a free page a "cell" is a step of 8 px.
+  if (onFree(c, ids)) return moveFrames(c, ids, dx * 8, dy * 8);
   const scope = scopeOf(c, ids);
   if (typeof scope === "string") return fail(scope);
   const next = new Map(scope.movable.map((b) => [b.id, { ...b.bounds, x: b.bounds.x + dx, y: b.bounds.y + dy }]));
@@ -58,6 +63,7 @@ export type Alignment = (typeof ALIGNMENTS)[number];
 
 /** Aligns to the edges of the selection as a whole (two or more blocks). */
 export function align(c: Canvas, ids: readonly string[], how: Alignment): ArrangeResult {
+  if (onFree(c, ids)) return alignFrames(c, ids, how);
   const scope = scopeOf(c, ids, 2);
   if (typeof scope === "string") return fail(scope);
   const box = boundsOf(scope.movable)!;
@@ -73,6 +79,7 @@ export function align(c: Canvas, ids: readonly string[], how: Alignment): Arrang
 
 /** Even gaps between three or more blocks; the outer two stay where they are. Whole cells only, so a gap may differ by one cell. */
 export function distribute(c: Canvas, ids: readonly string[], axis: "HORIZONTAL" | "VERTICAL"): ArrangeResult {
+  if (onFree(c, ids)) return distributeFrames(c, ids, axis);
   const scope = scopeOf(c, ids, 3);
   if (typeof scope === "string") return fail(scope);
   const horizontal = axis === "HORIZONTAL";
@@ -96,6 +103,10 @@ export function distribute(c: Canvas, ids: readonly string[], axis: "HORIZONTAL"
 
 /** Makes the selected blocks the size of the reference block, within each block's own limits. */
 export function matchSize(c: Canvas, ids: readonly string[], referenceId: string, what: "WIDTH" | "HEIGHT" | "BOTH"): ArrangeResult {
+  if (onFree(c, ids)) {
+    // The reference block comes first so the others take its size.
+    return matchFrameSize(c, [referenceId, ...ids.filter((i) => i !== referenceId)], what);
+  }
   const scope = scopeOf(c, ids, 2);
   if (typeof scope === "string") return fail(scope);
   const ref = scope.page.blocks.find((b) => b.id === referenceId);
@@ -103,10 +114,9 @@ export function matchSize(c: Canvas, ids: readonly string[], referenceId: string
   const next = new Map<string, CanvasBounds>();
   for (const b of scope.movable) {
     if (b.id === referenceId) continue;
-    const s = definitionFor(b.kind)?.sizes;
-    if (!s) continue;
-    const w = what === "HEIGHT" ? b.bounds.w : Math.min(s.max.w, Math.max(s.min.w, ref.bounds.w));
-    const h = what === "WIDTH" ? b.bounds.h : Math.min(s.max.h, Math.max(s.min.h, ref.bounds.h));
+    if (!definitionFor(b.kind)) continue;
+    const w = what === "HEIGHT" ? b.bounds.w : Math.min(CANVAS_GRID_COLUMNS, Math.max(1, ref.bounds.w));
+    const h = what === "WIDTH" ? b.bounds.h : Math.max(1, ref.bounds.h);
     next.set(b.id, { ...b.bounds, w, h: h, x: Math.min(b.bounds.x, CANVAS_GRID_COLUMNS - w) });
   }
   return withBounds(c, scope, next);
@@ -143,7 +153,7 @@ export function removeMany(c: Canvas, ids: readonly string[]): ArrangeResult {
   if (typeof scope === "string") return fail(scope);
   const gone = new Set(scope.movable.map((b) => b.id));
   const rest = scope.page.blocks.filter((b) => !gone.has(b.id)).map((b) => (b.container && gone.has(b.container.id) ? { ...b, container: undefined } : b));
-  return { ok: true, canvas: replacePage(c, scope.page, settleBlocks(rest)), skipped: scope.skipped };
+  return { ok: true, canvas: replacePage(c, scope.page, settleBlocks(rest, undefined, scope.page.mode)), skipped: scope.skipped };
 }
 
 /** Copies go below the originals, unlocked, with ids made by the caller (one per selected block, in the same order). */
@@ -156,7 +166,7 @@ export function duplicateMany(c: Canvas, ids: readonly string[], newIds: readonl
   const box = boundsOf(scope.movable)!;
   const idMap = new Map(scope.movable.map((b, i) => [b.id, newIds[i]!]));
   const copies = scope.movable.map((b) => ({ ...structuredClone(b), id: idMap.get(b.id)!, bounds: { ...b.bounds, y: b.bounds.y + box.h }, style: { ...b.style, locked: false }, container: b.container && idMap.has(b.container.id) ? { ...b.container, id: idMap.get(b.container.id)! } : b.container }));
-  return { ok: true, canvas: replacePage(c, scope.page, settleBlocks([...scope.page.blocks, ...copies], copies.map((b) => b.id))), skipped: scope.skipped };
+  return { ok: true, canvas: replacePage(c, scope.page, settleBlocks([...scope.page.blocks, ...copies.map((b) => (b.free ? { ...b, free: { ...b.free, x: b.free.x + 24, y: b.free.y + 24 } } : b))], copies.map((b) => b.id), scope.page.mode)), skipped: scope.skipped };
 }
 
 /** Locking and hiding work on locked blocks too (unlocking has to). */

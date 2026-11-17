@@ -3,7 +3,8 @@
  * print painter both read these hints, so a file and the screen draw the same frame, accent bar and title.
  */
 import type { InfographicTheme } from "../../infographics/theme.js";
-import type { BlockFormat, ColourChoice, ColourRole, Side } from "./types.js";
+import { stackFor } from "../theme-kit/fonts.js";
+import type { BlockFormat, ColourChoice, ColourRole, Side, TextTransform } from "./types.js";
 
 /** Semantic colours a theme may name for itself (Phase 50.5); without them the delivery-signal colours stand in. */
 export interface SemanticColours { good: string; bad: string; neutral: string }
@@ -27,6 +28,19 @@ export function roleColour(theme: ThemeWithSemantics, role: ColourRole): string 
 
 export const colourOf = (theme: ThemeWithSemantics, c: ColourChoice): string => ("hex" in c ? c.hex : roleColour(theme, c.role));
 
+/** Type for the whole block, resolved (Phase 61.4); every field is absent when the person set nothing, so the theme's own type stands. */
+export interface TypographyHints { fontStack?: string; sizePx?: number; weight?: number; italic?: boolean; transform?: TextTransform; letterSpacingPx?: number; lineHeight?: number; align?: "start" | "center" | "end"; colour?: string }
+
+export function typographyHints(format: BlockFormat | undefined, theme: ThemeWithSemantics): TypographyHints | null {
+  const t = format?.typography;
+  if (!t || Object.keys(t).length === 0) return null;
+  return {
+    ...(t.fontId ? { fontStack: stackFor(t.fontId) } : {}), ...(t.sizePx !== undefined ? { sizePx: t.sizePx } : {}), ...(t.weight !== undefined ? { weight: Number(t.weight) } : {}),
+    ...(t.italic !== undefined ? { italic: t.italic } : {}), ...(t.transform ? { transform: t.transform } : {}), ...(t.letterSpacingPx !== undefined ? { letterSpacingPx: t.letterSpacingPx } : {}),
+    ...(t.lineHeight !== undefined ? { lineHeight: t.lineHeight } : {}), ...(t.align ? { align: t.align } : {}), ...(t.color ? { colour: colourOf(theme, t.color) } : {}),
+  };
+}
+
 export interface FormatHints {
   title: { show: boolean; subtitle: string | null; sizePx: number; bold: boolean; colour: string; align: "start" | "center" | "end"; rule: boolean };
   accentBar: { side: Side; px: number; colour: string } | null;
@@ -41,7 +55,7 @@ export function formatHints(format: BlockFormat | undefined, theme: ThemeWithSem
   const a = format?.accentBar;
   const f = format?.frame;
   return {
-    title: { show: t.show ?? true, subtitle: t.subtitle?.trim() || null, sizePx: TITLE_PX[t.size ?? "M"], bold: (t.weight ?? "bold") === "bold", colour: t.color ? colourOf(theme, t.color) : theme.ink, align: t.align ?? "start", rule: t.rule ?? false },
+    title: { show: t.show ?? true, subtitle: t.subtitle?.trim() || null, sizePx: t.sizePx ?? TITLE_PX[t.size ?? "M"], bold: (t.weight ?? "bold") === "bold", colour: t.color ? colourOf(theme, t.color) : theme.ink, align: t.align ?? "start", rule: t.rule ?? false },
     accentBar: a?.show ? { side: a.side ?? "start", px: a.thickness ?? 6, colour: colourOf(theme, a.color ?? { role: "accent" }) } : null,
     border: f?.borderSide ? { side: f.borderSide, px: f.borderWidth ?? 1, colour: f.borderColor ? colourOf(theme, f.borderColor) : theme.cardStroke } : null,
     padding: f?.padding ?? null,

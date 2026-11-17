@@ -34,3 +34,18 @@ export function settleBoxes<T extends LayoutBox>(boxes: ReadonlyArray<T>, pinned
   // Back in the order they were given, so a caller's list does not reshuffle.
   return boxes.map((b) => placed.find((p) => p.id === b.id)!);
 }
+
+/**
+ * Closes the empty bands between blocks (Phase 61.9): when a starter leaves a block out (its indicator was not chosen) the rows it would have
+ * filled are removed, so the page has no gap. Blocks keep their order and columns; only their rows move up. Pure.
+ */
+export function compactRows<T extends LayoutBox>(boxes: ReadonlyArray<T>): T[] {
+  const maxY = boxes.reduce((m, b) => Math.max(m, b.y + b.h), 0);
+  const covered = new Array<boolean>(maxY).fill(false);
+  for (const b of boxes) for (let r = b.y; r < b.y + b.h; r += 1) covered[r] = true;
+  // `up[y]` = how many empty rows lie above row y.
+  const up: number[] = [];
+  let empty = 0;
+  for (let r = 0; r <= maxY; r += 1) { up[r] = empty; if (!covered[r]) empty += 1; }
+  return boxes.map((b) => ({ ...b, y: Math.max(0, b.y - (up[b.y] ?? 0)) }));
+}

@@ -13,10 +13,11 @@ const axisOf = (colours: ChartThemeColours) => (a: unknown): unknown => (a && ty
  * colours give way to the theme's palette, a colour set a person chose (their own, a named palette or a theme) is kept, and axes and lines
  * follow the theme. Returns a new option; the drawing it came from is never changed.
  */
-export function themeChartOption(option: Record<string, unknown>, colours: ChartThemeColours): Record<string, unknown> {
+export function themeChartOption(option: Record<string, unknown>, colours: ChartThemeColours, opts: { keepOwn?: boolean } = {}): Record<string, unknown> {
   const clone = JSON.parse(JSON.stringify(option)) as Record<string, unknown>;
   const chosen = Array.isArray(clone.color) && !same(clone.color as string[], CHART_PALETTES[0]!.colors);
-  if (chosen) return clone;
+  // A theme is enforced (Phase 61.6): a person's own colours stay only on a block marked to keep them; otherwise the theme's palette wins.
+  if (chosen && opts.keepOwn === true) return clone;
   if (Array.isArray(clone.series)) {
     for (const item of clone.series as Array<Record<string, unknown>>) {
       for (const key of ["itemStyle", "lineStyle", "areaStyle"] as const) {

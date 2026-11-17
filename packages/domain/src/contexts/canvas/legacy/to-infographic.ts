@@ -12,6 +12,8 @@ import { toLegacySpec, type ChartSpecV2 } from "../../reporting/chart-spec-v2.js
 import type { BlockInstance, Canvas } from "../canvas.js";
 import { projectOf } from "../binding.js";
 import { childrenOf, containerRole, isContainerKind, topLevel } from "../containers.js";
+import { withTextOverrides } from "../text/text.js";
+import { clearOverrides } from "../theme-kit/conformance.js";
 
 export interface SkippedBlock { blockId: string; kind: string; reason: string }
 export interface CanvasAsDesign { config: InfographicConfig; skipped: SkippedBlock[] }
@@ -94,7 +96,10 @@ export function canvasAsDesign(canvas: Canvas, projectId?: string): CanvasAsDesi
       if ("heading" in entry) { sections.push({ kind: "TEXT", text: entry.heading, span: 12, ...(first && pageIndex > 0 ? { pageBreakBefore: true } : {}) } as InfographicSectionConfig); first = false; continue; }
       const block = entry;
       if (block.style?.hidden) continue;
-      const props = asProps(block);
+      // The person's own headline, subtitle, caption and source line replace the automatic ones in a file as they do on the screen (Phase 61.5).
+      // A theme is enforced in a file too (Phase 61.6): a chart's own colours stay only on a block marked to keep them.
+      const themed = block.style?.keepOwnColours ? block : clearOverrides(block);
+      const props = withTextOverrides(asProps(themed), block.format);
       // A file reads one project; a block bound to another stays on screen and is named.
       const bound = projectOf(block.bindings);
       if (projectId && bound && bound !== projectId) { skipped.push({ blockId: block.id, kind: block.kind, reason: "This block reads another project; a file reads one." }); continue; }

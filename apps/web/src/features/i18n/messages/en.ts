@@ -3,6 +3,7 @@
  * depends on a number has `.one` / `.other` forms; `{name}` is filled in at run time. Every other language must have every key here
  * (a type check and a test enforce it), with the same `{placeholders}`.
  */
+import { visual61En } from "./visual61-en.ts";
 import { recordEn } from "./record-en.ts";
 import { placeEntryEn } from "./place-entry-en.ts";
 import { datasetsEn } from "./datasets-en.ts";
@@ -897,6 +898,7 @@ export const en = {
   ...datasetsEn,
   ...canvasEn,
   ...editor50En,
+  ...visual61En,
   ...studioEn,
   ...editorEn,
   ...libraryEn,

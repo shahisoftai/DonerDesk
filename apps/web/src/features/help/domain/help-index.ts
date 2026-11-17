@@ -31,6 +31,7 @@ export const HELP_ARTICLES: ReadonlyArray<{ href: string; file: string }> = [
   { href: "/support/getting-started/understanding-logframes", file: "basic-information/understanding-logframes.md" },
   { href: "/support/getting-started/indicators-and-targets", file: "basic-information-indicators-and-targets.md" },
   { href: "/support/getting-started/sector-library", file: "basic-information-sector-library.md" },
+  { href: "/support/getting-started/dashboards-and-infographics", file: "basic-information-dashboards-and-infographics.md" },
   { href: "/support/getting-started/understanding-activities", file: "basic-information-understanding-activities.md" },
   { href: "/support/getting-started/understanding-evidence", file: "basic-information/understanding-evidence.md" },
   { href: "/support/getting-started/understanding-reporting-periods", file: "basic-information/understanding-reporting-periods.md" },

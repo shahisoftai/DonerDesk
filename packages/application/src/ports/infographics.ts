@@ -57,7 +57,7 @@ export const EXPORT_FILE: Readonly<Record<InfographicExportFormat, { contentType
 export interface InfographicAssetRecord {
   id: string;
   tenantId: string;
-  kind: "IMAGE" | "LOGO";
+  kind: "IMAGE" | "LOGO" | "ICON";
   name: string;
   contentType: string;
   storageKey: string;
@@ -201,4 +201,12 @@ export interface IInfographicRenderer {
 /** The organization's display name and logo for the export header (read-only). */
 export interface IOrganizationBrandReader {
   brandFor(tenantId: TenantId): Promise<Result<{ name: string; logoUrl?: string }>>;
+}
+
+/**
+ * Where an uploaded picture is kept (Phase 61.8): the organisation's own Google Drive. There is no fallback to server storage; when Drive is
+ * not connected `put` refuses with the sentence to show the person. The returned key is what the library record stores.
+ */
+export interface IMediaStore {
+  put(tenantId: TenantId, file: { name: string; contentType: string; bytes: Buffer }): Promise<Result<{ storageKey: string; webLink?: string }>>;
 }

@@ -23,3 +23,14 @@ export function frameCss(h: FormatHints): Css {
 export function titleCss(h: FormatHints): Css {
   return { fontSize: h.title.sizePx, fontWeight: h.title.bold ? 600 : 400, color: h.title.colour, textAlign: h.title.align, ...(h.title.rule ? { borderBottom: "1px solid currentColor", paddingBottom: 2 } : {}) };
 }
+
+/** The block's own type as CSS (Phase 61.4): only what the person set; the rest is inherited from the theme. */
+export function typographyCss(t: import("@donordesk/domain/contexts/canvas/index.js").TypographyHints | null): Css {
+  if (!t) return {};
+  return {
+    ...(t.fontStack ? { fontFamily: t.fontStack } : {}), ...(t.sizePx !== undefined ? { fontSize: `${t.sizePx}px` } : {}), ...(t.weight !== undefined ? { fontWeight: t.weight } : {}),
+    ...(t.italic !== undefined ? { fontStyle: t.italic ? "italic" : "normal" } : {}), ...(t.transform ? { textTransform: t.transform } : {}),
+    ...(t.letterSpacingPx !== undefined ? { letterSpacing: `${t.letterSpacingPx}px` } : {}), ...(t.lineHeight !== undefined ? { lineHeight: t.lineHeight } : {}),
+    ...(t.align ? { textAlign: t.align === "start" ? "start" : t.align === "end" ? "end" : "center" } : {}), ...(t.colour ? { color: t.colour } : {}),
+  } as Css;
+}

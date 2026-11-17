@@ -1,6 +1,7 @@
 import { LIGHT_ROLES } from "./chart-theme-roles.js";
 import { CHART_PALETTES, DATA_CHART_TEMPLATES, HEX_COLOUR } from "./data-charts.js";
 import { CHART_KINDS, TEMPLATE_SHAPE, type ChartAnnotation, type ChartKind, type ChartShape, type ChartSize, type ChartSpecV2, type NumberFormat, type SeriesStyle } from "./chart-spec-v2.js";
+import { applyValueLabels } from "./chart-value-labels.js";
 import { applyChartStyle } from "./chart-style.js";
 import { areaRange, fillGauge, multiRing, network, parallel, pictorialBar, radialBar, rangeBar, themeRiver, tree, type KindBuilt, type RenderKit } from "./chart-render-kinds.js";
 import { bump, connectedScatter, divergingBar, dumbbell, thermometer } from "./chart-render-kinds-more.js";
@@ -810,7 +811,11 @@ function describe(kind: ChartKind, norm: Norm, title: string): string {
 
 /** Applies the spec's style to a drawn ECharts option; every other result (a table, a refusal) and a chart with no style pass through unchanged. */
 function withStyle(spec: ChartSpecV2, built: ChartBuild): ChartBuild {
-  return built.ok && built.render === "ECHART" && spec.style ? { ...built, option: applyChartStyle(built.option, spec) } : built;
+  if (!(built.ok && built.render === "ECHART")) return built;
+  // Value labels first (so the style's position, size and angle reach them), then the style.
+  const labelled = applyValueLabels(built.option, spec);
+  const option = spec.style ? applyChartStyle(labelled, spec) : labelled;
+  return option === built.option ? built : { ...built, option };
 }
 
 /** Draws a chart. Refuses (with a plain sentence) rather than draw something that would mislead. */

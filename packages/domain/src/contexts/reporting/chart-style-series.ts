@@ -48,7 +48,7 @@ function styleLabel(out: Obj, c: SeriesContext): void {
   const l = c.st.labels;
   if (!l || !isObj(out["label"])) return;
   const type = out["type"];
-  const map = type === "bar" ? BAR_POSITION(c.horizontal) : type === "line" ? LINE_POSITION : type === "pie" ? PIE_POSITION : undefined;
+  const map = type === "bar" ? BAR_POSITION(c.horizontal) : type === "line" || type === "scatter" || type === "effectScatter" ? LINE_POSITION : type === "pie" ? PIE_POSITION : undefined;
   put(out, "label", {
     fontSize: l.size, rotate: l.rotate,
     ...(l.weight ? { fontWeight: l.weight === "BOLD" ? "bold" : "normal" } : {}),

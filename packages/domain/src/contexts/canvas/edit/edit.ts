@@ -8,6 +8,7 @@ import { containerProblems } from "../containers.js";
 import { settleBoxes } from "./layout.js";
 import { CANVAS_GRID_COLUMNS, CANVAS_MAX_BLOCKS_PER_PAGE, CANVAS_MAX_PAGES, type BlockInstance, type Canvas, type CanvasBounds, type CanvasPage } from "../canvas.js";
 import { definitionFor } from "../blocks/registry.js";
+import { frameForNewBlock, isFreePage } from "./free-edit.js";
 
 export type EditResult = { ok: true; canvas: Canvas } | { ok: false; reason: string };
 const fail = (reason: string): EditResult => ({ ok: false, reason });
@@ -22,7 +23,9 @@ const mapPage = (c: Canvas, pageId: string, f: (p: CanvasPage) => CanvasPage | s
 };
 
 /** Blocks laid out by their grid cells with the shared rule (a dropped block keeps its place, the rest fall to the highest free row). */
-function settle(all: BlockInstance[], pinnedId?: string | readonly string[]): BlockInstance[] {
+function settle(all: BlockInstance[], pinnedId?: string | readonly string[], mode?: "GRID" | "FREE"): BlockInstance[] {
+  // A free page keeps every block exactly where the person put it: nothing falls, nothing is pushed.
+  if (mode === "FREE") return all;
   // Blocks held by a container are laid out by it, not by the page grid, so they are never moved to make room.
   const held = all.filter((b) => b.container);
   const blocks = all.filter((b) => !b.container);
@@ -35,7 +38,7 @@ function settleTop(blocks: BlockInstance[], pinnedId?: string | readonly string[
 }
 
 /** The page's blocks laid out with the shared rule; held blocks stay with their container. Used by the multi-block gestures. */
-export const settleBlocks = settle;
+export const settleBlocks = (all: BlockInstance[], pinnedId?: string | readonly string[], mode?: "GRID" | "FREE"): BlockInstance[] => settle(all, pinnedId, mode);
 
 export function addBlock(c: Canvas, pageId: string, input: { id: string; kind: string; props?: unknown }): EditResult {
   const def = definitionFor(input.kind);
@@ -46,6 +49,7 @@ export function addBlock(c: Canvas, pageId: string, input: { id: string; kind: s
     const { w, h } = def.sizes.default;
     const y = p.blocks.reduce((m, b) => Math.max(m, b.bounds.y + b.bounds.h), 0);
     const block: BlockInstance = { id: input.id, kind: input.kind, bounds: { x: 0, y, w, h }, props: input.props ?? def.defaults(), bindings: [] };
+    if (isFreePage(p)) return { ...p, blocks: [...p.blocks, frameForNewBlock(p, block)] };
     return { ...p, blocks: settle([...p.blocks, block]) };
   });
 }
@@ -62,7 +66,7 @@ function changeBlock(c: Canvas, id: string, f: (b: BlockInstance) => BlockInstan
   if (hit.block.style?.locked) return fail("That block is locked.");
   const next = f(hit.block);
   if (typeof next === "string") return fail(next);
-  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.map((b) => (b.id === id ? next : b)), pinned ? id : undefined) }));
+  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.map((b) => (b.id === id ? next : b)), pinned ? id : undefined, p.mode) }));
 }
 
 export const moveBlock = (c: Canvas, id: string, x: number, y: number): EditResult =>
@@ -70,10 +74,10 @@ export const moveBlock = (c: Canvas, id: string, x: number, y: number): EditResu
 
 export const resizeBlock = (c: Canvas, id: string, w: number, h: number): EditResult =>
   changeBlock(c, id, (b) => {
-    const s = definitionFor(b.kind)?.sizes;
-    if (!s) return "This block is not one the product knows.";
-    if (w < s.min.w || h < s.min.h) return `This block is at least ${s.min.w} wide and ${s.min.h} high.`;
-    if (w > s.max.w || h > s.max.h) return `This block is at most ${s.max.w} wide and ${s.max.h} high.`;
+    if (!definitionFor(b.kind)) return "This block is not one the product knows.";
+    // Any size is the person's choice (Phase 61.3): the one limit is one cell, and the page's edge on a grid.
+    if (w < 1 || h < 1) return "A block is at least one cell wide and high.";
+    if (h > 60) return "A block is at most 60 rows high.";
     if (b.bounds.x + w > CANVAS_GRID_COLUMNS) return "A block cannot leave the page.";
     return { ...b, bounds: { ...b.bounds, w, h } };
   }, true);
@@ -102,7 +106,7 @@ export function removeBlock(c: Canvas, id: string): EditResult {
   if (!hit) return fail("That block does not exist.");
   if (hit.block.style?.locked) return fail("That block is locked.");
   // Blocks a removed container held go back on the page.
-  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.filter((b) => b.id !== id).map((b) => (b.container?.id === id ? { ...b, container: undefined } : b))) }));
+  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.filter((b) => b.id !== id).map((b) => (b.container?.id === id ? { ...b, container: undefined } : b)), undefined, p.mode) }));
 }
 
 /** Puts a block inside a container of the same page (and tab), or back on the page grid when `container` is undefined. */
@@ -115,7 +119,7 @@ export function setContainer(c: Canvas, id: string, container: { id: string; tab
     const problem = containerProblems({ ...hit.page, blocks: hit.page.blocks.map((b) => (b.id === id ? next : b)) }, next)[0];
     if (problem) return fail(problem);
   }
-  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.map((b) => (b.id === id ? next : b))) }));
+  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle(p.blocks.map((b) => (b.id === id ? next : b)), undefined, p.mode) }));
 }
 
 /** A copy goes just below the original, unlocked, with its own id and a deep copy of its settings. */
@@ -125,13 +129,18 @@ export function duplicateBlock(c: Canvas, id: string, newId: string): EditResult
   if (c.pages.some((p) => p.blocks.some((b) => b.id === newId))) return fail("Two blocks share an id.");
   if (hit.page.blocks.length >= CANVAS_MAX_BLOCKS_PER_PAGE) return fail(`A page holds at most ${CANVAS_MAX_BLOCKS_PER_PAGE} blocks.`);
   const copy: BlockInstance = { ...structuredClone(hit.block), id: newId, bounds: { ...hit.block.bounds, y: hit.block.bounds.y + hit.block.bounds.h }, style: { ...hit.block.style, locked: false } };
-  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle([...p.blocks, copy], newId) }));
+  if (isFreePage(hit.page) && hit.block.free) {
+    const f = hit.block.free;
+    const moved = { ...copy, free: { ...f, x: f.x + 24, y: f.y + 24 } };
+    return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: [...p.blocks, moved] }));
+  }
+  return mapPage(c, hit.page.id, (p) => ({ ...p, blocks: settle([...p.blocks, copy], newId, p.mode) }));
 }
 
 export function addPage(c: Canvas, input: { id: string; title: string; format?: string }): EditResult {
   if (c.pages.length >= CANVAS_MAX_PAGES) return fail(`A canvas has at most ${CANVAS_MAX_PAGES} pages.`);
   if (c.pages.some((p) => p.id === input.id)) return fail("Two pages share an id.");
-  return done({ ...c, pages: [...c.pages, { id: input.id, title: input.title, format: input.format ?? c.pages[0]?.format ?? "WEB_FLUID", blocks: [] }] });
+  return done({ ...c, pages: [...c.pages, { id: input.id, title: input.title, format: input.format ?? c.pages[0]?.format ?? "WEB_FLUID", ...(c.pages[0]?.mode === "FREE" && c.pages[0].size ? { mode: "FREE" as const, size: c.pages[0].size } : {}), blocks: [] }] });
 }
 
 export function removePage(c: Canvas, pageId: string): EditResult {
@@ -159,8 +168,9 @@ export function moveBlockToPage(c: Canvas, id: string, pageId: string): EditResu
   if (!target) return fail("That page does not exist.");
   if (target.blocks.length >= CANVAS_MAX_BLOCKS_PER_PAGE) return fail(`A page holds at most ${CANVAS_MAX_BLOCKS_PER_PAGE} blocks.`);
   const y = target.blocks.reduce((m, b) => Math.max(m, b.bounds.y + b.bounds.h), 0);
-  const moved: BlockInstance = { ...hit.block, bounds: { ...hit.block.bounds, x: 0, y } };
-  return done({ ...c, pages: c.pages.map((p) => (p.id === hit.page.id ? { ...p, blocks: settle(p.blocks.filter((b) => b.id !== id)) } : p.id === pageId ? { ...p, blocks: settle([...p.blocks, moved]) } : p)) });
+  const moved: BlockInstance = { ...hit.block, bounds: { ...hit.block.bounds, x: 0, y }, free: undefined };
+  const placed = isFreePage(target) ? frameForNewBlock(target, moved) : moved;
+  return done({ ...c, pages: c.pages.map((p) => (p.id === hit.page.id ? { ...p, blocks: settle(p.blocks.filter((b) => b.id !== id), undefined, p.mode) } : p.id === pageId ? { ...p, blocks: isFreePage(p) ? [...p.blocks, placed] : settle([...p.blocks, moved], undefined, p.mode) } : p)) });
 }
 
 export const setTitle = (c: Canvas, title: string): EditResult => done({ ...c, title });

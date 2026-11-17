@@ -34,6 +34,10 @@ export interface CanvasBlockStyle {
   padding?: "none" | "small" | "medium" | "large" | undefined;
   radius?: "none" | "small" | "medium" | "large" | undefined;
   shadow?: "none" | "small" | "medium" | undefined;
+  /** A coloured bar behind the block's title (Phase 61.7), named by theme role. */
+  titleBar?: "none" | "accent" | "accent2" | "ink" | "neutral" | undefined;
+  /** The person chose to keep this block's own colours when a theme is applied (Phase 61.6). Otherwise the theme's colours win. */
+  keepOwnColours?: boolean | undefined;
 }
 
 /** Marks a block as an instance of a saved component (Phase 48.2): which one, which version it was made from and which of its blocks this is. */
@@ -98,6 +102,8 @@ export interface CanvasOptions {
   locationKeys?: string[] | undefined;
   acknowledgement?: string | undefined;
   subtitle?: string | undefined;
+  /** The frame style a block added to this canvas starts with (Phase 61.7); a block can still change its own. */
+  blockFrame?: string | undefined;
   /** A theme loaded from a file for this canvas (Phase 50.5); used when `themeId` is "CUSTOM". */
   themeSpec?: import("./theme-kit/build-theme.js").ThemeSpec | undefined;
 }

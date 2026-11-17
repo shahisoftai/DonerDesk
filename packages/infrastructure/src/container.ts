@@ -121,7 +121,7 @@ import { InfographicComposerRenderer, PrismaOrganizationBrandReader } from "./in
 import { ListCanvasesHandler, GetCanvasHandler, CreateCanvasHandler, SaveCanvasHandler, DeleteCanvasHandler, DuplicateCanvasHandler, ConvertDashboardHandler, ConvertInfographicHandler, ResolveCanvasHandler, ExportCanvasHandler } from "@donordesk/application";
 import { PrismaCanvasRepository } from "./repositories/canvas.js";
 import { PrismaCanvasAiSetting, PrismaCanvasExportRepository, PrismaCanvasShareLinkRepository, PrismaCanvasVersionRepository } from "./repositories/canvas-publishing.js";
-import { CreateCanvasShareHandler, DraftCanvasTextHandler, GetCanvasExportFileHandler, GetCanvasShareFileHandler, ListCanvasExportsHandler, ListCanvasSharesHandler, ListCanvasVersionsHandler, PublicCanvasHandler, PublishCanvasHandler, ResolveCanvasShareHandler, ReviewCanvasHandler, RevokeCanvasShareHandler, RunCanvasSnapshotsHandler, SetCanvasSnapshotsHandler } from "@donordesk/application";
+import { CreateCanvasShareHandler, DraftCanvasTextHandler, GetCanvasExportFileHandler, GetCanvasShareFileHandler, GetPublicCanvasAssetHandler, ListCanvasExportsHandler, ListCanvasSharesHandler, ListCanvasVersionsHandler, PublicCanvasHandler, PublishCanvasHandler, ResolveCanvasShareHandler, ReviewCanvasHandler, RevokeCanvasShareHandler, RunCanvasSnapshotsHandler, SetCanvasSnapshotsHandler } from "@donordesk/application";
 import { CreateInfographicHandler, UpdateInfographicHandler, ListProjectInfographicsHandler, GetInfographicHandler, DeleteInfographicHandler, ExportInfographicHandler, ListInfographicExportsHandler, GetInfographicExportFileHandler, InfographicRenderService, PreviewInfographicHandler, GetInfographicSuggestionsHandler, GetInfographicAiTextHandler, SuggestPresenceRowsHandler, ListInfographicTemplatesHandler, SaveInfographicTemplateHandler, DeleteInfographicTemplateHandler, UploadInfographicAssetHandler, ListInfographicAssetsHandler, GetInfographicAssetFileHandler, RemoveInfographicAssetHandler, GetBrandKitHandler, SaveBrandKitHandler, InfographicNotifier, InfographicReviewHandler, CreateInfographicShareLinkHandler, ListInfographicShareLinksHandler, RevokeInfographicShareLinkHandler, ResolveInfographicShareHandler, GenerateInfographicVariantsHandler, SectionInfographicsHandler, GetPortfolioInfographicDataHandler, AutoRefreshInfographicsHandler } from "@donordesk/application";
 import { EvidenceStorageResolver } from "./storage/router.js";
 import { ProjectWorkspaceServiceResolver, PrismaWorkspaceNameProvider } from "./storage/workspace-router.js";
@@ -130,6 +130,7 @@ import { GoogleDriveOAuthConnector } from "./storage/google-drive-oauth.js";
 import { GoogleDriveFileReader } from "./storage/google-drive.js";
 import { GoogleDriveWorkspaceDrive } from "./storage/google-drive-workspace.js";
 import { GoogleDriveSetupDocuments } from "./storage/google-drive-setup-documents.js";
+import { DriveRoutingStorage, GoogleDriveMediaStore } from "./storage/google-drive-media.js";
 import { GoogleSheetsReader } from "./storage/google-sheets-reader.js";
 import { PrismaGoogleDriveCredentialStore } from "./storage/google-drive-credentials.js";
 import { TolerantDocumentParser } from "./parsers/document-parser.js";
@@ -484,6 +485,7 @@ export interface Container {
     revokeCanvasShare: RevokeCanvasShareHandler;
     publicCanvas: PublicCanvasHandler;
     getCanvasShareFile: GetCanvasShareFileHandler;
+    getPublicCanvasAsset: GetPublicCanvasAssetHandler;
     reviewCanvas: ReviewCanvasHandler;
     listCanvasVersions: ListCanvasVersionsHandler;
     draftCanvasText: DraftCanvasTextHandler;
@@ -899,6 +901,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     googleDriveTokens,
   );
   // Project documents live in the organisation's own Google Drive (Phase 36): staged before the project exists, then moved into its folder.
+  // Pictures uploaded for dashboards and infographics live in the organisation's Google Drive (Phase 61.8); older ones are still read from server storage.
+  const mediaStore = new GoogleDriveMediaStore(googleDriveTokens, new GoogleDriveWorkspaceDrive(googleDriveTokens), projectWorkspace);
+  const mediaReader = new DriveRoutingStorage(storage, driveFileReader);
   const setupDocuments = new GoogleDriveSetupDocuments(googleDriveTokens, new GoogleDriveWorkspaceDrive(googleDriveTokens), projectWorkspace, driveFileReader);
   const evidenceStorage = new EvidenceStorageResolver(
     storage,
@@ -1542,7 +1547,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const infographicShares = new PrismaInfographicShareRepository(prisma);
   const portfolioOverview = new GetPortfolioOverviewHandler(new VisibleProjects(projects, projectMembers), projectHealth, projectRisks, periods, clock);
   const getPortfolioInfographicData = new GetPortfolioInfographicDataHandler(portfolioOverview, clock);
-  const infographicRender = new InfographicRenderService(getProjectInfographicData, getProjectDataSheet, infographicBrand, infographicBrandKits, infographicAssets, storage, clock, getPortfolioInfographicData);
+  const infographicRender = new InfographicRenderService(getProjectInfographicData, getProjectDataSheet, infographicBrand, infographicBrandKits, infographicAssets, mediaReader, clock, getPortfolioInfographicData);
   const infographicNotifier = new InfographicNotifier(personNotifier, projects, projectMembers, users);
   const createInfographic = new CreateInfographicHandler(ids, infographicRepository, audits, clock, infographicUserTemplates);
   const updateInfographic = new UpdateInfographicHandler(infographicRepository, audits, clock);
@@ -1821,6 +1826,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     revokeCanvasShare: new RevokeCanvasShareHandler(canvases, canvasLinks, audits, clock),
     publicCanvas: new PublicCanvasHandler(canvases, getProjectDataSheet, getProjectInfographicData, datasetExtras, new ShareMapReader(new ListPlacesHandler(places), placeResults as never, workplan.handlers.listWorkPlan as never, projects), countFacts, datasets.sources),
     getCanvasShareFile: new GetCanvasShareFileHandler(canvasExports, storage),
+    getPublicCanvasAsset: new GetPublicCanvasAssetHandler(canvases, infographicAssets, mediaReader),
     reviewCanvas: new ReviewCanvasHandler(canvases, audits, infographicNotifier),
     listCanvasVersions: new ListCanvasVersionsHandler(canvases, canvasVersions),
     draftCanvasText: new DraftCanvasTextHandler(canvasAi, canvasAiText, canvasAskProject),
@@ -1922,9 +1928,9 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     listInfographicTemplates: new ListInfographicTemplatesHandler(infographicUserTemplates),
     saveInfographicTemplate: new SaveInfographicTemplateHandler(infographicRepository, infographicUserTemplates, ids, audits, clock),
     deleteInfographicTemplate: new DeleteInfographicTemplateHandler(infographicUserTemplates, audits),
-    uploadInfographicAsset: new UploadInfographicAssetHandler(infographicAssets, new SharpImageNormalizer(), storage, ids, audits, clock),
+    uploadInfographicAsset: new UploadInfographicAssetHandler(infographicAssets, new SharpImageNormalizer(), storage, ids, audits, clock, mediaStore),
     listInfographicAssets: new ListInfographicAssetsHandler(infographicAssets),
-    getInfographicAssetFile: new GetInfographicAssetFileHandler(infographicAssets, storage),
+    getInfographicAssetFile: new GetInfographicAssetFileHandler(infographicAssets, mediaReader),
     removeInfographicAsset: new RemoveInfographicAssetHandler(infographicAssets, audits, clock),
     getInfographicBrandKit: new GetBrandKitHandler(infographicBrandKits),
     saveInfographicBrandKit: new SaveBrandKitHandler(infographicBrandKits, infographicAssets, ids, audits),

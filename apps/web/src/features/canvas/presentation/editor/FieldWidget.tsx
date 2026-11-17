@@ -1,5 +1,8 @@
 "use client";
 
+import { MediaField } from "./MediaField";
+import { ChartKindField } from "./ChartKindField";
+import { ChartLabelsField } from "./ChartLabelsField";
 import { useId } from "react";
 import { getAt, setAt } from "../../domain/path";
 import type { Field } from "../../domain/prop-fields";
@@ -21,6 +24,9 @@ export function FieldWidget({ field, settings, onChange, indicators }: Props) {
 
   switch (field.type) {
     case "dataset": case "datasetColumn": case "datasetColumns": case "wells": return <DatasetFieldWidget field={field} settings={settings} onChange={onChange} />;
+    case "chartKind": return <ChartKindField label={field.label} spec={getAt(settings, "spec") as never} indicatorIds={indicators.map((i) => i.id)} onChange={(spec) => onChange("spec", spec)} />;
+    case "chartLabels": return <ChartLabelsField spec={getAt(settings, "spec") as never} onChange={(spec) => onChange("spec", spec)} />;
+    case "media": return <MediaField label={field.label} value={typeof value === "string" ? value : undefined} onChange={(assetId, asset) => { onChange(field.path, assetId); if (asset && (settings as { altText?: string } | undefined)?.altText === undefined) onChange("altText", asset.name); }} />;
     case "text": return <div className="space-y-1">{label}<input id={id} className={INPUT} value={asText(value)} onChange={(e) => onChange(field.path, e.target.value)} />{hint}</div>;
     case "textarea": return <div className="space-y-1">{label}<textarea id={id} rows={4} className={INPUT} value={asText(value)} onChange={(e) => onChange(field.path, e.target.value)} />{hint}</div>;
     case "number": return <div className="space-y-1">{label}<input id={id} type="number" className={INPUT} min={field.min} max={field.max} value={asText(value)} onChange={(e) => onChange(field.path, e.target.value === "" ? undefined : Number(e.target.value))} /></div>;

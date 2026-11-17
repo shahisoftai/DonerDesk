@@ -37,7 +37,7 @@ export interface PreviewResponse {
 
 export interface AssetItem {
   id: string;
-  kind: "IMAGE" | "LOGO";
+  kind: "IMAGE" | "LOGO" | "ICON";
   name: string;
   contentType: string;
   width: number;

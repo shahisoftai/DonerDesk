@@ -8,7 +8,7 @@ import {
 
 const ok = (r) => { assert.equal(r.ok, true, r.ok ? "" : r.reason); return r.canvas; };
 function base() {
-  let c = blankCanvas({ id: "c", title: "T", scope: "MINE" });
+  let c = blankCanvas({ id: "c", title: "T", scope: "MINE", format: "WEB_FLUID" });
   for (const id of ["a", "b", "c"]) c = ok(addBlock(c, "page-1", { id, kind: "TEXT", props: { text: id } }));
   return c;
 }

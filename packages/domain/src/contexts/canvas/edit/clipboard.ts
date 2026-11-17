@@ -58,6 +58,6 @@ export function pasteBlocks(c: Canvas, pageId: string, payload: ClipboardPayload
     container: b.container ? { ...b.container, id: idMap.get(b.container.id) ?? b.container.id } : undefined, alt: b.alt, description: b.description, style: b.style,
   }));
   const ids = pasted.map((b) => b.id);
-  const blocks = settleBlocks([...page.blocks, ...pasted], ids.filter((i) => !pasted.find((b) => b.id === i)?.container));
+  const blocks = settleBlocks([...page.blocks, ...pasted], ids.filter((i) => !pasted.find((b) => b.id === i)?.container), page.mode);
   return { ok: true, canvas: { ...c, pages: c.pages.map((p) => (p.id === pageId ? { ...p, blocks } : p)) }, pastedIds: ids };
 }

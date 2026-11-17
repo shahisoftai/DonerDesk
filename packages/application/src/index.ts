@@ -431,6 +431,7 @@ export * from "./use-cases/canvas/revoke-canvas-share.js";
 export * from "./use-cases/canvas/resolve-canvas-share.js";
 export * from "./use-cases/canvas/public-canvas.js";
 export * from "./use-cases/canvas/get-canvas-share-file.js";
+export * from "./use-cases/canvas/get-public-canvas-asset.js";
 export * from "./use-cases/canvas/review-canvas.js";
 export * from "./use-cases/canvas/list-canvas-versions.js";
 export * from "./use-cases/canvas/draft-canvas-text.js";

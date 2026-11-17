@@ -11,7 +11,10 @@ export const BORDER_TOKENS = ["none", "line", "accent"] as const;
 export const SPACE_TOKENS = ["none", "small", "medium", "large"] as const;
 export const SHADOW_TOKENS = ["none", "small", "medium"] as const;
 
-export interface FrameTokens { fill: (typeof FILL_TOKENS)[number]; border: (typeof BORDER_TOKENS)[number]; padding: (typeof SPACE_TOKENS)[number]; radius: (typeof SPACE_TOKENS)[number]; shadow: (typeof SHADOW_TOKENS)[number] }
+export const TITLE_BAR_TOKENS = ["none", "accent", "accent2", "ink", "neutral"] as const;
+export type TitleBarToken = (typeof TITLE_BAR_TOKENS)[number];
+
+export interface FrameTokens { titleBar?: TitleBarToken; fill: (typeof FILL_TOKENS)[number]; border: (typeof BORDER_TOKENS)[number]; padding: (typeof SPACE_TOKENS)[number]; radius: (typeof SPACE_TOKENS)[number]; shadow: (typeof SHADOW_TOKENS)[number] }
 
 export const FRAME_PRESETS: Readonly<Record<string, { label: string; tokens: FrameTokens }>> = {
   plain: { label: "Plain", tokens: { fill: "none", border: "none", padding: "none", radius: "none", shadow: "none" } },
@@ -23,26 +26,32 @@ export const FRAME_PRESETS: Readonly<Record<string, { label: string; tokens: Fra
   accentLine: { label: "Accent outline", tokens: { fill: "none", border: "accent", padding: "medium", radius: "medium", shadow: "none" } },
   compact: { label: "Compact card", tokens: { fill: "card", border: "line", padding: "small", radius: "small", shadow: "none" } },
   roomy: { label: "Roomy card", tokens: { fill: "card", border: "line", padding: "large", radius: "large", shadow: "small" } },
+  flatBar: { label: "Flat title bar", tokens: { fill: "card", border: "line", padding: "small", radius: "none", shadow: "none", titleBar: "accent" } },
+  flatBarTeal: { label: "Flat title bar (second colour)", tokens: { fill: "card", border: "line", padding: "small", radius: "none", shadow: "none", titleBar: "accent2" } },
+  flatBarInk: { label: "Flat title bar (dark)", tokens: { fill: "card", border: "line", padding: "small", radius: "none", shadow: "none", titleBar: "ink" } },
+  flatBarGrey: { label: "Flat title bar (grey)", tokens: { fill: "card", border: "line", padding: "small", radius: "none", shadow: "none", titleBar: "neutral" } },
   flat: { label: "Flat tint", tokens: { fill: "tint", border: "line", padding: "small", radius: "none", shadow: "none" } },
 };
 
 const SPACE_PX: Record<(typeof SPACE_TOKENS)[number], number> = { none: 0, small: 8, medium: 16, large: 24 };
 const SHADOW_CSS: Record<(typeof SHADOW_TOKENS)[number], string> = { none: "none", small: "0 1px 2px rgba(15,23,42,0.12)", medium: "0 4px 12px rgba(15,23,42,0.16)" };
 
-export interface ResolvedFrame { background: string | null; borderColour: string | null; paddingPx: number; radiusPx: number; shadow: string; /** Text colour that reads on this fill. */ text: string }
+export interface ResolvedFrame { /** The title bar (colour and the text colour that reads on it), or null. */ titleBar: { background: string; text: string } | null; background: string | null; borderColour: string | null; paddingPx: number; radiusPx: number; shadow: string; /** Text colour that reads on this fill. */ text: string }
 
 /** The tokens a block ends up with: its preset (or plain) with the block's own tokens laid over it. */
 export function frameTokens(style: CanvasBlockStyle | undefined): FrameTokens {
   const base = (style?.frame && FRAME_PRESETS[style.frame]?.tokens) || FRAME_PRESETS["plain"]!.tokens;
   const fill = style?.background ?? base.fill;
-  return { fill: fill as FrameTokens["fill"], border: style?.border ?? base.border, padding: style?.padding ?? base.padding, radius: style?.radius ?? base.radius, shadow: style?.shadow ?? base.shadow };
+  return { fill: fill as FrameTokens["fill"], titleBar: style?.titleBar ?? base.titleBar ?? "none", border: style?.border ?? base.border, padding: style?.padding ?? base.padding, radius: style?.radius ?? base.radius, shadow: style?.shadow ?? base.shadow };
 }
 
 export function resolveFrame(style: CanvasBlockStyle | undefined, theme: InfographicTheme): ResolvedFrame {
   const t = frameTokens(style);
   const background = t.fill === "none" ? null : t.fill === "card" ? theme.card : t.fill === "tint" ? theme.surface : theme.accent;
   const onAccent = t.fill === "accent";
+  const bar = t.titleBar && t.titleBar !== "none" ? (t.titleBar === "accent" ? theme.accent : t.titleBar === "accent2" ? theme.accent2 : t.titleBar === "ink" ? theme.ink : theme.muted) : null;
   return {
+    titleBar: bar ? { background: bar, text: pickText(bar, theme) } : null,
     background, borderColour: t.border === "none" ? null : t.border === "line" ? theme.cardStroke : theme.accent,
     paddingPx: SPACE_PX[t.padding], radiusPx: Math.round((theme.radius * ({ none: 0, small: 0.5, medium: 1, large: 1.6 })[t.radius])), shadow: SHADOW_CSS[t.shadow],
     text: onAccent ? pickText(theme.accent, theme) : theme.body,
@@ -63,6 +72,7 @@ export function frameStyleProblems(style: CanvasBlockStyle | undefined): string[
   if (style.border !== undefined && !(BORDER_TOKENS as readonly string[]).includes(style.border)) out.push("Unknown border.");
   if (style.padding !== undefined && !(SPACE_TOKENS as readonly string[]).includes(style.padding)) out.push("Unknown padding.");
   if (style.radius !== undefined && !(SPACE_TOKENS as readonly string[]).includes(style.radius)) out.push("Unknown corner radius.");
+  if (style.titleBar !== undefined && !(TITLE_BAR_TOKENS as readonly string[]).includes(style.titleBar)) out.push("Unknown title bar colour.");
   if (style.shadow !== undefined && !(SHADOW_TOKENS as readonly string[]).includes(style.shadow)) out.push("Unknown shadow.");
   return out;
 }

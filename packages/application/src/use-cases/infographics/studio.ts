@@ -48,6 +48,7 @@ import type {
   IBrandKitRepository,
   IImageNormalizer,
   IInfographicAssetRepository,
+  IMediaStore,
   IInfographicRenderer,
   IInfographicRepository,
   IInfographicShareRepository,
@@ -250,6 +251,8 @@ export class UploadInfographicAssetHandler {
     private readonly ids: IIdGenerator,
     private readonly audits: IAuditLogger,
     private readonly clock: IClock,
+    /** Where the picture is kept; when given, the picture goes to the organisation's Google Drive and never to server storage. */
+    private readonly media?: IMediaStore,
   ) {}
 
   async handle(ctx: AuthenticatedContext, input: UploadInfographicAssetInput): Promise<Result<InfographicAssetRecord, DomainError>> {
@@ -260,13 +263,19 @@ export class UploadInfographicAssetHandler {
       return { ok: false, error: DomainError.validation("The image could not be read") };
     }
     if (bytes.length === 0 || bytes.length > MAX_ASSET_BYTES) return { ok: false, error: DomainError.validation("Choose a picture under 6 MB") };
-    const normalized = await this.images.normalize(bytes, { maxEdge: input.kind === "LOGO" ? 800 : 2000 });
+    const normalized = await this.images.normalize(bytes, { maxEdge: input.kind === "LOGO" || input.kind === "ICON" ? 800 : 2000 });
     if (!normalized.ok) return normalized;
     const id = this.ids.generate();
     const tenantId = ctx.tenant.tenantId;
     const ext = normalized.value.contentType === "image/png" ? "png" : "jpg";
-    const storageKey = `infographic-assets/${tenantId.toString()}/${id}.${ext}`;
-    await this.storage.put({ key: storageKey, body: normalized.value.bytes, contentType: normalized.value.contentType });
+    let storageKey = `infographic-assets/${tenantId.toString()}/${id}.${ext}`;
+    if (this.media) {
+      const kept = await this.media.put(tenantId, { name: `${input.name.trim().replace(/[^\w .-]+/g, "_") || "picture"}-${id}.${ext}`, contentType: normalized.value.contentType, bytes: normalized.value.bytes });
+      if (!kept.ok) return kept;
+      storageKey = kept.value.storageKey;
+    } else {
+      await this.storage.put({ key: storageKey, body: normalized.value.bytes, contentType: normalized.value.contentType });
+    }
     const record: InfographicAssetRecord = {
       id,
       tenantId: tenantId.toString(),

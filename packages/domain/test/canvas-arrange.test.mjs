@@ -10,7 +10,7 @@ import {
 const ok = (r) => { assert.equal(r.ok, true, r.ok ? "" : r.reason); return r.canvas; };
 /** blocks: [id, kind, x, y, w, h] placed exactly (dividers and text are free-size enough). */
 function world(spec) {
-  let c = blankCanvas({ id: "c", title: "T", scope: "MINE" });
+  let c = blankCanvas({ id: "c", title: "T", scope: "MINE", format: "WEB_FLUID" });
   for (const [id, kind] of spec) c = ok(addBlock(c, "page-1", { id, kind, props: kind === "TEXT" ? { text: id } : undefined }));
   return c;
 }

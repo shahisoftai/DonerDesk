@@ -1,3 +1,4 @@
+import { visual61Ar } from "./visual61-ar.ts";
 import type { MessageKey } from "./en.ts";
 import { recordAr } from "./record-ar.ts";
 import { placeEntryAr } from "./place-entry-ar.ts";
@@ -911,6 +912,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   ...datasetsAr,
   ...canvasAr,
   ...editor50Ar,
+  ...visual61Ar,
   ...studioAr,
   ...editorAr,
   ...libraryAr,

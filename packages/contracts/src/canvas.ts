@@ -18,7 +18,7 @@ const BlockAction = z.discriminatedUnion("type", [
   z.object({ type: z.literal("OPEN_LINK"), href: z.string().max(300) }),
   z.object({ type: z.literal("OPEN_TABLE") }),
 ]);
-const FreeFrame = z.object({ x: z.number().min(-6000).max(6000), y: z.number().min(-6000).max(6000), w: z.number().min(1).max(6000), h: z.number().min(1).max(6000), rot: z.number().min(-360).max(360).optional(), z: z.number().int().min(0).max(1000).optional() });
+const FreeFrame = z.object({ x: z.number().min(-6000).max(6000), y: z.number().min(-6000).max(6000), w: z.number().min(1).max(6000), h: z.number().min(1).max(6000), rot: z.number().min(-360).max(360).optional(), z: z.number().int().min(-1000).max(1000).optional() });
 const Space = z.enum(["none", "small", "medium", "large"]);
 export const CanvasParameterSchema = z.object({
   id: z.string().min(1).max(30), label: z.string().min(1).max(60),
@@ -31,6 +31,7 @@ export const CanvasBlockSchema = z.object({
   style: z.object({
     background: z.enum(["none", "card", "tint", "accent"]).optional(), align: z.enum(["start", "center", "end"]).optional(), hidden: z.boolean().optional(), locked: z.boolean().optional(),
     frame: z.string().max(30).optional(), border: z.enum(["none", "line", "accent"]).optional(), padding: Space.optional(), radius: Space.optional(), shadow: z.enum(["none", "small", "medium"]).optional(),
+    titleBar: z.enum(["none", "accent", "accent2", "ink", "neutral"]).optional(), keepOwnColours: z.boolean().optional(),
   }).optional(),
   alt: z.string().max(500).optional(), description: z.string().max(2000).optional(),
   free: FreeFrame.optional(),
@@ -48,7 +49,7 @@ export const CanvasPageSchema = z.object({
   mode: z.enum(["GRID", "FREE"]).optional(), size: z.object({ w: z.number().int().min(100).max(6000), h: z.number().int().min(100).max(6000) }).optional(),
   background: z.enum(["page", "card", "tint", "accent"]).optional(), themeId: z.string().max(40).optional(),
 });
-const Options = z.object({ periodFromId: z.string().max(80).optional(), periodToId: z.string().max(80).optional(), locationKeys: z.array(z.string().max(80)).max(50).optional(), acknowledgement: z.string().max(300).optional(), subtitle: z.string().max(200).optional(), themeSpec: z.object({ id: z.string().max(40), label: z.string().max(60), description: z.string().max(200).default(""), accent: z.string().max(9) }).passthrough().optional() });
+const Options = z.object({ periodFromId: z.string().max(80).optional(), periodToId: z.string().max(80).optional(), locationKeys: z.array(z.string().max(80)).max(50).optional(), acknowledgement: z.string().max(300).optional(), subtitle: z.string().max(200).optional(), blockFrame: z.string().max(30).optional(), themeSpec: z.object({ id: z.string().max(40), label: z.string().max(60), description: z.string().max(200).default(""), accent: z.string().max(9) }).passthrough().optional() });
 
 const Scope = z.enum(["ORG", "PROJECT", "MINE", "PORTFOLIO"]);
 const Profile = z.enum(["LIVE_INTERNAL", "SNAPSHOT", "DONOR_REPORT", "SOCIAL", "INTERNAL"]);

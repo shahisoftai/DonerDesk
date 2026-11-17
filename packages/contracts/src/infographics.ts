@@ -198,7 +198,7 @@ export const PreviewInfographicSchema = z
 export const UploadInfographicAssetSchema = z
   .object({
     name: z.string().min(1).max(120),
-    kind: z.enum(["IMAGE", "LOGO"]),
+    kind: z.enum(["IMAGE", "LOGO", "ICON"]),
     credit: z.string().max(80).optional(),
     dataBase64: z.string().min(16).max(8_000_000),
   })

@@ -9,6 +9,9 @@ export interface PagePreset { id: string; label: string; mode: "GRID" | "FREE"; 
 const mm = (n: number): number => Math.round((n / 25.4) * 96);
 export const PAGE_PRESETS: readonly PagePreset[] = [
   { id: "DASHBOARD", label: "Dashboard (fluid)", mode: "GRID", size: null, margin: 0, bleed: 0, family: "SCREEN" },
+  /** The default for a new canvas (Phase 61): a free page as wide as a laptop screen that grows as blocks are placed lower. */
+  { id: "DASHBOARD_FREE", label: "Dashboard (free)", mode: "FREE", size: { w: 1280, h: 800 }, margin: 24, bleed: 0, family: "SCREEN" },
+  { id: "DASHBOARD_WIDE", label: "Dashboard 16:9 (free)", mode: "FREE", size: { w: 1600, h: 900 }, margin: 32, bleed: 0, family: "SCREEN" },
   { id: "A4_PORTRAIT", label: "A4 portrait", mode: "FREE", size: { w: mm(210), h: mm(297) }, margin: mm(12), bleed: mm(3), family: "PRINT" },
   { id: "A4_LANDSCAPE", label: "A4 landscape", mode: "FREE", size: { w: mm(297), h: mm(210) }, margin: mm(12), bleed: mm(3), family: "PRINT" },
   { id: "A3_PORTRAIT", label: "A3 portrait", mode: "FREE", size: { w: mm(297), h: mm(420) }, margin: mm(15), bleed: mm(3), family: "PRINT" },
@@ -23,6 +26,18 @@ export const PAGE_PRESETS: readonly PagePreset[] = [
   { id: "SOCIAL_LANDSCAPE", label: "Social landscape", mode: "FREE", size: { w: 1200, h: 630 }, margin: 48, bleed: 0, family: "SOCIAL" },
   { id: "WEB_BANNER", label: "Web banner", mode: "FREE", size: { w: 1500, h: 500 }, margin: 40, bleed: 0, family: "SCREEN" },
 ];
+
+/** The format id a new canvas starts with. */
+export const DEFAULT_PAGE_FORMAT = "DASHBOARD_FREE";
+
+/** How tall a FREE page is drawn: its preset height, or lower when blocks sit below it (a screen page grows; a print page keeps its size). */
+export function pageExtent(page: CanvasPage): { w: number; h: number } | null {
+  if (page.mode !== "FREE" || !page.size) return null;
+  // Any page grows to hold what is on it (Phase 61): content below the page edge is shown, not hidden, and a file paginates it.
+  const margin = pagePresetById(page.format)?.margin ?? 24;
+  const bottom = page.blocks.reduce((m, b) => (b.container || !b.free ? m : Math.max(m, b.free.y + b.free.h)), 0);
+  return { w: page.size.w, h: Math.max(page.size.h, bottom + margin) };
+}
 
 export const pagePresetById = (id: string): PagePreset | undefined => PAGE_PRESETS.find((p) => p.id === id);
 export const MAX_FREE_PX = 6000;
@@ -81,7 +96,7 @@ export function freeFrameProblems(f: FreeFrame, size: { w: number; h: number }):
   if (![f.x, f.y, f.w, f.h].every(Number.isFinite)) return ["A frame needs numbers for its place and size."];
   if (f.w < 8 || f.h < 8) out.push("A block is at least 8 px wide and high.");
   if (f.w > MAX_FREE_PX || f.h > MAX_FREE_PX) out.push(`A block is at most ${MAX_FREE_PX} px.`);
-  if (f.x + f.w < 0 || f.y + f.h < 0 || f.x > size.w || f.y > size.h) out.push("A block must be at least partly on the page.");
+  if (f.x + f.w < 0 || f.y + f.h < 0 || f.x > size.w || f.y > MAX_FREE_PX) out.push("A block must be at least partly on the page.");
   if (f.rot !== undefined && (!Number.isFinite(f.rot) || Math.abs(f.rot) > MAX_ROTATION)) out.push("Rotation is between -360 and 360 degrees.");
   return out;
 }

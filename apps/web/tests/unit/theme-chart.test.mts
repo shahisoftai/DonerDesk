@@ -14,7 +14,8 @@ test("the product's default colours give way to the theme's palette", () => {
   assert.equal((option.series[0]!.itemStyle as { color: string }).color, "#3b5be6", "the drawing is not changed");
 });
 
-test("a colour set a person chose is kept as it is", () => {
+test("a colour set a person chose is kept only on a block marked to keep it; otherwise the theme is enforced", () => {
   const option = { color: ["#ff0000", "#00ff00"], series: [{ type: "bar", itemStyle: { color: "#ff0000" } }] };
-  assert.deepEqual(themeChartOption(option, colours), option);
+  assert.deepEqual(themeChartOption(option, colours, { keepOwn: true }), option);
+  assert.deepEqual(themeChartOption(option, colours).color, [...colours.palette], "the theme's palette wins by default");
 });

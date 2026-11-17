@@ -54,3 +54,28 @@ test("a decompression bomb is refused before it is decoded", async () => {
   const out = await normalizer.normalize(header);
   assert.equal(out.ok, false, "81 million pixels is over the limit");
 });
+
+test("a clean SVG is drawn to a PNG and only the PNG is kept; one that can run code or reach other files is refused", async () => {
+  const clean = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="120" height="60" viewBox="0 0 120 60"><rect width="120" height="60" fill="#0e7490"/></svg>');
+  const out = await normalizer.normalize(clean);
+  assert.equal(out.ok, true);
+  assert.equal(out.value.contentType, "image/png");
+  assert.equal((await sharp(out.value.bytes).metadata()).format, "png", "the vector is not kept");
+  const hostile = [
+    '<svg xmlns="http://www.w3.org/2000/svg"><image href="http://example.com/x.png"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><image href="file:///etc/passwd"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"><rect width="1" height="1"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><foreignObject><div/></foreignObject></svg>',
+    '<?xml version="1.0"?><!DOCTYPE svg [<!ENTITY x SYSTEM "file:///etc/passwd">]><svg xmlns="http://www.w3.org/2000/svg"><text>&x;</text></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg"><a href="javascript:alert(1)"><rect width="1" height="1"/></a></svg>',
+  ];
+  for (const text of hostile) { const r = await normalizer.normalize(Buffer.from(text)); assert.equal(r.ok, false, text.slice(0, 60)); }
+});
+
+test("a WebP picture is accepted and kept as a PNG", async () => {
+  const webp = await sharp(raw(80, 40)).webp().toBuffer();
+  const out = await normalizer.normalize(webp);
+  assert.equal(out.ok, true);
+  assert.equal(out.value.contentType, "image/png");
+  assert.deepEqual([out.value.width, out.value.height], [80, 40]);
+});

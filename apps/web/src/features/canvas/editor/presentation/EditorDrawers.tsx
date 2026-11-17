@@ -7,6 +7,7 @@ import { tablesOfDrawings } from "../../domain/data-tables";
 import type { EditTab } from "../domain/drawer-state";
 import type { DrawerPrefs } from "../domain/drawer-state";
 import { AddDrawer } from "./AddDrawer";
+import { DataPanel } from "./DataPanel";
 import { DataTab } from "./DataTab";
 import { DrawerShell } from "./DrawerShell";
 import { EditDrawer } from "./EditDrawer";
@@ -18,8 +19,10 @@ export interface DrawerEditorPort {
   canvas: Canvas;
   page: Canvas["pages"][number];
   selectionIds: readonly string[];
-  add(kind: string): void;
+  add(kind: string, props?: unknown): void;
   addStarter(id: string): void;
+  /** Adds a picture block for a picture just uploaded to the library. */
+  addImage(asset: { id: string; name: string }): void;
   setFormat(ids: readonly string[], capability: FormatCapability, settings: BlockFormat[FormatCapability] | undefined): void;
   setInteraction(sourceId: string, targetId: string, effect: InteractionEffect): void;
 }
@@ -48,6 +51,8 @@ export function EditorDrawers({ editor, prefs, onPrefs, models, drawings, projec
   const resolve = (c: ColourChoice) => colourOf(theme, c);
   const one = blocks.length === 1 ? blocks[0]! : null;
   const pid = one ? projectOf(one.bindings) ?? fallbackProjectId : undefined;
+  /** The project whose data the Add drawer lists: the one the page reads, else the first the person can use. */
+  const dataProject = pid ?? fallbackProjectId ?? editor.page.blocks.map((b) => projectOf(b.bindings)).find(Boolean) ?? projects[0]?.id;
   const table = useMemo(() => {
     if (!one) return undefined;
     const d = drawings.find((x) => x.widgetId === one.id);
@@ -70,7 +75,7 @@ export function EditorDrawers({ editor, prefs, onPrefs, models, drawings, projec
       )}
       {prefs.addOpen && (
         <DrawerShell id="add-drawer-shell" title={t("drawer.add")} width={prefs.addWidth} pinned={prefs.pinned} offset={addOffset} onWidth={(w) => onPrefs({ addWidth: w })} onPin={(p) => onPrefs({ pinned: p })} onClose={() => onPrefs({ addOpen: false })}>
-          <AddDrawer recent={recent} onAdd={editor.add} onStarter={editor.addStarter} />
+          <AddDrawer recent={recent} onAdd={(k) => editor.add(k)} onStarter={editor.addStarter} onPicture={editor.addImage} data={<DataPanel indicators={(dataProject && indicatorsByProject[dataProject]) || []} projectName={projects.find((p) => p.id === dataProject)?.name} onAdd={(k, props) => editor.add(k, props)} />} />
         </DrawerShell>
       )}
     </>

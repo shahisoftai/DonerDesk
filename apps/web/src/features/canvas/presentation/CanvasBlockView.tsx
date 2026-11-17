@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, type KeyboardEvent } from "react";
-import { canvasThemeOf, definitionFor, formatHints, isDashboardKind, type BlockInstance, type BlockModel, type Canvas, type PaintFrame } from "@donordesk/domain/contexts/canvas/index.js";
+import { canvasThemeOf, definitionFor, formatHints, isDashboardKind, resolveFrame, resolveText, typographyHints, TITLE_BAR_TOKENS, type BlockInstance, type BlockModel, type Canvas, type PaintFrame } from "@donordesk/domain/contexts/canvas/index.js";
 import type { DashboardWidget } from "@donordesk/domain/contexts/dashboards/index.js";
 import { Tile } from "@/components/ui/Tile";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
@@ -12,7 +12,8 @@ import { themeChartOption } from "../domain/theme-chart";
 import { motionChartOption, motionStyle } from "../domain/motion-style";
 import { screenRendererFor } from "./screen-registry";
 import { NothingToShow, screenText } from "./screens/screen-text";
-import { frameCss, titleCss } from "../domain/format-style";
+import { frameCss, titleCss, typographyCss } from "../domain/format-style";
+import { useAssetUrl } from "./asset-url-context";
 import { BlockIdProvider } from "@/components/editing/block-edit-context";
 
 interface Props {
@@ -41,6 +42,7 @@ export function modelOf(block: BlockInstance, serverModel: BlockModel<unknown> |
 
 export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, changed, selected, editing, onSelect, onPick }: Props) {
   const { t } = useI18n();
+  const assetUrl = useAssetUrl();
   const def = definitionFor(block.kind);
   const label = t(blockLabelKey(block.kind as never));
   const frame: PaintFrame = useMemo(() => ({ theme: canvasThemeOf(canvas), size: { w: block.bounds.w, h: block.bounds.h }, language: canvas.language, rtl: canvas.language === "ar" }), [canvas, block.bounds.w, block.bounds.h]);
@@ -52,7 +54,7 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
   let title = heading || label;
   if (drawing && widget) {
     // The page's look reaches the chart on screen as it does in a file.
-    const themed: ChartDrawing = drawing.chart ? { ...drawing, chart: { ...drawing.chart, option: motionChartOption(themeChartOption(drawing.chart.option, frame.theme), block.motion) } } : drawing;
+    const themed: ChartDrawing = drawing.chart ? { ...drawing, chart: { ...drawing.chart, option: motionChartOption(themeChartOption(drawing.chart.option, frame.theme, { keepOwn: block.style?.keepOwnColours === true }), block.motion) } } : drawing;
     const renderer = rendererFor(themed);
     title = renderer.title({ widget, drawing: themed }) ?? label;
     body = renderer.render({ widget, drawing: themed, onPick: editing ? undefined : onPick, countUp: block.motion?.animation === "COUNT_UP" ? block.motion : undefined });
@@ -66,7 +68,7 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
     const Screen = screenRendererFor(block.kind);
     // A prompt ("Write the callout.") is for the person editing; a reader sees nothing where nothing was written.
     if (!editing && model.state === "empty" && model.authoring === true) return null;
-    if (Screen) body = <Screen model={model} frame={frame} format={block.format} />;
+    if (Screen) body = <Screen model={model} frame={frame} format={block.format} assetUrl={assetUrl} />;
     else body = <PendingPreview text={screenText(frame)} reason={def ? "A preview of this block is not available yet. It is included when you publish." : "This block is not one the product knows."} />;
   }
 
@@ -76,9 +78,19 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
 
   // Formatting (Phase 50.2): a block with its own title, border or accent bar draws its own frame from the same hints a file uses.
   const fmt = block.format;
+  // The person's own words replace the block's automatic headline, subtitle and lines; the automatic ones come back with a reset (Phase 61.5).
+  const titleText = resolveText("title", title, fmt);
+  title = titleText.value;
+  const subtitle = resolveText("subtitle", fmt?.title?.subtitle ?? "", fmt).value;
+  const caption = resolveText("caption", "", fmt).value, source = resolveText("source", "", fmt).value, asOf = resolveText("asOf", "", fmt).value;
   const hints = fmt ? formatHints(fmt, frame.theme) : null;
-  const ownFrame = Boolean(fmt && (fmt.title || fmt.frame || fmt.accentBar));
+  const typo = typographyCss(typographyHints(fmt, frame.theme));
+  const styled = Boolean(block.style && (block.style.frame || block.style.titleBar || block.style.background || block.style.border || block.style.shadow || block.style.radius || block.style.padding));
+  const resolvedFrame = styled ? resolveFrame(block.style, frame.theme) : null;
+  const barToken = block.style?.titleBar && (TITLE_BAR_TOKENS as readonly string[]).includes(block.style.titleBar);
+  const ownFrame = Boolean((fmt && (fmt.title || fmt.frame || fmt.accentBar || fmt.typography || fmt.texts)) || styled);
   const shownTitle = hints?.title.show === false ? null : title;
+  const lines = [caption, source ? `Source: ${source}` : "", asOf].filter(Boolean);
   const visibility = `${fmt?.visibility?.hideOnPhone ? "hidden sm:block" : ""} ${fmt?.visibility?.hideOnPrint ? "print:hidden" : ""}`;
 
   body = <BlockIdProvider value={block.id}>{body}</BlockIdProvider>;
@@ -87,10 +99,14 @@ export function CanvasBlockView({ block, canvas, drawing, widget, serverModel, c
     <div role={editing ? "button" : undefined} tabIndex={editing ? 0 : undefined} onClick={editing ? onSelect : undefined} onKeyDown={keyDown} aria-pressed={editing ? selected : undefined} aria-label={editing ? `${label}${hidden ? " (hidden)" : ""}` : undefined}
       data-block={block.id} data-kind={block.kind} data-selected={selected || undefined} data-hidden={hidden || undefined}
       className={`h-full rounded-xl ${visibility} ${editing ? "cursor-pointer" : ""} ${selected ? "outline outline-2 outline-offset-2 outline-brand-600" : ""} ${hidden ? "opacity-40" : ""}`}>
-      {ownFrame && hints
-        ? <section aria-label={title} data-formatted className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-[var(--tile-border)] bg-[var(--tile-bg)] text-[var(--tile-title)] shadow-sm" style={frameCss(hints)}>
-            {shownTitle && <header className="px-3 pt-2"><h3 style={titleCss(hints)}>{shownTitle}</h3>{hints.title.subtitle && <p className="text-xs text-[var(--tile-meta)]">{hints.title.subtitle}</p>}</header>}
-            <div className="min-h-0 flex-1 overflow-auto">{body}</div>
+      {ownFrame
+        ? <section aria-label={title} data-formatted data-title-bar={barToken ? block.style?.titleBar : undefined} className="flex h-full min-h-0 flex-col overflow-hidden border border-[var(--tile-border)] bg-[var(--tile-bg)] text-[var(--tile-title)]"
+            style={{ ...(hints ? frameCss(hints) : {}), ...(resolvedFrame ? { background: resolvedFrame.background ?? undefined, borderColor: resolvedFrame.borderColour ?? "transparent", borderRadius: resolvedFrame.radiusPx, boxShadow: resolvedFrame.shadow, color: resolvedFrame.text } : { borderRadius: 12 }), ...typo }}>
+            {shownTitle && (resolvedFrame?.titleBar
+              ? <header className="break-words px-3 py-1.5" style={{ background: resolvedFrame.titleBar.background, color: resolvedFrame.titleBar.text }}><h3 className="whitespace-normal break-words text-sm font-semibold" style={hints ? titleCss(hints) : undefined}>{shownTitle}</h3>{subtitle && <p className="whitespace-normal break-words text-xs opacity-90">{subtitle}</p>}</header>
+              : <header className="px-3 pt-2"><h3 className="whitespace-normal break-words" style={hints ? titleCss(hints) : undefined}>{shownTitle}</h3>{subtitle && <p className="whitespace-normal break-words text-xs text-[var(--tile-meta)]">{subtitle}</p>}</header>)}
+            <div className="min-h-0 flex-1 overflow-auto" style={resolvedFrame ? { padding: resolvedFrame.paddingPx } : undefined}>{body}</div>
+            {lines.length > 0 && <footer className="whitespace-normal break-words px-3 pb-2 text-[11px] text-[var(--tile-meta)]" data-testid="block-lines">{lines.map((l, i) => <p key={i}>{l}</p>)}</footer>}
           </section>
         : def?.bare === true && !(drawing && widget)
         ? <div className={`h-full min-h-0 ${def?.family === "CONTROLS" ? "overflow-visible" : "overflow-auto"}`} aria-label={title}>{body}</div>

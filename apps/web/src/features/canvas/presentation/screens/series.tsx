@@ -34,7 +34,7 @@ export function SmallMultiplesScreen(props: ScreenRendererPropsOf<typeof smallMu
         const last = [...one.points].reverse().find((p) => p.value !== null);
         return (
           <li key={one.id} className="rounded-lg bg-slate-50 p-3 dark:bg-slate-900">
-            <p className="truncate text-sm font-semibold">{one.code} {one.name}</p>
+            <p className="break-words text-sm font-semibold">{one.code} {one.name}</p>
             <Sparkline points={one.points.map((p) => p.value)} target={one.target} />
             <p className={`text-xs ${last && !last.verified ? "text-amber-700" : "text-slate-500"}`}>{last ? `${last.label}: ${text.fmt(last.value as number)}` : text.l.notYetReported}{one.target !== null ? ` · ${text.l.target} ${text.fmt(one.target)}` : ""}</p>
           </li>
@@ -55,7 +55,7 @@ export function ResultsChainScreen(props: ScreenRendererPropsOf<typeof resultsCh
             <ul className="min-w-0 flex-1 space-y-1">
               {group.rows.map((lv) => (
                 <li key={lv.id} className="flex justify-between gap-3 text-sm">
-                  <span className="truncate">{lv.code} {lv.name}</span>
+                  <span className="break-words">{lv.code} {lv.name}</span>
                   <span className={`shrink-0 font-semibold ${lv.verified ? "" : "text-amber-700"}`}>{lv.number !== null ? text.fmt(lv.number) : lv.value}{lv.unit === "%" ? "%" : ""}{lv.percent !== null && lv.targetNumber !== null ? ` / ${text.fmt(lv.targetNumber)} · ${Math.round(lv.percent)}%` : ""}</span>
                 </li>
               ))}

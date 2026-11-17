@@ -10,14 +10,14 @@ const newId = (): string => `b${Date.now().toString(36)}${Math.random().toString
 const ZOOM_MIN = 0.4, ZOOM_MAX = 2;
 const typing = (t: EventTarget | null): boolean => t instanceof HTMLElement && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 
-export interface EditorView { zoom: number; grid: boolean; rulers: boolean }
+export interface EditorView { zoom: number; grid: boolean; rulers: boolean; /** Snap to margins, the page centre and other blocks on a free page. */ snap?: boolean }
 
 /**
  * The editing session around the canvas (Phase 48.1): the keyboard, the clipboard, zoom and the palette. It builds the `EditorPort` the
  * command table talks to, so every gesture runs through the pure domain functions; nothing here decides what a command means.
  */
 export function useEditorSession(ed: Editor, options: { enabled: boolean; save: () => void; preview: () => void; canReachProject: (id: string) => boolean; convert: (id: string) => void }) {
-  const [view, setView] = useState<EditorView>({ zoom: 1, grid: false, rulers: false });
+  const [view, setView] = useState<EditorView>({ zoom: 1, grid: false, rulers: false, snap: true });
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [hasClipboard, setHasClipboard] = useState(false);
@@ -104,5 +104,5 @@ export function useEditorSession(ed: Editor, options: { enabled: boolean; save: 
     return () => window.removeEventListener("keydown", onKey);
   }, [options.enabled, state, run, port, pasteFromSystem, paletteOpen, shortcutsOpen]);
 
-  return { view, state, paletteOpen, shortcutsOpen, setPaletteOpen, setShortcutsOpen, run };
+  return { view, setSnap: (snap: boolean) => setView((v) => ({ ...v, snap })), state, paletteOpen, shortcutsOpen, setPaletteOpen, setShortcutsOpen, run };
 }

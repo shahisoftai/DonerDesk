@@ -204,6 +204,19 @@ export async function registerPublicCanvasRoutes(app: FastifyInstance, admin: Co
     if (!r.ok) { reply.code(404); return { title: "This link is not available" }; }
     return { kind: "LIVE", ...r.value };
   });
+  // A picture the canvas names (Phase 61.8): the link is the credential, and only a picture on this canvas is served.
+  app.get("/public/canvases/:token/assets/:assetId", async (req, reply) => {
+    reply.header("cache-control", "private, no-store");
+    reply.header("x-robots-tag", "noindex, nofollow");
+    reply.header("x-content-type-options", "nosniff");
+    const params = req.params as { token: string; assetId: string };
+    const found = await resolve(params.token);
+    if (!found || found.link.kind !== "LIVE" || !/^[A-Za-z0-9_-]{1,80}$/.test(params.assetId)) { reply.code(404); return { title: "This link is not available" }; }
+    const r = await found.tenant.handlers.getPublicCanvasAsset.handle(found.link.tenantId, found.link.canvasId, params.assetId);
+    if (!r.ok) { reply.code(404); return { title: "This link is not available" }; }
+    reply.header("content-type", r.value.contentType);
+    return r.value.bytes;
+  });
   app.get("/public/canvases/:token/file", async (req, reply) => {
     reply.header("cache-control", "private, no-store");
     reply.header("x-robots-tag", "noindex, nofollow");

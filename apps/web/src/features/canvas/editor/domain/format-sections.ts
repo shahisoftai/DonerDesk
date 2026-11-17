@@ -3,7 +3,7 @@
  * inside that capability's settings. The drawer draws whatever a row says and never names a block kind; which sections a block shows
  * comes from the domain (`formatsOf`), so a block that does not offer a capability never shows its section.
  */
-import { FORMAT_CAPABILITIES, DISPLAY_UNITS, SIDES, TEXT_ALIGNMENTS, TOTAL_FUNCTIONS, type FormatCapability } from "@donordesk/domain/contexts/canvas/index.js";
+import { FORMAT_CAPABILITIES, FONT_WEIGHTS, TEXT_TRANSFORMS, DISPLAY_UNITS, SIDES, TEXT_ALIGNMENTS, TOTAL_FUNCTIONS, type FormatCapability } from "@donordesk/domain/contexts/canvas/index.js";
 
 export type FormatField =
   | { type: "toggle"; path: string; labelKey: string; defaultValue?: boolean }
@@ -12,6 +12,8 @@ export type FormatField =
   | { type: "slider"; path: string; labelKey: string; min: number; max: number; defaultValue: number }
   | { type: "text"; path: string; labelKey: string; max: number }
   | { type: "color"; path: string; labelKey: string }
+  | { type: "font"; path: string; labelKey: string }
+  | { type: "words"; path: string; labelKey: string; max: number }
   | { type: "padding"; path: string; labelKey: string }
   | { type: "conditional"; path: string; labelKey: string }
   | { type: "columns"; path: string; labelKey: string }
@@ -24,10 +26,30 @@ const SIZES_TITLE = ["S", "M", "L", "XL"] as const;
 const SIZES_CALLOUT = ["M", "L", "XL", "XXL"] as const;
 
 export const FORMAT_SECTIONS: Readonly<Record<FormatCapability, FormatSection>> = {
+  typography: { capability: "typography", labelKey: "format.typography", fields: [
+    { type: "font", path: "fontId", labelKey: "v61.f.font" },
+    { type: "number", path: "sizePx", labelKey: "v61.f.sizePx", min: 6, max: 400 },
+    { type: "select", path: "weight", labelKey: "format.f.weight", options: FONT_WEIGHTS.map((w) => ({ value: w, labelKey: `v61.weight.${w}` })) },
+    { type: "toggle", path: "italic", labelKey: "v61.f.italic" },
+    { type: "select", path: "transform", labelKey: "v61.f.transform", options: opt(TEXT_TRANSFORMS, "v61.transform") },
+    { type: "number", path: "letterSpacingPx", labelKey: "v61.f.letterSpacing", min: -20, max: 20, step: 0.5 },
+    { type: "number", path: "lineHeight", labelKey: "v61.f.lineHeight", min: 0.8, max: 3, step: 0.1 },
+    { type: "select", path: "align", labelKey: "format.f.align", options: opt(TEXT_ALIGNMENTS, "format.align") },
+    { type: "color", path: "color", labelKey: "format.f.color" },
+  ] },
+  texts: { capability: "texts", labelKey: "format.texts", fields: [
+    { type: "words", path: "title", labelKey: "v61.text.title", max: 600 },
+    { type: "words", path: "subtitle", labelKey: "v61.text.subtitle", max: 600 },
+    { type: "words", path: "caption", labelKey: "v61.text.caption", max: 600 },
+    { type: "words", path: "source", labelKey: "v61.text.source", max: 600 },
+    { type: "words", path: "asOf", labelKey: "v61.text.asOf", max: 600 },
+    { type: "words", path: "empty", labelKey: "v61.text.empty", max: 600 },
+  ] },
   title: { capability: "title", labelKey: "format.title", fields: [
     { type: "toggle", path: "show", labelKey: "format.f.showTitle", defaultValue: true },
     { type: "text", path: "subtitle", labelKey: "format.f.subtitle", max: 120 },
     { type: "select", path: "size", labelKey: "format.f.size", options: opt(SIZES_TITLE, "format.size"), defaultValue: "M" },
+    { type: "number", path: "sizePx", labelKey: "v61.f.sizePx", min: 6, max: 400 },
     { type: "select", path: "weight", labelKey: "format.f.weight", options: opt(["regular", "bold"], "format.weight"), defaultValue: "bold" },
     { type: "color", path: "color", labelKey: "format.f.color" },
     { type: "select", path: "align", labelKey: "format.f.align", options: opt(TEXT_ALIGNMENTS, "format.align"), defaultValue: "start" },

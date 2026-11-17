@@ -1,3 +1,4 @@
+import { visual61Es } from "./visual61-es.ts";
 import type { MessageKey } from "./en.ts";
 import { recordEs } from "./record-es.ts";
 import { placeEntryEs } from "./place-entry-es.ts";
@@ -895,6 +896,7 @@ export const es: Record<MessageKey, string> = {
   ...datasetsEs,
   ...canvasEs,
   ...editor50Es,
+  ...visual61Es,
   ...studioEs,
   ...editorEs,
   ...libraryEs,

@@ -145,7 +145,8 @@ export function contextFor(input: InfographicComposeInput): RenderCtx {
   return {
     t,
     rtl,
-    font: rtl ? `'Noto Sans Arabic', ${t.font}` : t.font,
+    // A font stack goes inside a double-quoted attribute, so its own double quotes ("Source Sans 3") become single quotes; left as they were they ended the attribute and the page could not be drawn.
+    font: (rtl ? `'Noto Sans Arabic', ${t.font}` : t.font).replace(/"/g, "'"),
     format,
     grid: gridFor(format),
     s: Math.min(Math.max(format.width / 1240, 1), 1.6),

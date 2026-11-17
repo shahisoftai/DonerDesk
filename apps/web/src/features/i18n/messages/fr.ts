@@ -1,3 +1,4 @@
+import { visual61Fr } from "./visual61-fr.ts";
 import type { MessageKey } from "./en.ts";
 import { recordFr } from "./record-fr.ts";
 import { placeEntryFr } from "./place-entry-fr.ts";
@@ -895,6 +896,7 @@ export const fr: Record<MessageKey, string> = {
   ...datasetsFr,
   ...canvasFr,
   ...editor50Fr,
+  ...visual61Fr,
   ...studioFr,
   ...editorFr,
   ...libraryFr,

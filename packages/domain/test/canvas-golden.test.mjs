@@ -38,7 +38,7 @@ function documents() {
   ];
   docs.set("dashboard:mixed", legacyDashboardToCanvas({ id: "golden-dashboard", title: "Mixed dashboard", scope: "PROJECT", revision: 1, widgets }).canvas);
   const ok = (r) => { assert.equal(r.ok, true, r.ok ? "" : r.reason); return r.canvas; };
-  let withContainers = blankCanvas({ id: "golden-containers", title: "Containers", scope: "PROJECT" });
+  let withContainers = blankCanvas({ id: "golden-containers", title: "Containers", scope: "PROJECT", format: "WEB_FLUID" });
   const pageId = withContainers.pages[0].id;
   withContainers = ok(addBlock(withContainers, pageId, { id: "tabs", kind: "TABS" }));
   withContainers = ok(addBlock(withContainers, pageId, { id: "t1", kind: "TEXT", props: { text: "Inside the first tab" } }));

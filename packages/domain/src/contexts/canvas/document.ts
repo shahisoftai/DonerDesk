@@ -4,6 +4,7 @@
  */
 import { CANVAS_MODES, CANVAS_PROFILES, CANVAS_SCOPES, type Canvas, type CanvasMode, type CanvasOptions, type CanvasPage, type CanvasProfile, type CanvasScope } from "./canvas.js";
 import type { CanvasParameter } from "./params.js";
+import { DEFAULT_PAGE_FORMAT, pagePresetById } from "./pages.js";
 
 export interface CanvasDocument { profile: CanvasProfile; language: string; themeId: string; pages: CanvasPage[]; options?: CanvasOptions | undefined; params?: CanvasParameter[] | undefined; interactions?: Canvas["interactions"] }
 
@@ -32,7 +33,11 @@ export function canvasFromColumns(row: CanvasColumns): Canvas | null {
 export interface NewCanvasInput { id: string; title: string; scope: CanvasScope; mode?: CanvasMode; profile?: CanvasProfile; language?: string; themeId?: string; format?: string }
 
 /** An empty canvas with one page: the starting point for "blank". */
-export const blankCanvas = (i: NewCanvasInput): Canvas => ({
-  id: i.id, scope: i.scope, mode: i.mode ?? "LIVE", profile: i.profile ?? "LIVE_INTERNAL", title: i.title, language: i.language ?? "en", themeId: i.themeId ?? "DEFAULT",
-  pages: [{ id: "page-1", title: "Page 1", format: i.format ?? "WEB_FLUID", blocks: [] }], revision: 1,
-});
+export const blankCanvas = (i: NewCanvasInput): Canvas => {
+  // A new canvas is a free page (Phase 61.3): blocks go where they are put and any size is allowed. A grid preset or "WEB_FLUID" still gives a grid page.
+  const preset = pagePresetById(i.format ?? DEFAULT_PAGE_FORMAT);
+  const page: CanvasPage = preset && preset.mode === "FREE" && preset.size
+    ? { id: "page-1", title: "Page 1", format: preset.id, mode: "FREE", size: preset.size, blocks: [] }
+    : { id: "page-1", title: "Page 1", format: i.format ?? "WEB_FLUID", blocks: [] };
+  return { id: i.id, scope: i.scope, mode: i.mode ?? "LIVE", profile: i.profile ?? "LIVE_INTERNAL", title: i.title, language: i.language ?? "en", themeId: i.themeId ?? "DEFAULT", pages: [page], revision: 1 };
+};

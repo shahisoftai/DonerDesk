@@ -196,7 +196,7 @@ test("the donor template fails the Design check until a person describes the cha
 import { settleBoxes, addBlock as addB, blankCanvas as blank, moveBlock as moveB, canvasStructureProblems as structureProblems } from "../dist/index.js";
 
 test("a one-row block stays one row: the canvas lays out by each block's own limits, not the dashboard's two-cell minimum", () => {
-  let c = blank({ id: "c", title: "T", scope: "MINE" });
+  let c = blank({ id: "c", title: "T", scope: "MINE", format: "WEB_FLUID" });
   for (const [id, kind] of [["d", "DIVIDER"], ["b", "BANNER"], ["f", "FILTER_BAR"], ["t", "TEXT"]]) { const r = addB(c, "page-1", { id, kind }); assert.ok(r.ok, kind); c = r.canvas; }
   assert.deepEqual(c.pages[0].blocks.map((b) => [b.id, b.bounds.h]), [["d", 1], ["b", 1], ["f", 1], ["t", 2]]);
   assert.deepEqual(structureProblems(c), []);
