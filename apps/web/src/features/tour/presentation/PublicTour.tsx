@@ -60,11 +60,11 @@ export function PublicTour() {
 
   return (
     <>
-      <section className="sx-hero" style={{ paddingBottom: 24 }}>
+      <section className="sx-hero sx-tour-hero">
         <div className="sx-wrap">
           <p className="sx-crumbs"><Link href="/platform">Platform</Link> › <b>Product tour</b></p>
-          <h1 style={{ marginTop: 18, fontSize: "clamp(34px,4.6vw,56px)", fontWeight: 800, maxWidth: "22ch" }}>{COPY.heading}</h1>
-          <p className="sx-lede" style={{ marginTop: 16 }}>{COPY.lede}</p>
+          <h1>{COPY.heading}</h1>
+          <p className="sx-lede">{COPY.lede}</p>
           <div role="group" aria-label={COPY.ui.rolePrompt} className="sx-tour-roles">
             <span>{COPY.ui.rolePrompt}</span>
             {(["all", ...TOUR_ROLES] as const).map((r) => (
@@ -76,7 +76,7 @@ export function PublicTour() {
         </div>
       </section>
 
-      <nav aria-label={COPY.ui.chapterNav} className="sx-strip">
+      <nav aria-label={COPY.ui.chapterNav} className="sx-strip sx-tour-strip">
         <div className="sx-wrap sx-tour-chapters">
           {TOUR_CHAPTERS.map((c, i) => {
             const first = scenes.find((s) => s.chapter === c);
@@ -90,7 +90,7 @@ export function PublicTour() {
         </div>
       </nav>
 
-      <section>
+      <section className="sx-tour-main">
         <div className="sx-wrap">
           <div className="sx-tour-stage">
             <Viewer scene={scene} COPY={COPY} />
@@ -108,7 +108,7 @@ export function PublicTour() {
               </div>
             </aside>
           </div>
-          <p className="sx-fine" style={{ marginTop: 12 }}>{COPY.ui.sampleNote}</p>
+          <p className="sx-fine" style={{ marginTop: 8 }}>{COPY.ui.sampleNote}</p>
         </div>
       </section>
 
@@ -121,7 +121,7 @@ export function PublicTour() {
               <p className="sx-fine">{COPY.chapters[c].promise}</p>
               <ul>
                 {TOUR_SCENES.filter((s) => s.chapter === c).map((s) => (
-                  <li key={s.id} id={s.id}><b>{COPY.scenes[s.id]!.title}.</b> {COPY.scenes[s.id]!.body} <Link className="sx-link" href={hrefOf(s)}>{COPY.ui.seeFeature} →</Link></li>
+                  <li key={s.id} id={`all-${s.id}`}><b>{COPY.scenes[s.id]!.title}.</b> {COPY.scenes[s.id]!.body} <Link className="sx-link" href={hrefOf(s)}>{COPY.ui.seeFeature} →</Link></li>
                 ))}
               </ul>
             </div>
