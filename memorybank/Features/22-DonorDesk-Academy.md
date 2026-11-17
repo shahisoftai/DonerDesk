@@ -313,3 +313,7 @@ project; walk a guided tour anchored to the real workflow from project setup thr
 short videos and reach contextual help without leaving the app; and all of this ships inside the
 existing `apps/web` app with no new domain, container, or tracking system beyond what onboarding
 already persists.
+
+
+## Update 2026-11-17 (Version 4.01)
+The in-app tour now has 13 steps (adds the work plan, the entry sheet and the Data Center) and reads its words from `features/tour/domain/tour-copy.ts` in English, French, Spanish and Arabic. The public `/tour` was rebuilt separately as a table of 22 scenes in six chapters with role paths and real screenshots: see AGENTS.md, "Product tours".

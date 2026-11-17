@@ -159,3 +159,17 @@ export const PUBLIC_TOUR_EN: PublicTourBundle = {
     },
   },
 };
+
+import { PUBLIC_TOUR_FR } from "./public-tour-copy-fr.ts";
+import { PUBLIC_TOUR_ES } from "./public-tour-copy-es.ts";
+import { PUBLIC_TOUR_AR } from "./public-tour-copy-ar.ts";
+
+/** The bundle for a locale; anything we do not offer reads English. */
+export function publicTourBundle(locale: string): PublicTourBundle {
+  switch (locale) {
+    case "fr": return PUBLIC_TOUR_FR;
+    case "es": return PUBLIC_TOUR_ES;
+    case "ar": return PUBLIC_TOUR_AR;
+    default: return PUBLIC_TOUR_EN;
+  }
+}

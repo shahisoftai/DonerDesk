@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { PUBLIC_TOUR_EN as COPY } from "../domain/public-tour-copy";
+import { publicTourBundle, type PublicTourBundle } from "../domain/public-tour-copy";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { TOUR_CHAPTERS, TOUR_ROLES, TOUR_SCENES, sceneForHash, type TourRole, type TourScene } from "../domain/public-tour-scenes";
 import shotsManifest from "../domain/tour-shots.json";
 
@@ -16,10 +17,12 @@ const hrefOf = (s: TourScene) => `/features#${s.feature}`;
 /**
  * The public tour: six chapters (plan, collect, track, see, prove, report), optionally narrowed to one role's path, each scene a real
  * screenshot of a sample project with the element it describes spotlighted. The address carries the scene (`/tour#entry-sheet`,
- * `/tour#collect`) so a page can link to one. All words come from `PUBLIC_TOUR_EN`; every scene is also listed as plain text below
+ * `/tour#collect`) so a page can link to one. All words come from the bundle for the person's language (`publicTourBundle`: English, French, Spanish, Arabic; the screenshots stay English); every scene is also listed as plain text below
  * the viewer, which is what a search engine and a screen reader read first. Screenshots: `scripts/capture-tour.mjs`.
  */
 export function PublicTour() {
+  const { locale } = useI18n();
+  const COPY = useMemo(() => publicTourBundle(locale), [locale]);
   const [role, setRole] = useState<TourRole | "all">("all");
   const [sceneId, setSceneId] = useState(TOUR_SCENES[0]!.id);
 
@@ -90,7 +93,7 @@ export function PublicTour() {
       <section>
         <div className="sx-wrap">
           <div className="sx-tour-stage">
-            <Viewer scene={scene} />
+            <Viewer scene={scene} COPY={COPY} />
             <aside className="sx-card sx-tour-card" aria-live="polite">
               <p className="sx-eyebrow">{COPY.chapters[scene.chapter].name} · {fill(COPY.ui.sceneOf, { n: index + 1, total: scenes.length })}</p>
               <h2>{COPY.scenes[scene.id]!.title}</h2>
@@ -142,7 +145,7 @@ export function PublicTour() {
   );
 }
 
-function Viewer({ scene }: { scene: TourScene }) {
+function Viewer({ scene, COPY }: { scene: TourScene; COPY: PublicTourBundle }) {
   const [missing, setMissing] = useState(false);
   useEffect(() => setMissing(false), [scene.id]);
   const rect = SHOTS[scene.id] ?? null;

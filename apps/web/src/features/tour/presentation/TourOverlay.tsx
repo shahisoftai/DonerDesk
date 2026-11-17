@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { TOUR_STEPS } from "../domain/tour-steps";
+import { localizedStep, tourChrome } from "../domain/tour-copy";
+import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { useTourProgress } from "./useTourProgress";
 
 /**
@@ -14,6 +16,8 @@ import { useTourProgress } from "./useTourProgress";
  */
 export function TourOverlay() {
   const { progress, hydrated, stop, goToStep, completeStep } = useTourProgress();
+  const { locale } = useI18n();
+  const chrome = tourChrome(locale);
   const router = useRouter();
   const pathname = usePathname();
   const [rect, setRect] = useState<DOMRect | null>(null);
@@ -24,7 +28,8 @@ export function TourOverlay() {
   const projectId = pathname.match(/\/projects\/([^/]+)/)?.[1];
   const periodId = pathname.match(/\/reports\/([^/]+)/)?.[1];
 
-  const step = TOUR_STEPS[progress.currentStepIndex];
+  const rawStep = TOUR_STEPS[progress.currentStepIndex];
+  const step = rawStep && localizedStep(rawStep, locale);
 
   const missingContext = Boolean(step && ((step.route.includes("{projectId}") && !projectId) || (step.route.includes("{periodId}") && !periodId)));
 
@@ -92,16 +97,16 @@ export function TourOverlay() {
       <div
         className="pointer-events-auto fixed bottom-6 right-6 w-80 rounded-xl border border-slate-300 bg-white p-4 shadow-lg dark:border-white/15 dark:bg-slate-800"
         role="dialog"
-        aria-label="DonorDesk Academy guided tour"
+        aria-label={chrome.dialog}
       >
         <p className="text-xs font-medium uppercase tracking-wide text-brand-600 dark:text-brand-400">
-          Step {progress.currentStepIndex + 1} of {TOUR_STEPS.length}
+          {chrome.step.replace("{n}", String(progress.currentStepIndex + 1)).replace("{total}", String(TOUR_STEPS.length))}
         </p>
         <h3 className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-50">{step.title}</h3>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{step.body}</p>
         {step.rule && (
           <div className="mt-2 rounded-md bg-slate-100 p-2 text-xs text-slate-700 dark:bg-white/10 dark:text-slate-200">
-            <p className="font-semibold">Good to know: {step.rule.title}</p>
+            <p className="font-semibold">{chrome.goodToKnow.replace("{title}", step.rule.title)}</p>
             <p className="mt-0.5">{step.rule.body}</p>
           </div>
         )}
@@ -111,7 +116,7 @@ export function TourOverlay() {
             onClick={stop}
             className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           >
-            End tour
+            {chrome.end}
           </button>
           <div className="flex gap-2">
             {step.optional ? (
@@ -120,7 +125,7 @@ export function TourOverlay() {
                 onClick={skip}
                 className="rounded-md px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10"
               >
-                Skip
+                {chrome.skip}
               </button>
             ) : null}
             <button
@@ -128,7 +133,7 @@ export function TourOverlay() {
               onClick={advance}
               className="rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700"
             >
-              {isLast ? "Finish" : "Next"}
+              {isLast ? chrome.finish : chrome.next}
             </button>
           </div>
         </div>

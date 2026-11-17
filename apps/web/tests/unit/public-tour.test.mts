@@ -4,7 +4,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { findRawTokens } from "@donordesk/domain/core/copy-lint.js";
 import { TOUR_CHAPTERS, TOUR_ROLES, TOUR_SCENES, scenesForRole, scenesOf, sceneForHash } from "../../src/features/tour/domain/public-tour-scenes.ts";
-import { PUBLIC_TOUR_EN } from "../../src/features/tour/domain/public-tour-copy.ts";
+import { PUBLIC_TOUR_EN, publicTourBundle } from "../../src/features/tour/domain/public-tour-copy.ts";
 
 /** Version 4.01 gate for the public /tour: every scene has words, a real hook in the app, a real feature anchor and a screenshot. */
 const WEB = process.cwd();
@@ -67,4 +67,31 @@ test("the shot manifest names every scene; once captured, every scene has a pict
     assert.ok(existsSync(join(WEB, "public/tour", `${s.id}.jpg`)), `${s.id}.jpg is missing`);
     assert.ok(manifest.shots[s.id], `${s.id} has no spotlight`);
   }
+});
+
+const placeholders = (t: string) => [...t.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
+const flat = (b: typeof PUBLIC_TOUR_EN): Record<string, string> => ({
+  heading: b.heading, lede: b.lede,
+  ...Object.fromEntries(Object.entries(b.chapters).flatMap(([k, v]) => [[`chapter.${k}.name`, v.name], [`chapter.${k}.promise`, v.promise]])),
+  ...Object.fromEntries(Object.entries(b.roles).flatMap(([k, v]) => [[`role.${k}.name`, v.name], [`role.${k}.line`, v.line]])),
+  ...Object.fromEntries(Object.entries(b.ui).map(([k, v]) => [`ui.${k}`, v])),
+  ...Object.fromEntries(Object.entries(b.scenes).flatMap(([k, v]) => [[`scene.${k}.title`, v.title], [`scene.${k}.body`, v.body], [`scene.${k}.note`, v.note]])),
+});
+
+test("French, Spanish and Arabic carry every key, the same placeholders, and no demo or personal data", () => {
+  const en = flat(PUBLIC_TOUR_EN);
+  for (const locale of ["fr", "es", "ar"]) {
+    const other = flat(publicTourBundle(locale));
+    assert.deepEqual(Object.keys(other).sort(), Object.keys(en).sort(), locale);
+    for (const [k, v] of Object.entries(other)) {
+      assert.ok(v.trim().length > 0, `${locale} ${k} is empty`);
+      assert.equal(placeholders(v), placeholders(en[k]!), `${locale} ${k}: placeholders differ`);
+      assert.notEqual(v, en[k], `${locale} ${k} is still English`);
+    }
+    assert.doesNotMatch(JSON.stringify(other), /DEMO-|Najeeb|P25-CHECK|shahisoft|ISO 27001|SOC ?2/i, locale);
+  }
+});
+
+test("a language we do not offer reads English", () => {
+  assert.equal(publicTourBundle("de"), PUBLIC_TOUR_EN);
 });
