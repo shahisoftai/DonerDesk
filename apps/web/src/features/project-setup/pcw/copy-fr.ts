@@ -232,7 +232,7 @@ export const PCW_FR: PcwBundle = {
       facts: { name: "Nom du projet", code: "Code du projet", startDate: "Date de début", endDate: "Date de fin", currency: "Devise (par exemple USD)", summary: "Court résumé" },
       roles: { PROJECT_MANAGER: "Responsable de projet", ME_OFFICER: "Responsable du suivi et de l'évaluation", GRANTS_OFFICER: "Responsable des subventions", FIELD_OFFICER: "Agent de terrain", COMPLIANCE_OFFICER: "Responsable de la conformité", VIEWER: "Lecteur" },
       outsidePartner: "partenaire extérieur", inviteAtLaunch: "invité au démarrage", inviteLaterWord: "invité plus tard", remove: "Retirer", removeFor: (name) => `Retirer ${name}`,
-      name: "Nom", email: "Courriel (nécessaire pour inviter)", role: "Rôle", invitation: "Invitation", external: "Partenaire extérieur (ne voit que ce projet)", add: "Ajouter à l'équipe",
+      name: "Nom", email: "Courriel (nécessaire pour inviter)", role: "Rôle", invitation: "Invitation", copyTitle: "Ou copiez l’équipe d’un autre projet", copyFrom: "Copier depuis le projet", copyChoose: "Choisir un projet…", copyAdd: "Copier l’équipe", copyDone: (n: number): string => `${n} personne(s) ajoutée(s). Les personnes déjà nommées ont été laissées telles quelles.`, existingTitle: "Ou choisissez une personne déjà dans votre espace", existingChoose: "Choisir une personne…", existingAdd: "Ajouter la personne choisie", existingNote: "Déjà dans votre espace : elle est ajoutée au projet au démarrage.", external: "Partenaire extérieur (ne voit que ce projet)", add: "Ajouter à l'équipe",
     },
     common: {
       levels: { GOAL: "Objectif général", OUTCOME: "Effet", OUTPUT: "Produit", ACTIVITY: "Activité" },
@@ -254,6 +254,7 @@ export const PCW_FR: PcwBundle = {
       leftOutLead: "La lecture les a trouvés, mais leurs mots sont introuvables dans vos documents ; ils n'ont donc pas été proposés. Ajoutez à la main ceux qui sont justes.",
       leftOutReasons: { VALUE_NOT_IN_QUOTE: "mots qui ne confirment pas cette valeur", UNREADABLE: "la réponse n'a pas pu être comprise", TEMPLATE_PLACEHOLDER: "texte de modèle jamais rempli", QUOTE_NOT_FOUND: "mots introuvables dans les documents", FIGURE_NOT_IN_QUOTE: "un chiffre ne figure pas dans les mots cités", DATE_NOT_IN_QUOTE: "une date ne figure pas dans les mots cités" },
       leftOutMore: "Seuls les premiers sont listés.",
+      leftOutAdd: "Ajouter", leftOutAdded: "Ajouté",
       reread: "Relire cette partie", rereadRunning: "Cette partie est en cours de relecture…", rereadFailed: "Cette partie n'a pas pu être lue. Vous pouvez la relire.",
       rereadWarn: "Cela remplace les décisions prises à cette étape par une nouvelle lecture.", rereadConfirm: "Relire", rereadKeep: "Garder ce que j'ai",
       documentsTitle: "Vos documents", documentsLead: "Chaque document est lu pour les parties qu'il contient. Si l'un a été lu comme le mauvais type, changez-le et chaque partie sera relue.",

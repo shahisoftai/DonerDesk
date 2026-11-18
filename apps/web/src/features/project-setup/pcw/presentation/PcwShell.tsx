@@ -132,7 +132,7 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
           <SectionNotice view={view} slide={current} />
           {current === "PROJECT_TEAM" && view.sources.length > 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{PCW_COPY.teamNotRead}</p> : null}
           {current === "START" ? <DocumentsList id={id} view={view} onView={setView} /> : null}
-          <LeftOutNote view={view} slide={current} />
+          <LeftOutNote id={id} view={view} slide={current} onView={setView} />
           <RereadPart id={id} slide={current} view={view} onView={setView} />
         </div>
       </SlideFrame>

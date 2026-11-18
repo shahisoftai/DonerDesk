@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { editDraftAction, getDraftAction } from "@/lib/actions/project-setup-draft";
+import { listPeopleForSharingAction } from "@/lib/actions/home-pins";
 import { editSetupItemAction } from "@/lib/actions/project-setup";
 import { Checkbox } from "@/components/ui/Checkbox";
 import { Field } from "@/components/ui/Field";
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
+import { CopyTeamFromProject } from "./CopyTeamFromProject";
 import { NotUsedToggle } from "./NotUsedToggle";
 import { useProjectCodeCheck } from "./useProjectCodeCheck";
 import { usePcwCopy } from "./usePcwCopy";
@@ -27,6 +29,21 @@ export function ProjectTeamSlide({ id, view, onView }: { id: string; view: Setup
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const team = view.extras.team;
+  // People already in the workspace. A caller who may not list them simply sees no picker.
+  const [existing, setExisting] = useState<Array<{ id: string; name: string; email: string }>>([]);
+  const [chosen, setChosen] = useState("");
+  useEffect(() => { void listPeopleForSharingAction().then((r) => { if (r.ok) setExisting(r.value); }); }, []);
+  const named = new Set(team.map((p) => (p.email ?? "").toLowerCase()));
+  const available = existing.filter((u) => !named.has(u.email.toLowerCase()));
+  const addExisting = () => {
+    const u = available.find((x) => x.id === chosen);
+    if (!u) return;
+    // The launch finds the account by email and puts the person on the project; no invitation is sent to an existing member.
+    const built = addPersonOperation(team, { name: u.name, email: u.email, role: form.role, external: false, invite: "NOW" });
+    if (!built.ok) return setError(built.reason);
+    run(built.operation);
+    setChosen("");
+  };
   const codeTaken = useProjectCodeCheck(typed.code, view.appliedProjectId === null);
 
   const saveFact = (key: FactKey) => {
@@ -91,6 +108,23 @@ export function ProjectTeamSlide({ id, view, onView }: { id: string; view: Setup
             ))}
           </ul>
         )}
+        <CopyTeamFromProject id={id} team={team} onView={onView} onError={setError} />
+        {available.length > 0 ? (
+          <div className="grid gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:grid-cols-2 dark:border-white/20">
+            <h3 className="text-sm font-semibold sm:col-span-2">{PCW_COPY.team.existingTitle}</h3>
+            <Field label={PCW_COPY.team.name}>
+              <Select value={chosen} onChange={(e) => setChosen(e.target.value)}>
+                <option value="">{PCW_COPY.team.existingChoose}</option>
+                {available.map((u) => <option key={u.id} value={u.id}>{u.name} · {u.email}</option>)}
+              </Select>
+            </Field>
+            <Field label={PCW_COPY.team.role}>
+              <Select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })}>{TEAM_ROLES.map((r) => <option key={r} value={r}>{PCW_COPY.team.roles[r] ?? roleLabel(r)}</option>)}</Select>
+            </Field>
+            <p className="text-xs text-slate-600 sm:col-span-2 dark:text-slate-300">{PCW_COPY.team.existingNote}</p>
+            <div className="sm:col-span-2"><button type="button" className="btn" disabled={pending || !chosen} onClick={addExisting}>{PCW_COPY.team.existingAdd}</button></div>
+          </div>
+        ) : null}
         <div className="grid gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:grid-cols-2 dark:border-white/20">
           <Field label={PCW_COPY.team.name}><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <Field label={PCW_COPY.team.email}><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></Field>

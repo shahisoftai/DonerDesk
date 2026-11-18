@@ -232,7 +232,7 @@ export const PCW_ES: PcwBundle = {
       facts: { name: "Nombre del proyecto", code: "Código del proyecto", startDate: "Fecha de inicio", endDate: "Fecha de fin", currency: "Moneda (por ejemplo USD)", summary: "Resumen breve" },
       roles: { PROJECT_MANAGER: "Responsable del proyecto", ME_OFFICER: "Responsable de seguimiento y evaluación", GRANTS_OFFICER: "Responsable de subvenciones", FIELD_OFFICER: "Oficial de campo", COMPLIANCE_OFFICER: "Responsable de cumplimiento", VIEWER: "Lector" },
       outsidePartner: "socio externo", inviteAtLaunch: "invitar al empezar", inviteLaterWord: "invitar más tarde", remove: "Quitar", removeFor: (name) => `Quitar a ${name}`,
-      name: "Nombre", email: "Correo electrónico (necesario para invitar)", role: "Rol", invitation: "Invitación", external: "Socio externo (solo ve este proyecto)", add: "Añadir al equipo",
+      name: "Nombre", email: "Correo electrónico (necesario para invitar)", role: "Rol", invitation: "Invitación", copyTitle: "O copie el equipo de otro proyecto", copyFrom: "Copiar del proyecto", copyChoose: "Elegir un proyecto…", copyAdd: "Copiar el equipo", copyDone: (n: number): string => `${n} persona(s) añadida(s). Quien ya estaba nombrado se dejó igual.`, existingTitle: "O elija a alguien que ya está en su espacio", existingChoose: "Elegir una persona…", existingAdd: "Añadir a la persona elegida", existingNote: "Ya está en su espacio: se añade al proyecto al iniciarlo.", external: "Socio externo (solo ve este proyecto)", add: "Añadir al equipo",
     },
     common: {
       levels: { GOAL: "Objetivo general", OUTCOME: "Efecto", OUTPUT: "Producto", ACTIVITY: "Actividad" },
@@ -254,6 +254,7 @@ export const PCW_ES: PcwBundle = {
       leftOutLead: "La lectura los encontró, pero sus palabras no aparecen en sus documentos, así que no se propusieron. Añada a mano los que sean correctos.",
       leftOutReasons: { VALUE_NOT_IN_QUOTE: "palabras que no respaldan este valor", UNREADABLE: "no se pudo entender la respuesta", TEMPLATE_PLACEHOLDER: "texto de plantilla sin completar", QUOTE_NOT_FOUND: "palabras no encontradas en los documentos", FIGURE_NOT_IN_QUOTE: "una cifra no está en las palabras citadas", DATE_NOT_IN_QUOTE: "una fecha no está en las palabras citadas" },
       leftOutMore: "Solo se listan los primeros.",
+      leftOutAdd: "Añadir", leftOutAdded: "Añadido",
       reread: "Leer esta parte de nuevo", rereadRunning: "Esta parte se está leyendo de nuevo…", rereadFailed: "No se pudo leer esta parte. Puede leerla de nuevo.",
       rereadWarn: "Esto reemplaza las decisiones que tomó en este paso por una lectura nueva.", rereadConfirm: "Leer de nuevo", rereadKeep: "Conservar lo que tengo",
       documentsTitle: "Sus documentos", documentsLead: "Cada documento se lee por las partes que contiene. Si alguno se leyó como el tipo equivocado, cámbielo y se volverá a leer cada parte.",

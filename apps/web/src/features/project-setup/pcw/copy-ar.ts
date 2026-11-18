@@ -234,7 +234,7 @@ export const PCW_AR: PcwBundle = {
       facts: { name: "اسم المشروع", code: "رمز المشروع", startDate: "تاريخ البدء", endDate: "تاريخ الانتهاء", currency: "العملة (مثل USD)", summary: "ملخص قصير" },
       roles: { PROJECT_MANAGER: "مدير المشروع", ME_OFFICER: "مسؤول الرصد والتقييم", GRANTS_OFFICER: "مسؤول المنح", FIELD_OFFICER: "موظف ميداني", COMPLIANCE_OFFICER: "مسؤول الامتثال", VIEWER: "مطّلع" },
       outsidePartner: "شريك خارجي", inviteAtLaunch: "تُوجَّه الدعوة عند البدء", inviteLaterWord: "تُوجَّه الدعوة لاحقاً", remove: "حذف", removeFor: (name) => `حذف ${name}`,
-      name: "الاسم", email: "البريد الإلكتروني (لازم للدعوة)", role: "الدور", invitation: "الدعوة", external: "شريك خارجي (يرى هذا المشروع فقط)", add: "إضافة إلى الفريق",
+      name: "الاسم", email: "البريد الإلكتروني (لازم للدعوة)", role: "الدور", invitation: "الدعوة", copyTitle: "أو انسخ الفريق من مشروع آخر", copyFrom: "النسخ من المشروع", copyChoose: "اختر مشروعاً…", copyAdd: "نسخ الفريق", copyDone: (n: number): string => `تمت إضافة: ${n}. لم يتغير من كان مذكوراً مسبقاً.`, existingTitle: "أو اختر شخصاً موجوداً في مساحة عملك", existingChoose: "اختر شخصاً…", existingAdd: "إضافة الشخص المختار", existingNote: "موجود في مساحة عملك: يُضاف إلى المشروع عند البدء.", external: "شريك خارجي (يرى هذا المشروع فقط)", add: "إضافة إلى الفريق",
     },
     common: {
       levels: { GOAL: "الهدف العام", OUTCOME: "النتيجة", OUTPUT: "المخرج", ACTIVITY: "النشاط" },
@@ -256,6 +256,7 @@ export const PCW_AR: PcwBundle = {
       leftOutLead: "وجدتها القراءة لكن تعذّر العثور على كلماتها في مستنداتك، لذلك لم تُقترح. أضف يدوياً ما كان منها صحيحاً.",
       leftOutReasons: { VALUE_NOT_IN_QUOTE: "كلمات لا تدعم هذه القيمة", UNREADABLE: "تعذر فهم الرد", TEMPLATE_PLACEHOLDER: "نص قالب لم يُملأ", QUOTE_NOT_FOUND: "كلمات غير موجودة في المستندات", FIGURE_NOT_IN_QUOTE: "رقم غير موجود في الكلمات المقتبسة", DATE_NOT_IN_QUOTE: "تاريخ غير موجود في الكلمات المقتبسة" },
       leftOutMore: "تُعرض الأولى فقط.",
+      leftOutAdd: "إضافة", leftOutAdded: "تمت الإضافة",
       reread: "اقرأ هذا الجزء من جديد", rereadRunning: "تُعاد قراءة هذا الجزء…", rereadFailed: "تعذّرت قراءة هذا الجزء. يمكنك قراءته من جديد.",
       rereadWarn: "سيستبدل هذا القرارات التي اتخذتها في هذه الخطوة بقراءة جديدة.", rereadConfirm: "اقرأ من جديد", rereadKeep: "أبقِ ما لدي",
       documentsTitle: "مستنداتك", documentsLead: "يُقرأ كل مستند للأجزاء التي يحتويها. إذا قُرئ مستند على أنه نوع خاطئ فغيّره وستُعاد قراءة كل جزء.",

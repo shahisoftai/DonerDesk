@@ -47,6 +47,13 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
       const fresh = await getDraftAction(id);
       if (fresh.ok) take(fresh.value); else fail(fresh.error.message);
     });
+  // A result may change level; it keeps its parent when that is still allowed, otherwise takes the first one that is.
+  const changeLevel = (path: string, node: { level: SetupLogLevel; code: string | null; parentCode: string | null }, next: SetupLogLevel) => {
+    if (next === node.level) return;
+    const options = moveParents(next, view, node.code);
+    const parentCode = options.find((p) => p.code === node.parentCode)?.code ?? options[0]?.code ?? null;
+    move(path, { level: next }, parentCode ?? "");
+  };
   const decide = (path: string, op: "ACCEPT" | "REJECT") =>
     startTransition(async () => {
       const r = await editSetupItemAction(id, { area: "LOGFRAME", path, op });
@@ -71,13 +78,23 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
             <li key={item.path} style={{ paddingInlineStart: `${depth * 1.5}rem` }} className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-white/10">
               <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{lw(node.level)}</span>
               <span className="font-mono text-xs text-slate-500">{node.code}</span>
-              <input
+              <textarea
                 key={`n-${node.title}`}
+                rows={2}
                 aria-label={`${lw(node.level)} ${node.code ?? ""}`}
                 defaultValue={node.title ?? ""}
-                className="min-w-[12rem] flex-1 bg-transparent outline-none focus:underline"
+                className="min-w-[12rem] flex-1 resize-y bg-transparent outline-none focus:underline"
                 onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== node.title && run(() => changeResultsAction(id, { kind: "EDIT_NODE_TITLE", path: item.path, title: e.target.value }))}
               />
+              <select
+                aria-label={`${PCW_COPY.results.level}: ${node.code ?? node.title ?? ""}`}
+                className="input max-w-[8rem] py-1 text-xs"
+                value={node.level}
+                disabled={pending}
+                onChange={(e) => changeLevel(item.path, node, e.target.value as SetupLogLevel)}
+              >
+                {LEVELS.map((l) => <option key={l} value={l}>{lw(l)}</option>)}
+              </select>
               {node.level !== "GOAL" ? (() => {
                 const parents = moveParents(node.level, view, node.code);
                 // A stored parent that is no longer a choice (it was removed) must not be shown as the first option: show it as not chosen.
@@ -95,7 +112,7 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
                   </select>
                 );
               })() : null}
-              <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />
+              <OriginBadge showTag={false} origin={item.origin} id={id} source={item.source} quote={item.quote} />
               {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{c.accept}</button> : null}
               <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${c.remove} ${node.title ?? ""}`}>{c.remove}</button>
               {node.level === "OUTCOME" || node.level === "OUTPUT" ? (

@@ -102,7 +102,7 @@ export function IndicatorsSlide({ id, view, onView }: { id: string; view: SetupD
             ),
             actions: (
               <span className="flex flex-wrap items-center gap-2">
-                {value.libraryId ? <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-900 dark:bg-brand-900/40 dark:text-brand-100" data-testid="library-badge">{t("lib.badge")}</span> : <OriginBadge origin={item.origin} id={id} source={item.source} quote={item.quote} />}
+                {value.libraryId ? <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[11px] font-medium text-brand-900 dark:bg-brand-900/40 dark:text-brand-100" data-testid="library-badge">{t("lib.badge")}</span> : <OriginBadge showTag={false} origin={item.origin} id={id} source={item.source} quote={item.quote} />}
                 {item.status === "PROPOSED" ? <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "ACCEPT")}>{PCW_COPY.results.accept}</button> : null}
                 <button type="button" className="btn-secondary" disabled={pending} onClick={() => decide(item.path, "REJECT")} aria-label={`${PCW_COPY.results.remove} ${value.title ?? ""}`}>{PCW_COPY.results.remove}</button>
               </span>

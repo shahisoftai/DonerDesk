@@ -244,7 +244,7 @@ export const PCW_COPY = {
     facts: { name: "Project name", code: "Project code", startDate: "Start date", endDate: "End date", currency: "Currency (for example USD)", summary: "Short summary" } as Record<string, string>,
     roles: { PROJECT_MANAGER: "Project manager", ME_OFFICER: "Monitoring and evaluation officer", GRANTS_OFFICER: "Grants officer", FIELD_OFFICER: "Field officer", COMPLIANCE_OFFICER: "Compliance officer", VIEWER: "Viewer" } as Record<string, string>,
     outsidePartner: "outside partner", inviteAtLaunch: "invite at launch", inviteLaterWord: "invite later", remove: "Remove", removeFor: (name: string): string => `Remove ${name}`,
-    name: "Name", email: "Email (needed to invite)", role: "Role", invitation: "Invitation", external: "Outside partner (sees this project only)", add: "Add to team",
+    name: "Name", email: "Email (needed to invite)", role: "Role", invitation: "Invitation", copyTitle: "Or copy the team from another project", copyFrom: "Copy from project", copyChoose: "Choose a project…", copyAdd: "Copy the team", copyDone: (n: number): string => `${n} ${n === 1 ? "person" : "people"} added. Anyone already named was left alone.`, existingTitle: "Or choose someone already in your workspace", existingChoose: "Choose a person…", existingAdd: "Add selected person", existingNote: "Already in your workspace: they are added to the project when it starts.", external: "Outside partner (sees this project only)", add: "Add to team",
   },
   common: {
     levels: { GOAL: "Goal", OUTCOME: "Outcome", OUTPUT: "Output", ACTIVITY: "Activity" } as Record<string, string>,
@@ -266,6 +266,7 @@ export const PCW_COPY = {
     leftOutLead: "These were found by the reading but their words could not be found in your documents, so they were not proposed. Add any that are right by hand.",
     leftOutReasons: { VALUE_NOT_IN_QUOTE: "words that do not support this value", UNREADABLE: "the reply could not be understood", TEMPLATE_PLACEHOLDER: "template text that was never filled in", QUOTE_NOT_FOUND: "words not found in the documents", FIGURE_NOT_IN_QUOTE: "a figure is not in the quoted words", DATE_NOT_IN_QUOTE: "a date is not in the quoted words" } as Record<string, string>,
     leftOutMore: "Only the first ones are listed.",
+    leftOutAdd: "Add", leftOutAdded: "Added",
     reread: "Read this part again", rereadRunning: "This part is being read again…", rereadFailed: "This part could not be read. You can read it again.",
     rereadWarn: "This replaces the decisions you made in this step with a fresh reading.", rereadConfirm: "Read again", rereadKeep: "Keep what I have",
     documentsTitle: "Your documents", documentsLead: "Each document is read for the parts it holds. If one was read as the wrong kind, change it and every part is read again.",
