@@ -15,6 +15,8 @@ export type ResultOperation =
   | { kind: "ADD_INDICATOR"; value: Record<string, unknown> }
   | { kind: "EDIT_INDICATOR"; path: string; patch: Partial<Pick<IndicatorDef, "title" | "type" | "unit" | "baseline" | "target" | "frequency" | "logframeCode" | "disaggregation">> }
   | { kind: "EDIT_NODE_TITLE"; path: string; title: string }
+  /** Renames a result's code; everything that points at the old code (children, indicators, plan rows, budget lines) follows. */
+  | { kind: "EDIT_NODE_CODE"; path: string; code: string }
   | { kind: "EDIT_NODE_LOGIC"; path: string; assumptions?: string; rationale?: string }
   | { kind: "BULK_INDICATORS"; frequency?: string; disaggregation?: string[]; level?: SetupLogLevel }
   /** Entries of the sector library, resolved by the caller (the organisation's own wording included); added as the person's own indicators. */
@@ -95,6 +97,23 @@ export const RESULT_OPERATIONS: { [K in ResultOperation["kind"]]: Handler<K> } =
     if (!name) return refuse("A result needs a name.");
     const logframe = p.logframe.map((n, i) => (i === at.index ? { ...n, value: { ...n.value!, title: name }, status: "EDITED" as const } : n));
     return done({ ...p, logframe });
+  },
+  EDIT_NODE_CODE: (p, { path, code }) => {
+    const at = itemAt(p.logframe, path, "logframe");
+    if (!at) return refuse("That result is not in the project.");
+    const next = clean(code, 40);
+    if (!next) return refuse("A result needs a code.");
+    const old = at.item.value!.code;
+    if (next === old) return done(p);
+    const taken = [...live(p.logframe), ...live(p.indicators)].some((i) => i.value!.code?.toLowerCase() === next.toLowerCase() && i !== at.item);
+    if (taken) return refuse(`The code ${next} is already used in this project.`);
+    const follow = <T extends { logframeCode: string | null }>(items: Array<Proposed<T>>): Array<Proposed<T>> =>
+      old ? items.map((i) => (i.value && i.value.logframeCode === old ? { ...i, value: { ...i.value, logframeCode: next } } : i)) : items;
+    const logframe = p.logframe.map((n, i) => {
+      if (i === at.index) return { ...n, value: { ...n.value!, code: next, codeSource: "DOCUMENT" as const }, status: "EDITED" as const };
+      return old && n.value?.parentCode === old ? { ...n, value: { ...n.value, parentCode: next } } : n;
+    });
+    return done({ ...p, logframe, indicators: follow(p.indicators), plan: follow(p.plan), budget: follow(p.budget) });
   },
   EDIT_NODE_LOGIC: (p, { path, assumptions, rationale }) => {
     const at = itemAt(p.logframe, path, "logframe");

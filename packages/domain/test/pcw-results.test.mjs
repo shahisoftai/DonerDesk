@@ -16,7 +16,7 @@ function chain() {
 }
 
 test("every result operation kind has a handler", () => {
-  assert.deepEqual(Object.keys(RESULT_OPERATIONS).sort(), ["ADD_FROM_LIBRARY", "ADD_FROM_SKELETON", "ADD_INDICATOR", "ADD_NODE", "BULK_INDICATORS", "EDIT_INDICATOR", "EDIT_NODE_LOGIC", "EDIT_NODE_TITLE"]);
+  assert.deepEqual(Object.keys(RESULT_OPERATIONS).sort(), ["ADD_FROM_LIBRARY", "ADD_FROM_SKELETON", "ADD_INDICATOR", "ADD_NODE", "BULK_INDICATORS", "EDIT_INDICATOR", "EDIT_NODE_CODE", "EDIT_NODE_LOGIC", "EDIT_NODE_TITLE"]);
 });
 
 test("a typed chain gets codes, belongs to the person, and closes the results requirements", () => {
@@ -93,4 +93,15 @@ test("result operations never change the proposal they were given", () => {
   applyResultOperation(p, { kind: "ADD_INDICATOR", value: { title: "x" } });
   applyResultOperation(p, { kind: "EDIT_NODE_TITLE", path: "logframe.0", title: "New" });
   assert.equal(JSON.stringify(p), before);
+});
+
+test("renaming a result's code moves its children and links, and refuses a repeat", () => {
+  let p = chain();
+  const wells = node(p, "Wells built");
+  const oldCode = wells.code;
+  p = run(p, { kind: "EDIT_NODE_CODE", path: `logframe.${p.logframe.findIndex((n) => n.value.title === "Wells built")}`, code: "OP-7" });
+  assert.equal(node(p, "Wells built").code, "OP-7");
+  assert.equal(node(p, "Drill wells").parentCode, "OP-7");
+  assert.notEqual(oldCode, "OP-7");
+  assert.match(refused(p, { kind: "EDIT_NODE_CODE", path: "logframe.0", code: "op-7" }), /already used/);
 });

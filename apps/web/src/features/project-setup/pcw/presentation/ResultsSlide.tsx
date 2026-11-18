@@ -18,6 +18,14 @@ import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
 import { WizardLibraryPanel } from "@/features/sector-library/presentation/WizardLibraryPanel";
 
+/** One colour band per level, so a row is recognised at a glance (the level's name is always written too). */
+const LEVEL_TONE: Record<SetupLogLevel, string> = {
+  GOAL: "border-slate-200 border-s-slate-500 bg-slate-50 dark:border-white/10 dark:border-s-slate-400 dark:bg-white/5",
+  OUTCOME: "border-slate-200 border-s-brand-600 bg-brand-50 dark:border-white/10 dark:border-s-brand-400 dark:bg-brand-500/10",
+  OUTPUT: "border-slate-200 border-s-accent-600 bg-accent-50 dark:border-white/10 dark:border-s-accent-400 dark:bg-accent-500/10",
+  ACTIVITY: "border-slate-200 border-s-amber-500 bg-amber-50 dark:border-white/10 dark:border-s-amber-400 dark:bg-amber-500/10",
+};
+
 /** Slide 3: the results framework as a tree. Anything from a document waits to be accepted; anything typed here is yours already. */
 export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void }) {
   const pcw = usePcwCopy();
@@ -32,7 +40,20 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
   const [parent, setParent] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
-  const rows = treeRows(view.logframe);
+  const allRows = treeRows(view.logframe);
+  // Outputs start folded away with their activities; `opened` holds the codes of the ones the person opened.
+  const [opened, setOpened] = useState<ReadonlySet<string>>(new Set());
+  const open = (code: string | null) => code !== null && opened.has(code);
+  const toggle = (code: string | null) => { if (code === null) return; setOpened((o) => { const n = new Set(o); if (n.has(code)) n.delete(code); else n.add(code); return n; }); };
+  const outputCodes = allRows.flatMap((r) => (r.node.level === "OUTPUT" && r.node.code ? [r.node.code] : []));
+  const rows: typeof allRows = [];
+  let hiding = false;
+  for (const r of allRows) {
+    if (r.node.level !== "ACTIVITY") hiding = r.node.level === "OUTPUT" && !open(r.node.code);
+    else if (hiding) continue;
+    rows.push(r);
+  }
+  const kids = (code: string | null) => (code ? allRows.filter((r) => r.node.level === "ACTIVITY" && r.node.parentCode === code).length : 0);
   const choices = parentChoices(level, view.logframe);
   const pendingCodes = unconfirmedCodes(view.logframe, view.extras.confirmedGeneratedCodes);
 
@@ -64,6 +85,7 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
 
   const add = () => {
     if (needsParent(level) && !parent) return fail(PCW_COPY.common.chooseParent(lw(level)));
+    if (parent && level === "ACTIVITY") setOpened((o) => new Set(o).add(parent));
     run(() => changeResultsAction(id, { kind: "ADD_NODE", level, title, parentCode: parent || null }));
     setTitle("");
   };
@@ -73,11 +95,30 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
       <WizardLibraryPanel id={id} view={view} onView={onView} />
       <AcceptAllWaiting id={id} area="LOGFRAME" items={view.logframe} onView={onView} onError={setError} />
       {rows.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.empty}</p> : (
+        <>
+        {outputCodes.length > 0 ? (
+          <div className="flex gap-2 text-xs">
+            <button type="button" className="btn-secondary" onClick={() => setOpened(new Set(outputCodes))}>{c.expandAll}</button>
+            <button type="button" className="btn-secondary" onClick={() => setOpened(new Set())}>{c.collapseAll}</button>
+          </div>
+        ) : null}
         <ul className="space-y-1">
           {rows.map(({ item, node, depth }) => (
-            <li key={item.path} style={{ paddingInlineStart: `${depth * 1.5}rem` }} className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-white/10">
-              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{lw(node.level)}</span>
-              <span className="font-mono text-xs text-slate-500">{node.code}</span>
+            <li key={item.path} style={{ paddingInlineStart: `${depth * 1.5}rem` }} className={`flex flex-wrap items-center gap-2 rounded-lg border border-s-4 px-3 py-2 text-sm ${LEVEL_TONE[node.level]}`}>
+              {node.level === "OUTPUT" ? (
+                <button type="button" className="btn-secondary px-2 py-0.5 text-xs" aria-expanded={open(node.code)} aria-label={`${open(node.code) ? c.hideKids : c.showKids}: ${node.code ?? ""}`} onClick={() => toggle(node.code)}>
+                  {open(node.code) ? "▾" : "▸"} {kids(node.code)}
+                </button>
+              ) : null}
+              <span className="text-xs font-semibold uppercase tracking-wide">{lw(node.level)}</span>
+              <input
+                key={`c-${node.code}`}
+                aria-label={`${c.code}: ${node.title ?? ""}`}
+                defaultValue={node.code ?? ""}
+                maxLength={40}
+                className="input w-24 py-0.5 font-mono text-xs"
+                onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== node.code && run(() => changeResultsAction(id, { kind: "EDIT_NODE_CODE", path: item.path, code: e.target.value }))}
+              />
               <textarea
                 key={`n-${node.title}`}
                 rows={2}
@@ -133,6 +174,7 @@ export function ResultsSlide({ id, view, onView }: { id: string; view: SetupDraf
             </li>
           ))}
         </ul>
+        </>
       )}
       {view.advice.filter((a) => a.slide === "RESULTS").map((a) => <p key={a.key} role="note" className="text-sm text-slate-600 dark:text-slate-300">{sentenceFor(a, pcw.sentences)}</p>)}
       {pendingCodes.length > 0 ? (

@@ -100,6 +100,7 @@ export const PCW_COPY = {
     empty: "Nothing here yet. Start with the goal, then add outcomes, outputs and activities.",
     keepCodes: (n: number): string => `Keep the ${n} code${n > 1 ? "s" : ""} made up for you`,
     codesNote: "Codes were made up where your documents had none. Check them, then keep them.",
+    code: "Code", showKids: "Show activities", hideKids: "Hide activities", expandAll: "Expand all", collapseAll: "Collapse all",
     remove: "Remove", accept: "Accept", needsDecision: "Waiting for your decision",
   },
   indicators: {

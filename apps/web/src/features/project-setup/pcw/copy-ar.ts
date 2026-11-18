@@ -90,6 +90,7 @@ export const PCW_AR: PcwBundle = {
       empty: "لا شيء هنا بعد. ابدأ بالهدف العام، ثم أضف النتائج والمخرجات والأنشطة.",
       keepCodes: (n) => `الاحتفاظ بالرموز التي أُنشئت لك (${n})`,
       codesNote: "أُنشئت رموز حيث لم تكن في مستنداتك. راجعها ثم احتفظ بها.",
+      code: "الرمز", showKids: "عرض الأنشطة", hideKids: "إخفاء الأنشطة", expandAll: "توسيع الكل", collapseAll: "طي الكل",
       remove: "حذف", accept: "قبول", needsDecision: "بانتظار قرارك",
     },
     indicators: {

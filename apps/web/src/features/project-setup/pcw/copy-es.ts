@@ -88,6 +88,7 @@ export const PCW_ES: PcwBundle = {
       empty: "Todavía nada. Empiece por el objetivo y luego añada efectos, productos y actividades.",
       keepCodes: (n) => `Conservar ${s(n, "el código inventado", "los códigos inventados")} para usted (${n})`,
       codesNote: "Se inventaron códigos donde sus documentos no tenían. Revíselos y luego consérvelos.",
+      code: "Código", showKids: "Mostrar actividades", hideKids: "Ocultar actividades", expandAll: "Expandir todo", collapseAll: "Contraer todo",
       remove: "Quitar", accept: "Aceptar", needsDecision: "Esperando su decisión",
     },
     indicators: {
