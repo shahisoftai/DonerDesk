@@ -13,8 +13,7 @@ import type { PcwCopy } from "../copy";
 type PlacesCopy = PcwCopy["places"];
 
 /**
- * The map beside the list: the areas inside the open one, shaded by what is ticked. Clicking an area chooses it (the list and the card follow);
- * it is the same choice as clicking its name in the list. When the device cannot start the map the same areas are drawn as plain shapes.
+ * The map beside the list: the areas inside the open one, shaded by what is ticked. Clicking an area ticks or unticks it, the same as clicking its name in the list. When the device cannot start the map the same areas are drawn as plain shapes.
  */
 export function PlacePickMap({ units, stateOf, activeRef, label, copy, marks, onChoose }: {
   marks: readonly Mark[]; units: readonly BoundaryUnit[]; stateOf: (u: BoundaryUnit) => TickState; activeRef: string | null; label: string; copy: PlacesCopy; onChoose: (ref: string | null) => void;

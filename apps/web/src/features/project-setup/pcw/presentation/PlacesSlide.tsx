@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
-import { NotUsedToggle } from "./NotUsedToggle";
+import { NoFixedPlaces } from "./NoFixedPlaces";
+import { notUsedAnswer } from "../domain/pcw-view";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OtherPlaces } from "./OtherPlaces";
 import { PlacePicker } from "./PlacePicker";
@@ -16,14 +17,15 @@ import { CarriedFacts } from "./CarriedFacts";
 export function PlacesSlide({ id, view, onView }: { id: string; view: SetupDraftView; onView: (v: SetupDraftView) => void }) {
   const [error, setError] = useState<string | null>(null);
   const [find, setFind] = useState<{ text: string; nonce: number } | null>(null);
+  // Offered only while nothing is chosen (or once chosen): a project that has places never needs it.
+  const noPlaces = view.places.every((i) => i.status === "REJECTED") || ["places.decided", "places.area"].every((r) => notUsedAnswer(view, r).notUsed);
   return (
     <div className="space-y-8">
       <CarriedFacts view={view} slide="PLACES" />
       <AcceptAllWaiting id={id} area="PLACES" items={view.places} onView={onView} onError={setError} />
       <PlacePicker id={id} view={view} onView={onView} onError={setError} find={find} />
       <OtherPlaces id={id} view={view} onView={onView} onError={setError} onFind={(text) => setFind({ text, nonce: Date.now() })} />
-      <NotUsedToggle id={id} view={view} requirement="places.decided" onView={onView} />
-      <NotUsedToggle id={id} view={view} requirement="places.area" onView={onView} />
+      {noPlaces ? <NoFixedPlaces id={id} view={view} onView={onView} /> : null}
       {error ? <p role="alert" className="text-sm text-danger-600">{error}</p> : null}
     </div>
   );

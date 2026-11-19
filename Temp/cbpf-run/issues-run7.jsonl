@@ -1,2 +1,0 @@
-{"t":"2026-11-04T10:46:38.243Z","phase":"cbpf","kind":"step-failed","msg":"start the project (waits up to 4 min; stale banners ignored): launch refused: ","url":"https://donordesk.online/projects/new/wizard?id=36f88711-5398-473f-a7c8-c3ebb27d17fb"}
-{"t":"2026-11-04T10:46:38.944Z","phase":"cbpf","kind":"launch","msg":"no 'Open the project' link after launch","url":"https://donordesk.online/projects/new/wizard?id=36f88711-5398-473f-a7c8-c3ebb27d17fb"}

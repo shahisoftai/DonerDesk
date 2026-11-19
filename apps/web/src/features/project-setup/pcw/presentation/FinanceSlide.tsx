@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { changeFinanceAction, editDraftAction, getDraftAction } from "@/lib/actions/project-setup-draft";
 import { editSetupItemAction } from "@/lib/actions/project-setup";
 import { Checkbox } from "@/components/ui/Checkbox";
@@ -11,7 +11,8 @@ import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { usePcwCopy } from "./usePcwCopy";
 import { CarriedFacts } from "./CarriedFacts";
 import { SUPPORT, activityChoices, currencyNote, money, suggestedCurrency, suggestionFor, targetLabel } from "../domain/finance-view";
-import { notUsedAnswer } from "../domain/pcw-view";
+import { hasOpenGap, notUsedAnswer } from "../domain/pcw-view";
+import { listGrantChoicesAction, type GrantChoice } from "@/lib/actions/funding";
 import { NotUsedToggle } from "./NotUsedToggle";
 import { AcceptAllWaiting } from "./AcceptAllWaiting";
 import { OriginBadge } from "./OriginBadge";
@@ -33,6 +34,12 @@ export function FinanceSlide({ id, view, onView }: { id: string; view: SetupDraf
   const sum = view.financeSummary;
   const [fund, setFund] = useState({ source: "", amount: "", currency: suggestedCurrency(view) });
   const [line, setLine] = useState({ category: "", amount: "", currency: suggestedCurrency(view) });
+  const [grants, setGrants] = useState<GrantChoice[]>([]);
+  const [grantId, setGrantId] = useState("");
+  useEffect(() => { void listGrantChoicesAction().then(setGrants).catch(() => setGrants([])); }, []);
+  const grant = grants.find((g) => g.id === grantId);
+  const fundingOpen = hasOpenGap(view, "FINANCE", "finance.funding") || hasOpenGap(view, "FINANCE", "funding");
+  const red = "border-red-600 ring-2 ring-red-500/40";
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const run = (work: Work) => startTransition(async () => { const r = await work(); if (r.ok) { setError(null); onView(r.value); } else setError(r.error.message); });
@@ -77,7 +84,31 @@ export function FinanceSlide({ id, view, onView }: { id: string; view: SetupDraf
             ))}
           </ul>
         )}
-        <fieldset className="grid gap-3 rounded-xl border border-dashed border-slate-300 p-4 sm:grid-cols-4 dark:border-white/20">
+        {grants.length > 0 ? (
+          <div className={`space-y-3 rounded-xl border p-4 ${fundingOpen && view.funding.length === 0 ? red : "border-slate-200 dark:border-white/10"}`}>
+            <Field label={c.pickGrant}>
+              <Select value={grantId} onChange={(e) => setGrantId(e.target.value)}>
+                <option value="">{c.pickGrantNone}</option>
+                {grants.map((g) => <option key={g.id} value={g.id}>{g.title} · {g.donorName}</option>)}
+              </Select>
+            </Field>
+            {grant ? (
+              <>
+                <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+                  <div><dt className="text-slate-500">{c.grantDonor}</dt><dd className="font-medium">{grant.donorName}</dd></div>
+                  <div><dt className="text-slate-500">{c.grantAward}</dt><dd className="font-medium">{grant.awardNumber ?? "—"}</dd></div>
+                  <div><dt className="text-slate-500">{c.grantAmount}</dt><dd className="font-medium">{grant.amount ? `${grant.amount} ${grant.currency ?? ""}` : "—"}</dd></div>
+                  <div><dt className="text-slate-500">{c.grantDates}</dt><dd className="font-medium">{grant.startDate?.slice(0, 10) ?? "—"} → {grant.endDate?.slice(0, 10) ?? "—"}</dd></div>
+                  <div><dt className="text-slate-500">{c.grantStatus}</dt><dd className="font-medium">{grant.status}</dd></div>
+                  <div><dt className="text-slate-500">{c.grantProgramme}</dt><dd className="font-medium">{grant.programme ?? "—"}</dd></div>
+                </dl>
+                {!grant.amount ? <p role="status" className="text-sm text-red-700">{c.grantNoAmount}</p> : null}
+                <button type="button" className="btn" disabled={pending || !grant.amount || !(grant.currency ?? fund.currency)} onClick={() => { change({ kind: "ADD_FUNDING", sourceName: grant.donorName, amount: grant.amount, currency: grant.currency ?? fund.currency }); setGrantId(""); }}>{c.addGrant}</button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+        <fieldset className={`grid gap-3 rounded-xl border border-dashed p-4 sm:grid-cols-4 ${fundingOpen && view.funding.length === 0 && grants.length === 0 ? red : "border-slate-300 dark:border-white/20"}`}>
           <legend className="px-1 text-sm font-semibold">{c.addFunding}</legend>
           <Field label={c.source}><Input value={fund.source} onChange={(e) => setFund({ ...fund, source: e.target.value })} /></Field>
           <Field label={c.amount}><Input inputMode="decimal" value={fund.amount} onChange={(e) => setFund({ ...fund, amount: e.target.value })} /></Field>

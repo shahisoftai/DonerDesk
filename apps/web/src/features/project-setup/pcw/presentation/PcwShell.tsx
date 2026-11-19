@@ -103,6 +103,12 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
         back={prev ? { label: PCW_COPY.prevSlide, onClick: () => go(prev) } : undefined}
         next={next ? { label: PCW_COPY.nextSlide, onClick: () => go(next) } : undefined}
       >
+        {gaps.length > 0 ? (
+          <div role="alert" data-testid="pcw-slide-gaps" className="mb-4 rounded-xl border-2 border-red-600 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-100">
+            <p className="font-semibold">{PCW_COPY.inboxTitle} ({gaps.length})</p>
+            <ul className="mt-1 list-disc space-y-0.5 ps-5">{gaps.map((g) => <li key={g.key}>{g.text}</li>)}</ul>
+          </div>
+        ) : null}
         {current === "START" ? (
           <StartSlide id={id} view={view} onView={setView} />
         ) : current === "PROJECT_TEAM" ? (

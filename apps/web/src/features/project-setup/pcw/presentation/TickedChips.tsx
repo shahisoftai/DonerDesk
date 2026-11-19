@@ -17,6 +17,7 @@ export function TickedChips({ selection, copy, saving, onRemove, onClear }: {
         {entries.length > 0 ? <button type="button" className="text-slate-600 underline dark:text-slate-300" onClick={onClear}>{copy.clear}</button> : null}
         {saving ? <span className="text-xs text-slate-500" role="status">…</span> : null}
       </div>
+      {entries.length > 0 ? <p className="text-xs text-slate-600 dark:text-slate-300">{copy.tickedHelp}</p> : null}
       {entries.length > 0 ? (
         <ul className="flex flex-wrap gap-1.5">
           {entries.slice(0, SHOWN).map(({ node }) => (

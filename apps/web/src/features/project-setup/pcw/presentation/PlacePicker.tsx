@@ -5,16 +5,17 @@ import { changePlacesAction } from "@/lib/actions/project-setup-draft";
 import { loadBoundaryManifest } from "@/lib/client/boundary-loader";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
+import { PLACE_LEVEL_LABEL } from "@/features/places/domain/places-copy";
 import { Field } from "@/components/ui/Field";
 import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import type { PlaceDef } from "@donordesk/domain";
 import type { BoundaryUnit } from "../../../maps/domain/boundaries/join";
 import {
-  EMPTY_SELECTION, entryFor, focusUnits, marksFor, matchDocumentPlaces, refOf, searchAreas, visibleRows, selectionFromPlaces, someRefs, tickState, toPicks, toggle,
+  EMPTY_SELECTION, addAll, entryFor, focusUnits, levelRows, marksFor, matchDocumentPlaces, matchPastedNames, refOf, searchAreas, visibleRows, selectionFromPlaces, someRefs, tickState, toPicks, toggle,
   type LevelUnits, type PickRef, type Row, type Selection,
 } from "../domain/place-picker";
 import { usePcwCopy } from "./usePcwCopy";
-import type { PcwCopy } from "../copy";
 import { usePlaceLevels } from "./usePlaceLevels";
 import { PlacePickTree } from "./PlacePickTree";
 import { PlacePickMap } from "./PlacePickMap";
@@ -34,7 +35,10 @@ export function PlacePicker({ id, view, onView, onError, find }: { id: string; v
   const [selection, setSelection] = useState<Selection>(() => selectionFromPlaces(defs));
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const [focus, setFocus] = useState<Row | null>(null);
-  const [active, setActive] = useState<Row | null>(null);
+  // One whole level at a time (null = the tree, opened area by area), and the box where a list of names is pasted.
+  const [levelView, setLevelView] = useState<number | null>(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
   const [query, setQuery] = useState("");
   const [found, setFound] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
@@ -64,15 +68,23 @@ export function PlacePicker({ id, view, onView, onError, find }: { id: string; v
   }
   const commit = (next: Selection, inCountry = country) => { setSelection(next); latest.current = { country: inCountry, selection: next }; setSaving(true); void flush(); };
 
-  const rows = useMemo(() => (lv.status === "ready" ? visibleRows(lv.levels, lv.units, open, insideCache) : []), [lv.status, lv.levels, lv.units, open, insideCache]);
-  const shown = useMemo(() => focusUnits(lv.levels, lv.units, focus, insideCache), [lv.levels, lv.units, focus, insideCache]);
+  const flat = useMemo(() => (levelView !== null && lv.status === "ready" ? levelRows(levelView, lv.units) : null), [levelView, lv.status, lv.units]);
+  const flatByRef = useMemo(() => new Map((flat ?? []).map((r) => [r.node.ref, r])), [flat]);
+  const rows = useMemo(() => (flat ?? (lv.status === "ready" ? visibleRows(lv.levels, lv.units, open, insideCache) : [])), [flat, lv.status, lv.levels, lv.units, open, insideCache]);
+  const shown = useMemo(() => (levelView !== null ? (lv.units.get(levelView) ? { level: levelView, list: [...lv.units.get(levelView)!] } : null) : focusUnits(lv.levels, lv.units, focus, insideCache)), [levelView, lv.levels, lv.units, focus, insideCache]);
   const some = useMemo(() => someRefs(selection), [selection]);
   // A ticked area finer than the level on screen is shown as a point; its level loads when something is ticked in it.
   const tickedLevels = useMemo(() => [...new Set([...selection.values()].map((e) => e.node.level))].join(","), [selection]);
   useEffect(() => { for (const l of tickedLevels.split(",").filter(Boolean)) void lv.ensure(Number(l)); }, [tickedLevels, lv.status]);
-  const marks = useMemo(() => marksFor(selection, lv.units, shown?.level ?? 0, focus?.node.ref ?? null), [selection, lv.units, shown, focus]);
+  const marks = useMemo(() => marksFor(selection, lv.units, shown?.level ?? 0, levelView !== null ? null : focus?.node.ref ?? null), [selection, lv.units, shown, focus, levelView]);
   const crumbs: PickRef[] = focus ? [...focus.ancestors, focus.node] : [];
-  const stateOfUnit = (u: BoundaryUnit) => tickState(selection, some, refOf(u, shown?.level ?? 0, crumbs[crumbs.length - 1] ?? null), crumbs);
+  const rowOfUnit = (u: BoundaryUnit): Row | null => {
+    const flatRow = flatByRef.get(u.ref);
+    if (flatRow) return flatRow;
+    if (!shown || levelView !== null) return null;
+    return { node: refOf(u, shown.level, crumbs[crumbs.length - 1] ?? null), unit: u, ancestors: crumbs, depth: crumbs.length, canOpen: false };
+  };
+  const stateOfUnit = (u: BoundaryUnit) => { const r = rowOfUnit(u); return r ? tickState(selection, some, r.node, r.ancestors) : "OFF"; };
 
   async function openRow(row: Row) {
     const isOpen = open.has(row.node.ref);
@@ -82,10 +94,30 @@ export function PlacePicker({ id, view, onView, onError, find }: { id: string; v
     const next = lv.levels.find((l) => l > row.node.level);
     if (next !== undefined) await lv.ensure(next);
   }
-  const chooseOnMap = (ref: string | null) => {
+  // A click on an area of the map is the same as a click on its name: it ticks or unticks it.
+  const tickOnMap = (ref: string | null) => {
     const unit = ref ? shown?.list.find((u) => u.ref === ref) : undefined;
-    setActive(unit && shown ? { node: refOf(unit, shown.level, crumbs[crumbs.length - 1] ?? null), unit, ancestors: crumbs, depth: crumbs.length, canOpen: lv.levels.some((l) => l > shown.level) } : null);
+    const row = unit ? rowOfUnit(unit) : null;
+    if (row) tick(row.node, row.ancestors);
   };
+  // Everything on screen (the areas of the level, or of the open area) in one go; what is already covered stays as it is.
+  const visibleAreas = (): Row[] => (levelView !== null ? (flat ?? []) : (shown?.list ?? []).map((u) => rowOfUnit(u)!).filter(Boolean));
+  const allCovered = visibleAreas().every((r) => tickState(selection, some, r.node, r.ancestors) !== "OFF" && tickState(selection, some, r.node, r.ancestors) !== "SOME");
+  const selectAllShown = () => commit(addAll(selection, visibleAreas()));
+  async function chooseLevel(value: string) {
+    if (value === "") { setLevelView(null); return; }
+    const level = Number(value);
+    await lv.ensureAll();
+    setLevelView(level); setQuery("");
+  }
+  async function addPasted() {
+    const all: LevelUnits = await lv.ensureAll();
+    const { matched, unmatched } = matchPastedNames(pasteText, all);
+    commit(addAll(selection, matched.map((f) => { const e = entryFor(f.unit, f.level, all); return { node: e.node, ancestors: e.chain }; })));
+    setPasteText(unmatched.join("\n"));
+    setNote(c.pastedLine(matched.length, unmatched.length));
+    if (unmatched.length === 0) setPasteOpen(false);
+  }
   const tick = (node: PickRef, ancestors: readonly PickRef[]) => commit(toggle(selection, node, ancestors));
   const refocus = (i: number) => {
     if (i < 0) { setFocus(null); return; }
@@ -118,21 +150,48 @@ export function PlacePicker({ id, view, onView, onError, find }: { id: string; v
     setNote(c.matchedLine(matched.length, unmatched.length));
   }
 
+  const levelSwitch = lv.levels.length > 1 ? (
+    <Field label={c.showLevel}>
+      <Select value={levelView === null ? "" : String(levelView)} onChange={(e) => void chooseLevel(e.target.value)}>
+        <option value="">{c.levelByArea}</option>
+        {lv.levels.map((l) => <option key={l} value={l}>{c.levelAll(PLACE_LEVEL_LABEL[l] ?? String(l))}</option>)}
+      </Select>
+    </Field>
+  ) : null;
+  const bulk = (
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" className="btn-secondary btn-sm" disabled={allCovered || (shown?.list.length ?? 0) === 0} onClick={selectAllShown}>{levelView === null && focus ? c.selectAllIn(focus.node.name) : c.selectAll}</button>
+      <button type="button" className="btn-ghost btn-sm" disabled={selection.size === 0} onClick={() => commit(EMPTY_SELECTION)}>{c.clear}</button>
+      <button type="button" className="btn-ghost btn-sm ms-auto" aria-expanded={pasteOpen} onClick={() => setPasteOpen((v) => !v)}>{c.pasteNames}</button>
+    </div>
+  );
+  const pasteBox = pasteOpen ? (
+    <div className="space-y-2 rounded-lg border border-slate-200 p-3 dark:border-white/10">
+      <Field label={c.pasteLabel}><Textarea rows={5} value={pasteText} onChange={(e) => setPasteText(e.target.value)} placeholder={c.pastePlaceholder} /></Field>
+      <button type="button" className="btn-secondary btn-sm" disabled={pasteText.trim().length === 0} onClick={() => void addPasted()}>{c.pasteAdd}</button>
+    </div>
+  ) : null;
+
   const body = lv.status === "none" ? <p className="text-sm text-slate-700 dark:text-slate-200">{country ? c.noBoundaries : c.chooseCountry}</p> : lv.status === "loading" || lv.status === "idle" ? <p className="text-sm text-slate-600 dark:text-slate-300">{country ? c.loading : ""}</p> : (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <div className="space-y-3" ref={searchBox}>
-        <Field label={c.search}><Input value={query} onChange={(e) => setQuery(e.target.value)} type="search" /></Field>
-        {query.trim().length >= 2
-          ? (found.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.searchNone}</p> : <PlacePickTree showPath rows={found} selection={selection} activeRef={active?.node.ref ?? null} open={open} copy={c} onTick={tick} onOpen={() => {}} onActive={setActive} />)
-          : <PlacePickTree rows={rows} selection={selection} activeRef={active?.node.ref ?? null} open={open} copy={c} onTick={tick} onOpen={(r) => void openRow(r)} onActive={setActive} />}
-      </div>
-      <div className="space-y-2">
-        <nav aria-label={c.areasLabel} className="flex flex-wrap items-center gap-1 text-sm">
-          <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-300" onClick={() => refocus(-1)}>{c.wholeCountry}</button>
-          {crumbs.map((cr, i) => <span key={cr.ref} className="flex items-center gap-1"><span aria-hidden="true">›</span><button type="button" className="hover:underline" onClick={() => refocus(i)}>{cr.name}</button></span>)}
-        </nav>
-        <PlacePickMap marks={marks} units={shown?.list ?? []} stateOf={stateOfUnit} activeRef={active?.node.ref ?? null} label={`${c.pickTitle}: ${country}`} copy={c} onChoose={chooseOnMap} />
-        {active ? <ActiveCard row={active} selection={selection} some={some} copy={c} onTick={() => tick(active.node, active.ancestors)} onOpen={() => void openRow(active)} /> : null}
+    <div className="space-y-3">
+      <div className="grid items-end gap-3 sm:grid-cols-2">{levelSwitch}{bulk}</div>
+      {pasteBox}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-3" ref={searchBox}>
+          <Field label={c.search}><Input value={query} onChange={(e) => setQuery(e.target.value)} type="search" /></Field>
+          {query.trim().length >= 2
+            ? (found.length === 0 ? <p className="text-sm text-slate-600 dark:text-slate-300">{c.searchNone}</p> : <PlacePickTree showPath rows={found} selection={selection} open={open} copy={c} onTick={tick} onOpen={() => {}} />)
+            : <PlacePickTree showPath={levelView !== null} rows={rows} selection={selection} open={open} copy={c} onTick={tick} onOpen={(r) => void openRow(r)} />}
+        </div>
+        <div className="space-y-2">
+          {levelView === null ? (
+            <nav aria-label={c.areasLabel} className="flex flex-wrap items-center gap-1 text-sm">
+              <button type="button" className="font-medium text-brand-700 hover:underline dark:text-brand-300" onClick={() => refocus(-1)}>{c.wholeCountry}</button>
+              {crumbs.map((cr, i) => <span key={cr.ref} className="flex items-center gap-1"><span aria-hidden="true">›</span><button type="button" className="hover:underline" onClick={() => refocus(i)}>{cr.name}</button></span>)}
+            </nav>
+          ) : null}
+          <PlacePickMap marks={marks} units={shown?.list ?? []} stateOf={stateOfUnit} activeRef={null} label={`${c.pickTitle}: ${country}`} copy={c} onChoose={tickOnMap} />
+        </div>
       </div>
     </div>
   );
@@ -145,7 +204,7 @@ export function PlacePicker({ id, view, onView, onError, find }: { id: string; v
       </div>
       <div className="max-w-sm">
         <Field label={c.country}>
-          <Select value={country} onChange={(e) => { setCountry(e.target.value); setOpen(new Set()); setFocus(null); setActive(null); setQuery(""); commit(EMPTY_SELECTION, e.target.value); }}>
+          <Select value={country} onChange={(e) => { setCountry(e.target.value); setOpen(new Set()); setFocus(null); setLevelView(null); setQuery(""); commit(EMPTY_SELECTION, e.target.value); }}>
             <option value="">{c.chooseCountry}</option>
             {country && !countries.includes(country) ? <option value={country}>{country}</option> : null}
             {countries.map((n) => <option key={n} value={n}>{n}</option>)}
@@ -165,20 +224,4 @@ function parentRow(row: Row, units: LevelUnits): Row | null {
   const parent = row.ancestors[row.ancestors.length - 1];
   const unit = parent ? units.get(parent.level)?.find((u) => u.ref === parent.ref) : undefined;
   return parent && unit ? { node: parent, unit, ancestors: row.ancestors.slice(0, -1), depth: row.depth - 1, canOpen: true } : null;
-}
-
-function ActiveCard({ row, selection, some, copy, onTick, onOpen }: { row: Row; selection: Selection; some: ReadonlySet<string>; copy: PcwCopy["places"]; onTick: () => void; onOpen: () => void }) {
-  const state = tickState(selection, some, row.node, row.ancestors);
-  const locked = state === "INSIDE";
-  return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm dark:border-white/10" role="status">
-      <span className="font-medium">{row.node.name}</span>
-      <span className="text-xs text-slate-600 dark:text-slate-300">{row.ancestors.map((a) => a.name).join(" › ")}</span>
-      <span className="ms-auto flex gap-2">
-        <button type="button" className="btn" disabled={locked} onClick={onTick}>{state === "ON" ? copy.untickThis : copy.tickThis}</button>
-        {row.canOpen ? <button type="button" className="btn-secondary" onClick={onOpen}>{copy.openThis}</button> : null}
-      </span>
-      {locked ? <span className="w-full text-xs text-slate-600 dark:text-slate-300">{copy.insideTicked(row.ancestors.find((a) => selection.has(a.ref))?.name ?? "")}</span> : null}
-    </div>
-  );
 }

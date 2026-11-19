@@ -43,3 +43,8 @@ export function notUsedAnswer(view: SetupDraftView, requirement: string): { notU
   const answer = view.extras.answers[requirement];
   return { notUsed: answer?.notUsed === true, reason: answer?.reason ?? "" };
 }
+
+/** Whether a slide still has an open requirement whose code starts with `prefix` (to mark that part of the page red). */
+export function hasOpenGap(view: SetupDraftView, slide: SlideKey, prefix: string): boolean {
+  return view.inbox.some((r) => r.slide === slide && r.status === "OPEN" && (r.code ?? "").startsWith(prefix));
+}

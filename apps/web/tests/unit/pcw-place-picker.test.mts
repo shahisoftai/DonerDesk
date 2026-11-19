@@ -137,3 +137,25 @@ test("the map's scene puts a point on each mark and tints 'some inside' apart fr
   assert.notEqual(fill.features[0]!.color, "#0f766e", "a province with something ticked inside is not painted as ticked");
   assert.deepEqual(scene.tips["pin:UG1"], { title: "Gulu", lines: [] });
 });
+
+import { addAll, levelRows, matchPastedNames } from "../../src/features/project-setup/pcw/domain/place-picker.ts";
+
+test("a whole level can be selected in one go, and what is already covered is left as it is", () => {
+  const rows = levelRows(2, levels);
+  assert.deepEqual(rows.map((r) => r.node.name), ["Abim", "Gulu", "Kampala"]);
+  assert.equal(rows[0]!.ancestors[0]?.name, "North");
+  const gulu1 = rows.find((r) => r.node.name === "Gulu")!;
+  const start = toggle(EMPTY_SELECTION, gulu1.node, gulu1.ancestors);
+  const all = addAll(start, rows);
+  assert.equal(all.size, 3);
+  assert.equal(addAll(all, rows).size, 3);
+  // A ticked province already covers what is inside it: its districts are not added.
+  const northRow = levelRows(1, levels).find((r) => r.node.name === "North")!;
+  assert.equal(addAll(toggle(EMPTY_SELECTION, northRow.node, northRow.ancestors), rows).size, 2);
+});
+
+test("a pasted list is matched by name; a name no single area answers to is returned, never guessed", () => {
+  const r = matchPastedNames("Gulu, abim\nNowhere;Kampala\nGulu", levels);
+  assert.deepEqual(r.matched.map((f) => f.unit.name).sort(), ["Abim", "Gulu", "Kampala"]);
+  assert.deepEqual(r.unmatched, ["Nowhere"]);
+});

@@ -48,6 +48,13 @@ export function toggle(sel: Selection, node: PickRef, ancestors: readonly PickRe
   return next;
 }
 
+/** Ticks every given area that is not already covered (ticked, or inside a ticked one); an area already on stays on. */
+export function addAll(sel: Selection, items: ReadonlyArray<{ node: PickRef; ancestors: readonly PickRef[] }>): Selection {
+  let next = sel;
+  for (const it of items) if (!next.has(it.node.ref)) next = toggle(next, it.node, it.ancestors);
+  return next;
+}
+
 export const clearAll = (): Selection => EMPTY_SELECTION;
 
 /** Ticked areas by level: `{ 2: 3, 3: 12 }`. Areas listed only as parents are not counted. */
@@ -118,9 +125,8 @@ export function findParent(unit: BoundaryUnit, candidates: readonly BoundaryUnit
 export type LevelUnits = ReadonlyMap<number, readonly BoundaryUnit[]>;
 
 /** `unit` as a ticked area with its chain of parents, resolved up through the levels the country has. */
-export function entryFor(unit: BoundaryUnit, level: number, levels: LevelUnits): PickEntry {
+export function entryFor(unit: BoundaryUnit, level: number, levels: LevelUnits, boxes: Map<string, Box | null> = new Map()): PickEntry {
   const order = [...levels.keys()].filter((l) => l < level).sort((a, b) => b - a);
-  const boxes = new Map<string, Box | null>();
   const chain: PickRef[] = [];
   let cur: BoundaryUnit = unit;
   for (const l of order) {
@@ -236,4 +242,26 @@ export function marksFor(sel: Selection, units: LevelUnits, shownLevel: number, 
     if (unit && box) { const [lng, lat] = centreOf(box); out.push({ ref: unit.ref, name: unit.name, lng, lat }); }
   }
   return out;
+}
+
+// ---- one level at a time, and pasted names ---------------------------------------------------------------------------------------------
+
+/** Every area of one level as a flat list (by name), each with the areas above it, so a whole level can be ticked in one go. Needs the levels above to be loaded. */
+export function levelRows(level: number, units: LevelUnits): Row[] {
+  const boxes = new Map<string, Box | null>();
+  const finer = [...units.keys()].some((l) => l > level);
+  return [...(units.get(level) ?? [])].sort((a, b) => a.name.localeCompare(b.name)).map((unit) => {
+    const e = entryFor(unit, level, units, boxes);
+    return { node: e.node, unit, ancestors: e.chain, depth: 0, canOpen: finer };
+  });
+}
+
+export interface PastedNames { matched: Found[]; /** Names no single area answers to (none, or several of that name), as the person wrote them. */ unmatched: string[] }
+
+/** A pasted list (one name per line, or separated by commas or semicolons) matched to areas by name; a name shared by several areas is not guessed. */
+export function matchPastedNames(text: string, levels: LevelUnits): PastedNames {
+  const names = [...new Set(text.split(/[\n,;]+/).map((n) => n.trim()).filter((n) => n.length > 0))];
+  const defs = names.map((name, index) => ({ index, place: { name, adminLevel: null, parentName: null, latitude: null, longitude: null } as PlaceDef }));
+  const { matched, unmatched } = matchDocumentPlaces(defs, levels);
+  return { matched: matched.map((m) => m.found), unmatched: unmatched.map((i) => names[i]!) };
 }

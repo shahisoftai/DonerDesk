@@ -97,7 +97,7 @@ export function ProjectAreaPicker({ projectId, initialCountry, areas, canEdit, o
         : lv.status !== "ready" ? <p className="text-sm text-slate-600 dark:text-slate-300">{country ? copy.loading : ""}</p>
         : (
           <div className="grid gap-4 lg:grid-cols-2">
-            <PlacePickTree rows={rows} selection={selection} activeRef={active?.node.ref ?? null} open={open} copy={copy} onTick={(n, a) => void tick(n, a)} onOpen={(r) => void openRow(r)} onActive={setActive} />
+            <PlacePickTree rows={rows} selection={selection} open={open} copy={copy} onTick={(n, a) => void tick(n, a)} onOpen={(r) => void openRow(r)} />
             <div className="space-y-2">
               <PlacePickMap marks={marks} units={shown?.list ?? []} stateOf={stateOfUnit} activeRef={active?.node.ref ?? null} label={`${copy.pickTitle}: ${country}`} copy={copy} onChoose={chooseOnMap} />
               {active && canEdit ? <button type="button" className={selection.has(active.node.ref) ? "btn-secondary" : "btn-primary"} disabled={saving} onClick={() => void tick(active.node, active.ancestors)}>{selection.has(active.node.ref) ? `Remove ${active.node.name} from this project` : `${copy.tickThis}: ${active.node.name}`}</button> : null}
