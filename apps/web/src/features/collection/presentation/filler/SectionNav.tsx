@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import type { FillSection, SectionProgress } from "../../domain/filler-state";
 
 /** The contents of a long form: each section with how much of it is answered and how many problems it holds. A section with problems says so in words, not only in colour. */
@@ -10,15 +12,25 @@ export function SectionNav({ sections, progress, current, onPick, t }: {
   onPick(index: number): void;
   t(key: string, params?: Record<string, string | number>): string;
 }) {
+  const [open, setOpen] = useState(false);
+  const now = sections[current];
+  const nowP = progress[current];
+  const label = (p: SectionProgress | undefined) => !p ? "" : p.problems > 0 ? t("assess.section.problems", { count: p.problems }) : p.asked > 0 && p.answered === p.asked ? t("assess.section.done") : t("assess.section.progress", { done: p.answered, total: p.asked });
   return (
-    <nav aria-label={t("assess.section.contents")} className="max-h-[60vh] overflow-y-auto rounded-md border border-slate-200 p-2 dark:border-slate-700">
-      <ol className="space-y-1">
+    <nav aria-label={t("assess.section.contents")} className="rounded-md border border-slate-200 p-2 dark:border-slate-700 lg:max-h-[60vh] lg:overflow-y-auto">
+      {/* On a phone the contents is a pull-down showing the section you are in, so the questions stay on screen. */}
+      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}
+        className="flex min-h-[44px] w-full items-center justify-between gap-2 rounded px-2 py-1 text-start text-sm font-medium lg:hidden">
+        <span className="min-w-0 break-words">{now?.title}</span>
+        <span className="shrink-0 text-xs text-slate-500">{label(nowP)} {open ? "▲" : "▼"}</span>
+      </button>
+      <ol className={`mt-1 max-h-[50vh] space-y-1 overflow-y-auto ${open ? "block" : "hidden"} lg:mt-0 lg:block lg:max-h-none lg:overflow-visible`}>
         {sections.map((s, i) => {
           const p = progress[i]!;
           const done = p.asked > 0 && p.answered === p.asked;
           return (
             <li key={s.key}>
-              <button type="button" aria-current={i === current ? "step" : undefined} onClick={() => onPick(i)}
+              <button type="button" aria-current={i === current ? "step" : undefined} onClick={() => { onPick(i); setOpen(false); }}
                 className={`flex min-h-[44px] w-full items-center justify-between gap-2 rounded px-2 py-1 text-start text-sm ${i === current ? "bg-brand-50 font-medium dark:bg-slate-800" : "hover:bg-slate-50 dark:hover:bg-slate-800"}`}>
                 <span className="min-w-0 break-words">{s.title}</span>
                 <span className="shrink-0 text-xs text-slate-500">
