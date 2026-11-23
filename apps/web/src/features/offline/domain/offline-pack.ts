@@ -3,13 +3,18 @@
  * browser's storage and the network are passed in. A pack holds the open forms' questions and the places list, nothing else:
  * no records, no figures, no people. It belongs to the person who downloaded it and is removed on sign-out.
  */
-import type { FormField } from "@donordesk/domain/contexts/collection/index.js";
+import type { FormDefinition, FormField } from "@donordesk/domain/contexts/collection/index.js";
 
 export interface PackForm {
   id: string;
   name: string;
   description?: string;
   fields: FormField[];
+  /** Phase 62: rules across answers, what a record is about, how it scores and the languages of its wording. Absent on a pack from an older server. */
+  constraints?: FormDefinition["constraints"];
+  subject?: FormDefinition["subject"];
+  score?: FormDefinition["score"];
+  languages?: FormDefinition["languages"];
 }
 
 export interface PackPlace {
@@ -19,7 +24,13 @@ export interface PackPlace {
   path: string;
   /** 0 country … 4 site; absent in a pack from an older server (the by-place entry then offers every place). */
   adminLevel?: number;
+  /** Phase 62: a facility (a facility form offers only these). */
+  facility?: boolean;
 }
+
+/** Pack v4 (Phase 62): a facility given to this person, and what the last accepted visit says about the facts a form carries forward. */
+export interface PackAssignment { id: string; formId: string; placeId: string; status: string; dueOn?: string }
+export interface PackPrefill { formId: string; placeId: string; values: Record<string, unknown> }
 
 /** Pack v2 (Phase 44): a number the person may type. Calculated indicators are never carried. */
 export interface PackIndicator {
@@ -64,7 +75,7 @@ export interface PackPlaceCell { periodId: string; indicatorId: string; placeId:
 
 export interface OfflinePack {
   /** 1 = forms and places only (Phase 33.6). 2 adds the parts below. 3 adds place-first entry. A v1 pack still fills forms. */
-  version: 1 | 2 | 3;
+  version: 1 | 2 | 3 | 4;
   /** Who downloaded it: a pack is only ever shown to, and sent by, this person. */
   userId: string;
   userName: string;
@@ -82,6 +93,9 @@ export interface OfflinePack {
   entryPlaces?: PackEntryPlace[];
   indicatorPlaces?: PackIndicatorPlace[];
   placeCells?: PackPlaceCell[];
+  /** v4 parts (Phase 62): the person's own facilities and carried facts. */
+  assignments?: PackAssignment[];
+  prefill?: PackPrefill[];
 }
 
 export interface PackStore {
@@ -111,12 +125,14 @@ export function packFromServer(input: {
   userId: string; userName: string; projectId: string; projectName: string; generatedAt: string; forms: PackForm[]; places: PackPlace[];
   indicators?: PackIndicator[] | undefined; periods?: PackPeriod[] | undefined; plan?: PackPlanItem[] | undefined;
   entryPlaces?: PackEntryPlace[] | undefined; indicatorPlaces?: PackIndicatorPlace[] | undefined; placeCells?: PackPlaceCell[] | undefined;
+  assignments?: PackAssignment[] | undefined; prefill?: PackPrefill[] | undefined;
 }): OfflinePack {
   const at = Date.parse(input.generatedAt);
   const v2 = input.indicators !== undefined || input.periods !== undefined || input.plan !== undefined;
   const v3 = input.entryPlaces !== undefined;
+  const v4 = input.assignments !== undefined;
   return {
-    version: v3 ? 3 : v2 ? 2 : 1, userId: input.userId, userName: input.userName, projectId: input.projectId, projectName: input.projectName,
+    version: v4 ? 4 : v3 ? 3 : v2 ? 2 : 1, userId: input.userId, userName: input.userName, projectId: input.projectId, projectName: input.projectName,
     generatedAt: Number.isFinite(at) ? at : 0, forms: input.forms, places: input.places,
     ...(input.indicators !== undefined ? { indicators: input.indicators } : {}),
     ...(input.periods !== undefined ? { periods: input.periods } : {}),
@@ -124,6 +140,8 @@ export function packFromServer(input: {
     ...(input.entryPlaces !== undefined ? { entryPlaces: input.entryPlaces } : {}),
     ...(input.indicatorPlaces !== undefined ? { indicatorPlaces: input.indicatorPlaces } : {}),
     ...(input.placeCells !== undefined ? { placeCells: input.placeCells } : {}),
+    ...(input.assignments !== undefined ? { assignments: input.assignments } : {}),
+    ...(input.prefill !== undefined ? { prefill: input.prefill } : {}),
   };
 }
 

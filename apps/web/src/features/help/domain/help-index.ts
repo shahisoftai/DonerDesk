@@ -141,6 +141,7 @@ export const HELP_ARTICLES: ReadonlyArray<{ href: string; file: string }> = [
   { href: "/support/how-to/use-datasets", file: "how-to/how-to-use-datasets.md" },
   { href: "/support/how-to/choose-where-you-work", file: "how-to/how-to-choose-where-you-work.md" },
   { href: "/support/how-to/record-figures-by-place", file: "how-to/how-to-record-figures-by-place.md" },
+  { href: "/support/how-to/run-a-facility-assessment", file: "how-to/how-to-run-a-facility-assessment.md" },
   { href: "/support/how-to/save-and-reuse-a-chart", file: "how-to/how-to-save-and-reuse-a-chart.md" },
   { href: "/support/how-to/use-the-report-builder", file: "how-to/how-to-use-the-report-builder.md" },
   { href: "/support/how-to/make-special-charts", file: "how-to/how-to-make-special-charts.md" },

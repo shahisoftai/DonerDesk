@@ -9,4 +9,6 @@ export const LOADERS: Readonly<Record<Exclude<Locale, "en">, () => Promise<Messa
   fr: () => import("./fr.ts").then((m) => m.fr),
   es: () => import("./es.ts").then((m) => m.es),
   ar: () => import("./ar.ts").then((m) => m.ar),
+  ur: () => import("./ur.ts").then((m) => m.ur),
+  ps: () => import("./ps.ts").then((m) => m.ps),
 };

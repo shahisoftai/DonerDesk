@@ -49,4 +49,4 @@ Fundamentals, donor-specific guides (UNHCR, DG ECHO, USAID, Global Fund, GCF, FC
 
 ## Unpublished (batch 3, 2026-10-21)
 `_unpublished-batch3/` holds nine drafts (framework history, programmes and grants, outside partners, taking your data with you, donor requirements, report locks, sign-in and passwords, AI usage and cost, files that could not be read) and a README with the publish checklist. The features are deployed; the articles wait for a browser check on the live site.
-
+Added 2026-11-22 (Phase 62): **run-a-facility-assessment** (facility forms, sections, tables, repeats, assignments, drafts, score, compare, kits, reading a Word or Excel tool).

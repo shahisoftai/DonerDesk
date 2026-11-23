@@ -36,7 +36,8 @@ export type Permission =
   | "risk.manage"
   | "finance.approve"
   | "dataset.manage"
-  | "dataset.contribute";
+  | "dataset.contribute"
+  | "collection.submit";
 
 const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -54,6 +55,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "risk.raise", "risk.manage",
     "finance.approve",
     "dataset.manage", "dataset.contribute",
+    "collection.submit",
   ]),
   PROJECT_MANAGER: new Set<Permission>([
     "project.edit", "project.view",
@@ -69,6 +71,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "risk.raise", "risk.manage",
     "finance.approve",
     "dataset.manage", "dataset.contribute",
+    "collection.submit",
   ]),
   ME_OFFICER: new Set<Permission>([
     "project.view",
@@ -81,6 +84,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "workplan.manage", "workplan.update-own",
     "task.assign", "team.view-work",
     "risk.raise", "risk.manage",
+    "collection.submit",
   ]),
   GRANTS_OFFICER: new Set<Permission>([
     "project.view",
@@ -100,6 +104,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "comment.create",
     "workplan.update-own",
     "risk.raise",
+    "collection.submit",
   ]),
   COMPLIANCE_OFFICER: new Set<Permission>([
     "project.view",

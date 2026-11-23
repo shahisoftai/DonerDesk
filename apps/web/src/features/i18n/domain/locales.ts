@@ -1,15 +1,18 @@
 /**
- * Interface languages (Phase 33.10). The interface can be shown in English, French, Spanish and Arabic; Arabic reads right to left.
+ * Interface languages (Phase 33.10). The interface can be shown in English, French, Spanish, Arabic, Urdu and Pashto; Arabic, Urdu and Pashto read right to left. Urdu and Pashto are partial: untranslated messages show English.
  * Pure: which language a request wants is decided here from what it carries, never from a clock or a network call.
  */
-export const LOCALES = ["en", "fr", "es", "ar"] as const;
+export const LOCALES = ["en", "fr", "es", "ar", "ur", "ps"] as const;
 export type Locale = (typeof LOCALES)[number];
+/** The languages whose interface is translated in full. Urdu and Pashto are partial: a message they lack shows English. */
+export const FULL_LOCALES = ["en", "fr", "es", "ar"] as const;
+export type FullLocale = (typeof FULL_LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = "en";
 
 /** The name of each language in that language, for the switcher (a person looks for their own language by its own name). */
-export const LOCALE_NAME: Readonly<Record<Locale, string>> = { en: "English", fr: "Français", es: "Español", ar: "العربية" };
+export const LOCALE_NAME: Readonly<Record<Locale, string>> = { en: "English", fr: "Français", es: "Español", ar: "العربية", ur: "اردو", ps: "پښتو" };
 
-export const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(["ar"]);
+export const RTL_LOCALES: ReadonlySet<Locale> = new Set<Locale>(["ar", "ur", "ps"]);
 
 export const LOCALE_COOKIE = "dd-locale";
 

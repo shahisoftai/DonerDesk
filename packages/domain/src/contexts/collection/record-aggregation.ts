@@ -4,7 +4,10 @@
  * that falls in no period, or lacks the figure a sum needs, is listed apart — never dropped, never counted as 0. Records that share a
  * dedup key count once (the latest wins), so a re-sent submission is not counted twice.
  */
-export type RecordMethod = "COUNT" | "SUM";
+import { conditionHolds, referencedFields } from "./conditions.js";
+import type { Condition } from "./form-model.js";
+
+export type RecordMethod = "COUNT" | "SUM" | "COUNT_WHERE" | "PERCENT_WHERE" | "AVERAGE_SCORE";
 
 export interface RecordMapping {
   indicatorId: string;
@@ -15,6 +18,10 @@ export interface RecordMapping {
   dateField?: string;
   /** Answers that make a record the same one: records agreeing on all of them count once. */
   dedupFields?: ReadonlyArray<string>;
+  /** COUNT_WHERE / PERCENT_WHERE: the records that count. */
+  where?: Condition;
+  /** Of several records about one facility, only the latest in the period counts (a re-visit does not count twice). */
+  latestPerFacility?: boolean;
 }
 
 export interface CollectedRecord {
@@ -22,6 +29,10 @@ export interface CollectedRecord {
   /** A plain day, `YYYY-MM-DD`. */
   submittedOn: string;
   answers: Readonly<Record<string, unknown>>;
+  /** The facility or place the record is about, when the form has a subject. */
+  placeId?: string | undefined;
+  /** The overall score (0-100) worked out at submission, when the form scores. */
+  score?: number | null | undefined;
 }
 
 export interface RecordPeriod {
@@ -60,6 +71,16 @@ const num = (v: unknown): number | null => {
 
 const tidy = (n: number): string => String(Math.round(n * 1e6) / 1e6);
 
+/** What a period's bucket becomes. A share or an average is a rate: it is never added across periods or facilities. */
+function valueOf(method: RecordMethod, b: { sum: number; ids: string[]; matched: number }): string {
+  switch (method) {
+    case "COUNT_WHERE": return tidy(b.matched);
+    case "PERCENT_WHERE": return b.ids.length > 0 ? tidy(Math.round((b.matched / b.ids.length) * 1000) / 10) : "";
+    case "AVERAGE_SCORE": return b.ids.length > 0 ? tidy(Math.round((b.sum / b.ids.length) * 10) / 10) : "";
+    default: return tidy(b.sum);
+  }
+}
+
 export function aggregateRecords(records: ReadonlyArray<CollectedRecord>, mapping: RecordMapping, periods: ReadonlyArray<RecordPeriod>): RecordAggregation {
   const duplicates: string[] = [];
   let kept: CollectedRecord[] = [...records].sort((a, b) => a.submittedOn.localeCompare(b.submittedOn) || a.id.localeCompare(b.id));
@@ -80,10 +101,24 @@ export function aggregateRecords(records: ReadonlyArray<CollectedRecord>, mappin
 
   const outsidePeriods: string[] = [];
   const missingFigure: string[] = [];
-  const buckets = new Map<string, { sum: number; ids: string[] }>();
+  const buckets = new Map<string, { sum: number; ids: string[]; matched: number; scored: number }>();
+  const dayOf = (r: CollectedRecord): string => (mapping.dateField ? String(r.answers[mapping.dateField] ?? "").trim() : "") || r.submittedOn;
+  if (mapping.latestPerFacility) {
+    // One current record per facility and period: the latest wins, earlier visits are listed as repeats, never counted twice.
+    const latest = new Map<string, CollectedRecord>();
+    const standing: CollectedRecord[] = [];
+    for (const r of kept) {
+      const period = periods.find((p) => dayOf(r) >= p.start && dayOf(r) <= p.end);
+      if (!r.placeId || !period) { standing.push(r); continue; }
+      const key = `${period.id}\u0001${r.placeId}`;
+      const earlier = latest.get(key);
+      if (earlier) duplicates.push(earlier.id);
+      latest.set(key, r);
+    }
+    kept = [...standing, ...latest.values()];
+  }
   for (const r of kept) {
-    const dateAnswer = mapping.dateField ? String(r.answers[mapping.dateField] ?? "").trim() : "";
-    const day = dateAnswer || r.submittedOn;
+    const day = dayOf(r);
     const period = periods.find((p) => day >= p.start && day <= p.end);
     if (!period) { outsidePeriods.push(r.id); continue; }
     let amount = 1;
@@ -92,8 +127,11 @@ export function aggregateRecords(records: ReadonlyArray<CollectedRecord>, mappin
       if (n === null) { missingFigure.push(r.id); continue; }
       amount = n;
     }
-    const b = buckets.get(period.id) ?? { sum: 0, ids: [] };
-    b.sum += amount;
+    const holds = !mapping.where || conditionHolds(mapping.where, r.answers);
+    if (mapping.method === "AVERAGE_SCORE" && (r.score === null || r.score === undefined)) { missingFigure.push(r.id); continue; }
+    const b = buckets.get(period.id) ?? { sum: 0, ids: [], matched: 0, scored: 0 };
+    b.sum += mapping.method === "AVERAGE_SCORE" ? (r.score as number) : amount;
+    if (holds) b.matched += 1;
     b.ids.push(r.id);
     buckets.set(period.id, b);
   }
@@ -101,7 +139,7 @@ export function aggregateRecords(records: ReadonlyArray<CollectedRecord>, mappin
   return {
     periods: periods.map((p) => {
       const b = buckets.get(p.id);
-      return { periodId: p.id, value: b ? tidy(b.sum) : "", recordCount: b?.ids.length ?? 0, recordIds: b?.ids ?? [] };
+      return { periodId: p.id, value: b ? valueOf(mapping.method, b) : "", recordCount: b?.ids.length ?? 0, recordIds: b?.ids ?? [] };
     }),
     outsidePeriods,
     missingFigure,
@@ -109,10 +147,14 @@ export function aggregateRecords(records: ReadonlyArray<CollectedRecord>, mappin
   };
 }
 
+const whereFields = (c: Condition): string[] => referencedFields(c);
+
 /** Problems with a mapping against a form's fields; the same checks run when it is saved. */
 export function recordMappingProblems(mapping: RecordMapping, fields: ReadonlyArray<{ key: string; type: string }>): string[] {
   const byKey = new Map(fields.map((f) => [f.key, f.type]));
   const problems: string[] = [];
+  if ((mapping.method === "COUNT_WHERE" || mapping.method === "PERCENT_WHERE") && !mapping.where) problems.push("Say which records count.");
+  if (mapping.where) for (const ref of whereFields(mapping.where)) if (!byKey.has(ref)) problems.push(`"${ref}" is not a field of the form.`);
   if (mapping.method === "SUM") {
     if (!mapping.valueField) problems.push("Choose the number field to add up.");
     else if (byKey.get(mapping.valueField) !== "NUMBER") problems.push("Only a number field can be added up.");

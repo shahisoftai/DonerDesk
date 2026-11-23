@@ -4,7 +4,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { SETUP_AREA_KEYS } from "@donordesk/contracts";
 import { SETUP_COPY_BY_LOCALE, copyFor } from "../../src/features/project-setup/copy/index.ts";
-import { localeDirection, LOCALES } from "../../src/features/i18n/domain/locales.ts";
+import { localeDirection, FULL_LOCALES as LOCALES } from "../../src/features/i18n/domain/locales.ts";
 
 const en = SETUP_COPY_BY_LOCALE.en;
 const OTHERS = LOCALES.filter((l) => l !== "en");

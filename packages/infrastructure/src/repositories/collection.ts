@@ -24,6 +24,9 @@ const recordFrom = (r: RecordRow): StoredCollectionRecord => ({
   submittedOn: r.submittedOn, source: r.source === "LINK" ? "LINK" : r.source === "CONNECTOR" ? "CONNECTOR" : "USER", ...(r.submittedById ? { submittedById: r.submittedById } : {}),
   ...(r.submitterName ? { submitterName: r.submitterName } : {}), status: r.status as CollectionRecordStatus, ...(r.reviewNote ? { reviewNote: r.reviewNote } : {}),
   ...(r.reviewedById ? { reviewedById: r.reviewedById } : {}), ...(r.reviewedAt ? { reviewedAt: r.reviewedAt } : {}), createdAt: r.createdAt,
+  ...(r.placeId ? { placeId: r.placeId } : {}), visitNo: r.visitNo, answersVersion: r.answersVersion,
+  ...(r.howJson ? { how: json<Record<string, string>>(r.howJson, {}) } : {}), ...(r.flagsJson ? { flags: json<Array<{ code: string; detail: string }>>(r.flagsJson, []) } : {}),
+  ...(r.scoreJson ? { score: json<NonNullable<StoredCollectionRecord["score"]>>(r.scoreJson, { overall: null, answered: 0, total: 0 }) } : {}), ...(r.startedAt ? { startedAt: r.startedAt } : {}),
 });
 
 const linkFrom = (r: LinkRow): StoredCollectionLink => ({
@@ -82,6 +85,8 @@ export class PrismaCollectionRecordRepository implements ICollectionRecordReposi
         data: {
           id: r.id, tenantId, formId: r.formId, projectId: r.projectId, answersJson: JSON.stringify(r.answers), submittedOn: r.submittedOn, source: r.source,
           submittedById: r.submittedById ?? null, submitterName: r.submitterName ?? null, status: r.status,
+          placeId: r.placeId ?? null, visitNo: r.visitNo ?? 1, answersVersion: r.answersVersion ?? 1, howJson: r.how ? JSON.stringify(r.how) : null,
+          flagsJson: r.flags ? JSON.stringify(r.flags) : null, scoreJson: r.score ? JSON.stringify(r.score) : null, startedAt: r.startedAt ?? null,
         },
       });
     } catch (e) {
@@ -112,6 +117,11 @@ export class PrismaCollectionRecordRepository implements ICollectionRecordReposi
     const rows = await this.prisma.collectionRecord.findMany({
       where: { formId, tenantId: tenantId.toString(), ...(status ? { status } : {}) }, orderBy: { createdAt: "desc" }, take: 5000,
     });
+    return ok(rows.map(recordFrom));
+  }
+
+  async listByPlace(formId: string, placeId: string, tenantId: TenantId): Promise<Result<StoredCollectionRecord[]>> {
+    const rows = await this.prisma.collectionRecord.findMany({ where: { formId, placeId, tenantId: tenantId.toString() }, orderBy: { createdAt: "asc" }, take: 500 });
     return ok(rows.map(recordFrom));
   }
 

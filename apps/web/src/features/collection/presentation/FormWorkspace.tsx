@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   applyCollectionTotalsAction, createCollectionLinkAction, getCollectionTotalsAction, listCollectionLinksAction, listCollectionRecordsAction,
@@ -15,10 +15,13 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/data/Badge";
 import { Textarea } from "@/components/ui/Textarea";
-import { FormFiller } from "./FormFiller";
+import { FormFiller, type FillFile } from "./filler/FormFiller";
+import { OnlineAssessmentFill } from "./OnlineAssessmentFill";
+import { FacilitiesTab } from "./FacilitiesTab";
+import { AssessmentRecordsTab } from "./AssessmentRecordsTab";
 import { ConnectorsPanel } from "./ConnectorsPanel";
 
-type Tab = "fill" | "records" | "totals" | "share" | "connect";
+type Tab = "fill" | "facilities" | "records" | "totals" | "share" | "connect";
 
 const STATUS_LABEL = { DRAFT: "Draft", PUBLISHED: "Open for answers", CLOSED: "Closed" } as const;
 const REVIEW_LABEL = { PENDING: "Waiting for review", ACCEPTED: "Accepted", REJECTED: "Rejected" } as const;
@@ -34,10 +37,12 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: 
   const router = useRouter();
   const status = useActionState();
   const [tab, setTab] = useState<Tab>(form.status === "PUBLISHED" && canSubmit ? "fill" : "records");
+  const assessment = form.subject === "FACILITY" || form.subject === "PLACE";
   const tabs: Array<[Tab, string]> = [
     ...(form.status === "PUBLISHED" && canSubmit ? ([["fill", "Fill in"]] as Array<[Tab, string]>) : []),
-    ["records", `Records (${form.counts.PENDING} waiting)`],
-    ["totals", "What it adds up to"],
+    ...(assessment && form.status === "PUBLISHED" ? ([["facilities", "Facilities"]] as Array<[Tab, string]>) : []),
+    ["records", assessment ? `Assessments (${form.counts.PENDING} waiting)` : `Records (${form.counts.PENDING} waiting)`],
+    ...(form.mappings.length > 0 || !assessment ? ([["totals", "What it adds up to"]] as Array<[Tab, string]>) : []),
     ...(canEdit && form.status === "PUBLISHED" ? ([["share", "Share a link"]] as Array<[Tab, string]>) : []),
     ...(canEdit ? ([["connect", "KoboToolbox / SurveyCTO"]] as Array<[Tab, string]>) : []),
   ];
@@ -70,7 +75,10 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: 
             ))}
           </div>
           {tab === "fill" && <FillTab form={form} />}
-          {tab === "records" && <RecordsTab formId={form.id} fields={form.fields} canReview={canReview} />}
+          {tab === "facilities" && <FacilitiesTab formId={form.id} projectId={form.projectId} formName={form.name} canEdit={canEdit} />}
+          {tab === "records" && (assessment
+            ? <AssessmentRecordsTab formId={form.id} projectId={form.projectId} form={{ fields: form.fields as never, definition: definitionOf(form) }} hasScore={form.score !== undefined} canReview={canReview} canAct={canReview} />
+            : <RecordsTab formId={form.id} fields={form.fields} canReview={canReview} />)}
           {tab === "totals" && <TotalsTab formId={form.id} periods={periods} canApply={canSubmit} />}
           {tab === "share" && <ShareTab formId={form.id} />}
           {tab === "connect" && <ConnectorsPanel form={form} />}
@@ -80,28 +88,43 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: 
   );
 }
 
+/** Sends a photo, document or drawn signature to this form and returns the id to keep as the answer. */
+const uploadTo = (formId: string): FillFile => async (file) => {
+  const body = new FormData();
+  body.set("file", file);
+  try {
+    const response = await fetch(`/api/collection-forms/${encodeURIComponent(formId)}/files`, { method: "POST", body });
+    const json = (await response.json().catch(() => null)) as { id?: string; name?: string; title?: string; detail?: string } | null;
+    if (response.ok && json?.id) return { ok: true, id: json.id, name: json.name ?? file.name };
+    return { ok: false, message: json?.detail ?? json?.title ?? "That file could not be sent." };
+  } catch {
+    return { ok: false, message: "No connection. Try again when you are online." };
+  }
+};
+
+/** The rest of a form's definition (rules across answers, score, languages), for the filler. */
+const definitionOf = (form: CollectionFormView) => ({
+  ...(form.constraints?.length ? { constraints: form.constraints as never } : {}), ...(form.subject ? { subject: form.subject } : {}),
+  ...(form.score ? { score: form.score as never } : {}), ...(form.languages?.length ? { languages: form.languages } : {}),
+});
+
 function FillTab({ form }: { form: CollectionFormView }) {
   const [key, setKey] = useState(newIdempotencyKey);
+  const upload = useMemo(() => uploadTo(form.id), [form.id]);
+  const definition = definitionOf(form);
+  if (form.subject === "FACILITY" || form.subject === "PLACE") {
+    return <OnlineAssessmentFill form={{ id: form.id, projectId: form.projectId, name: form.name, fields: form.fields as never, definition }} uploadFile={upload} />;
+  }
   return (
     <div className="space-y-8">
       <FormFiller
         key={key}
         fields={form.fields as never}
-        uploadFile={async (file) => {
-          const body = new FormData();
-          body.set("file", file);
-          try {
-            const response = await fetch(`/api/collection-forms/${encodeURIComponent(form.id)}/files`, { method: "POST", body });
-            const json = (await response.json().catch(() => null)) as { id?: string; name?: string; title?: string; detail?: string } | null;
-            if (response.ok && json?.id) return { ok: true, id: json.id, name: json.name ?? file.name };
-            return { ok: false, message: json?.detail ?? json?.title ?? "That file could not be sent." };
-          } catch {
-            return { ok: false, message: "No connection. Try again when you are online." };
-          }
-        }}
-        onSubmit={async (answers) => {
+        definition={definition}
+        uploadFile={upload}
+        onSubmit={async (answers, { how }) => {
           // The same key is reused if the send is repeated, so a retry after a bad connection is stored once.
-          const r = await submitCollectionRecordAction(form.id, { id: key.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60).padEnd(8, "0"), answers });
+          const r = await submitCollectionRecordAction(form.id, { id: key.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60).padEnd(8, "0"), answers, ...(Object.keys(how).length ? { how } : {}) });
           if (!r.ok) return { ok: false, message: r.error.message };
           setKey(newIdempotencyKey());
           return { ok: true };

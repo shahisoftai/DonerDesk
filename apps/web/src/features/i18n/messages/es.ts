@@ -1,6 +1,7 @@
 import { visual61Es } from "./visual61-es.ts";
 import type { MessageKey } from "./en.ts";
 import { recordEs } from "./record-es.ts";
+import { assessEs } from "./assess-es.ts";
 import { placeEntryEs } from "./place-entry-es.ts";
 import { datasetsEs } from "./datasets-es.ts";
 import { libraryEs } from "./library-es.ts";
@@ -892,6 +893,7 @@ export const es: Record<MessageKey, string> = {
   "maps.boundary.uploading": "Subiendo…",
   "maps.sources.link": "Fuentes y licencias de los mapas",
   ...recordEs,
+  ...assessEs,
   ...placeEntryEs,
   ...datasetsEs,
   ...canvasEs,

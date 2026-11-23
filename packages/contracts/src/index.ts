@@ -24,6 +24,7 @@ export * from "./risks.js";
 export * from "./infographics.js";
 export * from "./places.js";
 export * from "./collection.js";
+export * from "./assessments.js";
 export * from "./dashboards.js";
 export * from "./visual-data.js";
 export * from "./canvas.js";

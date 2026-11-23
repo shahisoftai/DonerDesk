@@ -3,6 +3,7 @@ import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { CollectionFormListSchema } from "@/lib/server/schemas-collection";
 import { InlineError } from "@/components/feedback/PageState";
+import { FormStarters } from "@/features/collection/presentation/FormStarters";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,7 @@ export default async function FormsPage({ params }: { params: Promise<{ id: stri
           {canEdit && <Link className="btn-primary" href={`/projects/${id}/forms/new`}>New form</Link>}
         </div>
       </header>
+      {canEdit && <FormStarters projectId={id} />}
       {result.value.forms.length === 0 ? (
         <p className="text-sm text-slate-500">No forms yet.</p>
       ) : (

@@ -25,6 +25,7 @@
     "test:visuals": "node tests/harness/dashboard-visuals/run.mjs",
     "test:home-layout": "node tests/harness/home-layout/run.mjs",
     "test:record": "node tests/harness/record/run.mjs",
+    "test:assess": "node tests/harness/assess/run.mjs && node tests/harness/assess/designer.mjs",
     "test:simple-maps": "node tests/live/simple-maps.mjs"
   },
   "dependencies": {

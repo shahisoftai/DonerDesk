@@ -224,6 +224,13 @@ export async function registerInternalRoutes(app: FastifyInstance) {
       return r.value;
     });
 
+    // Called by the same hourly timer: removes assessment drafts nobody has saved for the stated number of days (Phase 62).
+    instance.post("/internal/collection-drafts/run", async (req) => {
+      const r = await req.container.handlers.expireCollectionDrafts.handle(req.tenant.tenantId);
+      if (!r.ok) throw r.error;
+      return r.value;
+    });
+
     // Called by the same hourly timer: evaluates people's threshold alerts and tells each owner once when a figure crosses.
     instance.post("/internal/data-alerts/run", async (req) => {
       const r = await req.container.handlers.runDataAlerts.handle(req.tenant.tenantId);

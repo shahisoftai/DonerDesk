@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { downloadOfflinePackAction, listFieldProjectsAction } from "@/lib/actions/offline";
 import { newIdempotencyKey } from "@/lib/shared/create-retry";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
-import { FormFiller } from "@/features/collection/presentation/FormFiller";
+import { AssessmentFlow } from "@/features/collection/presentation/AssessmentFlow";
+import { deviceDraftStore } from "@/features/collection/adapters/indexeddb-draft-store";
 import { createMemoryPackStore, describePackFreshness, packCanRecordNumbers, packCounts, packsFor, type OfflinePack, type PackStore } from "../domain/offline-pack";
 import { COLLECTION_RECORD_KIND, collectionRecordEntry, type QueuedAttachment } from "../domain/collection-outbox";
 import { canUseDurableOutbox } from "../infrastructure/indexeddb-outbox-store";
@@ -179,39 +180,57 @@ function FieldScreens({ userId, onUser }: { userId: string; onUser: (id: string)
   );
 }
 
-/** Fills a form and puts the finished one in the outbox; the outbox sends it now if online, or whenever the connection returns. */
+/**
+ * Fills a form and puts the finished one in the outbox; the outbox sends it now if online, or whenever the connection returns. A form about a
+ * facility starts from the facilities given to this person in the pack, keeps a draft on the phone while filling (photos included) and
+ * carries forward what the last visit knew. A photo or signature stays on the phone with the record and goes up with it.
+ */
 function QueueingFiller({ pack, formId, formName, fields }: { pack: OfflinePack; formId: string; formName: string; fields: OfflinePack["forms"][number]["fields"] }) {
   const outbox = useOutbox();
   const { t } = useI18n();
-  const [files, setFiles] = useState<Record<string, QueuedAttachment>>({});
-  const placeNames = useMemo(() => pack.places.map((p) => {
-    const parts = p.path.split(" › ");
-    return parts.length > 1 ? `${p.name}, ${parts[1]}` : p.name;
-  }), [pack.places]);
-  const [key, setKey] = useState(0);
+  // Files taken so far, by the placeholder id the answers hold. Kept in a ref: the draft saves a snapshot, a send reads the ones still named.
+  const taken = useRef<Record<string, QueuedAttachment & { placeholder: string }>>({});
+  const drafts = useMemo(() => deviceDraftStore(pack.userId), [pack.userId]);
+  const form = pack.forms.find((f) => f.id === formId);
+  const definition = useMemo(() => ({
+    ...(form?.constraints ? { constraints: form.constraints } : {}), ...(form?.subject ? { subject: form.subject } : {}), ...(form?.score ? { score: form.score } : {}), ...(form?.languages ? { languages: form.languages } : {}),
+  }), [form]);
+  const assignments = (pack.assignments ?? []).filter((a) => a.formId === formId);
 
   return (
-    <FormFiller
-      key={key}
-      fields={fields}
-      placeNames={placeNames}
+    <AssessmentFlow
+      form={{ id: formId, name: formName, fields, definition }}
+      places={pack.places}
+      assignments={assignments}
+      drafts={drafts}
+      online={outbox.online}
+      rememberKey={`${pack.projectId}:${formId}`}
       submitLabel={outbox.online ? t("common.send") : t("common.saveOnPhone")}
-      // A photo stays on the phone with the record and goes up with it; its key here is a placeholder the outbox replaces.
+      prefill={async (placeId) => {
+        const hit = (pack.prefill ?? []).find((p) => p.formId === formId && p.placeId === placeId);
+        return hit ? { values: hit.values, carried: Object.keys(hit.values) } : null;
+      }}
+      files={{
+        snapshot: () => Object.fromEntries(Object.entries(taken.current).map(([id, f]) => [id, { name: f.name, type: f.type, blob: f.blob }])),
+        restore: (saved) => { taken.current = Object.fromEntries(Object.entries(saved).map(([id, f]) => [id, { fieldKey: id, placeholder: id, name: f.name, type: f.type, blob: f.blob }])); },
+      }}
       uploadFile={async (file, fieldKey) => {
         if (file.size > 5 * 1024 * 1024) return { ok: false, message: t("form.fileTooBig") };
         const token = newIdempotencyKey().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 24).padEnd(8, "0");
-        setFiles((current) => ({ ...current, [fieldKey]: { fieldKey, name: file.name, type: file.type, blob: file } }));
+        taken.current = { ...taken.current, [token]: { fieldKey, placeholder: token, name: file.name, type: file.type, blob: file } };
         return { ok: true, id: token, name: file.name };
       }}
-      onSubmit={async (answers) => {
+      onSubmit={async ({ placeId, answers, how, startedAt }) => {
         if (!outbox.supported) return { ok: false, message: t("field.cannotKeep") };
-        const attached = fields.filter((f) => f.type === "FILE" && files[f.key]);
-        const plain = { ...answers };
-        for (const f of attached) delete plain[f.key];
+        // Only the files the finished answers still name go up; the placeholders are replaced by the real ids when they are sent.
+        const text = JSON.stringify(answers);
+        const attached = Object.values(taken.current).filter((f) => text.includes(`"${f.placeholder}"`));
         const id = newIdempotencyKey().replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60).padEnd(8, "0");
-        await outbox.enqueue(collectionRecordEntry({ id, title: formName, payload: { formId, answers: plain, files: attached.map((f) => files[f.key]!) }, now: Date.now() }));
-        setFiles({});
-        setKey((k) => k + 1);
+        await outbox.enqueue(collectionRecordEntry({
+          id, title: formName, now: Date.now(),
+          payload: { formId, answers, files: attached, ...(placeId ? { placeId } : {}), ...(Object.keys(how).length ? { how } : {}), startedAt },
+        }));
+        taken.current = {};
         void outbox.sendNow();
         return { ok: true };
       }}

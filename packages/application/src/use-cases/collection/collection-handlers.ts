@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  DomainError, PlaceRegistry, Permissions, formFromIndicator, effectiveIndicatorSemantics, resolvePlace, aggregateRecords, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, addDays, toPlainDate, validateFormDefinition, validateSubmission, visibleFields,
-  type FormDefinition, type FormField, type RecordAggregation, type RecordMapping, type Result, type Role, type TenantId,
+  DomainError, PlaceRegistry, Permissions, formFromIndicator, effectiveIndicatorSemantics, resolvePlace, aggregateRecords, collectFileIds, formTakesFiles, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, addDays, toPlainDate, prefillFromLast, validateFormDefinition, validateSubmission, visibleFields,
+  type FormDefinition, type FormField, type RecordAggregation, type RecordMapping, type RecordMethod, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { ApplyRecordsInput, CreateCollectionLinkInput, PublicSubmitInput, ReviewRecordInput, SaveCollectionFormInput, SubmitRecordInput } from "@donordesk/contracts";
 import type { AuthenticatedContext } from "../../context.js";
@@ -12,9 +12,10 @@ import type { IStorage } from "../../ports/infrastructure.js";
 import type { IPlaceRepository } from "../../ports/places.js";
 import type { IMyWeekReader } from "../../ports/workplan.js";
 import type {
-  CollectionFormStatus, ICollectionFileRepository, StoredCollectionFile, ICollectionFormRepository, ICollectionLinkRepository, ICollectionRecordRepository, StoredCollectionForm, StoredCollectionLink, StoredCollectionRecord,
+  CollectionFormStatus, ICollectionAssignmentRepository, ICollectionFileRepository, StoredCollectionFile, ICollectionFormRepository, ICollectionLinkRepository, ICollectionRecordRepository, StoredCollectionForm, StoredCollectionLink, StoredCollectionRecord,
 } from "../../ports/collection.js";
 import type { BulkUpsertIndicatorUpdatesHandler } from "../logframe/bulk-upsert-indicator-updates.js";
+import type { AssessmentRecorder } from "./assessment-recorder.js";
 
 /**
  * Collection forms that feed indicators (Phase 33.5). A form is designed as a draft (`project.edit`), published (its fields are then
@@ -36,6 +37,11 @@ export interface CollectionFormDto {
   status: CollectionFormStatus;
   fields: FormField[];
   mappings: RecordMapping[];
+  /** Phase 62: rules across answers, what a record is about, how it scores, and the languages the wording exists in. */
+  constraints?: FormDefinition["constraints"];
+  subject?: FormDefinition["subject"];
+  score?: FormDefinition["score"];
+  languages?: FormDefinition["languages"];
   counts: { PENDING: number; ACCEPTED: number; REJECTED: number };
   updatedAt: string;
 }
@@ -49,6 +55,15 @@ export interface CollectionRecordDto {
   submitter: string;
   status: "PENDING" | "ACCEPTED" | "REJECTED";
   reviewNote?: string;
+  /** Phase 62: the facility, the visit, the score, the quality flags and how answers were established. */
+  placeId?: string;
+  /** The facility's name and where it sits, for a record that is about one. */
+  placeName?: string;
+  placePath?: string;
+  visitNo?: number;
+  score?: StoredCollectionRecord["score"];
+  flags?: StoredCollectionRecord["flags"];
+  how?: Record<string, string>;
   /** What each place answer means in the organisation's list of places: a path, or why it does not resolve. */
   places?: Record<string, { status: "RESOLVED" | "AMBIGUOUS" | "UNRESOLVED"; label: string }>;
   /** Attached photos and documents by question: the id to download and the name it was sent with. */
@@ -59,6 +74,8 @@ function toDto(form: StoredCollectionForm, counts: CollectionFormDto["counts"]):
   return {
     id: form.id, projectId: form.projectId, name: form.name, ...(form.description ? { description: form.description } : {}), status: form.status,
     fields: [...form.definition.fields], mappings: form.mappings, counts, updatedAt: form.updatedAt.toISOString(),
+    ...(form.definition.constraints ? { constraints: form.definition.constraints } : {}), ...(form.definition.subject ? { subject: form.definition.subject } : {}),
+    ...(form.definition.score ? { score: form.definition.score } : {}), ...(form.definition.languages ? { languages: form.definition.languages } : {}),
   };
 }
 
@@ -67,11 +84,18 @@ function toRecordDto(r: StoredCollectionRecord, names: Map<string, string>): Col
     id: r.id, formId: r.formId, answers: r.answers, submittedOn: r.submittedOn, source: r.source,
     submitter: r.submitterName ?? (r.submittedById ? names.get(r.submittedById) ?? "A team member" : "Someone with the link"),
     status: r.status, ...(r.reviewNote ? { reviewNote: r.reviewNote } : {}),
+    ...(r.placeId ? { placeId: r.placeId } : {}), ...(r.visitNo ? { visitNo: r.visitNo } : {}), ...(r.score ? { score: r.score } : {}), ...(r.flags ? { flags: r.flags } : {}), ...(r.how ? { how: r.how } : {}),
   };
 }
 
 function definitionFrom(input: SaveCollectionFormInput): FormDefinition {
-  return { fields: input.fields as unknown as FormField[] };
+  return {
+    fields: input.fields as unknown as FormField[],
+    ...(input.constraints?.length ? { constraints: input.constraints as FormDefinition["constraints"] } : {}),
+    ...(input.subject && input.subject !== "NONE" ? { subject: input.subject } : {}),
+    ...(input.score ? { score: input.score as FormDefinition["score"] } : {}),
+    ...(input.languages?.length ? { languages: input.languages } : {}),
+  };
 }
 
 /** Everything wrong with a form being saved, in one list of sentences. */
@@ -164,7 +188,9 @@ export class SetCollectionFormStatusHandler {
       if (form.value.status !== "DRAFT") return fail(DomainError.conflict("Only a draft can be published."));
       const problems = validateFormDefinition(form.value.definition);
       if (problems.length > 0) return fail(DomainError.validation(problems[0]!.message));
-      if (form.value.mappings.length === 0) return fail(DomainError.validation("Say which indicator this form feeds before publishing it."));
+      // An assessment (a form about a facility or one that scores) is read on its own and may feed no indicator; any other form must say what it feeds.
+      const standsAlone = (form.value.definition.subject ?? "NONE") !== "NONE" || form.value.definition.score !== undefined;
+      if (form.value.mappings.length === 0 && !standsAlone) return fail(DomainError.validation("Say which indicator this form feeds before publishing it."));
     } else if (form.value.status !== "PUBLISHED") return fail(DomainError.conflict("Only a published form can be closed."));
     const saved = await this.forms.update({ ...form.value, status: to, updatedAt: this.clock.now() });
     if (!saved.ok) return saved;
@@ -190,42 +216,50 @@ export class DeleteDraftCollectionFormHandler {
   }
 }
 
+/** Who is submitting, and what the record may be about. A link has no user and no facility. */
+interface Submitter { source: "USER" | "LINK"; userId?: string; name?: string }
+
 /** Shared by the member and public paths: validate against the form, then store once under the client's own id. */
 async function storeSubmission(
   repo: ICollectionRecordRepository, ids: IIdGenerator, clock: IClock, form: StoredCollectionForm,
-  who: { source: "USER" | "LINK"; userId?: string; name?: string },
+  who: Submitter,
   input: SubmitRecordInput,
   files?: ICollectionFileRepository,
+  recorder?: AssessmentRecorder,
 ): Promise<Result<{ id: string; duplicate: boolean; ignored: string[] }, DomainError>> {
   if (form.status !== "PUBLISHED") return fail(DomainError.conflict("This form is not open for answers."));
-  const checked = validateSubmission(form.definition, input.answers);
+  const checked = validateSubmission(form.definition, input.answers, { how: input.how ?? {} });
   if (checked.problems.length > 0) return fail(DomainError.validation(checked.problems[0]!.message, { problems: checked.problems }));
   // An attached file must be one that was uploaded to this very form: an id from anywhere else is refused.
-  for (const f of form.definition.fields) {
-    const id = checked.values[f.key];
-    if (f.type !== "FILE" || typeof id !== "string") continue;
-    const stored = files ? await files.findById(id, form.tenantId) : null;
+  for (const f of collectFileIds(form.definition, checked.values)) {
+    const stored = files ? await files.findById(f.id, form.tenantId) : null;
     if (stored && !stored.ok) return stored;
     if (!files || !stored?.value || stored.value.formId !== form.id) return fail(DomainError.validation(`${f.label}: that file was not found. Attach it again.`));
   }
   const now = clock.now();
+  let extras: Awaited<ReturnType<AssessmentRecorder["prepare"]>> | undefined;
+  if (recorder) {
+    extras = await recorder.prepare(form, checked, { placeId: input.placeId, startedAt: input.startedAt ? new Date(input.startedAt) : undefined, now });
+    if (!extras.ok) return extras;
+  }
   const stored = await repo.createOnce({
     id: input.id ?? ids.generate(), tenantId: form.tenantId, formId: form.id, projectId: form.projectId, answers: checked.values,
     submittedOn: toPlainDate(now)!, source: who.source, ...(who.userId ? { submittedById: who.userId } : {}), ...(who.name ? { submitterName: who.name } : {}),
-    status: "PENDING", createdAt: now,
+    status: "PENDING", createdAt: now, ...(extras?.ok ? extras.value : {}),
   });
   if (!stored.ok) return stored;
+  if (stored.value.created && recorder) await recorder.after(form, { id: stored.value.record.id, placeId: stored.value.record.placeId }, who.userId, form.tenantId);
   return ok({ id: stored.value.record.id, duplicate: !stored.value.created, ignored: checked.ignored });
 }
 
 export class SubmitCollectionRecordHandler {
-  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock, private readonly files?: ICollectionFileRepository) {}
+  constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly records: ICollectionRecordRepository, private readonly audit: IAuditLogger, private readonly clock: IClock, private readonly files?: ICollectionFileRepository, private readonly recorder?: AssessmentRecorder) {}
 
   async handle(ctx: AuthenticatedContext, formId: string, input: SubmitRecordInput): Promise<Result<{ id: string; duplicate: boolean; ignored: string[] }, DomainError>> {
-    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    if (!can(ctx, "collection.submit")) return fail(DomainError.forbidden("You cannot submit records"));
     const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
     if (!form.ok) return form;
-    const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "USER", userId: ctx.tenant.userId }, input, this.files);
+    const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "USER", userId: ctx.tenant.userId }, input, this.files, this.recorder);
     if (stored.ok && !stored.value.duplicate) {
       await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: "collection.record.submitted", entityType: "collection_record", entityId: stored.value.id, projectId: form.value.projectId });
     }
@@ -253,10 +287,14 @@ export class ListCollectionRecordsHandler {
 
     // A place answer is read against the organisation's list of places, never guessed: a word it cannot tell apart stays "to confirm".
     const placeFields = form.value.definition.fields.filter((f) => f.type === "PLACE");
-    if (placeFields.length > 0 && this.places) {
-      const all = await this.places.list(ctx.tenant.tenantId);
+    if ((placeFields.length > 0 || dtos.some((d) => d.placeId)) && this.places) {
+      const all = await this.places.list(ctx.tenant.tenantId, { includeArchived: true });
       if (all.ok) {
         const registry = new PlaceRegistry(all.value.map(({ tenantId: _t, createdById: _c, archivedAt: _a, ...record }) => record));
+        for (const dto of dtos) {
+          const named = dto.placeId ? all.value.find((p) => p.id === dto.placeId) : undefined;
+          if (named) { dto.placeName = named.name; dto.placePath = registry.pathLabel(named.id); }
+        }
         for (const dto of dtos) {
           for (const f of placeFields) {
             const text = dto.answers[f.key];
@@ -269,14 +307,12 @@ export class ListCollectionRecordsHandler {
         }
       }
     }
-    const fileFields = form.value.definition.fields.filter((f) => f.type === "FILE");
-    if (fileFields.length > 0 && this.files) {
+    if (this.files) {
       for (const dto of dtos) {
-        for (const f of fileFields) {
-          const id = dto.answers[f.key];
-          if (typeof id !== "string") continue;
-          const stored = await this.files.findById(id, ctx.tenant.tenantId);
-          if (stored.ok && stored.value) (dto.files ??= {})[f.key] = { id, name: stored.value.fileName };
+        // Photos, signatures and files inside tables or repeats: the question's key (a path inside a table or repeat) points to the file to open.
+        for (const f of collectFileIds(form.value.definition, dto.answers)) {
+          const stored = await this.files.findById(f.id, ctx.tenant.tenantId);
+          if (stored.ok && stored.value) (dto.files ??= {})[f.key] = { id: f.id, name: stored.value.fileName };
         }
       }
     }
@@ -322,6 +358,7 @@ export class CreateCollectionLinkHandler {
     const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
     if (!form.ok) return form;
     if (form.value.status !== "PUBLISHED") return fail(DomainError.conflict("Publish the form before sharing it."));
+    if (form.value.definition.subject === "FACILITY" || form.value.definition.subject === "PLACE") return fail(DomainError.conflict("A form about a facility is filled in by your team, not through a public link: a visitor cannot be trusted to choose the facility."));
     const now = this.clock.now();
     const token = randomBytes(24).toString("base64url");
     const link: StoredCollectionLink = {
@@ -383,10 +420,13 @@ export class PublicCollectionFormHandler {
   constructor(private readonly forms: ICollectionFormRepository) {}
 
   /** The questions only: no mappings, no project, no counts. */
-  async handle(tenantId: TenantId, formId: string): Promise<Result<{ name: string; description?: string; fields: FormField[] }, DomainError>> {
+  async handle(tenantId: TenantId, formId: string): Promise<Result<{ name: string; description?: string; fields: FormField[]; constraints?: FormDefinition["constraints"]; languages?: FormDefinition["languages"] }, DomainError>> {
     const form = await loadForm(this.forms, formId, tenantId);
-    if (!form.ok || form.value.status !== "PUBLISHED") return fail(DomainError.notFound("Form", "unavailable"));
-    return ok({ name: form.value.name, ...(form.value.description ? { description: form.value.description } : {}), fields: [...form.value.definition.fields] });
+    if (!form.ok || form.value.status !== "PUBLISHED" || (form.value.definition.subject ?? "NONE") !== "NONE") return fail(DomainError.notFound("Form", "unavailable"));
+    return ok({
+      name: form.value.name, ...(form.value.description ? { description: form.value.description } : {}), fields: [...form.value.definition.fields],
+      ...(form.value.definition.constraints ? { constraints: form.value.definition.constraints } : {}), ...(form.value.definition.languages ? { languages: form.value.definition.languages } : {}),
+    });
   }
 }
 
@@ -395,7 +435,7 @@ export class PublicSubmitCollectionRecordHandler {
 
   async handle(tenantId: TenantId, formId: string, linkId: string, input: PublicSubmitInput): Promise<Result<{ id: string; duplicate: boolean }, DomainError>> {
     const form = await loadForm(this.forms, formId, tenantId);
-    if (!form.ok) return fail(DomainError.notFound("Form", "unavailable"));
+    if (!form.ok || (form.value.definition.subject ?? "NONE") !== "NONE") return fail(DomainError.notFound("Form", "unavailable"));
     const stored = await storeSubmission(this.records, this.ids, this.clock, form.value, { source: "LINK", ...(input.submitterName ? { name: input.submitterName } : {}) }, input, this.files);
     if (!stored.ok) return stored;
     if (!stored.value.duplicate) {
@@ -408,7 +448,7 @@ export class PublicSubmitCollectionRecordHandler {
 export interface RecordTotalsDto {
   indicatorId: string;
   indicatorCode: string;
-  method: "COUNT" | "SUM";
+  method: RecordMethod;
   periods: Array<{ periodId: string; label: string; value: string; recordCount: number }>;
   outsidePeriods: number;
   missingFigure: number;
@@ -570,7 +610,7 @@ async function storeCollectionFile(
   who: { source: "USER" | "LINK"; userId?: string }, file: { name: string; bytes: Buffer },
 ): Promise<Result<{ id: string; name: string }, DomainError>> {
   if (form.status !== "PUBLISHED") return fail(DomainError.conflict("This form is not open for answers."));
-  if (!form.definition.fields.some((f) => f.type === "FILE")) return fail(DomainError.validation("This form does not ask for a file."));
+  if (!formTakesFiles(form.definition)) return fail(DomainError.validation("This form does not ask for a file."));
   if (file.bytes.length === 0) return fail(DomainError.validation("That file is empty."));
   if (file.bytes.length > COLLECTION_FILE_LIMIT_BYTES) return fail(DomainError.validation("That file is larger than 5 MB."));
   const contentType = collectionFileType(file.bytes);
@@ -588,7 +628,7 @@ export class UploadCollectionFileHandler {
   constructor(private readonly ids: IIdGenerator, private readonly forms: ICollectionFormRepository, private readonly files: ICollectionFileRepository, private readonly storage: IStorage, private readonly clock: IClock) {}
 
   async handle(ctx: AuthenticatedContext, formId: string, file: { name: string; bytes: Buffer }): Promise<Result<{ id: string; name: string }, DomainError>> {
-    if (!can(ctx, "indicator.update")) return fail(DomainError.forbidden("You cannot submit records"));
+    if (!can(ctx, "collection.submit")) return fail(DomainError.forbidden("You cannot submit records"));
     const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
     if (!form.ok) return form;
     return storeCollectionFile(this.files, this.storage, this.ids, this.clock, form.value, { source: "USER", userId: ctx.tenant.userId }, file);
@@ -618,9 +658,15 @@ export interface OfflinePackDto {
   projectId: string;
   generatedAt: string;
   /** The forms that are open for answers, with their questions; nothing else about the project. */
-  forms: Array<{ id: string; name: string; description?: string; fields: FormField[] }>;
-  /** The live places, for place questions: an id, a name and the path that tells two of the same name apart. */
-  places: Array<{ id: string; name: string; path: string; adminLevel?: number }>;
+  forms: Array<{ id: string; name: string; description?: string; fields: FormField[]; constraints?: FormDefinition["constraints"]; subject?: FormDefinition["subject"]; score?: FormDefinition["score"]; languages?: FormDefinition["languages"] }>;
+  /** The live places, for place questions: an id, a name and the path that tells two of the same name apart. `facility` marks a facility (a facility form offers only those). */
+  places: Array<{ id: string; name: string; path: string; adminLevel?: number; facility?: boolean }>;
+  /**
+   * Pack v4 (Phase 62): the facilities given to this person that are not finished, and what the last accepted visit says about the facts a
+   * form carries forward for those facilities only. No scores, no other facilities' answers: a lost phone gives away its own round only.
+   */
+  assignments?: Array<{ id: string; formId: string; placeId: string; status: string; dueOn?: string }>;
+  prefill?: Array<{ formId: string; placeId: string; values: Record<string, unknown> }>;
   /**
    * Pack v2 (Phase 44), present only when the handler was given the readers. The numbers the person may type (calculated ones left
    * out), the project's reporting periods (so a day can be matched to one with no connection) and the person's OWN open planned
@@ -646,6 +692,8 @@ export interface OfflinePackReaders {
   /** Pack v3 (Phase 57). */
   entryPlaces?: { handle(ctx: AuthenticatedContext, projectId: string): Promise<Result<Array<{ placeId: string; name: string; path: string }>, DomainError>> };
   placeSheet?: { handle(ctx: AuthenticatedContext, input: { projectId: string; periodId?: string }): Promise<Result<{ rows: Array<{ placeId: string }>; columns: Array<{ indicatorId: string; lock: string | null }>; cells: Array<Array<{ value: string } | string>> }, DomainError>> };
+  /** Pack v4 (Phase 62). */
+  assessments?: { assignments: Pick<ICollectionAssignmentRepository, "listForAssignee">; records: Pick<ICollectionRecordRepository, "listByPlace"> };
   planPlaces?: { findFor(kind: "PLANNED_ACTIVITY", recordIds: readonly string[], tenantId: AuthenticatedContext["tenant"]["tenantId"]): Promise<Result<Map<string, Array<{ placeId: string }>>, DomainError>> };
 }
 
@@ -653,7 +701,7 @@ export interface OfflinePackReaders {
 const PACK_PLACE_PERIODS = 2;
 
 /** What lets someone take a project pack: any way of recording. The parts they get follow the permission for each. */
-const PACK_PERMISSIONS = ["indicator.update", "activity.create", "evidence.upload", "workplan.update-own"] as const;
+const PACK_PERMISSIONS = ["indicator.update", "collection.submit", "activity.create", "evidence.upload", "workplan.update-own"] as const;
 
 /** How far ahead the pack carries the person's own planned items. */
 export const PACK_PLAN_DAYS_AHEAD = 14;
@@ -669,6 +717,8 @@ export class GetOfflinePackHandler {
     // Anyone who can record something may take the pack; what is in it follows what they may record (below).
     if (!PACK_PERMISSIONS.some((p) => can(ctx, p))) return fail(DomainError.forbidden("You cannot record on this project"));
     const mayEnterNumbers = can(ctx, "indicator.update");
+    // Forms, a person's facilities and the facts carried forward follow the right to submit records; the indicator list follows the right to enter numbers.
+    const mayFillForms = can(ctx, "collection.submit") || mayEnterNumbers;
     const [listed, all] = await Promise.all([this.forms.listByProject(projectId, ctx.tenant.tenantId), this.places.list(ctx.tenant.tenantId)]);
     if (!listed.ok) return listed;
     if (!all.ok) return all;
@@ -677,9 +727,30 @@ export class GetOfflinePackHandler {
       projectId,
       generatedAt: this.clock.now().toISOString(),
       // Forms and numbers are answered with the permission to enter numbers; without it they are simply not carried.
-      forms: !mayEnterNumbers ? [] : listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({ id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields] })),
-      places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id), adminLevel: p.adminLevel })),
+      forms: !mayFillForms ? [] : listed.value.filter((f) => f.status === "PUBLISHED").map((f) => ({
+        id: f.id, name: f.name, ...(f.description ? { description: f.description } : {}), fields: [...f.definition.fields],
+        ...(f.definition.constraints ? { constraints: f.definition.constraints } : {}), ...(f.definition.subject ? { subject: f.definition.subject } : {}),
+        ...(f.definition.score ? { score: f.definition.score } : {}), ...(f.definition.languages ? { languages: f.definition.languages } : {}),
+      })),
+      places: all.value.filter((p) => !p.archived && p.archivedAt === undefined).map((p) => ({ id: p.id, name: p.name, path: registry.pathLabel(p.id), adminLevel: p.adminLevel, ...(p.facility ? { facility: true } : {}) })),
     };
+    if (mayFillForms && this.readers.assessments) {
+      const mine = await this.readers.assessments.assignments.listForAssignee(ctx.tenant.userId, ctx.tenant.tenantId, ["TO_DO", "IN_PROGRESS"]);
+      if (!mine.ok) return mine;
+      const open = mine.value.filter((a) => a.projectId === projectId);
+      dto.assignments = open.map((a) => ({ id: a.id, formId: a.formId, placeId: a.placeId, status: a.status, ...(a.dueOn ? { dueOn: a.dueOn } : {}) }));
+      const prefill: NonNullable<OfflinePackDto["prefill"]> = [];
+      for (const a of open) {
+        const form = listed.value.find((f) => f.id === a.formId);
+        if (!form) continue;
+        const before = await this.readers.assessments.records.listByPlace(a.formId, a.placeId, ctx.tenant.tenantId);
+        const last = before.ok ? [...before.value].reverse().find((r) => r.status === "ACCEPTED") : undefined;
+        if (!last) continue;
+        const carried = prefillFromLast(form.definition, last.answers);
+        if (carried.carried.length > 0) prefill.push({ formId: a.formId, placeId: a.placeId, values: carried.values });
+      }
+      dto.prefill = prefill;
+    }
 
     if (this.readers.indicators && mayEnterNumbers) {
       const found = await this.readers.indicators.findByProject(projectId, ctx.tenant.tenantId);

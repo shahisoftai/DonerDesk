@@ -28,6 +28,8 @@ export * from "./contexts/identity/boundary-layer.js";
 export * from "./contexts/integrations/index.js";
 export * from "./contexts/collection/index.js";
 export * from "./contexts/collection/connector.js";
+/** The ready-made forms are server data: kept out of the collection index, which browser code imports. */
+export * from "./contexts/collection/form-kits.js";
 export * from "./contexts/sector-library/index.js";
 export * from "./contexts/dashboards/index.js";
 export * from "./contexts/bookmarks/index.js";

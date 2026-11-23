@@ -1,6 +1,7 @@
 import { visual61Ar } from "./visual61-ar.ts";
 import type { MessageKey } from "./en.ts";
 import { recordAr } from "./record-ar.ts";
+import { assessAr } from "./assess-ar.ts";
 import { placeEntryAr } from "./place-entry-ar.ts";
 import { datasetsAr } from "./datasets-ar.ts";
 import { libraryAr } from "./library-ar.ts";
@@ -908,6 +909,7 @@ export const ar: Record<MessageKey, string> & Record<string, string> = {
   "maps.boundary.uploading": "جارٍ الرفع…",
   "maps.sources.link": "مصادر الخرائط وتراخيصها",
   ...recordAr,
+  ...assessAr,
   ...placeEntryAr,
   ...datasetsAr,
   ...canvasAr,

@@ -3,12 +3,12 @@
 import { useRef } from "react";
 import type { FormField } from "@donordesk/domain/contexts/collection/index.js";
 import { newIdempotencyKey } from "@/lib/shared/create-retry";
-import { FormFiller } from "./FormFiller";
+import { FormFiller } from "./filler/FormFiller";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { LocaleSwitcher } from "@/features/i18n/presentation/LocaleSwitcher";
 
 /** The public form. Each answer carries its own id, kept until it is sent, so a repeated send after a bad connection is stored once. */
-export function PublicCollectForm({ token, fields }: { token: string; fields: ReadonlyArray<FormField> }) {
+export function PublicCollectForm({ token, fields, definition }: { token: string; fields: ReadonlyArray<FormField>; definition?: { constraints?: ReadonlyArray<never>; languages?: ReadonlyArray<string> } }) {
   const key = useRef(newIdempotencyKey());
   const { t } = useI18n();
   return (
@@ -16,6 +16,7 @@ export function PublicCollectForm({ token, fields }: { token: string; fields: Re
     <div className="mb-4 flex justify-end"><LocaleSwitcher /></div>
     <FormFiller
       fields={fields}
+      definition={definition as never}
       withName
       uploadFile={async (file) => {
         const body = new FormData();
@@ -30,7 +31,7 @@ export function PublicCollectForm({ token, fields }: { token: string; fields: Re
         }
       }}
       submitLabel={t("form.sendMyAnswers")}
-      onSubmit={async (answers, submitterName) => {
+      onSubmit={async (answers, { submitterName }) => {
         try {
           const id = key.current.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60).padEnd(8, "0");
           const response = await fetch(`/api/collect/${encodeURIComponent(token)}`, {

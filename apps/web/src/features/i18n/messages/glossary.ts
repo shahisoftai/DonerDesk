@@ -6,9 +6,12 @@
  */
 import type { Locale } from "../domain/locales.ts";
 
+/** The languages the glossary covers: Urdu and Pashto are partial (Phase 62) and have no agreed terms yet, so they fall back to English. */
+export type GlossaryLocale = Exclude<Locale, "ur" | "ps">;
+
 export type GlossaryTerm = "indicator" | "project" | "portfolio" | "activity" | "map" | "table" | "chart" | "funding" | "resultsChain" | "sector";
 
-export const GLOSSARY: Readonly<Record<GlossaryTerm, Readonly<Record<Locale, readonly string[]>>>> = {
+export const GLOSSARY: Readonly<Record<GlossaryTerm, Readonly<Record<GlossaryLocale, readonly string[]>>>> = {
   indicator: { en: ["indicator"], fr: ["indicateur"], es: ["indicador"], ar: ["مؤشر"] },
   project: { en: ["project"], fr: ["projet"], es: ["proyecto"], ar: ["مشروع", "مشاريع"] },
   portfolio: { en: ["portfolio"], fr: ["portefeuille"], es: ["cartera"], ar: ["محفظة"] },

@@ -29,6 +29,7 @@ export type Capability =
   | "template.edit"
   | "logframe.edit"
   | "indicator.update"
+  | "collection.submit"
   | "indicator.verify"
   | "activity.create"
   | "activity.review"
@@ -68,6 +69,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "template.edit",
     "logframe.edit",
     "indicator.update",
+    "collection.submit",
     "indicator.verify",
     "activity.create",
     "activity.review",
@@ -102,6 +104,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "template.edit",
     "logframe.edit",
     "indicator.update",
+    "collection.submit",
     "indicator.verify",
     "activity.review",
     "evidence.verify",
@@ -124,6 +127,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   ME_OFFICER: [
     "logframe.edit",
     "indicator.update",
+    "collection.submit",
     "indicator.verify",
     "activity.review",
     "evidence.upload",
@@ -150,7 +154,7 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
       "risk.raise",
     "risk.manage",
   ],
-  FIELD_OFFICER: ["activity.create", "evidence.upload", "workplan.update-own", "risk.raise"],
+  FIELD_OFFICER: ["activity.create", "evidence.upload", "workplan.update-own", "risk.raise", "collection.submit"],
   COMPLIANCE_OFFICER: [
     "checklist.resolve",
     "checklist.manage",

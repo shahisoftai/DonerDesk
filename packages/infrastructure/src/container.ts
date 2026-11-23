@@ -768,11 +768,12 @@ export interface Container {
     retryBillingInbox: RetryBillingInboxHandler;
     runGrandfatherCreditCutover: RunGrandfatherCreditCutoverHandler;
     runGrandfatherByoLlm: RunGrandfatherByoLlmHandler;
-  } & WorkplanHandlers & FinanceHandlers & SectorLibraryHandlers & DatasetsHandlers & PlaceTreeHandlers & PlaceEntryHandlers;
+  } & WorkplanHandlers & FinanceHandlers & AssessmentHandlers & SectorLibraryHandlers & DatasetsHandlers & PlaceTreeHandlers & PlaceEntryHandlers;
 }
 
 import { createWorkplanModule, type WorkplanHandlers } from "./container/workplan-module.js";
 import { createFinanceModule, type FinanceHandlers } from "./container/finance-module.js";
+import { createAssessmentModule, type AssessmentHandlers } from "./container/assessment-module.js";
 import { createPlaceEntryHandlers, createPlaceTreeModule, type PlaceEntryHandlers, type PlaceTreeHandlers } from "./container/place-tree-module.js";
 import { createDatasetsModule, type DatasetsHandlers } from "./datasets/module.js";
 import { createSectorLibraryModule, type SectorLibraryHandlers } from "./container/sector-library-module.js";
@@ -1522,6 +1523,13 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const placeResults = new GetProjectPlaceResultsHandler(projects, periods, indicators, indicatorUpdates, places);
   const listPlacesForExport = new ListPlacesHandler(places);
   const finance = createFinanceModule({ prisma, ids, clock, audits, projects, visible: visibleProjects, evidence });
+  // Assessments and long surveys (Phase 62). The ordinary save, request and problem handlers are reached lazily: they are built below.
+  const assessments = createAssessmentModule({
+    prisma, ids, clock, audits, forms: collectionForms, records: collectionRecords, places, roster: projectRoster, notifier: personNotifier, parser,
+    save: { handle: (ctx, input, formId) => handlers.saveCollectionForm.handle(ctx, input, formId) },
+    tasks: { handle: (ctx, projectId, input) => handlers.createTask.handle(ctx, projectId, input) },
+    risks: { handle: (ctx, projectId, input) => handlers.createRisk.handle(ctx, projectId, input) },
+  });
   const datasetExtras = new DatasetExtrasService(workplan.handlers.listWorkPlan, activities, new PrismaBudgetRepository(prisma), placeResults, places, logframe, finance.handlers.getProjectFinance, visibleProjects, bookmarks, placeFlows);
   const countFacts = new CountFactsService(places, projects, datasetExtras, finance.fundings, finance.sources);
   const getProjectDataSheet = new GetProjectDataSheetHandler(periods, logframe, indicators, indicatorUpdates, financeInputs, periodFinancials, finance.registerFinanceRows);
@@ -1604,6 +1612,7 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
   const handlers: Container["handlers"] = {
     ...workplan.handlers,
     ...finance.handlers,
+    ...assessments.handlers,
     ...placeTree.handlers,
     // The bulk save is read lazily so the save runs through the wrapped (atomic) handler like every other caller.
     ...createPlaceEntryHandlers({ projects, visible: visibleProjects, places, areas: placeTree.areas, links: placeTree.links, plan: plannedActivities, indicators, updates: indicatorUpdates, periods, bulk: { handle: (ctx, input) => handlers.bulkUpsertIndicatorUpdates.handle(ctx, input) } }),
@@ -1769,14 +1778,14 @@ export function createContainer(options?: { tenantId?: string; useAdminConnectio
     createFormFromIndicator: new CreateFormFromIndicatorHandler(indicators, { handle: (ctx, input, formId) => handlers.saveCollectionForm.handle(ctx, input, formId) }),
     setCollectionFormStatus: new SetCollectionFormStatusHandler(collectionForms, audits, clock),
     deleteDraftCollectionForm: new DeleteDraftCollectionFormHandler(collectionForms, audits),
-    submitCollectionRecord: new SubmitCollectionRecordHandler(ids, collectionForms, collectionRecords, audits, clock, collectionFiles),
+    submitCollectionRecord: new SubmitCollectionRecordHandler(ids, collectionForms, collectionRecords, audits, clock, collectionFiles, assessments.recorder),
     listCollectionRecords: new ListCollectionRecordsHandler(collectionForms, collectionRecords, async (tenantId) => {
       const listed = await users.listByTenant(tenantId);
       return new Map(listed.ok ? listed.value.map((u) => [u.id.toString(), u.name] as [string, string]) : []);
     }, places, collectionFiles),
     uploadCollectionFile: new UploadCollectionFileHandler(ids, collectionForms, collectionFiles, storage, clock),
     getCollectionFile: new GetCollectionFileHandler(collectionFiles, storage),
-    getOfflinePack: new GetOfflinePackHandler(collectionForms, places, clock, { indicators, periods, myWeek: new PrismaMyWeekReader(prisma), entryPlaces: { handle: (ctx, projectId) => handlers.listAgendaPlaces.handle(ctx, projectId) }, placeSheet: { handle: (ctx, input) => handlers.getPlaceSheet.handle(ctx, input) }, planPlaces: placeTree.links }),
+    getOfflinePack: new GetOfflinePackHandler(collectionForms, places, clock, { indicators, periods, myWeek: new PrismaMyWeekReader(prisma), entryPlaces: { handle: (ctx, projectId) => handlers.listAgendaPlaces.handle(ctx, projectId) }, placeSheet: { handle: (ctx, input) => handlers.getPlaceSheet.handle(ctx, input) }, planPlaces: placeTree.links, assessments: assessments.pack }),
     listDashboards: new ListDashboardsHandler(dashboards),
     getDashboard: new GetDashboardHandler(dashboards),
     saveDashboard,

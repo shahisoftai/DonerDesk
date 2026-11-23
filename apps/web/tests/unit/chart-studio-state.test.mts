@@ -6,7 +6,7 @@ import {
 } from "../../src/features/charts/domain/studio-state.ts";
 import { CHART_KIND_ORDER, validateChartSpec } from "@donordesk/domain/contexts/reporting/chart-spec-v2.js";
 import { CHART_KINDS } from "@donordesk/domain/contexts/reporting/chart-spec-v2.js";
-import { LOCALES } from "../../src/features/i18n/domain/locales.ts";
+import { FULL_LOCALES as LOCALES } from "../../src/features/i18n/domain/locales.ts";
 import { MESSAGES } from "../../src/features/i18n/messages/index.ts";
 
 const ALL = ["i1", "i2", "i3"];

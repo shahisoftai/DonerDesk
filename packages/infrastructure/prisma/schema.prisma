@@ -2378,8 +2378,60 @@ model CollectionRecord {
   reviewedAt    DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  /// Phase 62: the facility or place the record is about (a Place id), and which visit it is for that facility.
+  placeId       String?
+  visitNo       Int       @default(1)
+  /// 1 = flat answers; 2 = answers may hold grids, repeats and "not applicable".
+  answersVersion Int      @default(1)
+  /// How answers were established (HowVerified by field key), quality flags and the score worked out at submission.
+  howJson       String?
+  flagsJson     String?
+  scoreJson     String?
+  startedAt     DateTime?
 
   @@index([tenantId, formId, status])
+  @@index([tenantId, formId, placeId])
+}
+
+/// A long form in progress (Phase 62): one person, one form, one facility. Not a record: never counted or reviewed.
+model CollectionDraft {
+  id          String   @id
+  tenantId    String
+  formId      String
+  projectId   String
+  userId      String
+  /// The facility the draft is about, "" when the form has no subject (kept as text so it can be part of a unique key).
+  placeKey    String   @default("")
+  answersJson String
+  howJson     String?
+  startedAt   DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, formId, userId, placeKey])
+  @@index([tenantId, userId])
+}
+
+/// A facility assigned to an assessor for one form (Phase 62): TO_DO | IN_PROGRESS | DONE | NOT_VISITED.
+model CollectionAssignment {
+  id          String   @id
+  tenantId    String
+  formId      String
+  projectId   String
+  placeId     String
+  assigneeId  String
+  /// A plain day (YYYY-MM-DD).
+  dueOn       String?
+  status      String   @default("TO_DO")
+  reason      String?
+  recordId    String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, formId, placeId])
+  @@index([tenantId, assigneeId, status])
+  @@index([tenantId, projectId])
 }
 
 /// A photo or document attached to an answer (Phase 33.5). Uploaded before the record; the answer holds its id.

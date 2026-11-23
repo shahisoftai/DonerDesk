@@ -9,13 +9,21 @@ import { validateSubmission, type FormDefinition, type FormField } from "./form-
 
 export const PROBLEMS_COLUMN = "Problems";
 
+/** The questions that fit one spreadsheet cell. Tables, repeats, files and signatures are filled in the form itself. */
+const SHEET_TYPES: ReadonlySet<string> = new Set(["NUMBER", "TEXT", "DATE", "SELECT", "MULTI_SELECT", "YES_NO", "PLACE", "GPS"]);
+
+/** What a sheet is checked against: the sheet's questions plus the headings and formulas that decide what is asked and worked out. */
+function sheetForm(full: FormDefinition): FormDefinition {
+  return { ...full, fields: full.fields.filter((f) => SHEET_TYPES.has(f.type) || f.type === "SECTION" || f.type === "CALCULATED") };
+}
+const columnFields = (form: FormDefinition): FormField[] => form.fields.filter((f) => SHEET_TYPES.has(f.type));
+
 const csvCell = (value: string): string => (/[",;\t\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value);
 const csvLine = (cells: ReadonlyArray<string>): string => cells.map(csvCell).join(",");
 
 /** The header row for a blank sheet, plus a hint row saying what each column takes. */
 export function recordSheetTemplate(fullForm: FormDefinition): string {
-  // A photo or document cannot be a spreadsheet cell: it is attached in the form itself.
-  const form: FormDefinition = { fields: fullForm.fields.filter((f) => f.type !== "FILE") };
+  const form: FormDefinition = { fields: columnFields(fullForm) };
   const hint = (f: FormField): string => {
     switch (f.type) {
       case "NUMBER": return "a number";
@@ -23,6 +31,7 @@ export function recordSheetTemplate(fullForm: FormDefinition): string {
       case "YES_NO": return "yes or no";
       case "GPS": return "latitude, longitude";
       case "SELECT": return (f.options ?? []).map((o) => o.label).join(" / ");
+      case "MULTI_SELECT": return `one or more of ${(f.options ?? []).map((o) => o.label).join(" / ")}, separated by ;`;
       default: return "text";
     }
   };
@@ -34,7 +43,7 @@ export interface RecordSheetRow {
   rowNumber: number;
   cells: string[];
   /** The answers to store, in the form's own shape; empty when the row has problems. */
-  answers: Record<string, string | number | boolean | { lat: number; lon: number }>;
+  answers: Record<string, unknown>;
   problems: string[];
   /** Questions answered but not asked for the other answers; they are not stored. */
   ignored: string[];
@@ -63,6 +72,9 @@ function cellValue(field: FormField, text: string): unknown {
     const hit = (field.options ?? []).find((o) => o.label.toLowerCase() === t.toLowerCase() || o.value.toLowerCase() === t.toLowerCase());
     return hit ? hit.value : t;
   }
+  if (field.type === "MULTI_SELECT") {
+    return t.split(/[;|]/).map((part) => part.trim()).filter(Boolean).map((part) => (field.options ?? []).find((o) => o.label.toLowerCase() === part.toLowerCase() || o.value.toLowerCase() === part.toLowerCase())?.value ?? part);
+  }
   if (field.type === "GPS") {
     const parts = t.split(/[,\s/]+/).filter(Boolean);
     return parts.length === 2 ? { lat: parts[0], lon: parts[1] } : t;
@@ -72,14 +84,8 @@ function cellValue(field: FormField, text: string): unknown {
 
 /** Reads a pasted or uploaded sheet against a form. A hint row that repeats the template's wording is skipped. */
 export function parseRecordSheet(fullForm: FormDefinition, text: string): RecordSheetResult {
-  // A photo or document is attached in the form itself, so a sheet neither asks for it nor requires it.
-  const form: FormDefinition = {
-    fields: fullForm.fields.map((f) => {
-      if (f.type !== "FILE") return f;
-      const { requiredWhen: _when, required: _required, ...rest } = f;
-      return rest;
-    }),
-  };
+  // A table, repeat, photo or signature is filled in the form itself, so a sheet neither asks for it nor requires it.
+  const form = sheetForm(fullForm);
   const lines = text.replace(/^﻿/, "").split(/\r?\n/);
   const first = lines.findIndex((l) => l.trim() !== "");
   if (first < 0) return { header: [], unknownColumns: [], missingColumns: [], rows: [], valid: 0, invalid: 0 };
@@ -88,11 +94,11 @@ export function parseRecordSheet(fullForm: FormDefinition, text: string): Record
   const byColumn = new Map<number, FormField>();
   const used = new Set<string>();
   header.forEach((h, i) => {
-    const hit = form.fields.find((f) => !used.has(f.key) && normalizeHeader(f.label) === normalizeHeader(h));
+    const hit = columnFields(form).find((f) => !used.has(f.key) && normalizeHeader(f.label) === normalizeHeader(h));
     if (hit) { byColumn.set(i, hit); used.add(hit.key); }
   });
   const unknownColumns = header.filter((h, i) => h.trim() !== "" && !byColumn.has(i) && normalizeHeader(h) !== normalizeHeader(PROBLEMS_COLUMN));
-  const missingColumns = form.fields.filter((f) => f.required === true && !used.has(f.key)).map((f) => f.label);
+  const missingColumns = columnFields(form).filter((f) => f.required === true && !used.has(f.key)).map((f) => f.label);
 
   const rows: RecordSheetRow[] = [];
   const templateHint = (cells: string[]) => cells.some((c) => /\((optional)\)$|^YYYY-MM-DD$|^a number$|^yes or no$/i.test(c.trim()));

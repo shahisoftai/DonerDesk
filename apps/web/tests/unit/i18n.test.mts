@@ -11,18 +11,23 @@ import { NAV_ENTRIES } from "../../src/features/navigation/domain/role-navigatio
 test("which language: the person's choice, then the organisation's, then the browser's, then English; an unknown one is ignored", () => {
   assert.equal(resolveLocale({ cookie: "ar", organisationDefault: "fr", acceptLanguage: "es" }), "ar");
   assert.equal(resolveLocale({ cookie: "xx", organisationDefault: "fr", acceptLanguage: "es" }), "fr");
-  assert.equal(resolveLocale({ organisationDefault: "ur", acceptLanguage: "es-MX,es;q=0.9,en;q=0.8" }), "es");
+  assert.equal(resolveLocale({ organisationDefault: "de", acceptLanguage: "es-MX,es;q=0.9,en;q=0.8" }), "es");
+  assert.equal(resolveLocale({ organisationDefault: "ur", acceptLanguage: "es" }), "ur", "Urdu is offered now");
   assert.equal(resolveLocale({ acceptLanguage: "de,it;q=0.8" }), "en");
   assert.equal(resolveLocale({}), "en");
   assert.equal(localeFromAcceptLanguage("en;q=0.5, fr-CH;q=0.9"), "fr");
   assert.equal(localeFromAcceptLanguage("fr;q=0"), null, "q=0 means not acceptable");
-  assert.deepEqual(LOCALES.map((l) => [l, localeDirection(l)]), [["en", "ltr"], ["fr", "ltr"], ["es", "ltr"], ["ar", "rtl"]]);
+  assert.deepEqual(LOCALES.map((l) => [l, localeDirection(l)]), [["en", "ltr"], ["fr", "ltr"], ["es", "ltr"], ["ar", "rtl"], ["ur", "rtl"], ["ps", "rtl"]]);
   assert.equal(LOCALE_NAME.ar, "العربية");
 });
 
-test("every language has every English message, no more, and the same {placeholders}", () => {
+/** Urdu and Pashto are partial on purpose (Phase 62): what they carry is checked, what they lack shows English. */
+const PARTIAL: readonly string[] = ["ur", "ps"];
+const FULL = LOCALES.filter((l) => !PARTIAL.includes(l));
+
+test("every full language has every English message, no more, and the same {placeholders}", () => {
   const keys = Object.keys(en);
-  for (const locale of LOCALES) {
+  for (const locale of FULL) {
     const messages = MESSAGES[locale];
     const missing = keys.filter((k) => !(k in messages));
     assert.deepEqual(missing, [], `${locale} is missing messages`);
@@ -37,6 +42,18 @@ test("every language has every English message, no more, and the same {placehold
     const extra = Object.keys(messages).filter((k) => !keys.includes(k));
     for (const k of extra) assert.match(k, /\.(zero|one|two|few|many|other)$/, `${locale}: ${k} is not a plural form`);
     for (const k of extra) assert.ok(keys.some((e) => e.replace(/\.(one|other)$/, "") === k.replace(/\.(zero|one|two|few|many|other)$/, "")), `${locale}: ${k} has no English counterpart`);
+  }
+});
+
+test("Urdu and Pashto: every message they carry is an English message with the same {placeholders}, and the assessment screens are complete", () => {
+  for (const locale of PARTIAL) {
+    const messages = MESSAGES[locale as keyof typeof MESSAGES];
+    for (const [key, text] of Object.entries(messages)) {
+      assert.ok(key in en, `${locale}: ${key} is not an English message`);
+      assert.ok(text.trim().length > 0, `${locale}: ${key} is empty`);
+      if (!/\.(one|other)$/.test(key)) assert.deepEqual(placeholdersOf(text), placeholdersOf(en[key as keyof typeof en]), `${locale}: ${key} must use the same placeholders as English`);
+    }
+    for (const key of Object.keys(en).filter((k) => k.startsWith("assess.") || /^problem\.[A-Z_]+$/.test(k) || k.startsWith("form."))) assert.ok(key in messages, `${locale}: ${key} is missing`);
   }
 });
 
@@ -81,7 +98,7 @@ test("answer problems are said in the language with their values", () => {
 
 test("every navigation entry has a message, in every language", () => {
   const items = Object.values(NAV_ENTRIES).map((e) => ({ href: e.href, label: e.label, group: e.group }));
-  for (const locale of LOCALES) {
+  for (const locale of FULL) {
     const t = createTranslator(locale, MESSAGES[locale], ENGLISH).t;
     const translated = translateNav(items, t);
     for (const [i, item] of translated.entries()) {

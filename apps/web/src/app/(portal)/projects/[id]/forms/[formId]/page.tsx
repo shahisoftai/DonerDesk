@@ -29,7 +29,7 @@ export default async function FormPage({ params }: { params: Promise<{ id: strin
         </div>
         {canEdit && form.value.status === "DRAFT" && <Link className="btn-secondary" href={`/projects/${id}/forms/${formId}/edit`}>Edit the questions</Link>}
       </header>
-      <FormWorkspace form={form.value} periods={options} canEdit={canEdit} canSubmit={ctx.capabilities.has("indicator.update")} canReview={ctx.capabilities.has("indicator.verify")} />
+      <FormWorkspace form={form.value} periods={options} canEdit={canEdit} canSubmit={ctx.capabilities.has("collection.submit")} canReview={ctx.capabilities.has("indicator.verify")} />
     </div>
   );
 }

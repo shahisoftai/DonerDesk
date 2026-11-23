@@ -12,8 +12,11 @@ import { packFromServer, type OfflinePack } from "@/features/offline/domain/offl
 
 const PackSchema = z.object({
   projectId: z.string(), generatedAt: z.string(),
-  forms: z.array(z.object({ id: z.string(), name: z.string(), description: z.string().optional(), fields: z.array(FormFieldViewSchema) })),
-  places: z.array(z.object({ id: z.string(), name: z.string(), path: z.string(), adminLevel: z.number().optional() })),
+  forms: z.array(z.object({
+    id: z.string(), name: z.string(), description: z.string().optional(), fields: z.array(FormFieldViewSchema),
+    constraints: z.array(z.unknown()).optional(), subject: z.enum(["FACILITY", "PLACE", "NONE"]).optional(), score: z.unknown().optional(), languages: z.array(z.string()).optional(),
+  })),
+  places: z.array(z.object({ id: z.string(), name: z.string(), path: z.string(), adminLevel: z.number().optional(), facility: z.boolean().optional() })),
   // Pack v2: absent from an older server, so each part is optional.
   indicators: z.array(z.object({ id: z.string(), code: z.string(), name: z.string(), type: z.string(), disaggregationRequired: z.boolean(), recordByPlace: z.boolean().optional(), placeLevel: z.number().optional(), unit: z.string().optional(), frequency: z.string().optional() })).optional(),
   periods: z.array(z.object({ id: z.string(), reportType: z.string(), startDate: z.string(), endDate: z.string(), status: z.string() })).optional(),
@@ -22,6 +25,9 @@ const PackSchema = z.object({
   entryPlaces: z.array(z.object({ placeId: z.string(), name: z.string(), path: z.string() })).optional(),
   indicatorPlaces: z.array(z.object({ indicatorId: z.string(), scope: z.string(), level: z.number().nullable().optional(), placeIds: z.array(z.string()).optional() })).optional(),
   placeCells: z.array(z.object({ periodId: z.string(), indicatorId: z.string(), placeId: z.string(), value: z.string(), locked: z.boolean(), lockReason: z.string().optional() })).optional(),
+  // Pack v4 (Phase 62): the person's own facilities and carried facts.
+  assignments: z.array(z.object({ id: z.string(), formId: z.string(), placeId: z.string(), status: z.string(), dueOn: z.string().optional() })).optional(),
+  prefill: z.array(z.object({ formId: z.string(), placeId: z.string(), values: z.record(z.unknown()) })).optional(),
 });
 
 /** The projects whose forms the signed-in person can fill, for the "download for offline" list. */
@@ -42,6 +48,6 @@ export async function downloadOfflinePackAction(projectId: string, projectName: 
   if (!result.ok) return result;
   return {
     ok: true,
-    value: packFromServer({ userId: payload.sub, userName: payload.name ?? "", projectId, projectName, generatedAt: result.value.generatedAt, forms: result.value.forms as never, places: result.value.places, indicators: result.value.indicators, periods: result.value.periods, plan: result.value.plan, entryPlaces: result.value.entryPlaces, indicatorPlaces: result.value.indicatorPlaces, placeCells: result.value.placeCells }),
+    value: packFromServer({ userId: payload.sub, userName: payload.name ?? "", projectId, projectName, generatedAt: result.value.generatedAt, forms: result.value.forms as never, places: result.value.places, indicators: result.value.indicators, periods: result.value.periods, plan: result.value.plan, entryPlaces: result.value.entryPlaces, indicatorPlaces: result.value.indicatorPlaces, placeCells: result.value.placeCells, assignments: result.value.assignments, prefill: result.value.prefill }),
   };
 }

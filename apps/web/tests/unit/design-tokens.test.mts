@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { CONTRAST_PAIRS, TOKENS, TOKEN_NAMES, VIZ_TOKENS, contrastFailures, contrastRatio, vizColor } from "../../src/features/design/domain/tokens.ts";
 import { tileView } from "../../src/features/design/domain/tile-view.ts";
-import { LOCALES } from "../../src/features/i18n/domain/locales.ts";
+import { FULL_LOCALES as LOCALES } from "../../src/features/i18n/domain/locales.ts";
 import { createTranslator } from "../../src/features/i18n/domain/translate.ts";
 import { MESSAGES, ENGLISH } from "../../src/features/i18n/messages/index.ts";
 
