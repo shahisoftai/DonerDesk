@@ -1,0 +1,335 @@
+[
+ {
+  "no": 1,
+  "facility": "Cat-D Hospital Pacha Kallay",
+  "district": "Buner",
+  "lat": null,
+  "lon": null,
+  "prec": "NOT FOUND",
+  "osm": null
+ },
+ {
+  "no": 2,
+  "facility": "Cat-D Hospital Kulachi",
+  "district": "D.I. Khan",
+  "lat": 31.9299926,
+  "lon": 70.4592265,
+  "prec": "VILLAGE:town",
+  "osm": "\u06a9\u0644\u0627\u0686\u06cc, \u062a\u062d\u0635\u06cc\u0644 \u06a9\u0644\u0627\u0686\u06cc, \u0636\u0644\u0639 \u0688\u06cc\u0631\u0647 \u0627\u0633\u0645\u0627\u0639\u06cc\u0644 \u062e\u0627\u0646, \u0688\u06cc\u0631\u06c1 \u0627\u0633\u0645\u0627\u0639\u06cc\u0644 \u062e\u0627\u0646 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 3,
+  "facility": "Cat-B Hospital Chakdara",
+  "district": "Dir Lower",
+  "lat": 34.6557106,
+  "lon": 72.0308093,
+  "prec": "VILLAGE:town",
+  "osm": "\u0686\u06a9\u062f\u0631\u0647, \u062a\u062d\u0635\u06cc\u0644 \u0622\u062f\u0646\u0632\u0626\u06cc, \u0636\u0644\u0639 \u062f\u06cc\u0631 \u0632\u06cc\u0631\u06cc\u06ba, \u0645\u0627\u0644\u0627\u06a9\u0646\u0688 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, 18800, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 4,
+  "facility": "Cat-D Hospital Mayar",
+  "district": "Dir Lower",
+  "lat": 34.8869192,
+  "lon": 71.6618644,
+  "prec": "VILLAGE:town",
+  "osm": "\u0645\u0639\u06cc\u0627\u0631, \u062a\u062d\u0635\u06cc\u0644 \u062b\u0645\u0631\u0628\u0627\u063a, \u0636\u0644\u0639 \u062f\u06cc\u0631 \u0632\u06cc\u0631\u06cc\u06ba, \u0645\u0627\u0644\u0627\u06a9\u0646\u0688 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, 18600, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 5,
+  "facility": "Cat-D Hospital Patrak",
+  "district": "Dir Upper",
+  "lat": 35.344121,
+  "lon": 72.0596396,
+  "prec": "VILLAGE:village",
+  "osm": "\u067e\u0627\u062a\u0631\u0627\u06a9, \u062a\u062d\u0635\u06cc\u0644 \u06a9\u0627\u0644\u06a9\u0648\u0679, \u0636\u0644\u0639 \u062f\u06cc\u0631 \u0628\u0627\u0644\u0627, \u0645\u0627\u0644\u0627\u06a9\u0646\u0688 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 6,
+  "facility": "Cat-D Hospital Doaba Hangu",
+  "district": "Hangu",
+  "lat": 33.4250135,
+  "lon": 70.7362943,
+  "prec": "VILLAGE:town",
+  "osm": "\u062f\u0648\u0622\u0628\u0647, \u062a\u062d\u0635\u06cc\u0644 \u0679\u0644, \u0636\u0644\u0639 \u06c1\u0646\u06af\u0648, \u06a9\u0648\u06c1\u0627\u0679 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 7,
+  "facility": "Cat-D Hospital Thall",
+  "district": "Hangu",
+  "lat": 33.5187724,
+  "lon": 71.0489507,
+  "prec": "VILLAGE:trunk",
+  "osm": "Thall Road, \u0645\u0631\u06a9\u0632\u06cc \u0634\u06c1\u0631, \u06c1\u0646\u06af\u0648, \u062a\u062d\u0635\u06cc\u0644 \u06c1\u0646\u06af\u0648, \u0636\u0644\u0639 \u06c1\u0646\u06af\u0648, \u06a9\u0648\u06c1\u0627\u0679 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, 26190, \u067e\u0627\u06a9\u0633"
+ },
+ {
+  "no": 8,
+  "facility": "Cat-D Hospital Kanpur",
+  "district": "Haripur",
+  "lat": null,
+  "lon": null,
+  "prec": "NOT FOUND",
+  "osm": null
+ },
+ {
+  "no": 9,
+  "facility": "Cat-D Hospital Latamber",
+  "district": "Karak",
+  "lat": 33.1279606,
+  "lon": 70.8643528,
+  "prec": "VILLAGE:reservoir",
+  "osm": "Latamber Dam Reservoir, Latambar, \u062a\u062d\u0635\u06cc\u0644 \u06a9\u0631\u06a9, \u0636\u0644\u0639 \u06a9\u0631\u06a9, \u06a9\u0648\u06c1\u0627\u0679 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 10,
+  "facility": "Cat-D Hospital Sabir Abad",
+  "district": "Karak",
+  "lat": 33.1383653,
+  "lon": 71.1909136,
+  "prec": "VILLAGE:residential",
+  "osm": "Sabir abad, \u06a9\u0631\u06a9, \u062a\u062d\u0635\u06cc\u0644 \u06a9\u0631\u06a9, \u0636\u0644\u0639 \u06a9\u0631\u06a9, \u06a9\u0648\u06c1\u0627\u0679 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 11,
+  "facility": "Cat-C Hospital Thathi Nasrathi",
+  "district": "Karak",
+  "lat": null,
+  "lon": null,
+  "prec": "NOT FOUND",
+  "osm": null
+ },
+ {
+  "no": 12,
+  "facility": "Cat-D Hospital Lachi",
+  "district": "Kohat",
+  "lat": 33.3875712,
+  "lon": 71.3287683,
+  "prec": "FACILITY",
+  "osm": "Tehsil Hospital - Lachi, \u0642\u0648\u0645\u06cc \u0634\u0627\u06c1\u0631\u0627\u06c1 55, \u0644\u0627\u0686\u06cc, \u062a\u062d\u0635\u06cc\u0644 \u0644\u0627\u0686\u06cc, \u0636\u0644\u0639 \u06a9\u0648\u06c1\u0627\u0679, \u06a9\u0648\u06c1\u0627\u0679 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e"
+ },
+ {
+  "no": 13,
+  "facility": "THQ Hospital Sadda (Cat-C)",
+  "district": "Kurram",
+  "lat": 33.7062424,
+  "lon": 70.3267526,
+  "prec": "VILLAGE:town",
+  "osm": "\u0635\u062f\u06c1, \u062a\u062d\u0635\u06cc\u0644 \u06a9\u0631\u0645 \u0632\u06cc\u0631\u06cc\u06ba, \u0636\u0644\u0639 \u06a9\u0631\u0645, \u06a9\u0648\u06c1\u0627\u0679 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 14,
+  "facility": "Cat-C Hospital Lakki Marwat",
+  "district": "Lakki Marwat",
+  "lat": 32.6056744,
+  "lon": 70.9113526,
+  "prec": "VILLAGE:town",
+  "osm": "\u0644\u06a9\u06cc \u0645\u0631\u0648\u062a, \u0636\u0644\u0639 \u0644\u06a9\u06cc \u0645\u0631\u0648\u062a, \u0628\u0646\u0648\u06ba \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 15,
+  "facility": "Cat-D Hospital Titter Khel",
+  "district": "Lakki Marwat",
+  "lat": null,
+  "lon": null,
+  "prec": "NOT FOUND",
+  "osm": null
+ },
+ {
+  "no": 16,
+  "facility": "Cat-C Hospital Serai Naurang",
+  "district": "Lakki Marwat",
+  "lat": 32.8270541,
+  "lon": 70.7824962,
+  "prec": "VILLAGE:town",
+  "osm": "\u0633\u0631\u0627\u0626\u06d2 \u0646\u0648\u0631\u0646\u06af, \u0636\u0644\u0639 \u0644\u06a9\u06cc \u0645\u0631\u0648\u062a, \u0628\u0646\u0648\u06ba \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 17,
+  "facility": "DHQ Hospital Lakki Marwat (Cat-B)",
+  "district": "Lakki Marwat",
+  "lat": 32.6056744,
+  "lon": 70.9113526,
+  "prec": "VILLAGE:town",
+  "osm": "\u0644\u06a9\u06cc \u0645\u0631\u0648\u062a, \u0636\u0644\u0639 \u0644\u06a9\u06cc \u0645\u0631\u0648\u062a, \u0628\u0646\u0648\u06ba \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 18,
+  "facility": "RHC Landiwah",
+  "district": "Lakki Marwat",
+  "lat": 32.752146,
+  "lon": 70.9649576,
+  "prec": "VILLAGE:village",
+  "osm": "Landiwah, \u0636\u0644\u0639 \u0644\u06a9\u06cc \u0645\u0631\u0648\u062a, \u0628\u0646\u0648\u06ba \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 19,
+  "facility": "MHF (RHC) Tiarza",
+  "district": "Mahsud Belt - SW",
+  "lat": 32.4324521,
+  "lon": 69.7472498,
+  "prec": "VILLAGE:administrative",
+  "osm": "\u062a\u062d\u0635\u06cc\u0644 \u062a\u06cc\u0627\u0631\u0632\u0647, \u0636\u0644\u0639 \u0628\u0627\u0644\u0627\u0626\u06cc \u062c\u0646\u0648\u0628\u06cc \u0648\u0632\u06cc\u0631\u0633\u062a\u0627\u0646, \u0688\u06cc\u0631\u06c1 \u0627\u0633\u0645\u0627\u0639\u06cc\u0644 \u062e\u0627\u0646 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 20,
+  "facility": "Cat-D Hospital Totakan",
+  "district": "Malakand",
+  "lat": 34.6150594,
+  "lon": 71.9643404,
+  "prec": "VILLAGE:information",
+  "osm": "TOTAKAN CHOWK \u0637\u0648\u0637\u0627\u06a9\u0627\u0646 \u0686\u0648\u06a9, National Highway 45, \u0645\u0644\u0627\u06a9\u0646\u0688\u200e, \u062a\u062d\u0635\u06cc\u0644 \u0633\u0648\u0627\u062a \u0631\u0627\u0646\u06cc\u0632\u0626\u06cc, \u0636\u0644\u0639 \u0645\u0627\u0644\u0627\u06a9\u0646\u0688, "
+ },
+ {
+  "no": 21,
+  "facility": "Cat-D Hospital Oghi",
+  "district": "Mansehra",
+  "lat": 34.4973045,
+  "lon": 73.0160443,
+  "prec": "VILLAGE:town",
+  "osm": "\u0627\u0648\u06af\u0626\u06cc, \u062a\u062d\u0635\u06cc\u0644 \u0627\u0648\u06af\u0626\u06cc, \u0636\u0644\u0639 \u0645\u0627\u0646\u0633\u06c1\u0631\u06c1, \u06c1\u0632\u0627\u0631\u06c1 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 22,
+  "facility": "Cat-D Hospital Katlung",
+  "district": "Mardan",
+  "lat": 34.2229431,
+  "lon": 72.0425462,
+  "prec": "VILLAGE:primary",
+  "osm": "Katlang Road, \u0645\u0631\u062f\u0627\u0646, \u062a\u062d\u0635\u06cc\u0644 \u0645\u0631\u062f\u0627\u0646, \u0636\u0644\u0639 \u0645\u0631\u062f\u0627\u0646, \u0645\u0631\u062f\u0627\u0646 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, 23200, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 23,
+  "facility": "Cat-D Hospital Rustam",
+  "district": "Mardan",
+  "lat": 34.3381744,
+  "lon": 72.2658596,
+  "prec": "VILLAGE:primary",
+  "osm": "Rustam - Mardan Road, Kamergy, \u0631\u0633\u062a\u0645, \u062a\u062d\u0635\u06cc\u0644 \u0631\u0633\u062a\u0645, \u0636\u0644\u0639 \u0645\u0631\u062f\u0627\u0646, \u0645\u0631\u062f\u0627\u0646 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627"
+ },
+ {
+  "no": 24,
+  "facility": "Cat-D Hospital Shahbaz Garhi",
+  "district": "Mardan",
+  "lat": 34.2269486,
+  "lon": 72.1381653,
+  "prec": "VILLAGE:trunk",
+  "osm": "Mardan - Swabi Road, \u0634\u06be\u0628\u0627\u0632 \u06af\u0691\u06be\u06cc, \u062a\u062d\u0635\u06cc\u0644 \u06af\u0691\u06be\u06cc \u06a9\u067e\u0648\u0631\u06c1, \u0636\u0644\u0639 \u0645\u0631\u062f\u0627\u0646, \u0645\u0631\u062f\u0627\u0646 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, "
+ },
+ {
+  "no": 25,
+  "facility": "Cat-D Hospital Toru",
+  "district": "Mardan",
+  "lat": 34.1440955,
+  "lon": 72.0950136,
+  "prec": "VILLAGE:town",
+  "osm": "\u0637\u0648\u0631\u0648, \u062a\u062d\u0635\u06cc\u0644 \u06af\u0691\u06be\u06cc \u06a9\u067e\u0648\u0631\u06c1, \u0636\u0644\u0639 \u0645\u0631\u062f\u0627\u0646, \u0645\u0631\u062f\u0627\u0646 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 26,
+  "facility": "DHQ (Cat-C) Hospital Ghallanai",
+  "district": "Mohmand",
+  "lat": null,
+  "lon": null,
+  "prec": "NOT FOUND",
+  "osm": null
+ },
+ {
+  "no": 27,
+  "facility": "Civil Hospital Datta Khel",
+  "district": "North Waziristan",
+  "lat": 33.1606092,
+  "lon": 70.418765,
+  "prec": "VILLAGE:village",
+  "osm": "Datta Khel, \u062a\u062d\u0635\u06cc\u0644 \u0633\u067e\u06cc\u0646 \u0648\u0627\u0645, \u0636\u0644\u0639 \u0634\u0645\u0627\u0644\u06cc \u0648\u0632\u06cc\u0631\u0633\u062a\u0627\u0646, \u0628\u0646\u0648\u06ba \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 28,
+  "facility": "RHC Spinwam",
+  "district": "North Waziristan",
+  "lat": 33.1794341,
+  "lon": 70.3912867,
+  "prec": "VILLAGE:village",
+  "osm": "\u0633\u067e\u06cc\u0646 \u0648\u0627\u0645, \u062a\u062d\u0635\u06cc\u0644 \u0633\u067e\u06cc\u0646 \u0648\u0627\u0645, \u0636\u0644\u0639 \u0634\u0645\u0627\u0644\u06cc \u0648\u0632\u06cc\u0631\u0633\u062a\u0627\u0646, \u0628\u0646\u0648\u06ba \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 29,
+  "facility": "Cat-D Hospital Ziarat Kaka Sahib",
+  "district": "Nowshera",
+  "lat": 33.9270307,
+  "lon": 72.0357403,
+  "prec": "VILLAGE:village",
+  "osm": "\u0632\u06cc\u0627\u0631\u062a \u06a9\u0627\u06a9\u0627 \u0635\u0627\u062d\u0628, \u062a\u062d\u0635\u06cc\u0644 \u0646\u0648\u0634\u06c1\u0631\u06c1, \u0636\u0644\u0639 \u0646\u0648\u0634\u06c1\u0631\u06c1, \u067e\u0634\u0627\u0648\u0631 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 30,
+  "facility": "Cat-D Hospital Manki Sharif",
+  "district": "Nowshera",
+  "lat": 33.9417338,
+  "lon": 71.9729879,
+  "prec": "VILLAGE:town",
+  "osm": "\u0645\u0627\u0646\u06a9\u06cc, \u062a\u062d\u0635\u06cc\u0644 \u0646\u0648\u0634\u06c1\u0631\u06c1, \u0636\u0644\u0639 \u0646\u0648\u0634\u06c1\u0631\u06c1, \u067e\u0634\u0627\u0648\u0631 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, 24100, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 31,
+  "facility": "Cat-D Hospital Daboori",
+  "district": "Orakzai",
+  "lat": null,
+  "lon": null,
+  "prec": "NOT FOUND",
+  "osm": null
+ },
+ {
+  "no": 32,
+  "facility": "Cat-D Hospital Kalaya",
+  "district": "Orakzai",
+  "lat": 33.7474754,
+  "lon": 70.9621031,
+  "prec": "VILLAGE:village",
+  "osm": "\u06a9\u0644\u0627\u06cc\u06c1, \u062a\u062d\u0635\u06cc\u0644 \u0627\u0648\u0631\u06a9\u0632\u0626\u06cc \u0632\u06cc\u0631\u06cc\u06ba, \u0636\u0644\u0639 \u0627\u0648\u0631\u06a9\u0632\u0626\u06cc, \u06a9\u0648\u06c1\u0627\u0679 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 33,
+  "facility": "Cat-D Hospital Mathani",
+  "district": "Peshawar",
+  "lat": null,
+  "lon": null,
+  "prec": "NOT FOUND",
+  "osm": null
+ },
+ {
+  "no": 34,
+  "facility": "Cat-D Hospital Besham",
+  "district": "Shangla",
+  "lat": 34.922914,
+  "lon": 72.8776349,
+  "prec": "FACILITY",
+  "osm": "Tehsil hospital besham, Abasin colony main road, Zor Buti\u0101l, \u0628\u0634\u0627\u0645, \u062a\u062d\u0635\u06cc\u0644 \u0628\u0634\u0627\u0645, \u0636\u0644\u0639 \u0634\u0627\u0646\u06af\u0644\u06c1,"
+ },
+ {
+  "no": 35,
+  "facility": "Cat-C Hospital Puran",
+  "district": "Shangla",
+  "lat": 34.7272206,
+  "lon": 72.6951669,
+  "prec": "VILLAGE:hamlet",
+  "osm": "P\u016bran, \u067e\u0648\u0631\u064e\u0646, \u062a\u062d\u0635\u06cc\u0644 \u067e\u0648\u0631\u064e\u0646, \u0634\u0627\u0646\u06af\u0644\u06c1, \u0645\u0627\u0644\u0627\u06a9\u0646\u0688 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e\u062e\u062a\u0648\u0646\u062e\u0648\u0627, 19150, \u067e\u0627\u06a9\u0633\u062a\u0627\u0646"
+ },
+ {
+  "no": 36,
+  "facility": "Cat-C Hospital Madyan",
+  "district": "Swat",
+  "lat": 35.1340537,
+  "lon": 72.5319605,
+  "prec": "FACILITY",
+  "osm": "Madyan hospital, N-95 National Highway, \u0645\u062f\u06cc\u0646, \u062a\u062d\u0635\u06cc\u0644 \u0628\u062d\u0631\u06cc\u0646, \u0636\u0644\u0639 \u0633\u0648\u0627\u062a, \u0645\u0627\u0644\u0627\u06a9\u0646\u0688 \u0688\u0648\u06cc\u0698\u0646, \u062e\u06cc\u0628\u0631 \u067e"
+ },
+ {
+  "no": 37,
+  "facility": "Cat-D Hospital Manglore",
+  "district": "Swat",
+  "lat": null,
+  "lon": null,
+  "prec": "NOT FOUND",
+  "osm": null
+ }
+]
