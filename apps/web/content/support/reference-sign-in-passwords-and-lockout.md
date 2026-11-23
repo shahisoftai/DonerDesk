@@ -16,7 +16,7 @@ After **five wrong passwords in a row**, sign-in to that account pauses for **15
 
 An unknown email address gets the same message as a wrong password, so the sign-in page cannot be used to find out which addresses have accounts.
 
-If you are locked out and cannot wait, use **Forgot your password?** on the sign-in page to set a new password.
+If you are locked out and cannot wait, use **Forgot your password?** on the sign-in page to set a new password. The email you receive contains a link to a page where you choose the new password. The link works **once** and stops working after **60 minutes**; if you ask for a second email, use the newest one. If no email arrives, check your spam folder, then ask for another.
 
 ## Messages
 | *Invalid credentials* | The email or password is wrong, or the address has no account | Check both, or use Forgot your password? on the sign-in page |

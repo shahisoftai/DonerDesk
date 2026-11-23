@@ -2,7 +2,7 @@
 
 **DonorDesk Version 4.01**
 
-Record of fixes applied to DonorDesk. Last updated: 2026-11-15 (the new UX, Version 4.000: see the section of that date); previously 2026-11-03 (dashboards: Phase 39 and live checks); previously 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
+Record of fixes applied to DonorDesk. Last updated: 2026-11-23 (the field officer, Phase 63: see the section of that date); previously 2026-11-15 (the new UX, Version 4.000: see the section of that date); previously 2026-11-03 (dashboards: Phase 39 and live checks); previously 2026-10-18 (demo 9 findings fixed after the Phase 28 deploy); previously 2026-10-19 (work plan bugs found before shipping); previously 2026-10-05 (Education demo: disaggregation and attendance findings).
 
 ## Phase 57 — defects found by driving production after the deploy (2026-11-16)
 
@@ -1597,3 +1597,27 @@ Found by looking at the baseline pictures, by the browser harnesses, and by driv
 | A work-plan sheet was read by the model, slowly, and lost its Repeats column | Emails are redacted before a reader sees the text, so the work-plan importer refused every row ("lead must be an email address") and the sheet reader returned nothing | `withoutLeadColumn` blanks the lead column before parsing; `repeats` is carried to the draft and written back by `workPlanSheet` |
 | Setup said "44 reportable of 55" with no reason | The snapshot carried counts only; the wizard's "No starting value" leaves the baseline empty and reportable requires one | `indicators.missing` and a sentence ("11 need a starting value.") |
 | "Your dashboard is ready" was missed and people clicked Create again | The note rendered below a very long gallery | It scrolls into view and the link is a button |
+
+
+## 2026-11-23: the field officer (Phase 63, 63b) and the password-reset email
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| The reset-password email said "use the secure link below" and had no link | `RequestPasswordResetHandler` built the link and never put it in the message | The link is passed as `emailLink` and appended to the **email only** (never the in-app inbox, so a one-time token is not stored there); `WEB_BASE_URL=https://donordesk.online` added to the API env (it was unset, so the link would have pointed at localhost). Release `20261123101758` |
+| The invitation email also has no link | Same shape: the message says "Open the invitation link" and the link is only shown to the admin on the Team page | **Not fixed** (pending): give the invite the same `emailLink` |
+| A field officer could open Visual Studio, Reports, Compliance, Downloads, Where we work, Settings tabs and a project's edit buttons, and the API served them finance, billing, the data sheet and every beneficiary | Only the buttons were hidden; routes were `project.view` and pages were reachable under "More" | `finance.view`/`results.view`, ownership policy, reachable-page tables, form tabs by permission (Phase 63, 63b) |
+| `/where-we-work` still opened for a field officer after 63b | The page was not in the middleware matcher, so the gate that reads `x-pathname` saw an empty path and allowed it | Matcher fixed, the gate refuses a restricted role when no path is known, and `middleware-path-header.test.mts` lists every portal route against the matcher (release `20261123120430`) |
+| Tapping one of three given facilities opened a list of all 37 | The Home link named no facility and the chooser had no "only mine" rule | Links carry `?place=`; a person with facilities given and no manage/review right chooses only from those; the chosen one opens at once (release `20261123121410`) |
+| Signing in with a field officer's address opened another organisation's account | The same address existed in the demo organisation and in AGRC; sign-in takes email and password only and opens the first match | The AGRC field officer was invited again with a different address. Rule for admins: one address, one organisation |
+| Raw text "Role FIELD_OFFICER lacks permission results.view" on `/portfolio`, `/programmes`, `/settings/billing`, `/projects/new` | `Permissions.require` put the role and permission in the message | The message is "You do not have permission for this"; the details stay in the log; and a restricted role no longer reaches those pages at all |
+| Playwright `connectOverCDP("http://localhost:9334")` hung | `localhost` resolved to IPv6 | Use `http://127.0.0.1:9334` |
+
+## 2026-11-23: field officer — the server side (Phase 63c)
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| A field officer could still call evidence search, the canvases list, form totals, the organisation map and visual-data queries | The API only checked permissions; routes needing just "can view the project" stayed open though their pages were closed | `role-route-access.ts` deny-by-default list for the role (release `20261123170626`) |
+| A field officer could open other people's Sensitive files through the API | `SENSITIVE` needed `evidence.upload`, which a field officer holds | Needs `evidence.verify` or `report.override-confidentiality`; uploaders keep their own |
+| The offline download held every place of the organisation (62 here) | The pack listed all live places | Only the person's own places and the areas above them (1 of 62 in the test) |
+| Two archive/restore tests failed after the message change | They matched `project.edit` in the error message | They read `details.permission` |
+| My own cleanup commands killed the shell twice | `pkill -f`/`pgrep -f` matched the command line of the shell that ran them | Use a script file or a pid file; never match on a string that is in your own command |

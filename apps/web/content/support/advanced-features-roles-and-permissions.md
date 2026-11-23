@@ -28,9 +28,13 @@ Seats are counted by role. Full seats are every role except **Viewer**; Viewers 
 | Manage AI Writing Style | Admin, Project Manager |
 | View the audit log | Admin, Project Manager, Compliance Officer |
 
+## What a Field Officer is shown
+
+A Field Officer holds neither the **money view** nor the **analysis view** that every other role has: the finance register, budget, funding and billing summary, and the data sheet, management report, portfolio, framework history and changes of plan are closed to them, in the app and in the data it asks for. They see only the people they registered. Their pages are Home, Inbox, Projects and, inside a project, the work plan and the forms. See [How to do your field work on your phone](/support/how-to/do-your-field-work-on-your-phone).
+
 ## Separation of duties
 
-A common setup is: Field Officers log activities and upload evidence; M&E Officers enter and verify indicators; Grants Officers draft and edit reports; Project Managers approve; Compliance Officers verify evidence and manage the checklist; Viewers export.
+A common setup is: Field Officers fill in forms, log activities and upload evidence; M&E Officers enter and verify indicators; Grants Officers draft and edit reports; Project Managers approve; Compliance Officers verify evidence and manage the checklist; Viewers export.
 
 ## Changing roles
 

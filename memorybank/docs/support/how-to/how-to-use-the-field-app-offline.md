@@ -4,10 +4,12 @@ The field app lets you fill in a project's forms, record numbers and activities,
 
 ## Before you go
 
+A **field officer's Home** shows **Given to you**: the facilities assigned to you, with one tap to open each form. A line under it opens this field app. For the whole day's work on a phone, see [How to do your field work on your phone](/support/how-to/do-your-field-work-on-your-phone).
+
 1. Open **Work offline** on a project's **Data → Forms** page, or go to `/field`, while you are online.
 2. Choose a project under **Download for offline** and choose **Download or refresh**.
 
-The download holds the project's form questions, the list of places, your planned work for the next two weeks, and the current figures of the project's places for the latest two open reporting periods. It holds no people and no files. It is removed when you sign out. A download older than two weeks shows a reminder to refresh it, but still works.
+The download holds the project's form questions, the list of places, your planned work for the next two weeks, and the current figures of the project's places for the latest two open reporting periods. It holds no people and no files. It is removed when you sign out. A download older than two weeks shows a reminder to refresh it, but still works. When your manager gives you more facilities, or changes the form, choose **Download or refresh** again; if you see the old list, sign out and in, reload the page and refresh the download.
 
 ## Fill in a form offline
 

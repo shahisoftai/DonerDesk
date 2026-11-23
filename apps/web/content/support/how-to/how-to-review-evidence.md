@@ -31,4 +31,4 @@ On **Evidence** you can filter by project, donor, country, verification status, 
 ## Good to know
 
 - Every decision is recorded in the audit trail with its reason.
-- Sensitive files are shown only to people allowed to open them.
+- **Sensitive** and **Highly sensitive** files are shown only to people allowed to open them: Admin, Project Manager, M&E Officer, Compliance Officer and Grants Officer. Bringing a file in does not let you open everyone else's: a Field Officer opens only **Public** and **Internal** files and the files they uploaded themselves.

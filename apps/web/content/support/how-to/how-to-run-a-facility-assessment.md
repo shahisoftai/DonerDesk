@@ -16,11 +16,11 @@ A place only counts as a facility once it is marked as one on the project's **Wh
 
 ## Give facilities to assessors
 
-Open the form and choose the **Facilities** tab. Tick facilities, choose the assessor (an active member of the project who can submit forms) and a due day, then **Give**. They are told in the app. The table above shows how far each district has got.
+Open the form and choose the **Facilities** tab. Tick facilities, choose the assessor (an active member of the project who can submit forms) and a due day, then **Give**. They are told in the app. The table above shows how far each district has got. The **Facilities**, **Assessments** and totals tabs are for the people who manage or review the form; an assessor sees only **Fill in**.
 
 ## Fill it in
 
-Assessors open the form (or **Work offline** on a phone) and see the facilities given to them first. Choose **Start**:
+Assessors open the form from **Given to you** on their Home (or **Work offline** on a phone). An assessor who has facilities given sees **only those**, not every facility, and a tap on one opens it. A manager or reviewer, and a form nobody assigned, chooses from every facility. When everything given is done the page says so. Choose **Start**:
 
 - A long form shows one section at a time with a contents list and how much of each is answered. Problems are named in words beside the question.
 - Facts that rarely change are offered from the last visit and marked **From the last visit**. Check them.

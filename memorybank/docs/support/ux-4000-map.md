@@ -23,7 +23,7 @@
 | Admin | **Settings** | grouped list (section 4) | Admin, PM, Grants |
 
 - **Project tabs by role (Phase 59):** the tab row shows the tabs the role needs and puts the rest under a **More** menu at the end of the row (`features/projects/domain/role-project-tabs.ts`). Ask for the tab by name; do not say it is "hidden".
-- A **Field Officer** sees **Home**, **Inbox**, **Projects** and **Evidence** only (and the phone bar **Today · Record · Waiting · More**).
+- A **Field Officer** (Phase 63b) sees **Home**, **Inbox** and **Projects** only (and the phone bar **Today · Record · Waiting · More**). Inside a project the tab bar is **Plan** (**Work plan**) and **Data** (**Forms**) with no **More**; opening a project goes to **Forms**. Home has **Given to you**. Every other page answers **Page not found**. On a form they see only **Fill in**. See `how-to-do-your-field-work-on-your-phone.md`.
 - An **outside partner** sees **Home** (their **Your projects** page), **My projects** and **Security**.
 - **My Work** and **Notifications** no longer exist: they are the **Inbox** (**To do**, **Team**, **Updates**). The old addresses were removed on 2026-11-15 (no hits since the release).
 - **Portfolio**, **Evidence**, **Compliance** and **Download Center** are tabs on top of **Home** and **Reports**, not separate sidebar entries (except Evidence for a field officer).

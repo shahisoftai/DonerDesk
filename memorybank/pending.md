@@ -1305,3 +1305,21 @@ Verified in the signed-in test tenant on 2026-11-03 (`demo/verification-2026-11-
 - [ ] Re-run `pnpm --filter @donordesk/web test:visuals -- --update` after any look change and review the pictures; the committed baselines were taken before the toolbar and axis-label fixes.
 - [ ] Native review of the new FR/ES/AR labels (KPI change and narrative sentences, Low-data mode, View data).
 - [ ] The first deploy (`20261103044136`) was built from an uncommitted tree; the commits (`d63e1c2a`, `2f3b254e`) were made afterwards. `Temp/` (third-party donor files) is intentionally uncommitted.
+
+
+## Phase 63 / 63b and the KP assessment (2026-11-23, DEPLOYED; `imp/phase63-field-officer-access.md`, `imp/kp-hf-assessment-2026.md`)
+- [ ] The **invitation email carries no link** (the reset email was fixed the same day). Give `InviteUserHandler` the same `emailLink`, and show on the Team page that the link is shown there too.
+- [ ] A **per-project switch** for "register people reached" and "enter indicator values" for the field role (needs a stored setting); today both are off for field officers.
+- [ ] **One address, one organisation**: sign-in with the same address in two organisations opens the first match. Either refuse an invitation to an address that exists in another organisation, or let sign-in ask which organisation.
+- [ ] KP assessment: assign the other 34 facilities; remove the old AGRC entry mnpiracha@gmail.com; replace the 25 rough pins and add the 8 missing ones from real GPS; create the reporting period before applying the OC1-1 total; decide whether the Foundation wants a score.
+- [ ] Native review of `assess.facility.allDone` and the other assessor wording (fr, es, ar, ur, ps).
+- [ ] Support article screenshots for the field officer's Home, Given to you and the form's single tab (text only so far).
+- [ ] Older tests that fail without this phase: two API tests need a local Postgres, the external-access sample list lacks `entry-places`, the PCW "plain language" copy test, and a dashboard-template handler test (`a built-in template applies too…`).
+- [ ] The code of Phase 63, 63b and the support updates is **not committed** (working tree on `0025-place-tree`).
+
+## Phase 63c follow-ups (2026-11-23)
+- [ ] A real phone and real loss of signal: download, fill, send with no connection, as a field officer (the checks ran in a phone-width desktop browser).
+- [ ] Delete the four archived `ZZ-FO-…` scratch projects in the AGRC tenant (test data from the end-to-end runs).
+- [ ] A draft project shows its "activate" banner to a field officer; hide it for roles that cannot edit the project.
+- [ ] Other restricted roles (a compliance or grants role) could take their own rows in `ROLE_REACHABLE_PAGES`, `ROLE_REACHABLE_APP_PAGES` and `ROLE_ROUTE_ALLOWLISTS` if the owner wants them narrowed.
+- [ ] Reading a file by id is still allowed to a field officer for the file's confidentiality level; no other project's files are reachable (project boundary).

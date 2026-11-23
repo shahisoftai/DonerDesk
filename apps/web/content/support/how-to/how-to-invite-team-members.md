@@ -11,6 +11,10 @@ Only **Admins** can invite people and change roles.
 
 An **Invitation created** panel shows the acceptance link (`/invite/accept?token=…`). **DonorDesk does not send invitation emails at the moment**, so copy the link, add your workspace's address in front of it, and send it to the person yourself (email, chat, etc.).
 
+## One email address, one organisation
+
+Sign-in takes only an email and a password, so an address should belong to **one organisation**. If the same address already has an account in another organisation, signing in opens that account, not the one you invited. Invite the person with a different address, or ask them to use the other organisation's address for that work.
+
 ## Who has not joined yet
 
 Below the member table, **Invited, not joined yet (n)** lists everyone you invited who has not accepted. Each row shows the email, the role and how long the link is valid (or **Expired**), with a **Copy link** button, so you can send the link again without inviting twice. Only Admins see this list, because the link lets whoever has it join with that role.

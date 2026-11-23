@@ -432,3 +432,14 @@ Collapsible rows on the wizard's Indicators and Work plan slides, reused facts w
 
 ## Phase 58 — simpler for every level of user (2026-11-16)
 - Plan and status: [`imp/phase58-simpler-for-everyone.md`](imp/phase58-simpler-for-everyone.md). Suggested indicator settings with reasons, sheet Type / Break down by columns, delete a draft form, Setup explains "reportable of". Backlog 58.7-58.12 listed there. Demo record: [`demo/verification-demo-17.md`](demo/verification-demo-17.md).
+
+## 2026-11-22: Phase 62 — assessments and long surveys (Version 4.01)
+- Feature: [`Features/71-Assessments-And-Surveys-Phase-62.md`](Features/71-Assessments-And-Surveys-Phase-62.md). Plan: [`imp/phase62-assessments-and-surveys.md`](imp/phase62-assessments-and-surveys.md). Deployed 2026-11-22/23 (`20261122183439`, fixes `20261123191059`); migration `20261120090000_assessments`.
+- Support: `how-to-run-a-facility-assessment.md`.
+
+## 2026-11-23: Phase 63 and 63b — the field officer: least access, one mobile path (Version 4.01)
+- Feature: [`Features/72-Field-Officer-Access-Phase-63.md`](Features/72-Field-Officer-Access-Phase-63.md). Plan, batches, releases and live check: [`imp/phase63-field-officer-access.md`](imp/phase63-field-officer-access.md). Rules: AGENTS.md (Phase 63, 63b).
+- Deployed 2026-11-23 (`20261123101758` reset-email link and `WEB_BASE_URL`, `20261123111219`, `20261123115213`, `20261123120430`, `20261123121410`); no migration, no RLS change. Checked live as a real field officer, 46 of 46 screens as expected.
+- The project that prompted it: [`imp/kp-hf-assessment-2026.md`](imp/kp-hf-assessment-2026.md) (37 KP health facilities, 24-section form, generators in `scripts/kp-hf-assessment/`).
+- Support: new `how-to-do-your-field-work-on-your-phone.md`; updated `how-to-run-a-facility-assessment.md`, `how-to-use-the-field-app-offline.md`, `user-roles-and-permissions.md`, `advanced-features-roles-and-permissions.md`, `how-to-find-your-way-around.md`, `how-to-invite-team-members.md`, `reference-sign-in-passwords-and-lockout.md`; navigation map `docs/support/ux-4000-map.md`.
+- **Phase 63c (2026-11-23)**: the server-side deny-by-default route list for the field officer, sensitive evidence closed to them, a scoped offline download, proven as a real field officer (e2e 25/25, screens 46/46). Releases `20261123164543` (audit), `20261123170626` (enforcing). See `Features/72-Field-Officer-Access-Phase-63.md` (Phase 63c section) and `imp/phase63-field-officer-access.md`.
