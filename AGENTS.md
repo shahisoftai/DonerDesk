@@ -1101,3 +1101,10 @@ in-process default), stub LLM (dev default), pino logs, console email.
 - **The offline pack carries only a restricted person's own places** (`placeIdsWithAncestors`): assigned facilities, the plan's and areas' places, their planned items' places, and the areas above them.
 - **An error message never carries the permission name**; tests read `error.details.permission`.
 - **Prove access as the role, not as an admin**: `apps/api/test/live/field-officer-e2e.mjs` (needs `DD_ADMIN_EMAIL`/`DD_ADMIN_PASS`, an SSH tunnel to the api, `EXPECT_MODE=enforce|audit`; `KEEP=1` leaves a sandbox, `TEARDOWN=<json>` removes it) makes a scratch project and a throwaway field officer, acts as them and cleans up. Run it with the screen check after any change to the access tables.
+
+## Phase 64 invariants — the field app (2026-11-23, branch `0025-place-tree`; plan `memorybank/imp/phase64-field-app.md`, feature doc `memorybank/Features/73-Field-App-Phase-64.md`)
+- **A field officer on a phone lands in `/field`** (`landsInFieldApp`, pure; FIELD variant + phone user agent, `?stay=1` opts out, never for outside partners). `/field` stays client-only and renders no signed-in data on the server.
+- **What Today shows is `buildToday(packs, today)`** (`features/offline/domain/field-today.ts`): one "Do this next", then visits and planned work ranked started, overdue, today, soon, later. The screens only draw it; today is passed in.
+- **Screens are `features/offline/presentation/field/*`** (shell, Today, My week, Waiting, Me, tab bar); the form is the existing filler. One download (`getWork`) fetches every project; work older than a day refreshes quietly when online. Copy is `fa.*` (four languages, number-neutral, drafts). The glossary bans "my work": use "jobs".
+- **On a phone a form's section contents is a pull-down** (`SectionNav`), so the questions stay on screen; photo answers are shrunk before upload.
+- **Check it**: `pnpm --filter @donordesk/web test:field-app` after changing any field screen. Deploy: web only.

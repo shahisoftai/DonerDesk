@@ -58,3 +58,6 @@ Today (default)                       My week                 Waiting           
 
 ## Not in this phase
 Notifications, the full work plan and the map stay on the online Home. A real-phone, real-signal-loss test is the owner's (see `pending.md`).
+
+## Status (2026-11-23)
+Built, tested (harness 12/12, unit tests), deployed (`20261123182235`; contents pull-down in a later web release) and checked live as the field officer. Docs, AGENTS.md and the two support articles are updated. Open: real-phone test, native translation review.
