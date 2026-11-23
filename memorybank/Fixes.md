@@ -1621,3 +1621,7 @@ Found by looking at the baseline pictures, by the browser harnesses, and by driv
 | The offline download held every place of the organisation (62 here) | The pack listed all live places | Only the person's own places and the areas above them (1 of 62 in the test) |
 | Two archive/restore tests failed after the message change | They matched `project.edit` in the error message | They read `details.permission` |
 | My own cleanup commands killed the shell twice | `pkill -f`/`pgrep -f` matched the command line of the shell that ran them | Use a script file or a pid file; never match on a string that is in your own command |
+
+## 2026-11-23: field app
+- A form's section contents was always open on a phone and pushed the questions down: it is now a pull-down (`SectionNav`).
+- A phone sign-in opened the online Home with no way to the field app: field officers on a phone now land in `/field`.

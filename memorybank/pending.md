@@ -1315,7 +1315,7 @@ Verified in the signed-in test tenant on 2026-11-03 (`demo/verification-2026-11-
 - [ ] Native review of `assess.facility.allDone` and the other assessor wording (fr, es, ar, ur, ps).
 - [ ] Support article screenshots for the field officer's Home, Given to you and the form's single tab (text only so far).
 - [ ] Older tests that fail without this phase: two API tests need a local Postgres, the external-access sample list lacks `entry-places`, the PCW "plain language" copy test, and a dashboard-template handler test (`a built-in template applies too…`).
-- [ ] The code of Phase 63, 63b and the support updates is **not committed** (working tree on `0025-place-tree`).
+- [x] The code of Phase 63, 63b and the support updates is committed.
 
 ## Phase 63c follow-ups (2026-11-23)
 - [ ] A real phone and real loss of signal: download, fill, send with no connection, as a field officer (the checks ran in a phone-width desktop browser).
@@ -1323,3 +1323,10 @@ Verified in the signed-in test tenant on 2026-11-03 (`demo/verification-2026-11-
 - [ ] A draft project shows its "activate" banner to a field officer; hide it for roles that cannot edit the project.
 - [ ] Other restricted roles (a compliance or grants role) could take their own rows in `ROLE_REACHABLE_PAGES`, `ROLE_REACHABLE_APP_PAGES` and `ROLE_ROUTE_ALLOWLISTS` if the owner wants them narrowed.
 - [ ] Reading a file by id is still allowed to a field officer for the file's confidentiality level; no other project's files are reachable (project boundary).
+
+## Phase 64 — the field app (2026-11-23, DEPLOYED `20261123182235`, `20261123184952`)
+- [ ] A real-phone, real-signal-loss test of the field app (owner).
+- [ ] Native review of the French, Spanish and Arabic `fa.*` copy.
+- [ ] Archive the "ZZ Phone test" project (it still shows under Other forms for Pasha).
+- [ ] The invitation email still carries no link.
+- [ ] Pre-existing failing web unit test: "the words on this slide are plain language".
