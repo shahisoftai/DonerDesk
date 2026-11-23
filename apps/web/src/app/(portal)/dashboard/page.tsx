@@ -1,4 +1,7 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
+import { landsInFieldApp } from "@/features/navigation/domain/phone-landing";
 import { homeVariantFor } from "@/features/navigation/domain/role-navigation";
 import { PortfolioHome } from "@/features/dashboard/presentation/PortfolioHome";
 import { FieldHome } from "@/features/dashboard/presentation/FieldHome";
@@ -15,6 +18,8 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
   const ctx = await requireSession();
   // An outside partner has no organisation-wide home: their projects and what is next on each (plan F37).
   if (ctx.external) return <PartnerHome ctx={ctx} />;
+  // A field officer on a phone lands in the field app, which is made for the phone and works with no signal; "Open the online home page" there adds ?stay=1.
+  if (landsInFieldApp({ homeVariant: homeVariantFor(ctx.role), userAgent: (await headers()).get("user-agent"), stay: one(sp.stay) })) redirect("/field");
   switch (homeVariantFor(ctx.role)) {
     case "DIRECTOR": return <PortfolioHome ctx={ctx} variant="DIRECTOR" filter={filter} />;
     case "MANAGER": return <PortfolioHome ctx={ctx} variant="MANAGER" filter={filter} />;

@@ -2,6 +2,7 @@ import { visual61Fr } from "./visual61-fr.ts";
 import type { MessageKey } from "./en.ts";
 import { recordFr } from "./record-fr.ts";
 import { assessFr } from "./assess-fr.ts";
+import { fieldFr } from "./field-fr.ts";
 import { placeEntryFr } from "./place-entry-fr.ts";
 import { datasetsFr } from "./datasets-fr.ts";
 import { libraryFr } from "./library-fr.ts";
@@ -894,6 +895,7 @@ export const fr: Record<MessageKey, string> = {
   "maps.sources.link": "Sources et licences des cartes",
   ...recordFr,
   ...assessFr,
+  ...fieldFr,
   ...placeEntryFr,
   ...datasetsFr,
   ...canvasFr,

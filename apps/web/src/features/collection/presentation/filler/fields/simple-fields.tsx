@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
+import { reduceImage } from "@/lib/client/reduce-image";
 import { framed } from "../FieldFrame";
 import type { FieldViewProps } from "../field-types";
 
@@ -81,7 +82,9 @@ export function FileFieldView(p: FieldViewProps) {
     if (!file || !uploadFile) return;
     setBusy(true); setNote("");
     try {
-      const r = await uploadFile(file, p.field.key);
+      // A phone photo is often 5 to 12 MB and the form takes 5 MB at most: shrink it first (it also saves mobile data and phone storage).
+      const prepared = file.type.startsWith("image/") ? await reduceImage(file) : file;
+      const r = await uploadFile(prepared, p.field.key);
       if (r.ok) { p.ctx.rememberFile(r.id, r.name); p.onChange(r.id); } else setNote(r.message);
     } finally { setBusy(false); }
   }

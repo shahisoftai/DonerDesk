@@ -6,6 +6,7 @@
 import { visual61En } from "./visual61-en.ts";
 import { recordEn } from "./record-en.ts";
 import { assessEn } from "./assess-en.ts";
+import { fieldEn } from "./field-en.ts";
 import { placeEntryEn } from "./place-entry-en.ts";
 import { datasetsEn } from "./datasets-en.ts";
 import { libraryEn } from "./library-en.ts";
@@ -896,6 +897,7 @@ export const en = {
   "maps.sources.link": "Map sources and licences",
   ...recordEn,
   ...assessEn,
+  ...fieldEn,
   ...placeEntryEn,
   ...datasetsEn,
   ...canvasEn,
