@@ -31,7 +31,7 @@ export class PostmarkNotificationAdapter implements INotificationPort {
       const result = await this.email.send({
         to: recipient.email.toString(),
         subject: input.title,
-        html: messageHtml(input.message),
+        html: messageHtml(input.emailLink ? `${input.message}\n\n${input.emailLink}` : input.message, input.emailLink),
       });
       if (!result.success) {
         this.logger.error("notification.email_failed", { type: input.type, recipient: input.recipientId, error: result.error });
@@ -43,14 +43,15 @@ export class PostmarkNotificationAdapter implements INotificationPort {
 }
 
 /** Headings, bullet lists and paragraphs, read by the same rule as the Inbox (`messageBlocks`). */
-function messageHtml(text: string): string {
+function messageHtml(text: string, link?: string): string {
+  const linkHtml = (t: string): string => (link && t === link ? `<p><a href="${escapeHtml(link)}">${escapeHtml(link)}</a></p>` : null) ?? `<p>${escapeHtml(t)}</p>`;
   return messageBlocks(text)
     .map((b) =>
       b.kind === "LIST"
         ? `<ul>${b.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>`
         : b.kind === "HEADING"
           ? `<p><strong>${escapeHtml(b.text)}</strong></p>`
-          : `<p>${escapeHtml(b.text)}</p>`,
+          : linkHtml(b.text),
     )
     .join("");
 }
