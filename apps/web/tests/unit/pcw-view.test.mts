@@ -35,8 +35,9 @@ test("the rail follows the API's order and says progress in words", () => {
   assert.equal(rail.find((r) => r.slide === "START")!.status, "Complete");
 });
 
-test("the wizard opens on the first slide with something to answer, else on Launch", () => {
-  assert.equal(firstOpenSlide(view({ PLACES: 1, FINANCE: 3 })), "PLACES");
+test("the wizard opens on the first essential slide with something to answer, else on Launch; a slide that can wait never pulls the person back", () => {
+  assert.equal(firstOpenSlide(view({ RESULTS: 2, PLACES: 1 })), "RESULTS");
+  assert.equal(firstOpenSlide(view({ PLACES: 1, FINANCE: 3 })), "LAUNCH");
   assert.equal(firstOpenSlide(view({})), "LAUNCH");
 });
 

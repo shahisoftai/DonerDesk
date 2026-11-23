@@ -8,7 +8,7 @@ import type { SetupDraftView } from "@/lib/server/schemas-project-setup-draft";
 import { usePcwCopy } from "./usePcwCopy";
 import { getDraftAction } from "@/lib/actions/project-setup-draft";
 import { READING_POLL_MS, readingState } from "../domain/documents-view";
-import { firstOpenSlide, neighbourSlide, railEntries, slideGaps } from "../domain/pcw-view";
+import { firstOpenSlide, neighbourSlide, railEntries, slideGaps, slideLater } from "../domain/pcw-view";
 import { anyAreaRunning } from "../domain/parity-view";
 import { DocumentsList } from "./DocumentsList";
 import { LeftOutNote } from "./LeftOutNote";
@@ -32,6 +32,11 @@ import { FoundCard } from "./FoundCard";
  * domain through the API, so the shell holds no requirement of its own. Slides not yet built show what is still to answer
  * there, so the whole list is visible from the start.
  */
+/** Whether the slide is one the launch needs (the rail entry says so). */
+function PCW_SLIDE_ESSENTIAL(rail: ReadonlyArray<{ slide: SlideKey; essential: boolean }>, slide: SlideKey): boolean {
+  return rail.find((r) => r.slide === slide)?.essential ?? true;
+}
+
 export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView }) {
   const pcw = usePcwCopy();
   const PCW_COPY = pcw.c;
@@ -60,6 +65,8 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
   const next = quick ? quickNext : neighbourSlide(view, current, 1);
   const index = rail.findIndex((r) => r.slide === current) + 1;
   const gaps = slideGaps(view, current, pcw.sentences);
+  const later = slideLater(view, current, pcw.sentences);
+  const canWait = !PCW_SLIDE_ESSENTIAL(rail, current);
 
   return (
     <div className="mx-auto w-full max-w-[1600px] space-y-4 px-4 py-6">
@@ -73,10 +80,10 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
                 aria-current={r.slide === current ? "step" : undefined}
                 title={r.status}
                 onClick={() => go(r.slide)}
-                className={`h-full w-full rounded-lg px-2 py-2 text-start text-xs font-medium text-white ${r.complete ? "bg-green-700 hover:bg-green-800" : "bg-red-700 hover:bg-red-800"} ${r.slide === current ? "ring-2 ring-slate-900 ring-offset-2 dark:ring-white dark:ring-offset-slate-900" : ""}`}
+                className={`h-full w-full rounded-lg px-2 py-2 text-start text-xs font-medium text-white ${r.complete ? "bg-green-700 hover:bg-green-800" : r.essential ? "bg-red-700 hover:bg-red-800" : "bg-slate-600 hover:bg-slate-700"} ${r.slide === current ? "ring-2 ring-slate-900 ring-offset-2 dark:ring-white dark:ring-offset-slate-900" : ""}`}
               >
                 <span className="block">{i + 1}. {PCW_SLIDES[r.slide].label}</span>
-                <span className="block text-xs font-normal">{r.complete ? "✓ " : ""}{r.status}</span>
+                <span className="block text-xs font-normal">{r.complete ? "✓ " : ""}{r.status}{!r.essential && !r.complete ? ` · ${PCW_COPY.canWait}` : ""}</span>
               </button>
             </li>
           ))}
@@ -107,6 +114,19 @@ export function PcwShell({ id, initial }: { id: string; initial: SetupDraftView 
           <div role="alert" data-testid="pcw-slide-gaps" className="mb-4 rounded-xl border-2 border-red-600 bg-red-50 p-3 text-sm text-red-900 dark:bg-red-950/40 dark:text-red-100">
             <p className="font-semibold">{PCW_COPY.inboxTitle} ({gaps.length})</p>
             <ul className="mt-1 list-disc space-y-0.5 ps-5">{gaps.map((g) => <li key={g.key}>{g.text}</li>)}</ul>
+          </div>
+        ) : null}
+        {!canWait && later.length > 0 ? (
+          <div data-testid="pcw-later-here" className="mb-4 rounded-xl border border-slate-300 bg-slate-50 p-3 text-sm text-slate-800 dark:border-white/15 dark:bg-white/5 dark:text-slate-100">
+            <p>{PCW_COPY.laterIntro}</p>
+            <ul className="mt-1 list-disc space-y-0.5 ps-5">{later.map((g) => <li key={g.key}>{g.text}</li>)}</ul>
+          </div>
+        ) : null}
+        {canWait ? (
+          <div data-testid="pcw-can-wait" className="mb-4 rounded-xl border border-slate-300 bg-slate-50 p-3 text-sm text-slate-800 dark:border-white/15 dark:bg-white/5 dark:text-slate-100">
+            <p>{PCW_COPY.laterNote}</p>
+            {later.length > 0 ? <ul className="mt-1 list-disc space-y-0.5 ps-5">{later.map((g) => <li key={g.key}>{g.text}</li>)}</ul> : null}
+            <button type="button" className="btn-secondary mt-2" onClick={() => go("LAUNCH")}>{PCW_COPY.finishLater}</button>
           </div>
         ) : null}
         {current === "START" ? (

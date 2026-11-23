@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { launchDeadlineOffset, scheduleTimeline, cadenceOf, applyOperation, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox } from "../dist/index.js";
+import { launchDeadlineOffset, scheduleTimeline, cadenceOf, applyOperation, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, openRequirements } from "../dist/index.js";
 
 const item = (value) => ({ value, sourceQuote: null, sourceRef: null, confidence: "HIGH", status: "EDITED" });
 const person = (key, role = "FIELD_OFFICER") => ({ key, name: key, email: null, role, external: false, invite: "LATER" });
@@ -67,7 +67,7 @@ test("the schedule edit checks the cadence, the report types and the days", () =
 });
 
 test("the reporting requirements close from the slide's decisions", () => {
-  const open = (x) => gapInbox(evaluateRequirements(x, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("reporting."));
+  const open = (x) => openRequirements(evaluateRequirements(x, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("reporting."));
   const d = draft();
   assert.deepEqual(open(d), ["reporting.rules"]);
   const done = applyOperation(d, { kind: "SET_SCHEDULE", patch: { rules: [{ reportType: "QUARTERLY", template: "BUILT_IN", dueDaysAfterEnd: 30 }] } }).draft;

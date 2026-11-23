@@ -86,7 +86,7 @@ export const INDICATOR_REQUIREMENTS: readonly RequirementDef[] = [
     },
   },
   {
-    key: "indicators.owners", slide: "INDICATORS", coversSteps: [8], allowsNotUsed: false,
+    key: "indicators.owners", when: "AFTER_LAUNCH", slide: "INDICATORS", coversSteps: [8], allowsNotUsed: false,
     check: (d) => {
       const team = new Set(d.extras.team.map((p) => p.key));
       const problems = live(d.proposal.indicators)

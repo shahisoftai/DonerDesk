@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { emptyDraft, applyOperation, applyResultOperation, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox, adviceNotes, canLaunch, isDefaultVocabulary, presetVocabulary, DEFAULT_VOCABULARY, logframeSheet } from "../dist/index.js";
+import { emptyDraft, applyOperation, applyResultOperation, evaluateRequirements, SETUP_REQUIREMENTS, openRequirements, adviceNotes, canLaunch, isDefaultVocabulary, presetVocabulary, DEFAULT_VOCABULARY, logframeSheet } from "../dist/index.js";
 
 const item = (value) => ({ value, sourceQuote: null, sourceRef: null, confidence: "HIGH", status: "EDITED" });
 const node = (level, code, parentCode, extra = {}) => item({ level, code, title: `${level} ${code}`, description: null, parentCode, codeSource: "DOCUMENT", ...extra });
@@ -32,11 +32,11 @@ test("52.5: a result without reasoning is advice only: shown, never an open gap,
   const d = emptyDraft(false);
   d.proposal.logframe = [node("OUTCOME", "OC1", null), node("OUTPUT", "OP1", "OC1", { rationale: "Wells give water" })];
   const results = evaluateRequirements(d, SETUP_REQUIREMENTS);
-  const advice = adviceNotes(results);
+  const advice = adviceNotes(results).filter((a) => a.key === "results.reasoning");
   assert.deepEqual(advice.map((a) => [a.key, a.code, a.params.count]), [["results.reasoning", "resultsWithoutReasoning", 1]]);
-  assert.equal(gapInbox(results).some((g) => g.key === "results.reasoning"), false);
+  assert.equal(openRequirements(results).some((g) => g.key === "results.reasoning"), false);
   d.proposal.logframe[0].value.rationale = "Because";
-  assert.equal(adviceNotes(evaluateRequirements(d, SETUP_REQUIREMENTS)).length, 0);
+  assert.equal(adviceNotes(evaluateRequirements(d, SETUP_REQUIREMENTS)).filter((a) => a.key === "results.reasoning").length, 0);
 });
 
 test("52.5: the logframe sheet adds Assumptions and Rationale columns only when a result has them", () => {

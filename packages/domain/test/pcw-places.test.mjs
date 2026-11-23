@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { PLACE_OPERATIONS, applyPlaceOperation, emptyProposal, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox } from "../dist/index.js";
+import { PLACE_OPERATIONS, applyPlaceOperation, emptyProposal, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, openRequirements } from "../dist/index.js";
 
 const run = (p, op) => { const r = applyPlaceOperation(p, op); assert.equal(r.ok, true, r.reason); return r.proposal; };
 const refused = (p, op) => { const r = applyPlaceOperation(p, op); assert.equal(r.ok, false); return r.reason; };
@@ -67,7 +67,7 @@ test("places never change the proposal they were given", () => {
 });
 
 test("typed places close the places requirement; the project area and 'not used' close the rest", () => {
-  const open = (d) => gapInbox(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("places."));
+  const open = (d) => openRequirements(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("places."));
   const d = { ...emptyDraft(), proposal: base() };
   assert.deepEqual(open(d), ["places.area"]);
   d.extras.projectArea = "Gulu District";
@@ -118,5 +118,5 @@ test("the map's picks are checked", () => {
 test("areas ticked on the map count as the project area", () => {
   const d = emptyDraft();
   d.proposal = run(d.proposal, { kind: "SET_BOUNDARY_PLACES", country: { name: "Uganda" }, units: [pick("UG3", "Northern", 1)] });
-  assert.deepEqual(gapInbox(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k === "places.area"), []);
+  assert.deepEqual(openRequirements(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k === "places.area"), []);
 });

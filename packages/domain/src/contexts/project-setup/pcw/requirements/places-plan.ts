@@ -35,7 +35,7 @@ export const unfedIndicators = (d: SetupDraft): string[] => {
 export const PLACES_REQUIREMENTS: readonly RequirementDef[] = [
   {
     // A project with no named places answers "not used".
-    key: "places.decided", slide: "PLACES", coversSteps: [16], allowsNotUsed: true,
+    key: "places.decided", when: "AFTER_LAUNCH", slide: "PLACES", coversSteps: [16], allowsNotUsed: true,
     check: (d) => {
       if (d.proposal.places.length === 0) return open("placesEmpty");
       const n = undecidedCount(d.proposal.places);
@@ -43,7 +43,7 @@ export const PLACES_REQUIREMENTS: readonly RequirementDef[] = [
     },
   },
   {
-    key: "places.area", slide: "PLACES", coversSteps: [17, 18], allowsNotUsed: true,
+    key: "places.area", when: "AFTER_LAUNCH", slide: "PLACES", coversSteps: [17, 18], allowsNotUsed: true,
     // Areas ticked on the map are the project area; the typed area is for a project that names its area in words.
     check: (d) => (present(d.extras.projectArea) || live(d.proposal.places).some((x) => Boolean(x.mapRef)) ? MET : open("projectAreaMissing")),
   },
@@ -51,27 +51,27 @@ export const PLACES_REQUIREMENTS: readonly RequirementDef[] = [
 
 export const PLAN_REQUIREMENTS: readonly RequirementDef[] = [
   {
-    key: "plan.decided", slide: "WORK_PLAN", coversSteps: [19], allowsNotUsed: false,
+    key: "plan.decided", when: "AFTER_LAUNCH", slide: "WORK_PLAN", coversSteps: [19], allowsNotUsed: false,
     check: (d) => {
       const n = undecidedCount(d.proposal.plan);
       return n === 0 ? MET : open("planUndecided", { count: n });
     },
   },
   {
-    key: "plan.coverage", slide: "WORK_PLAN", coversSteps: [19, 20], allowsNotUsed: false,
+    key: "plan.coverage", when: "AFTER_LAUNCH", slide: "WORK_PLAN", coversSteps: [19, 20], allowsNotUsed: false,
     check: (d) => (planRows(d).length === 0 ? open("planEmpty") : allOf(uncoveredActivities(d), "activityWithoutPlan")),
   },
   {
-    key: "plan.complete", slide: "WORK_PLAN", coversSteps: [21, 23, 24, 33], allowsNotUsed: false,
+    key: "plan.complete", when: "AFTER_LAUNCH", slide: "WORK_PLAN", coversSteps: [21, 23, 24, 33], allowsNotUsed: false,
     check: (d) => allOf(incompletePlans(d), "planIncomplete"),
   },
   {
     // An activity that feeds no indicator is allowed when the person says so.
-    key: "plan.indicators", slide: "WORK_PLAN", coversSteps: [22], allowsNotUsed: true,
+    key: "plan.indicators", when: "AFTER_LAUNCH", slide: "WORK_PLAN", coversSteps: [22], allowsNotUsed: true,
     check: (d) => allOf(planRows(d).filter(({ setup }) => (setup?.indicatorCodes.length ?? 0) === 0).map(({ def, key }) => named(def.title, key)), "planWithoutIndicator"),
   },
   {
-    key: "plan.indicatorFed", slide: "WORK_PLAN", coversSteps: [22], allowsNotUsed: false,
+    key: "plan.indicatorFed", when: "AFTER_LAUNCH", slide: "WORK_PLAN", coversSteps: [22], allowsNotUsed: false,
     check: (d) => allOf(unfedIndicators(d), "indicatorNotFed"),
   },
 ];

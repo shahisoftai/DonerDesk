@@ -75,6 +75,10 @@ export const PCW_ES: PcwBundle = {
     progress: (open) => (open === 0 ? "Completo" : `${open} por responder`),
     inboxTitle: "Por responder",
     inboxEmpty: "No queda nada por responder.",
+    canWait: "Puede esperar",
+    finishLater: "Terminar más tarde en el proyecto",
+    laterNote: "Puede terminar esto en el proyecto después del lanzamiento. Estará en la lista de configuración, con orientación.",
+    laterIntro: "Termine primero lo esencial. Esto puede esperar hasta después del lanzamiento:",
     start: {
       withDocs: "Tengo documentos", withoutDocs: "Empezar sin documentos", donor: "Donante", sector: "Sector", country: "País", begin: "Empezar",
       useStarting: "Usar las respuestas iniciales de este sector",

@@ -9,11 +9,11 @@ const FINANCE_SWITCH = "finance.funding";
 
 export const FINANCE_REQUIREMENTS: readonly RequirementDef[] = [
   {
-    key: FINANCE_SWITCH, slide: "FINANCE", coversSteps: [25, 28], allowsNotUsed: true,
+    key: FINANCE_SWITCH, when: "AFTER_LAUNCH", slide: "FINANCE", coversSteps: [25, 28], allowsNotUsed: true,
     check: (d) => (live(d.proposal.funding).some((f) => present(f.amount) && present(f.currency)) ? MET : open("fundingMissing")),
   },
   {
-    key: "finance.budget", slide: "FINANCE", coversSteps: [26], allowsNotUsed: true, unlessNotUsed: FINANCE_SWITCH,
+    key: "finance.budget", when: "AFTER_LAUNCH", slide: "FINANCE", coversSteps: [26], allowsNotUsed: true, unlessNotUsed: FINANCE_SWITCH,
     check: (d) => {
       const pending = undecidedCount(d.proposal.budget);
       if (pending > 0) return open("budgetUndecided", { count: pending });
@@ -21,7 +21,7 @@ export const FINANCE_REQUIREMENTS: readonly RequirementDef[] = [
     },
   },
   {
-    key: "finance.reconcile", slide: "FINANCE", coversSteps: [27], allowsNotUsed: true, unlessNotUsed: FINANCE_SWITCH,
+    key: "finance.reconcile", when: "AFTER_LAUNCH", slide: "FINANCE", coversSteps: [27], allowsNotUsed: true, unlessNotUsed: FINANCE_SWITCH,
     check: (d) => {
       if (!present(d.extras.finance.reportingCurrency)) return open("reportingCurrencyMissing");
       const summary = financeSummary(d);
@@ -33,7 +33,7 @@ export const FINANCE_REQUIREMENTS: readonly RequirementDef[] = [
 
 export const LAUNCH_REQUIREMENTS: readonly RequirementDef[] = [
   {
-    key: "launch.risks", slide: "LAUNCH", coversSteps: [38], allowsNotUsed: true,
+    key: "launch.risks", when: "AFTER_LAUNCH", slide: "LAUNCH", coversSteps: [38], allowsNotUsed: true,
     check: (d) => {
       const n = undecidedCount(d.proposal.risks);
       if (n > 0) return open("risksUndecided", { count: n });
@@ -44,11 +44,11 @@ export const LAUNCH_REQUIREMENTS: readonly RequirementDef[] = [
   },
   {
     // An assumption is a kind of risk ("we are assuming"); the logframe has no field for them.
-    key: "launch.assumptions", slide: "LAUNCH", coversSteps: [11], allowsNotUsed: true,
+    key: "launch.assumptions", when: "AFTER_LAUNCH", slide: "LAUNCH", coversSteps: [11], allowsNotUsed: true,
     check: (d) => (live(d.proposal.risks).some((r) => r.kind === "ASSUMPTION") ? MET : open("assumptionsMissing")),
   },
   {
-    key: "launch.dashboard", slide: "LAUNCH", coversSteps: [40, 41], allowsNotUsed: true,
+    key: "launch.dashboard", when: "AFTER_LAUNCH", slide: "LAUNCH", coversSteps: [40, 41], allowsNotUsed: true,
     check: (d) => (present(d.extras.dashboardTemplate) ? MET : open("dashboardMissing")),
   },
 ];

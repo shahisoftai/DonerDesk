@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   RISK_OPERATIONS, applyRiskOperation, launchSummary, applyOperation, emptyDraft, emptyProposal, evaluateRequirements,
-  SETUP_REQUIREMENTS, gapInbox, DEFERRED_STEPS, SECTOR_TEMPLATES,
+  SETUP_REQUIREMENTS, openRequirements, DEFERRED_STEPS, SECTOR_TEMPLATES,
   DRAFT_OPERATIONS,
 } from "../dist/index.js";
 
@@ -40,7 +40,7 @@ test("editing a risk keeps it the person's and validates the same way", () => {
 
 test("assumptions now have a requirement (step 11 is no longer deferred) and 'not used' answers it", () => {
   assert.equal(11 in DEFERRED_STEPS, false);
-  const open = (d) => gapInbox(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("launch."));
+  const open = (d) => openRequirements(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("launch."));
   const d = emptyDraft();
   d.proposal.risks = [item({ kind: "RISK", title: "Floods", seriousness: "HIGH", mitigation: null })];
   assert.ok(open(d).includes("launch.assumptions"));
@@ -79,7 +79,7 @@ test("the summary counts what will be created and who is invited when", () => {
 });
 
 test("an entry with no rating holds the risks requirement open instead of being left out at launch", () => {
-  const open = (d) => gapInbox(evaluateRequirements(d, SETUP_REQUIREMENTS)).filter((r) => r.key === "launch.risks").map((r) => [r.code, r.params.first]);
+  const open = (d) => openRequirements(evaluateRequirements(d, SETUP_REQUIREMENTS)).filter((r) => r.key === "launch.risks").map((r) => [r.code, r.params.first]);
   const d = emptyDraft();
   d.proposal.risks = [item({ kind: "RISK", title: "Floods", seriousness: "HIGH", mitigation: null }), item({ kind: "ASSUMPTION", title: "Roads stay open", seriousness: null, mitigation: null })];
   assert.deepEqual(open(d), [["risksUnrated", "Roads stay open"]]);

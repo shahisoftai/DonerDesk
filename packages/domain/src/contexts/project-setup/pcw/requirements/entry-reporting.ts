@@ -4,11 +4,11 @@ import { MET, allOf, live, open, present } from "./shared.js";
 
 export const ENTRY_REQUIREMENTS: readonly RequirementDef[] = [
   {
-    key: "entry.methods", slide: "DATA_ENTRY", coversSteps: [30, 31, 32], allowsNotUsed: false,
+    key: "entry.methods", when: "AFTER_LAUNCH", slide: "DATA_ENTRY", coversSteps: [30, 31, 32], allowsNotUsed: false,
     check: (d) => allOf(live(d.proposal.indicators).filter((i) => i.code === null || d.extras.indicatorSetup[i.code]?.method === undefined).map((i) => i.code ?? i.title ?? "?"), "methodMissing"),
   },
   {
-    key: "entry.review", slide: "DATA_ENTRY", coversSteps: [15], allowsNotUsed: false,
+    key: "entry.review", when: "AFTER_LAUNCH", slide: "DATA_ENTRY", coversSteps: [15], allowsNotUsed: false,
     check: (d) => {
       const c = d.extras.collection;
       if (c.reviewMode === undefined) return open("reviewModeMissing");
@@ -25,7 +25,7 @@ export const REPORTING_REQUIREMENTS: readonly RequirementDef[] = [
     check: (d) => (present(d.extras.schedule.cadence) || live(d.proposal.periods).some((p) => present(p.type)) ? MET : open("cadenceMissing")),
   },
   {
-    key: "reporting.rules", slide: "REPORTING", coversSteps: [5, 13, 14, 42], allowsNotUsed: false,
+    key: "reporting.rules", when: "AFTER_LAUNCH", slide: "REPORTING", coversSteps: [5, 13, 14, 42], allowsNotUsed: false,
     check: (d) => {
       const rules = d.extras.schedule.rules;
       if (rules.length === 0) return open("reportRulesMissing");

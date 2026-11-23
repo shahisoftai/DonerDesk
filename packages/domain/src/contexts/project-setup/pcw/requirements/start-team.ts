@@ -33,12 +33,12 @@ export const TEAM_REQUIREMENTS: readonly RequirementDef[] = [
     check: (d) => (hasRole(d, "PROJECT_MANAGER") ? MET : open("managerMissing")),
   },
   {
-    key: "project.me", slide: "PROJECT_TEAM", coversSteps: [3], allowsNotUsed: false,
+    key: "project.me", when: "AFTER_LAUNCH", slide: "PROJECT_TEAM", coversSteps: [3], allowsNotUsed: false,
     check: (d) => (hasRole(d, "ME_OFFICER") ? MET : open("meMissing")),
   },
   {
     // "No outside partners" is an answer.
-    key: "project.partners", slide: "PROJECT_TEAM", coversSteps: [4], allowsNotUsed: true,
+    key: "project.partners", when: "AFTER_LAUNCH", slide: "PROJECT_TEAM", coversSteps: [4], allowsNotUsed: true,
     check: (d) => (d.extras.team.some((p) => p.external) ? MET : open("partnersMissing")),
   },
 ];

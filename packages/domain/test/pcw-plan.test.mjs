@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   PLAN_OPERATIONS, applyPlanOperation, SETUP_LINK_SUGGESTERS, suggestSetupLinks, planCoverage, planKeyOf,
-  applyOperation, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox,
+  applyOperation, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, openRequirements,
 } from "../dist/index.js";
 
 const item = (value, extra = {}) => ({ value, sourceQuote: null, sourceRef: null, confidence: "HIGH", status: "EDITED", ...extra });
@@ -141,7 +141,7 @@ test("coverage counts the same things the requirements ask", () => {
   assert.deepEqual(planCoverage(d), { activities: { covered: 1, total: 1 }, plans: { complete: 0, total: 1 }, indicators: { fed: 0, total: 1 } });
   const done = applyOperation(d, { kind: "ACCEPT_SUGGESTIONS", ids: suggestSetupLinks(d).map((s) => s.id) }).draft;
   assert.deepEqual(planCoverage(done), { activities: { covered: 1, total: 1 }, plans: { complete: 1, total: 1 }, indicators: { fed: 1, total: 1 } });
-  const open = (x) => gapInbox(evaluateRequirements(x, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("plan."));
+  const open = (x) => openRequirements(evaluateRequirements(x, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("plan."));
   assert.ok(open(d).includes("plan.complete") && open(d).includes("plan.indicatorFed"));
   assert.deepEqual(open(done), []);
 });

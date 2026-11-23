@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BUILT_IN_PACKS, SECTOR_TEMPLATES, resolvePack, applyPack, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox } from "../dist/index.js";
+import { BUILT_IN_PACKS, SECTOR_TEMPLATES, resolvePack, applyPack, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, openRequirements } from "../dist/index.js";
 
 const org = (sector, extra = {}) => ({ id: `org:${sector}`, sector, source: "ORGANISATION", label: "Ours", reportRules: [], risks: [], ...extra });
 
@@ -58,7 +58,7 @@ test("applying a pack does not change the input draft and closes some requiremen
   const before = JSON.stringify(base);
   const { draft } = applyPack(base, BUILT_IN_PACKS[0]);
   assert.equal(JSON.stringify(base), before);
-  const open = (d) => gapInbox(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key);
+  const open = (d) => openRequirements(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key);
   assert.ok(!open(draft).includes("reporting.rules"), "a pack's report rules (layout and due date) are all that is asked");
   assert.ok(open(draft).includes("reporting.cadence") === false);
   assert.ok(open(draft).includes("launch.risks"), "suggested risks still need a decision");

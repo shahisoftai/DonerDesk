@@ -1,13 +1,8 @@
-import { requireSession } from "@/lib/server/auth-context";
-import { listSetupProposalsAction } from "@/lib/actions/project-setup";
-import { SetupWizard } from "@/features/project-setup/presentation/SetupWizard";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default async function SetupFromDocumentPage({ searchParams }: { searchParams: Promise<{ s?: string }> }) {
-  await requireSession();
-  const { s } = await searchParams;
-  const list = await listSetupProposalsAction();
-  const recent = list.ok ? list.value.proposals.slice(0, 10) : [];
-  return <SetupWizard view={null} recent={recent} asked={s ?? null} />;
+/** The older document wizard was retired in Phase 65: the Project Creation Wizard reads documents too. Old links open it. */
+export default function SetupFromDocumentPage() {
+  redirect("/projects/new/wizard");
 }

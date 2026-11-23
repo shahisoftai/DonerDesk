@@ -82,6 +82,10 @@ export const PCW_COPY = {
   progress: (open: number): string => (open === 0 ? "Complete" : `${open} to answer`),
   inboxTitle: "Still to answer",
   inboxEmpty: "Nothing left to answer.",
+  canWait: "Can wait",
+  finishLater: "Finish later on the project",
+  laterNote: "You can finish this on the project after launch. It will be on the setup checklist, with guidance.",
+  laterIntro: "Finish the essentials first. These can wait until after launch:",
   start: {
     withDocs: "I have documents",
     withoutDocs: "Start without documents",

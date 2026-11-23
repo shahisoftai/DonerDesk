@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   FINANCE_OPERATIONS, applyFinanceOperation, financeSummary, suggestBudgetLinks, SUPPORT_WORDS, applyOperation,
-  emptyDraft, emptyProposal, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox, budgetKeyOf, planKeyOf, SUPPORT_LINE,
+  emptyDraft, emptyProposal, evaluateRequirements, SETUP_REQUIREMENTS, openRequirements, budgetKeyOf, planKeyOf, SUPPORT_LINE,
 } from "../dist/index.js";
 
 const run = (p, op) => { const r = applyFinanceOperation(p, op); assert.equal(r.ok, true, r.reason); return r.proposal; };
@@ -140,7 +140,7 @@ test("accepting places the lines, refuses a stale id, and the plan target is che
 });
 
 test("the finance requirements close when funding, lines and currency are settled, and compare funding with budget", () => {
-  const open = (x) => gapInbox(evaluateRequirements(x, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("finance."));
+  const open = (x) => openRequirements(evaluateRequirements(x, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("finance."));
   const d = planDraft();
   d.proposal.funding = [item({ sourceName: "EU", amount: "9300", currency: "USD" })];
   d.extras.team = [{ key: "pm", name: "Pat", email: null, role: "PROJECT_MANAGER", external: false, invite: "LATER" }];

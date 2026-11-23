@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { suggestMethods, applyOperation, emptyDraft, planKeyOf, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox } from "../dist/index.js";
+import { suggestMethods, applyOperation, emptyDraft, planKeyOf, evaluateRequirements, SETUP_REQUIREMENTS, openRequirements } from "../dist/index.js";
 
 const item = (value) => ({ value, sourceQuote: null, sourceRef: null, confidence: "HIGH", status: "EDITED" });
 const indicator = (code) => item({ code, title: `Ind ${code}`, logframeCode: null, type: "NUMBER", unit: null, baseline: null, target: "1", targetSchedule: null, frequency: null, direction: null, disaggregation: null, meansOfVerification: null });
@@ -67,7 +67,7 @@ test("there is no evidence default or named verifier to set: the product has no 
 });
 
 test("the data entry requirements close from the slide's decisions", () => {
-  const open = (x) => gapInbox(evaluateRequirements(x, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("entry."));
+  const open = (x) => openRequirements(evaluateRequirements(x, SETUP_REQUIREMENTS)).map((r) => r.key).filter((k) => k.startsWith("entry."));
   let d = draft();
   assert.deepEqual(open(d).sort(), ["entry.methods", "entry.review"]);
   d = applyOperation(d, { kind: "ACCEPT_METHOD_SUGGESTIONS", ids: suggestMethods(d).map((s) => s.id) }).draft;

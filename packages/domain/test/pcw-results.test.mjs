@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { RESULT_OPERATIONS, applyResultOperation, emptyProposal, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, gapInbox } from "../dist/index.js";
+import { RESULT_OPERATIONS, applyResultOperation, emptyProposal, emptyDraft, evaluateRequirements, SETUP_REQUIREMENTS, openRequirements } from "../dist/index.js";
 
 const run = (p, op) => { const r = applyResultOperation(p, op); assert.equal(r.ok, true, r.reason); return r.proposal; };
 const refused = (p, op) => { const r = applyResultOperation(p, op); assert.equal(r.ok, false); return r.reason; };
@@ -24,7 +24,7 @@ test("a typed chain gets codes, belongs to the person, and closes the results re
   assert.ok(p.logframe.every((n) => n.status === "EDITED" && n.sourceQuote === null && n.value.code));
   assert.equal(node(p, "Drill wells").parentCode, node(p, "Wells built").code);
   const d = { ...emptyDraft(), proposal: p };
-  const open = gapInbox(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key);
+  const open = openRequirements(evaluateRequirements(d, SETUP_REQUIREMENTS)).map((r) => r.key);
   assert.ok(!open.includes("results.chain") && !open.includes("results.decided"));
   assert.ok(open.includes("results.codes"), "generated codes still wait for the person to keep them");
 });

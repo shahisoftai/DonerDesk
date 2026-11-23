@@ -1,5 +1,6 @@
 import type { Sector, SlideKey } from "@donordesk/domain";
 import type { SetupDraftView, SetupResultView } from "../../../../lib/server/schemas-project-setup-draft.ts";
+import { SETUP_SLIDES } from "@donordesk/domain/contexts/project-setup/pcw/slides.js";
 import { PCW_COPY, REQUIREMENT_SENTENCES, type PcwSentences } from "../copy.ts";
 
 /** The sectors a project can be filed under, in the order they are offered (kept in step with the identity context's list by a type check). */
@@ -7,6 +8,8 @@ export const SECTOR_OPTIONS = ["NUTRITION", "FOOD_SECURITY", "WASH", "HEALTH", "
 
 export interface RailEntry {
   slide: SlideKey;
+  /** Phase 65: false = the slide can wait until after launch. */
+  essential: boolean;
   open: number;
   complete: boolean;
   /** The words under the slide's name; never only a colour. */
@@ -15,7 +18,7 @@ export interface RailEntry {
 
 /** The rail of slides in the order the API gave them, each with its progress in words. */
 export function railEntries(view: SetupDraftView, progress: (open: number) => string = PCW_COPY.progress): RailEntry[] {
-  return view.progress.map((p) => ({ slide: p.slide, open: p.open, complete: p.complete, status: progress(p.open) }));
+  return view.progress.map((p) => ({ slide: p.slide, essential: SETUP_SLIDES[p.slide].essential, open: p.open, complete: p.complete, status: progress(p.open) }));
 }
 
 /** The plain sentence for one open requirement. */
@@ -28,9 +31,15 @@ export function slideGaps(view: SetupDraftView, slide: SlideKey, sentences: PcwS
   return view.inbox.filter((r) => r.slide === slide).map((r) => ({ key: r.key, text: sentenceFor(r, sentences) }));
 }
 
+/** What a slide still has that can wait until after launch, as sentences (it never blocks the launch). */
+export function slideLater(view: SetupDraftView, slide: SlideKey, sentences: PcwSentences = REQUIREMENT_SENTENCES): Array<{ key: string; text: string }> {
+  return view.advice.filter((r) => r.slide === slide && r.code).map((r) => ({ key: r.key, text: sentenceFor(r, sentences) }));
+}
+
 /** The first slide that still has something to answer, else the last one (Launch). */
 export function firstOpenSlide(view: SetupDraftView): SlideKey {
-  return (view.progress.find((p) => !p.complete) ?? view.progress[view.progress.length - 1])!.slide;
+  // Only what blocks the launch decides where the person starts; a slide that can wait never pulls them back.
+  return (view.progress.find((p) => !p.complete && SETUP_SLIDES[p.slide].essential) ?? view.progress[view.progress.length - 1])!.slide;
 }
 
 export function neighbourSlide(view: SetupDraftView, slide: SlideKey, step: 1 | -1): SlideKey | null {

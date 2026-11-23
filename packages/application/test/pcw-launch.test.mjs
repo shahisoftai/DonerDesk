@@ -149,10 +149,15 @@ test("launch re-checks on the server: not signed off, stale, or something open a
   stale.extras.start.donor = "Changed after sign-off";
   const r2 = await launcher({ draft: stale }).handler.handle(as("u1"), "pr1");
   assert.match(r2.error.message, /Something changed after you signed off/);
+  // Phase 65: a dashboard can wait until after launch; the donor cannot.
+  const withoutDashboard = completeDraftForTest();
+  delete withoutDashboard.extras.dashboardTemplate;
+  const later = signOffDraft(withoutDashboard, "u1", NOW.toISOString(), 0).draft;
+  assert.equal((await launcher({ draft: later }).handler.handle(as("u1"), "pr1")).ok, true);
   const open = signed();
-  delete open.extras.dashboardTemplate;
+  open.extras.start.donor = "";
   const r3 = await launcher({ draft: open }).handler.handle(as("u1"), "pr1");
-  assert.match(r3.error.message, /1 thing is still to answer/);
+  assert.ok(r3.error, "a missing donor still stops the launch");
 });
 
 test("only the person who started it can launch, and only a setup that is ready or partly launched", async () => {

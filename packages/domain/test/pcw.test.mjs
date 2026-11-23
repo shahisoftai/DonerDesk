@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   SETUP_SLIDES, SLIDE_KEYS, SLIDE_ORDER, SETUP_REQUIREMENTS, AUTOMATIC_STEPS, DEFERRED_STEPS,
   emptyDraft, upgradeProposal, planKeyOf, budgetKeyOf, SUPPORT_LINE,
-  evaluateRequirements, gapInbox, slideProgress, canLaunch, signOffDraft, signOffIsCurrent, draftFingerprint,
+  evaluateRequirements, openRequirements, adviceNotes, slideProgress, canLaunch, signOffDraft, signOffIsCurrent, draftFingerprint,
   DRAFT_OPERATIONS, applyOperation, personReferences,
 } from "../dist/index.js";
 
@@ -45,7 +45,7 @@ function completeDraft() {
 }
 
 const results = (d) => evaluateRequirements(d, SETUP_REQUIREMENTS);
-const openKeys = (d) => gapInbox(results(d)).map((r) => r.key);
+const openKeys = (d) => openRequirements(results(d)).map((r) => r.key);
 
 // ---------- slides ----------
 
@@ -90,7 +90,7 @@ test("every requirement is total: an empty draft never throws and leaves things 
   for (const withDocs of [false, true]) {
     const r = results(emptyDraft(withDocs));
     assert.equal(r.length, SETUP_REQUIREMENTS.length);
-    assert.ok(gapInbox(r).length > 0);
+    assert.ok(openRequirements(r).length > 0);
   }
   assert.doesNotThrow(() => results(upgradeProposal(emptyDraft().proposal)));
 });
@@ -117,7 +117,7 @@ test("an indicator that measures no result of the project is a gap that names it
   assert.equal(openKeys(d).includes("indicators.placed"), false);
   d.proposal.indicators[0].value.logframeCode = null;
   assert.ok(openKeys(d).includes("indicators.placed"));
-  const gap = gapInbox(results(d)).find((r) => r.key === "indicators.placed");
+  const gap = openRequirements(results(d)).find((r) => r.key === "indicators.placed");
   assert.equal(gap.code, "indicatorUnplaced");
   assert.equal(gap.params.first, "I1");
   const gone = completeDraft();
@@ -129,12 +129,12 @@ test("the inbox follows slide order and names the first thing to fix", () => {
   const d = completeDraft();
   d.extras.team = d.extras.team.filter((p) => p.role !== "PROJECT_MANAGER");
   d.extras.start.donor = undefined;
-  const inbox = gapInbox(results(d));
+  const inbox = openRequirements(results(d));
   assert.equal(inbox[0].slide, "START");
   assert.ok(inbox.some((r) => r.key === "project.manager"));
   const fine = completeDraft();
   fine.proposal.indicators[0].value.frequency = null;
-  const gap = gapInbox(results(fine)).find((r) => r.key === "indicators.complete");
+  const gap = openRequirements(results(fine)).find((r) => r.key === "indicators.complete");
   assert.equal(gap.params.first, "I1");
 });
 
@@ -218,8 +218,13 @@ test("Launch needs every requirement closed and a current sign-off", () => {
   assert.deepEqual(canLaunch(results(d), d).blockers, [{ kind: "SIGN_OFF_MISSING" }]);
   const signed = signOffDraft(d, "u1", "2026-11-02T10:00:00Z", 0).draft;
   assert.equal(canLaunch(results(signed), signed).ok, true);
-  const open = { ...signed, extras: { ...signed.extras } };
-  delete open.extras.dashboardTemplate;
+  // Phase 65: what can wait until after launch (here the dashboard) never blocks; what is needed first (the donor) still does.
+  const later = { ...signed, extras: { ...signed.extras } };
+  delete later.extras.dashboardTemplate;
+  assert.ok(!canLaunch(results(later), later).blockers.some((b) => b.kind === "OPEN_REQUIREMENTS"));
+  assert.ok(openRequirements(results(later)).some((g) => g.key === "launch.dashboard"), "it stays open on its slide");
+  assert.ok(adviceNotes(results(later)).some((g) => g.key === "launch.dashboard"), "and is listed as advice");
+  const open = { ...signed, extras: { ...signed.extras, start: { ...signed.extras.start, donor: "" } } };
   assert.ok(canLaunch(results(open), open).blockers.some((b) => b.kind === "OPEN_REQUIREMENTS" && b.count === 1));
 });
 
@@ -324,7 +329,7 @@ test("the project area and boundary level are set, cleared and checked", () => {
   assert.equal("projectArea" in cleared.extras, false);
   assert.equal("boundaryLevel" in cleared.extras, false);
   assert.equal(applyOperation(d, { kind: "SET_PLACES_SETUP", patch: { boundaryLevel: 7 } }).ok, false);
-  assert.ok(gapInbox(evaluateRequirements(cleared, SETUP_REQUIREMENTS)).some((r) => r.key === "places.area"));
+  assert.ok(openRequirements(evaluateRequirements(cleared, SETUP_REQUIREMENTS)).some((r) => r.key === "places.area"));
 });
 
 test("the documents fill empty Start and reporting answers once, never a person's answer or a rejected reading", async () => {
@@ -346,4 +351,14 @@ test("the documents fill empty Start and reporting answers once, never a person'
   assert.equal(sectorFromText(["Something else"]), null);
   const blank = emptyDraft(false);
   assert.equal(prefillFromDocuments(blank).draft, blank, "a draft without documents is untouched");
+});
+
+test("Phase 65: an essential slide is finished when what the launch needs is settled; a slide that can wait counts everything", () => {
+  const d = completeDraft();
+  delete d.extras.dashboardTemplate;
+  assert.equal(slideProgress(results(d), "LAUNCH").complete, true, "the dashboard can wait, so Launch is not red for it");
+  assert.equal(slideProgress(results(d), "LAUNCH").open, 0);
+  const empty = emptyDraft(false);
+  assert.equal(slideProgress(results(empty), "PLACES").complete, false, "an empty slide that can wait is not called finished");
+  assert.ok(slideProgress(results(empty), "PLACES").open > 0);
 });

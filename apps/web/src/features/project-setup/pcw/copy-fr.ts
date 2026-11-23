@@ -75,6 +75,10 @@ export const PCW_FR: PcwBundle = {
     progress: (open) => (open === 0 ? "Terminé" : `${open} à renseigner`),
     inboxTitle: "Reste à renseigner",
     inboxEmpty: "Il ne reste rien à renseigner.",
+    canWait: 'Peut attendre',
+    finishLater: 'Terminer plus tard sur le projet',
+    laterNote: 'Vous pouvez terminer ceci sur le projet après le lancement. Ce sera dans la liste de configuration, avec des conseils.',
+    laterIntro: "Terminez d'abord l'essentiel. Ceci peut attendre après le lancement :",
     start: {
       withDocs: "J'ai des documents", withoutDocs: "Commencer sans documents", donor: "Bailleur", sector: "Secteur", country: "Pays", begin: "Commencer",
       useStarting: "Utiliser les réponses de départ de ce secteur",
