@@ -39,7 +39,7 @@ export async function deleteDraftCollectionFormAction(formId: string): Promise<R
   return result.ok ? { ok: true, value: undefined } : result;
 }
 
-export async function setCollectionFormStatusAction(formId: string, to: "publish" | "close"): Promise<Result<undefined, AppError>> {
+export async function setCollectionFormStatusAction(formId: string, to: "publish" | "close" | "reopen"): Promise<Result<undefined, AppError>> {
   const context = await requireSession();
   const result = await gatewayRequest(`/v1/collection-forms/${enc(formId)}/${to}`, OkResponseSchema, context.token, { method: "POST", body: {} });
   return result.ok ? { ok: true, value: undefined } : result;

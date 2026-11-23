@@ -44,7 +44,7 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview, ca
   const tabs = visibleFormTabs({ published: form.status === "PUBLISHED", assessment, hasMappings: form.mappings.length > 0, pending: form.counts.PENDING, canEdit, canSubmit, canReview, canEnter });
   const [tab, setTab] = useState<Tab>(tabs[0]?.[0] ?? "fill");
 
-  async function setState(to: "publish" | "close") {
+  async function setState(to: "publish" | "close" | "reopen") {
     if (await status.run(() => setCollectionFormStatusAction(form.id, to))) router.refresh();
   }
 
@@ -59,6 +59,7 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview, ca
         <Badge tone={form.status === "PUBLISHED" ? "success" : "neutral"}>{STATUS_LABEL[form.status]}</Badge>
         {canEdit && form.status === "DRAFT" && <Button onClick={() => void setState("publish")} pending={status.busy}>Publish</Button>}
         {canEdit && form.status === "DRAFT" && <Button variant="secondary" onClick={() => void removeDraft()} pending={status.busy}>Delete this draft</Button>}
+        {canEdit && form.status === "CLOSED" && <Button onClick={() => void setState("reopen")} pending={status.busy}>Reopen this form</Button>}
         {canEdit && form.status === "PUBLISHED" && <Button variant="secondary" onClick={() => void setState("close")} pending={status.busy}>Close this form</Button>}
         {status.error && <span role="alert" className="text-sm text-danger-600">{status.error}</span>}
       </div>

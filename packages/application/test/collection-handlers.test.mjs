@@ -290,3 +290,17 @@ test("a draft form can be deleted by someone who can edit; a published one canno
   assert.equal(refused.ok, false); assert.match(refused.error.message, /draft/i);
   assert.equal(w.stores.forms.has(b.value.id), true);
 });
+
+test("a closed form can be reopened by someone who can edit the project, and only a closed one (Phase 65)", async () => {
+  const w = world();
+  const save = new SaveCollectionFormHandler(ids, w.forms, w.indicators, audit, clock);
+  const status = new SetCollectionFormStatusHandler(w.forms, audit, clock);
+  const { value: { id: formId } } = await save.handle(manager, input);
+  assert.match((await status.handle(manager, formId, "REOPENED")).error.message, /Only a closed form/, "a draft cannot be reopened");
+  await status.handle(manager, formId, "PUBLISHED");
+  assert.match((await status.handle(manager, formId, "REOPENED")).error.message, /Only a closed form/, "an open form cannot be reopened");
+  assert.ok((await status.handle(manager, formId, "CLOSED")).ok);
+  assert.ok((await status.handle(manager, formId, "REOPENED")).ok);
+  assert.equal([...w.stores.forms.values()].find((f) => f.id === formId).status, "PUBLISHED");
+  assert.ok(audit.events.includes("collection.form.reopened"));
+});

@@ -180,8 +180,8 @@ export class SaveCollectionFormHandler {
 export class SetCollectionFormStatusHandler {
   constructor(private readonly forms: ICollectionFormRepository, private readonly audit: IAuditLogger, private readonly clock: IClock) {}
 
-  async handle(ctx: AuthenticatedContext, formId: string, to: "PUBLISHED" | "CLOSED"): Promise<Result<void, DomainError>> {
-    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot publish or close forms"));
+  async handle(ctx: AuthenticatedContext, formId: string, to: "PUBLISHED" | "CLOSED" | "REOPENED"): Promise<Result<void, DomainError>> {
+    if (!can(ctx, "project.edit")) return fail(DomainError.forbidden("You cannot publish, close or reopen forms"));
     const form = await loadForm(this.forms, formId, ctx.tenant.tenantId);
     if (!form.ok) return form;
     if (to === "PUBLISHED") {
@@ -191,10 +191,14 @@ export class SetCollectionFormStatusHandler {
       // An assessment (a form about a facility or one that scores) is read on its own and may feed no indicator; any other form must say what it feeds.
       const standsAlone = (form.value.definition.subject ?? "NONE") !== "NONE" || form.value.definition.score !== undefined;
       if (form.value.mappings.length === 0 && !standsAlone) return fail(DomainError.validation("Say which indicator this form feeds before publishing it."));
+    } else if (to === "REOPENED") {
+      // A closed form is frozen, so reopening gives back exactly the questions the records were answered with.
+      if (form.value.status !== "CLOSED") return fail(DomainError.conflict("Only a closed form can be reopened."));
     } else if (form.value.status !== "PUBLISHED") return fail(DomainError.conflict("Only a published form can be closed."));
-    const saved = await this.forms.update({ ...form.value, status: to, updatedAt: this.clock.now() });
+    const next = to === "REOPENED" ? "PUBLISHED" : to;
+    const saved = await this.forms.update({ ...form.value, status: next, updatedAt: this.clock.now() });
     if (!saved.ok) return saved;
-    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: `collection.form.${to === "PUBLISHED" ? "published" : "closed"}`, entityType: "collection_form", entityId: formId, projectId: form.value.projectId });
+    await this.audit.record({ tenantId: ctx.tenant.tenantId, actorId: ctx.tenant.userId, eventType: `collection.form.${to === "PUBLISHED" ? "published" : to === "REOPENED" ? "reopened" : "closed"}`, entityType: "collection_form", entityId: formId, projectId: form.value.projectId });
     return ok(undefined);
   }
 }

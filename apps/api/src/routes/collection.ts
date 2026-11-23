@@ -65,6 +65,12 @@ export async function registerCollectionRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  app.post("/v1/collection-forms/:formId/reopen", async (req) => {
+    const r = await req.container.handlers.setCollectionFormStatus.handle(ctx(req), param(req, "formId"), "REOPENED");
+    if (!r.ok) throw r.error;
+    return { ok: true };
+  });
+
   app.post("/v1/collection-forms/:formId/records", async (req, reply) => {
     const r = await req.container.handlers.submitCollectionRecord.handle(ctx(req), param(req, "formId"), SubmitRecordSchema.parse(req.body));
     if (!r.ok) throw r.error;
