@@ -9,8 +9,9 @@ import { FormWorkspace } from "@/features/collection/presentation/FormWorkspace"
 
 export const dynamic = "force-dynamic";
 
-export default async function FormPage({ params }: { params: Promise<{ id: string; formId: string }> }) {
+export default async function FormPage({ params, searchParams }: { params: Promise<{ id: string; formId: string }>; searchParams: Promise<{ place?: string }> }) {
   const { id, formId } = await params;
+  const { place } = await searchParams;
   const ctx = await requireSession();
   const [form, periods] = await Promise.all([
     gatewayRequest(`/v1/collection-forms/${encodeURIComponent(formId)}`, CollectionFormSchema, ctx.token),
@@ -29,7 +30,7 @@ export default async function FormPage({ params }: { params: Promise<{ id: strin
         </div>
         {canEdit && form.value.status === "DRAFT" && <Link className="btn-secondary" href={`/projects/${id}/forms/${formId}/edit`}>Edit the questions</Link>}
       </header>
-      <FormWorkspace form={form.value} periods={options} canEdit={canEdit} canSubmit={ctx.capabilities.has("collection.submit")} canReview={ctx.capabilities.has("indicator.verify")} />
+      <FormWorkspace form={form.value} periods={options} canEdit={canEdit} canSubmit={ctx.capabilities.has("collection.submit")} canReview={ctx.capabilities.has("indicator.verify")} canEnter={ctx.capabilities.has("indicator.update")} initialPlaceId={place} />
     </div>
   );
 }

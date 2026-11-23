@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
-  DomainError, PlaceRegistry, Permissions, formFromIndicator, effectiveIndicatorSemantics, resolvePlace, aggregateRecords, collectFileIds, formTakesFiles, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, addDays, toPlainDate, prefillFromLast, validateFormDefinition, validateSubmission, visibleFields,
+  DomainError, PlaceRegistry, placeIdsWithAncestors, Permissions, formFromIndicator, effectiveIndicatorSemantics, resolvePlace, aggregateRecords, collectFileIds, formTakesFiles, conditionHolds, parseRecordSheet, recordSheetErrorFile, recordSheetTemplate, recordMappingProblems, addDays, toPlainDate, prefillFromLast, validateFormDefinition, validateSubmission, visibleFields,
   type FormDefinition, type FormField, type RecordAggregation, type RecordMapping, type RecordMethod, type Result, type Role, type TenantId,
 } from "@donordesk/domain";
 import type { ApplyRecordsInput, CreateCollectionLinkInput, PublicSubmitInput, ReviewRecordInput, SaveCollectionFormInput, SubmitRecordInput } from "@donordesk/contracts";
@@ -785,6 +785,17 @@ export class GetOfflinePackHandler {
       const entry = await this.readers.entryPlaces.handle(ctx, projectId);
       if (!entry.ok) return entry;
       dto.entryPlaces = entry.value.map((r) => ({ placeId: r.placeId, name: r.name, path: r.path }));
+    }
+    // A person who sees only their own work (no project-wide view) carries the places of that work and the areas above them, not the whole
+    // organisation's list: their facilities, the places the project's plan and areas name, and where their planned items are.
+    if (!can(ctx, "results.view")) {
+      const wanted = [
+        ...(dto.assignments ?? []).map((a) => a.placeId),
+        ...(dto.entryPlaces ?? []).map((e) => e.placeId),
+        ...(dto.plan ?? []).flatMap((p) => p.placeIds ?? []),
+      ];
+      const keep = placeIdsWithAncestors(all.value.map((p) => ({ id: p.id, parentId: p.parentId })), wanted);
+      dto.places = dto.places.filter((p) => keep.has(p.id));
     }
     if (mayEnterNumbers && this.readers.indicators && this.readers.placeSheet && dto.periods) {
       const found = await this.readers.indicators.findByProject(projectId, ctx.tenant.tenantId);

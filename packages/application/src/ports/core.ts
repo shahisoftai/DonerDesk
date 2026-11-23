@@ -87,5 +87,7 @@ export interface INotificationPort {
     message: string;
     relatedEntityType?: string;
     relatedEntityId?: string;
+    /** A link that goes only in the email (never in the in-app log): a one-time reset link must not be stored in the inbox. */
+    emailLink?: string;
   }): Promise<void>;
 }

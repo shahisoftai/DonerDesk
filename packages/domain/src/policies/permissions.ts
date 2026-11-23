@@ -37,7 +37,11 @@ export type Permission =
   | "finance.approve"
   | "dataset.manage"
   | "dataset.contribute"
-  | "collection.submit";
+  | "collection.submit"
+  /** See the project's money: finance register, budget, funding, rates, billing. Every role but the field officer (Phase 63). */
+  | "finance.view"
+  /** See the project's analysis across everyone's records: data sheet, management report, portfolio, framework versions. */
+  | "results.view";
 
 const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
   ADMIN: new Set<Permission>([
@@ -56,6 +60,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "finance.approve",
     "dataset.manage", "dataset.contribute",
     "collection.submit",
+      "finance.view", "results.view",
   ]),
   PROJECT_MANAGER: new Set<Permission>([
     "project.edit", "project.view",
@@ -72,6 +77,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "finance.approve",
     "dataset.manage", "dataset.contribute",
     "collection.submit",
+      "finance.view", "results.view",
   ]),
   ME_OFFICER: new Set<Permission>([
     "project.view",
@@ -85,6 +91,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "task.assign", "team.view-work",
     "risk.raise", "risk.manage",
     "collection.submit",
+      "finance.view", "results.view",
   ]),
   GRANTS_OFFICER: new Set<Permission>([
     "project.view",
@@ -95,6 +102,7 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "workplan.update-own",
     "task.assign",
     "risk.raise", "risk.manage",
+      "finance.view", "results.view",
   ]),
   FIELD_OFFICER: new Set<Permission>([
     "project.view",
@@ -114,9 +122,11 @@ const ROLE_PERMISSIONS: Record<Role, ReadonlySet<Permission>> = {
     "workplan.update-own",
     "task.assign",
     "risk.raise", "risk.manage",
+      "finance.view", "results.view",
   ]),
   VIEWER: new Set<Permission>([
     "project.view", "report.export",
+      "finance.view", "results.view",
   ]),
 };
 
@@ -131,7 +141,7 @@ export class Permissions {
 
   static require(role: Role, permission: Permission): void {
     if (!Permissions.can(role, permission)) {
-      throw DomainError.forbidden(`Role ${role} lacks permission ${permission}`, { role, permission });
+      throw DomainError.forbidden("You do not have permission for this", { role, permission });
     }
   }
 

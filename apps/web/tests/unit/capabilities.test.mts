@@ -10,7 +10,8 @@ test("unknown role gets no capabilities", () => {
 test("VIEWER can export but has no write capabilities", () => {
   const caps = capabilitiesForRole("VIEWER");
   assert.equal(can(caps, "export.create"), true);
-  assert.equal(caps.size, 1);
+  // The two read-only views (money, analysis) are the only other things a viewer holds (Phase 63).
+  assert.deepEqual([...caps].sort(), ["export.create", "finance.view", "results.view"]);
 });
 
 test("FIELD_OFFICER can create activities and upload evidence only", () => {

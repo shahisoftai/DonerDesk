@@ -1,9 +1,10 @@
 import { MESSAGES } from "@/features/i18n/messages";
 import type { ReactNode } from "react";
 import { NOINDEX_METADATA } from "@/lib/seo";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { homeVariantFor, hubTabsFor, navFor } from "@/features/navigation/domain/role-navigation";
+import { canReachAppPage } from "@/features/navigation/domain/role-app-pages";
 import { translateNav } from "@/features/i18n/domain/nav-keys";
 import { I18nProvider } from "@/features/i18n/presentation/I18nProvider";
 import { getLocale, getTranslator } from "@/lib/server/locale";
@@ -52,6 +53,9 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       redirect("/onboarding");
     }
   }
+
+  // A role restricted to a few pages (the field officer) gets "not found" for every other page, wherever the link came from (Phase 63b).
+  if (!canReachAppPage(ctx.role, (await headers()).get("x-pathname") ?? "")) notFound();
 
   const canRecord = RECORD_KINDS.some((k) => k.anyOf.some((c) => hasCapability(ctx, c)));
   const orgName = orgResult.ok ? (orgResult.value.name ?? "") : "";

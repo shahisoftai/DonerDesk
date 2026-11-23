@@ -16,6 +16,10 @@ export interface AssessmentFlowProps {
   form: { id: string; name: string; fields: ReadonlyArray<FormField>; definition: Omit<FormDefinition, "fields"> };
   places: ReadonlyArray<{ id: string; name: string; path: string; facility?: boolean | undefined }>;
   assignments: ReadonlyArray<FacilityAssignment>;
+  /** Offer only the facilities given to this person (see `mustChooseFromAssigned`). */
+  onlyAssigned?: boolean;
+  /** A facility to open straight away (a link from Home): used only when the person may choose it. */
+  initialPlaceId?: string | undefined;
   drafts: DraftStore;
   /** What the last accepted visit says about the facts the form carries forward; null when offline and the pack has none. */
   prefill: (placeId: string) => Promise<{ values: Record<string, unknown>; carried: string[] } | null>;
@@ -54,7 +58,8 @@ export function AssessmentFlow(props: AssessmentFlowProps) {
   const placeKey = placeId ?? "";
 
   const choices = useMemo(() => placesForSubject(props.places, subject).map((p) => ({ id: p.id, name: p.name, path: p.path })), [props.places, subject]);
-  const offered = useMemo(() => offerFacilities(choices, props.assignments, typed), [choices, props.assignments, typed]);
+  const onlyAssigned = props.onlyAssigned ?? false;
+  const offered = useMemo(() => offerFacilities(choices, props.assignments, typed, 60, onlyAssigned), [choices, props.assignments, typed, onlyAssigned]);
   const chosen = choices.find((c) => c.id === placeId);
 
   const flush = useCallback(async () => {
@@ -92,6 +97,17 @@ export function AssessmentFlow(props: AssessmentFlowProps) {
     } finally { setLoading(false); }
   }
 
+  // A link from Home names the facility: open it at once, once, when this person may choose it.
+  const autoStarted = useRef(false);
+  const wanted = props.initialPlaceId;
+  useEffect(() => {
+    if (autoStarted.current || !wanted || placeId || subject === "NONE") return;
+    if (!choices.some((c) => c.id === wanted) || (onlyAssigned && !offered.some((o) => o.id === wanted))) return;
+    autoStarted.current = true;
+    void choose(wanted);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wanted, placeId, choices, offered, onlyAssigned, subject]);
+
   async function discard() {
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     pending.current = null;
@@ -125,6 +141,7 @@ export function AssessmentFlow(props: AssessmentFlowProps) {
       <div className="space-y-3">
         <Field label={t("assess.facility.search")}><Input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" /></Field>
         {choices.length === 0 && <p className="text-sm text-slate-500">{t("assess.facility.none")}</p>}
+        {choices.length > 0 && onlyAssigned && offered.length === 0 && typed.trim() === "" && <p className="text-sm text-slate-500">{t("assess.facility.allDone")}</p>}
         <ul className="space-y-2" aria-label={t("assess.facility.pick")}>
           {offered.map((f) => (
             <li key={f.id} className="rounded-md border border-slate-200 p-3 dark:border-slate-700">

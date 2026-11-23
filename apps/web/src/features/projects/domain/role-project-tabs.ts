@@ -1,5 +1,6 @@
 import type { Role } from "@/lib/shared/capabilities";
 import type { ProjectTab } from "./project-tabs";
+import { isRestrictedRole, tabsReachableBy } from "./role-project-pages.ts";
 
 /**
  * Which of the project's tabs each role sees in the bar (Phase 59). The others sit under "More" and stay one click away; a page is never
@@ -22,6 +23,8 @@ export const ROLE_PROJECT_TABS: Readonly<Record<Role, readonly ProjectTabKey[]>>
 export interface TabBar { shown: ProjectTab[]; more: ProjectTab[] }
 
 export function tabsFor(tabs: readonly ProjectTab[], role: string | null | undefined, currentKey: string): TabBar {
+  // A restricted role has no "More": a tab it cannot open anything in is not offered at all (Phase 63).
+  if (isRestrictedRole(role)) return { shown: tabsReachableBy(role, tabs), more: [] };
   const keys = (ROLE_PROJECT_TABS[(role ?? "VIEWER") as Role] ?? ROLE_PROJECT_TABS.VIEWER) as readonly string[];
   const shown = tabs.filter((t) => keys.includes(t.key) || t.key === currentKey);
   return { shown, more: tabs.filter((t) => !shown.includes(t)) };

@@ -42,10 +42,12 @@ export function PlannedViews(props: {
   country?: string;
   /** The workspace's uploaded boundaries, drawn instead of the built-in outlines (Phase 30.1). */
   mapLayerUrl?: string;
+  /** Show the plan's spreadsheet download (needs the project-wide view). */
+  canExport?: boolean;
 }) {
   const [view, setView] = useState<PlanViewKey>(props.initialView);
   const list = (
-    <PlanListView projectId={props.projectId} rows={props.rows} today={props.today} userId={props.userId} names={props.names} defaultMine={props.defaultMine} changeableIds={props.changeableIds} fieldChips={props.fieldChips ?? {}} />
+    <PlanListView projectId={props.projectId} rows={props.rows} today={props.today} userId={props.userId} names={props.names} defaultMine={props.defaultMine} changeableIds={props.changeableIds} fieldChips={props.fieldChips ?? {}} canExport={props.canExport ?? true} />
   );
   return (
     <div className="space-y-4">

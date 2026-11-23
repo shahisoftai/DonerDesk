@@ -285,7 +285,11 @@ test("pack v4: the person's own facilities, facility flags and carried facts for
   assert.equal(dto.forms[0].subject, "FACILITY");
   assert.ok(dto.forms[0].score);
   assert.equal(dto.places.find((p) => p.id === "f1").facility, true);
-  assert.equal(dto.places.find((p) => p.id === "v1").facility, undefined);
+  // Phase 63c: a person who sees only their own work carries their facilities and the areas above them, not the whole list.
+  assert.deepEqual(dto.places.map((p) => p.id).sort(), ["d1", "f1"]);
+  const all = (await pack.handle(manager, "p1")).value;
+  assert.deepEqual(all.places.map((p) => p.id).sort(), ["d1", "f1", "f2", "v1"], "a manager carries every live place");
+  assert.equal(all.places.find((p) => p.id === "v1").facility, undefined);
   const without = (await new GetOfflinePackHandler(w.forms, w.places, clock).handle(officer, "p1")).value;
   assert.equal(without.assignments, undefined, "built without the readers it answers as before");
 });

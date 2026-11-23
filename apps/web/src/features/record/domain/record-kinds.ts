@@ -27,6 +27,8 @@ export interface RecordKind {
   hintKey: `record.kind.${RecordKindKey}.hint`;
   /** The person needs ANY of these. */
   anyOf: readonly Capability[];
+  /** And ALL of these, when listed (a kind whose page the person must also be allowed to open). */
+  requires?: readonly Capability[];
   offline: OfflineLevel;
   /** The outbox kind that carries it, when it has one. */
   outboxKind: string | null;
@@ -42,8 +44,8 @@ export const RECORD_KINDS: readonly RecordKind[] = [
   // A photo or file on its own has no outbox sender today: offline, photos travel with the activity or form they belong to.
   { key: "FILE", labelKey: "record.kind.FILE", hintKey: "record.kind.FILE.hint", anyOf: ["evidence.upload"], offline: "ONLINE_ONLY", outboxKind: null, packParts: [], icon: "photo" },
   // Expenses go through the plan item's budget today and have no outbox sender: they need a connection.
-  { key: "EXPENSE", labelKey: "record.kind.EXPENSE", hintKey: "record.kind.EXPENSE.hint", anyOf: ["workplan.update-own"], offline: "ONLINE_ONLY", outboxKind: null, packParts: [], icon: "money" },
-  { key: "FORM", labelKey: "record.kind.FORM", hintKey: "record.kind.FORM.hint", anyOf: ["indicator.update"], offline: "PACKED", outboxKind: "collection-record", packParts: ["forms", "places"], icon: "form" },
+  { key: "EXPENSE", labelKey: "record.kind.EXPENSE", hintKey: "record.kind.EXPENSE.hint", anyOf: ["workplan.update-own"], requires: ["finance.view"], offline: "ONLINE_ONLY", outboxKind: null, packParts: [], icon: "money" },
+  { key: "FORM", labelKey: "record.kind.FORM", hintKey: "record.kind.FORM.hint", anyOf: ["collection.submit"], offline: "PACKED", outboxKind: "collection-record", packParts: ["forms", "places"], icon: "form" },
 ] as const;
 
 export interface KindContext {
@@ -54,7 +56,7 @@ export interface KindContext {
 
 /** The kinds this person may use here, in table order. */
 export function availableKinds(ctx: KindContext, kinds: readonly RecordKind[] = RECORD_KINDS): RecordKind[] {
-  return kinds.filter((k) => k.anyOf.some((c) => ctx.has(c)) && (k.key !== "FORM" || ctx.hasForms));
+  return kinds.filter((k) => k.anyOf.some((c) => ctx.has(c)) && (k.requires ?? []).every((c) => ctx.has(c)) && (k.key !== "FORM" || ctx.hasForms));
 }
 
 /** The kind to open first: the one used last when it is still allowed, else the first allowed one. */

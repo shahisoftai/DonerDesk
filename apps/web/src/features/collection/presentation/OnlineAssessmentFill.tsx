@@ -10,12 +10,16 @@ import { newIdempotencyKey } from "@/lib/shared/create-retry";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { createServerDraftStore } from "../adapters/server-draft-store";
 import { AssessmentFlow } from "./AssessmentFlow";
+import { mustChooseFromAssigned } from "../domain/assessment-flow";
 import type { FillFile } from "./filler/FormFiller";
 
 /** Filling an assessment on the website: the facilities come from the project's pack, drafts are kept on the server and follow the person. */
-export function OnlineAssessmentFill({ form, uploadFile }: {
+export function OnlineAssessmentFill({ form, uploadFile, canManage = true, initialPlaceId }: {
   form: { id: string; projectId: string; name: string; fields: ReadonlyArray<FormField>; definition: Omit<FormDefinition, "fields"> };
   uploadFile: FillFile;
+  /** A person who manages or reviews the form chooses from every facility; anyone else from the ones given to them. */
+  canManage?: boolean;
+  initialPlaceId?: string | undefined;
 }) {
   const { t } = useI18n();
   const [pack, setPack] = useState<OfflinePack | "failed" | null>(null);
@@ -36,6 +40,8 @@ export function OnlineAssessmentFill({ form, uploadFile }: {
       form={form}
       places={pack.places}
       assignments={mine}
+      onlyAssigned={mustChooseFromAssigned(canManage, mine)}
+      initialPlaceId={initialPlaceId}
       drafts={drafts}
       online
       rememberKey={`${form.projectId}:${form.id}`}

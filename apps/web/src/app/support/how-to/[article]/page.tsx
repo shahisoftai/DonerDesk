@@ -95,6 +95,7 @@ const FILE_MAP: Record<string, string> = {
   "choose-where-you-work": "how-to/how-to-choose-where-you-work.md",
   "record-figures-by-place": "how-to/how-to-record-figures-by-place.md",
   "run-a-facility-assessment": "how-to/how-to-run-a-facility-assessment.md",
+  "do-your-field-work-on-your-phone": "how-to/how-to-do-your-field-work-on-your-phone.md",
   "save-and-reuse-a-chart": "how-to/how-to-save-and-reuse-a-chart.md",
   "use-the-report-builder": "how-to/how-to-use-the-report-builder.md",
   "make-special-charts": "how-to/how-to-make-special-charts.md",

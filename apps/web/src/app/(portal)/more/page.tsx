@@ -18,7 +18,7 @@ export default async function MorePage() {
         {/* A plain anchor: only a document navigation is kept for offline opening. */}
         <a className={ROW} href="/field"><span><span className="block">{t("record.more.ready")}</span><span className="block text-sm font-normal text-slate-600 dark:text-slate-300">{t("record.more.readyHint")}</span></span><span aria-hidden="true">›</span></a>
         <Link className={ROW} href="/projects" prefetch={false}><span>{t("record.more.projects")}</span><span aria-hidden="true">›</span></Link>
-        <Link className={ROW} href="/help" prefetch={false}><span>{t("record.more.help")}</span><span aria-hidden="true">›</span></Link>
+        <Link className={ROW} href="/help/how-it-works" prefetch={false}><span>{t("record.more.help")}</span><span aria-hidden="true">›</span></Link>
         <div className={ROW}><span>{t("record.more.language")}</span><LocaleSwitcher /></div>
         <Link className={ROW} href="/logout" prefetch={false}><span>{t("record.more.signOut")}</span><span aria-hidden="true">›</span></Link>
       </nav>

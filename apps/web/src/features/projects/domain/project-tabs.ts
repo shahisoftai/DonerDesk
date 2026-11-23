@@ -89,8 +89,8 @@ export function locateProjectPage(subPath: string): { tab: ProjectTab; page: Pro
 export interface SubNavView { shown: ProjectSubPage[]; more: ProjectSubPage[] }
 
 /** A tab's pages split into the bar and its "More" menu; the page you are on is always in the bar. */
-export function subNavFor(tab: ProjectTab, input: { facts: ReadonlySet<ProjectFact>; capabilities: ReadonlySet<string>; current: ProjectSubPage }): SubNavView {
-  const allowed = tab.pages.filter((p) => !p.needs || p.needs.some((c) => input.capabilities.has(c)));
+export function subNavFor(tab: ProjectTab, input: { facts: ReadonlySet<ProjectFact>; capabilities: ReadonlySet<string>; current: ProjectSubPage; /** Pages the role may open at all (see `role-project-pages`); absent = every page. */ reachable?: (path: string) => boolean }): SubNavView {
+  const allowed = tab.pages.filter((p) => (!p.needs || p.needs.some((c) => input.capabilities.has(c))) && (input.reachable?.(p.path) ?? true));
   const folded = (p: ProjectSubPage) => p !== input.current && (p.more || (p.onlyWhen !== undefined && !input.facts.has(p.onlyWhen)));
   return { shown: allowed.filter((p) => !folded(p)), more: allowed.filter(folded) };
 }

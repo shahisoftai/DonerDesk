@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { requireSession } from "@/lib/server/auth-context";
 import { getProject } from "@/lib/server/project-queries";
 import { ProjectCrumbs, ProjectNav } from "@/features/projects/presentation/ProjectNav";
@@ -9,6 +10,8 @@ import { CollectionFormListSchema } from "@/lib/server/schemas-collection";
 import { listDatasetsAction } from "@/lib/actions/datasets";
 import { InlineError } from "@/components/feedback/PageState";
 import { RecordButton } from "@/features/record/presentation/RecordButton";
+import { canReachProjectPage, landingPageFor } from "@/features/projects/domain/role-project-pages";
+import { availableKinds } from "@/features/record/domain/record-kinds";
 import { ProjectLifecycleBanner } from "@/features/projects/presentation/ProjectLifecycleBanner";
 import { formatDate } from "@/lib/shared/dates";
 import { loadReportingProfileAction } from "@/lib/actions/setup";
@@ -29,9 +32,19 @@ export default async function ProjectLayout({ params, children }: { params: Prom
   // A failed read shows the default words; the project still opens.
   const [profile, datasets, forms] = await Promise.all([
     loadReportingProfileAction(project.id),
-    listDatasetsAction(project.id),
+    // A role that cannot open the datasets page does not ask for them (the project bar only needs to know whether there are any).
+    canReachProjectPage(ctx.role, "/datasets") ? listDatasetsAction(project.id) : Promise.resolve({ ok: false as const }),
     gatewayRequest(`/v1/projects/${encodeURIComponent(project.id)}/collection-forms`, CollectionFormListSchema, ctx.token),
   ]);
+  // A role restricted to a few pages (the field officer) gets "not found" for any other page, wherever the link came from; the project's front
+  // page sends them to their own work instead (Phase 63).
+  const requested = ((await headers()).get("x-pathname") ?? "").split("?", 1)[0] ?? "";
+  const base = `/projects/${project.id}`;
+  if (requested.startsWith(base) && !canReachProjectPage(ctx.role, requested.slice(base.length))) {
+    const landing = requested.slice(base.length).replace(/\/+$/, "") === "" ? landingPageFor(ctx.role, forms.ok && forms.value.forms.length > 0) : null;
+    if (landing) redirect(base + landing);
+    notFound();
+  }
   // Rare tools stay under "More" until the project uses them (plan F5); a failed read only folds them.
   const facts: ProjectFact[] = [
     ...(datasets.ok && datasets.value.datasets.length > 0 ? (["DATASETS"] as const) : []),
@@ -58,7 +71,7 @@ export default async function ProjectLayout({ params, children }: { params: Prom
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {ctx.capabilities.has("indicator.update") && <RecordButton projectId={project.id} />}
+              {availableKinds({ has: (c) => ctx.capabilities.has(c), hasForms: forms.ok && forms.value.forms.length > 0 }).length > 0 && <RecordButton projectId={project.id} />}
             </div>
           </div>
         </div>

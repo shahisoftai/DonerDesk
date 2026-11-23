@@ -27,7 +27,7 @@ function leadName(row: WorkPlanRow, userId: string, names: Record<string, string
 }
 
 /** The List view: grouped This week / Next week / Later / Done. Buttons the person cannot use are not rendered. */
-export function PlanListView({ projectId, rows, today, userId, names, defaultMine, changeableIds, fieldChips = {} }: {
+export function PlanListView({ projectId, rows, today, userId, names, defaultMine, changeableIds, fieldChips = {}, canExport = true }: {
   projectId: string;
   rows: WorkPlanRow[];
   today: string;
@@ -37,6 +37,8 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
   /** Ids of the activities this person may change the status of (decided on the server; plain data so it can cross to the browser). */
   changeableIds: string[];
   fieldChips?: Record<string, string[]>;
+  /** The spreadsheet of the whole plan is for people who see the project's analysis (Phase 63b). */
+  canExport?: boolean;
 }) {
   const [mineOnly, setMineOnly] = useState(defaultMine);
   const [completedOnly, setCompletedOnly] = useState(false);
@@ -46,7 +48,7 @@ export function PlanListView({ projectId, rows, today, userId, names, defaultMin
 
   return (
     <div className="space-y-6">
-      <a href={`/projects/${projectId}/activities/plan/export`} className="float-right text-sm text-brand-700 underline dark:text-brand-300">Download as a spreadsheet (CSV)</a>
+      {canExport && <a href={`/projects/${projectId}/activities/plan/export`} className="float-right text-sm text-brand-700 underline dark:text-brand-300">Download as a spreadsheet (CSV)</a>}
       <div className="flex flex-wrap gap-4">
         <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200">
           <input type="checkbox" checked={mineOnly} onChange={(e) => setMineOnly(e.target.checked)} className="h-4 w-4" />

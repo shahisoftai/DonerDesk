@@ -10,6 +10,7 @@ import { activitiesTabMode } from "@/features/workplan/domain/activities-tab-mod
 import { getProject } from "@/lib/server/project-queries";
 import { showsButton, surfaceFor, managesPlan } from "@/features/workplan/domain/role-surfaces";
 import { PlanEmptyCard } from "@/features/workplan/presentation/PlanEmptyCard";
+import { canReachProjectPage } from "@/features/projects/domain/role-project-pages";
 import { PlannedViews } from "@/features/workplan/presentation/PlannedViews";
 import { deadlinesFromPeriods } from "@/features/workplan/domain/timeline-deadlines";
 import { ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
@@ -103,7 +104,7 @@ async function PlannedActivitiesView({ projectId, otherSide }: { projectId: stri
       </header>
       <p className="mt-2 flex flex-wrap gap-x-4 text-sm">
         {otherSide === "RECORDS" && <Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/activities?view=completed`}>Completed activities</Link>}
-        <Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/beneficiaries`}>People reached</Link>
+        {canReachProjectPage(data.ctx.role, "/beneficiaries") && <Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/beneficiaries`}>People reached</Link>}
       </p>
       <div className="mt-4">
         {!plan.ok ? (
@@ -112,6 +113,7 @@ async function PlannedActivitiesView({ projectId, otherSide }: { projectId: stri
           <PlanEmptyCard projectId={projectId} canPlan={canPlan && canStart} />
         ) : (
           <PlannedViews
+            canExport={data.ctx.capabilities.has("results.view")}
             projectId={projectId}
             rows={rows}
             today={data.today}

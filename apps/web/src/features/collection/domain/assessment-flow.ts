@@ -9,7 +9,13 @@ const fold = (text: string): string => text.normalize("NFKD").replace(/[\u0300-\
 
 export interface OfferedFacility extends FacilityChoice { assigned: boolean; status?: string; dueOn?: string }
 
-export function offerFacilities(places: ReadonlyArray<FacilityChoice>, assignments: ReadonlyArray<FacilityAssignment>, typed: string, limit = 60): OfferedFacility[] {
+/**
+ * Whether a person must choose from the facilities given to them: they have some for this form and do not manage or review it. A manager
+ * (or anyone with no assignment, a survey nobody was assigned) still chooses from every place the form may be about.
+ */
+export const mustChooseFromAssigned = (canManage: boolean, assignments: ReadonlyArray<FacilityAssignment>): boolean => !canManage && assignments.length > 0;
+
+export function offerFacilities(places: ReadonlyArray<FacilityChoice>, assignments: ReadonlyArray<FacilityAssignment>, typed: string, limit = 60, onlyAssigned = false): OfferedFacility[] {
   const mine = new Map(assignments.filter((a) => a.status === "TO_DO" || a.status === "IN_PROGRESS").map((a) => [a.placeId, a]));
   const q = fold(typed);
   const matches = (p: FacilityChoice): boolean => q === "" || fold(p.name).includes(q) || fold(p.path).includes(q);
@@ -17,8 +23,9 @@ export function offerFacilities(places: ReadonlyArray<FacilityChoice>, assignmen
     const a = mine.get(p.id);
     return { ...p, assigned: a !== undefined, ...(a ? { status: a.status } : {}), ...(a?.dueOn ? { dueOn: a.dueOn } : {}) };
   });
-  offered.sort((x, y) => Number(y.assigned) - Number(x.assigned) || (x.dueOn ?? "9999").localeCompare(y.dueOn ?? "9999") || x.name.localeCompare(y.name));
-  return offered.slice(0, limit);
+  const shown = onlyAssigned ? offered.filter((o) => o.assigned) : offered;
+  shown.sort((x, y) => Number(y.assigned) - Number(x.assigned) || (x.dueOn ?? "9999").localeCompare(y.dueOn ?? "9999") || x.name.localeCompare(y.name));
+  return shown.slice(0, limit);
 }
 
 /** The places a form of this subject may be about: a facility form only facilities, any other form any place. */

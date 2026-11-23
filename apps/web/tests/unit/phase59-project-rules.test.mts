@@ -29,12 +29,17 @@ test("every role has a row, every row names real tabs, and Overview is always in
 });
 
 test("trimmed tabs go under More, never disappear, and the tab you are on stays in the bar", () => {
+  // Roles that are not restricted keep every page one click away (Phase 59).
+  const grants = tabsFor(PROJECT_TABS, "GRANTS_OFFICER", "overview");
+  assert.ok(grants.shown.some((t) => t.key === "finance"));
+  assert.ok(grants.more.some((t) => t.key === "data"));
+  assert.equal(grants.shown.length + grants.more.length, PROJECT_TABS.length);
+  const onData = tabsFor(PROJECT_TABS, "GRANTS_OFFICER", "data");
+  assert.ok(onData.shown.some((t) => t.key === "data"), "a page opened by link keeps its tab visible");
+  // The field officer is restricted (Phase 63): no More, and only the tabs they can open something in.
   const field = tabsFor(PROJECT_TABS, "FIELD_OFFICER", "overview");
-  assert.ok(field.shown.some((t) => t.key === "data"));
-  assert.ok(field.more.some((t) => t.key === "finance"));
-  assert.equal(field.shown.length + field.more.length, PROJECT_TABS.length);
-  const onFinance = tabsFor(PROJECT_TABS, "FIELD_OFFICER", "finance");
-  assert.ok(onFinance.shown.some((t) => t.key === "finance"), "a page opened by link keeps its tab visible");
+  assert.deepEqual(field.more, []);
+  assert.deepEqual(field.shown.map((t) => t.key), ["plan", "data"]);
   assert.equal(tabsFor(PROJECT_TABS, "ADMIN", "overview").more.length, 0);
   assert.equal(tabsFor(PROJECT_TABS, null, "overview").shown.length, ROLE_PROJECT_TABS.VIEWER.length, "no role reads as viewer");
 });

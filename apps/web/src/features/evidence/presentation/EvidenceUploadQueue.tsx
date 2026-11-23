@@ -29,6 +29,7 @@ export function EvidenceUploadQueue({
   indicators = [],
   periods = [],
   initialActivityId,
+  doneHref,
 }: {
   projectId: string;
   storageProvider?: string;
@@ -36,6 +37,8 @@ export function EvidenceUploadQueue({
   activities?: Array<{ id: string; label: string; periodLabel?: string }>;
   /** Set when the form is opened from an activity ("Add evidence"), so the link is already chosen. */
   initialActivityId?: string;
+  /** Where to go when every file is saved; the evidence list unless the page says otherwise (a role that cannot open the list). */
+  doneHref?: string;
   indicators?: Array<{ id: string; label: string }>;
   periods?: Array<{ id: string; label: string }>;
 }) {
@@ -127,7 +130,7 @@ export function EvidenceUploadQueue({
       if (!uploaded.ok) failed = true;
     }
     if (!failed) {
-      router.push(`/projects/${projectId}/evidence`);
+      router.push(doneHref ?? `/projects/${projectId}/evidence`);
       router.refresh();
     }
   }

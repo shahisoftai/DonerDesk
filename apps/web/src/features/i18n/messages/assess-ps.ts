@@ -47,6 +47,7 @@ export const assessPs: Record<keyof typeof assessEn, string> = {
   "assess.facility.search": "مرکز ولټوئ",
   "assess.facility.pick": "مرکزونه",
   "assess.facility.none": "د دې فورمې لپاره هېڅ مرکز نشته. له خپل مدیر وغواړئ چې ځایونه د مرکز په توګه په نښه کړي.",
+  "assess.facility.allDone": "د دې فورمې لپاره تاسو ته ورکړل شوی ټول کار بشپړ شوی. له خپل مدیر وپوښتئ چې نور مرکزونه تاسو ته ورکړل شي که نه.",
   "assess.facility.assigned": "تاسو ته سپارل شوی",
   "assess.facility.due": "وروستی نېټه {date}",
   "assess.facility.started": "پیل شوی",

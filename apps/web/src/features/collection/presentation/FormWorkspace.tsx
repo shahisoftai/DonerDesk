@@ -18,34 +18,31 @@ import { Textarea } from "@/components/ui/Textarea";
 import { FormFiller, type FillFile } from "./filler/FormFiller";
 import { OnlineAssessmentFill } from "./OnlineAssessmentFill";
 import { FacilitiesTab } from "./FacilitiesTab";
+import { visibleFormTabs, type FormTabKey } from "../domain/form-tabs";
 import { AssessmentRecordsTab } from "./AssessmentRecordsTab";
 import { ConnectorsPanel } from "./ConnectorsPanel";
 
-type Tab = "fill" | "facilities" | "records" | "totals" | "share" | "connect";
+type Tab = FormTabKey;
 
 const STATUS_LABEL = { DRAFT: "Draft", PUBLISHED: "Open for answers", CLOSED: "Closed" } as const;
 const REVIEW_LABEL = { PENDING: "Waiting for review", ACCEPTED: "Accepted", REJECTED: "Rejected" } as const;
 
 /** A published form at work: filling it, reviewing what came in, seeing what it adds up to, sharing a link. */
-export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: {
+export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview, canEnter = false, initialPlaceId }: {
   form: CollectionFormView;
   periods: Array<{ id: string; label: string }>;
   canEdit: boolean;
   canSubmit: boolean;
   canReview: boolean;
+  canEnter?: boolean;
+  /** A facility named by the link that opened the page (the Home list): the fill tab opens it. */
+  initialPlaceId?: string | undefined;
 }) {
   const router = useRouter();
   const status = useActionState();
-  const [tab, setTab] = useState<Tab>(form.status === "PUBLISHED" && canSubmit ? "fill" : "records");
   const assessment = form.subject === "FACILITY" || form.subject === "PLACE";
-  const tabs: Array<[Tab, string]> = [
-    ...(form.status === "PUBLISHED" && canSubmit ? ([["fill", "Fill in"]] as Array<[Tab, string]>) : []),
-    ...(assessment && form.status === "PUBLISHED" ? ([["facilities", "Facilities"]] as Array<[Tab, string]>) : []),
-    ["records", assessment ? `Assessments (${form.counts.PENDING} waiting)` : `Records (${form.counts.PENDING} waiting)`],
-    ...(form.mappings.length > 0 || !assessment ? ([["totals", "What it adds up to"]] as Array<[Tab, string]>) : []),
-    ...(canEdit && form.status === "PUBLISHED" ? ([["share", "Share a link"]] as Array<[Tab, string]>) : []),
-    ...(canEdit ? ([["connect", "KoboToolbox / SurveyCTO"]] as Array<[Tab, string]>) : []),
-  ];
+  const tabs = visibleFormTabs({ published: form.status === "PUBLISHED", assessment, hasMappings: form.mappings.length > 0, pending: form.counts.PENDING, canEdit, canSubmit, canReview, canEnter });
+  const [tab, setTab] = useState<Tab>(tabs[0]?.[0] ?? "fill");
 
   async function setState(to: "publish" | "close") {
     if (await status.run(() => setCollectionFormStatusAction(form.id, to))) router.refresh();
@@ -74,7 +71,7 @@ export function FormWorkspace({ form, periods, canEdit, canSubmit, canReview }: 
               <button key={key} role="tab" aria-selected={tab === key} className={`px-3 py-2 text-sm ${tab === key ? "border-b-2 border-brand-600 font-medium" : "text-slate-600 dark:text-slate-300"}`} onClick={() => setTab(key)}>{label}</button>
             ))}
           </div>
-          {tab === "fill" && <FillTab form={form} />}
+          {tab === "fill" && <FillTab form={form} canManage={canEdit || canReview} initialPlaceId={initialPlaceId} />}
           {tab === "facilities" && <FacilitiesTab formId={form.id} projectId={form.projectId} formName={form.name} canEdit={canEdit} />}
           {tab === "records" && (assessment
             ? <AssessmentRecordsTab formId={form.id} projectId={form.projectId} form={{ fields: form.fields as never, definition: definitionOf(form) }} hasScore={form.score !== undefined} canReview={canReview} canAct={canReview} />
@@ -108,12 +105,12 @@ const definitionOf = (form: CollectionFormView) => ({
   ...(form.score ? { score: form.score as never } : {}), ...(form.languages?.length ? { languages: form.languages } : {}),
 });
 
-function FillTab({ form }: { form: CollectionFormView }) {
+function FillTab({ form, canManage, initialPlaceId }: { form: CollectionFormView; canManage: boolean; initialPlaceId?: string | undefined }) {
   const [key, setKey] = useState(newIdempotencyKey);
   const upload = useMemo(() => uploadTo(form.id), [form.id]);
   const definition = definitionOf(form);
   if (form.subject === "FACILITY" || form.subject === "PLACE") {
-    return <OnlineAssessmentFill form={{ id: form.id, projectId: form.projectId, name: form.name, fields: form.fields as never, definition }} uploadFile={upload} />;
+    return <OnlineAssessmentFill form={{ id: form.id, projectId: form.projectId, name: form.name, fields: form.fields as never, definition }} uploadFile={upload} canManage={canManage} initialPlaceId={initialPlaceId} />;
   }
   return (
     <div className="space-y-8">

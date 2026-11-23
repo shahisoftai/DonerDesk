@@ -1,4 +1,4 @@
-import { DomainError, Permissions, checkBeneficiary, duplicateCheck, beneficiaryCounts, parseSubmissions, err, ok, type Result, type Role, type SubmissionMapping } from "@donordesk/domain";
+import { DomainError, Permissions, canChangeRecord, visibleRecords, checkBeneficiary, duplicateCheck, beneficiaryCounts, parseSubmissions, err, ok, type Result, type Role, type SubmissionMapping } from "@donordesk/domain";
 import type { AuthenticatedContext } from "../../context.js";
 import type { IAuditLogger, IClock, IIdGenerator } from "../../ports/core.js";
 import type { BeneficiaryRecord, IBeneficiaryRepository, IPlanContextReader, IProjectSubmissionMappingRepository } from "../../ports/workplan.js";
@@ -46,7 +46,9 @@ export class ListBeneficiariesHandler {
     if (!member.ok) return member;
     const rows = await this.repo.findByProject(projectId, ctx.tenant.tenantId);
     if (!rows.ok) return rows;
-    return ok({ items: rows.value, counts: beneficiaryCounts(rows.value) });
+    // Someone without the project-wide view sees only the people they registered, and the counts follow (Phase 63).
+    const visible = visibleRecords(ctx.tenant.role as Role, ctx.tenant.userId, rows.value);
+    return ok({ items: visible, counts: beneficiaryCounts(visible) });
   }
 }
 
@@ -111,6 +113,7 @@ export class UpdateBeneficiaryHandler {
     if (!found.value) return err(DomainError.notFound("Person", id));
     const member = await onProject(ctx, this.context, found.value.projectId);
     if (!member.ok) return member;
+    if (!canChangeRecord(ctx.tenant.role as Role, ctx.tenant.userId, found.value)) return err(DomainError.notFound("Person", id));
     const checked = checkBeneficiary(input as Parameters<typeof checkBeneficiary>[0]);
     if (!checked.ok) return checked;
     const all = await this.repo.findByProject(found.value.projectId, ctx.tenant.tenantId);
@@ -138,6 +141,7 @@ export class RemoveBeneficiaryHandler {
     if (!found.value) return err(DomainError.notFound("Person", id));
     const member = await onProject(ctx, this.context, found.value.projectId);
     if (!member.ok) return member;
+    if (!canChangeRecord(ctx.tenant.role as Role, ctx.tenant.userId, found.value)) return err(DomainError.notFound("Person", id));
     const gone = await this.repo.remove(id, ctx.tenant.tenantId);
     if (!gone.ok) return gone;
     await this.audit.record({

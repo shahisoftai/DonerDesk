@@ -49,6 +49,7 @@ export const assessEn = {
   "assess.facility.search": "Find a facility",
   "assess.facility.pick": "Facilities",
   "assess.facility.none": "No facility is available for this form. Ask your manager to mark places as facilities.",
+  "assess.facility.allDone": "Everything given to you for this form is done. Ask your manager if more facilities should be given to you.",
   "assess.facility.assigned": "Given to you",
   "assess.facility.due": "due {date}",
   "assess.facility.started": "started",

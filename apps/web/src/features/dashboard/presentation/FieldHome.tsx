@@ -9,6 +9,7 @@ import { loadDashboard } from "../application/dashboard-read-model";
 import { loadWorkItems } from "@/features/work-items/application/work-items-read-model";
 import { workItemHref, workItemMeta, workItemTitle } from "@/features/work-items/presentation/work-items-view";
 import { RecordCard } from "@/features/record/presentation/RecordCard";
+import { MyFacilitiesPanel } from "@/features/collection/presentation/MyFacilitiesPanel";
 import { MyWeekPanel } from "@/features/workplan/presentation/MyWeekPanel";
 import { Badge } from "@/components/data/Badge";
 import { InlineError } from "@/components/feedback/PageState";
@@ -44,6 +45,7 @@ export async function FieldHome({ ctx }: { ctx: Ctx }) {
         actions={<Link className="btn-secondary" href="/inbox">Open Inbox</Link>}
       />
       <RecordCard capabilities={[...ctx.capabilities]} />
+      <MyFacilitiesPanel />
       {!week.ok && <InlineError title={week.error.message} referenceId={week.error.referenceId} />}
       {week.ok && <MyWeekPanel week={week.value} projects={projects.map((p) => ({ id: p.id, title: p.title }))} />}
       <HomePinsPanel />

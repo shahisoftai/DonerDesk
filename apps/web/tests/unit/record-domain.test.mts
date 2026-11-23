@@ -27,14 +27,17 @@ test("a kind marked as queued or packed names its outbox kind; online-only has n
 test("availableKinds follows capabilities and hides the form kind when the project has no published form", () => {
   const field = availableKinds({ has: caps("indicator.update", "activity.create", "evidence.upload"), hasForms: false }).map((k) => k.key);
   assert.deepEqual(field, ["PLACE", "NUMBER", "ACTIVITY", "FILE"]);
-  const withForms = availableKinds({ has: caps("indicator.update"), hasForms: true }).map((k) => k.key);
+  const withForms = availableKinds({ has: caps("indicator.update", "collection.submit"), hasForms: true }).map((k) => k.key);
   assert.deepEqual(withForms, ["PLACE", "NUMBER", "FORM"]);
+  // The form follows the right to fill forms, not the right to enter numbers (Phase 63).
+  assert.deepEqual(availableKinds({ has: caps("collection.submit"), hasForms: true }).map((k) => k.key), ["FORM"]);
   assert.deepEqual(availableKinds({ has: caps(), hasForms: true }), []);
 });
 
-test("a viewer sees no kinds; the expense kind needs the plan-entry permission", () => {
+test("a viewer sees no kinds; the expense kind needs the plan-entry permission and the right to open Finance", () => {
   assert.equal(availableKinds({ has: caps("project.view" as Capability), hasForms: true }).length, 0);
-  assert.deepEqual(availableKinds({ has: caps("workplan.update-own"), hasForms: false }).map((k) => k.key), ["EXPENSE"]);
+  assert.deepEqual(availableKinds({ has: caps("workplan.update-own"), hasForms: false }).map((k) => k.key), []);
+  assert.deepEqual(availableKinds({ has: caps("workplan.update-own", "finance.view"), hasForms: false }).map((k) => k.key), ["EXPENSE"]);
 });
 
 test("startingKind remembers the last kind only while it is still allowed", () => {

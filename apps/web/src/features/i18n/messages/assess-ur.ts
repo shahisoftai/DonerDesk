@@ -47,6 +47,7 @@ export const assessUr: Record<keyof typeof assessEn, string> = {
   "assess.facility.search": "سہولت تلاش کریں",
   "assess.facility.pick": "سہولتیں",
   "assess.facility.none": "اس فارم کے لیے کوئی سہولت دستیاب نہیں۔ اپنے مینیجر سے کہیں کہ مقامات کو سہولت کے طور پر نشان زد کریں۔",
+  "assess.facility.allDone": "اس فارم کے لیے آپ کو دیا گیا سب کام مکمل ہو چکا ہے۔ اپنے مینیجر سے پوچھیں کہ کیا مزید سہولتیں دی جانی چاہئیں۔",
   "assess.facility.assigned": "آپ کو سونپی گئی",
   "assess.facility.due": "آخری تاریخ {date}",
   "assess.facility.started": "شروع ہو چکی",

@@ -3,6 +3,7 @@ import { isLiveActivity } from "@donordesk/domain/contexts/activities/activity-t
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ActivitiesResponseSchema, LogframeResponseSchema, OrganizationSchema, ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
 import { activityOptionLabel, periodOptionLabel, recentFirst } from "@/lib/shared/option-labels";
+import { canReachProjectPage } from "@/features/projects/domain/role-project-pages";
 import { EvidenceUploadQueue } from "@/features/evidence/presentation/EvidenceUploadQueue";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,7 @@ export default async function NewEvidencePage({ params, searchParams }: { params
         projectId={resolvedParams.id}
         storageProvider={storageProvider}
         initialActivityId={initialActivityId}
+        {...(canReachProjectPage(ctx.role, "/evidence") ? {} : { doneHref: `/projects/${resolvedParams.id}` })}
         activities={activitiesResult.ok ? recentFirst(activitiesResult.value.items.filter((a) => isLiveActivity(a.status)), (a) => a.activityDate).map((a) => ({ id: a.id, label: activityOptionLabel(a), periodLabel: a.reportingPeriodId ? periodLabelById.get(a.reportingPeriodId) : undefined })) : []}
         indicators={logframeResult.ok ? logframeResult.value.indicators.map((i) => ({ id: i.id, label: `${i.code} — ${i.name}` })) : []}
         periods={periodsResult.ok ? recentFirst(periodsResult.value.items, (p) => p.startDate).map((p) => ({ id: p.id, label: periodOptionLabel(p) })) : []}

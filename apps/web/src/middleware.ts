@@ -42,5 +42,7 @@ export const config = {
     "/programmes/:path*",
     "/visuals/:path*",
     "/waiting/:path*",
+    "/places/:path*",
+    "/where-we-work/:path*",
   ],
 };

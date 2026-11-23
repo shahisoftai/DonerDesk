@@ -202,6 +202,7 @@ function QueueingFiller({ pack, formId, formName, fields }: { pack: OfflinePack;
       form={{ id: formId, name: formName, fields, definition }}
       places={pack.places}
       assignments={assignments}
+      onlyAssigned={assignments.length > 0}
       drafts={drafts}
       online={outbox.online}
       rememberKey={`${pack.projectId}:${formId}`}

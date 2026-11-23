@@ -85,8 +85,9 @@ test("the list leaves out evidence the caller may not open", async () => {
   assert.equal(result.ok, true);
   assert.deepEqual(result.value.items.map((i) => i.id), ["e-1"]);
 
+  // Phase 63c: a field officer opens ordinary evidence, not other people's sensitive files.
   const field = await handler.handle(context("FIELD_OFFICER"), {});
-  assert.deepEqual(field.value.items.map((i) => i.id), ["e-1", "e-2"]);
+  assert.deepEqual(field.value.items.map((i) => i.id), ["e-1"]);
 
   const compliance = await handler.handle(context("COMPLIANCE_OFFICER"), {});
   assert.deepEqual(compliance.value.items.map((i) => i.id), ["e-1", "e-2", "e-3"]);

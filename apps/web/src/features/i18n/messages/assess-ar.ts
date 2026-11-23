@@ -47,6 +47,7 @@ export const assessAr: Record<keyof typeof assessEn, string> = {
   "assess.facility.search": "ابحث عن منشأة",
   "assess.facility.pick": "المنشآت",
   "assess.facility.none": "لا توجد منشأة متاحة لهذا النموذج. اطلب من مديرك تحديد أماكن على أنها منشآت.",
+  "assess.facility.allDone": "تم إنجاز كل ما أُسند إليك في هذا النموذج. اسأل مديرك إن كان يجب إسناد منشآت أخرى إليك.",
   "assess.facility.assigned": "مُسندة إليك",
   "assess.facility.due": "الموعد {date}",
   "assess.facility.started": "بدأت",

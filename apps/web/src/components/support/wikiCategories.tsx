@@ -151,6 +151,7 @@ export const WIKI_CATEGORIES: WikiCategory[] = [
       { title: "How to Choose the Areas a Project Works In", description: "Plan, Where we work: tick areas, add points like a camp or clinic, and confirm typed places.", href: "/support/how-to/choose-where-you-work" },
       { title: "How to Record a Figure for Each Place (and Get a Map)", description: "Turn on record by place so the Record panel asks one number per place and the map has figures to draw.", href: "/support/how-to/record-figures-by-place" },
       { title: "How to Run a Facility Assessment (or Any Long Checklist)", description: "Data, Forms: sections, tables and repeats, give facilities to assessors, fill offline with drafts, score and compare visits.", href: "/support/how-to/run-a-facility-assessment" },
+      { title: "How to Do Your Field Work on Your Phone", description: "For field officers: download once, open your given facilities from Home, fill forms and take photos with or without signal.", href: "/support/how-to/do-your-field-work-on-your-phone" },
       { title: "How to See Your Work on a Map", description: "Plan page Map view and the Where we work card on the project Overview.", href: "/support/how-to/see-your-work-on-a-map" },
       { title: "How to Use the Maps Explorer", description: "Results by place: shading, periods, ground, layers, overlays and movements.", href: "/support/how-to/use-the-maps-explorer" },
       { title: "How to Pin a Place on the Map", description: "Place a location the map does not know by hand.", href: "/support/how-to/pin-a-place-on-the-map" },

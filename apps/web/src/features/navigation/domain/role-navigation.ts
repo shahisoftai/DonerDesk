@@ -59,8 +59,8 @@ export const ROLE_NAVIGATION: Readonly<Record<Role, RoleNavigation>> = {
   ME_OFFICER: { home: "MANAGER", entries: ["HOME", "PORTFOLIO", "PLACES", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "EVIDENCE", "DOWNLOADS"] },
   GRANTS_OFFICER: { home: "GRANTS", entries: ["HOME", "PORTFOLIO", "PLACES", "INBOX", "PROJECTS", "VISUALS", "REPORTS", "DOWNLOADS", "FUNDING", "SETTINGS"] },
   COMPLIANCE_OFFICER: { home: "COMPLIANCE", entries: ["HOME", "INBOX", "PROJECTS", "REPORTS", "EVIDENCE", "COMPLIANCE", "DOWNLOADS"] },
-  // Field officers keep a short list (plan F36): Home, Inbox, Projects and Evidence, nothing administrative.
-  FIELD_OFFICER: { home: "FIELD", entries: ["HOME", "INBOX", "PROJECTS", "EVIDENCE"] },
+  // Field officers keep a short list (plan F36, Phase 63b): Home, Inbox and Projects, nothing else.
+  FIELD_OFFICER: { home: "FIELD", entries: ["HOME", "INBOX", "PROJECTS"] },
   VIEWER: { home: "DIRECTOR", entries: ["HOME", "PORTFOLIO", "PLACES", "PROJECTS", "VISUALS", "REPORTS", "DOWNLOADS"] },
 };
 

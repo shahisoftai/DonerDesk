@@ -2,12 +2,14 @@
  * Who may open a piece of evidence, by its confidentiality level.
  *
  * A level names the permission that opens it. PUBLIC and INTERNAL are open to
- * anyone who may view the project; SENSITIVE needs `evidence.upload` (the
- * roles that may bring evidence in); HIGHLY_SENSITIVE needs `evidence.verify`
- * (the roles accountable for what is verified) or
+ * anyone who may view the project; SENSITIVE and HIGHLY_SENSITIVE need
+ * `evidence.verify` (the roles accountable for what is verified) or
  * `report.override-confidentiality` (the roles that may put it in a donor
  * report, and so must be able to open it). A VIEWER holds none of them, so a
  * viewer can browse ordinary evidence but never opens a restricted file.
+ * Until Phase 63c SENSITIVE needed only `evidence.upload`, which a field
+ * officer holds, so a field officer could open other people's sensitive files;
+ * bringing a file in is not a reason to read everyone else's.
  *
  * The person who uploaded a file can always open their own.
  *
@@ -22,7 +24,7 @@ import type { ConfidentialityLevel } from "./evidence-file.js";
 export const CONFIDENTIALITY_READERS: Readonly<Record<ConfidentialityLevel, readonly Permission[]>> = {
   PUBLIC: [],
   INTERNAL: [],
-  SENSITIVE: ["evidence.upload"],
+  SENSITIVE: ["evidence.verify", "report.override-confidentiality"],
   HIGHLY_SENSITIVE: ["evidence.verify", "report.override-confidentiality"],
 };
 

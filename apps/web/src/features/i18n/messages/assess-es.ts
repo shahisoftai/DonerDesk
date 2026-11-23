@@ -47,6 +47,7 @@ export const assessEs: Record<keyof typeof assessEn, string> = {
   "assess.facility.search": "Buscar un centro",
   "assess.facility.pick": "Centros",
   "assess.facility.none": "No hay ningún centro disponible para este formulario. Pida a su responsable que marque lugares como centros.",
+  "assess.facility.allDone": "Todo lo que se le asignó para este formulario está hecho. Pregunte a su responsable si le deben asignar más centros.",
   "assess.facility.assigned": "Asignado a usted",
   "assess.facility.due": "para el {date}",
   "assess.facility.started": "iniciado",

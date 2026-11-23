@@ -12,6 +12,7 @@ import { authorizationMiddleware } from "./middleware/authorization.js";
 import { checkAiSpend } from "@donordesk/infrastructure";
 import { projectBoundaryMiddleware } from "./middleware/project-boundary.js";
 import { externalAccessMiddleware } from "./middleware/external-access.js";
+import { roleRouteAccessMiddleware } from "./middleware/role-route-access.js";
 import { dataResidencyMiddleware } from "./middleware/data-residency.js";
 import { idempotencyBegin, idempotencyFinish } from "./middleware/idempotency.js";
 import { registerAuthRoutes } from "./routes/auth.js";
@@ -195,6 +196,7 @@ export async function buildServer(): Promise<FastifyInstance> {
     });
     instance.addHook("preHandler", authorizationMiddleware);
     instance.addHook("preHandler", externalAccessMiddleware);
+    instance.addHook("preHandler", roleRouteAccessMiddleware);
     instance.addHook("preHandler", projectBoundaryMiddleware);
     instance.addHook("preHandler", dataResidencyMiddleware);
     instance.addHook("preHandler", idempotencyBegin);

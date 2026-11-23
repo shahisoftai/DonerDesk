@@ -181,7 +181,7 @@ test("archive-project requires project.edit (VIEWER is forbidden, defense in dep
   };
   await assert.rejects(
     () => handler.handle(viewerContext, "p-1"),
-    (e) => e.code === "FORBIDDEN" && /project\.edit/.test(e.message),
+    (e) => e.code === "FORBIDDEN" && e.details?.permission === "project.edit",
   );
   assert.equal(project.status, "DRAFT", "project must be untouched");
 });
@@ -197,7 +197,7 @@ test("restore-project requires project.edit (VIEWER is forbidden, defense in dep
   };
   await assert.rejects(
     () => handler.handle(viewerContext, "p-1"),
-    (e) => e.code === "FORBIDDEN" && /project\.edit/.test(e.message),
+    (e) => e.code === "FORBIDDEN" && e.details?.permission === "project.edit",
   );
   assert.equal(project.status, "ARCHIVED", "project must be untouched");
 });

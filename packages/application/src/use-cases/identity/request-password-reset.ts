@@ -120,6 +120,7 @@ export class RequestPasswordResetHandler {
         message: "Use the secure link below to reset your DonorDesk password. The link is valid for 60 minutes and can be used once.",
         relatedEntityType: "password_reset_token",
         relatedEntityId: token.id.toString(),
+        emailLink: deepLink,
       });
     } catch {
       notificationSent = false;

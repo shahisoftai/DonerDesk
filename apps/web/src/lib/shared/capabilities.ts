@@ -54,7 +54,10 @@ export type Capability =
   | "risk.manage"
   | "finance.approve"
   | "settings.view"
-  | "billing.manage";
+  | "billing.manage"
+  /** The project's money and the analysis across everyone's records: every role except the field officer (Phase 63). */
+  | "finance.view"
+  | "results.view";
 
 const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
   ADMIN: [
@@ -95,6 +98,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
       "risk.raise",
     "risk.manage",
     "finance.approve",
+    "finance.view",
+    "results.view",
   ],
   PROJECT_MANAGER: [
     "project.create",
@@ -123,6 +128,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
       "risk.raise",
     "risk.manage",
     "finance.approve",
+    "finance.view",
+    "results.view",
   ],
   ME_OFFICER: [
     "logframe.edit",
@@ -140,6 +147,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "team.view-work",
       "risk.raise",
     "risk.manage",
+    "finance.view",
+    "results.view",
   ],
   GRANTS_OFFICER: [
     "template.create",
@@ -153,6 +162,8 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "task.assign",
       "risk.raise",
     "risk.manage",
+    "finance.view",
+    "results.view",
   ],
   FIELD_OFFICER: ["activity.create", "evidence.upload", "workplan.update-own", "risk.raise", "collection.submit"],
   COMPLIANCE_OFFICER: [
@@ -165,8 +176,10 @@ const ROLE_CAPABILITIES: Record<Role, readonly Capability[]> = {
     "task.assign",
       "risk.raise",
     "risk.manage",
+    "finance.view",
+    "results.view",
   ],
-  VIEWER: ["export.create"],
+  VIEWER: ["export.create", "finance.view", "results.view"],
 };
 
 export function capabilitiesForRole(role: string | undefined): ReadonlySet<Capability> {

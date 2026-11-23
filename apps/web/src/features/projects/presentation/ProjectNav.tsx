@@ -10,6 +10,7 @@ import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { uiLabel } from "@/features/i18n/domain/ui-labels";
 import { PROJECT_TABS, locateProjectPage, projectCrumbs, subNavFor, type ProjectFact } from "../domain/project-tabs";
 import { tabsFor } from "../domain/role-project-tabs";
+import { canReachProjectPage } from "../domain/role-project-pages";
 
 /** The project's tabs, the current tab's pages (with "More" for rare ones) and the breadcrumbs above the title. */
 export function ProjectCrumbs({ projectId, projectTitle }: { projectId: string; projectTitle: string }) {
@@ -23,7 +24,7 @@ export function ProjectNav({ projectId, facts, capabilities, role }: { projectId
   const pathname = usePathname();
   const base = `/projects/${projectId}`;
   const { tab, page } = locateProjectPage(pathname.slice(base.length));
-  const sub = subNavFor(tab, { facts: new Set(facts), capabilities: new Set(capabilities), current: page });
+  const sub = subNavFor(tab, { facts: new Set(facts), capabilities: new Set(capabilities), current: page, reachable: (path) => canReachProjectPage(role, path) });
   const { t: tr } = useI18n();
   const bar = tabsFor(PROJECT_TABS, role, tab.key);
 

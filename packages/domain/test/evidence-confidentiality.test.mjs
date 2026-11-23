@@ -15,10 +15,12 @@ test("ordinary evidence is open to every role; restricted evidence is not", () =
   assert.equal(mayReadConfidentiality("VIEWER", "HIGHLY_SENSITIVE"), false);
 });
 
-test("a role that may bring evidence in may open sensitive evidence", () => {
-  for (const role of ["ADMIN", "PROJECT_MANAGER", "ME_OFFICER", "GRANTS_OFFICER", "FIELD_OFFICER", "COMPLIANCE_OFFICER"]) {
+test("a role accountable for what is verified or reported may open sensitive evidence; a field officer does not (Phase 63c)", () => {
+  for (const role of ["ADMIN", "PROJECT_MANAGER", "ME_OFFICER", "GRANTS_OFFICER", "COMPLIANCE_OFFICER"]) {
     assert.equal(mayReadConfidentiality(role, "SENSITIVE"), true, role);
   }
+  assert.equal(mayReadConfidentiality("FIELD_OFFICER", "SENSITIVE"), false, "bringing a file in is not a reason to read everyone else's");
+  assert.equal(mayReadConfidentiality("FIELD_OFFICER", "INTERNAL"), true);
 });
 
 test("a role accountable for verification may open highly sensitive evidence", () => {
@@ -44,7 +46,7 @@ test("the person who uploaded a file can always open their own", () => {
 
 test("the readable levels are exactly the ones the role may open", () => {
   assert.deepEqual(readableConfidentialityLevels("VIEWER"), ["PUBLIC", "INTERNAL"]);
-  assert.deepEqual(readableConfidentialityLevels("FIELD_OFFICER"), ["PUBLIC", "INTERNAL", "SENSITIVE"]);
+  assert.deepEqual(readableConfidentialityLevels("FIELD_OFFICER"), ["PUBLIC", "INTERNAL"]);
   assert.deepEqual(readableConfidentialityLevels("COMPLIANCE_OFFICER"), [
     "PUBLIC",
     "INTERNAL",
