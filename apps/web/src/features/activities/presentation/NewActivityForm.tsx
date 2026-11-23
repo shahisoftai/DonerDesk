@@ -375,7 +375,7 @@ function NewActivityFormInner({
     setLeaving(true);
     // Say it was saved and show where it is: the record is on the Completed tab, waiting for a reviewer.
     toast.push({ title: "Activity saved", description: "It is on the Completed tab, waiting to be accepted.", tone: "success" });
-    router.push(`/projects/${projectId}/activities?view=completed`);
+    router.push(`/projects/${projectId}/activities`);
     router.refresh();
   }
 
@@ -591,7 +591,7 @@ function NewActivityFormInner({
           <Button type="button" variant="secondary" className="min-h-[52px]" disabled={leaving || uploading} onClick={() => {
             if (onSaved) { onSaved({ title: activityTitle, queued: false }); return; }
             setLeaving(true);
-            router.push(`/projects/${projectId}/activities?view=completed`);
+            router.push(`/projects/${projectId}/activities`);
             router.refresh();
           }}>Finish without these files</Button>
         ) : !embedded ? (

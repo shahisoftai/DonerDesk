@@ -58,20 +58,26 @@ export const COMMANDS: readonly CommandDef[] = [
 
 /** Inside a project, the same commands for that project. */
 export const PROJECT_COMMANDS: readonly (Omit<CommandDef, "run" | "group"> & { path: string })[] = [
-  { id: "p.overview", label: "Project overview", path: "" },
-  { id: "p.plan", label: "Work plan", path: "/activities", keywords: "activities timeline" },
+  { id: "p.overview", label: "Project home", path: "", keywords: "overview next step" },
+  { id: "p.plan", label: "Work plan", path: "/activities/plan", keywords: "activities timeline planned" },
   { id: "p.logframe", label: "Results framework and logframe", path: "/logframe", keywords: "indicators outcomes outputs" },
-  { id: "p.data", label: "Data Center", path: "/data", keywords: "values sheet charts" },
+  { id: "p.periods", label: "Reporting periods", path: "/periods", keywords: "calendar deadlines create period" },
+  { id: "p.collect", label: "Add data to this project", path: "/collect", keywords: "collect record enter upload form import" },
+  { id: "p.review", label: "To review on this project", path: "/review", keywords: "verify approve accept waiting needs you" },
+  { id: "p.data", label: "Data Center", path: "/data", keywords: "values sheet charts all figures" },
   { id: "p.enter", label: "Enter data for this project", path: "/enter", needs: ["indicator.update"], keywords: "record values" },
   { id: "p.import", label: "Import a file into this project", path: "/import", needs: ["project.edit", "indicator.update", "activity.create"], keywords: "upload spreadsheet excel csv" },
-  { id: "p.evidence", label: "Evidence of this project", path: "/evidence" },
+  { id: "p.activities", label: "Activities done in this project", path: "/activities", keywords: "completed activity updates" },
+  { id: "p.evidence", label: "Evidence of this project", path: "/evidence", keywords: "files photos" },
   { id: "p.upload", label: "Upload evidence to this project", path: "/evidence/new", needs: ["evidence.upload"] },
   { id: "p.reports", label: "Reports of this project", path: "/reports" },
   { id: "p.new-report", label: "Start a new report for this project", path: "/reports/new", needs: ["reporting.create"] },
+  { id: "p.rules", label: "Donor rules of this project", path: "/compliance", keywords: "compliance" },
   { id: "p.places", label: "Where we work (places and map)", path: "/places", keywords: "map locations districts" },
-  { id: "p.finance", label: "Finance of this project", path: "/finance", keywords: "budget expenses funding" },
+  { id: "p.finance", label: "Finance of this project", path: "/finance", keywords: "budget expenses funding money" },
   { id: "p.team", label: "Team of this project", path: "/team" },
   { id: "p.map", label: "Map of this project", path: "", keywords: "maps" },
+  { id: "p.checklist", label: "Setup checklist of this project", path: "/setup", keywords: "finish setting up guidance" },
   { id: "p.settings", label: "Project settings", path: "/settings", needs: ["project.edit"] },
 ];
 

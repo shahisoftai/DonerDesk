@@ -5,6 +5,10 @@ import { loadProjectSetupAction } from "@/lib/actions/setup";
 import { InlineError } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { SetupChecklistClient } from "./SetupChecklistClient";
+import { loadProjectOverviewV2 } from "@/features/projects/application/overview-read-model";
+import { checklistOf } from "@/features/projects/application/project-checklist";
+import { GuidedChecklist } from "@/features/projects/presentation/GuidedChecklist";
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 
 export const dynamic = "force-dynamic";
 
@@ -17,21 +21,26 @@ export default async function ProjectSetupPage({ params }: { params: Promise<{ i
   }
   if (!result.value?.setup) notFound();
   const setup = result.value.setup;
+  const overview = await loadProjectOverviewV2(ctx.token, id, { role: ctx.role, capabilities: ctx.capabilities, today: new Date().toISOString().slice(0, 10), meId: decodeSessionPayload(ctx.token)?.sub ?? "" });
+  const guided = overview.ok && overview.value ? checklistOf(overview.value, ctx.capabilities) : null;
 
   return (
     <div className="animate-fade-in" data-tour-id="project-setup-checklist">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="font-mono text-xs text-slate-500">Project setup</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">Prepare your project for reporting</h2>
+          <p className="font-mono text-xs text-slate-500">Setup checklist</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">Finish setting up your project</h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
-            Complete the items below to unlock reporting periods. Everything else (evidence, activities, logframe editing) is available now.
+            Do these when you are ready. Nothing here stops you from recording data or planning work, except the items under "Before reporting".
           </p>
         </div>
         <Link className="btn-secondary" href={`/projects/${id}`}>View project</Link>
       </header>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+      {guided ? <div className="mt-6"><GuidedChecklist checklist={guided} projectId={id} /></div> : null}
+
+      <div className="mt-8 grid gap-4 lg:grid-cols-3">
+        <h3 className="section-title lg:col-span-3">Before reporting</h3>
         <div className="lg:col-span-2">
           <SetupChecklistClient
             projectId={id}
@@ -64,7 +73,7 @@ export default async function ProjectSetupPage({ params }: { params: Promise<{ i
               values once a reporting period is open.
             </p>
             <p className="mt-2">
-              <Link className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${id}/reports`}>
+              <Link className="text-sm font-medium text-brand-600 hover:underline dark:text-brand-400" href={`/projects/${id}/periods`}>
                 Open reporting periods to enter indicator data
               </Link>
             </p>

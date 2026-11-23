@@ -61,7 +61,7 @@ export function StartFromLogframeWizard({ projectId, activities, leads }: { proj
   }
   async function create() {
     const out = await state.runCreate((idempotencyKey) => startPlanFromLogframeAction(projectId, payload(true), { idempotencyKey }));
-    if (out) router.push(`/projects/${projectId}/activities?view=planned`);
+    if (out) router.push(`/projects/${projectId}/activities/plan`);
   }
 
   return (

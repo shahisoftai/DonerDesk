@@ -82,7 +82,7 @@ export function PlanActivityForm({ projectId, leads, activities, country, custom
         ...(shownFiles.length > 0 ? { requiredFiles: shownFiles } : {}),
       }, { idempotencyKey }),
     );
-    if (out) router.push(`/projects/${projectId}/activities?view=planned`);
+    if (out) router.push(`/projects/${projectId}/activities/plan`);
   }
 
   const err = (k: string) => state.fields?.[k]?.[0];

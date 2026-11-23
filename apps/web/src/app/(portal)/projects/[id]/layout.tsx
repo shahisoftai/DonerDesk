@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { requireSession } from "@/lib/server/auth-context";
 import { getProject } from "@/lib/server/project-queries";
 import { ProjectCrumbs, ProjectNav } from "@/features/projects/presentation/ProjectNav";
-import type { ProjectFact } from "@/features/projects/domain/project-tabs";
+import type { ProjectFact } from "@/features/projects/domain/project-stages";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { CollectionFormListSchema } from "@/lib/server/schemas-collection";
 import { listDatasetsAction } from "@/lib/actions/datasets";

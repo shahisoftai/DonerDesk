@@ -17,7 +17,7 @@ export function LocationSection({ location, projectId }: { location: LocationDat
   const { sites } = location;
   const where = [location.region, location.country].filter(Boolean).join(", ");
   return (
-    <OverviewSection kicker="Location" title={OVERVIEW_SECTION_LABEL.LOCATION} href={`/projects/${projectId}/activities?view=planned`} linkLabel="See the plan">
+    <OverviewSection kicker="Location" title={OVERVIEW_SECTION_LABEL.LOCATION} href={`/projects/${projectId}/activities/plan`} linkLabel="See the plan">
       <div className="card max-w-3xl">
         {where ? <p className="text-sm text-slate-600 dark:text-slate-300">{where}</p> : null}
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-300" aria-label={WORKPLAN_COPY.mapLegend}>

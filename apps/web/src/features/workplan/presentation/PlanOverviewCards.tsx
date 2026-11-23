@@ -27,7 +27,7 @@ export function PlanOverviewCards({ projectId, counts, outputs, health }: { proj
           <li>{countOf(counts.underWay, "activity", "activities")} under way</li>
           <li>{countOf(counts.dueSoon, "activity", "activities")} starting within a week</li>
         </ul>
-        <Link className="mt-3 inline-block text-sm text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/activities?view=planned`}>See the plan</Link>
+        <Link className="mt-3 inline-block text-sm text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/activities/plan`}>See the plan</Link>
       </div>
 
       <div className="card">

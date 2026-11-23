@@ -1,28 +1,16 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { ActivitiesResponseSchema } from "@/lib/server/schemas";
 import { InlineError } from "@/components/feedback/PageState";
-import { MapLayerMetaSchema, PlanFieldValuesSchema, RisksResponseSchema, WorkPlanResponseSchema } from "@/lib/server/schemas";
-import { fieldChips } from "@/features/workplan/domain/plan-export";
-import { WORKPLAN_COPY } from "@donordesk/domain/contexts/workplan/index.js";
+import { WorkPlanResponseSchema } from "@/lib/server/schemas";
 import { activitiesTabMode } from "@/features/workplan/domain/activities-tab-mode";
 import { getProject } from "@/lib/server/project-queries";
-import { showsButton, surfaceFor, managesPlan } from "@/features/workplan/domain/role-surfaces";
-import { PlanEmptyCard } from "@/features/workplan/presentation/PlanEmptyCard";
-import { canReachProjectPage } from "@/features/projects/domain/role-project-pages";
-import { PlannedViews } from "@/features/workplan/presentation/PlannedViews";
-import { deadlinesFromPeriods } from "@/features/workplan/domain/timeline-deadlines";
-import { ReportingPeriodsResponseSchema } from "@/lib/server/schemas";
-import { canActOnPlanItem } from "@donordesk/domain/contexts/workplan/index.js";
-import type { Role } from "@/lib/shared/capabilities";
-import { loadPlanPageData } from "@/features/workplan/application/plan-page-data";
+import { showsButton } from "@/features/workplan/domain/role-surfaces";
 import { ActivityBulkList } from "@/features/activities/presentation/ActivityBulkList";
 
 export const dynamic = "force-dynamic";
-
-// The links to plan/start, plan/new and plan/import are plain anchors on purpose: a client-side Link is caught by the
-// @panel/(.)plan/[itemId] interception, which reads "start" as an activity id and shows a 404.
 
 export default async function ActivitiesPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ view?: string }> }) {
   const resolvedParams = await params;
@@ -37,15 +25,16 @@ export default async function ActivitiesPage({ params, searchParams }: { params:
     planningVisible: !project.ok || project.value.showWorkPlanning !== false,
     plannedCount: plan.ok ? plan.value.items.length : 0,
     canPlan: showsButton(ctx.role, ctx.capabilities, "ADD_PLANNED"),
-    view,
+    view: "completed",
   });
-  if (mode.planned) return <PlannedActivitiesView projectId={resolvedParams.id} otherSide={mode.otherSide} />;
+  // Phase 65: the work plan has its own page; an old `?view=planned` address opens it.
+  if (view === "planned") redirect(`/projects/${resolvedParams.id}/activities/plan`);
   const result = await gatewayRequest(`/v1/projects/${resolvedParams.id}/activities`, ActivitiesResponseSchema, ctx.token);
   if (!result.ok) {
     return (
       <div className="animate-fade-in">
         <header className="flex items-center justify-between">
-          <h1 className="page-title">Activity updates</h1>
+          <h1 className="page-title">Activities done</h1>
           <Link className="btn" href={`/projects/${resolvedParams.id}/activities/new`}>New activity</Link>
         </header>
         <div className="mt-6"><InlineError title={result.error.message} referenceId={result.error.referenceId} /></div>
@@ -57,10 +46,10 @@ export default async function ActivitiesPage({ params, searchParams }: { params:
   return (
     <div className="animate-fade-in">
       {mode.otherSide === "PLAN" && (
-        <p className="mb-4"><Link className="text-sm text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${resolvedParams.id}/activities?view=planned`}>Planned activities</Link></p>
+        <p className="mb-4"><Link className="text-sm text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${resolvedParams.id}/activities/plan`}>Work plan</Link></p>
       )}
       <header className="flex items-center justify-between">
-        <h1 className="page-title">Activity updates</h1>
+        <h1 className="page-title">Activities done</h1>
         <div className="flex gap-2">
           <a className="btn-secondary text-xs" href="/api/templates/activities">Download template</a>
           <Link className="btn-secondary text-xs" href={`/projects/${resolvedParams.id}/activities/import`}>Import</Link>
@@ -68,72 +57,6 @@ export default async function ActivitiesPage({ params, searchParams }: { params:
         </div>
       </header>
       <ActivityBulkList projectId={resolvedParams.id} items={items} canReview={ctx.capabilities.has("activity.review")} />
-    </div>
-  );
-}
-
-async function PlannedActivitiesView({ projectId, otherSide }: { projectId: string; otherSide: "RECORDS" | "PLAN" | null }) {
-  const data = await loadPlanPageData(projectId);
-  const [plan, periods, planFields, risks, mapLayer] = await Promise.all([
-    gatewayRequest(`/v1/projects/${projectId}/work-plan`, WorkPlanResponseSchema, data.ctx.token),
-    gatewayRequest(`/v1/projects/${projectId}/reporting-periods`, ReportingPeriodsResponseSchema, data.ctx.token),
-    gatewayRequest(`/v1/projects/${projectId}/plan-field-values`, PlanFieldValuesSchema, data.ctx.token),
-    gatewayRequest(`/v1/projects/${projectId}/risks`, RisksResponseSchema, data.ctx.token),
-    gatewayRequest("/v1/organization/map-layer", MapLayerMetaSchema, data.ctx.token),
-  ]);
-  // A few words per activity for the project's own fields: only fields that have a value.
-  const chips: Record<string, string[]> = planFields.ok
-    ? Object.fromEntries(Object.entries(planFields.value.values).map(([itemId, own]) => [itemId, fieldChips(planFields.value.fields, own)]))
-    : {};
-  const surface = surfaceFor(data.ctx.role);
-  const canPlan = showsButton(data.ctx.role, data.ctx.capabilities, "ADD_PLANNED");
-  const canStart = showsButton(data.ctx.role, data.ctx.capabilities, "START_FROM_LOGFRAME");
-  const canUpdateOwn = showsButton(data.ctx.role, data.ctx.capabilities, "UPDATE_OWN_STATUS");
-  const rows = plan.ok ? plan.value.items : [];
-  const actor = { userId: data.userId, role: (data.ctx.role ?? "VIEWER") as Role };
-  return (
-    <div data-tour-id="work-plan" className="animate-fade-in">
-      <header className="flex items-center justify-between">
-        <h1 className="page-title">Planned activities</h1>
-        {canPlan && rows.length > 0 && (
-          <div className="flex gap-2">
-            <a className="btn-secondary text-xs" href={`/projects/${projectId}/activities/plan/import`}>{WORKPLAN_COPY.importSheet}</a>
-            <a className="btn" href={`/projects/${projectId}/activities/plan/new`}>{WORKPLAN_COPY.addPlanned}</a>
-          </div>
-        )}
-      </header>
-      <p className="mt-2 flex flex-wrap gap-x-4 text-sm">
-        {otherSide === "RECORDS" && <Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/activities?view=completed`}>Completed activities</Link>}
-        {canReachProjectPage(data.ctx.role, "/beneficiaries") && <Link className="text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${projectId}/beneficiaries`}>People reached</Link>}
-      </p>
-      <div className="mt-4">
-        {!plan.ok ? (
-          <InlineError title={plan.error.message} referenceId={plan.error.referenceId} />
-        ) : rows.length === 0 ? (
-          <PlanEmptyCard projectId={projectId} canPlan={canPlan && canStart} />
-        ) : (
-          <PlannedViews
-            canExport={data.ctx.capabilities.has("results.view")}
-            projectId={projectId}
-            rows={rows}
-            today={data.today}
-            userId={data.userId}
-            names={data.names}
-            fieldChips={chips}
-            initialView={surface.planView}
-            defaultMine={surface.mineFilter}
-            defaultActuals={managesPlan(data.ctx.role)}
-            deadlines={deadlinesFromPeriods(periods.ok ? periods.value.items : [])}
-            project={data.projectRange}
-            outputTitles={data.outputTitles}
-            changeableIds={rows.filter((row) => canPlan || (canUpdateOwn && (row.ownerUserId === data.userId || row.supportUserIds.includes(data.userId)))).map((row) => row.id)}
-            movableIds={rows.filter((row) => canActOnPlanItem(actor, { ownerUserId: row.ownerUserId, supportUserIds: row.supportUserIds }, "MOVE")).map((row) => row.id)}
-            siteRisks={risks.ok ? risks.value.items.map((r) => ({ title: r.title, plannedActivityId: r.plannedActivityId, status: r.status })) : []}
-            country={data.country}
-            mapLayerUrl={mapLayer.ok && mapLayer.value ? "/api/organization/map-layer/data" : undefined}
-          />
-        )}
-      </div>
     </div>
   );
 }

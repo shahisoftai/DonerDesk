@@ -54,6 +54,21 @@ const LABEL: Readonly<Record<string, string>> = {
   "API keys and webhooks": "ui.api-keys-and-webhooks",
   "Search or jump to…": "ui.search-or-jump-to",
   "Academy": "ui.academy",
+  "Home": "ui.home",
+  "Collect": "ui.collect",
+  "Review": "ui.review",
+  "Report": "ui.report",
+  "Add data": "ui.add-data",
+  "Activities done": "ui.activities-done",
+  "Files and evidence": "ui.files-and-evidence",
+  "Data files": "ui.data-files",
+  "Plan changes": "ui.plan-changes",
+  "Reporting periods": "ui.reporting-periods",
+  "To review": "ui.to-review",
+  "Donor rules": "ui.donor-rules",
+  "Visuals": "ui.visuals",
+  "Tables": "ui.tables",
+  "Setup checklist": "ui.setup-checklist",
 };
 
 export function uiLabel(label: string, t: Translator["t"]): string {

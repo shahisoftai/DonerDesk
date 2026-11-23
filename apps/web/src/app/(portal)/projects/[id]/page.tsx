@@ -13,10 +13,10 @@ import { InlineError, EmptyState } from "@/components/feedback/PageState";
 import { Badge } from "@/components/data/Badge";
 import { PeriodSwitcher } from "@/features/projects/presentation/PeriodSwitcher";
 import { projectStatusTone } from "@/lib/shared/tone";
-import { LifecycleStrip } from "@/features/projects/presentation/overview/LifecycleStrip";
+import { ProjectJourney } from "@/features/projects/presentation/overview/ProjectJourney";
+import { nextStepFor, journeyStage } from "@/features/projects/domain/journey";
+import { checklistOf } from "@/features/projects/application/project-checklist";
 import { NeedsYouSection } from "@/features/projects/presentation/overview/NeedsYouSection";
-import { NextStepStrip } from "@/features/projects/presentation/overview/NextStepStrip";
-import { nextStep } from "@/features/projects/domain/next-step";
 import { PulseSection } from "@/features/projects/presentation/overview/PulseSection";
 import { CalendarSection } from "@/features/projects/presentation/overview/CalendarSection";
 import { ReportingSection } from "@/features/projects/presentation/overview/ReportingSection";
@@ -78,6 +78,28 @@ export default async function ProjectDetail({
   const savedLayout = await layoutCall;
   const layout = resolveOverviewLayout(sections, savedLayout.layout);
 
+  // Phase 65: the one card that says where the project is and what to do next, from facts already read.
+  const needsYouList = has("NEEDS_YOU") && data.needsYou.ok ? data.needsYou.value : [];
+  const nextDeadline = data.pulse.ok ? data.pulse.value.nextDeadline : null;
+  const readinessPercent = data.reporting.ok ? data.reporting.value.readiness?.overall ?? null : null;
+  const checklist = checklistOf(data, ctx.capabilities);
+  const step = nextStepFor({
+    projectId: identity.id,
+    needsYou: needsYouList.map((i) => ({ title: i.title, href: i.href, urgent: i.urgent })),
+    checklist,
+    periods: periods.length,
+    canCreatePeriod: ctx.capabilities.has("project.edit") || ctx.capabilities.has("reporting.create"),
+    nextDeadlineDays: nextDeadline?.days ?? null,
+    nextDeadlineTitle: nextDeadline?.title ?? null,
+    readiness: readinessPercent,
+  });
+  const stage = journeyStage({
+    indicators: data.setup.ok ? data.setup.value.logframe?.indicators ?? 0 : 0,
+    periods: periods.length,
+    reviewWaiting: needsYouList.length > 0,
+    reportUnderway: periods.some((p) => ["DRAFT_GENERATED", "UNDER_REVIEW", "APPROVED", "SUBMITTED"].includes(p.status)),
+  });
+
   const renderPanel = (key: OverviewPanel): ReactNode | null => {
     switch (key) {
       case "PULSE": return data.pulse.ok ? <PulseSection pulse={data.pulse.value} projectId={identity.id} /> : null;
@@ -114,25 +136,14 @@ export default async function ProjectDetail({
 
   return (
     <div data-tour-id="demo-project-card">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-sm text-slate-600 dark:text-slate-400">
-          {identity.donorName} · {identity.country} · {identity.sector.replace(/_/g, " ")}
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Link className="text-sm underline" href={`/visuals/assets?project=${identity.id}`}>Visuals for this project</Link>
-          {identity.isDemo ? <Badge tone="info">Demo</Badge> : null}
-          <Badge tone={projectStatusTone(identity.status)}>{identity.status.replace(/_/g, " ")}</Badge>
-          <Badge tone="neutral">{identity.reportingFrequency.toLowerCase().replace("_", " ")}</Badge>
-        </div>
-      </div>
-
       {identity.isDemo ? (
-        <div className="mt-3">
+        <div className="mb-3 flex items-center gap-2">
+          <Badge tone="info">Demo</Badge>
           <DeleteDemoProjectButton projectId={identity.id} />
         </div>
       ) : null}
 
-      <LifecycleStrip life={life} />
+      <ProjectJourney stage={stage} step={step} checklist={checklist} checklistHref={`/projects/${identity.id}/setup`} />
 
       {periods.length > 0 ? (
         <section className="mt-4" aria-label="Reporting period">
@@ -141,29 +152,18 @@ export default async function ProjectDetail({
         </section>
       ) : null}
 
-      <NextStepStrip step={nextStep({ needsYou: has("NEEDS_YOU") && data.needsYou.ok ? data.needsYou.value : [], hasPeriods: periods.length > 0, canCreatePeriod: ctx.capabilities.has("project.edit"), projectId: identity.id })} />
-
-      {!has("REPORTING") ? (
-        <section className="mt-6">
-          <div className="card">
-            <h2 className="font-medium">Set up your reporting period</h2>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-              Create a reporting period to start collecting evidence and generating a report.
-            </p>
-            <Link className="btn mt-3" href={`/projects/${identity.id}/reports/new`}>Create reporting period</Link>
-          </div>
-        </section>
-      ) : null}
-
       {has("NEEDS_YOU") && data.needsYou.ok ? (
-        <NeedsYouSection items={data.needsYou.value} projectId={identity.id} today={new Date().toISOString().slice(0, 10)} />
+        <NeedsYouSection items={data.needsYou.value.slice(0, 3)} projectId={identity.id} today={today} />
+      ) : null}
+      {has("NEEDS_YOU") && data.needsYou.ok && data.needsYou.value.length > 3 ? (
+        <p className="mt-2 text-sm"><Link className="font-medium text-brand-700 hover:underline dark:text-brand-300" href={`/projects/${identity.id}/review`}>See all {data.needsYou.value.length} to review</Link></p>
       ) : null}
 
       <div className="mt-6 flex justify-end">
         <ArrangeEditor
           variant={OVERVIEW_LAYOUT_VARIANT} initial={[...layout]} defaults={defaultOverviewLayout(sections)} version={savedLayout.version}
           info={OVERVIEW_PANEL_INFO} labels={OVERVIEW_SECTION_LABEL}
-          copy={{ open: "Arrange this page", title: "Arrange the project page", intro: "Choose the order and width of the parts, or hide the ones you do not use. Only you see this arrangement, and it applies to every project. On a phone, parts always stack in this order." }}
+          copy={{ open: "Customise this page", title: "Customise the project page", intro: "Choose the order and width of the parts, or hide the ones you do not use. Only you see this arrangement, and it applies to every project. On a phone, parts always stack in this order." }}
         />
       </div>
 

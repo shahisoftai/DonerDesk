@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { ROLE_REACHABLE_PAGES, canReachProjectPage, isRestrictedRole, landingPageFor, tabsReachableBy } from "../../src/features/projects/domain/role-project-pages.ts";
-import { ROLE_PROJECT_TABS, tabsFor } from "../../src/features/projects/domain/role-project-tabs.ts";
-import { PROJECT_TABS, locateProjectPage, subNavFor } from "../../src/features/projects/domain/project-tabs.ts";
+import { stagesFor } from "../../src/features/projects/domain/role-project-stages.ts";
+import { PROJECT_STAGES as PROJECT_TABS, locateProjectPage, subNavFor } from "../../src/features/projects/domain/project-stages.ts";
 import { capabilitiesForRole, ROLES } from "../../src/lib/shared/capabilities.ts";
 import { canReachAppPage, ROLE_REACHABLE_APP_PAGES } from "../../src/features/navigation/domain/role-app-pages.ts";
 import { navFor } from "../../src/features/navigation/domain/role-navigation.ts";
@@ -24,7 +24,7 @@ test("a field officer reaches their activities, their forms and the photo upload
   for (const ok of ["/activities", "/activities/abc", "/activities/new", "/forms", "/forms/f1", "/evidence/new"]) {
     assert.ok(canReachProjectPage("FIELD_OFFICER", ok), ok);
   }
-  for (const no of ["", "/logframe", "/indicators", "/places", "/datasets", "/evidence", "/evidence/e1", "/beneficiaries", "/finance", "/settings", "/team", "/setup", "/reports", "/reports/r1", "/templates", "/compliance", "/data", "/enter", "/import", "/charts", "/maps", "/report-builder", "/management-report", "/adaptations", "/ask", "/infographics", "/unknown", "/activitiesX"]) {
+  for (const no of ["", "/logframe", "/indicators", "/places", "/datasets", "/evidence", "/evidence/e1", "/beneficiaries", "/finance", "/settings", "/team", "/setup", "/reports", "/reports/r1", "/templates", "/compliance", "/data", "/enter", "/import", "/collect", "/review", "/periods", "/visuals", "/charts", "/maps", "/report-builder", "/management-report", "/adaptations", "/ask", "/infographics", "/unknown", "/activitiesX"]) {
     assert.ok(!canReachProjectPage("FIELD_OFFICER", no), no);
   }
 });
@@ -43,12 +43,12 @@ test("the project front page sends a field officer to their forms, or their acti
 });
 
 test("the field officer's bar has no More, and no tab it cannot open", () => {
-  const bar = tabsFor(PROJECT_TABS, "FIELD_OFFICER", "plan");
+  const bar = stagesFor(PROJECT_TABS, "FIELD_OFFICER", "plan");
   assert.deepEqual(bar.more, []);
-  assert.deepEqual(bar.shown.map((t) => t.key), ["plan", "data"]);
-  assert.deepEqual(tabsReachableBy("FIELD_OFFICER", PROJECT_TABS).map((t) => t.key), ["plan", "data"]);
+  assert.deepEqual(bar.shown.map((t) => t.key), ["plan", "collect"]);
+  assert.deepEqual(tabsReachableBy("FIELD_OFFICER", PROJECT_TABS).map((t) => t.key), ["plan", "collect"]);
   for (const role of ROLE_LIST.filter((r) => r !== "FIELD_OFFICER")) {
-    const b = tabsFor(PROJECT_TABS, role, "overview");
+    const b = stagesFor(PROJECT_TABS, role, "home");
     assert.equal(b.shown.length + b.more.length, PROJECT_TABS.length, role);
   }
 });
@@ -56,10 +56,10 @@ test("the field officer's bar has no More, and no tab it cannot open", () => {
 test("the sub-navigation of a restricted role lists only reachable pages", () => {
   const plan = locateProjectPage("/activities");
   const sub = subNavFor(plan.tab, { facts: new Set(), capabilities: capabilitiesForRole("FIELD_OFFICER"), current: plan.page, reachable: (p) => canReachProjectPage("FIELD_OFFICER", p) });
-  assert.deepEqual([...sub.shown, ...sub.more].map((p) => p.path), ["/activities"]);
+  assert.deepEqual([...sub.shown, ...sub.more].map((p) => p.path), ["/activities", "/forms"]);
   const data = locateProjectPage("/forms");
   const dsub = subNavFor(data.tab, { facts: new Set(["FORMS"]), capabilities: capabilitiesForRole("FIELD_OFFICER"), current: data.page, reachable: (p) => canReachProjectPage("FIELD_OFFICER", p) });
-  assert.deepEqual([...dsub.shown, ...dsub.more].map((p) => p.path), ["/forms"]);
+  assert.deepEqual([...dsub.shown, ...dsub.more].map((p) => p.path), ["/activities", "/forms"]);
 });
 
 test("the field officer holds neither money nor analysis; every other role holds both", () => {

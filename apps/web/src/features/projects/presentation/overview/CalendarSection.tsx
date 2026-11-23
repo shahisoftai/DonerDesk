@@ -11,7 +11,7 @@ import { OverviewSection } from "./overview-pieces";
 export function CalendarSection({ items, projectId }: { items: CalendarItem[]; projectId: string }) {
   if (items.length === 0) return null;
   return (
-    <OverviewSection kicker="Calendar" title="Everything due, next six weeks" href={`/projects/${projectId}/activities?view=planned`} linkLabel="Open the plan">
+    <OverviewSection kicker="Calendar" title="Everything due, next six weeks" href={`/projects/${projectId}/activities/plan`} linkLabel="Open the plan">
       <div className="card">
         <ul className="divide-y divide-slate-200/70 dark:divide-white/10">
           {items.map((item) => (

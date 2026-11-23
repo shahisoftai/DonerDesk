@@ -32,8 +32,16 @@ const isPanel = (s: OverviewSection): s is OverviewPanel => s !== "NEEDS_YOU";
 export const overviewPanels = (shown: ReadonlyArray<OverviewSection>): OverviewPanel[] =>
   OVERVIEW_SECTION_ORDER.filter((s): s is OverviewPanel => isPanel(s) && shown.includes(s));
 
+/**
+ * Parts a person who has not arranged the page does not see at first (Phase 65): the page opens on the next step and a few summaries.
+ * The parts stay one tick away in "Customise", and a saved arrangement always wins. Setup is the checklist now.
+ */
+export const OVERVIEW_HIDDEN_BY_DEFAULT: ReadonlyArray<OverviewPanel> = ["LOCATION", "TEAM", "SETUP"];
+
 export const defaultOverviewLayout = (shown: ReadonlyArray<OverviewSection>): Arrangement<OverviewPanel> =>
-  defaultArrangement(OVERVIEW_PANEL_INFO, overviewPanels(shown));
+  defaultArrangement(OVERVIEW_PANEL_INFO, overviewPanels(shown)).map((p) => (OVERVIEW_HIDDEN_BY_DEFAULT.includes(p.key) ? { ...p, hidden: true } : p));
 
 export const resolveOverviewLayout = (shown: ReadonlyArray<OverviewSection>, stored: unknown): Arrangement<OverviewPanel> =>
-  resolveArrangement(OVERVIEW_PANEL_INFO, overviewPanels(shown), stored);
+  Array.isArray(stored) && stored.length > 0
+    ? resolveArrangement(OVERVIEW_PANEL_INFO, overviewPanels(shown), stored)
+    : defaultOverviewLayout(shown);

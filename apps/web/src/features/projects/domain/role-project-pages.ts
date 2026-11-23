@@ -1,8 +1,8 @@
 import type { Role } from "@/lib/shared/capabilities";
-import type { ProjectTab } from "./project-tabs";
+import type { ProjectStage } from "./project-stages";
 
 /**
- * Which pages of a project a role may open at all (Phase 63). Different from `ROLE_PROJECT_TABS`, which only decides what sits in the bar:
+ * Which pages of a project a role may open at all (Phase 63). Different from `ROLE_PROJECT_STAGES`, which only decides what sits in the bar:
  * a role listed here reaches nothing else, not through "More", the command palette or a typed address. A role with no row is not
  * restricted, so the other roles behave exactly as before and a new restricted role is a row, never a branch. Paths are under
  * `/projects/<id>`; a path also covers its detail pages (`/activities` covers `/activities/<id>`).
@@ -38,6 +38,6 @@ export function canReachProjectPage(role: string | null | undefined, subPath: st
 }
 
 /** The tabs a restricted role can open anything in; every tab for an unrestricted role. */
-export function tabsReachableBy(role: string | null | undefined, tabs: readonly ProjectTab[]): ProjectTab[] {
+export function tabsReachableBy(role: string | null | undefined, tabs: readonly ProjectStage[]): ProjectStage[] {
   return tabs.filter((t) => t.pages.some((pg) => canReachProjectPage(role, pg.path)));
 }

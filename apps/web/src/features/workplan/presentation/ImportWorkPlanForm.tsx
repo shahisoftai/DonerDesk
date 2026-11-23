@@ -17,7 +17,7 @@ export function ImportWorkPlanForm({ projectId }: { projectId: string }) {
       noneCreatedMessage="No new planned activities were created. Rows that are already planned for the same dates are skipped."
       templateHref="/api/templates/work-plan"
       createLabel="Create planned activities"
-      viewHref={`/projects/${projectId}/activities?view=planned`}
+      viewHref={`/projects/${projectId}/activities/plan`}
       viewLabel="View planned activities"
       runImport={(text, sourceName) => importWorkPlanAction(projectId, { apply: true, text, ...(sourceName ? { sourceName } : {}) })}
       renderItem={(item) => (

@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Settings } from "lucide-react";
 import { cn } from "@/components/ui/cn";
 import { Breadcrumbs } from "@/components/layout/Page";
 import { useI18n } from "@/features/i18n/presentation/I18nProvider";
 import { uiLabel } from "@/features/i18n/domain/ui-labels";
-import { PROJECT_TABS, locateProjectPage, projectCrumbs, subNavFor, type ProjectFact } from "../domain/project-tabs";
-import { tabsFor } from "../domain/role-project-tabs";
+import { PROJECT_STAGES, locateProjectPage, projectCrumbs, subNavFor, type ProjectFact } from "../domain/project-stages";
+import { stagesFor } from "../domain/role-project-stages";
 import { canReachProjectPage } from "../domain/role-project-pages";
 
 /** The project's tabs, the current tab's pages (with "More" for rare ones) and the breadcrumbs above the title. */
@@ -26,7 +26,7 @@ export function ProjectNav({ projectId, facts, capabilities, role }: { projectId
   const { tab, page } = locateProjectPage(pathname.slice(base.length));
   const sub = subNavFor(tab, { facts: new Set(facts), capabilities: new Set(capabilities), current: page, reachable: (path) => canReachProjectPage(role, path) });
   const { t: tr } = useI18n();
-  const bar = tabsFor(PROJECT_TABS, role, tab.key);
+  const bar = stagesFor(PROJECT_STAGES, role, tab.key);
 
   return (
     <div className="space-y-3">
@@ -38,7 +38,7 @@ export function ProjectNav({ projectId, facts, capabilities, role }: { projectId
             return (
               <li key={t.key}>
                 <Link
-                  href={base + t.pages[0]!.path}
+                  href={base + (t.pages.find((pg) => canReachProjectPage(role, pg.path)) ?? t.pages[0]!).path}
                   prefetch={false}
                   aria-current={on ? "page" : undefined}
                   className={cn(
@@ -48,6 +48,7 @@ export function ProjectNav({ projectId, facts, capabilities, role }: { projectId
                       : "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white",
                   )}
                 >
+                  {t.key === "settings" ? <Settings aria-hidden="true" className="me-1.5 h-4 w-4" /> : null}
                   {uiLabel(t.label, tr)}
                 </Link>
               </li>
@@ -55,7 +56,7 @@ export function ProjectNav({ projectId, facts, capabilities, role }: { projectId
           })}
         </ul>
       </nav>
-      {bar.more.length > 0 && <MoreMenu base={base} pages={bar.more.map((t) => ({ label: t.label, path: t.pages[0]!.path }))} />}
+      {bar.more.length > 0 && <MoreMenu base={base} pages={bar.more.map((t) => ({ label: t.label, path: (t.pages.find((pg) => canReachProjectPage(role, pg.path)) ?? t.pages[0]!).path }))} />}
     </div>
       {(sub.shown.length > 1 || sub.more.length > 0) && (
         <nav aria-label={`${uiLabel(tab.label, tr)}`} className="flex flex-wrap items-center gap-1">

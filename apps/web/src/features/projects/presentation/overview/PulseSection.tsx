@@ -22,7 +22,7 @@ export function PulseSection({ pulse, projectId }: { pulse: PulseData; projectId
           badge={delivery ? { tone: healthTone(delivery.band), text: delivery.label } : undefined}
           value={delivery ? (delivery.planned > 0 ? `${delivery.done} of ${delivery.planned}` : "—") : "—"}
           hint={delivery ? (delivery.planned === 0 ? "No planned activities yet" : `activities done · ${delivery.reasons.join(" · ") || "nothing late"}`) : "Not available"}
-          href={`/projects/${projectId}/activities?view=planned`}
+          href={`/projects/${projectId}/activities/plan`}
         >
           {delivery && delivery.planned > 0 ? (
             <div className="mt-2">

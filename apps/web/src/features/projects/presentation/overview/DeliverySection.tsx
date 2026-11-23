@@ -13,7 +13,7 @@ export function DeliverySection({ delivery, projectId }: { delivery: DeliveryDat
   const { counts, health, movements, week, outputs, people } = delivery;
   const nameOf = (userId: string | undefined) => people.find((p) => p.id === userId)?.label.replace(/ \(you\)$/, "");
   return (
-    <OverviewSection kicker="Delivery" title="Plan against reality" href={`/projects/${projectId}/activities?view=planned`} linkLabel="See the plan">
+    <OverviewSection kicker="Delivery" title="Plan against reality" href={`/projects/${projectId}/activities/plan`} linkLabel="See the plan">
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         <div className="card">
           <CardHead
@@ -28,9 +28,9 @@ export function DeliverySection({ delivery, projectId }: { delivery: DeliveryDat
           </div>
           {health && health.reasons.length > 0 ? <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{health.reasons.join(" · ")}</p> : null}
           <ul className="mt-3 space-y-1 text-sm text-slate-600 dark:text-slate-300">
-            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities?view=planned`}>Under way</Link><span className="tabular-nums">{counts.underWay}</span></li>
-            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities?view=planned`}>Starting within a week</Link><span className="tabular-nums">{counts.dueSoon}</span></li>
-            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities?view=planned`}>Late</Link><span className="tabular-nums text-danger-600 dark:text-danger-400">{counts.late}</span></li>
+            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities/plan`}>Under way</Link><span className="tabular-nums">{counts.underWay}</span></li>
+            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities/plan`}>Starting within a week</Link><span className="tabular-nums">{counts.dueSoon}</span></li>
+            <li className="flex justify-between"><Link className="hover:underline" href={`/projects/${projectId}/activities/plan`}>Late</Link><span className="tabular-nums text-danger-600 dark:text-danger-400">{counts.late}</span></li>
           </ul>
         </div>
 
