@@ -325,3 +325,13 @@ test("the health facility kit is a valid form, scores, and a filled-in sample su
   const s = computeScore(def.score, r.values);
   assert.ok(s.overall !== null && s.illustrative);
 });
+
+test("the Master Version 2.0 kit is a valid form and a service module opens only where the service is mandated or provided", async () => {
+  const { formKitById } = await import("../dist/index.js");
+  const def = formKitById("health-facility-assessment-v2").build();
+  assert.deepEqual(validateFormDefinition(def), []);
+  const shown = (a) => visibleFields(def, a).map((f) => f.key);
+  assert.ok(!shown({ svc_w: "not_mandated" }).includes("w_items"));
+  assert.ok(shown({ svc_w: "suspended" }).includes("w_items"));
+  assert.ok(shown({}).includes("c_items"), "core modules are always asked");
+});
