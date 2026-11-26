@@ -1,12 +1,14 @@
 "use client";
 import { useState, useTransition } from "react";
-import { changePasswordAction } from "@/lib/actions/password";
+import { changePasswordAction, requestPasswordResetAction } from "@/lib/actions/password";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 
-export function SecurityPanel() {
+export function SecurityPanel({ email, ssoManaged }: { email: string | null; ssoManaged: boolean }) {
+  const [linkState, setLinkState] = useState<"idle" | "sent" | "failed">("idle");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
@@ -47,10 +49,9 @@ export function SecurityPanel() {
       )}
       <form onSubmit={onSubmit} className="card space-y-4">
         <Field label="Current password" htmlFor="currentPassword" error={fieldErrors.currentPassword?.[0]}>
-          <Input
+          <PasswordInput
             id="currentPassword"
             name="currentPassword"
-            type="password"
             autoComplete="current-password"
             value={currentPassword}
             onChange={(e) => setCurrentPassword(e.target.value)}
@@ -59,10 +60,9 @@ export function SecurityPanel() {
           />
         </Field>
         <Field label="New password" htmlFor="newPassword" error={fieldErrors.newPassword?.[0]}>
-          <Input
+          <PasswordInput
             id="newPassword"
             name="newPassword"
-            type="password"
             autoComplete="new-password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -75,10 +75,9 @@ export function SecurityPanel() {
           At least 12 characters, with a mix of uppercase, lowercase, digits, or symbols.
         </p>
         <Field label="Confirm new password" htmlFor="confirmNewPassword" error={fieldErrors.confirmNewPassword?.[0]}>
-          <Input
+          <PasswordInput
             id="confirmNewPassword"
             name="confirmNewPassword"
-            type="password"
             autoComplete="new-password"
             value={confirmNewPassword}
             onChange={(e) => setConfirmNewPassword(e.target.value)}
@@ -94,6 +93,17 @@ export function SecurityPanel() {
           </Button>
         </div>
       </form>
+      {email && !ssoManaged && (
+        <div className="mt-6 border-t border-slate-200 pt-4 dark:border-white/10">
+          <h2 className="text-sm font-semibold">Forgot your current password?</h2>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">We can email a reset link to {email}. It works once and expires soon.</p>
+          {linkState === "sent" && <InlineAlert tone="success" title="Reset link sent">Check your inbox for an email from DonorDesk.</InlineAlert>}
+          {linkState === "failed" && <InlineAlert tone="danger" title="We could not send the link. Please try again." />}
+          <Button type="button" variant="secondary" className="mt-3" disabled={pending} onClick={() => startTransition(async () => { const r = await requestPasswordResetAction({ email }); setLinkState(r.ok ? "sent" : "failed"); })}>
+            Email me a reset link
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

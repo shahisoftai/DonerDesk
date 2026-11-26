@@ -206,7 +206,9 @@ export class PlatformControlPlane {
       this.query(`SELECT * FROM "BackupRun" ORDER BY "startedAt" DESC LIMIT 5`),
       this.query(`SELECT * FROM "ConnectorRun" ORDER BY "startedAt" DESC LIMIT 5`),
     ]);
-    return { tenants, users, configurations: configs, backups, connectors };
+    // Raw rows carry BigInt columns (BackupRun.sizeBytes), which JSON cannot serialise.
+    const plain = (rows: Record<string, unknown>[]) => rows.map((row) => Object.fromEntries(Object.entries(row).map(([k, v]) => [k, typeof v === "bigint" ? Number(v) : v])));
+    return { tenants, users, configurations: configs, backups: plain(backups), connectors: plain(connectors) };
   }
   async listTenants() {
     const [orgs, usage] = await Promise.all([
@@ -1017,6 +1019,13 @@ export class PlatformControlPlane {
     }, { timeout: 120_000, maxWait: 10_000 });
     await this.audit(actor, "tenant.force_deleted", "Organization", id, { name: org.name, tenantId: org.tenantId }, { deletedCategories: [...chosen], keptCategories: [...known].filter(k => !chosen.has(k)), rowsDeleted: summary }, meta);
     return { deleted: summary, organizationRemoved: Boolean(summary.Organization) };
+  }
+  listAdmins() { return this.query(`SELECT "id","email","name","status","lastLoginAt","lockedUntil","passwordChangedAt","createdAt" FROM "PlatformAdmin" ORDER BY "createdAt" ASC`); }
+  async resetAdminPassword(actor: PlatformSession, id: string, data: { password: string; reason: string }, meta?: { ip?: string; userAgent?: string }) {
+    await this.adminById(id);
+    await this.execute(`UPDATE "PlatformAdmin" SET "passwordHash"=$2,"passwordChangedAt"=NOW(),"failedLoginCount"=0,"lockedUntil"=NULL,"updatedAt"=NOW() WHERE "id"=$1`, id, await bcrypt.hash(data.password, 12));
+    await this.audit(actor, "superadmin.admin.password.reset", "PlatformAdmin", id, null, { password: "[RESET]", reason: data.reason }, meta);
+    return { ok: true };
   }
   async createUser(actor: PlatformSession, data: { tenantId: string; email: string; name: string; role: string; status: string; password: string }, meta?: { ip?: string; userAgent?: string }) {
     const created = await this.prisma.user.create({ data: { id: randomUUID(), tenantId: data.tenantId, email: data.email.toLowerCase(), name: data.name, role: data.role, status: data.status, passwordHash: await bcrypt.hash(data.password, 12) } });

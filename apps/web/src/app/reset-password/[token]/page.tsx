@@ -7,6 +7,7 @@ import { validateResetTokenAction, confirmPasswordResetAction } from "@/lib/acti
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 
@@ -81,10 +82,9 @@ export default function ResetPasswordPage() {
         {phase === "ready" && (
           <form onSubmit={onSubmit} className="space-y-4">
             <Field label="New password" htmlFor="newPassword" error={fieldError ?? undefined}>
-              <Input
+              <PasswordInput
                 id="newPassword"
                 name="newPassword"
-                type="password"
                 autoComplete="new-password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -97,10 +97,9 @@ export default function ResetPasswordPage() {
               At least 12 characters, with a mix of uppercase, lowercase, digits, or symbols.
             </p>
             <Field label="Confirm new password" htmlFor="confirmNewPassword">
-              <Input
+              <PasswordInput
                 id="confirmNewPassword"
                 name="confirmNewPassword"
-                type="password"
                 autoComplete="new-password"
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}

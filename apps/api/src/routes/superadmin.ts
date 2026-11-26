@@ -138,6 +138,8 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
     secured.post("/superadmin/users", req => service().createUser(actor(req), UserCreate.parse(req.body), meta(req)));
     secured.patch("/superadmin/users/:id", req => service().updateUser(actor(req), (req.params as { id: string }).id, UserUpdate.parse(req.body), meta(req)));
     secured.delete("/superadmin/users/:id", async (req, reply) => { await service().deleteUser(actor(req), (req.params as { id: string }).id, meta(req)); return reply.status(204).send(); });
+    secured.get("/superadmin/admins", () => service().listAdmins());
+    secured.post("/superadmin/admins/:id/password", req => service().resetAdminPassword(actor(req), (req.params as { id: string }).id, z.object({ password: z.string().min(12).max(200), reason: z.string().min(1).max(200) }).parse(req.body), meta(req)));
     secured.get("/superadmin/configurations", () => service().listConfigurations());
     secured.put("/superadmin/configurations", req => service().upsertConfiguration(actor(req), Config.parse(req.body), meta(req)));
     secured.post("/superadmin/configurations/:id/test", req => service().testConfiguration(actor(req), (req.params as { id: string }).id, meta(req)));

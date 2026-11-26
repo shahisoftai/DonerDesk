@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { PasswordBox } from "./PasswordBox";
 
-type Tab = "overview" | "tenants" | "users" | "tiers" | "billing" | "nonprofit" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
+type Tab = "overview" | "tenants" | "users" | "admins" | "tiers" | "billing" | "nonprofit" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
 type AnyRow = Record<string, any>;
 
 const tierPlanCodes = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
@@ -53,7 +54,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
   const [data, setData] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ type: "ok" | "error"; text: string } | null>(null);
-  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant" | "resetPassword" | "creditPacks" | "tenantDelete"; row?: AnyRow }>(null);
+  const [modal, setModal] = useState<null | { kind: "tenant" | "user" | "provider" | "tier" | "tierTenant" | "resetPassword" | "resetAdminPassword" | "creditPacks" | "tenantDelete"; row?: AnyRow }>(null);
   const [tenants, setTenants] = useState<AnyRow[]>([]);
   const [byoStatus, setByoStatus] = useState<AnyRow[]>([]);
 
@@ -75,7 +76,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
   function changeTab(next: Tab) { setData(null); setModal(null); setTab(next); }
 
   const navigation: Array<[Tab, string, string]> = [
-    ["overview", "Overview", "⌂"], ["tenants", "Tenants", "▦"], ["users", "Users", "♙"],
+    ["overview", "Overview", "⌂"], ["tenants", "Tenants", "▦"], ["users", "Users", "♙"], ["admins", "Platform admins", "♔"],
     ["tiers", "Tier management", "◈"], ["billing", "Billing & credits", "¤"],
     ["nonprofit", "Nonprofit verification", "♥"],
     ["ai", "AI & LLM", "✦"], ["email", "Email", "✉"], ["storage", "Object storage", "▤"],
@@ -116,6 +117,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
       {tab === "nonprofit" && <NonprofitVerifications rows={Array.isArray(data) ? data : []} busy={busy} onApprove={(row: AnyRow) => confirm(`Approve nonprofit verification for tenant ${row.tenantId}? This unlocks the discounted checkout product.`) && void action(() => api(`billing/nonprofit-verifications/${row.id}/approve`, { method: "POST" }), "Verification approved")} onReject={(row: AnyRow) => { const reason = prompt("Reason for rejection (recorded in the audit trail):"); if (reason && reason.trim()) void action(() => api(`billing/nonprofit-verifications/${row.id}/reject`, { method: "POST", body: JSON.stringify({ reason: reason.trim() }) }), "Verification rejected"); }} onRunByoLlmGrandfather={() => confirm("Run the BYO-LLM grandfather migration? This grants a permanent MANUAL override to any tenant with a working tenant-scoped LLM configuration whose plan does not include byoLlmEnabled. Safe to re-run.") && void action(() => api("billing/grandfather-byo-llm", { method: "POST" }), "BYO-LLM grandfather migration run")} />}
       {tab === "users" && <Users rows={Array.isArray(data) ? data : []} tenants={tenants} onAdd={() => setModal({ kind: "user" })} onEdit={(row: AnyRow) => setModal({ kind: "user", row })} onReset={(row: AnyRow) => setModal({ kind: "resetPassword", row })} onDelete={(row: AnyRow) => confirm(`Delete ${row.email}? This cannot be undone.`) && void action(() => api(`users/${row.id}`, { method: "DELETE" }), "User deleted")} />}
       {(tab in providerGroups) && <Providers tab={tab as keyof typeof providerGroups} rows={(Array.isArray(data) ? data : []).filter((x: AnyRow) => x.category === providerGroups[tab as keyof typeof providerGroups].category)} byoStatus={byoStatus} onAdd={() => setModal({ kind: "provider" })} onEdit={(row: AnyRow) => setModal({ kind: "provider", row })} onTest={(row: AnyRow) => action(() => api(`configurations/${row.id}/test`, { method: "POST" }), "Connection test completed")} onToggle={(row: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(configurationPayload(row, { enabled: !row.enabled })) }), row.enabled ? "Provider disabled" : "Provider enabled")} onDelete={(row: AnyRow) => confirm(`Delete ${row.displayName}? Encrypted credentials will also be removed.`) && void action(() => api(`configurations/${row.id}`, { method: "DELETE" }), "Configuration deleted")} />}
+      {tab === "admins" && <Resource title="Platform administrators" description="SuperAdmin accounts of the control plane. Reset a password if an administrator is locked out."><table><thead><tr><th>Administrator</th><th>Status</th><th>Last login</th><th>Password changed</th><th /></tr></thead><tbody>{(Array.isArray(data) ? data : []).map((r: AnyRow) => <tr key={r.id}><td><strong>{r.name}</strong><small>{r.email}</small></td><td><Badge ok={r.status === "ACTIVE"}>{pretty(r.status)}</Badge></td><td>{date(r.lastLoginAt)}</td><td>{date(r.passwordChangedAt)}</td><td><div className="row-actions"><button onClick={() => setModal({ kind: "resetAdminPassword", row: r })}>Reset password</button></div></td></tr>)}</tbody></table></Resource>}
       {tab === "audit" && <Audit rows={Array.isArray(data) ? data : []} />}
       {tab === "kestra" && <Kestra data={data || {}} />}
       {tab === "system" && <System data={data || {}} />}
@@ -123,6 +125,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
     {modal?.kind === "tenant" && <TenantModal row={modal.row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(async () => { const { canvasAiEnabled, ...tenant } = value; await api(modal.row ? `tenants/${modal.row.id}` : "tenants", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(tenant) }); if (modal.row && Boolean(canvasAiEnabled) !== Boolean(modal.row.canvasAiEnabled)) await api(`tenants/${modal.row.tenantId}/canvas-ai`, { method: "PUT", body: JSON.stringify({ enabled: Boolean(canvasAiEnabled) }) }); }, modal.row ? "Tenant updated" : "Tenant created")} />}
     {modal?.kind === "tenantDelete" && modal.row && <TenantDeleteModal row={modal.row} busy={busy} onClose={() => setModal(null)} onDelete={(body: AnyRow) => action(() => api(`tenants/${modal.row!.id}`, { method: "DELETE", body: JSON.stringify(body) }), "Tenant deleted")} />}
     {modal?.kind === "user" && <UserModal row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(modal.row ? `users/${modal.row.id}` : "users", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(value) }), modal.row ? "User updated" : "User created")} />}
+    {modal?.kind === "resetAdminPassword" && modal.row && <UserResetPasswordModal row={modal.row} busy={busy} admin onClose={() => setModal(null)} />}
     {modal?.kind === "resetPassword" && modal.row && <UserResetPasswordModal row={modal.row} busy={busy} onClose={() => setModal(null)} />}
     {modal?.kind === "provider" && <ProviderModal group={providerGroups[tab as keyof typeof providerGroups]} row={modal.row} tenants={tenants} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api("configurations", { method: "PUT", body: JSON.stringify(value) }), modal.row ? "Configuration updated and secrets rotated" : "Credentials encrypted and saved")} />}
     {modal?.kind === "tier" && (() => { const row = modal.row!; return <TierModal row={row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(() => api(`tiers/${row.planCode}`, { method: "PUT", body: JSON.stringify(value) }), "Tier updated globally")} />; })()}
@@ -461,7 +464,7 @@ function passwordStrength(value: string): { score: number; label: string } {
   return { score, label: labels[Math.min(score, 5)] as string };
 }
 
-function UserResetPasswordModal({ row, busy, onClose }: any) {
+function UserResetPasswordModal({ row, busy, onClose, admin }: any) {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [reasonChoice, setReasonChoice] = useState(resetReasons[0]);
@@ -481,7 +484,7 @@ function UserResetPasswordModal({ row, busy, onClose }: any) {
     if (!reason) { setError("A reason is required for the audit trail."); return; }
     setSaving(true);
     try {
-      await api(`users/${row.id}`, { method: "PATCH", body: JSON.stringify({ password, reason }) });
+      await (admin ? api(`admins/${row.id}/password`, { method: "POST", body: JSON.stringify({ password, reason }) }) : api(`users/${row.id}`, { method: "PATCH", body: JSON.stringify({ password, reason }) }));
       setDone(true);
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); } finally { setSaving(false); }
   }
@@ -504,8 +507,8 @@ function UserResetPasswordModal({ row, busy, onClose }: any) {
 
   return <Modal title="Reset password" subtitle={`Set a new password for ${row.email}`} onClose={onClose}>
     <FormGrid>
-      <label className="field"><span>New password</span><input type="password" autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimum 12 characters" /></label>
-      <label className="field"><span>Confirm password</span><input type="password" autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat the password" /></label>
+      <label className="field"><span>New password</span><PasswordBox autoComplete="new-password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Minimum 12 characters" /></label>
+      <label className="field"><span>Confirm password</span><PasswordBox autoComplete="new-password" value={confirm} onChange={e => setConfirm(e.target.value)} placeholder="Repeat the password" /></label>
       <div className="field full"><span>Strength <strong>{password ? strength.label : ""}</strong></span>
         <div style={{ display: "flex", gap: 4 }}>{[0, 1, 2, 3, 4].map(i => <div key={i} style={{ height: 6, flex: 1, borderRadius: 3, background: password && i < strength.score ? (strength.score <= 2 ? "#dc2626" : strength.score <= 3 ? "#d97706" : "#16a34a") : "rgba(148,163,184,.3)" }} />)}</div>
       </div>
@@ -526,14 +529,14 @@ function ProviderModal({ group, row, tenants, busy, onClose, onSave }: any) {
   const [configuration, setConfiguration] = useState<Record<string, string>>(initialConfig);
   const [secrets, setSecrets] = useState<Record<string, string>>({});
   const spec = fields[provider] || { config: [], secrets: [] };
-  return <Modal title={row ? "Edit configuration" : "Add provider"} subtitle="Credentials are encrypted before they are stored" onClose={onClose} wide><FormGrid>{select("Provider", "provider", [...group.providers], { provider }, (x: any) => { setProvider(x.provider); setConfiguration({}); setSecrets({}); }, Boolean(row))}{input("Display name", "displayName", base, setBase, { placeholder: "e.g. Primary production provider" })}{select("Scope", "scopeType", ["GLOBAL", "TENANT"], base, setBase)}{base.scopeType === "TENANT" && select("Tenant", "scopeId", tenants.map((x: AnyRow) => x.tenantId), base, setBase, false, Object.fromEntries(tenants.map((x: AnyRow) => [x.tenantId, x.name])))}<div className="section-label full">Configuration</div>{spec.config.map(name => input(pretty(name), name, configuration, setConfiguration, { placeholder: placeholder(name, provider) }))}<div className="section-label full">Credentials <span>encrypted · never displayed again</span></div>{spec.secrets.map(name => <label className={`field ${name.toLowerCase().includes("json") ? "full" : ""}`} key={name}><span>{pretty(name)} {row?.secretConfigured && <em>leave blank to keep current</em>}</span>{name.toLowerCase().includes("json") ? <textarea rows={5} value={secrets[name] || ""} onChange={e => setSecrets({ ...secrets, [name]: e.target.value })} /> : <input type="password" autoComplete="new-password" value={secrets[name] || ""} onChange={e => setSecrets({ ...secrets, [name]: e.target.value })} placeholder={row?.secretConfigured ? "•••••••• (unchanged)" : "Required"} />}</label>)}<label className="check full"><input type="checkbox" checked={base.enabled} onChange={e => setBase({ ...base, enabled: e.target.checked })} /> Enable this configuration immediately</label></FormGrid><div className="security-note">🔒 Secrets are protected with AES-256-GCM. Saved credentials cannot be viewed or copied back out of DonorDesk.</div><ModalActions busy={busy} onClose={onClose} onSave={() => onSave({ id: row?.id, category: group.category, provider, ...base, scopeId: base.scopeType === "GLOBAL" ? "GLOBAL" : base.scopeId, configuration, secrets: Object.fromEntries(Object.entries(secrets).filter(([, v]) => v)) })} label={row ? "Save and rotate" : "Encrypt and save"} /></Modal>;
+  return <Modal title={row ? "Edit configuration" : "Add provider"} subtitle="Credentials are encrypted before they are stored" onClose={onClose} wide><FormGrid>{select("Provider", "provider", [...group.providers], { provider }, (x: any) => { setProvider(x.provider); setConfiguration({}); setSecrets({}); }, Boolean(row))}{input("Display name", "displayName", base, setBase, { placeholder: "e.g. Primary production provider" })}{select("Scope", "scopeType", ["GLOBAL", "TENANT"], base, setBase)}{base.scopeType === "TENANT" && select("Tenant", "scopeId", tenants.map((x: AnyRow) => x.tenantId), base, setBase, false, Object.fromEntries(tenants.map((x: AnyRow) => [x.tenantId, x.name])))}<div className="section-label full">Configuration</div>{spec.config.map(name => input(pretty(name), name, configuration, setConfiguration, { placeholder: placeholder(name, provider) }))}<div className="section-label full">Credentials <span>encrypted · never displayed again</span></div>{spec.secrets.map(name => <label className={`field ${name.toLowerCase().includes("json") ? "full" : ""}`} key={name}><span>{pretty(name)} {row?.secretConfigured && <em>leave blank to keep current</em>}</span>{name.toLowerCase().includes("json") ? <textarea rows={5} value={secrets[name] || ""} onChange={e => setSecrets({ ...secrets, [name]: e.target.value })} /> : <PasswordBox autoComplete="new-password" value={secrets[name] || ""} onChange={e => setSecrets({ ...secrets, [name]: e.target.value })} placeholder={row?.secretConfigured ? "•••••••• (unchanged)" : "Required"} />}</label>)}<label className="check full"><input type="checkbox" checked={base.enabled} onChange={e => setBase({ ...base, enabled: e.target.checked })} /> Enable this configuration immediately</label></FormGrid><div className="security-note">🔒 Secrets are protected with AES-256-GCM. Saved credentials cannot be viewed or copied back out of DonorDesk.</div><ModalActions busy={busy} onClose={onClose} onSave={() => onSave({ id: row?.id, category: group.category, provider, ...base, scopeId: base.scopeType === "GLOBAL" ? "GLOBAL" : base.scopeId, configuration, secrets: Object.fromEntries(Object.entries(secrets).filter(([, v]) => v)) })} label={row ? "Save and rotate" : "Encrypt and save"} /></Modal>;
 }
 
 function Modal({ title, subtitle, onClose, wide, children }: any) { return <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}><section className={`modal ${wide ? "wide" : ""}`}><header><div><h2>{title}</h2><p>{subtitle}</p></div><button className="close" onClick={onClose}>×</button></header>{children}</section></div>; }
 function FormGrid({ children }: { children: React.ReactNode }) { return <div className="form-grid">{children}</div>; }
 function ModalActions({ busy, onClose, onSave, label }: any) { return <footer className="modal-actions"><button onClick={onClose}>Cancel</button><button className="primary" disabled={busy} onClick={onSave}>{busy ? "Saving…" : label}</button></footer>; }
 
-function input(label: string, name: string, form: AnyRow, setForm: any, props: AnyRow = {}) { return <label className="field" key={name}><span>{label}</span><input value={form[name] ?? ""} onChange={e => setForm({ ...form, [name]: e.target.value })} {...props} /></label>; }
+function input(label: string, name: string, form: AnyRow, setForm: any, props: AnyRow = {}) { return <label className="field" key={name}><span>{label}</span>{props.type === "password" ? <PasswordBox value={form[name] ?? ""} onChange={e => setForm({ ...form, [name]: e.target.value })} {...props} /> : <input value={form[name] ?? ""} onChange={e => setForm({ ...form, [name]: e.target.value })} {...props} />}</label>; }
 function select(label: string, name: string, options: string[], form: AnyRow, setForm: any, disabled = false, labels: AnyRow = {}) { return <label className="field" key={name}><span>{label}</span><select disabled={disabled} value={form[name] ?? ""} onChange={e => setForm({ ...form, [name]: e.target.value })}>{options.map(x => <option value={x} key={x}>{labels[x] || pretty(x)}</option>)}</select></label>; }
 function safeJson(value: any, fallback: any) { try { return typeof value === "string" ? JSON.parse(value) : value || fallback; } catch { return fallback; } }
 function configurationPayload(row: AnyRow, patch: AnyRow) { return { id: row.id, scopeType: row.scopeType, scopeId: row.scopeId || "GLOBAL", category: row.category, provider: row.provider, displayName: row.displayName, enabled: row.enabled, configuration: safeJson(row.configurationJson, {}), ...patch }; }

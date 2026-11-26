@@ -7,6 +7,7 @@ import { loginAction } from "@/lib/auth-actions";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 
@@ -72,7 +73,7 @@ export default function LoginPage() {
               <Input id="email" name="email" type="email" autoComplete="email" invalid={Boolean(fields.email)} required />
             </Field>
             <Field label="Password" htmlFor="password" error={fields.password?.[0]}>
-              <Input id="password" name="password" type="password" autoComplete="current-password" invalid={Boolean(fields.password)} required />
+              <PasswordInput id="password" name="password" autoComplete="current-password" invalid={Boolean(fields.password)} required />
             </Field>
           </>
         )}

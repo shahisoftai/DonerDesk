@@ -5,6 +5,7 @@ import { acceptInvitationAction } from "@/lib/actions/invitations";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 
 export default function InviteAcceptForm({ token, role }: { token: string; role: string }) {
   const [state, formAction] = useFormState<{ error: string | null; fields?: Record<string, string[]> }, FormData>(
@@ -26,7 +27,7 @@ export default function InviteAcceptForm({ token, role }: { token: string; role:
         error={fields.password?.[0]}
         hint={`${isViewer ? "Viewer accounts can browse projects and export reports. " : ""}At least 12 characters with no spaces, using three of: lowercase, uppercase, number, symbol.`}
       >
-        <Input id="invite-password" name="password" type="password" autoComplete="new-password" required minLength={12} maxLength={128} />
+        <PasswordInput id="invite-password" name="password" autoComplete="new-password" required minLength={12} maxLength={128} />
       </Field>
       <Field label="" htmlFor="invite-terms" error={fields.acceptTerms?.[0]}>
         <label className="flex items-start gap-2 text-sm">

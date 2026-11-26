@@ -1,3 +1,4 @@
+import { decodeSessionPayload } from "@/lib/shared/jwt-session";
 import { requireSession } from "@/lib/server/auth-context";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { MfaStatusSchema, TeamResponseSchema } from "@/lib/server/schemas";
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function SecurityPage() {
   const ctx = await requireSession();
   const mfa = await gatewayRequest("/v1/auth/mfa", MfaStatusSchema, ctx.token);
+  const email = decodeSessionPayload(ctx.token)?.email ?? null;
   const canManage = ctx.capabilities.has("org.manage");
   const team = canManage ? await gatewayRequest("/v1/users", TeamResponseSchema, ctx.token) : null;
   const people = team?.ok ? team.value.items.filter((m) => m.status !== "REMOVED" && m.status !== "SUSPENDED") : null;
@@ -34,7 +36,7 @@ export default async function SecurityPage() {
           />
         </div>
       )}
-      <SecurityPanel />
+      <SecurityPanel email={email} ssoManaged={process.env.AUTH_PROVIDER === "oidc"} />
     </div>
   );
 }

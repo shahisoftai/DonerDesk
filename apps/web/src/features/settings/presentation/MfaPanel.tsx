@@ -8,6 +8,7 @@ import { useHydrated } from "@/lib/client/use-hydrated";
 import { logoutAction } from "@/lib/auth-actions";
 import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Button } from "@/components/ui/Button";
 import { InlineAlert } from "@/components/feedback/InlineAlert";
 
@@ -97,7 +98,7 @@ export function MfaPanel({ enabled, enabledAt, recoveryCodesLeft, signOutAfterEn
           ) : (
             <form onSubmit={(e) => void disable(e)} className="space-y-3">
               <Field label="Your password" htmlFor="mfa-off-password" error={state.fields?.password?.[0]}>
-                <Input id="mfa-off-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                <PasswordInput id="mfa-off-password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </Field>
               <Field label="A code from the app, or a recovery code" htmlFor="mfa-off-code" error={state.fields?.code?.[0]}>
                 <Input id="mfa-off-code" value={offCode} onChange={(e) => setOffCode(e.target.value)} autoComplete="one-time-code" required />
