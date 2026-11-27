@@ -3,7 +3,7 @@ import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { allowsAnalytics, consentCookie, CONSENT_COOKIE, CONSENT_DAYS, parseConsent } from "../../src/features/analytics/domain/consent.ts";
-import { ANALYTICS_ROUTES, asksConsentOn, countsPageViewOn, isAnalyticsRoute, pagePathOf } from "../../src/features/analytics/domain/analytics-routes.ts";
+import { ANALYTICS_ROUTES, asksConsentOn, isAnalyticsRoute, pagePathOf } from "../../src/features/analytics/domain/analytics-routes.ts";
 import { ANALYTICS_EVENTS, resolveWelcome, welcomeAddress } from "../../src/features/analytics/domain/events.ts";
 import { GoogleTagAdapter } from "../../src/features/analytics/adapters/google-tag-adapter.ts";
 
@@ -39,11 +39,10 @@ test("every portal route directory is untracked: a new route is private by defau
   for (const name of readdirSync(portal).filter((n) => statSync(join(portal, n)).isDirectory())) assert.equal(isAnalyticsRoute(`/${name}`), false, name);
 });
 
-test("only the pages that ask for consent show the banner, and the relay sends an event but is not a page view", () => {
+test("only the pages that ask for consent show the banner; the relay is allowed to send its event but asks nothing", () => {
   assert.equal(asksConsentOn("/pricing"), true);
   assert.equal(asksConsentOn("/welcome"), false);
-  assert.equal(countsPageViewOn("/welcome"), false);
-  assert.equal(countsPageViewOn("/tour"), true);
+  assert.equal(isAnalyticsRoute("/welcome"), true);
   assert.equal(asksConsentOn("/dashboard"), false);
   assert.ok(ANALYTICS_ROUTES.length >= 18);
 });
@@ -72,9 +71,9 @@ test("the sign-up relay only ever forwards to the app's own two pages and sends 
 function fakeBrowser(cookie = "") {
   const pushed: unknown[][] = [];
   const appended: Array<{ src: string }> = [];
-  const win: any = { location: { origin: "https://donordesk.online", hostname: "donordesk.online", pathname: "/pricing" } };
+  const win: any = { location: { hostname: "donordesk.online" } };
   const doc: any = {
-    cookie, title: "Pricing", referrer: "https://donordesk.online/features?x=secret",
+    cookie, title: "Pricing",
     createElement: () => ({ async: false, src: "" }),
     head: { appendChild: (n: { src: string }) => appended.push(n) },
     querySelector: () => (appended.length ? {} : null),
@@ -86,7 +85,6 @@ function fakeBrowser(cookie = "") {
 test("nothing is loaded until start, and start sets no advertising features", () => {
   const { win, doc, pushed, appended } = fakeBrowser();
   const tag = new GoogleTagAdapter("G-TEST", win, doc);
-  tag.pageView("/pricing");
   assert.equal(appended.length, 0);
   assert.equal(pushed.length, 0);
   tag.start();
@@ -107,18 +105,18 @@ test("the queue holds `arguments` objects, which is the only form gtag.js reads"
   }
 });
 
-test("the page address is set clean, so the query never reaches Google, for the page view and for Google's own events", () => {
-  const { win, doc, pushed } = fakeBrowser();
+test("pause switches collection off without touching cookies, and start switches it back on", () => {
+  const { win, doc } = fakeBrowser("_ga=1");
+  const written: string[] = [];
+  Object.defineProperty(doc, "cookie", { get: () => "_ga=1", set: (v: string) => written.push(v) });
   const tag = new GoogleTagAdapter("G-TEST", win, doc);
   tag.start();
-  const config = Array.from(pushed.find((e) => (e as unknown[])[0] === "config") as unknown[]);
-  assert.equal((config[2] as Record<string, string>).page_location, "https://donordesk.online/pricing");
-  tag.pageView("/pricing");
-  const calls = pushed.map((e) => Array.from(e as unknown[]));
-  const set = calls.filter((c) => c[0] === "set").at(-1)![1] as Record<string, string>;
-  assert.deepEqual([set.page_path, set.page_location, set.page_referrer], ["/pricing", "https://donordesk.online/pricing", "https://donordesk.online/features"]);
-  assert.deepEqual(calls.at(-1), ["event", "page_view"]);
-  assert.ok(!JSON.stringify(calls).includes("secret"));
+  assert.equal(win["ga-disable-G-TEST"], false);
+  tag.pause();
+  assert.equal(win["ga-disable-G-TEST"], true);
+  assert.deepEqual(written, []);
+  tag.start();
+  assert.equal(win["ga-disable-G-TEST"], false);
 });
 
 test("stop disables collection and removes the analytics cookies but not the others", () => {
@@ -153,6 +151,11 @@ test("an event that Google never confirms (an ad blocker) still lets the page mo
   const t0 = Date.now();
   await tag.event("sign_up");
   assert.ok(Date.now() - t0 < 2000);
+});
+
+test("the consent manager stops on no, starts on an allowed page after yes, and pauses on any other page", () => {
+  const source = readFileSync(new URL("../../src/features/analytics/presentation/ConsentManager.tsx", import.meta.url), "utf8");
+  assert.match(source, /if \(!allowsAnalytics\(choice\)\) service\.stop\(\);\s*else if \(tracked\) service\.start\(\);\s*else service\.pause\(\);/);
 });
 
 test("the old per-page banner is gone and the root layout hosts the one consent manager", () => {

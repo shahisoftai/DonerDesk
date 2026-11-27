@@ -14,7 +14,7 @@ Superadmin console, without tracking anyone inside the signed-in product.
 ## What is collected, and where
 - Collection: GA4 (`NEXT_PUBLIC_GA_MEASUREMENT_ID`) on **public marketing and legal pages only** (`ANALYTICS_ROUTES`, an allow-list: any
   route not listed is never tracked, so a new route is private by default). Never in the portal, share, embed, collect, invite,
-  reset-password, field or checkout routes. Query strings and fragments are stripped from every page path.
+  reset-password, field or checkout routes. Page views are Google's automatic ones (no manual page view: an experiment showed Google sends one regardless of `send_page_view:false`); leaving the list pauses collection, so private pages are never counted, also by in-app navigation. Query strings of allow-listed pages reach Google as standard (campaign tags are wanted); none of those pages takes a sensitive query.
 - Reading: a Google **service account** (read-only) is used by the API. Key file on the host, never in the repo, never returned.
 - Display: Superadmin tab "Website visitors" (`GET /superadmin/website-stats?days=7|28|90`), one-hour cache.
 

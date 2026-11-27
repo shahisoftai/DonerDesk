@@ -45,21 +45,17 @@ await check("Decline: nothing goes to Google, no analytics cookie, and the quest
   await context.close();
 });
 
-await check("Accept: every hit reaches Google with the path only, never the query", async () => {
+await check("Accept: exactly one page view reaches Google for the page, with the path", async () => {
   const { context, page, seen } = await fresh();
   const hits = [];
-  page.on("request", (r) => { if (/google-analytics\.com\/g\/collect/.test(r.url())) hits.push(r.url()); });
-  await page.goto(`${SITE}/pricing?secret=abc123`);
+  page.on("request", (r) => { if (/google-analytics\.com\/g\/collect/.test(r.url())) hits.push(new URL(r.url()).searchParams); });
+  await page.goto(`${SITE}/pricing`);
   await banner(page).waitFor({ timeout: 15000 });
   await page.getByRole("button", { name: "Accept" }).click();
   await page.waitForTimeout(7000);
-  assert.ok(hits.length >= 1, "at least one hit");
-  assert.ok(hits.some((u) => u.includes("en=page_view")), "a page view");
-  for (const u of hits) {
-    assert.ok(!u.includes("secret"), "no query in any hit");
-    const dl = new URL(u).searchParams.get("dl");
-    if (dl) assert.equal(dl, `${SITE}/pricing`);
-  }
+  const views = hits.filter((h) => h.get("en") === "page_view");
+  assert.equal(views.length, 1, `page views: ${views.length}`);
+  assert.equal(views[0].get("dl"), `${SITE}/pricing`);
   assert.ok(seen.some((u) => u.includes("id=G-")));
   await context.close();
 });
@@ -75,6 +71,14 @@ await check("a private page is never tracked, even after Accept", async () => {
   await page.goto(`${SITE}/forgot-password`);
   await page.waitForTimeout(3000);
   assert.equal(seen.slice(before).filter((u) => /g\/collect/.test(u)).length, 0, "no hit from a private page");
+  // in-app navigation from an allowed page to a private one must not be tracked either
+  await page.goto(`${SITE}/features`);
+  await page.waitForTimeout(3000);
+  const mark = seen.length;
+  await page.getByRole("link", { name: /log in/i }).first().click();
+  await page.waitForURL(/\/login/, { timeout: 15000 });
+  await page.waitForTimeout(4000);
+  assert.equal(seen.slice(mark).filter((u) => /g\/collect/.test(u)).length, 0, "no hit after in-app navigation to a private page");
   assert.equal(await banner(page).count(), 0, "no question on a private page");
   await context.close();
 });

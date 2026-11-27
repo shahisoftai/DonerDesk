@@ -8,21 +8,19 @@ export interface AnalyticsRoute {
   match: "exact" | "prefix";
   /** The cookie question is asked here. */
   asksConsent: boolean;
-  /** A visit here is counted as a page view. */
-  countsPageView: boolean;
 }
 
-const page = (path: string, match: AnalyticsRoute["match"] = "exact"): AnalyticsRoute => ({ path, match, asksConsent: true, countsPageView: true });
+const page = (path: string, match: AnalyticsRoute["match"] = "exact"): AnalyticsRoute => ({ path, match, asksConsent: true });
 
 export const ANALYTICS_ROUTES: readonly AnalyticsRoute[] = [
   page("/"), page("/platform"), page("/features"), page("/solutions", "prefix"), page("/pricing"), page("/compare"), page("/tour"),
   page("/security"), page("/contact-sales"), page("/support", "prefix"), page("/signup"),
   page("/privacy"), page("/terms"), page("/cookies"), page("/subprocessors"), page("/dpa"), page("/refunds"), page("/acceptable-use"),
-  /** The relay after sign-up only sends the sign-up event: it asks nothing and is not itself a page view. */
-  { path: "/welcome", match: "exact", asksConsent: false, countsPageView: false },
+  /** The relay after sign-up sends the sign-up event and asks nothing. */
+  { path: "/welcome", match: "exact", asksConsent: false },
 ];
 
-/** The path without query or fragment and without a trailing slash, which is the only form of an address that is ever sent. */
+/** The path without query or fragment and without a trailing slash: the form of an address the allow-list is matched against. */
 export function pagePathOf(location: string): string {
   const path = location.split("#")[0]!.split("?")[0]!;
   return path.length > 1 ? path.replace(/\/+$/, "") || "/" : path || "/";
@@ -35,4 +33,3 @@ export function routeFor(location: string): AnalyticsRoute | null {
 
 export const isAnalyticsRoute = (location: string): boolean => routeFor(location) !== null;
 export const asksConsentOn = (location: string): boolean => routeFor(location)?.asksConsent === true;
-export const countsPageViewOn = (location: string): boolean => routeFor(location)?.countsPageView === true;

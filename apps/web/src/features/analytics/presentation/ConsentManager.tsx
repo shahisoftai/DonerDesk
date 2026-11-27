@@ -5,14 +5,14 @@ import { useEffect, useState } from "react";
 import { analytics } from "../composition.ts";
 import { allowsAnalytics } from "../domain/consent.ts";
 import { OPEN_COOKIE_SETTINGS } from "../domain/consent-events.ts";
-import { asksConsentOn, countsPageViewOn, isAnalyticsRoute, pagePathOf } from "../domain/analytics-routes.ts";
+import { asksConsentOn, isAnalyticsRoute } from "../domain/analytics-routes.ts";
 import { CookieBanner } from "./CookieBanner.tsx";
 import { useConsent } from "./use-consent.ts";
 
 /**
  * Joins the consent choice, the allow-list of pages and the analytics service. Analytics starts only on an allowed page
- * after a yes; it stops the moment the answer is no or the visitor leaves the allowed pages; a page view carries the path
- * only, never the query.
+ * after a yes; it is paused the moment the visitor moves to a page that is not on the list (also by in-app navigation) and
+ * stopped, with its cookies removed, when the answer is no.
  */
 export function ConsentManager() {
   const pathname = usePathname() ?? "/";
@@ -20,7 +20,6 @@ export function ConsentManager() {
   const [reopened, setReopened] = useState(false);
   const service = analytics();
   const tracked = isAnalyticsRoute(pathname);
-  const active = ready && tracked && allowsAnalytics(choice);
 
   useEffect(() => {
     const open = () => setReopened(true);
@@ -29,16 +28,11 @@ export function ConsentManager() {
   }, []);
 
   useEffect(() => {
-    if (!service) return;
-    if (!ready) return;
+    if (!service || !ready) return;
     if (!allowsAnalytics(choice)) service.stop();
-  }, [service, ready, choice]);
-
-  useEffect(() => {
-    if (!service || !active) return;
-    service.start();
-    if (countsPageViewOn(pathname)) service.pageView(pagePathOf(pathname));
-  }, [service, active, pathname]);
+    else if (tracked) service.start();
+    else service.pause();
+  }, [service, ready, choice, tracked]);
 
   const asking = Boolean(service) && ready && asksConsentOn(pathname) && (choice === null || reopened);
   if (!asking) return null;
