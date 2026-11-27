@@ -189,7 +189,8 @@
 @media (max-width:760px){.sx .sx-fgrid{grid-template-columns:1fr 1fr}}
 .sx footer h4{font:600 13px var(--body);color:var(--ink);letter-spacing:0;margin-bottom:8px}
 .sx footer a{display:block;text-decoration:none;padding:3px 0}
-.sx footer a:hover{color:var(--brand)}
+.sx footer a:hover,.sx footer button.sx-cookie:hover{color:var(--brand)}
+.sx footer button.sx-cookie{display:block;background:none;border:0;padding:3px 0;font:inherit;color:inherit;cursor:pointer;text-align:start}
 .sx .sx-crumbs{font-size:13px;color:var(--muted)}
 .sx .sx-cmp-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
 .sx table.sx-cmp{border-collapse:separate;border-spacing:0;min-width:980px;width:100%;font-size:14px}

@@ -45,16 +45,21 @@ await check("Decline: nothing goes to Google, no analytics cookie, and the quest
   await context.close();
 });
 
-await check("Accept: the page view reaches Google with the path only, never a query", async () => {
+await check("Accept: every hit reaches Google with the path only, never the query", async () => {
   const { context, page, seen } = await fresh();
+  const hits = [];
+  page.on("request", (r) => { if (/google-analytics\.com\/g\/collect/.test(r.url())) hits.push(r.url()); });
   await page.goto(`${SITE}/pricing?secret=abc123`);
   await banner(page).waitFor({ timeout: 15000 });
-  const collect = page.waitForRequest((r) => /google-analytics\.com\/g\/collect/.test(r.url()) && r.url().includes("en=page_view"), { timeout: 20000 });
   await page.getByRole("button", { name: "Accept" }).click();
-  const request = await collect;
-  const location = new URL(request.url()).searchParams.get("dl");
-  assert.equal(location, `${SITE}/pricing`);
-  assert.ok(!request.url().includes("secret"));
+  await page.waitForTimeout(7000);
+  assert.ok(hits.length >= 1, "at least one hit");
+  assert.ok(hits.some((u) => u.includes("en=page_view")), "a page view");
+  for (const u of hits) {
+    assert.ok(!u.includes("secret"), "no query in any hit");
+    const dl = new URL(u).searchParams.get("dl");
+    if (dl) assert.equal(dl, `${SITE}/pricing`);
+  }
   assert.ok(seen.some((u) => u.includes("id=G-")));
   await context.close();
 });

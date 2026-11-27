@@ -6,6 +6,7 @@ import { SupportJsonLd } from "@/components/support/SupportJsonLd";
 import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
 import { loadArticle } from "@/components/support/wikiUtils";
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 
 /** Class names are written out in full so Tailwind sees every one of them. */
 const ACCENTS = {
@@ -123,6 +124,7 @@ export function CategoryArticle({ categorySlug, categoryLabel, accent, article, 
           <div className="flex gap-6 text-sm text-fog">
             <Link href="/support" className="transition hover:text-mist">Support</Link>
             <Link href="/privacy" className="transition hover:text-mist">Privacy</Link>
+            <CookieSettingsLink className="transition hover:text-mist" />
             <Link href="/terms" className="transition hover:text-mist">Terms</Link>
             <Link href="/refunds" className="transition hover:text-mist">Refunds</Link>
           </div>

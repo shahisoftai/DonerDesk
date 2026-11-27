@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SECTOR_PAGES } from "./site-data";
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 
 export function SiteFooter() {
   return (
@@ -31,6 +32,7 @@ export function SiteFooter() {
           <Link href="/support">Support centre</Link>
           <Link href="/contact-sales">Talk to us</Link>
           <Link href="/privacy">Privacy</Link>
+          <CookieSettingsLink className="sx-cookie" />
           <Link href="/terms">Terms</Link>
           <Link href="/refunds">Refunds</Link>
           <Link href="/subprocessors">Subprocessors</Link>

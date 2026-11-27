@@ -72,9 +72,9 @@ test("the sign-up relay only ever forwards to the app's own two pages and sends 
 function fakeBrowser(cookie = "") {
   const pushed: unknown[][] = [];
   const appended: Array<{ src: string }> = [];
-  const win: any = { location: { origin: "https://donordesk.online", hostname: "donordesk.online" } };
+  const win: any = { location: { origin: "https://donordesk.online", hostname: "donordesk.online", pathname: "/pricing" } };
   const doc: any = {
-    cookie, title: "Pricing",
+    cookie, title: "Pricing", referrer: "https://donordesk.online/features?x=secret",
     createElement: () => ({ async: false, src: "" }),
     head: { appendChild: (n: { src: string }) => appended.push(n) },
     querySelector: () => (appended.length ? {} : null),
@@ -107,16 +107,18 @@ test("the queue holds `arguments` objects, which is the only form gtag.js reads"
   }
 });
 
-test("a page view carries the path and never a query", () => {
+test("the page address is set clean, so the query never reaches Google, for the page view and for Google's own events", () => {
   const { win, doc, pushed } = fakeBrowser();
   const tag = new GoogleTagAdapter("G-TEST", win, doc);
   tag.start();
+  const config = Array.from(pushed.find((e) => (e as unknown[])[0] === "config") as unknown[]);
+  assert.equal((config[2] as Record<string, string>).page_location, "https://donordesk.online/pricing");
   tag.pageView("/pricing");
-  const last = Array.from(pushed.at(-1) as unknown[]);
-  assert.deepEqual(last.slice(0, 2), ["event", "page_view"]);
-  const params = last[2] as Record<string, string>;
-  assert.equal(params.page_path, "/pricing");
-  assert.equal(params.page_location, "https://donordesk.online/pricing");
+  const calls = pushed.map((e) => Array.from(e as unknown[]));
+  const set = calls.filter((c) => c[0] === "set").at(-1)![1] as Record<string, string>;
+  assert.deepEqual([set.page_path, set.page_location, set.page_referrer], ["/pricing", "https://donordesk.online/pricing", "https://donordesk.online/features"]);
+  assert.deepEqual(calls.at(-1), ["event", "page_view"]);
+  assert.ok(!JSON.stringify(calls).includes("secret"));
 });
 
 test("stop disables collection and removes the analytics cookies but not the others", () => {
@@ -168,7 +170,7 @@ test("the cookie banner gives yes and no the same look", () => {
 });
 
 test("every page that asks for the cookie answer links to the policy, and both footers can reopen it", () => {
-  for (const f of ["../../src/components/landing/MarketingFooter.tsx", "../../src/components/legal/LegalLayout.tsx"]) {
+  for (const f of ["../../src/components/landing/MarketingFooter.tsx", "../../src/components/legal/LegalLayout.tsx", "../../src/components/site/SiteFooter.tsx", "../../src/components/support/WikiLayout.tsx", "../../src/components/support/CategoryArticle.tsx", "../../src/app/pricing/page.tsx", "../../src/app/support/page.tsx"]) {
     assert.match(readFileSync(new URL(f, import.meta.url), "utf8"), /CookieSettingsLink/);
   }
 });

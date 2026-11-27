@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { SupportSearch, type SearchEntry } from "@/components/support/SupportSearch";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 
 const CATEGORIES = [
   {
@@ -445,6 +446,7 @@ export default function SupportPage() {
             <Link href="/login" className="transition hover:text-white">Log in</Link>
             <Link href="/signup" className="transition hover:text-white">Get started</Link>
             <Link href="/privacy" className="transition hover:text-white">Privacy</Link>
+            <CookieSettingsLink className="transition hover:text-white" />
             <Link href="/terms" className="transition hover:text-white">Terms</Link>
             <Link href="/refunds" className="transition hover:text-white">Refunds</Link>
             <Link href="/support" className="transition hover:text-white text-saffron">Support</Link>

@@ -2,6 +2,7 @@ import { supportCategoryMetadata } from "@/lib/seo";
 import Link from "next/link";
 import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 
 export const metadata = supportCategoryMetadata("security-privacy");
 
@@ -56,6 +57,7 @@ export default function SecurityPrivacyPage() {
           <div className="flex gap-6 text-sm text-fog">
             <Link href="/support" className="transition hover:text-mist">Support</Link>
             <Link href="/privacy" className="transition hover:text-mist">Privacy</Link>
+            <CookieSettingsLink className="transition hover:text-mist" />
             <Link href="/terms" className="transition hover:text-mist">Terms</Link>
             <Link href="/refunds" className="transition hover:text-mist">Refunds</Link>
           </div>

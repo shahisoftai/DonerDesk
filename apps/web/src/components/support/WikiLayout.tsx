@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 
 export interface WikiArticle {
   title: string;
@@ -151,6 +152,7 @@ export function WikiLayout({
           <div className="flex gap-6 text-sm text-fog">
             <Link href="/support" className="transition hover:text-mist">Support</Link>
             <Link href="/privacy" className="transition hover:text-mist">Privacy</Link>
+            <CookieSettingsLink className="transition hover:text-mist" />
             <Link href="/terms" className="transition hover:text-mist">Terms</Link>
             <Link href="/refunds" className="transition hover:text-mist">Refunds</Link>
           </div>

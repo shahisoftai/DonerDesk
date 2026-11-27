@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/pricing" },
@@ -419,6 +420,7 @@ export default function PricingPage() {
               <h4 className="font-semibold text-white">Legal</h4>
               <ul className="mt-4 space-y-2.5 text-sm text-slate-400">
                 <li><Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link></li>
+                <li><CookieSettingsLink className="transition hover:text-white" /></li>
                 <li><Link href="/terms" className="transition hover:text-white">Terms of Service</Link></li>
                 <li><Link href="/refunds" className="transition hover:text-white">Refund &amp; Cancellation</Link></li>
                 <li><Link href="/cookies" className="transition hover:text-white">Cookie Policy</Link></li>

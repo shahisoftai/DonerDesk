@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { WikiTopNav, CategoryNav } from "@/components/support/CategoryNav";
 import { WIKI_CATEGORIES } from "@/components/support/wikiCategories";
 import { loadArticle } from "@/components/support/wikiUtils";
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 
 const FILE_MAP: Record<string, { file: string; title: string }> = {
   contact: { file: "support-contact.md", title: "Contact Support" },
@@ -109,6 +110,7 @@ export default async function SupportReferencePage({
           <div className="flex gap-6 text-sm text-fog">
             <Link href="/support" className="transition hover:text-mist">Support</Link>
             <Link href="/privacy" className="transition hover:text-mist">Privacy</Link>
+            <CookieSettingsLink className="transition hover:text-mist" />
             <Link href="/terms" className="transition hover:text-mist">Terms</Link>
             <Link href="/refunds" className="transition hover:text-mist">Refunds</Link>
           </div>
