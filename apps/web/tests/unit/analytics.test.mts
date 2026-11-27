@@ -97,6 +97,16 @@ test("nothing is loaded until start, and start sets no advertising features", ()
   assert.ok(flat.includes('"ad_storage":"denied"') && flat.includes('"allow_google_signals":false') && flat.includes('"send_page_view":false'));
 });
 
+test("the queue holds `arguments` objects, which is the only form gtag.js reads", () => {
+  const { win, doc, pushed } = fakeBrowser();
+  new GoogleTagAdapter("G-TEST", win, doc).start();
+  assert.ok(pushed.length >= 3);
+  for (const entry of pushed) {
+    assert.equal(Array.isArray(entry), false);
+    assert.equal(Object.prototype.toString.call(entry), "[object Arguments]");
+  }
+});
+
 test("a page view carries the path and never a query", () => {
   const { win, doc, pushed } = fakeBrowser();
   const tag = new GoogleTagAdapter("G-TEST", win, doc);

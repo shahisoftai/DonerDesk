@@ -39,7 +39,12 @@ export class GoogleTagAdapter implements AnalyticsPort {
     if (this.started) return;
     this.started = true;
     this.win.dataLayer = this.win.dataLayer ?? [];
-    this.win.gtag = (...args: unknown[]) => void this.win.dataLayer!.push(args);
+    // gtag.js only understands queue entries that are `arguments` objects, not arrays, so this must be a plain function.
+    const layer = this.win.dataLayer;
+    this.win.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      layer.push(arguments);
+    };
     this.win.gtag("consent", "default", { analytics_storage: "granted", ad_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" });
     this.win.gtag("js", new Date());
     this.win.gtag("config", this.measurementId, { send_page_view: false, allow_google_signals: false, allow_ad_personalization_signals: false });
