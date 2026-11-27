@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { CompareMatrix } from "@/components/site/CompareMatrix";
@@ -67,7 +66,6 @@ export default function ComparePage() {
           </div>
         </div>
       </section>
-      <CookieConsentBanner />
     </SiteShell>
   );
 }

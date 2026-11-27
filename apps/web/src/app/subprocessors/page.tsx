@@ -14,12 +14,13 @@ const TOC = [
   { id: "ai", title: "AI providers" },
   { id: "optional", title: "Used only if you enable them" },
   { id: "drive", title: "Your own Google Drive" },
+  { id: "website", title: "Visitors to our website" },
   { id: "changes", title: "Changes and objections" },
 ];
 
 export default function SubprocessorsPage() {
   return (
-    <LegalLayout title="Sub-processors" subtitle="Legal" updated={LEGAL.updated} toc={TOC}>
+    <LegalLayout title="Sub-processors" subtitle="Legal" updated={LEGAL.analyticsPoliciesUpdated} toc={TOC}>
       <p className="mt-8 text-[15px] leading-7 text-slate-300">
         This list names the third parties that may process personal data in a customer workspace on
         DonorDesk&apos;s behalf. It forms part of our <A href="/dpa">Data Processing Addendum</A>.
@@ -87,7 +88,20 @@ export default function SubprocessorsPage() {
           configured AI provider when you use AI drafting.
         </p>
       </Section>
-      <Section id="changes" title="5. Changes and objections">
+      <Section id="website" title="5. Visitors to our website">
+        <p>
+          This is not customer workspace data. It concerns people who visit our public pages at donordesk.online, and it applies only to
+          visitors who accept analytics cookies. Nothing from the signed-in Service is sent to these providers.
+        </p>
+        <Table
+          head={["Provider", "Purpose", "Data", "Location"]}
+          rows={[
+            ["Google LLC (Google Analytics 4)", "Counting visits to our public pages and where they come from", "Pages visited, approximate location, device and browser type, a cookie identifier; advertising features and Google signals are off; kept for 14 months", "United States (EU–US Data Privacy Framework and standard contractual clauses)"],
+            ["Google LLC (Search Console)", "How our pages appear in Google Search", "Aggregate search queries and clicks; no visitor-level data", "Per Google's policy"],
+          ]}
+        />
+      </Section>
+      <Section id="changes" title="6. Changes and objections">
         <p>
           We will update this page before adding or replacing a sub-processor, and notify customers
           with a DPA by email at least 30 days ahead where practicable. You may object on reasonable

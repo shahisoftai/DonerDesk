@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Script from "next/script";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { FieldFlow } from "@/components/site/FieldFlow";
@@ -169,7 +168,6 @@ export default function HomePage() {
           </div>
         </section>
       </SectorProvider>
-      <CookieConsentBanner />
       <Script id="voxeleon-chat" strategy="afterInteractive">{`
         window.voxeleonSettings = {"position":"right","type":"standard","launcherTitle":""};
         (function(d,t){

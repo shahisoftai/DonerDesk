@@ -7,6 +7,7 @@ import { AuthService, AuthFormError, type SignupInput } from "@/features/auth/ap
 import type { AuthFormState } from "@/features/auth/application/auth-schemas";
 import { gatewayRequest } from "@/lib/server/api-gateway";
 import { LegalConsentSchema } from "@/lib/server/schemas";
+import { welcomeAddress, type WelcomePlan } from "@/features/analytics/domain/events";
 
 const service = new AuthService();
 
@@ -112,11 +113,11 @@ export async function signupAction(
     if (err instanceof AuthFormError) return err.state;
     return { error: "We could not create your account. Please try again." };
   }
-  if ((requestedPlan === "TEAM" || requestedPlan === "GROWTH") && !trialGranted) {
-    redirect(`/checkout?plan=${requestedPlan.toLowerCase()}`);
-  }
-  // A new account has not accepted the terms yet: land on onboarding directly (see landingAfterSignIn).
-  redirect("/onboarding");
+  // The new account passes through /welcome, which sends the sign-up event (only if the visitor allowed analytics) and then
+  // forwards at once: to checkout for a paid plan without a trial, otherwise straight to onboarding (the terms are not accepted
+  // yet, see landingAfterSignIn). The address carries words only, never a path.
+  const needsCheckout = (requestedPlan === "TEAM" || requestedPlan === "GROWTH") && !trialGranted;
+  redirect(welcomeAddress(trialGranted ? "trial" : "signup", needsCheckout ? "checkout" : "onboarding", (requestedPlan ?? "STARTER").toLowerCase() as WelcomePlan));
 }
 
 /**

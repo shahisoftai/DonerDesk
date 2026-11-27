@@ -20,6 +20,7 @@ export * from "./ports/exports.js";
 export * from "./ports/support.js";
 export * from "./ports/setup.js";
 export * from "./ports/billing.js";
+export * from "./ports/site-analytics.js";
 export * from "./ports/sales.js";
 export * from "./ports/agent-memory.js";
 export * from "./ports/demo.js";
@@ -244,6 +245,7 @@ export * from "./use-cases/support/list-audit-log.js";
 export * from "./use-cases/support/record-legal-consent.js";
 export * from "./use-cases/support/get-legal-consent.js";
 
+export * from "./use-cases/site-analytics/get-website-stats.js";
 export * from "./use-cases/billing/create-checkout.js";
 export * from "./use-cases/billing/create-topup-checkout.js";
 export * from "./use-cases/billing/submit-nonprofit-verification.js";

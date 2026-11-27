@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/pricing" },
@@ -440,7 +439,6 @@ export default function PricingPage() {
           </div>
         </div>
       </footer>
-      <CookieConsentBanner />
     </main>
   );
 }

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactSalesForm } from "./ContactSalesForm";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 
@@ -34,7 +33,6 @@ export default function ContactSalesPage() {
         </Link>
       </p>
     </div>
-      <CookieConsentBanner />
     </SiteShell>
   );
 }

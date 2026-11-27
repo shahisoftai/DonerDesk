@@ -19,4 +19,6 @@ export const LEGAL = {
    * effective date rather than the label shared by the other policies.
    */
   refundPolicyUpdated: "21 October 2026 · product version 4.01",
+  /** Re-issued with website analytics (Google Analytics and Search Console on the public pages): cookie policy, privacy policy, sub-processors. */
+  analyticsPoliciesUpdated: "27 November 2026 · product version 4.01",
 } as const;

@@ -167,5 +167,6 @@ redirect to the target and must never be linked from the app. (Removed 2026-11-1
 | `/support/troubleshooting/[article]` | Marketing site | KEPT |  |
 | `/terms` | Marketing site | KEPT |  |
 | `/thanks` | Marketing site | KEPT |  |
+| `/welcome` | Marketing site | KEPT | Sign-up relay: sends the sign-up event if analytics was accepted, then forwards to onboarding or checkout |
 | `/tour` | Marketing site | KEPT |  |
 | `/` | Marketing site | KEPT |  |

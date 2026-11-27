@@ -36,7 +36,7 @@ export default function PrivacyPage() {
     <LegalLayout
       title="Privacy Policy"
       subtitle="Legal"
-      updated={LEGAL.updated}
+      updated={LEGAL.analyticsPoliciesUpdated}
       toc={TOC}
     >
       <Section id="who-we-are" title="1. Who we are">
@@ -165,6 +165,8 @@ export default function PrivacyPage() {
           <Li>
             <B>Improvement and analytics.</B> Understanding how the Service is
             used, measuring performance, and improving features and reliability.
+            Website analytics on our public pages are used only with your
+            consent.
           </Li>
           <Li>
             <B>Legal compliance.</B> Complying with legal obligations, resolving
@@ -496,8 +498,15 @@ export default function PrivacyPage() {
             and language preference.
           </Li>
           <Li>
-            <B>Analytics cookies</B>, where used, to understand aggregate usage
-            so we can improve the Service.
+            <B>Analytics cookies</B>, only if you accept them on our public
+            pages: Google Analytics 4 counts visits and shows which pages and
+            countries they come from, so we can improve our website. We switch
+            off Google&apos;s advertising features, keep the data for 14
+            months, and never use analytics inside the signed-in Service. We
+            also read aggregate search results (how often our pages appear in
+            Google Search and what people searched) from Google Search Console,
+            which holds no information about individual visitors. Google LLC
+            acts on our behalf for this; see our sub-processor list.
           </Li>
         </Ul>
         <P>

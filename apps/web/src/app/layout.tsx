@@ -5,6 +5,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ThemeScript } from "@/components/ThemeScript";
+import { ConsentManager } from "@/features/analytics/presentation/ConsentManager";
 
 /** Version 4.000 type: IBM Plex Sans for every word on screen, Plex Mono for codes and aligned figures. */
 const plexSans = IBM_Plex_Sans({ subsets: ["latin", "latin-ext"], weight: ["400", "500", "600", "700"], variable: "--font-sans", display: "swap" });
@@ -115,6 +116,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         />
         <ThemeScript />
         <I18nProvider initialLocale="en">{children}</I18nProvider>
+        <ConsentManager />
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 import Image from "next/image";
 import type { ReactNode } from "react";
 
@@ -79,6 +80,7 @@ export function LegalLayout({
             <Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link>
             <Link href="/terms" className="transition hover:text-white">Terms of Service</Link>
             <Link href="/refunds" className="transition hover:text-white">Refund &amp; Cancellation Policy</Link>
+            <CookieSettingsLink className="transition hover:text-white" />
           </div>
         </div>
       </footer>

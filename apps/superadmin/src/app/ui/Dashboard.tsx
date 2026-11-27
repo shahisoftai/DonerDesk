@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { PasswordBox } from "./PasswordBox";
+import { WebsiteStats } from "./WebsiteStats";
 
-type Tab = "overview" | "tenants" | "users" | "admins" | "tiers" | "billing" | "nonprofit" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system";
+type Tab = "overview" | "tenants" | "users" | "admins" | "tiers" | "billing" | "nonprofit" | "ai" | "email" | "storage" | "backups" | "connectors" | "kestra" | "audit" | "system" | "website-stats";
 type AnyRow = Record<string, any>;
 
 const tierPlanCodes = ["STARTER", "TEAM", "GROWTH", "ENTERPRISE"];
@@ -49,6 +50,8 @@ async function api(path: string, init?: RequestInit) {
   return data;
 }
 
+const loadWebsiteStats = (days: 7 | 28 | 90, fresh: boolean) => api(`website-stats?days=${days}${fresh ? "&fresh=1" : ""}`);
+
 export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterprisePriceFloorAnnualUsd?: number }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [data, setData] = useState<any>(null);
@@ -60,6 +63,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
 
   const endpoint = tab === "ai" || tab === "email" || tab === "storage" || tab === "backups" || tab === "connectors" ? "configurations" : tab === "nonprofit" ? "billing/nonprofit-verifications" : tab;
   async function load() {
+    if (tab === "website-stats") return; // the report loads itself, by the period chosen
     try {
       const result = await api(endpoint);
       setData(tab === "nonprofit" ? result.items : result);
@@ -79,7 +83,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
     ["overview", "Overview", "⌂"], ["tenants", "Tenants", "▦"], ["users", "Users", "♙"], ["admins", "Platform admins", "♔"],
     ["tiers", "Tier management", "◈"], ["billing", "Billing & credits", "¤"],
     ["nonprofit", "Nonprofit verification", "♥"],
-    ["ai", "AI & LLM", "✦"], ["email", "Email", "✉"], ["storage", "Object storage", "▤"],
+    ["website-stats", "Website visitors", "◔"], ["ai", "AI & LLM", "✦"], ["email", "Email", "✉"], ["storage", "Object storage", "▤"],
     ["backups", "Off-host backups", "↥"], ["connectors", "Inbound connectors", "⇄"],
     ["kestra", "Kestra plugins", "⚙"], ["audit", "Audit trail", "◷"], ["system", "System health", "●"],
   ];
@@ -121,6 +125,7 @@ export function Dashboard({ enterprisePriceFloorAnnualUsd = 12000 }: { enterpris
       {tab === "audit" && <Audit rows={Array.isArray(data) ? data : []} />}
       {tab === "kestra" && <Kestra data={data || {}} />}
       {tab === "system" && <System data={data || {}} />}
+      {tab === "website-stats" && <WebsiteStats load={loadWebsiteStats} />}
     </main>
     {modal?.kind === "tenant" && <TenantModal row={modal.row} busy={busy} onClose={() => setModal(null)} onSave={(value: AnyRow) => action(async () => { const { canvasAiEnabled, ...tenant } = value; await api(modal.row ? `tenants/${modal.row.id}` : "tenants", { method: modal.row ? "PATCH" : "POST", body: JSON.stringify(tenant) }); if (modal.row && Boolean(canvasAiEnabled) !== Boolean(modal.row.canvasAiEnabled)) await api(`tenants/${modal.row.tenantId}/canvas-ai`, { method: "PUT", body: JSON.stringify({ enabled: Boolean(canvasAiEnabled) }) }); }, modal.row ? "Tenant updated" : "Tenant created")} />}
     {modal?.kind === "tenantDelete" && modal.row && <TenantDeleteModal row={modal.row} busy={busy} onClose={() => setModal(null)} onDelete={(body: AnyRow) => action(() => api(`tenants/${modal.row!.id}`, { method: "DELETE", body: JSON.stringify(body) }), "Tenant deleted")} />}

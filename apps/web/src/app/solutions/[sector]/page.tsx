@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SectorDashboard } from "@/components/site/charts";
@@ -98,7 +97,6 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
           </div>
         </div>
       </section>
-      <CookieConsentBanner />
     </SiteShell>
   );
 }

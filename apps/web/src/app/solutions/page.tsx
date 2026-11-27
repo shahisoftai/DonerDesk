@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SECTOR_PAGES } from "@/components/site/site-data";
@@ -32,7 +31,6 @@ export default function SolutionsIndex() {
           ))}
         </div>
       </section>
-      <CookieConsentBanner />
     </SiteShell>
   );
 }

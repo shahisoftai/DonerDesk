@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { PlatformControlPlane } from "@donordesk/infrastructure";
 import { PHASE22_CREDIT_CUTOVERS } from "@donordesk/application";
+import { registerWebsiteStatsRoutes } from "./superadmin-website-stats.js";
 
 const Login = z.object({ email: z.string().email(), password: z.string().min(1) });
 const Mfa = z.object({ token: z.string().min(1), code: z.string().regex(/^\d{6}$/) });
@@ -39,6 +40,7 @@ export async function registerSuperAdminRoutes(app: FastifyInstance) {
     const actor = (req: FastifyRequest) => (req as FastifyRequest & { superAdmin: ReturnType<PlatformControlPlane["verifySession"]> }).superAdmin;
     const meta = (req: FastifyRequest) => ({ ip: req.ip, userAgent: req.headers["user-agent"] });
     secured.get("/superadmin/overview", () => service().overview());
+    registerWebsiteStatsRoutes(secured);
     secured.get("/superadmin/billing", () => service().listBilling());
     secured.get("/superadmin/tiers", () => service().listTiers());
     secured.put("/superadmin/tiers/:planCode", req => service().updateTier(actor(req), (req.params as { planCode: string }).planCode, TierUpdate.parse(req.body), meta(req)));

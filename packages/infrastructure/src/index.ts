@@ -43,6 +43,7 @@ export * from "./jobs/index.js";
 export { OutboxEventBus, DEFAULT_EVENT_TO_JOB, type EventToJobMapping } from "./events/outbox-event-bus.js";
 export { createLLMProvider, withPiiFirewall, registerLLMProvider, type LLMProviderConfig, type LLMProviderName } from "./llm/factory.js";
 export { createPiiFirewall, PiiFirewall, type PiiPolicy, type PiiDetectionResult, type PiiMatch } from "@donordesk/domain";
+export { createWebsiteStatsHandler, type SiteAnalyticsEnv } from "./site-analytics/index.js";
 export { PlatformControlPlane, PLATFORM_CATEGORIES, PLATFORM_PROVIDERS } from "./platform/control-plane.js";
 export { RuntimeProvisioner, MANAGED_BLOCK_MARKER, MANAGED_BLOCK_END_MARKER, renderApiManagedBlock, renderWorkersManagedBlock, applyManagedBlockToEnv, removeManagedBlockFromEnv, decryptPlatformConfigurationSecret, provisionExistingGlobalLlmConfigs } from "./platform/runtime-provisioner.js";
 export { PlatformLlmConfigResolver } from "./llm/llm-config-resolver.js";

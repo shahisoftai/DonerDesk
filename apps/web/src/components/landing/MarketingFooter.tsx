@@ -1,3 +1,4 @@
+import { CookieSettingsLink } from "@/features/analytics/presentation/CookieSettingsLink";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -72,6 +73,7 @@ export function MarketingFooter() {
               <li><Link href="/privacy" className="transition hover:text-white">Privacy Policy</Link></li>
               <li><Link href="/terms" className="transition hover:text-white">Terms of Service</Link></li>
               <li><Link href="/cookies" className="transition hover:text-white">Cookie Policy</Link></li>
+              <li><CookieSettingsLink className="transition hover:text-white" /></li>
               <li><Link href="/security" className="transition hover:text-white">Security</Link></li>
               <li><Link href="/dpa" className="transition hover:text-white">Data Processing Agreement</Link></li>
               <li><Link href="/subprocessors" className="transition hover:text-white">Subprocessors</Link></li>

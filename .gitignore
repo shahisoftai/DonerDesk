@@ -21,3 +21,6 @@ storage/
 apps/web/public/geo/
 apps/web/public/tiles/
 .context-work/
+
+# Credentials dropped into Temp/ (for example Google service account keys) must never be committed.
+Temp/*.json

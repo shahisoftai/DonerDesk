@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LEGAL } from "@/lib/legal-entity";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 
@@ -196,7 +195,6 @@ export default function SecurityPage() {
         .
       </p>
     </div>
-      <CookieConsentBanner />
     </SiteShell>
   );
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 
@@ -110,7 +109,6 @@ export default function PlatformPage() {
           </div>
         </div>
       </section>
-      <CookieConsentBanner />
     </SiteShell>
   );
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CookieConsentBanner } from "@/components/legal/CookieConsentBanner";
 import { SiteShell } from "@/components/site/SiteShell";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { FEATURE_GROUPS } from "@/components/landing/platform-content";
@@ -78,7 +77,6 @@ export default function FeaturesPage() {
           </div>
         </div>
       </section>
-      <CookieConsentBanner />
     </SiteShell>
   );
 }
