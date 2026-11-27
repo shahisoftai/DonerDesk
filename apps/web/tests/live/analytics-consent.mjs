@@ -60,26 +60,26 @@ await check("Accept: exactly one page view reaches Google for the page, with the
   await context.close();
 });
 
-await check("a private page is never tracked, even after Accept", async () => {
-  const { context, page, seen } = await fresh();
+await check("a private page is never tracked, even after Accept, also by in-app navigation", async () => {
+  const { context, page } = await fresh();
+  const pages = [];
+  page.on("request", (r) => { if (/google-analytics\.com\/g\/collect/.test(r.url())) pages.push(new URL(new URL(r.url()).searchParams.get("dl") ?? "about:blank").pathname); });
   await page.goto(`${SITE}/features`);
   await banner(page).waitFor({ timeout: 15000 });
   await page.getByRole("button", { name: "Accept" }).click();
-  await page.waitForTimeout(2000);
-  const before = seen.length;
+  await page.waitForTimeout(4000);
+  assert.ok(pages.includes("/features"), "the allowed page was counted");
   await page.goto(`${SITE}/login`);
   await page.goto(`${SITE}/forgot-password`);
   await page.waitForTimeout(3000);
-  assert.equal(seen.slice(before).filter((u) => /g\/collect/.test(u)).length, 0, "no hit from a private page");
-  // in-app navigation from an allowed page to a private one must not be tracked either
-  await page.goto(`${SITE}/features`);
-  await page.waitForTimeout(3000);
-  const mark = seen.length;
-  await page.getByRole("link", { name: /log in/i }).first().click();
-  await page.waitForURL(/\/login/, { timeout: 15000 });
-  await page.waitForTimeout(4000);
-  assert.equal(seen.slice(mark).filter((u) => /g\/collect/.test(u)).length, 0, "no hit after in-app navigation to a private page");
   assert.equal(await banner(page).count(), 0, "no question on a private page");
+  await page.goto(`${SITE}/features`);
+  await page.waitForTimeout(4000);
+  await page.getByRole("link", { name: /log in/i }).first().click(); // in-app navigation, no page load
+  await page.waitForURL(/\/login/, { timeout: 15000 });
+  await page.waitForTimeout(5000);
+  const privatePages = pages.filter((p) => p !== "/features");
+  assert.deepEqual(privatePages, [], `hits for private pages: ${privatePages.join(", ")}`);
   await context.close();
 });
 
