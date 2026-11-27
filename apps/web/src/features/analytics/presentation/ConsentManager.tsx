@@ -1,11 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { analytics } from "../composition.ts";
 import { allowsAnalytics } from "../domain/consent.ts";
 import { OPEN_COOKIE_SETTINGS } from "../domain/consent-events.ts";
 import { asksConsentOn, isAnalyticsRoute } from "../domain/analytics-routes.ts";
+import { guardHistory } from "../domain/history-guard.ts";
 import { CookieBanner } from "./CookieBanner.tsx";
 import { useConsent } from "./use-consent.ts";
 
@@ -26,6 +27,19 @@ export function ConsentManager() {
     window.addEventListener(OPEN_COOKIE_SETTINGS, open);
     return () => window.removeEventListener(OPEN_COOKIE_SETTINGS, open);
   }, []);
+
+  const yes = useRef(false);
+  yes.current = allowsAnalytics(choice);
+
+  // Decide before the address changes: Google's own page view is sent from the same history call.
+  useEffect(() => {
+    if (!service) return;
+    return guardHistory(window.history, window.location.href, (path) => {
+      if (!yes.current) return;
+      if (isAnalyticsRoute(path)) service.start();
+      else service.pause();
+    });
+  }, [service]);
 
   useEffect(() => {
     if (!service || !ready) return;

@@ -5,6 +5,7 @@ import test from "node:test";
 import { allowsAnalytics, consentCookie, CONSENT_COOKIE, CONSENT_DAYS, parseConsent } from "../../src/features/analytics/domain/consent.ts";
 import { ANALYTICS_ROUTES, asksConsentOn, isAnalyticsRoute, pagePathOf } from "../../src/features/analytics/domain/analytics-routes.ts";
 import { ANALYTICS_EVENTS, resolveWelcome, welcomeAddress } from "../../src/features/analytics/domain/events.ts";
+import { guardHistory } from "../../src/features/analytics/domain/history-guard.ts";
 import { GoogleTagAdapter } from "../../src/features/analytics/adapters/google-tag-adapter.ts";
 
 test("only an explicit yes allows analytics, and the old cookie values still read", () => {
@@ -176,4 +177,20 @@ test("every page that asks for the cookie answer links to the policy, and both f
   for (const f of ["../../src/components/landing/MarketingFooter.tsx", "../../src/components/legal/LegalLayout.tsx", "../../src/components/site/SiteFooter.tsx", "../../src/components/support/WikiLayout.tsx", "../../src/components/support/CategoryArticle.tsx", "../../src/app/pricing/page.tsx", "../../src/app/support/page.tsx"]) {
     assert.match(readFileSync(new URL(f, import.meta.url), "utf8"), /CookieSettingsLink/);
   }
+});
+
+test("the history guard decides on the path before the address changes, and can be undone", () => {
+  const calls: string[] = [];
+  const history: any = { pushState: (_d: unknown, _u: string, url?: string) => calls.push(`push ${url}`), replaceState: (_d: unknown, _u: string, url?: string) => calls.push(`replace ${url}`) };
+  const original = history.pushState;
+  const decided: string[] = [];
+  const undo = guardHistory(history, "https://donordesk.online/pricing", (p) => decided.push(p));
+  history.pushState(null, "", "/login?x=1");
+  history.replaceState(null, "", "https://donordesk.online/features#a");
+  history.replaceState(null, "", null);
+  history.pushState(null, "", "http://[bad");
+  assert.deepEqual(decided, ["/login", "/features"]);
+  assert.deepEqual(calls, ["push /login?x=1", "replace https://donordesk.online/features#a", "replace null", "push http://[bad"]);
+  undo();
+  assert.equal(history.pushState, original);
 });
